@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.type.VarType;
 
 /**
  * Represents a constant integer.
@@ -11,6 +12,7 @@ public class IntNode extends AtomNode {
   public IntNode(int value) {
     super(Type.INT);
     this.value = value;
+    setVarType(VarType.INT);
   }
 
   public int value() {
