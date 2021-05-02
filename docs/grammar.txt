@@ -7,20 +7,13 @@ expr -> atom (+/- atom)*
 atom -> int | variable
 
 
-nodes could be:
+node classes are:
 
 abstract statement node
 print node extends statement node
 assignment node extends statement node
 binop node 
-int node
-varaccess node
+int node extends atomnode
+varaccess node extends atomnode
 
-statements node contains multiple statements
 coocoocool this works.
-
-maybe this:?
-
-expr -> atom (+/- expr)* ?
-
-atom -> int | variable
