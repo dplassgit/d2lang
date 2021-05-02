@@ -1,25 +1,28 @@
 package com.plasstech.lang.d2.common;
 
+/**
+ * Represents a location in the file: line and column.
+ */
 public class Position {
   private final int line;
-  private final int col;
+  private final int column;
 
-  public Position(int line, int col) {
+  public Position(int line, int column) {
     this.line = line;
-    this.col = col;
+    this.column = column;
   }
 
-  public int getLine() {
+  public int line() {
     return line;
   }
 
-  public int getCol() {
-    return col;
+  public int column() {
+    return column;
   }
 
   @Override
   public String toString() {
-    return String.format("%d,%d", line, col);
+    return String.format("%d,%d", line, column);
   }
 }
 

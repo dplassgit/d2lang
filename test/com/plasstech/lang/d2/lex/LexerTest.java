@@ -65,19 +65,19 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.INT);
     assertThat(token.text()).isEqualTo("1");
     assertThat(token.value()).isEqualTo(1);
-    assertThat(token.start().getLine()).isEqualTo(1);
-    assertThat(token.start().getCol()).isEqualTo(1);
-    assertThat(token.end().getLine()).isEqualTo(1);
-    assertThat(token.end().getCol()).isEqualTo(2);
+    assertThat(token.start().line()).isEqualTo(1);
+    assertThat(token.start().column()).isEqualTo(1);
+    assertThat(token.end().line()).isEqualTo(1);
+    assertThat(token.end().column()).isEqualTo(2);
 
     token = (IntToken) lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.INT);
     assertThat(token.text()).isEqualTo("23");
     assertThat(token.value()).isEqualTo(23);
-    assertThat(token.start().getLine()).isEqualTo(2);
-    assertThat(token.start().getCol()).isEqualTo(3);
-    assertThat(token.end().getLine()).isEqualTo(2);
-    assertThat(token.end().getCol()).isEqualTo(4);
+    assertThat(token.start().line()).isEqualTo(2);
+    assertThat(token.start().column()).isEqualTo(3);
+    assertThat(token.end().line()).isEqualTo(2);
+    assertThat(token.end().column()).isEqualTo(4);
   }
 
   @Test
