@@ -1,0 +1,26 @@
+statements -> stmt stmt*
+
+stmt -> print expr | variable = expr
+
+expr -> atom (+/- atom)*
+
+atom -> int | variable
+
+
+nodes could be:
+
+abstract statement node
+print node extends statement node
+assignment node extends statement node
+binop node 
+int node
+varaccess node
+
+statements node contains multiple statements
+coocoocool this works.
+
+maybe this:?
+
+expr -> atom (+/- expr)* ?
+
+atom -> int | variable
