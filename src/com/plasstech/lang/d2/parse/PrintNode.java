@@ -2,6 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
 
+/**
+ * Print statement: print [expr]
+ */
 public class PrintNode extends StatementNode {
   private final Node expr;
 

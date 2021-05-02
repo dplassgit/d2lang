@@ -2,6 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
 
+/**
+ * Represents a constant integer.
+ */
 public class IntNode extends AtomNode {
   private final int value;
 

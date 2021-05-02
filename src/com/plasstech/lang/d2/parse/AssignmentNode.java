@@ -2,6 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
 
+/**
+ * Assignment: variable = <expression>
+ */
 public class AssignmentNode extends StatementNode {
   private final VariableNode variable;
   private final Node expr;

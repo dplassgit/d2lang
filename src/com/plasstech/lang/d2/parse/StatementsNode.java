@@ -4,8 +4,11 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 
+/**
+ * Represents a list of statements - a program, or a block inside a
+ * function/method/procedure.
+ */
 public class StatementsNode extends Node {
-
   private final List<StatementNode> children;
 
   StatementsNode(List<StatementNode> children) {

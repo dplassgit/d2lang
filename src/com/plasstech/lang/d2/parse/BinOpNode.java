@@ -7,6 +7,9 @@ import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.lex.Token;
 
+/**
+ * Binary operation: leftexpr <operation> rightexpr
+ */
 public class BinOpNode extends Node {
   // TODO: augment with type of variable.
 

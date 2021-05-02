@@ -2,6 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
 
+/**
+ * Abstract base class for nodes in the parse tree.
+ */
 public abstract class Node {
   // TODO: augment with type of expression
 
