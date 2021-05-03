@@ -98,7 +98,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_assignMulti() {
-    Lexer lexer = new Lexer("a=3 b=a c = b+4");
+    Lexer lexer = new Lexer("a=3 b=a c = b+4 print c");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
