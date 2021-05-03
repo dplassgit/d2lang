@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 /**
  * Represents a variable access, or a variable assignment.
  */
-public class VariableNode extends AtomNode {
+public class VariableNode extends Node {
   private final String name;
 
   public VariableNode(String name) {

@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.type.VarType;
 /**
  * Represents a constant integer.
  */
-public class IntNode extends AtomNode {
+public class IntNode extends Node {
   private final int value;
 
   public IntNode(int value) {
