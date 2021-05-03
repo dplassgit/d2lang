@@ -23,3 +23,22 @@ int node extends atomnode
 varaccess node extends atomnode
 
 coocoocool this works.
+
+Full expr (does not include ^ [exponent])
+
+expr -> booland (| booland)*
+
+booland -> compare (& compare)*
+
+compare -> additive (relop additive)*
+relop -> == != > < <= >=
+
+additive -> muldiv (+- muldiv)*
+
+muldiv -> unary (*/% unary)*
+
+unary ->  atom | !-+ atom
+
+atom -> '(' expr ') | var | intconst | charconst | stringconst | boolconst | floatconst
+
+See https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html for Java reference
