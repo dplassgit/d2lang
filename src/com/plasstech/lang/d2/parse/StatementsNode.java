@@ -12,7 +12,7 @@ public class StatementsNode extends Node {
   private final List<StatementNode> children;
 
   StatementsNode(List<StatementNode> children) {
-    super(Type.STATEMENTS);
+    super(Type.STATEMENTS, children.get(0).position());
     this.children = children;
   }
 

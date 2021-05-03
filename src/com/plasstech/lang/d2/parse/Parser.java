@@ -61,7 +61,7 @@ public class Parser {
   }
 
   private Node assignment() {
-    VariableNode var = new VariableNode(token.text());
+    VariableNode var = new VariableNode(token.text(), token.start());
     advance();
     if (token.type() != Token.Type.EQ) {
       return new ErrorNode(String.format("Unexpected token %s; expected '='", token.toString()),
@@ -82,7 +82,7 @@ public class Parser {
     if (expr.isError()) {
       return expr;
     }
-    return new PrintNode(expr);
+    return new PrintNode(expr, kt.start());
   }
 
   private Node expr() {
@@ -121,11 +121,12 @@ public class Parser {
     if (token.type() == Token.Type.INT) {
       IntToken it = (IntToken) token;
       advance();
-      return new IntNode(it.value());
+      return new IntNode(it.value(), it.start());
     } else if (token.type() == Token.Type.VARIABLE) {
+      Token varToken = token;
       String name = token.text();
       advance();
-      return new VariableNode(name);
+      return new VariableNode(name, varToken.start());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       Node expr = expr();

@@ -21,7 +21,7 @@ public class BinOpNode extends Node {
   private final Node right;
 
   BinOpNode(Node left, Token.Type opType, Node right) {
-    super(Node.Type.BIN_OP);
+    super(Node.Type.BIN_OP, left.position());
     Preconditions.checkArgument(BINARY_OPERATORS.contains(opType),
             "Invalid opType " + opType.name());
     this.left = left;

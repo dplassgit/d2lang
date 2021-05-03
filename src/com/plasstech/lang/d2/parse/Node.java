@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
@@ -13,10 +14,12 @@ public abstract class Node {
   }
 
   private final Type type;
+  private final Position position;
   private VarType varType = VarType.UNKNOWN;
 
-  Node(Type type) {
+  Node(Type type, Position position) {
     this.type = type;
+    this.position = position;
   }
 
   public Type nodeType() {
@@ -37,6 +40,10 @@ public abstract class Node {
 
   public boolean isError() {
     return type == Type.ERROR;
+  }
+
+  public Position position() {
+    return position;
   }
 
   public void accept(NodeVisitor visitor) {

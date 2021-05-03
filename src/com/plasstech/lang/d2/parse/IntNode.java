@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
@@ -9,8 +10,8 @@ import com.plasstech.lang.d2.type.VarType;
 public class IntNode extends Node {
   private final int value;
 
-  public IntNode(int value) {
-    super(Type.INT);
+  public IntNode(int value, Position position) {
+    super(Type.INT, position);
     this.value = value;
     setVarType(VarType.INT);
   }

@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.Position;
 
 /**
  * Represents a variable access, or a variable assignment.
@@ -8,8 +9,8 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 public class VariableNode extends Node {
   private final String name;
 
-  public VariableNode(String name) {
-    super(Type.VARIABLE);
+  public VariableNode(String name, Position position) {
+    super(Type.VARIABLE, position);
     this.name = name;
   }
 

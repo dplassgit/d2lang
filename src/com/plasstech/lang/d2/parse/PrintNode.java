@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.Position;
 
 /**
  * Print statement: print [expr]
@@ -8,8 +9,8 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 public class PrintNode extends StatementNode {
   private final Node expr;
 
-  public PrintNode(Node expr) {
-    super(Type.PRINT);
+  public PrintNode(Node expr, Position position) {
+    super(Type.PRINT, position);
     this.expr = expr;
   }
 

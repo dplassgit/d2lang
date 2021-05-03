@@ -22,11 +22,15 @@ public class ParserTest {
 
     PrintNode node = (PrintNode) root.children().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.PRINT);
+    assertThat(node.position().line()).isEqualTo(1);
+    assertThat(node.position().column()).isEqualTo(1);
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
     IntNode intNode = (IntNode) expr;
     assertThat(intNode.value()).isEqualTo(123);
+    assertThat(intNode.position().line()).isEqualTo(1);
+    assertThat(intNode.position().column()).isEqualTo(7);
   }
 
   @Test
@@ -133,7 +137,7 @@ public class ParserTest {
 
     Node rootNode = parser.parse();
     assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
-    System.out.println(rootNode);
+//    System.out.println(rootNode);
   }
 
   @Test
