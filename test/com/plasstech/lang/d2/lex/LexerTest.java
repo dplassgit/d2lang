@@ -18,6 +18,15 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_multiplyDivide() {
+    Lexer lexer = new Lexer("*/");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.MULT);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.DIV);
+  }
+
+  @Test
   public void nextToken_parens() {
     Lexer lexer = new Lexer("()");
     Token token = lexer.nextToken();

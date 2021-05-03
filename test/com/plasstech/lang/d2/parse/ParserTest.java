@@ -98,8 +98,37 @@ public class ParserTest {
   }
 
   @Test
+  public void testParse_assignmentMul() {
+    Lexer lexer = new Lexer("a=3   * 4");
+    Parser parser = new Parser(lexer);
+
+    Node rootNode = parser.parse();
+    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
+
+    StatementsNode root = (StatementsNode) rootNode;
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.BIN_OP);
+
+    BinOpNode binOp = (BinOpNode) expr;
+    IntNode left = (IntNode) binOp.left();
+    assertThat(left.value()).isEqualTo(3);
+    assertThat(binOp.opType()).isEqualTo(Token.Type.MULT);
+    IntNode right = (IntNode) binOp.right();
+    assertThat(right.value()).isEqualTo(4);
+  }
+
+  @Test
   public void testParse_assignmentAddChained() {
-    Lexer lexer = new Lexer("a=3   -(4-b)+(5)");
+    Lexer lexer = new Lexer("a=3+4*b-5");
     Parser parser = new Parser(lexer);
 
     Node rootNode = parser.parse();
@@ -136,9 +165,9 @@ public class ParserTest {
     assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
 
     StatementsNode root = (StatementsNode) rootNode;
-    System.out.println("Program:");
-    System.out.println(root);
-    System.out.println();
+//    System.out.println("Program:");
+//    System.out.println(root);
+//    System.out.println();
 
     List<StatementNode> children = root.children();
     assertThat(children).hasSize(5);

@@ -2,7 +2,9 @@ statements -> stmt stmt*
 
 stmt -> print expr | variable = expr
 
-expr -> atom (+/- atom)*
+expr -> term (+- term)*
+
+term -> atom (*/ atom)*
 
 atom -> int 
 	| variable 
@@ -12,6 +14,8 @@ atom -> int
 node classes are:
 
 abstract statement node
+abstract atom node
+
 print node extends statement node
 assignment node extends statement node
 binop node 

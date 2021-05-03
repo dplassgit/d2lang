@@ -86,12 +86,28 @@ public class Parser {
   }
 
   private Node expr() {
-    Node left = atom();
+    Node left = term();
     if (left.isError()) {
       return left;
     }
 
     while (token.type() == Token.Type.PLUS || token.type() == Token.Type.MINUS) {
+      Token.Type operator = token.type();
+      advance();
+      Node right = term();
+      left = new BinOpNode(left, operator, right);
+    }
+
+    return left;
+  }
+
+  private Node term() {
+    Node left = atom();
+    if (left.isError()) {
+      return left;
+    }
+
+    while (token.type() == Token.Type.MULT || token.type() == Token.Type.DIV) {
       Token.Type operator = token.type();
       advance();
       Node right = atom();
