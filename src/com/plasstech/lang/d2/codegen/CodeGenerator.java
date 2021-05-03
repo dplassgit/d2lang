@@ -23,59 +23,64 @@ public class CodeGenerator implements NodeVisitor {
 
   // mumble something visitor pattern
   @Override
-  public void accept(PrintNode printNode) {
-    Node expr = printNode.expr();
+  public void accept(PrintNode node) {
+    System.out.printf("; %s\n", node);
+    Node expr = node.expr();
     expr.visit(this);
-    emit("call $ffd2 ; print r0");
+    emit("call $ffd2 ; print r0\n");
   }
 
   @Override
   public void accept(AssignmentNode node) {
+    System.out.printf("; %s\n", node);
     String name = node.variable().name();
     node.expr().visit(this);
     emit(String.format("st r0, %s", name));
   }
 
   @Override
-  public void accept(IntNode intNode) {
+  public void accept(IntNode node) {
+    System.out.printf("; %s\n", node);
     // Provide constant in r0
-    emit(String.format("ld r0, #%s", intNode.value()));
+    emit(String.format("ld r0, #%s", node.value()));
   }
 
   @Override
-  public void accept(VariableNode variableNode) {
+  public void accept(VariableNode node) {
+    System.out.printf("; %s\n", node);
     // Retrieve location of variable and provide it in r0
-    emit(String.format("ld r0, %s", variableNode.name()));
+    emit(String.format("ld r0, %s", node.name()));
   }
 
   @Override
-  public void accept(BinOpNode binOpNode) {
+  public void accept(BinOpNode node) {
+    System.out.printf("; %s\n", node);
     // calculate the value and set it in r0
-    Node left = binOpNode.left();
+    Node left = node.left();
     left.visit(this);
     // by definition, "left" has emitted its value in r0. push on stack
-    emit("push r0");
+    emit("push r0\n");
 
-    Node right = binOpNode.right();
+    Node right = node.right();
     right.visit(this);
     // by definition, "right" has emitted its value in r0. push on stack
-    switch (binOpNode.opType()) {
+    switch (node.opType()) {
       case MINUS: // want r1 - r0
         emit("pop r1");
         emit("sbc");
-        emit("sub r1, r0");
+        emit("sub r1, r0\n");
         break;
       case DIV:
         emit("pop r1");
-        emit("div r1, r0");
+        emit("div r1, r0\n");
         break;
       case MULT:
         emit("pop r1");
-        emit("mul r1, r0");
+        emit("mul r1, r0\n");
         break;
       case PLUS:
         emit("pop r1");
-        emit("add r1, r0");
+        emit("add r1, r0\n");
         break;
       default:
         break;
@@ -83,6 +88,6 @@ public class CodeGenerator implements NodeVisitor {
   }
 
   private void emit(String string) {
-    System.err.println(string);
+    System.out.println(string);
   }
 }

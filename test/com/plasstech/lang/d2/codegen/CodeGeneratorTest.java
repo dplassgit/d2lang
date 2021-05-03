@@ -20,7 +20,7 @@ public class CodeGeneratorTest {
 
   @Test
   public void testGenerate_assignments() {
-    Lexer lexer = new Lexer("a=3 b=a c = b+4 print c");
+    Lexer lexer = new Lexer("a=3 b=a c = b+4  d= (3-c)/(a*b+9) print c");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();

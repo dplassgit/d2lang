@@ -102,6 +102,14 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_keywordMixed() {
+    Lexer lexer = new Lexer("pRInT");
+    KeywordToken token = (KeywordToken) lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.KEYWORD);
+    assertThat(token.keyword()).isEqualTo(KeywordType.PRINT);
+  }
+
+  @Test
   public void nextToken_mixed() {
     Lexer lexer = new Lexer("print 3 p");
     KeywordToken token = (KeywordToken) lexer.nextToken();
