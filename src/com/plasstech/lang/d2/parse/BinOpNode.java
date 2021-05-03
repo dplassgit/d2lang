@@ -6,13 +6,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.type.VarType;
 
 /**
  * Binary operation: leftexpr <operation> rightexpr
  */
 public class BinOpNode extends Node {
-  // TODO: augment with type of variable.
-
   private static final Set<
           Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS);
 
@@ -39,6 +38,18 @@ public class BinOpNode extends Node {
 
   public Node right() {
     return right;
+  }
+
+  @Override
+  public void setVarType(VarType varType) {
+    super.setVarType(varType);
+    // This is weird.
+    if (left.varType().isUnknown()) {
+      left.setVarType(varType);
+    }
+    if (right.varType().isUnknown()) {
+      right.setVarType(varType);
+    }
   }
 
   @Override

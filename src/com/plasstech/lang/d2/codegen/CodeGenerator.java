@@ -5,7 +5,6 @@ import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.PrintNode;
-import com.plasstech.lang.d2.parse.StatementNode;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
@@ -36,10 +35,6 @@ public class CodeGenerator implements NodeVisitor {
 
   @Override
   public void accept(VariableNode variableNode) {
-  }
-
-  @Override
-  public void accept(StatementNode statementNode) {
   }
 
   @Override

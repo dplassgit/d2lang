@@ -5,4 +5,8 @@ package com.plasstech.lang.d2.type;
  */
 public enum VarType {
   INT, STRING, BOOLEAN, MAP, LAMBDA, OTHER, UNKNOWN;
+
+  public boolean isUnknown() {
+    return this == UNKNOWN;
+  }
 }

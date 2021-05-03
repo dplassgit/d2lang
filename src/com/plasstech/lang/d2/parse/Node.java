@@ -28,8 +28,10 @@ public abstract class Node {
   }
 
   public void setVarType(VarType varType) {
-    Preconditions.checkArgument(this.varType == VarType.UNKNOWN,
+    Preconditions.checkArgument(this.varType.isUnknown(),
             "Cannot overwrite already-set vartype. Was: " + this.varType.name());
+    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set to unknown");
+    Preconditions.checkNotNull(varType, "Cannot set to null");
     this.varType = varType;
   }
 
