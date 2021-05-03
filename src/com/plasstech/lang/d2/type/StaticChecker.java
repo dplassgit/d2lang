@@ -39,16 +39,13 @@ public class StaticChecker implements NodeVisitor {
         variable.setVarType(existingType);
       }
     }
+
     Node right = node.expr();
     right.visit(this);
     if (right.varType().isUnknown()) {
-      if (!variable.varType().isUnknown()) {
-        right.setVarType(variable.varType());
-      } else {
-        // this is bad.
-        throw new IllegalStateException(
-                String.format("Cannot determine type of %s at %s", right, node));
-      }
+      // this is bad.
+      throw new IllegalStateException(
+              String.format("Cannot determine type of %s in %s", right, node));
     }
 
     if (variable.varType().isUnknown()) {
@@ -63,16 +60,16 @@ public class StaticChecker implements NodeVisitor {
 
   @Override
   public void accept(IntNode intNode) {
-    // All is good.
+    // NOP
   }
 
   @Override
-  public void accept(VariableNode variableNode) {
-    // Look up variable in the (local) symbol table, and set it in the node.
-    if (variableNode.varType().isUnknown()) {
-      VarType existingType = symbolTable.lookup(variableNode.name());
+  public void accept(VariableNode node) {
+    if (node.varType().isUnknown()) {
+      // Look up variable in the (local) symbol table, and set it in the node.
+      VarType existingType = symbolTable.lookup(node.name());
       if (!existingType.isUnknown()) {
-        variableNode.setVarType(existingType);
+        node.setVarType(existingType);
       }
     }
   }
@@ -86,27 +83,10 @@ public class StaticChecker implements NodeVisitor {
     Node right = binOpNode.right();
     right.visit(this);
 
-    if (left.varType().isUnknown() && right.varType().isUnknown()) {
+    if (left.varType().isUnknown() || right.varType().isUnknown()) {
       throw new IllegalStateException("Cannot determine type of " + binOpNode);
     }
-    // Go back down the tree
-    if (left.varType().isUnknown()) {
-      left.setVarType(right.varType());
 
-      // This is a hack that will not scale...
-      if (left.nodeType() == Node.Type.VARIABLE) {
-        VariableNode node = (VariableNode) left;
-        symbolTable.add(node.name(), left.varType());
-      }
-    }
-    if (right.varType().isUnknown()) {
-      right.setVarType(left.varType());
-
-      if (right.nodeType() == Node.Type.VARIABLE) {
-        VariableNode node = (VariableNode) right;
-        symbolTable.add(node.name(), right.varType());
-      }
-    }
     if (left.varType() != right.varType()) {
       throw new IllegalStateException(String.format("Type mismatch; lhs %s is %s; rhs %s is %s",
               left.toString(), left.varType(), right.toString(), right.varType()));

@@ -33,7 +33,9 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    checker.execute();
+    SymTab types = checker.execute();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
     VariableNode var = node.variable();
@@ -52,7 +54,9 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    checker.execute();
+    SymTab types = checker.execute();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
     VariableNode var = node.variable();
@@ -65,30 +69,36 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assign_expr_unknown() {
+  public void execute_assignExprUnknown() {
     Lexer lexer = new Lexer("a=3+(4-b)");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    SymTab types = checker.execute();
+    try {
+      checker.execute();
+      assertThat(true).isEqualTo("should have failed");
+    } catch (RuntimeException expected) {
+    }
+  }
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+  @Test
+  public void execute_assignExprUnknownMultiple() {
+    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d"); // this hsould fail.
+    Parser parser = new Parser(lexer);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
-    VariableNode var = node.variable();
-    assertThat(var.name()).isEqualTo("a");
-    assertThat(var.varType()).isEqualTo(VarType.INT);
-
-    Node expr = node.expr();
-    BinOpNode binOpNode = (BinOpNode) expr;
-    assertThat(binOpNode.varType()).isEqualTo(VarType.INT);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    try {
+      checker.execute();
+      assertThat(true).isEqualTo("should have failed");
+    } catch (RuntimeException expected) {
+    }
   }
 
   @Test
   public void execute_assignMulti() {
-    Lexer lexer = new Lexer("a=3 b=a c = d+4");
+    Lexer lexer = new Lexer("a=3 b=a c = b+4");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
@@ -98,7 +108,6 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
     assertWithMessage("type of c").that(types.lookup("c")).isEqualTo(VarType.INT);
-    assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.children().get(1);
     VariableNode var = node.variable();
