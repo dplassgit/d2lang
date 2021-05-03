@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    INT, KEYWORD, VARIABLE, EQ, PLUS, MINUS, EOF;
+    INT, KEYWORD, VARIABLE, EQ, PLUS, MINUS, EOF, RPAREN, LPAREN;
   }
 
   private final Type type;

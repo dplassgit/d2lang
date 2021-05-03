@@ -110,9 +110,19 @@ public class Parser {
       String name = token.text();
       advance();
       return new VariableNode(name);
+    } else if (token.type() == Token.Type.LPAREN) {
+      advance();
+      Node expr = expr();
+      if (token.type() == Token.Type.RPAREN) {
+        advance();
+        return expr;
+      } else {
+        return new ErrorNode(String.format("Unexpected token %s; expected )", token),
+                token.start());
+      }
     } else {
       return new ErrorNode(
-              String.format("Unexpected token %s; expected number or variable", token.toString()),
+              String.format("Unexpected token %s; expected number or ( or variable", token),
               token.start());
     }
   }

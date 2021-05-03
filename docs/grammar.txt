@@ -4,7 +4,9 @@ stmt -> print expr | variable = expr
 
 expr -> atom (+/- atom)*
 
-atom -> int | variable
+atom -> int 
+	| variable 
+	| '(' expr ')'
 
 
 node classes are:

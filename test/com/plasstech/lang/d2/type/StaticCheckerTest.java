@@ -66,7 +66,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_assign_expr_unknown() {
-    Lexer lexer = new Lexer("a=3+4-b");
+    Lexer lexer = new Lexer("a=3+(4-b)");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();

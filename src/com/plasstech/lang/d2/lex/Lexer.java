@@ -43,7 +43,7 @@ public class Lexer {
       return makeInt();
     } else if (Character.isLetter(cc)) {
       return makeText();
-    } else if (cc == '=' || cc == '+' || cc == '-') {
+    } else if (cc == '=' || cc == '+' || cc == '-' || cc == '(' || cc == ')') {
       return makeSymbol();
     } else if (cc != 0) {
       Position loc = new Position(line, col);
@@ -89,16 +89,24 @@ public class Lexer {
   private Token makeSymbol() {
     Position loc = new Position(line, col);
     char oc = cc;
-    if (oc == '=') {
+    switch (oc) {
+      case '=':
       advance();
       return new Token(Type.EQ, loc, oc);
-    } else if (oc == '+') {
+    case '+':
       advance();
       return new Token(Type.PLUS, loc, oc);
-    } else if (oc == '-') {
+    case '-':
       advance();
       return new Token(Type.MINUS, loc, oc);
+    case '(':
+      advance();
+      return new Token(Type.LPAREN, loc, oc);
+    case ')':
+      advance();
+      return new Token(Type.RPAREN, loc, oc);
+    default:
+      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, loc));
     }
-    throw new RuntimeException(String.format("Unknown character %c at location %s", cc, loc));
   }
 }

@@ -99,7 +99,7 @@ public class ParserTest {
 
   @Test
   public void testParse_assignmentAddChained() {
-    Lexer lexer = new Lexer("a=3   + 4+b+5");
+    Lexer lexer = new Lexer("a=3   -(4-b)+(5)");
     Parser parser = new Parser(lexer);
 
     Node rootNode = parser.parse();
@@ -134,6 +134,7 @@ public class ParserTest {
 
     Node rootNode = parser.parse();
     assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
+
     StatementsNode root = (StatementsNode) rootNode;
     System.out.println("Program:");
     System.out.println(root);
@@ -148,4 +149,27 @@ public class ParserTest {
     assertThat(children.get(3).nodeType()).isEqualTo(Node.Type.PRINT);
     assertThat(children.get(4).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
   }
+
+  @Test
+  public void testParse_assignmentParens() {
+    Lexer lexer = new Lexer("a=(3)");
+    Parser parser = new Parser(lexer);
+
+    Node rootNode = parser.parse();
+    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
+    StatementsNode root = (StatementsNode) rootNode;
+
+    assertThat(root.children()).hasSize(1);
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
+    IntNode intNode = (IntNode) expr;
+    assertThat(intNode.value()).isEqualTo(3);
+  }
+
 }
