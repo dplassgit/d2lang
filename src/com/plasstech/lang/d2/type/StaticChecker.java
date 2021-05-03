@@ -19,17 +19,17 @@ public class StaticChecker implements NodeVisitor {
 
   public SymTab execute() {
     // for each child of root
-    root.children().forEach(node -> node.visit(this));
+    root.children().forEach(node -> node.accept(this));
     return symbolTable;
   }
 
   @Override
-  public void accept(PrintNode printNode) {
+  public void visit(PrintNode printNode) {
     // NOP
   }
 
   @Override
-  public void accept(AssignmentNode node) {
+  public void visit(AssignmentNode node) {
     // Make sure that the left = right
     VariableNode variable = node.variable();
     VarType existingType = variable.varType();
@@ -41,7 +41,7 @@ public class StaticChecker implements NodeVisitor {
     }
 
     Node right = node.expr();
-    right.visit(this);
+    right.accept(this);
     if (right.varType().isUnknown()) {
       // this is bad.
       throw new IllegalStateException(
@@ -59,12 +59,12 @@ public class StaticChecker implements NodeVisitor {
   }
 
   @Override
-  public void accept(IntNode intNode) {
+  public void visit(IntNode intNode) {
     // NOP
   }
 
   @Override
-  public void accept(VariableNode node) {
+  public void visit(VariableNode node) {
     if (node.varType().isUnknown()) {
       // Look up variable in the (local) symbol table, and set it in the node.
       VarType existingType = symbolTable.lookup(node.name());
@@ -75,13 +75,13 @@ public class StaticChecker implements NodeVisitor {
   }
 
   @Override
-  public void accept(BinOpNode binOpNode) {
+  public void visit(BinOpNode binOpNode) {
     // Make sure that the left = right
     Node left = binOpNode.left();
-    left.visit(this);
+    left.accept(this);
 
     Node right = binOpNode.right();
-    right.visit(this);
+    right.accept(this);
 
     if (left.varType().isUnknown() || right.varType().isUnknown()) {
       throw new IllegalStateException("Cannot determine type of " + binOpNode);

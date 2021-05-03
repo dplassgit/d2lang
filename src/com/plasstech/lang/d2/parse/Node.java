@@ -39,7 +39,7 @@ public abstract class Node {
     return type == Type.ERROR;
   }
 
-  public void visit(NodeVisitor visitor) {
+  public void accept(NodeVisitor visitor) {
     // do nothing.
   }
 }

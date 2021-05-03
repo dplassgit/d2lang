@@ -59,7 +59,7 @@ public class BinOpNode extends Node {
   }
 
   @Override
-  public void visit(NodeVisitor visitor) {
-    visitor.accept(this);
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
   }
 }

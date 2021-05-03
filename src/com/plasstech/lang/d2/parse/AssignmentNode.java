@@ -29,7 +29,7 @@ public class AssignmentNode extends StatementNode {
   }
 
   @Override
-  public void visit(NodeVisitor visitor) {
-    visitor.accept(this);
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
   }
 }
