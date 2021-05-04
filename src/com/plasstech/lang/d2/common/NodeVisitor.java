@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public interface NodeVisitor {
@@ -20,4 +21,6 @@ public interface NodeVisitor {
   void visit(VariableNode node);
 
   void visit(BoolNode boolNode);
+
+  void visit(UnaryNode unaryNode);
 }

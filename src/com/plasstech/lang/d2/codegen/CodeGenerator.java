@@ -64,7 +64,7 @@ public class CodeGenerator extends DefaultVisitor {
     Node right = node.right();
     right.accept(this);
     // by definition, "right" has emitted its value in r0. push on stack
-    switch (node.opType()) {
+    switch (node.operator()) {
       case MINUS: // want r1 - r0
         emit("pop r1");
         emit("sbc");

@@ -16,21 +16,21 @@ public class BinOpNode extends Node {
           Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS,
                   Token.Type.MULT, Token.Type.DIV);
 
-  private final Token.Type opType;
+  private final Token.Type operator;
   private final Node left;
   private final Node right;
 
-  BinOpNode(Node left, Token.Type opType, Node right) {
+  BinOpNode(Node left, Token.Type operator, Node right) {
     super(Node.Type.BIN_OP, left.position());
-    Preconditions.checkArgument(BINARY_OPERATORS.contains(opType),
-            "Invalid opType " + opType.name());
+    Preconditions.checkArgument(BINARY_OPERATORS.contains(operator),
+            "Invalid opType " + operator.name());
     this.left = left;
-    this.opType = opType;
+    this.operator = operator;
     this.right = right;
   }
 
-  public Token.Type opType() {
-    return opType;
+  public Token.Type operator() {
+    return operator;
   }
 
   public Node left() {
@@ -55,7 +55,7 @@ public class BinOpNode extends Node {
 
   @Override
   public String toString() {
-    return String.format("{BinOpNode: %s %s %s}", left.toString(), opType.name(), right.toString());
+    return String.format("{BinOpNode: %s %s %s}", left.toString(), operator.name(), right.toString());
   }
 
   @Override

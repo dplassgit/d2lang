@@ -104,9 +104,35 @@ public class Parser {
     return new BinOpFn() {
       @Override
       public Node function() {
-        return atom();
+        return unary();
       }
     }.call(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV));
+  }
+
+  private Node unary() {
+    if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS /* or not */) {
+      Token unaryToken = token;
+      advance();
+      Node expr = unary(); // should this be expr? unary? atom?
+      if (expr.isError()) {
+        return expr;
+      }
+
+      if (expr.nodeType() == Node.Type.INT) {
+        // We can simplify now
+        if (unaryToken.type() == Token.Type.PLUS) {
+          return expr;
+        } else {
+          return new IntNode(-((IntNode) expr).value(), unaryToken.start());
+        }
+      }
+      // TODO: Optimize this further, before the code generator is called.
+      // For example, --(expr) == +(expr) == (expr) if expr is ultimately integer.
+      // However, at this point we don't have types in the expr tree yet so we can't
+      // do that exact optimization yet.
+      return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
+    }
+    return atom();
   }
 
   private Node atom() {

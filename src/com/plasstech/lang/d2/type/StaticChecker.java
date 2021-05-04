@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class StaticChecker extends DefaultVisitor {
@@ -102,12 +103,32 @@ public class StaticChecker extends DefaultVisitor {
               right);
       return;
     }
-
     if (left.varType() != right.varType()) {
       error = String.format("Type mismatch at %s: lhs %s is %s; rhs %s is %s", left.position(),
               left, left.varType(), right, right.varType());
       return;
     }
+    // TODO: check that they're not trying to, for example, multiply booleans
     binOpNode.setVarType(left.varType());
   }
+
+  @Override
+  public void visit(UnaryNode unaryNode) {
+    if (error != null) {
+      return;
+    }
+    Node expr = unaryNode.expr();
+    expr.accept(this);
+    if (error != null) {
+      return;
+    }
+
+    if (expr.varType().isUnknown()) {
+      error = String.format("Type error at %s: Indeterminable type for %s", expr.position(), expr);
+      return;
+    }
+    // TODO: check that they're not trying to, for example, have +false or !3
+    unaryNode.setVarType(expr.varType());
+  }
+
 }

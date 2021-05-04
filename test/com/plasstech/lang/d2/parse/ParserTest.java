@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-// import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.util.List;
@@ -10,6 +9,7 @@ import org.junit.Test;
 
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+
 
 public class ParserTest {
   @Test
@@ -100,13 +100,13 @@ public class ParserTest {
 
   @Test
   public void testParse_addMissing() {
-    Lexer lexer = new Lexer("a=3*+5");
+    Lexer lexer = new Lexer("a=3**5");
     Parser parser = new Parser(lexer);
 
     Node node = parser.parse();
     assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
     System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("Found +");
+    assertThat(((ErrorNode) node).message()).contains("Found *");
   }
 
   @Test
@@ -189,7 +189,7 @@ public class ParserTest {
     BinOpNode binOp = (BinOpNode) expr;
     IntNode left = (IntNode) binOp.left();
     assertThat(left.value()).isEqualTo(3);
-    assertThat(binOp.opType()).isEqualTo(Token.Type.PLUS);
+    assertThat(binOp.operator()).isEqualTo(Token.Type.PLUS);
     IntNode right = (IntNode) binOp.right();
     assertThat(right.value()).isEqualTo(4);
   }
@@ -218,7 +218,7 @@ public class ParserTest {
     BinOpNode binOp = (BinOpNode) expr;
     IntNode left = (IntNode) binOp.left();
     assertThat(left.value()).isEqualTo(3);
-    assertThat(binOp.opType()).isEqualTo(Token.Type.MULT);
+    assertThat(binOp.operator()).isEqualTo(Token.Type.MULT);
     IntNode right = (IntNode) binOp.right();
     assertThat(right.value()).isEqualTo(4);
   }
@@ -230,7 +230,6 @@ public class ParserTest {
 
     Node rootNode = parser.parse();
     assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
-//    System.out.println(rootNode);
   }
 
   @Test
@@ -254,6 +253,85 @@ public class ParserTest {
   }
 
   @Test
+  public void testParse_unaryMinus() {
+    Lexer lexer = new Lexer("a=-b");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.opType()).isEqualTo(Token.Type.MINUS);
+    Node right = unary.expr();
+    assertThat(right.nodeType()).isEqualTo(Node.Type.VARIABLE);
+  }
+
+  @Test
+  public void testParse_unaryPlus() {
+    Lexer lexer = new Lexer("a=+b");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.opType()).isEqualTo(Token.Type.PLUS);
+    Node right = unary.expr();
+    assertThat(right.nodeType()).isEqualTo(Node.Type.VARIABLE);
+  }
+
+  @Test
+  public void testParse_unaryNegativeInt() {
+    assertUnaryAssignConstant("a=-5", -5);
+    assertUnaryAssignConstant("a=-+5", -5);
+    assertUnaryAssignConstant("a=+-5", -5);
+    assertUnaryAssignConstant("a=---5", -5);
+  }
+
+  @Test
+  public void testParse_multipleUnary() {
+    assertUnaryAssignConstant("a=++5", 5);
+    assertUnaryAssignConstant("a=+++5", 5);
+    assertUnaryAssignConstant("a=--5", 5);
+    assertUnaryAssignConstant("a=-+-5", 5);
+    assertUnaryAssignConstant("a=--+5", 5);
+  }
+
+  private void assertUnaryAssignConstant(String expression, int value) {
+    Lexer lexer = new Lexer(expression);
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
+    assertThat(((IntNode) expr).value()).isEqualTo(value);
+  }
+
+  @Test
   public void testParse_program() {
     Lexer lexer = new Lexer("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
     Parser parser = new Parser(lexer);
@@ -262,9 +340,7 @@ public class ParserTest {
     assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
 
     StatementsNode root = (StatementsNode) rootNode;
-//    System.out.println("Program:");
 //    System.out.println(root);
-//    System.out.println();
 
     List<StatementNode> children = root.children();
     assertThat(children).hasSize(5);
