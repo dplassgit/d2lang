@@ -50,8 +50,63 @@ public class ParserTest {
 
     Node node = parser.parse();
     assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    assertThat(((ErrorNode) node).message()).contains("EOF");
     System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("EOF");
+  }
+
+  @Test
+  public void testParse_missingCloseParens() {
+    Lexer lexer = new Lexer("\na=(3+");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("EOF");
+  }
+
+  @Test
+  public void testParse_addIncomplete() {
+    Lexer lexer = new Lexer("a=3+");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("EOF");
+  }
+
+  @Test
+  public void testParse_mulIncomplete() {
+    Lexer lexer = new Lexer("a=3+5*");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("EOF");
+  }
+
+  @Test
+  public void testParse_mulMissing() {
+    Lexer lexer = new Lexer("a=3+*5");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("Found *");
+  }
+
+  @Test
+  public void testParse_addMissing() {
+    Lexer lexer = new Lexer("a=3*+5");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
+    assertThat(((ErrorNode) node).message()).contains("Found +");
   }
 
   @Test

@@ -95,6 +95,9 @@ public class Parser {
       Token.Type operator = token.type();
       advance();
       Node right = term();
+      if (right.isError()) {
+        return right;
+      }
       left = new BinOpNode(left, operator, right);
     }
 
@@ -111,6 +114,9 @@ public class Parser {
       Token.Type operator = token.type();
       advance();
       Node right = atom();
+      if (right.isError()) {
+        return right;
+      }
       left = new BinOpNode(left, operator, right);
     }
 
@@ -134,7 +140,7 @@ public class Parser {
         return new BoolNode(kt.keyword() == KeywordType.TRUE, kt.end());
       }
       return new ErrorNode(
-              String.format("Unexpected token at %s: Found %s, expected literal, variable or '('",
+              String.format("Unexpected keyword at %s: Found %s, expected literal, variable or '('",
                       token.start(), token.text()),
               token.start());
 
@@ -146,12 +152,12 @@ public class Parser {
         return expr;
       } else {
         return new ErrorNode(
-        String.format("Unexpected token at %s: Found %s, expected ')'",
+                String.format("Unexpected string at %s: Found %s, expected ')'",
                 token.start(), token.text()), token.start());
       }
     } else {
       return new ErrorNode(
-              String.format("Unexpected token at %s: Found %s, expected literal, variable or '('",
+              String.format("Unexpected string at %s: Found %s, expected literal, variable or '('",
                       token.start(), token.text()),
               token.start());
     }
