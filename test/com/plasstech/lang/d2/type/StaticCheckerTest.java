@@ -28,7 +28,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assign() {
+  public void execute_assignInt() {
     Lexer lexer = new Lexer("a=3");
     Parser parser = new Parser(lexer);
 
@@ -51,7 +51,29 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assign_expr() {
+  public void execute_assignBool() {
+    Lexer lexer = new Lexer("a=true");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
+    SymTab types = result.symbolTable();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+    assertThat(var.varType()).isEqualTo(VarType.BOOL);
+
+    Node expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.BOOL);
+  }
+
+  @Test
+  public void execute_assignExpr() {
     Lexer lexer = new Lexer("a=3+4-9");
     Parser parser = new Parser(lexer);
 
@@ -74,7 +96,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignExprUnknown() {
+  public void execute_assignExprIndeterminable() {
     Lexer lexer = new Lexer("a=3+(4-b)");
     Parser parser = new Parser(lexer);
 
@@ -82,18 +104,20 @@ public class StaticCheckerTest {
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     assertThat(result.isError()).isTrue();
+    System.err.println(result.message());
     assertThat(result.message()).contains("Indeterminable type");
   }
 
   @Test
-  public void execute_assignExprUnknownMultiple() {
-    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d"); // this should fail.
+  public void execute_assignExprIndeterminableMultiple() {
+    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     assertThat(result.isError()).isTrue();
+    System.err.println(result.message());
     assertThat(result.message()).contains("Indeterminable type");
   }
 
@@ -120,5 +144,31 @@ public class StaticCheckerTest {
     Node expr = node.expr();
     VariableNode rhsNode = (VariableNode) expr;
     assertThat(rhsNode.varType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void execute_assignMismatch() {
+    Lexer lexer = new Lexer("a=true b=3 b=a");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isTrue();
+    System.err.println(result.message());
+    assertThat(result.message()).contains("Type mismatch");
+  }
+
+  @Test
+  public void execute_binOpMismatch() {
+    Lexer lexer = new Lexer("a=true+3");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isTrue();
+    System.err.println(result.message());
+    assertThat(result.message()).contains("Type mismatch");
   }
 }

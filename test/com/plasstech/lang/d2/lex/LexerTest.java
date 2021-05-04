@@ -95,10 +95,17 @@ public class LexerTest {
 
   @Test
   public void nextToken_keyword() {
-    Lexer lexer = new Lexer("print");
+    Lexer lexer = new Lexer("print true false");
     KeywordToken token = (KeywordToken) lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.KEYWORD);
     assertThat(token.keyword()).isEqualTo(KeywordType.PRINT);
+
+    token = (KeywordToken) lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.KEYWORD);
+    assertThat(token.keyword()).isEqualTo(KeywordType.TRUE);
+    token = (KeywordToken) lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.KEYWORD);
+    assertThat(token.keyword()).isEqualTo(KeywordType.FALSE);
   }
 
   @Test

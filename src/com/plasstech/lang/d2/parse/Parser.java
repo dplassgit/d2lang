@@ -127,6 +127,17 @@ public class Parser {
       String name = token.text();
       advance();
       return new VariableNode(name, varToken.start());
+    } else if (token.type() == Token.Type.KEYWORD) {
+      KeywordToken kt = (KeywordToken) token;
+      if (kt.keyword() == KeywordType.TRUE || kt.keyword() == KeywordType.FALSE) {
+        advance();
+        return new BoolNode(kt.keyword() == KeywordType.TRUE, kt.end());
+      }
+      return new ErrorNode(
+              String.format("Unexpected token at %s: Found %s, expected literal, variable or '('",
+                      token.start(), token.text()),
+              token.start());
+
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       Node expr = expr();
@@ -134,12 +145,14 @@ public class Parser {
         advance();
         return expr;
       } else {
-        return new ErrorNode(String.format("Unexpected token %s; expected )", token),
-                token.start());
+        return new ErrorNode(
+        String.format("Unexpected token at %s: Found %s, expected ')'",
+                token.start(), token.text()), token.start());
       }
     } else {
       return new ErrorNode(
-              String.format("Unexpected token %s; expected number or ( or variable", token),
+              String.format("Unexpected token at %s: Found %s, expected literal, variable or '('",
+                      token.start(), token.text()),
               token.start());
     }
   }

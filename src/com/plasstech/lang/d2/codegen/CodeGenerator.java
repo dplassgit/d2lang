@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.IntNode;
@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
-public class CodeGenerator implements NodeVisitor {
+public class CodeGenerator extends DefaultVisitor {
   private final StatementsNode root;
 
   public CodeGenerator(StatementsNode root) {

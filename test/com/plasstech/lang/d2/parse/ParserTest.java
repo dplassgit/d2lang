@@ -40,19 +40,33 @@ public class ParserTest {
 
     Node node = parser.parse();
     assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    System.err.println(((ErrorNode) node).message());
   }
 
   @Test
-  public void testParse_assignErr() {
+  public void testParse_assignIncomplete() {
     Lexer lexer = new Lexer("a=");
     Parser parser = new Parser(lexer);
 
     Node node = parser.parse();
     assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    assertThat(((ErrorNode) node).message()).contains("EOF");
+    System.err.println(((ErrorNode) node).message());
   }
 
   @Test
-  public void testParse_assignmentConst() {
+  public void testParse_assignErrror() {
+    Lexer lexer = new Lexer("a=print");
+    Parser parser = new Parser(lexer);
+
+    Node node = parser.parse();
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
+    assertThat(((ErrorNode) node).message()).contains("PRINT");
+    System.err.println(((ErrorNode) node).message());
+  }
+
+  @Test
+  public void testParse_assignInt() {
     Lexer lexer = new Lexer("a=3");
     Parser parser = new Parser(lexer);
 
@@ -70,6 +84,30 @@ public class ParserTest {
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
     IntNode intNode = (IntNode) expr;
     assertThat(intNode.value()).isEqualTo(3);
+  }
+
+  @Test
+  public void testParse_assignTrueFalse() {
+    Lexer lexer = new Lexer("a=true b=FALSE");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    assertThat(root.children()).hasSize(2);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
+    assertThat(((BoolNode) expr).value()).isTrue();
+
+    node = (AssignmentNode) root.children().get(1);
+    expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
+    assertThat(((BoolNode) expr).value()).isFalse();
   }
 
   @Test

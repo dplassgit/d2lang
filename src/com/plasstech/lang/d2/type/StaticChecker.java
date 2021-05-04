@@ -1,15 +1,13 @@
 package com.plasstech.lang.d2.type;
 
-import com.plasstech.lang.d2.common.NodeVisitor;
+import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
-import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
-public class StaticChecker implements NodeVisitor {
+public class StaticChecker extends DefaultVisitor {
   private final StatementsNode root;
   private final SymTab symbolTable = new SymTab();
   private String error;
@@ -24,11 +22,6 @@ public class StaticChecker implements NodeVisitor {
       return new TypeCheckResult(error);
     }
     return new TypeCheckResult(symbolTable);
-  }
-
-  @Override
-  public void visit(PrintNode printNode) {
-    // NOP
   }
 
   @Override
@@ -48,6 +41,9 @@ public class StaticChecker implements NodeVisitor {
 
     Node right = node.expr();
     right.accept(this);
+    if (error != null) {
+      return;
+    }
     if (right.varType().isUnknown()) {
       // this is bad.
       error = String.format("Type error at %s: Indeterminable type for %s", right.position(),
@@ -61,15 +57,8 @@ public class StaticChecker implements NodeVisitor {
       symbolTable.add(variable.name(), right.varType());
     } else if (variable.varType() != right.varType()) {
       error = String.format("Type mismatch at %s: lhs (%s) is %s; rhs (%s) is %s",
-              variable.position(),
-              variable,
-              variable.varType(), right, right.varType());
+              variable.position(), variable, variable.varType(), right, right.varType());
     }
-  }
-
-  @Override
-  public void visit(IntNode intNode) {
-    // NOP
   }
 
   @Override
@@ -94,19 +83,29 @@ public class StaticChecker implements NodeVisitor {
     // Make sure that the left = right
     Node left = binOpNode.left();
     left.accept(this);
+    if (error != null) {
+      return;
+    }
 
     Node right = binOpNode.right();
     right.accept(this);
+    if (error != null) {
+      return;
+    }
 
-    if (left.varType().isUnknown() || right.varType().isUnknown()) {
-      error = String.format("Cannot determine type of %s", binOpNode);
+    if (left.varType().isUnknown()) {
+      error = String.format("Type error at %s: Indeterminable type for %s", left.position(), left);
+      return;
+    }
+    if (right.varType().isUnknown()) {
+      error = String.format("Type error at %s: Indeterminable type for %s", right.position(),
+              right);
       return;
     }
 
     if (left.varType() != right.varType()) {
       error = String.format("Type mismatch at %s: lhs %s is %s; rhs %s is %s", left.position(),
-              left, left.varType(),
-              right, right.varType());
+              left, left.varType(), right, right.varType());
       return;
     }
     binOpNode.setVarType(left.varType());
