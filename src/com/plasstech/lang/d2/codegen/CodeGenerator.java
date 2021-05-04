@@ -17,8 +17,8 @@ public class CodeGenerator implements NodeVisitor {
   }
 
   public void generate() {
-    // for each child of root
-    root.children().forEach(node -> node.accept(this));
+    // For each child of root
+    root.accept(this);
   }
 
   // mumble something visitor pattern

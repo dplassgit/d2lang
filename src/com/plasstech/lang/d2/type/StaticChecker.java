@@ -12,15 +12,18 @@ import com.plasstech.lang.d2.parse.VariableNode;
 public class StaticChecker implements NodeVisitor {
   private final StatementsNode root;
   private final SymTab symbolTable = new SymTab();
+  private String error;
 
   public StaticChecker(StatementsNode root) {
     this.root = root;
   }
 
-  public SymTab execute() {
-    // for each child of root
-    root.children().forEach(node -> node.accept(this));
-    return symbolTable;
+  public TypeCheckResult execute() {
+    root.accept(this);
+    if (error != null) {
+      return new TypeCheckResult(error);
+    }
+    return new TypeCheckResult(symbolTable);
   }
 
   @Override
@@ -30,6 +33,9 @@ public class StaticChecker implements NodeVisitor {
 
   @Override
   public void visit(AssignmentNode node) {
+    if (error != null) {
+      return;
+    }
     // Make sure that the left = right
     VariableNode variable = node.variable();
     VarType existingType = variable.varType();
@@ -44,8 +50,9 @@ public class StaticChecker implements NodeVisitor {
     right.accept(this);
     if (right.varType().isUnknown()) {
       // this is bad.
-      throw new IllegalStateException(
-              String.format("Cannot determine type of %s in %s", right, node));
+      error = String.format("Type error at %s: Indeterminable type for %s", right.position(),
+              right);
+      return;
     }
 
     if (variable.varType().isUnknown()) {
@@ -53,8 +60,10 @@ public class StaticChecker implements NodeVisitor {
       // Enter it in the local symbol table
       symbolTable.add(variable.name(), right.varType());
     } else if (variable.varType() != right.varType()) {
-      throw new IllegalStateException(String.format("Type mismatch; lhs %s is %s; rhs %s is %s",
-              variable.toString(), variable.varType(), right.toString(), right.varType()));
+      error = String.format("Type mismatch at %s: lhs (%s) is %s; rhs (%s) is %s",
+              variable.position(),
+              variable,
+              variable.varType(), right, right.varType());
     }
   }
 
@@ -65,6 +74,9 @@ public class StaticChecker implements NodeVisitor {
 
   @Override
   public void visit(VariableNode node) {
+    if (error != null) {
+      return;
+    }
     if (node.varType().isUnknown()) {
       // Look up variable in the (local) symbol table, and set it in the node.
       VarType existingType = symbolTable.lookup(node.name());
@@ -76,6 +88,9 @@ public class StaticChecker implements NodeVisitor {
 
   @Override
   public void visit(BinOpNode binOpNode) {
+    if (error != null) {
+      return;
+    }
     // Make sure that the left = right
     Node left = binOpNode.left();
     left.accept(this);
@@ -84,12 +99,15 @@ public class StaticChecker implements NodeVisitor {
     right.accept(this);
 
     if (left.varType().isUnknown() || right.varType().isUnknown()) {
-      throw new IllegalStateException("Cannot determine type of " + binOpNode);
+      error = String.format("Cannot determine type of %s", binOpNode);
+      return;
     }
 
     if (left.varType() != right.varType()) {
-      throw new IllegalStateException(String.format("Type mismatch; lhs %s is %s; rhs %s is %s",
-              left.toString(), left.varType(), right.toString(), right.varType()));
+      error = String.format("Type mismatch at %s: lhs %s is %s; rhs %s is %s", left.position(),
+              left, left.varType(),
+              right, right.varType());
+      return;
     }
     binOpNode.setVarType(left.varType());
   }

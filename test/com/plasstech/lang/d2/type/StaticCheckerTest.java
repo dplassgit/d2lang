@@ -23,7 +23,8 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    checker.execute();
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
   }
 
   @Test
@@ -33,7 +34,9 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    SymTab types = checker.execute();
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
+    SymTab types = result.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -54,7 +57,9 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    SymTab types = checker.execute();
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
+    SymTab types = result.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -75,25 +80,21 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    try {
-      checker.execute();
-      assertThat(true).isEqualTo("should have failed");
-    } catch (RuntimeException expected) {
-    }
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isTrue();
+    assertThat(result.message()).contains("Indeterminable type");
   }
 
   @Test
   public void execute_assignExprUnknownMultiple() {
-    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d"); // this hsould fail.
+    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d"); // this should fail.
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    try {
-      checker.execute();
-      assertThat(true).isEqualTo("should have failed");
-    } catch (RuntimeException expected) {
-    }
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isTrue();
+    assertThat(result.message()).contains("Indeterminable type");
   }
 
   @Test
@@ -103,7 +104,9 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    SymTab types = checker.execute();
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
+    SymTab types = result.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);

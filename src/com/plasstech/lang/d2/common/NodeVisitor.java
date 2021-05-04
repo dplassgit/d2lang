@@ -8,13 +8,13 @@ import com.plasstech.lang.d2.parse.VariableNode;
 
 public interface NodeVisitor {
 
-  void visit(PrintNode printNode);
+  void visit(PrintNode node);
 
   void visit(AssignmentNode node);
 
-  void visit(BinOpNode binOpNode);
+  void visit(BinOpNode node);
 
-  void visit(IntNode intNode);
+  void visit(IntNode node);
 
-  void visit(VariableNode variableNode);
+  void visit(VariableNode node);
 }

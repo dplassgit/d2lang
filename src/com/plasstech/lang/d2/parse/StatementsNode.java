@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.parse;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import com.plasstech.lang.d2.common.NodeVisitor;
 
 /**
  * Represents a list of statements - a program, or a block inside a
@@ -23,5 +24,10 @@ public class StatementsNode extends Node {
   @Override
   public String toString() {
     return Joiner.on("\n").join(children);
+  }
+
+  @Override
+  public void accept(NodeVisitor visitor) {
+    children().forEach(node -> node.accept(visitor));
   }
 }
