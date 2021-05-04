@@ -2,7 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
@@ -86,41 +88,25 @@ public class Parser {
   }
 
   private Node expr() {
-    Node left = term();
-    if (left.isError()) {
-      return left;
-    }
-
-    while (token.type() == Token.Type.PLUS || token.type() == Token.Type.MINUS) {
-      Token.Type operator = token.type();
-      advance();
-      Node right = term();
-      if (right.isError()) {
-        return right;
-      }
-      left = new BinOpNode(left, operator, right);
-    }
-
-    return left;
+    return addSubTerm();
   }
 
-  private Node term() {
-    Node left = atom();
-    if (left.isError()) {
-      return left;
-    }
-
-    while (token.type() == Token.Type.MULT || token.type() == Token.Type.DIV) {
-      Token.Type operator = token.type();
-      advance();
-      Node right = atom();
-      if (right.isError()) {
-        return right;
+  private Node addSubTerm() {
+    return new BinOpFn() {
+      @Override
+      Node function() {
+        return mulDivTerm();
       }
-      left = new BinOpNode(left, operator, right);
-    }
+    }.call(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS));
+  }
 
-    return left;
+  private Node mulDivTerm() {
+    return new BinOpFn() {
+      @Override
+      public Node function() {
+        return atom();
+      }
+    }.call(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV));
   }
 
   private Node atom() {
@@ -151,8 +137,7 @@ public class Parser {
         advance();
         return expr;
       } else {
-        return new ErrorNode(
-                String.format("Unexpected string at %s: Found %s, expected ')'",
+        return new ErrorNode(String.format("Unexpected string at %s: Found %s, expected ')'",
                 token.start(), token.text()), token.start());
       }
     } else {
@@ -160,6 +145,42 @@ public class Parser {
               String.format("Unexpected string at %s: Found %s, expected literal, variable or '('",
                       token.start(), token.text()),
               token.start());
+    }
+  }
+
+  /** Parses a binary operation function. */
+  private abstract class BinOpFn {
+    /** Call the next method, e.g., mulDivTerm */
+    abstract Node function();
+
+    /**
+     * Parse from the current location, repeatedly call "function", e.g.,:
+     *
+     * here -> function (tokentype function)*
+     *
+     * where tokentype is in tokenTypes
+     *
+     * In the grammar:
+     *
+     * expr -> term (+- term)*
+     */
+    Node call(Set<Token.Type> tokenTypes) {
+      Node left = function();
+      if (left.isError()) {
+        return left;
+      }
+
+      while (tokenTypes.contains(token.type())) {
+        Token.Type operator = token.type();
+        advance();
+        Node right = function();
+        if (right.isError()) {
+          return right;
+        }
+        left = new BinOpNode(left, operator, right);
+      }
+
+      return left;
     }
   }
 }
