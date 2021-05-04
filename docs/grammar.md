@@ -1,4 +1,4 @@
-h# Grammar
+# Grammar
 
 ## Implemented so far
 
@@ -11,8 +11,9 @@ expr -> term (+- term)*
 
 term -> atom (*/ atom)*
 
-atom -> int 
-	| variable 
+atom -> int constant
+	| variable name
+	| boolean constant
 	| '(' expr ')'
 ```
 
@@ -38,7 +39,7 @@ This works.
 
 ## Expression grammar
 
-### Not implemented yet
+### Not fully implemented yet
 
 (does not include exponent or bit operations or shift left/right)
 
