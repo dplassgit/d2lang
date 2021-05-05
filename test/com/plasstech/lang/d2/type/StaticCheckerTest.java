@@ -2,9 +2,11 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
@@ -218,7 +220,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_assignExprIndeterminableMultiple() {
-    Lexer lexer = new Lexer("a=3 b=(((a+3))) c=d");
+    Lexer lexer = new Lexer("a=3 b=a+3 c=d");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
@@ -228,7 +230,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_assignMulti() {
-    Lexer lexer = new Lexer("a=3 b=a c = b+4 print c");
+    Lexer lexer = new Lexer("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
@@ -238,6 +240,9 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
     assertWithMessage("type of c").that(types.lookup("c")).isEqualTo(VarType.INT);
+    assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
 
     AssignmentNode node = (AssignmentNode) root.children().get(1);
     VariableNode var = node.variable();
@@ -261,12 +266,26 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_binOpMismatch() {
-    Lexer lexer = new Lexer("a=true+3");
-    Parser parser = new Parser(lexer);
+    for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
+      Lexer lexer = new Lexer(String.format("a=true%S3", op));
+      Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    assertExecuteError(checker, "Type mismatch");
+      StatementsNode root = (StatementsNode) parser.parse();
+      StaticChecker checker = new StaticChecker(root);
+      assertExecuteError(checker, "Type mismatch");
+    }
+  }
+
+  @Test
+  public void execute_binOpSingleCharMismatch() {
+    for (char c : "+-<>|&".toCharArray()) {
+      Lexer lexer = new Lexer(String.format("a=true%c3", c));
+      Parser parser = new Parser(lexer);
+
+      StatementsNode root = (StatementsNode) parser.parse();
+      StaticChecker checker = new StaticChecker(root);
+      assertExecuteError(checker, "Type mismatch");
+    }
   }
 
   private void assertExecuteError(StaticChecker checker, String messageShouldContain) {
@@ -278,7 +297,9 @@ public class StaticCheckerTest {
 
   private SymTab execute(StaticChecker checker) {
     TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
+    if (result.isError()) {
+      fail(result.message());
+    }
     SymTab types = result.symbolTable();
     return types;
   }

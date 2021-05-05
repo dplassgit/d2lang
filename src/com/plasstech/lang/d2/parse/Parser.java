@@ -88,18 +88,26 @@ public class Parser {
   }
 
   private Node expr() {
-    return compareTerm();
+    return top();
   }
-  /*
-   * expr -> booland (| booland)*
-   * 
-   * booland -> compare (& compare)*
-   * 
-   * compare -> additive (relop additive)
-   * 
-   * relop -> == != > < <= >=
-   * 
-   */
+
+  private Node top() {
+    return new BinOpFn() {
+      @Override
+      Node function() {
+        return boolAnd();
+      }
+    }.call(ImmutableSet.of(Token.Type.AND));
+  }
+
+  private Node boolAnd() {
+    return new BinOpFn() {
+      @Override
+      Node function() {
+        return compareTerm();
+      }
+    }.call(ImmutableSet.of(Token.Type.OR));
+  }
 
   private Node compareTerm() {
     return new BinOpFn() {

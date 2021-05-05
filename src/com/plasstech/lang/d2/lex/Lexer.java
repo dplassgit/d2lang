@@ -8,9 +8,8 @@ import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
-  private static final Set<
-          Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*', '/', '!', '%',
-                  '<', '>');
+  private static final Set<Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*',
+          '/', '!', '%', '&', '|', '<', '>');
 
   private final String text;
   private int line, col;
@@ -101,31 +100,37 @@ public class Lexer {
         return startsWithLt(start);
       case '>':
         return startsWithGt(start);
-    case '+':
-      advance();
-      return new Token(Type.PLUS, start, oc);
-    case '-':
-      advance();
-      return new Token(Type.MINUS, start, oc);
-    case '(':
-      advance();
-      return new Token(Type.LPAREN, start, oc);
-    case ')':
-      advance();
-      return new Token(Type.RPAREN, start, oc);
-    case '*':
-      advance();
-      return new Token(Type.MULT, start, oc);
-    case '/':
-      advance();
-      return new Token(Type.DIV, start, oc);
-    case '%':
-      advance();
-      return new Token(Type.MOD, start, oc);
-    case '!':
-      return startsWithNot(start);
-    default:
-      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
+      case '+':
+        advance();
+        return new Token(Type.PLUS, start, oc);
+      case '-':
+        advance();
+        return new Token(Type.MINUS, start, oc);
+      case '(':
+        advance();
+        return new Token(Type.LPAREN, start, oc);
+      case ')':
+        advance();
+        return new Token(Type.RPAREN, start, oc);
+      case '*':
+        advance();
+        return new Token(Type.MULT, start, oc);
+      case '/':
+        advance();
+        return new Token(Type.DIV, start, oc);
+      case '%':
+        advance();
+        return new Token(Type.MOD, start, oc);
+      case '&':
+        advance();
+        return new Token(Type.AND, start, oc);
+      case '|':
+        advance();
+        return new Token(Type.OR, start, oc);
+      case '!':
+        return startsWithNot(start);
+      default:
+        throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }
   }
 

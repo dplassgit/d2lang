@@ -12,10 +12,10 @@ import com.plasstech.lang.d2.type.VarType;
  * Binary operation: leftexpr <operation> rightexpr
  */
 public class BinOpNode extends Node {
-  private static final Set<
-          Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS,
-                  Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.EQEQ, Token.Type.GT,
-                  Token.Type.LT, Token.Type.GEQ, Token.Type.LEQ, Token.Type.NEQ);
+  private static final Set<Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS,
+          Token.Type.MINUS, Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.AND,
+          Token.Type.OR, Token.Type.EQEQ, Token.Type.GT, Token.Type.LT, Token.Type.GEQ,
+          Token.Type.LEQ, Token.Type.NEQ);
 
   private final Token.Type operator;
   private final Node left;
@@ -56,7 +56,8 @@ public class BinOpNode extends Node {
 
   @Override
   public String toString() {
-    return String.format("{BinOpNode: %s %s %s}", left.toString(), operator.name(), right.toString());
+    return String.format("{BinOpNode: %s %s %s}", left.toString(), operator.name(),
+            right.toString());
   }
 
   @Override

@@ -13,7 +13,8 @@ import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class StaticChecker extends DefaultVisitor {
-  private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.EQ);
+  private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
+          Token.Type.LT, Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ);
 
   private final StatementsNode root;
   private final SymTab symbolTable = new SymTab();
@@ -122,8 +123,11 @@ public class StaticChecker extends DefaultVisitor {
               left.position(), binOpNode.operator());
       return;
     }
-
-    binOpNode.setVarType(left.varType());
+    if (left.varType() == VarType.INT && COMPARISION_OPERATORS.contains(binOpNode.operator())) {
+      binOpNode.setVarType(VarType.BOOL);
+    } else {
+      binOpNode.setVarType(left.varType());
+    }
   }
 
   @Override

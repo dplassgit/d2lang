@@ -348,7 +348,7 @@ public class ParserTest {
 
   @Test
   public void parse_each_binop_single() {
-    for (char c: "+-*/%><".toCharArray()) {
+    for (char c : "+-*/%><|&".toCharArray()) {
       parse(String.format("a=b%c5", c));
     }
   }
@@ -372,8 +372,9 @@ public class ParserTest {
   @Test
   public void parse_allExprTypes() {
     StatementsNode root2 = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == false & \n"
-            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))");
+            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
+            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
+            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
     System.out.println(root2);
   }
 
