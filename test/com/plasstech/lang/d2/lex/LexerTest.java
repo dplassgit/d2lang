@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 public class LexerTest {
   @Test
   public void nextToken_singleSymbols() {
-    Lexer lexer = new Lexer("+-*/()!");
+    Lexer lexer = new Lexer("+-*/%()! =<>");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
     token = lexer.nextToken();
@@ -20,11 +20,32 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.DIV);
     token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.MOD);
+    token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.LPAREN);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.RPAREN);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.NOT);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.LT);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.GT);
+  }
+
+  @Test
+  public void nextToken_doubleSymbols() {
+    Lexer lexer = new Lexer("== <= >= !=");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EQEQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.LEQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.GEQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.NEQ);
   }
 
   @Test

@@ -7,9 +7,13 @@ statements -> stmt stmt*
 
 stmt -> print expr | variable = expr
 
-expr -> term (+- term)*
+expr -> addsub
 
-term -> atom (*/ atom)*
+addsub-> muldiv (+- muldiv)*
+
+muldiv -> unary (*/ unary)*
+
+unary -> +-! unary | atom
 
 atom -> int constant
 	| variable name
@@ -20,7 +24,7 @@ atom -> int constant
 
 Node classes are:
 
-`statementnodes`
+`StatementNodes`
 
 `abstract statementnode`
 
@@ -28,11 +32,15 @@ Node classes are:
 
 `assignmentnode extends statementnode`
 
-`binop node`
+`binopnode extends node`
 
-`intnode extends node`
+`unaryNode extends node`
 
-`varaccess node extends node`
+`intNode extends node`
+
+`boolNode extends node`
+
+`varaccessNode extends node`
 
 
 This works.
@@ -55,7 +63,7 @@ additive -> muldiv (+- muldiv)*
 
 muldiv -> unary (*/% unary)*
 
-unary ->  atom | !-+ atom
+unary ->  atom | !-+ unary
 
 atom -> '(' expr ') | var | intconst | stringconst | boolconst 
 ```

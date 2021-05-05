@@ -9,7 +9,8 @@ import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
   private static final Set<
-          Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*', '/', '!');
+          Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*', '/', '!', '%',
+                  '<', '>');
 
   private final String text;
   private int line, col;
@@ -45,23 +46,23 @@ public class Lexer {
       }
       advance();
     }
-    if (Character.isDigit(cc)) {
-      return makeInt();
-    } else if (Character.isLetter(cc)) {
-      return makeText();
-    } else if (SYMBOL_STARTS.contains(cc)) {
-      return makeSymbol();
-    } else if (cc != 0) {
-      Position loc = new Position(line, col);
-      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, loc));
-    }
+
     Position start = new Position(line, col);
+    if (Character.isDigit(cc)) {
+      return makeInt(start);
+    } else if (Character.isLetter(cc)) {
+      return makeText(start);
+    } else if (SYMBOL_STARTS.contains(cc)) {
+      return makeSymbol(start);
+    } else if (cc != 0) {
+      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
+    }
+
     return new Token(Type.EOF, start);
   }
 
-  private Token makeText() {
+  private Token makeText(Position start) {
     StringBuilder sb = new StringBuilder();
-    Position start = new Position(line, col);
     if (Character.isLetter(cc)) {
       sb.append(cc);
       advance();
@@ -81,9 +82,8 @@ public class Lexer {
     }
   }
 
-  private IntToken makeInt() {
+  private IntToken makeInt(Position start) {
     int value = 0;
-    Position start = new Position(line, col);
     while (Character.isDigit(cc)) {
       value = value * 10 + (cc - '0');
       advance();
@@ -92,36 +92,88 @@ public class Lexer {
     return new IntToken(start, end, value);
   }
 
-  private Token makeSymbol() {
-    Position loc = new Position(line, col);
+  private Token makeSymbol(Position start) {
     char oc = cc;
     switch (oc) {
       case '=':
-      advance();
-      return new Token(Type.EQ, loc, oc);
+        return startsWithEq(start);
+      case '<':
+        return startsWithLt(start);
+      case '>':
+        return startsWithGt(start);
     case '+':
       advance();
-      return new Token(Type.PLUS, loc, oc);
+      return new Token(Type.PLUS, start, oc);
     case '-':
       advance();
-      return new Token(Type.MINUS, loc, oc);
+      return new Token(Type.MINUS, start, oc);
     case '(':
       advance();
-      return new Token(Type.LPAREN, loc, oc);
+      return new Token(Type.LPAREN, start, oc);
     case ')':
       advance();
-      return new Token(Type.RPAREN, loc, oc);
+      return new Token(Type.RPAREN, start, oc);
     case '*':
       advance();
-      return new Token(Type.MULT, loc, oc);
+      return new Token(Type.MULT, start, oc);
     case '/':
       advance();
-      return new Token(Type.DIV, loc, oc);
-    case '!':
+      return new Token(Type.DIV, start, oc);
+    case '%':
       advance();
-      return new Token(Type.NOT, loc, oc);
+      return new Token(Type.MOD, start, oc);
+    case '!':
+      return startsWithNot(start);
     default:
-      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, loc));
+      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }
+  }
+
+  private Token startsWithNot(Position start) {
+    char oc = cc;
+    advance();
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      oc = cc;
+      advance();
+      return new Token(Type.NEQ, start, end, "!=");
+    }
+    return new Token(Type.NOT, start, oc);
+  }
+
+  private Token startsWithGt(Position start) {
+    char oc = cc;
+    advance();
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      oc = cc;
+      advance();
+      return new Token(Type.GEQ, start, end, ">=");
+    }
+    return new Token(Type.GT, start, oc);
+  }
+
+  private Token startsWithLt(Position start) {
+    char oc = cc;
+    advance();
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      oc = cc;
+      advance();
+      return new Token(Type.LEQ, start, end, "<=");
+    }
+    return new Token(Type.LT, start, oc);
+  }
+
+  private Token startsWithEq(Position start) {
+    char oc = cc;
+    advance();
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      oc = cc;
+      advance();
+      return new Token(Type.EQEQ, start, end, "==");
+    }
+    return new Token(Type.EQ, start, oc);
   }
 }

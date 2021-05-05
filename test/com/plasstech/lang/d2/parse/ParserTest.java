@@ -386,14 +386,25 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_allExprTypes() {
+    // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
+    // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
+    // (8 % 2));
+    Lexer lexer = new Lexer(
+            "a=((1 + 2) * (3 - 4) / (-5) == 6) == true\n"
+                    + " | ((2 - 3) * (4 - 5) / (-6) == 7) == false & \n"
+                    + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = parse(parser);
+    System.out.println(root);
+  }
+
+  @Test
   public void parse_program() {
     Lexer lexer = new Lexer("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
     Parser parser = new Parser(lexer);
 
-    Node rootNode = parser.parse();
-    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
-
-    StatementsNode root = (StatementsNode) rootNode;
+    StatementsNode root = parse(parser);
 //    System.out.println(root);
 
     List<StatementNode> children = root.children();

@@ -131,6 +131,7 @@ public class Parser {
           return new BoolNode(!((BoolNode) expr).value(), unaryToken.start());
         }
       }
+
       // TODO: Optimize this further, before the code generator is called.
       // For example, --(expr) == +(expr) == (expr) if expr is ultimately integer.
       // However, at this point we don't have types in the expr tree yet so we can't
