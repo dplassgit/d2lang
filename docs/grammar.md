@@ -3,17 +3,21 @@
 ## Implemented so far
 
 ```
-statements -> stmt stmt*
+expr -> boolor
 
-stmt -> print expr | variable = expr
+boolor -> booland (| booland)*
 
-expr -> addsub
+booland -> compare (& compare)*
 
-addsub-> muldiv (+- muldiv)*
+compare -> addsub (relop addsub)*
 
-muldiv -> unary (*/ unary)*
+relop -> == != > < >= <=
 
-unary -> +-! unary | atom
+addsub -> muldiv (+- muldiv)*
+
+muldiv -> unary (*/% unary)*
+
+unary ->  atom | !-+ unary
 
 atom -> int constant
 	| variable name
@@ -45,27 +49,36 @@ Node classes are:
 
 This works.
 
-## Expression grammar
+## Full expression grammar
 
-### Not fully implemented yet
-
-(does not include exponent or bit operations or shift left/right)
+Not implemented: shift
 
 ```
-expr -> booland (| booland)*
+expr -> boolor
+
+boolor -> booland (| booland)*
 
 booland -> compare (& compare)*
 
-compare -> additive (relop additive)*
-relop -> == != > < <= >=
+compare -> shift (relop shift)*
 
-additive -> muldiv (+- muldiv)*
+relop -> == != > < >= <=
+
+shift -> addsub (shiftop addsub)
+
+shiftop -> << >>
+
+addsub -> muldiv (+- muldiv)*
 
 muldiv -> unary (*/% unary)*
 
 unary ->  atom | !-+ unary
 
-atom -> '(' expr ') | var | intconst | stringconst | boolconst 
+atom -> int constant
+	| variable name
+	| boolean constant
+	| string constant
+	| '(' expr ')'
 ```
 
 See [Java operators](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html)
