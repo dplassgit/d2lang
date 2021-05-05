@@ -14,7 +14,8 @@ import com.plasstech.lang.d2.type.VarType;
 public class BinOpNode extends Node {
   private static final Set<
           Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS,
-                  Token.Type.MULT, Token.Type.DIV);
+                  Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.EQEQ, Token.Type.GT,
+                  Token.Type.LT, Token.Type.GEQ, Token.Type.LEQ, Token.Type.NEQ);
 
   private final Token.Type operator;
   private final Node left;

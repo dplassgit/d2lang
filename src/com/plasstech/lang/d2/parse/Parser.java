@@ -88,7 +88,27 @@ public class Parser {
   }
 
   private Node expr() {
-    return addSubTerm();
+    return compareTerm();
+  }
+  /*
+   * expr -> booland (| booland)*
+   * 
+   * booland -> compare (& compare)*
+   * 
+   * compare -> additive (relop additive)
+   * 
+   * relop -> == != > < <= >=
+   * 
+   */
+
+  private Node compareTerm() {
+    return new BinOpFn() {
+      @Override
+      Node function() {
+        return addSubTerm();
+      }
+    }.call(ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT, Token.Type.LT,
+            Token.Type.GEQ, Token.Type.LEQ));
   }
 
   private Node addSubTerm() {
@@ -106,7 +126,7 @@ public class Parser {
       public Node function() {
         return unary();
       }
-    }.call(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV));
+    }.call(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD));
   }
 
   private Node unary() {
