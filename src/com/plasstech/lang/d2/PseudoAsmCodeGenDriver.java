@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.codegen.PseudoAsmCodeGenerator;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.ErrorNode;
 import com.plasstech.lang.d2.parse.Node;
@@ -13,7 +13,7 @@ import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
-public class CodeGenDriver {
+public class PseudoAsmCodeGenDriver {
 
   public static void main(String[] args) {
     String filename = args[0];
@@ -39,7 +39,7 @@ public class CodeGenDriver {
       throw new RuntimeException(checkResult.message());
     }
     System.out.println(root);
-    ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
+    PseudoAsmCodeGenerator cg = new PseudoAsmCodeGenerator(root);
     cg.generate();
   }
 }

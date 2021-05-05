@@ -14,7 +14,7 @@ public class CodeGeneratorTest {
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
-    CodeGenerator codegen = new CodeGenerator(root);
+    CodeGenerator<String> codegen = new PseudoAsmCodeGenerator(root);
     codegen.generate();
   }
 
@@ -25,7 +25,7 @@ public class CodeGeneratorTest {
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
-    CodeGenerator codegen = new CodeGenerator(root);
+    CodeGenerator<String> codegen = new PseudoAsmCodeGenerator(root);
     codegen.generate();
   }
 }
