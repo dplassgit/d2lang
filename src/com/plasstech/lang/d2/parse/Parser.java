@@ -88,16 +88,16 @@ public class Parser {
   }
 
   private Node expr() {
-    return top();
+    return boolOr();
   }
 
-  private Node top() {
+  private Node boolOr() {
     return new BinOpFn() {
       @Override
       Node function() {
         return boolAnd();
       }
-    }.call(ImmutableSet.of(Token.Type.AND));
+    }.call(ImmutableSet.of(Token.Type.OR));
   }
 
   private Node boolAnd() {
@@ -106,7 +106,7 @@ public class Parser {
       Node function() {
         return compareTerm();
       }
-    }.call(ImmutableSet.of(Token.Type.OR));
+    }.call(ImmutableSet.of(Token.Type.AND));
   }
 
   private Node compareTerm() {
