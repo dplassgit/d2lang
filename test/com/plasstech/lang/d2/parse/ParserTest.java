@@ -269,7 +269,7 @@ public class ParserTest {
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.opType()).isEqualTo(Token.Type.MINUS);
+    assertThat(unary.operator()).isEqualTo(Token.Type.MINUS);
     Node right = unary.expr();
     assertThat(right.nodeType()).isEqualTo(Node.Type.VARIABLE);
   }
@@ -291,9 +291,31 @@ public class ParserTest {
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.opType()).isEqualTo(Token.Type.PLUS);
+    assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
     Node right = unary.expr();
     assertThat(right.nodeType()).isEqualTo(Node.Type.VARIABLE);
+  }
+
+  @Test
+  public void testParse_unaryExpr() {
+    Lexer lexer = new Lexer("a=+(b+-c)");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
+    Node right = unary.expr();
+    assertThat(right.nodeType()).isEqualTo(Node.Type.BIN_OP);
   }
 
   @Test

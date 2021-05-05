@@ -1,6 +1,10 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.Set;
+
+import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.DefaultVisitor;
+import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.Node;
@@ -9,6 +13,8 @@ import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class StaticChecker extends DefaultVisitor {
+  private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.EQ);
+
   private final StatementsNode root;
   private final SymTab symbolTable = new SymTab();
   private String error;
@@ -108,7 +114,12 @@ public class StaticChecker extends DefaultVisitor {
               left, left.varType(), right, right.varType());
       return;
     }
-    // TODO: check that they're not trying to, for example, multiply booleans
+    // Check that they're not trying to, for example, multiply booleans
+    if (left.varType() == VarType.BOOL && !COMPARISION_OPERATORS.contains(binOpNode.operator())) {
+      error = String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
+              left.position(), binOpNode.operator());
+      return;
+    }
     binOpNode.setVarType(left.varType());
   }
 
@@ -127,7 +138,12 @@ public class StaticChecker extends DefaultVisitor {
       error = String.format("Type error at %s: Indeterminable type for %s", expr.position(), expr);
       return;
     }
-    // TODO: check that they're not trying to, for example, have +false or !3
+    if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
+      error = String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
+              expr.position(), unaryNode.operator());
+      return;
+    }
+    // TODO: check that they're not trying to do !3
     unaryNode.setVarType(expr.varType());
   }
 

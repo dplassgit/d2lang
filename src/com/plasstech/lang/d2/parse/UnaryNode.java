@@ -17,7 +17,7 @@ public class UnaryNode extends Node {
     this.expr = expr;
   }
 
-  public Token.Type opType() {
+  public Token.Type operator() {
     return operator;
   }
 

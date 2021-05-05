@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class StaticCheckerTest {
@@ -23,8 +24,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
+    execute(checker);
   }
 
   @Test
@@ -34,9 +34,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
-    SymTab types = result.symbolTable();
+    SymTab types = execute(checker);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -51,15 +49,76 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_assignUnaryIntConst() {
+    Lexer lexer = new Lexer("a=-3");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+    assertThat(var.varType()).isEqualTo(VarType.INT);
+
+    Node expr = node.expr();
+    IntNode intNode = (IntNode) expr;
+    assertThat(intNode.varType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void execute_assignUnaryVar() {
+    Lexer lexer = new Lexer("a=3 b=-a");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(1);
+    VariableNode var = node.variable();
+    assertThat(var.varType()).isEqualTo(VarType.INT);
+
+    Node expr = node.expr();
+    UnaryNode unaryNode = (UnaryNode) expr;
+    assertThat(unaryNode.varType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void execute_assignUnaryExpr() {
+    Lexer lexer = new Lexer("a=3 b=-(a+3)");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(1);
+    VariableNode var = node.variable();
+    assertThat(var.varType()).isEqualTo(VarType.INT);
+
+    Node expr = node.expr();
+    UnaryNode unaryNode = (UnaryNode) expr;
+    assertThat(unaryNode.varType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
   public void execute_assignBool() {
     Lexer lexer = new Lexer("a=true");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
-    SymTab types = result.symbolTable();
+    SymTab types = execute(checker);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
 
@@ -73,15 +132,33 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_assignBoolConstantUnaryFailure() {
+    Lexer lexer = new Lexer("a=-true");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "MINUS");
+  }
+
+  @Test
+  public void execute_assignBoolUnaryFailure() {
+    Lexer lexer = new Lexer("a=true\nb=-a");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "MINUS");
+  }
+
+  @Test
   public void execute_assignExpr() {
     Lexer lexer = new Lexer("a=3+4-9");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
-    SymTab types = result.symbolTable();
+    SymTab types = execute(checker);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -102,10 +179,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isTrue();
-    System.err.println(result.message());
-    assertThat(result.message()).contains("Indeterminable type");
+    assertExecuteError(checker, "Indeterminable type");
   }
 
   @Test
@@ -115,10 +189,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isTrue();
-    System.err.println(result.message());
-    assertThat(result.message()).contains("Indeterminable type");
+    assertExecuteError(checker, "Indeterminable type");
   }
 
   @Test
@@ -128,9 +199,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isFalse();
-    SymTab types = result.symbolTable();
+    SymTab types = execute(checker);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -153,10 +222,7 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertThat(result.isError()).isTrue();
-    System.err.println(result.message());
-    assertThat(result.message()).contains("Type mismatch");
+    assertExecuteError(checker, "Type mismatch");
   }
 
   @Test
@@ -166,9 +232,20 @@ public class StaticCheckerTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "Type mismatch");
+  }
+
+  private void assertExecuteError(StaticChecker checker, String messageShouldContain) {
     TypeCheckResult result = checker.execute();
     assertThat(result.isError()).isTrue();
     System.err.println(result.message());
-    assertThat(result.message()).contains("Type mismatch");
+    assertThat(result.message()).contains(messageShouldContain);
+  }
+
+  private SymTab execute(StaticChecker checker) {
+    TypeCheckResult result = checker.execute();
+    assertThat(result.isError()).isFalse();
+    SymTab types = result.symbolTable();
+    return types;
   }
 }
