@@ -56,7 +56,7 @@ public class BinOpNode extends Node {
 
   @Override
   public String toString() {
-    return String.format("{BinOpNode: %s %s %s}", left.toString(), operator.name(),
+    return String.format("{BinOpNode: {%s} %s {%s}}", left.toString(), operator.name(),
             right.toString());
   }
 

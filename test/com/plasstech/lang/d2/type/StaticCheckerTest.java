@@ -132,6 +132,19 @@ public class StaticCheckerTest {
     Node expr = node.expr();
     assertThat(expr.varType()).isEqualTo(VarType.BOOL);
   }
+  
+  @Test
+  public void execute_manybinops() {
+    Lexer lexer = new Lexer("a=4 b=5  e=(a>=3)|!(b<3)");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
+  }
 
   @Test
   public void execute_assignBoolConstantUnaryFailure() {

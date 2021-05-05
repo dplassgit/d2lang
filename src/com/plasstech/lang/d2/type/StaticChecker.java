@@ -13,8 +13,9 @@ import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class StaticChecker extends DefaultVisitor {
-  private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
-          Token.Type.LT, Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ);
+  private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.AND,
+          Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
+          Token.Type.GEQ, Token.Type.NEQ);
 
   private final StatementsNode root;
   private final SymTab symbolTable = new SymTab();
