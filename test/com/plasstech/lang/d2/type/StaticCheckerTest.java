@@ -152,6 +152,40 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_assignIntUnaryFailure() {
+    Lexer lexer = new Lexer("a=3\nb=!a");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "NOT");
+  }
+
+  @Test
+  public void execute_assignBoolConstantUnary() {
+    Lexer lexer = new Lexer("a=!true");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
+  }
+
+  @Test
+  public void execute_assignBoolUnary() {
+    Lexer lexer = new Lexer("a=true\nb=!a");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
+  }
+
+  @Test
   public void execute_assignExpr() {
     Lexer lexer = new Lexer("a=3+4-9");
     Parser parser = new Parser(lexer);

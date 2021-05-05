@@ -110,7 +110,8 @@ public class Parser {
   }
 
   private Node unary() {
-    if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS /* or not */) {
+    if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS
+            || token.type() == Token.Type.NOT) {
       Token unaryToken = token;
       advance();
       Node expr = unary(); // should this be expr? unary? atom?
@@ -122,8 +123,12 @@ public class Parser {
         // We can simplify now
         if (unaryToken.type() == Token.Type.PLUS) {
           return expr;
-        } else {
+        } else if (unaryToken.type() == Token.Type.MINUS) {
           return new IntNode(-((IntNode) expr).value(), unaryToken.start());
+        }
+      } else if (expr.nodeType() == Node.Type.BOOL) {
+        if (unaryToken.type() == Token.Type.NOT) {
+          return new BoolNode(!((BoolNode) expr).value(), unaryToken.start());
         }
       }
       // TODO: Optimize this further, before the code generator is called.

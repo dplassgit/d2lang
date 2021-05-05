@@ -9,30 +9,22 @@ import com.plasstech.lang.d2.lex.Token.Type;
 
 public class LexerTest {
   @Test
-  public void nextToken_plusMinus() {
-    Lexer lexer = new Lexer("+-");
+  public void nextToken_singleSymbols() {
+    Lexer lexer = new Lexer("+-*/()!");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.MINUS);
-  }
-
-  @Test
-  public void nextToken_multiplyDivide() {
-    Lexer lexer = new Lexer("*/");
-    Token token = lexer.nextToken();
+    token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.MULT);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.DIV);
-  }
-
-  @Test
-  public void nextToken_parens() {
-    Lexer lexer = new Lexer("()");
-    Token token = lexer.nextToken();
+    token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.LPAREN);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.RPAREN);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.NOT);
   }
 
   @Test

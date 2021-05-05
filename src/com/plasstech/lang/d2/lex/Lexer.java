@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
   private static final Set<
-          Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*', '/');
+          Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*', '/', '!');
 
   private final String text;
   private int line, col;
@@ -117,6 +117,9 @@ public class Lexer {
     case '/':
       advance();
       return new Token(Type.DIV, loc, oc);
+    case '!':
+      advance();
+      return new Token(Type.NOT, loc, oc);
     default:
       throw new RuntimeException(String.format("Unknown character %c at location %s", cc, loc));
     }

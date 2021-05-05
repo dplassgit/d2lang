@@ -109,17 +109,20 @@ public class StaticChecker extends DefaultVisitor {
               right);
       return;
     }
+
     if (left.varType() != right.varType()) {
       error = String.format("Type mismatch at %s: lhs %s is %s; rhs %s is %s", left.position(),
               left, left.varType(), right, right.varType());
       return;
     }
+
     // Check that they're not trying to, for example, multiply booleans
     if (left.varType() == VarType.BOOL && !COMPARISION_OPERATORS.contains(binOpNode.operator())) {
       error = String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
               left.position(), binOpNode.operator());
       return;
     }
+
     binOpNode.setVarType(left.varType());
   }
 
@@ -138,12 +141,18 @@ public class StaticChecker extends DefaultVisitor {
       error = String.format("Type error at %s: Indeterminable type for %s", expr.position(), expr);
       return;
     }
+
+    // Check that they're not trying to negate a boolean or "not" an int.
     if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
       error = String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
               expr.position(), unaryNode.operator());
       return;
     }
-    // TODO: check that they're not trying to do !3
+    if (expr.varType() == VarType.INT && unaryNode.operator() == Token.Type.NOT) {
+      error = String.format("Type mismatch at %s: Cannot apply %s operator to int expression",
+              expr.position(), unaryNode.operator());
+      return;
+    }
     unaryNode.setVarType(expr.varType());
   }
 

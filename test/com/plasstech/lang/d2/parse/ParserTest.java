@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -13,11 +14,11 @@ import com.plasstech.lang.d2.lex.Token;
 
 public class ParserTest {
   @Test
-  public void testParse_print() {
+  public void parse_print() {
     Lexer lexer = new Lexer("print 123");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     PrintNode node = (PrintNode) root.children().get(0);
@@ -34,7 +35,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_printErr() {
+  public void parse_printErr() {
     Lexer lexer = new Lexer("print");
     Parser parser = new Parser(lexer);
 
@@ -44,7 +45,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignIncomplete() {
+  public void parse_assignIncomplete() {
     Lexer lexer = new Lexer("a=");
     Parser parser = new Parser(lexer);
 
@@ -55,7 +56,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_missingCloseParens() {
+  public void parse_missingCloseParens() {
     Lexer lexer = new Lexer("\na=(3+");
     Parser parser = new Parser(lexer);
 
@@ -66,7 +67,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_addIncomplete() {
+  public void parse_addIncomplete() {
     Lexer lexer = new Lexer("a=3+");
     Parser parser = new Parser(lexer);
 
@@ -77,7 +78,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_mulIncomplete() {
+  public void parse_mulIncomplete() {
     Lexer lexer = new Lexer("a=3+5*");
     Parser parser = new Parser(lexer);
 
@@ -88,7 +89,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_mulMissing() {
+  public void parse_mulMissing() {
     Lexer lexer = new Lexer("a=3+*5");
     Parser parser = new Parser(lexer);
 
@@ -99,7 +100,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_addMissing() {
+  public void parse_addMissing() {
     Lexer lexer = new Lexer("a=3**5");
     Parser parser = new Parser(lexer);
 
@@ -110,7 +111,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignErrror() {
+  public void parse_assignErrror() {
     Lexer lexer = new Lexer("a=print");
     Parser parser = new Parser(lexer);
 
@@ -121,11 +122,11 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignInt() {
+  public void parse_assignInt() {
     Lexer lexer = new Lexer("a=3");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -142,11 +143,11 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignTrueFalse() {
+  public void parse_assignTrueFalse() {
     Lexer lexer = new Lexer("a=true b=FALSE");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(2);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -166,14 +167,11 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignmentAdd() {
+  public void parse_assignmentAdd() {
     Lexer lexer = new Lexer("a=3   + 4");
     Parser parser = new Parser(lexer);
 
-    Node rootNode = parser.parse();
-    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
-
-    StatementsNode root = (StatementsNode) rootNode;
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -195,14 +193,11 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignmentMul() {
+  public void parse_assignmentMul() {
     Lexer lexer = new Lexer("a=3   * 4");
     Parser parser = new Parser(lexer);
 
-    Node rootNode = parser.parse();
-    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
-
-    StatementsNode root = (StatementsNode) rootNode;
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -224,20 +219,19 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignmentAddChained() {
+  public void parse_assignmentAddChained() {
     Lexer lexer = new Lexer("a=3+4*b-5");
     Parser parser = new Parser(lexer);
 
-    Node rootNode = parser.parse();
-    assertWithMessage(rootNode.toString()).that(rootNode.isError()).isFalse();
+    parse(parser);
   }
 
   @Test
-  public void testParse_assignment() {
+  public void parse_assignment() {
     Lexer lexer = new Lexer("a=b");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -253,11 +247,11 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_unaryMinus() {
+  public void parse_unaryMinus() {
     Lexer lexer = new Lexer("a=-b");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -275,11 +269,49 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_unaryPlus() {
+  public void parse_unaryNotConstant() {
+    Lexer lexer = new Lexer("a=!true");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = parse(parser);
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
+    assertThat(((BoolNode) expr).value()).isFalse();
+  }
+
+  @Test
+  public void parse_unaryNot() {
+    Lexer lexer = new Lexer("a=!b");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = parse(parser);
+    assertThat(root.children()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.UNARY);
+    assertThat(((UnaryNode) expr).operator()).isEqualTo(Token.Type.NOT);
+  }
+
+  @Test
+  public void parse_unaryPlus() {
     Lexer lexer = new Lexer("a=+b");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    StatementsNode root = parse(parser);
     assertThat(root.children()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.children().get(0);
@@ -297,7 +329,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_unaryExpr() {
+  public void parse_unaryExpr() {
     Lexer lexer = new Lexer("a=+(b+-c)");
     Parser parser = new Parser(lexer);
 
@@ -319,7 +351,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_unaryNegativeInt() {
+  public void parse_unaryNegativeInt() {
     assertUnaryAssignConstant("a=-5", -5);
     assertUnaryAssignConstant("a=-+5", -5);
     assertUnaryAssignConstant("a=+-5", -5);
@@ -327,7 +359,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_multipleUnary() {
+  public void parse_multipleUnary() {
     assertUnaryAssignConstant("a=++5", 5);
     assertUnaryAssignConstant("a=+++5", 5);
     assertUnaryAssignConstant("a=--5", 5);
@@ -354,7 +386,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_program() {
+  public void parse_program() {
     Lexer lexer = new Lexer("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
     Parser parser = new Parser(lexer);
 
@@ -375,7 +407,7 @@ public class ParserTest {
   }
 
   @Test
-  public void testParse_assignmentParens() {
+  public void parse_assignmentParens() {
     Lexer lexer = new Lexer("a=(3)");
     Parser parser = new Parser(lexer);
 
@@ -396,4 +428,12 @@ public class ParserTest {
     assertThat(intNode.value()).isEqualTo(3);
   }
 
+  private StatementsNode parse(Parser parser) {
+    Node node = parser.parse();
+    if (node.isError()) {
+      ErrorNode error = (ErrorNode) node;
+      fail(error.message());
+    }
+    return (StatementsNode) node;
+  }
 }
