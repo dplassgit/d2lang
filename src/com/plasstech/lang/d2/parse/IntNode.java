@@ -7,7 +7,7 @@ import com.plasstech.lang.d2.type.VarType;
 /**
  * Represents a constant integer.
  */
-public class IntNode extends Node {
+public class IntNode extends SimpleNode {
   private final int value;
 
   public IntNode(int value, Position position) {
@@ -18,6 +18,11 @@ public class IntNode extends Node {
 
   public int value() {
     return value;
+  }
+
+  @Override
+  public String simpleValue() {
+    return String.valueOf(value);
   }
 
   @Override

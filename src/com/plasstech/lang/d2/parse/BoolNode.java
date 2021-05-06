@@ -4,7 +4,7 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-public class BoolNode extends Node {
+public class BoolNode extends SimpleNode {
   private final boolean value;
 
   public BoolNode(boolean value, Position position) {
@@ -18,6 +18,11 @@ public class BoolNode extends Node {
   }
 
   @Override
+  public String simpleValue() {
+    return String.valueOf(value);
+  }
+
+  @Override
   public String toString() {
     return String.format("BoolNode: %s", value);
   }
@@ -26,5 +31,4 @@ public class BoolNode extends Node {
   public void accept(NodeVisitor visitor) {
     visitor.visit(this);
   }
-
 }

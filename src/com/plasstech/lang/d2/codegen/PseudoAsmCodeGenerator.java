@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
@@ -19,12 +22,12 @@ public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenera
   }
 
   @Override
-  public void generate() {
+  public List<String> generate() {
     // For each child of root
     root.accept(this);
+    return ImmutableList.of("; eof");
   }
 
-  // mumble something visitor pattern
   @Override
   public void visit(PrintNode node) {
     System.out.printf("\n; %s\n", node);
@@ -124,8 +127,7 @@ public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenera
     }
   }
   
-  @Override
-  public void emit(String string) {
+  private void emit(String string) {
     System.out.println(string);
   }
 }

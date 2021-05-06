@@ -35,4 +35,17 @@ public class ILCodeGeneratorTest {
       System.out.println(op);
     }
   }
+
+  @Test
+  public void testGenerate_hugeAssignment() {
+    Lexer lexer = new Lexer("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
+            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
+            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
 }

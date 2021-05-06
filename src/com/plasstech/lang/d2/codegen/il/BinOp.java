@@ -8,6 +8,7 @@ public class BinOp extends Op {
   private final String rhs1;
   private final String rhs2;
 
+  // TODO: check the token type
   public BinOp(String lhs, String rhs1, Token.Type type, String rhs2) {
     this.lhs = lhs;
     this.rhs1 = rhs1;

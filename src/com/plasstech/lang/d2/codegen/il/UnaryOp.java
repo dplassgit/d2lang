@@ -7,6 +7,7 @@ public class UnaryOp extends Op {
   private final Token.Type type;
   private final String rhs;
 
+  // TODO: check the token type
   public UnaryOp(String lhs, Token.Type type, String rhs) {
     this.lhs = lhs;
     this.rhs = rhs;

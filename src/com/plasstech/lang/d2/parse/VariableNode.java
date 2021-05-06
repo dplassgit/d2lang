@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Represents a variable access, or a variable assignment.
  */
-public class VariableNode extends Node {
+public class VariableNode extends SimpleNode {
   private final String name;
 
   public VariableNode(String name, Position position) {
@@ -16,6 +16,11 @@ public class VariableNode extends Node {
 
   public String name() {
     return name;
+  }
+
+  @Override
+  public String simpleValue() {
+    return String.valueOf(name);
   }
 
   @Override
