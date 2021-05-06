@@ -9,8 +9,8 @@ public class RegistersTest {
   @Test
   public void allocate_all() {
     Registers r = new Registers();
-    for (int i = 0; i < 32; ++i) {
-      assertThat(r.allocate()).isEqualTo(i);
+    for (int i = 0; i < 31; ++i) {
+      assertThat(r.allocate()).isEqualTo(i + 1);
     }
   }
 
@@ -18,8 +18,8 @@ public class RegistersTest {
   public void deallocate_one() {
     Registers registers = new Registers();
     for (int i = 0; i < 10; ++i) {
-      assertThat(registers.allocate()).isEqualTo(0);
-      registers.deallocate(0);
+      assertThat(registers.allocate()).isEqualTo(1);
+      registers.deallocate(1);
     }
   }
 }
