@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -10,7 +11,6 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
-
 
 public class ParserTest {
   @Test
@@ -42,80 +42,14 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignIncomplete() {
-    Lexer lexer = new Lexer("a=");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("EOF");
-  }
-
-  @Test
-  public void parse_missingCloseParens() {
-    Lexer lexer = new Lexer("\na=(3+");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("EOF");
-  }
-
-  @Test
-  public void parse_addIncomplete() {
-    Lexer lexer = new Lexer("a=3+");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("EOF");
-  }
-
-  @Test
-  public void parse_mulIncomplete() {
-    Lexer lexer = new Lexer("a=3+5*");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("EOF");
-  }
-
-  @Test
-  public void parse_mulMissing() {
-    Lexer lexer = new Lexer("a=3+*5");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("Found *");
-  }
-
-  @Test
-  public void parse_addMissing() {
-    Lexer lexer = new Lexer("a=3**5");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    System.err.println(((ErrorNode) node).message());
-    assertThat(((ErrorNode) node).message()).contains("Found *");
-  }
-
-  @Test
-  public void parse_assignErrror() {
-    Lexer lexer = new Lexer("a=print");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.nodeType()).isEqualTo(Node.Type.ERROR);
-    assertThat(((ErrorNode) node).message()).contains("PRINT");
-    System.err.println(((ErrorNode) node).message());
+  public void parse_assignErrors() {
+    assertParseError("Missing expression", "a=", "expected literal");
+    assertParseError("Missing close", "a=(3+", "expected ')'");
+    assertParseError("Missing close", "a=3+", "expected literal");
+    assertParseError("Missing multiplicand", "a=3+5*", "expected literal");
+    assertParseError("Missing multiplier", "a=3+*5", "expected literal");
+    assertParseError("Missing add", "a=3**5", "expected literal");
+    assertParseError("Missing expression", "a=print", "expected literal");
   }
 
   @Test
@@ -366,7 +300,7 @@ public class ParserTest {
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
     StatementsNode root = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
-    System.out.println(root);
+//    System.out.println(root);
   }
 
   @Test
@@ -375,7 +309,7 @@ public class ParserTest {
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
-    System.out.println(root2);
+//    System.out.println(root2);
   }
 
   @Test
@@ -413,12 +347,54 @@ public class ParserTest {
   @Test
   public void parse_if() {
     StatementsNode root = parse("if a==3 { print a a=4 }");
-    System.out.println(root);
 
     List<StatementNode> children = root.children();
     assertThat(children).hasSize(1);
 
     assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(ifNode.cases()).hasSize(1);
+    IfNode.Case first = ifNode.cases().get(0);
+    assertThat(first.condition().nodeType()).isEqualTo(Node.Type.BIN_OP);
+    assertThat(first.statements()).hasSize(2);
+  }
+
+  @Test
+  public void parse_ifEmpty() {
+    StatementsNode root = parse("if a==3 { }");
+
+    List<StatementNode> children = root.children();
+    assertThat(children).hasSize(1);
+
+    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(ifNode.cases()).hasSize(1);
+    assertThat(ifNode.elseBlock()).isEmpty();
+    IfNode.Case first = ifNode.cases().get(0);
+    assertThat(first.condition().nodeType()).isEqualTo(Node.Type.BIN_OP);
+    assertThat(first.statements()).isEmpty();
+  }
+
+  @Test
+  public void parse_ifElse() {
+    StatementsNode root = parse("if a==3 { print a } else { print 4 print a}");
+
+    List<StatementNode> children = root.children();
+    assertThat(children).hasSize(1);
+
+    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(ifNode.cases()).hasSize(1);
+    assertThat(ifNode.elseBlock()).hasSize(2);
+  }
+
+  @Test
+  public void parse_ifElseError() {
+    assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
+    assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
+            "expected print");
+    assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
+    assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
   }
 
   private StatementsNode parse(String expression) {
@@ -430,5 +406,18 @@ public class ParserTest {
       fail(error.message());
     }
     return (StatementsNode) node;
+  }
+
+  private void assertParseError(String message, String expressionToParse) {
+    assertParseError(message, expressionToParse, "");
+  }
+
+  private void assertParseError(String message, String expressionToParse, String errorMsgContains) {
+    Lexer lexer = new Lexer(expressionToParse);
+    Parser parser = new Parser(lexer);
+    Node node = parser.parse();
+    assertWithMessage(message).that(node.isError()).isTrue();
+    ErrorNode error = (ErrorNode) node;
+    assertThat(error.message()).contains(errorMsgContains);
   }
 }

@@ -2,26 +2,51 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
 public class IfNode extends StatementNode {
+  public static class Case {
+    private final Node condition;
+    private final List<Node> statements;
 
-  private final Node condition;
-  private final List<Node> statements;
+    public Case(Node condition, List<Node> statements) {
+      this.condition = condition;
+      this.statements = statements;
+    }
 
-  IfNode(Node condition, List<Node> statements, Position position) {
+    @Override
+    public String toString() {
+      return String.format("IfCaseNode: if (%s) {%s}", condition(), statements());
+    }
+
+    public Node condition() {
+      return condition;
+    }
+
+    public List<Node> statements() {
+      return statements;
+    }
+  }
+
+  private final List<Case> cases;
+  private final List<Node> elseBlock;
+
+  IfNode(List<Case> cases, List<Node> elseStatements, Position position) {
     super(Type.IF, position);
-    this.condition = condition;
-    this.statements = statements;
+    Preconditions.checkArgument(cases != null, "cases cannot be null");
+    Preconditions.checkArgument(elseStatements != null, "elseStatements cannot be null");
+    this.cases = cases;
+    this.elseBlock = elseStatements;
   }
 
-  public Node condition() {
-    return condition;
+  public List<Case> cases() {
+    return cases;
   }
 
-  public List<Node> statements() {
-    return statements;
+  public List<Node> elseBlock() {
+    return elseBlock;
   }
 
   @Override
@@ -31,6 +56,11 @@ public class IfNode extends StatementNode {
 
   @Override
   public String toString() {
-    return String.format("IfNode: if (%s) { %s}", condition, statements, null);
+    if (!elseBlock().isEmpty()) {
+      return String.format("IfNode: (%s) else {%s}", cases(), elseBlock());
+    } else {
+      // this isn't ideal, but shrug.
+      return String.format("IfNode: (%s)", cases());
+    }
   }
 }

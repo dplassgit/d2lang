@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
-
 
 public class Parser {
 
@@ -28,10 +28,10 @@ public class Parser {
   }
 
   public Node parse() {
-    return statements();
+    return block();
   }
 
-  private Node statements() {
+  private Node block() {
     Node child = statement();
     if (child.isError() || !(child instanceof StatementNode)) {
       return child;
@@ -61,7 +61,8 @@ public class Parser {
       return assignment();
     }
     return new ErrorNode(
-            String.format("Unexpected token %s; expected print or assignment", token.toString()),
+            String.format("Unexpected token %s; expected print, assignment or if",
+                    token.toString()),
             token.start());
   }
 
@@ -93,6 +94,7 @@ public class Parser {
   private Node ifStmt(KeywordToken kt) {
     assert (kt.keyword() == KeywordType.IF);
     advance();
+
     Node condition = expr();
     if (condition.isError()) {
       return condition;
@@ -102,6 +104,7 @@ public class Parser {
               token.start());
     }
     advance();
+
     List<Node> statements = new ArrayList<>();
     while (token.type() != Token.Type.RBRACE) {
       Node statement = statement();
@@ -111,8 +114,31 @@ public class Parser {
       statements.add(statement);
     }
     advance();
-    // TODO: repeat for else/elseif/chain
-    return new IfNode(condition, statements, kt.start());
+
+    List<Node> elseStatements = new ArrayList<>();
+    if (token.type() == Token.Type.KEYWORD) {
+      KeywordToken maybeElseKw = (KeywordToken) token;
+      if (maybeElseKw.keyword() == KeywordType.ELSE) {
+        advance();
+        if (token.type() != Token.Type.LBRACE) {
+          return new ErrorNode(String.format("Unexpected token %s; expected {", token.toString()),
+                  token.start());
+        }
+        advance();
+        while (token.type() != Token.Type.RBRACE) {
+          Node statement = statement();
+          if (statement.isError()) {
+            return statement;
+          }
+          elseStatements.add(statement);
+        }
+        advance();
+      }
+    }
+
+    // TODO: repeat for elseif chain
+    return new IfNode(ImmutableList.of(new IfNode.Case(condition, statements)), elseStatements,
+            kt.start());
   }
 
   private Node expr() {
