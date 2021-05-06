@@ -4,7 +4,7 @@ import com.plasstech.lang.d2.common.Position;
 
 public class KeywordToken extends Token {
   public enum KeywordType {
-    PRINT, TRUE, FALSE
+    PRINT, TRUE, FALSE, IF, ELSE, ELIF
   }
 
   private final KeywordType type;

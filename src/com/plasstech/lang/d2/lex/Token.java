@@ -6,7 +6,7 @@ public class Token {
 
   public enum Type {
     KEYWORD, INT, VARIABLE, EQ /* = */, NOT, PLUS, MINUS, RPAREN, LPAREN, MULT, DIV, MOD,
-    AND, OR, EQEQ /* == */, LT, GT, LEQ, GEQ, NEQ, EOF;
+    AND, OR, EQEQ /* == */, LT, GT, LEQ, GEQ, NEQ, LBRACE, RBRACE, EOF;
   }
 
   private final Type type;

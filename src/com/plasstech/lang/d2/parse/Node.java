@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.VarType;
  */
 public abstract class Node {
   public enum Type {
-    INT, KEYWORD, VARIABLE, PRINT, ERROR, ASSIGNMENT, EXPR, STATEMENTS, BIN_OP, BOOL, UNARY;
+    INT, KEYWORD, VARIABLE, PRINT, ERROR, ASSIGNMENT, EXPR, STATEMENTS, BIN_OP, BOOL, UNARY, IF;
   }
 
   private final Type type;

@@ -1,16 +1,10 @@
 package com.plasstech.lang.d2.lex;
 
-import java.util.Set;
-
-import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
-  private static final Set<Character> SYMBOL_STARTS = ImmutableSet.of('=', '+', '-', '(', ')', '*',
-          '/', '!', '%', '&', '|', '<', '>');
-
   private final String text;
   private int line, col;
   // location inside text
@@ -30,6 +24,7 @@ public class Lexer {
       cc = text.charAt(loc);
       col++;
     } else {
+      // Indicates no more characters
       cc = 0;
     }
     loc++;
@@ -51,10 +46,8 @@ public class Lexer {
       return makeInt(start);
     } else if (Character.isLetter(cc)) {
       return makeText(start);
-    } else if (SYMBOL_STARTS.contains(cc)) {
-      return makeSymbol(start);
     } else if (cc != 0) {
-      throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
+      return makeSymbol(start);
     }
 
     return new Token(Type.EOF, start);
@@ -129,6 +122,12 @@ public class Lexer {
         return new Token(Type.OR, start, oc);
       case '!':
         return startsWithNot(start);
+      case '{':
+        advance();
+        return new Token(Type.LBRACE, start, oc);
+      case '}':
+        advance();
+        return new Token(Type.RBRACE, start, oc);
       default:
         throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }

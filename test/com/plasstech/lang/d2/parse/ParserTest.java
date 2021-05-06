@@ -410,6 +410,17 @@ public class ParserTest {
     assertThat(intNode.value()).isEqualTo(3);
   }
 
+  @Test
+  public void parse_if() {
+    StatementsNode root = parse("if a==3 { print a a=4 }");
+    System.out.println(root);
+
+    List<StatementNode> children = root.children();
+    assertThat(children).hasSize(1);
+
+    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+  }
+
   private StatementsNode parse(String expression) {
     Lexer lexer = new Lexer(expression);
     Parser parser = new Parser(lexer);

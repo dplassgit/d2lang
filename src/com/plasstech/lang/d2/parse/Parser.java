@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 
+
 public class Parser {
 
   private final Lexer lexer;
@@ -53,6 +54,8 @@ public class Parser {
       // TODO: use a switch
       if (kt.keyword() == KeywordType.PRINT) {
         return print(kt);
+      } else if (kt.keyword() == KeywordType.IF) {
+        return ifStmt(kt);
       }
     } else if (token.type() == Token.Type.VARIABLE) {
       return assignment();
@@ -85,6 +88,31 @@ public class Parser {
       return expr;
     }
     return new PrintNode(expr, kt.start());
+  }
+
+  private Node ifStmt(KeywordToken kt) {
+    assert (kt.keyword() == KeywordType.IF);
+    advance();
+    Node condition = expr();
+    if (condition.isError()) {
+      return condition;
+    }
+    if (token.type() != Token.Type.LBRACE) {
+      return new ErrorNode(String.format("Unexpected token %s; expected {", token.toString()),
+              token.start());
+    }
+    advance();
+    List<Node> statements = new ArrayList<>();
+    while (token.type() != Token.Type.RBRACE) {
+      Node statement = statement();
+      if (statement.isError()) {
+        return statement;
+      }
+      statements.add(statement);
+    }
+    advance();
+    // TODO: repeat for else/elseif/chain
+    return new IfNode(condition, statements, kt.start());
   }
 
   private Node expr() {

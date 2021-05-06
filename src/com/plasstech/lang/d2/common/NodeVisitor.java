@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.common;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
+import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
@@ -23,4 +24,6 @@ public interface NodeVisitor {
   void visit(BoolNode boolNode);
 
   void visit(UnaryNode unaryNode);
+
+  void visit(IfNode ifNode);
 }
