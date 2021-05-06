@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.SimpleNode;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
@@ -79,31 +80,43 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(BinOpNode node) {
     System.out.printf("\n; %s\n", node);
-    // calculate the value and set it in r0
+
+    // Calculate the value and set it in r0
     Node left = node.left();
+    // Source for the value of left - either a register or memory location or a value.
+    String leftSrc;
+    // Possible register
+    int leftReg = -1;
+    // if left and right are "simple", just get it.
+    if (left.isSimpleType()) {
+      SimpleNode simpleLeft = (SimpleNode) left;
+      leftSrc = simpleLeft.simpleValue();
+    } else {
+      leftReg = registers.allocate();
+      left.accept(this);
+      // by definition, "left" has emitted its value in r0. store in rx
+      leftSrc = "r" + leftReg;
+      emit(new Assignment(leftSrc, "r0"));
+    }
 
-    // destination for the calculation
-    int leftReg = registers.allocate();
-    left.accept(this);
-    // by definition, "left" has emitted its value in r0. store in rx
-    emit(new Assignment("r" + leftReg, "r0"));
-//    String leftVal;
-//    // if left and right are "simple", just get it.
-//    if (left.isSimpleType()) {
-//      SimpleNode simpleLeft = (SimpleNode) left;
-//      leftVal = simpleLeft.simpleValue();
-//    } else {
-//      left.accept(this);
-//      // by definition, "left" has emitted its value in r0. store in rx
-//      leftVal = String.format("r%d", dest);
-//      emit(new Assignment(leftVal, "r0"));
-//    }
-
+    // Calculate the value and set it in r0
     Node right = node.right();
-    int rightReg = registers.allocate();
-    right.accept(this);
-    // by definition, "left" has emitted its value in r0. store in rx
-    emit(new Assignment("r" + rightReg, "r0"));
+    // Source for the value of right - either a register or memory location or a
+    // value.
+    String rightSrc;
+    // Possible register
+    int rightReg = -1;
+    // if left and right are "simple", just get it.
+    if (right.isSimpleType()) {
+      SimpleNode simpleRight = (SimpleNode) right;
+      rightSrc = simpleRight.simpleValue();
+    } else {
+      rightReg = registers.allocate();
+      right.accept(this);
+      // by definition, "left" has emitted its value in r0. store in rx
+      rightSrc = "r" + rightReg;
+      emit(new Assignment(rightSrc, "r0"));
+    }
 
 //    switch (node.operator()) {
 //      case MINUS:
@@ -111,7 +124,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 //      case MULT:
 //      case PLUS:
 //      case EQEQ:
-        emit(new BinOp("r0", "r" + leftReg, node.operator(), "r" + rightReg));
+    emit(new BinOp("r0", leftSrc, node.operator(), rightSrc));
 //        break;
 //      default:
 //        emit("UNKNOWN OP " + node.operator());
@@ -119,8 +132,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 //    }
 
     // now we can deallocate registers
-    registers.deallocate(leftReg);
-    registers.deallocate(rightReg);
+    if (leftReg != -1) {
+      registers.deallocate(leftReg);
+    }
+    if (rightReg != -1) {
+      registers.deallocate(rightReg);
+    }
   }
 
   @Override
@@ -132,13 +149,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     switch (node.operator()) {
       case NOT:
-      case MINUS: // want r0 to be 0-r1
+      case MINUS: // want r0 to be 0-r0
         emit(new UnaryOp("r0", node.operator(), "r0"));
-
-//        emit("ld r1, r0");
-//        emit("ld r0, #0");
-//        emit("sbc");
-//        emit("sub r0, r1\n");
         break;
       case PLUS:
         // Intentionally do nothing.
@@ -146,9 +158,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       default:
         break;
     }
-  }
-
-  private void emit(String ignored) {
   }
 
   private void emit(Op op) {
