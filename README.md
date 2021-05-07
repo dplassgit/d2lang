@@ -1,6 +1,6 @@
 # d2lang
 
-A simple type-inferred language that generates code in C.
+A simple type-inferred language compiler.
 
 <tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
 
