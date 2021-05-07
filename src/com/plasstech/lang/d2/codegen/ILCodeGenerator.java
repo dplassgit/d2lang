@@ -54,6 +54,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(AssignmentNode node) {
     System.out.printf("\n; %s\n", node);
+
     String name = node.variable().name();
     Node expr = node.expr();
     expr.accept(this);
@@ -62,21 +63,18 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(IntNode node) {
-    System.out.printf("; %s\n", node);
     // Provide constant in r0
     emit(new Assignment("r0", String.valueOf(node.value())));
   }
 
   @Override
   public void visit(BoolNode node) {
-    System.out.printf("; %s\n", node);
     // Provide constant in r0
     emit(new Assignment("r0", String.valueOf(node.value())));
   }
 
   @Override
   public void visit(VariableNode node) {
-    System.out.printf("; %s\n", node);
     // Retrieve location of variable and provide it in r0
     emit(new Assignment("r0", String.valueOf(node.name())));
   }

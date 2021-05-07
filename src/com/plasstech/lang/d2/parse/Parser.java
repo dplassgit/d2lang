@@ -287,7 +287,7 @@ public class Parser {
     }
 
     BinOpFn(Token.Type tokenType) {
-      this.tokenTypes = Immutableset.of(tokenType);
+      this.tokenTypes = ImmutableSet.of(tokenType);
     }
 
     /** Call the next method, e.g., mulDivTerm */

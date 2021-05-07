@@ -28,3 +28,13 @@ print a
 print 3+a*-b
 print (3+a)*-b
 
+if (a==3) {
+  if a==2 {
+    print a
+  }
+} elif a==3 {
+  print a
+} else {
+  a=4
+}
+
