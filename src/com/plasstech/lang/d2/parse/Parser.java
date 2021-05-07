@@ -161,49 +161,50 @@ public class Parser {
   }
 
   private Node boolOr() {
-    return new BinOpFn() {
+    return new BinOpFn(Token.Type.OR) {
       @Override
-      Node function() {
+      Node nextRule() {
         return boolAnd();
       }
-    }.call(ImmutableSet.of(Token.Type.OR));
+    }.parse();
   }
 
   private Node boolAnd() {
-    return new BinOpFn() {
+    return new BinOpFn(Token.Type.AND) {
       @Override
-      Node function() {
+      Node nextRule() {
         return compareTerm();
       }
-    }.call(ImmutableSet.of(Token.Type.AND));
+    }.parse();
   }
 
   private Node compareTerm() {
-    return new BinOpFn() {
+    return new BinOpFn(
+        ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT, Token.Type.LT, 
+          Token.Type.GEQ, Token.Type.LEQ)) {
       @Override
-      Node function() {
+      Node nextRule() {
         return addSubTerm();
       }
-    }.call(ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT, Token.Type.LT,
-            Token.Type.GEQ, Token.Type.LEQ));
+    }.parse();
   }
 
   private Node addSubTerm() {
-    return new BinOpFn() {
+    return new BinOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS)) {
       @Override
-      Node function() {
+      Node nextRule() {
         return mulDivTerm();
       }
-    }.call(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS));
+    }.parse();
   }
 
   private Node mulDivTerm() {
-    return new BinOpFn() {
+    return new BinOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD)) {
       @Override
-      public Node function() {
+      public Node nextRule() {
         return unary();
       }
-    }.call(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD));
+    }.parse();
   }
 
   private Node unary() {
@@ -279,8 +280,18 @@ public class Parser {
 
   /** Parses a binary operation function. */
   private abstract class BinOpFn {
+    private final Set<Token.Type> tokenTypes;
+
+    BinOpFn(Set<Token.Type> tokenTypes) {
+      this.tokenTypes = tokenTypes;
+    }
+
+    BinOpFn(Token.Type tokenType) {
+      this.tokenTypes = Immutableset.of(tokenType);
+    }
+
     /** Call the next method, e.g., mulDivTerm */
-    abstract Node function();
+    abstract Node nextRule();
 
     /**
      * Parse from the current location, repeatedly call "function", e.g.,:
@@ -293,8 +304,8 @@ public class Parser {
      *
      * expr -> term (+- term)*
      */
-    Node call(Set<Token.Type> tokenTypes) {
-      Node left = function();
+    Node parse() {
+      Node left = nextRule();
       if (left.isError()) {
         return left;
       }
@@ -302,7 +313,7 @@ public class Parser {
       while (tokenTypes.contains(token.type())) {
         Token.Type operator = token.type();
         advance();
-        Node right = function();
+        Node right = nextRule();
         if (right.isError()) {
           return right;
         }
