@@ -34,6 +34,6 @@ public class BinOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s=%s %s %s", lhs, rhs1, type.name(), rhs2);
+    return String.format("\t%s = %s %s %s", lhs, rhs1, type.name(), rhs2);
   }
 }

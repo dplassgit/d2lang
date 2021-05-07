@@ -28,6 +28,6 @@ public class UnaryOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s=%s %s", lhs, type.name(), rhs);
+    return String.format("\t%s = %s %s", lhs, type.name(), rhs);
   }
 }

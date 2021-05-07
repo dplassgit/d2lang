@@ -16,9 +16,7 @@ public class ILCodeGeneratorTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
-    for (Op op : codegen.generate()) {
-      System.out.println(op);
-    }
+    codegen.generate();
   }
 
   @Test
@@ -31,9 +29,7 @@ public class ILCodeGeneratorTest {
 
     StatementsNode root = (StatementsNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
-    for (Op op : codegen.generate()) {
-      System.out.println(op);
-    }
+    codegen.generate();
   }
 
   @Test
@@ -42,6 +38,19 @@ public class ILCodeGeneratorTest {
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
+    Parser parser = new Parser(lexer);
+
+    StatementsNode root = (StatementsNode) parser.parse();
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
+
+  @Test
+  public void testGenerate_if() {
+    Lexer lexer = new Lexer(
+            "a=0 if a==0 {print 1} elif ((1 + 2) * (3 - 4) / (-5) == 6) != true "
+                    + "{ b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==a & 3+4*5+6/-7>=8%2} "
+                    + "else {print 2} print 3");
     Parser parser = new Parser(lexer);
 
     StatementsNode root = (StatementsNode) parser.parse();

@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -12,6 +14,7 @@ import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
+import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
@@ -27,6 +30,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private final SymTab symTab;
   private List<Op> operations = new ArrayList<>();
   private final Registers registers = new Registers();
+  private int labelId;
 
   public ILCodeGenerator(StatementsNode root, SymTab symTab) {
     this.root = root;
@@ -160,8 +164,37 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     }
   }
 
+  @Override
+  public void visit(IfNode node) {
+    System.out.printf("\n; %s\n", node);
+    int after = labelId++;
+
+    for (IfNode.Case ifCase : node.cases()) {
+      Node cond = ifCase.condition();
+      cond.accept(this);
+      // This is very inefficient, but understandable.
+      int thisLabel = labelId++;
+      int nextLabel = labelId++;
+      // if it's true, jump to tihs block
+      emit(new IfOp("r0", "label" + thisLabel));
+      // else, jump to the next one
+      emit(new Goto("label" + nextLabel));
+      emit(new Label("label" + thisLabel));
+      ifCase.statements().forEach(stmt -> stmt.accept(this));
+      // We're in a block , now jump completely after.
+      emit(new Goto("label" + after));
+      emit(new Label("label" + nextLabel));
+    }
+    if (!node.elseBlock().isEmpty()) {
+      System.out.printf("\n; else:");
+      node.elseBlock().forEach(stmt -> stmt.accept(this));
+    }
+
+    emit(new Label("label" + after));
+  }
+
   private void emit(Op op) {
-    System.err.println(op);
+    System.out.println(op);
     operations.add(op);
   }
 }
