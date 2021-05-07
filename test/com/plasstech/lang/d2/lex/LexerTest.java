@@ -115,18 +115,25 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_trueFalse() {
+    Lexer lexer = new Lexer("true false True FALSE");
+    BoolToken token = (BoolToken) lexer.nextToken();
+    assertThat(token.value()).isTrue();
+    token = (BoolToken) lexer.nextToken();
+    assertThat(token.value()).isFalse();
+    token = (BoolToken) lexer.nextToken();
+    assertThat(token.value()).isTrue();
+    token = (BoolToken) lexer.nextToken();
+    assertThat(token.value()).isFalse();
+  }
+
+  @Test
   public void nextToken_keyword() {
-    Lexer lexer = new Lexer("print true false IF Else elif");
+    Lexer lexer = new Lexer("print IF Else elif");
 
     KeywordToken token = (KeywordToken) lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.KEYWORD);
     assertThat(token.keyword()).isEqualTo(KeywordType.PRINT);
-    token = (KeywordToken) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.KEYWORD);
-    assertThat(token.keyword()).isEqualTo(KeywordType.TRUE);
-    token = (KeywordToken) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.KEYWORD);
-    assertThat(token.keyword()).isEqualTo(KeywordType.FALSE);
     token = (KeywordToken) lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.KEYWORD);
     assertThat(token.keyword()).isEqualTo(KeywordType.IF);

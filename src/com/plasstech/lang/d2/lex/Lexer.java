@@ -68,6 +68,13 @@ public class Lexer {
     try {
       // Figure out which keyword it is
       KeywordType keywordType = KeywordType.valueOf(value.toUpperCase());
+
+      if (keywordType == KeywordType.TRUE) {
+        return new BoolToken(start, true);
+      } else if (keywordType == KeywordType.FALSE) {
+        return new BoolToken(start, false);
+      }
+
       return new KeywordToken(start, end, keywordType);
     } catch (Exception e) {
       return new Token(Type.VARIABLE, start, end, value);
