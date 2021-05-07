@@ -7,7 +7,9 @@ import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Load;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
@@ -58,7 +60,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     String name = node.variable().name();
     Node expr = node.expr();
     expr.accept(this);
-    emit(new Assignment(name, "r0"));
+    emit(new Store(name, "r0"));
   }
 
   @Override
@@ -76,7 +78,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(VariableNode node) {
     // Retrieve location of variable and provide it in r0
-    emit(new Assignment("r0", String.valueOf(node.name())));
+    emit(new Load("r0", String.valueOf(node.name())));
   }
 
   @Override
