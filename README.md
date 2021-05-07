@@ -10,4 +10,7 @@ Use Eclipse
 
 ## git
 
+`git clone git@github.com:dplassgit/d2lang.git` clones into `d2lang` subdirectory.
+
 `git push origin trunk`
+
