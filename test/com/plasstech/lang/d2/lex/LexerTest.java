@@ -225,4 +225,60 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.INT);
     assertThat(token.text()).isEqualTo("4");
   }
+
+  @Test
+  public void nextToken_comment() {
+    Lexer lexer = new Lexer("1// ignored\na");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("a");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
+
+  @Test
+  public void nextToken_commentEom() {
+    Lexer lexer = new Lexer("1// ignored\n");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
+
+  @Test
+  public void nextToken_commentEol() {
+    Lexer lexer = new Lexer("1// ignored");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
+
+  @Test
+  public void nextToken_commentsEol() {
+    Lexer lexer = new Lexer("1// ignored\n// so is this...\nb");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("b");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
 }
