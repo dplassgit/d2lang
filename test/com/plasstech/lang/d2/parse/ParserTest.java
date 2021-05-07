@@ -376,6 +376,20 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_ifNested() {
+    StatementsNode root = parse("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
+            + "} }" + "else { print 4 print a}");
+
+    List<StatementNode> children = root.children();
+    assertThat(children).hasSize(1);
+
+    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(ifNode.cases()).hasSize(1);
+    assertThat(ifNode.elseBlock()).hasSize(2);
+  }
+
+  @Test
   public void parse_ifElse() {
     StatementsNode root = parse("if a==3 { print a } else { print 4 print a}");
 
@@ -389,12 +403,29 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifElseError() {
+  public void parse_ifElif() {
+    StatementsNode root = parse("if a==3 { print a } elif a==4 { print 4 print a} "
+            + "elif a==5 { print 5}else { print 6 print 7}");
+    System.out.println(root);
+    List<StatementNode> children = root.children();
+    assertThat(children).hasSize(1);
+
+    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(ifNode.cases()).hasSize(3);
+    assertThat(ifNode.elseBlock()).isNotEmpty();
+  }
+
+  @Test
+  public void parse_ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
     assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
             "expected print");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
+    assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
+            + "elif a==5 { print 5}else { print 6 print 7}", "Unexpected token ELIF");
+
   }
 
   private StatementsNode parse(String expression) {
