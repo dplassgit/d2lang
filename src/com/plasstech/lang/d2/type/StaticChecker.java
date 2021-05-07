@@ -7,6 +7,7 @@ import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
+import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
@@ -161,4 +162,33 @@ public class StaticChecker extends DefaultVisitor {
     unaryNode.setVarType(expr.varType());
   }
 
+  @Override
+  public void visit(IfNode node) {
+    if (error != null) {
+      return;
+    }
+    for (IfNode.Case ifCase : node.cases()) {
+      Node condition = ifCase.condition();
+      condition.accept(this);
+      if (error != null) {
+        return;
+      }
+      if (condition.varType() != VarType.BOOL) {
+        error = String.format(
+                "Type mismatch at %s: Condition for 'if' or 'elif' must be boolean; was %s",
+                condition.position(), condition.varType());
+        return;
+      }
+      ifCase.statements().forEach(stmt -> {
+        if (error == null) {
+          stmt.accept(this);
+        }
+      });
+    }
+    node.elseBlock().forEach(stmt -> {
+      if (error == null) {
+        stmt.accept(this);
+      }
+    });
+  }
 }

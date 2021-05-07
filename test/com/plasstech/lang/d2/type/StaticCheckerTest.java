@@ -301,6 +301,59 @@ public class StaticCheckerTest {
     }
   }
 
+  @Test
+  public void execute_ifElifElse() {
+    Lexer lexer = new Lexer("a=1 if a==1 { print a } elif a == 2 {print 2} else {print 3}");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    execute(checker);
+  }
+
+  @Test
+  public void execute_ifBool() {
+    Lexer lexer = new Lexer("a=true if a { print a }");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    execute(checker);
+  }
+
+  @Test
+  public void execute_ifNotBoolCond_error() {
+    Lexer lexer = new Lexer("a=1 if a { print a }");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "INT");
+  }
+
+  @Test
+  public void execute_ifNotBoolCondNested_error() {
+    Lexer lexer = new Lexer("a=1 if a==1 { if (a==1) { if b {print a } } }");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "UNKNOWN");
+  }
+
+  @Test
+  public void execute_errorInIf() {
+    Lexer lexer = new Lexer("a=1 if a==1 { a=b }");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "Indeterminable");
+  }
+
+  @Test
+  public void execute_errorInElse() {
+    Lexer lexer = new Lexer("a=1 if a==1 {} else {a=b }");
+    Parser parser = new Parser(lexer);
+    StatementsNode root = (StatementsNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    assertExecuteError(checker, "Indeterminable");
+  }
   private void assertExecuteError(StaticChecker checker, String messageShouldContain) {
     TypeCheckResult result = checker.execute();
     assertThat(result.isError()).isTrue();

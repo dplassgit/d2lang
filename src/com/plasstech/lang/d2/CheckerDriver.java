@@ -10,12 +10,12 @@ import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.StatementsNode;
 import com.plasstech.lang.d2.type.StaticChecker;
+import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class CheckerDriver {
 
   public static void main(String[] args) {
     String filename = args[0];
-    // 1. read file
     String text;
     try {
       text = new String(Files.readAllBytes(Paths.get(filename)));
@@ -23,15 +23,18 @@ public class CheckerDriver {
       e.printStackTrace();
       return;
     }
-    // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
     Node node = parser.parse();
     if (node.isError()) {
-      throw new RuntimeException(((ErrorNode) node).message());
+      System.err.println(((ErrorNode) node).message());
+      return;
     }
     StaticChecker checker = new StaticChecker((StatementsNode) node);
-    checker.execute();
+    TypeCheckResult result = checker.execute();
     System.out.println(node);
+    if (result.isError()) {
+      System.err.println(result.message());
+    }
   }
 }

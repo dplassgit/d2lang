@@ -1,16 +1,12 @@
 
-
+a=3
 if (a==3) {
-  if (a ==4 ) {
-    if a {
-      print a
-    } else {
-      print b
-    }
+  if a==2 {
+    print a
   }
-} else { 
-  if a==6 {
-    print 6
-  }
+} elif a==3 {
+  print a
+} else {
+  a=4
 }
 
