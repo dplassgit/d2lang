@@ -54,7 +54,7 @@ public class Parser {
           return mainBlock;
         }
         if (token.type() == Token.Type.EOF) {
-          ProcedureNode mainProc = new ProcedureNode((BlockNode) mainBlock, kt.start());
+          ProcedureNode mainProc = new ProcedureNode("main", (BlockNode) mainBlock, kt.start());
           return new ProgramNode((BlockNode) statements, mainProc);
         }
         return new ErrorNode(String.format("Unexpected token %s; expected EOF", token.toString()),

@@ -39,4 +39,13 @@ public class ProgramNode extends Node {
       main.get().accept(visitor);
     }
   }
+
+  @Override
+  public String toString() {
+    if (main.isPresent()) {
+      return String.format("ProgramNode:\n%s\n%s", statements(), main.get());
+    } else {
+      return String.format("ProgramNode:\n%s", statements());
+    }
+  }
 }
