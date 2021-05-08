@@ -428,6 +428,85 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_while() {
+    BlockNode root = parseStatements("while true {}");
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    WhileNode whileNode = (WhileNode) statements.get(0);
+    assertThat(whileNode.assignment().isPresent()).isFalse();
+    Node condition = whileNode.condition();
+    assertThat(condition.nodeType()).isEqualTo(Node.Type.BOOL);
+    assertThat(((BoolNode) condition).value()).isTrue();
+    BlockNode block = whileNode.block();
+    assertThat(block.statements()).isEmpty();
+  }
+
+  @Test
+  public void parse_whileDo() {
+    BlockNode root = parseStatements("while true do i = 1 {}");
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    WhileNode whileNode = (WhileNode) statements.get(0);
+
+    AssignmentNode assignment = whileNode.assignment().get();
+    VariableNode var = assignment.variable();
+    assertThat(var.name()).isEqualTo("i");
+
+    Node expr = assignment.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
+    IntNode intNode = (IntNode) expr;
+    assertThat(intNode.value()).isEqualTo(1);
+  }
+
+  @Test
+  public void parse_whileExprDo() {
+    BlockNode root = parseStatements("while i < 30 do i = 1 {}");
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    WhileNode whileNode = (WhileNode) statements.get(0);
+
+    Node condition = whileNode.condition();
+    assertThat(condition.nodeType()).isEqualTo(Node.Type.BIN_OP);
+
+    BinOpNode binOp = (BinOpNode) condition;
+    VariableNode left = (VariableNode) binOp.left();
+    assertThat(left.name()).isEqualTo("i");
+    assertThat(binOp.operator()).isEqualTo(Token.Type.LT);
+    IntNode right = (IntNode) binOp.right();
+    assertThat(right.value()).isEqualTo(30);
+  }
+
+  @Test
+  public void parse_whileExprDoBlock() {
+    BlockNode root = parseStatements("while i < 30 do i = 1 {print i a=i}");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    WhileNode whileNode = (WhileNode) statements.get(0);
+
+    BlockNode block = whileNode.block();
+    assertThat(block.statements()).hasSize(2);
+  }
+
+  @Test
+  public void parse_whileError() {
+    assertParseError("Missing expression", "while print", "expected literal");
+    assertParseError("Missing open brace", "while a==3 print", "expected {");
+    assertParseError("Missing close brace", "while a==3 {print", "expected literal");
+    assertParseError("Missing do assignment", "while a==3 do {print}", "expected variable");
+    assertParseError("Bad do assignment", "while a==3 do print {print}", "expected variable");
+    assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
+  }
+
+  @Test
   public void parse_mainEmpty() {
     ProgramNode root = parseProgram("main{}");
     assertThat(root.main().isPresent()).isTrue();

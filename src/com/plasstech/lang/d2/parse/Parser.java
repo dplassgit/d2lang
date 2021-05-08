@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -37,23 +38,23 @@ public class Parser {
     }
   }
 
-  private Node program() {
+  private ProgramNode program() {
     // Read statements until EOF or "main"
-    Node statements = statements(matchesEofOrMain());
+    BlockNode statements = statements(matchesEofOrMain());
 
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
     if (token.type() == Token.Type.EOF) {
-      return new ProgramNode((BlockNode) statements);
+      return new ProgramNode(statements);
     } else if (token.type() == Token.Type.KEYWORD) {
       // if main, process main
       KeywordToken kt = (KeywordToken) token;
       if (kt.keyword() == KeywordType.MAIN) {
         advance(); // eat the main
         // TODO: parse arguments
-        Node mainBlock = block();
+        BlockNode mainBlock = block();
         if (token.type() == Token.Type.EOF) {
-          MainNode mainProc = new MainNode((BlockNode) mainBlock, kt.start());
-          return new ProgramNode((BlockNode) statements, mainProc);
+          MainNode mainProc = new MainNode(mainBlock, kt.start());
+          return new ProgramNode(statements, mainProc);
         }
         throw new ParseException(
                 String.format("Unexpected %s; expected EOF", token.text()),
@@ -70,45 +71,43 @@ public class Parser {
       if (token.type() == Token.Type.EOF) {
         return true;
       }
-      if (token.type() == Token.Type.KEYWORD) {
-        KeywordToken kt = (KeywordToken) token;
-        return kt.keyword() == KeywordType.MAIN;
-      }
-      return false;
+      return matchesKeyword(token, KeywordType.MAIN);
     };
   }
 
+  private static Boolean matchesKeyword(Token token, KeywordType type) {
+    if (token.type() == Token.Type.KEYWORD) {
+      KeywordToken kt = (KeywordToken) token;
+      return kt.keyword() == type;
+    }
+    return false;
+  }
+
   // TODO: do not allow functions in blocks?
-  private Node statements(Function<Token, Boolean> matcher) {
+  private BlockNode statements(Function<Token, Boolean> matcher) {
     List<StatementNode> children = new ArrayList<>();
     Position start = token.start();
     while (!matcher.apply(token)) {
-      Node child = statement();
-      if (child.isError() || !(child instanceof StatementNode)) {
-        return child;
-      }
-      children.add((StatementNode) child);
+      StatementNode child = statement();
+      children.add(child);
     }
     return new BlockNode(children, start);
   }
 
   // This is a statements node surrounded by braces.
-  private Node block() {
+  private BlockNode block() {
     if (token.type() != Token.Type.LBRACE) {
       throw new ParseException(String.format("Unexpected %s; expected {", token.text()),
               token.start());
     }
     advance();
 
-    Node statements = statements(token -> token.type() == Token.Type.RBRACE);
-    if (statements.isError()) {
-      return statements;
-    }
+    BlockNode statements = statements(token -> token.type() == Token.Type.RBRACE);
     advance();
     return statements;
   }
 
-  private Node statement() {
+  private StatementNode statement() {
     if (token.type() == Token.Type.KEYWORD) {
       KeywordToken kt = (KeywordToken) token;
       // TODO: use a switch
@@ -116,16 +115,24 @@ public class Parser {
         return print(kt);
       } else if (kt.keyword() == KeywordType.IF) {
         return ifStmt(kt);
+      } else if (kt.keyword() == KeywordType.WHILE) {
+        return whileStmt(kt);
       }
     } else if (token.type() == Token.Type.VARIABLE) {
       return assignment();
     }
-    throw new ParseException(String.format("Unexpected %s; expected 'print', assignment or 'if'",
+
+    throw new ParseException(
+            String.format("Unexpected %s; expected 'print', assignment, 'if' or 'while'",
             token.text()), token.start());
   }
 
-  private Node assignment() {
-    assert (token.type() == Token.Type.VARIABLE);
+  private AssignmentNode assignment() {
+    if (token.type() != Token.Type.VARIABLE) {
+      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
+              token.start());
+    }
+
     VariableNode var = new VariableNode(token.text(), token.start());
     advance();
     if (token.type() != Token.Type.EQ) {
@@ -137,14 +144,14 @@ public class Parser {
     return new AssignmentNode(var, expr);
   }
 
-  private Node print(KeywordToken kt) {
+  private PrintNode print(KeywordToken kt) {
     assert (kt.keyword() == KeywordType.PRINT);
     advance();
     Node expr = expr();
     return new PrintNode(expr, kt.start());
   }
 
-  private Node ifStmt(KeywordToken kt) {
+  private IfNode ifStmt(KeywordToken kt) {
     assert (kt.keyword() == KeywordType.IF);
     advance();
 
@@ -179,6 +186,19 @@ public class Parser {
     }
 
     return new IfNode(cases, (BlockNode) elseStatements, kt.start());
+  }
+
+  private WhileNode whileStmt(KeywordToken kt) {
+    assert (kt.keyword() == KeywordType.WHILE);
+    advance();
+    Node condition = expr();
+    Optional<AssignmentNode> assignment = Optional.empty();
+    if (matchesKeyword(token, KeywordType.DO)) {
+      advance();
+      assignment = Optional.of(assignment());
+    }
+    BlockNode block = block();
+    return new WhileNode(condition, assignment, block, kt.start());
   }
 
   private Node expr() {
