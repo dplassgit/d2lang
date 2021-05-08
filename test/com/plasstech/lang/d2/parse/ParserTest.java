@@ -458,7 +458,7 @@ public class ParserTest {
     ProgramNode root = parseProgram("main{print 123 }");
     BlockNode globalBlock = root.statements();
     assertThat(globalBlock.statements()).isEmpty();
-    ProcedureNode main = root.main().get();
+    MainNode main = root.main().get();
     BlockNode block = main.statements();
 
     PrintNode node = (PrintNode) block.statements().get(0);

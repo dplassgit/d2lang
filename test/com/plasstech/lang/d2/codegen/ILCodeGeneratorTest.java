@@ -57,4 +57,16 @@ public class ILCodeGeneratorTest {
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }
+
+  @Test
+  public void testGenerate_main() {
+    // AHA main *is* different.
+    Lexer lexer = new Lexer("a=0 main {print a}");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    System.err.println(root);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
 }

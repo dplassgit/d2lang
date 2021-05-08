@@ -9,6 +9,8 @@ import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Load;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -18,8 +20,10 @@ import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
+import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.SimpleNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
@@ -87,7 +91,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     // Calculate the value and set it in r0
     Node left = node.left();
-    // Source for the value of left - either a register or memory location or a value.
+    // Source for the value of left - either a register or memory location or a
+    // value.
     String leftSrc;
     // Possible register
     int leftReg = -1;
@@ -175,22 +180,51 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       // This is very inefficient, but understandable.
       int thisLabel = labelId++;
       int nextLabel = labelId++;
-      // if it's true, jump to tihs block
-      emit(new IfOp("r0", "label" + thisLabel));
+      // if it's true, jump to this block
+      emit(new IfOp("r0", "then" + thisLabel));
       // else, jump to the next one
-      emit(new Goto("label" + nextLabel));
-      emit(new Label("label" + thisLabel));
+      emit(new Goto("elif" + nextLabel));
+      emit(new Label("then" + thisLabel));
       ifCase.block().statements().forEach(stmt -> stmt.accept(this));
       // We're in a block , now jump completely after.
-      emit(new Goto("label" + after));
-      emit(new Label("label" + nextLabel));
+      emit(new Goto("afterIf" + after));
+      emit(new Label("elif" + nextLabel));
     }
     if (node.elseBlock() != null) {
       System.out.printf("\n; else:");
       node.elseBlock().statements().forEach(stmt -> stmt.accept(this));
     }
 
-    emit(new Label("label" + after));
+    emit(new Label("afterIf" + after));
+  }
+
+  @Override
+  public void visit(MainNode node) {
+    emit(new Label("_main"));
+    // TODO: something about arguments? probably add to local symbol table
+    // Also TODO: how to reference arguments
+    if (node.statements() != null) {
+      node.statements().accept(this);
+    }
+    emit(new Stop());
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
+    // Guard to prevent just falling into this method
+    int afterLabel = labelId++;
+    emit(new Goto("afterProc" + afterLabel));
+
+    // note different mangling
+    emit(new Label("d_" + node.name()));
+    // TODO: something about arguments? probably add to local symbol table
+    // Also TODO: how to reference arguments
+    if (node.statements() != null) {
+      node.statements().accept(this);
+    }
+    emit(new Return());
+
+    emit(new Label("afterProc" + afterLabel));
   }
 
   private void emit(Op op) {

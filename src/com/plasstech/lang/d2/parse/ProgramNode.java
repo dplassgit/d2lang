@@ -8,17 +8,17 @@ import com.plasstech.lang.d2.common.Position;
 public class ProgramNode extends Node {
 
   private final BlockNode statements;
-  private final Optional<ProcedureNode> main;
+  private final Optional<MainNode> main;
 
   ProgramNode(BlockNode statements) {
-    this(statements, Optional.empty());
+    this(statements, MainNode.EMPTY);
   }
 
-  ProgramNode(BlockNode statements, ProcedureNode main) {
+  ProgramNode(BlockNode statements, MainNode main) {
     this(statements, Optional.of(main));
   }
 
-  public ProgramNode(BlockNode statements, Optional<ProcedureNode> maybeMain) {
+  private ProgramNode(BlockNode statements, Optional<MainNode> maybeMain) {
     super(Type.PROGRAM, new Position(0, 0));
     this.statements = statements;
     this.main = maybeMain;
@@ -28,7 +28,7 @@ public class ProgramNode extends Node {
     return statements;
   }
 
-  public Optional<ProcedureNode> main() {
+  public Optional<MainNode> main() {
     return main;
   }
 

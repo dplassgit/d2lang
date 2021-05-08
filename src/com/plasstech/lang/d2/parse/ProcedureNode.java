@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.parse;
 
+import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
 public class ProcedureNode extends Node {
@@ -19,6 +20,11 @@ public class ProcedureNode extends Node {
 
   public String name() {
     return name;
+  }
+
+  @Override
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
   }
 
   @Override

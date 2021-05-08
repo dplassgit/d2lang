@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
+import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
@@ -29,4 +30,6 @@ public interface NodeVisitor {
   void visit(IfNode ifNode);
 
   void visit(ProcedureNode node);
+
+  void visit(MainNode node);
 }
