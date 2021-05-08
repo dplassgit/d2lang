@@ -267,6 +267,30 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_commentCrLf() {
+    Lexer lexer = new Lexer("1// ignored\r\n");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
+
+  @Test
+  public void nextToken_commentLfCr() {
+    Lexer lexer = new Lexer("1// ignored\n\r");
+
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.text()).isEqualTo("1");
+
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.EOF);
+  }
+
+  @Test
   public void nextToken_commentsEol() {
     Lexer lexer = new Lexer("1// ignored\n// so is this...\nb");
 

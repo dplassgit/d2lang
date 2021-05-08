@@ -31,12 +31,13 @@ loop i from 20 by -1 while i < 30
 Make i go from 1 to 10 step 2
 for i = 1 while i < 30 update i=i+1 
 For i = 1 until i == 30 update i=i+1 
+for i=0 while i < 30 do i +=1 {
 ```
 
 **Winner?**
 
 ```
-for i=0 while i < 30 do i +=1 {
+i=0 while i < 30 do i +=1 {
 }
 ```
 

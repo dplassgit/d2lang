@@ -1,4 +1,5 @@
-a=3// number expressions
+// Integers
+a=3
 a=-3
 a=--3
 a=-+-3

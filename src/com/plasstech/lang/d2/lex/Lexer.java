@@ -33,7 +33,7 @@ public class Lexer {
 
   public Token nextToken() {
     // skip unwanted whitespace
-    while (cc == ' ' || cc == '\n' || cc == '\t') {
+    while (cc == ' ' || cc == '\n' || cc == '\t' || cc == '\r') {
       if (cc == '\n') {
         line++;
         col = 0;
@@ -144,6 +144,9 @@ public class Lexer {
     if (cc == '/') {
       advance(); // eat the second slash
       while (cc != '\n' && cc != 0) {
+        advance();
+      }
+      if (cc != 0) {
         advance();
       }
       line++;
