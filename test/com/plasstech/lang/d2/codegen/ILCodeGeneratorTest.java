@@ -100,4 +100,22 @@ public class ILCodeGeneratorTest {
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }
+
+  @Test
+  public void testGenerate_whileNestedBreak() {
+    Lexer lexer = new Lexer(
+            "i=0 while i < 30 do i = i+1 { "
+                    + "  j = 0 while j < 10 do j = j + 1 { " //
+                    + "    print j break" //
+                    + "  }" //
+                    + "   if i > 10  { break } print i" //
+                    + "}" //
+                    + "print -1");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    System.err.println(root);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
 }

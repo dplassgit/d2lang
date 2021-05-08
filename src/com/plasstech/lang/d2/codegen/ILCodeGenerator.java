@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -19,6 +20,8 @@ import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
+import com.plasstech.lang.d2.parse.BreakNode;
+import com.plasstech.lang.d2.parse.ContinueNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.MainNode;
@@ -39,8 +42,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private final List<Op> operations = new ArrayList<>();
   private final Registers registers = new Registers();
-  private final List<String> whileStarts = new ArrayList<>();
-  private final List<String> whileEnds = new ArrayList<>();
+  private final Stack<String> whileStarts = new Stack<>();
+  private final Stack<String> whileEnds = new Stack<>();
 
   private int labelId;
 
@@ -208,26 +211,50 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     emit(new Label(after));
   }
-  
+
   @Override
   public void visit(WhileNode node) {
     System.out.printf("\n; %s\n", node);
 
     String before = generateLabel("beforeWhile");
+    whileStarts.push(before);
     String after = generateLabel("afterWhile");
+    whileEnds.push(after);
 
-    // push before and after on the stacks, for possible use by the "breka" and
-    // "continue" nodes.
+    // push before and after on the stacks, for possible use by the "break" and "continue" nodes.
+
+    System.out.println("; while");
     emit(new Label(before));
     node.condition().accept(this);
     emit(new UnaryOp("r0", Type.NOT, "r0"));
     emit(new IfOp("r0", after));
+
+    System.out.println("; do");
     node.block().accept(this);
     if (node.assignment().isPresent()) {
       node.assignment().get().accept(this);
     }
     emit(new Goto(before));
+
     emit(new Label(after));
+    whileStarts.pop();
+    whileEnds.pop();
+  }
+
+  @Override
+  public void visit(BreakNode node) {
+    // break = go to the end
+    System.out.println("; break");
+    String after = whileEnds.peek();
+    emit(new Goto(after));
+  }
+
+  @Override
+  public void visit(ContinueNode node) {
+    System.out.println("; continue");
+    // continue = go to the beginning
+    String before = whileStarts.peek();
+    emit(new Goto(before));
   }
 
   @Override

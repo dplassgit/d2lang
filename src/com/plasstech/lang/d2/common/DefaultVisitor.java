@@ -3,6 +3,8 @@ package com.plasstech.lang.d2.common;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
+import com.plasstech.lang.d2.parse.BreakNode;
+import com.plasstech.lang.d2.parse.ContinueNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.MainNode;
@@ -56,5 +58,13 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(WhileNode node) {
+  }
+
+  @Override
+  public void visit(BreakNode node) {
+  }
+
+  @Override
+  public void visit(ContinueNode node) {
   }
 }
