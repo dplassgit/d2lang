@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.ErrorNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.BlockNode;
+import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
@@ -32,7 +32,7 @@ public class CodeGenDriver {
     if (node.isError()) {
       throw new RuntimeException(((ErrorNode) node).message());
     }
-    BlockNode root = (BlockNode) node;
+    ProgramNode root = (ProgramNode) node;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult checkResult = checker.execute();
     if (checkResult.isError()) {

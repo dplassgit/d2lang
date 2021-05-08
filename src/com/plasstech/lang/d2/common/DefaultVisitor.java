@@ -6,6 +6,7 @@ import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
@@ -41,5 +42,9 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(UnaryNode unaryNode) {
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
   }
 }

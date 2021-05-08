@@ -5,7 +5,7 @@ import org.junit.Test;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.BlockNode;
+import com.plasstech.lang.d2.parse.ProgramNode;
 
 public class ILCodeGeneratorTest {
 
@@ -14,7 +14,7 @@ public class ILCodeGeneratorTest {
     Lexer lexer = new Lexer("print 123");
     Parser parser = new Parser(lexer);
 
-    BlockNode root = (BlockNode) parser.parse();
+    ProgramNode root = (ProgramNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }
@@ -27,7 +27,7 @@ public class ILCodeGeneratorTest {
 //            "d=(3-4)/(b*b+9)");
     Parser parser = new Parser(lexer);
 
-    BlockNode root = (BlockNode) parser.parse();
+    ProgramNode root = (ProgramNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }
@@ -40,7 +40,7 @@ public class ILCodeGeneratorTest {
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
     Parser parser = new Parser(lexer);
 
-    BlockNode root = (BlockNode) parser.parse();
+    ProgramNode root = (ProgramNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }
@@ -53,7 +53,7 @@ public class ILCodeGeneratorTest {
                     + "else {print 2} print 3");
     Parser parser = new Parser(lexer);
 
-    BlockNode root = (BlockNode) parser.parse();
+    ProgramNode root = (ProgramNode) parser.parse();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
     codegen.generate();
   }

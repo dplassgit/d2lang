@@ -20,28 +20,28 @@ import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.SimpleNode;
-import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
 
-  private final BlockNode root;
+  private final ProgramNode root;
   private final SymTab symTab;
   private List<Op> operations = new ArrayList<>();
   private final Registers registers = new Registers();
   private int labelId;
 
-  public ILCodeGenerator(BlockNode root, SymTab symTab) {
+  public ILCodeGenerator(ProgramNode root, SymTab symTab) {
     this.root = root;
     this.symTab = symTab;
   }
 
   @Override
   public List<Op> generate() {
-    root.accept(this);
+    root.statements().accept(this);
     return operations;
   }
 

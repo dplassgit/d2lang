@@ -9,6 +9,7 @@ public class KeywordToken extends Token {
 
   private final KeywordType type;
 
+  // reject if type is true or false
   public KeywordToken(Position posStart, Position posEnd, KeywordType type) {
     super(Type.KEYWORD, posStart, posEnd, type.name());
     this.type = type;

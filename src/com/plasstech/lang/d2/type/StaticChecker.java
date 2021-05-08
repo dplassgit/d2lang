@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.Node;
-import com.plasstech.lang.d2.parse.BlockNode;
+import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
@@ -18,19 +18,21 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
-  private final BlockNode root;
+  private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
   private String error;
 
-  public StaticChecker(BlockNode root) {
+  public StaticChecker(ProgramNode root) {
     this.root = root;
   }
 
   public TypeCheckResult execute() {
-    root.accept(this);
+    root.statements().accept(this);
+
     if (error != null) {
       return new TypeCheckResult(error);
     }
+    // TODO: also accept the main procedure
     return new TypeCheckResult(symbolTable);
   }
 

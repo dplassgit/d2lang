@@ -10,21 +10,21 @@ import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
-import com.plasstech.lang.d2.parse.BlockNode;
+import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenerator<String> {
-  private final BlockNode root;
+  private final ProgramNode root;
 
-  public PseudoAsmCodeGenerator(BlockNode root) {
+  public PseudoAsmCodeGenerator(ProgramNode root) {
     this.root = root;
   }
 
   @Override
   public List<String> generate() {
     // For each child of root
-    root.accept(this);
+    root.statements().accept(this);
     return ImmutableList.of("; eof");
   }
 

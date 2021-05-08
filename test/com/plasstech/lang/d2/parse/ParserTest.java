@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.lex.Token;
 public class ParserTest {
   @Test
   public void parse_print() {
-    BlockNode root = parse("print 123");
+    BlockNode root = parseStatements("print 123");
     assertThat(root.statements()).hasSize(1);
 
     PrintNode node = (PrintNode) root.statements().get(0);
@@ -54,7 +54,7 @@ public class ParserTest {
 
   @Test
   public void parse_assignInt() {
-    BlockNode root = parse("a=3");
+    BlockNode root = parseStatements("a=3");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -72,7 +72,7 @@ public class ParserTest {
 
   @Test
   public void parse_assignTrueFalse() {
-    BlockNode root = parse("a=true b=FALSE");
+    BlockNode root = parseStatements("a=true b=FALSE");
     assertThat(root.statements()).hasSize(2);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -93,7 +93,7 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentAdd() {
-    BlockNode root = parse("a=3 + 4");
+    BlockNode root = parseStatements("a=3 + 4");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -116,7 +116,7 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentMul() {
-    BlockNode root = parse("a=3 * 4");
+    BlockNode root = parseStatements("a=3 * 4");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -139,12 +139,12 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentAddChained() {
-    parse("a=3+4*b-5");
+    parseStatements("a=3+4*b-5");
   }
 
   @Test
   public void parse_assignment() {
-    BlockNode root = parse("a=b");
+    BlockNode root = parseStatements("a=b");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -161,7 +161,7 @@ public class ParserTest {
 
   @Test
   public void parse_unaryMinus() {
-    BlockNode root = parse("a=-b");
+    BlockNode root = parseStatements("a=-b");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -180,7 +180,7 @@ public class ParserTest {
 
   @Test
   public void parse_unaryNotConstant() {
-    BlockNode root = parse("a=!true");
+    BlockNode root = parseStatements("a=!true");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -196,7 +196,7 @@ public class ParserTest {
 
   @Test
   public void parse_unaryNot() {
-    BlockNode root = parse("a=!b");
+    BlockNode root = parseStatements("a=!b");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -212,7 +212,7 @@ public class ParserTest {
 
   @Test
   public void parse_unaryPlus() {
-    BlockNode root = parse("a=+b");
+    BlockNode root = parseStatements("a=+b");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -231,7 +231,7 @@ public class ParserTest {
 
   @Test
   public void parse_unaryExpr() {
-    BlockNode root = parse("a=+(b+-c)");
+    BlockNode root = parseStatements("a=+(b+-c)");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -266,7 +266,7 @@ public class ParserTest {
   }
 
   private void assertUnaryAssignConstant(String expression, int value) {
-    BlockNode root = parse(expression);
+    BlockNode root = parseStatements(expression);
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -283,14 +283,14 @@ public class ParserTest {
   @Test
   public void parse_each_binop_single() {
     for (char c : "+-*/%><|&".toCharArray()) {
-      parse(String.format("a=b%c5", c));
+      parseStatements(String.format("a=b%c5", c));
     }
   }
 
   @Test
   public void parse_each_binop_multiple() {
     for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
-      parse(String.format("a=b%s5", op));
+      parseStatements(String.format("a=b%s5", op));
     }
   }
 
@@ -299,13 +299,13 @@ public class ParserTest {
     // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
-    BlockNode root = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
+    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
 //    System.out.println(root);
   }
 
   @Test
   public void parse_allExprTypes() {
-    BlockNode root2 = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+    BlockNode root2 = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
@@ -314,7 +314,7 @@ public class ParserTest {
 
   @Test
   public void parse_program() {
-    BlockNode root = parse("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
+    BlockNode root = parseStatements("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
 //    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
@@ -329,7 +329,7 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentParens() {
-    BlockNode root = parse("a=(3)");
+    BlockNode root = parseStatements("a=(3)");
 
     assertThat(root.statements()).hasSize(1);
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -346,7 +346,7 @@ public class ParserTest {
 
   @Test
   public void parse_if() {
-    BlockNode root = parse("if a==3 { print a a=4 }");
+    BlockNode root = parseStatements("if a==3 { print a a=4 }");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -361,7 +361,7 @@ public class ParserTest {
 
   @Test
   public void parse_ifEmpty() {
-    BlockNode root = parse("if a==3 { }");
+    BlockNode root = parseStatements("if a==3 { }");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -377,7 +377,7 @@ public class ParserTest {
 
   @Test
   public void parse_ifNested() {
-    BlockNode root = parse("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
+    BlockNode root = parseStatements("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
             + "} }" + "else { print 4 print a}");
 
     List<StatementNode> statements = root.statements();
@@ -391,7 +391,7 @@ public class ParserTest {
 
   @Test
   public void parse_ifElse() {
-    BlockNode root = parse("if a==3 { print a } else { print 4 print a}");
+    BlockNode root = parseStatements("if a==3 { print a } else { print 4 print a}");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -404,7 +404,7 @@ public class ParserTest {
 
   @Test
   public void parse_ifElif() {
-    BlockNode root = parse("if a==3 { print a } elif a==4 { print 4 print a} "
+    BlockNode root = parseStatements("if a==3 { print a } elif a==4 { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}");
     System.out.println(root);
     List<StatementNode> statements = root.statements();
@@ -433,7 +433,7 @@ public class ParserTest {
 
   }
 
-  private BlockNode parse(String expression) {
+  private BlockNode parseStatements(String expression) {
     Lexer lexer = new Lexer(expression);
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
@@ -441,7 +441,7 @@ public class ParserTest {
       ErrorNode error = (ErrorNode) node;
       fail(error.message());
     }
-    return (BlockNode) node;
+    return ((ProgramNode) node).statements();
   }
 
   private void assertParseError(String message, String expressionToParse) {

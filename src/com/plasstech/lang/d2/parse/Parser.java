@@ -2,8 +2,10 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.BoolToken;
@@ -29,24 +31,44 @@ public class Parser {
   }
 
   public Node parse() {
-    return statements(Token.Type.EOF);
+    return program();
   }
 
-//  private Node program() {
-//    Node statements = statements(Token.Type.KEYWORD, Optional.of(KeywordType.MAIN));
-//    if (statements.isError()) {
-//      return statements;
-//    }
-//    // we're at the "main"
-//    advance();
-//    
-//  }
+  private Node program() {
+    Node statements = statements(Token.Type.EOF, Optional.empty());
+    if (statements.isError()) {
+      return statements;
+    }
+
+    // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
+    if (token.type() == Token.Type.EOF) {
+      return new ProgramNode((BlockNode) statements);
+    } else if (token.type() == Token.Type.KEYWORD) {
+      // if main, process main
+      KeywordToken kt = (KeywordToken) token;
+      if (kt.keyword() == KeywordType.MAIN) {
+        advance();
+        // TODO: parse arguments
+        Node mainBlock = block();
+        if (mainBlock.isError()) {
+          return mainBlock;
+        }
+        ProcedureNode mainProc = new ProcedureNode((BlockNode) statements, kt.start());
+        return new ProgramNode((BlockNode) statements, mainProc);
+      }
+    }
+    return new ErrorNode(
+            String.format("Unexpected token %s; expected 'main' or EOF", token.toString()),
+            token.start());
+  }
 
   // TODO: do not allow functions in blocks?
-  private Node statements(Token.Type blockEnd) {
+  private Node statements(Token.Type blockEnd, Optional<KeywordType> keywordType) {
+    Preconditions.checkArgument(!((blockEnd == Token.Type.KEYWORD) ^ keywordType.isPresent()),
+            "If keyword token type is set, keyword type must be set");
     List<StatementNode> children = new ArrayList<>();
     Position start = token.start();
-    while (token.type() != blockEnd) {
+    while (!matches(blockEnd, keywordType)) { // token.type() != blockEnd) {
       Node child = statement();
       if (child.isError() || !(child instanceof StatementNode)) {
         return child;
@@ -55,7 +77,15 @@ public class Parser {
     }
     return new BlockNode(children, start);
   }
-  
+
+  private boolean matches(Token.Type blockEnd, Optional<KeywordType> keywordType) {
+    if (token.type() == blockEnd && keywordType.isPresent()) {
+      KeywordToken kt = (KeywordToken) token;
+      return kt.keyword() == keywordType.get();
+    }
+    return token.type() == blockEnd;
+  }
+
   // This is a statements node surrounded by braces.
   private Node block() {
     if (token.type() != Token.Type.LBRACE) {
@@ -64,7 +94,7 @@ public class Parser {
     }
     advance();
 
-    Node statements = statements(Token.Type.RBRACE);
+    Node statements = statements(Token.Type.RBRACE, Optional.empty());
     if (statements.isError()) {
       return statements;
     }
