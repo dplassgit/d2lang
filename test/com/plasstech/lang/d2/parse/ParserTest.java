@@ -299,23 +299,26 @@ public class ParserTest {
     // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
-    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
-//    System.out.println(root);
+    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true");
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
   }
 
   @Test
   public void parse_allExprTypes() {
-    BlockNode root2 = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
-//    System.out.println(root2);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(2);
   }
 
   @Test
   public void parse_program() {
     BlockNode root = parseStatements("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
-//    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(5);
@@ -377,8 +380,8 @@ public class ParserTest {
 
   @Test
   public void parse_ifNested() {
-    BlockNode root = parseStatements("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
-            + "} }" + "else { print 4 print a}");
+    BlockNode root = parseStatements("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a"
+            + " } " + "} }" + "else { print 4 print a}");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -406,7 +409,7 @@ public class ParserTest {
   public void parse_ifElif() {
     BlockNode root = parseStatements("if a==3 { print a } elif a==4 { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}");
-    System.out.println(root);
+//    System.out.println(root);
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -419,8 +422,7 @@ public class ParserTest {
   @Test
   public void parse_ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
-    assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
-            "expected 'print");
+    assertParseError("Missing close brace", "if a==3 { print a } else {print 4", "expected 'print");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
     assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
@@ -497,6 +499,22 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_whileBreak() {
+    BlockNode root = parseStatements("while true {break continue}");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    WhileNode whileNode = (WhileNode) statements.get(0);
+
+    BlockNode block = whileNode.block();
+    assertThat(block.statements()).hasSize(2);
+    assertThat(block.statements().get(0).nodeType()).isEqualTo(Node.Type.BREAK);
+    assertThat(block.statements().get(1).nodeType()).isEqualTo(Node.Type.CONTINUE);
+  }
+
+  @Test
   public void parse_whileError() {
     assertParseError("Missing expression", "while print", "expected literal");
     assertParseError("Missing open brace", "while a==3 print", "expected {");
@@ -504,6 +522,11 @@ public class ParserTest {
     assertParseError("Missing do assignment", "while a==3 do {print}", "expected variable");
     assertParseError("Bad do assignment", "while a==3 do print {print}", "expected variable");
     assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
+    assertParseError("Unexpected continue", "continue", "CONTINUE keyword");
+    assertParseError("Unexpected break", "break", "BREAK keyword");
+    assertParseError("Unexpected break", "if true {break while true {continue }}", "BREAK keyword");
+    assertParseError("Unexpected continue", "if true {continue while true {break}}",
+            "CONTINUE keyword");
   }
 
   @Test

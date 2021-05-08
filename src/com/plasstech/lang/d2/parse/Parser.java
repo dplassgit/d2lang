@@ -19,6 +19,7 @@ public class Parser {
 
   private final Lexer lexer;
   private Token token;
+  private int inWhile;
 
   public Parser(Lexer lexer) {
     this.lexer = lexer;
@@ -56,13 +57,11 @@ public class Parser {
           MainNode mainProc = new MainNode(mainBlock, kt.start());
           return new ProgramNode(statements, mainProc);
         }
-        throw new ParseException(
-                String.format("Unexpected %s; expected EOF", token.text()),
+        throw new ParseException(String.format("Unexpected %s; expected EOF", token.text()),
                 token.start());
       }
     }
-    throw new ParseException(
-            String.format("Unexpected %s; expected 'main' or EOF", token.text()),
+    throw new ParseException(String.format("Unexpected %s; expected 'main' or EOF", token.text()),
             token.start());
   }
 
@@ -109,22 +108,46 @@ public class Parser {
 
   private StatementNode statement() {
     if (token.type() == Token.Type.KEYWORD) {
+
       KeywordToken kt = (KeywordToken) token;
-      // TODO: use a switch
-      if (kt.keyword() == KeywordType.PRINT) {
-        return print(kt);
-      } else if (kt.keyword() == KeywordType.IF) {
-        return ifStmt(kt);
-      } else if (kt.keyword() == KeywordType.WHILE) {
-        return whileStmt(kt);
+      switch (kt.keyword()) {
+        case PRINT:
+          return print(kt);
+
+        case IF:
+          return ifStmt(kt);
+
+        case WHILE: {
+          inWhile++;
+          WhileNode whileStmt = whileStmt(kt);
+          inWhile--;
+          return whileStmt;
+        }
+
+        case BREAK:
+          if (inWhile == 0) {
+            throw new ParseException("BREAK keyword not in while block", kt.start());
+          }
+          advance();
+          return new BreakNode(kt.start());
+
+        case CONTINUE:
+          if (inWhile == 0) {
+            throw new ParseException("CONTINUE keyword not in while block", kt.start());
+          }
+          advance();
+          return new ContinueNode(kt.start());
+
+        default:
+          break;
       }
     } else if (token.type() == Token.Type.VARIABLE) {
       return assignment();
     }
 
-    throw new ParseException(
-            String.format("Unexpected %s; expected 'print', assignment, 'if' or 'while'",
-            token.text()), token.start());
+    throw new ParseException(String
+            .format("Unexpected %s; expected 'print', assignment, 'if' or 'while'", token.text()),
+            token.start());
   }
 
   private AssignmentNode assignment() {

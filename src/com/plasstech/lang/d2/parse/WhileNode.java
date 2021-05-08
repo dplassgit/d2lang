@@ -32,12 +32,12 @@ public class WhileNode extends StatementNode {
   }
 
   @Override
-  public String toString() {
-    return String.format("WhileNode: while (%s) do (%s)\n{%s}", condition, assignment, block);
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
   }
 
   @Override
-  public void accept(NodeVisitor visitor) {
-    visitor.visit(this);
+  public String toString() {
+    return String.format("WhileNode: while (%s) do (%s)\n{%s}", condition, assignment, block);
   }
 }

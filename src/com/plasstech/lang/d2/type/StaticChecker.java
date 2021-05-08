@@ -22,7 +22,6 @@ public class StaticChecker extends DefaultVisitor {
 
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
-  private String error;
 
   public StaticChecker(ProgramNode root) {
     this.root = root;
