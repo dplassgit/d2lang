@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.ErrorNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
@@ -30,7 +30,7 @@ public class CheckerDriver {
       System.err.println(((ErrorNode) node).message());
       return;
     }
-    StaticChecker checker = new StaticChecker((StatementsNode) node);
+    StaticChecker checker = new StaticChecker((BlockNode) node);
     TypeCheckResult result = checker.execute();
     System.out.println(node);
     if (result.isError()) {

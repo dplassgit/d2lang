@@ -1,6 +1,25 @@
 # Grammar
 
 
+## Full Grammar
+
+```
+program -> statements main
+statements -> statement* 
+statement -> assignment | print | if | while | proc 
+main -> 'main' { statements }
+assignment -> variable '=' expr
+print -> 'print' expr
+if -> 'if' expr { statements } elif* else
+elif -> 'elif' expr {statements}
+else -> ('else' { statements })?
+while -> 'while' expr do { statements }
+do -> ('do' assignment)?
+proc -> // TODO
+
+```
+
+
 ## Comments
 
 `//` to end of line is considered a comment.
@@ -29,7 +48,12 @@ Node classes are:
 
 `IfNode extends StatementNode` (also includes a repeated `Case`, which is like a node)
 
+`ProcNode extends StatementNode`
+
+`MainNode extends ProcNode`
+
 This works.
+
 
 
 ## Expression grammar implemented so far

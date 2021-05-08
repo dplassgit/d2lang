@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.BoolToken;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.KeywordToken;
@@ -29,12 +29,23 @@ public class Parser {
   }
 
   public Node parse() {
-    // TODO: do not allow functions in blocks
-    return block(Token.Type.EOF);
+    return statements(Token.Type.EOF);
   }
 
-  private Node block(Token.Type blockEnd) {
+//  private Node program() {
+//    Node statements = statements(Token.Type.KEYWORD, Optional.of(KeywordType.MAIN));
+//    if (statements.isError()) {
+//      return statements;
+//    }
+//    // we're at the "main"
+//    advance();
+//    
+//  }
+
+  // TODO: do not allow functions in blocks?
+  private Node statements(Token.Type blockEnd) {
     List<StatementNode> children = new ArrayList<>();
+    Position start = token.start();
     while (token.type() != blockEnd) {
       Node child = statement();
       if (child.isError() || !(child instanceof StatementNode)) {
@@ -42,7 +53,23 @@ public class Parser {
       }
       children.add((StatementNode) child);
     }
-    return new StatementsNode(children);
+    return new BlockNode(children, start);
+  }
+  
+  // This is a statements node surrounded by braces.
+  private Node block() {
+    if (token.type() != Token.Type.LBRACE) {
+      return new ErrorNode(String.format("Unexpected token %s; expected {", token.toString()),
+              token.start());
+    }
+    advance();
+
+    Node statements = statements(Token.Type.RBRACE);
+    if (statements.isError()) {
+      return statements;
+    }
+    advance();
+    return statements;
   }
 
   private Node statement() {
@@ -96,13 +123,13 @@ public class Parser {
     if (condition.isError()) {
       return condition;
     }
-    List<Node> statements = parseStatementList();
-    if (statements.size() == 1 && statements.get(0).isError()) {
-      return statements.get(0);
+    Node statements = block();
+    if (statements.isError()) {
+      return statements;
     }
-    cases.add(new IfNode.Case(condition, statements));
+    cases.add(new IfNode.Case(condition, (BlockNode) statements));
 
-    List<Node> elseStatements = ImmutableList.of();
+    Node elseStatements = null;
     if (token.type() == Token.Type.KEYWORD) {
       KeywordToken elseOrElif = (KeywordToken) token;
       // while elif: get condition, get statements, add to case list.
@@ -113,11 +140,11 @@ public class Parser {
         if (elifCondition.isError()) {
           return elifCondition;
         }
-        List<Node> elifStatements = parseStatementList();
-        if (elifStatements.size() == 1 && elifStatements.get(0).isError()) {
-          return elifStatements.get(0);
+        Node elifStatements = block();
+        if (elifStatements.isError()) {
+          return elifStatements;
         }
-        cases.add(new IfNode.Case(elifCondition, elifStatements));
+        cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
 
         if (token.type() == Token.Type.KEYWORD) {
           elseOrElif = (KeywordToken) token;
@@ -128,33 +155,14 @@ public class Parser {
 
       if (elseOrElif != null && elseOrElif.keyword() == KeywordType.ELSE) {
         advance();
-        elseStatements = parseStatementList();
-        if (elseStatements.size() == 1 && elseStatements.get(0).isError()) {
-          return elseStatements.get(0);
+        elseStatements = block();
+        if (elseStatements.isError()) {
+          return elseStatements;
         }
       }
     }
 
-    return new IfNode(cases, elseStatements, kt.start());
-  }
-
-  private List<Node> parseStatementList() {
-    if (token.type() != Token.Type.LBRACE) {
-      return ImmutableList.of(new ErrorNode(
-              String.format("Unexpected token %s; expected {", token.toString()), token.start()));
-    }
-    advance();
-
-    List<Node> statements = new ArrayList<>();
-    while (token.type() != Token.Type.RBRACE) {
-      Node statement = statement();
-      if (statement.isError()) {
-        return ImmutableList.of(statement);
-      }
-      statements.add(statement);
-    }
-    advance();
-    return statements;
+    return new IfNode(cases, (BlockNode) elseStatements, kt.start());
   }
 
   private Node expr() {

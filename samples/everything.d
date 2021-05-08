@@ -46,3 +46,6 @@ if a==3 {
 } else {
   print 6
 }
+
+main {
+}

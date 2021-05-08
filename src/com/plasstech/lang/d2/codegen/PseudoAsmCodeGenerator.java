@@ -10,14 +10,14 @@ import com.plasstech.lang.d2.parse.BoolNode;
 import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
-import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
 public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenerator<String> {
-  private final StatementsNode root;
+  private final BlockNode root;
 
-  public PseudoAsmCodeGenerator(StatementsNode root) {
+  public PseudoAsmCodeGenerator(BlockNode root) {
     this.root = root;
   }
 

@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.Node;
-import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 
@@ -18,11 +18,11 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
-  private final StatementsNode root;
+  private final BlockNode root;
   private final SymTab symbolTable = new SymTab();
   private String error;
 
-  public StaticChecker(StatementsNode root) {
+  public StaticChecker(BlockNode root) {
     this.root = root;
   }
 
@@ -179,16 +179,18 @@ public class StaticChecker extends DefaultVisitor {
                 condition.position(), condition.varType());
         return;
       }
-      ifCase.statements().forEach(stmt -> {
+      ifCase.block().statements().forEach(stmt -> {
         if (error == null) {
           stmt.accept(this);
         }
       });
     }
-    node.elseBlock().forEach(stmt -> {
-      if (error == null) {
-        stmt.accept(this);
-      }
-    });
+    if (node.elseBlock() != null) {
+      node.elseBlock().statements().forEach(stmt -> {
+        if (error == null) {
+          stmt.accept(this);
+        }
+      });
+    }
   }
 }

@@ -15,10 +15,10 @@ import com.plasstech.lang.d2.lex.Token;
 public class ParserTest {
   @Test
   public void parse_print() {
-    StatementsNode root = parse("print 123");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("print 123");
+    assertThat(root.statements()).hasSize(1);
 
-    PrintNode node = (PrintNode) root.children().get(0);
+    PrintNode node = (PrintNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.PRINT);
     assertThat(node.position().line()).isEqualTo(1);
     assertThat(node.position().column()).isEqualTo(1);
@@ -54,10 +54,10 @@ public class ParserTest {
 
   @Test
   public void parse_assignInt() {
-    StatementsNode root = parse("a=3");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=3");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
@@ -72,10 +72,10 @@ public class ParserTest {
 
   @Test
   public void parse_assignTrueFalse() {
-    StatementsNode root = parse("a=true b=FALSE");
-    assertThat(root.children()).hasSize(2);
+    BlockNode root = parse("a=true b=FALSE");
+    assertThat(root.statements()).hasSize(2);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -85,7 +85,7 @@ public class ParserTest {
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
     assertThat(((BoolNode) expr).value()).isTrue();
 
-    node = (AssignmentNode) root.children().get(1);
+    node = (AssignmentNode) root.statements().get(1);
     expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
     assertThat(((BoolNode) expr).value()).isFalse();
@@ -93,10 +93,10 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentAdd() {
-    StatementsNode root = parse("a=3 + 4");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=3 + 4");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
@@ -116,10 +116,10 @@ public class ParserTest {
 
   @Test
   public void parse_assignmentMul() {
-    StatementsNode root = parse("a=3 * 4");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=3 * 4");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
@@ -144,10 +144,10 @@ public class ParserTest {
 
   @Test
   public void parse_assignment() {
-    StatementsNode root = parse("a=b");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=b");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -161,10 +161,10 @@ public class ParserTest {
 
   @Test
   public void parse_unaryMinus() {
-    StatementsNode root = parse("a=-b");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=-b");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -180,10 +180,10 @@ public class ParserTest {
 
   @Test
   public void parse_unaryNotConstant() {
-    StatementsNode root = parse("a=!true");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=!true");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -196,10 +196,10 @@ public class ParserTest {
 
   @Test
   public void parse_unaryNot() {
-    StatementsNode root = parse("a=!b");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=!b");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -212,10 +212,10 @@ public class ParserTest {
 
   @Test
   public void parse_unaryPlus() {
-    StatementsNode root = parse("a=+b");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=+b");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -231,10 +231,10 @@ public class ParserTest {
 
   @Test
   public void parse_unaryExpr() {
-    StatementsNode root = parse("a=+(b+-c)");
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse("a=+(b+-c)");
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -266,10 +266,10 @@ public class ParserTest {
   }
 
   private void assertUnaryAssignConstant(String expression, int value) {
-    StatementsNode root = parse(expression);
-    assertThat(root.children()).hasSize(1);
+    BlockNode root = parse(expression);
+    assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -299,13 +299,13 @@ public class ParserTest {
     // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
-    StatementsNode root = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
+    BlockNode root = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n");
 //    System.out.println(root);
   }
 
   @Test
   public void parse_allExprTypes() {
-    StatementsNode root2 = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+    BlockNode root2 = parse("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
@@ -314,25 +314,25 @@ public class ParserTest {
 
   @Test
   public void parse_program() {
-    StatementsNode root = parse("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
+    BlockNode root = parse("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
 //    System.out.println(root);
 
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(5);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(5);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
-    assertThat(children.get(1).nodeType()).isEqualTo(Node.Type.PRINT);
-    assertThat(children.get(2).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
-    assertThat(children.get(3).nodeType()).isEqualTo(Node.Type.PRINT);
-    assertThat(children.get(4).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+    assertThat(statements.get(1).nodeType()).isEqualTo(Node.Type.PRINT);
+    assertThat(statements.get(2).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+    assertThat(statements.get(3).nodeType()).isEqualTo(Node.Type.PRINT);
+    assertThat(statements.get(4).nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
   }
 
   @Test
   public void parse_assignmentParens() {
-    StatementsNode root = parse("a=(3)");
+    BlockNode root = parse("a=(3)");
 
-    assertThat(root.children()).hasSize(1);
-    AssignmentNode node = (AssignmentNode) root.children().get(0);
+    assertThat(root.statements()).hasSize(1);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
 
     VariableNode var = node.variable();
@@ -346,74 +346,74 @@ public class ParserTest {
 
   @Test
   public void parse_if() {
-    StatementsNode root = parse("if a==3 { print a a=4 }");
+    BlockNode root = parse("if a==3 { print a a=4 }");
 
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(1);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
-    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
     IfNode.Case first = ifNode.cases().get(0);
     assertThat(first.condition().nodeType()).isEqualTo(Node.Type.BIN_OP);
-    assertThat(first.statements()).hasSize(2);
+    assertThat(first.block().statements()).hasSize(2);
   }
 
   @Test
   public void parse_ifEmpty() {
-    StatementsNode root = parse("if a==3 { }");
+    BlockNode root = parse("if a==3 { }");
 
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(1);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
-    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock()).isEmpty();
+    assertThat(ifNode.elseBlock()).isNull();
     IfNode.Case first = ifNode.cases().get(0);
     assertThat(first.condition().nodeType()).isEqualTo(Node.Type.BIN_OP);
-    assertThat(first.statements()).isEmpty();
+    assertThat(first.block().statements()).isEmpty();
   }
 
   @Test
   public void parse_ifNested() {
-    StatementsNode root = parse("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
+    BlockNode root = parse("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a" + " } "
             + "} }" + "else { print 4 print a}");
 
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(1);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
-    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock()).hasSize(2);
+    assertThat(ifNode.elseBlock().statements()).hasSize(2);
   }
 
   @Test
   public void parse_ifElse() {
-    StatementsNode root = parse("if a==3 { print a } else { print 4 print a}");
+    BlockNode root = parse("if a==3 { print a } else { print 4 print a}");
 
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(1);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
-    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock()).hasSize(2);
+    assertThat(ifNode.elseBlock().statements()).hasSize(2);
   }
 
   @Test
   public void parse_ifElif() {
-    StatementsNode root = parse("if a==3 { print a } elif a==4 { print 4 print a} "
+    BlockNode root = parse("if a==3 { print a } elif a==4 { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}");
     System.out.println(root);
-    List<StatementNode> children = root.children();
-    assertThat(children).hasSize(1);
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
 
-    assertThat(children.get(0).nodeType()).isEqualTo(Node.Type.IF);
-    IfNode ifNode = (IfNode) children.get(0);
+    assertThat(statements.get(0).nodeType()).isEqualTo(Node.Type.IF);
+    IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(3);
-    assertThat(ifNode.elseBlock()).isNotEmpty();
+    assertThat(ifNode.elseBlock()).isNotNull();
   }
 
   @Test
@@ -428,7 +428,12 @@ public class ParserTest {
 
   }
 
-  private StatementsNode parse(String expression) {
+  @Test
+  public void parse_mainEmpty() {
+
+  }
+
+  private BlockNode parse(String expression) {
     Lexer lexer = new Lexer(expression);
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
@@ -436,7 +441,7 @@ public class ParserTest {
       ErrorNode error = (ErrorNode) node;
       fail(error.message());
     }
-    return (StatementsNode) node;
+    return (BlockNode) node;
   }
 
   private void assertParseError(String message, String expressionToParse) {

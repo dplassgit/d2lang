@@ -9,43 +9,42 @@ import com.plasstech.lang.d2.common.Position;
 public class IfNode extends StatementNode {
   public static class Case {
     private final Node condition;
-    private final List<Node> statements;
+    private final BlockNode block;
 
-    public Case(Node condition, List<Node> statements) {
+    public Case(Node condition, BlockNode block) {
       this.condition = condition;
-      this.statements = statements;
+      this.block = block;
     }
 
     @Override
     public String toString() {
-      return String.format("\nIfCaseNode: if (%s)\n{%s}", condition(), statements());
+      return String.format("\nIfCaseNode: if (%s)\n{%s}", condition, block);
     }
 
     public Node condition() {
       return condition;
     }
 
-    public List<Node> statements() {
-      return statements;
+    public BlockNode block() {
+      return block;
     }
   }
 
   private final List<Case> cases;
-  private final List<Node> elseBlock;
+  private final BlockNode elseBlock;
 
-  IfNode(List<Case> cases, List<Node> elseStatements, Position position) {
+  IfNode(List<Case> cases, BlockNode elseBlock, Position position) {
     super(Type.IF, position);
     Preconditions.checkArgument(cases != null, "cases cannot be null");
-    Preconditions.checkArgument(elseStatements != null, "elseStatements cannot be null");
     this.cases = cases;
-    this.elseBlock = elseStatements;
+    this.elseBlock = elseBlock;
   }
 
   public List<Case> cases() {
     return cases;
   }
 
-  public List<Node> elseBlock() {
+  public BlockNode elseBlock() {
     return elseBlock;
   }
 
@@ -56,7 +55,7 @@ public class IfNode extends StatementNode {
 
   @Override
   public String toString() {
-    if (!elseBlock().isEmpty()) {
+    if (elseBlock != null) {
       return String.format("IfNode:\n(%s)\nelse {\n%s}", cases(), elseBlock());
     } else {
       // this isn't ideal, but shrug.

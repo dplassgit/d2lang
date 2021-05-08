@@ -21,20 +21,20 @@ import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.SimpleNode;
-import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
 
-  private final StatementsNode root;
+  private final BlockNode root;
   private final SymTab symTab;
   private List<Op> operations = new ArrayList<>();
   private final Registers registers = new Registers();
   private int labelId;
 
-  public ILCodeGenerator(StatementsNode root, SymTab symTab) {
+  public ILCodeGenerator(BlockNode root, SymTab symTab) {
     this.root = root;
     this.symTab = symTab;
   }
@@ -180,14 +180,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       // else, jump to the next one
       emit(new Goto("label" + nextLabel));
       emit(new Label("label" + thisLabel));
-      ifCase.statements().forEach(stmt -> stmt.accept(this));
+      ifCase.block().statements().forEach(stmt -> stmt.accept(this));
       // We're in a block , now jump completely after.
       emit(new Goto("label" + after));
       emit(new Label("label" + nextLabel));
     }
-    if (!node.elseBlock().isEmpty()) {
+    if (node.elseBlock() != null) {
       System.out.printf("\n; else:");
-      node.elseBlock().forEach(stmt -> stmt.accept(this));
+      node.elseBlock().statements().forEach(stmt -> stmt.accept(this));
     }
 
     emit(new Label("label" + after));

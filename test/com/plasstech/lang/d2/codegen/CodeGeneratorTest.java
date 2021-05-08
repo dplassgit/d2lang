@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.StatementsNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 
 public class CodeGeneratorTest {
 
@@ -13,7 +13,7 @@ public class CodeGeneratorTest {
     Lexer lexer = new Lexer("print 123");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    BlockNode root = (BlockNode) parser.parse();
     CodeGenerator<String> codegen = new PseudoAsmCodeGenerator(root);
     codegen.generate();
   }
@@ -24,7 +24,7 @@ public class CodeGeneratorTest {
             "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
     Parser parser = new Parser(lexer);
 
-    StatementsNode root = (StatementsNode) parser.parse();
+    BlockNode root = (BlockNode) parser.parse();
     CodeGenerator<String> codegen = new PseudoAsmCodeGenerator(root);
     codegen.generate();
   }
