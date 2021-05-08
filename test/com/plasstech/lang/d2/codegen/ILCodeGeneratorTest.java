@@ -48,8 +48,7 @@ public class ILCodeGeneratorTest {
   @Test
   public void testGenerate_if() {
     Lexer lexer = new Lexer(
-            "a=0 if a==0 {print 1} elif ((1 + 2) * (3 - 4) / (-5) == 6) != true "
-                    + "{ b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==a & 3+4*5+6/-7>=8%2} "
+            "a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} "
                     + "else {print 2} print 3");
     Parser parser = new Parser(lexer);
 
@@ -71,7 +70,29 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void testGenerate_while() {
-    Lexer lexer = new Lexer("i=0 while i < 30 do i = i+1 {} main {print i}");
+    Lexer lexer = new Lexer("i=0 while i < 30 do i = i+1 {print i}");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    System.err.println(root);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
+
+  @Test
+  public void testGenerate_whileContinue() {
+    Lexer lexer = new Lexer("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    System.err.println(root);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
+
+  @Test
+  public void testGenerate_whileBreak() {
+    Lexer lexer = new Lexer("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1");
     Parser parser = new Parser(lexer);
 
     ProgramNode root = (ProgramNode) parser.parse();

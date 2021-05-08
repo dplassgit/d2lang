@@ -13,6 +13,6 @@ public class Label extends Op {
 
   @Override
   public String toString() {
-    return label + ":";
+    return "\n" + label + ":";
   }
 }

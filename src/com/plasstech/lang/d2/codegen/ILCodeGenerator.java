@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
+import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BoolNode;
@@ -28,14 +29,19 @@ import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.SimpleNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
+import com.plasstech.lang.d2.parse.WhileNode;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
 
   private final ProgramNode root;
   private final SymTab symTab;
-  private List<Op> operations = new ArrayList<>();
+
+  private final List<Op> operations = new ArrayList<>();
   private final Registers registers = new Registers();
+  private final List<String> whileStarts = new ArrayList<>();
+  private final List<String> whileEnds = new ArrayList<>();
+
   private int labelId;
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
@@ -55,6 +61,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Node expr = node.expr();
     expr.accept(this);
     emit(new SysCall("$ffd2", "r0"));
+  }
+
+  private String generateLabel(String prefix) {
+    labelId++;
+    return String.format("%s%d", prefix, labelId);
   }
 
   @Override
@@ -172,30 +183,51 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(IfNode node) {
     System.out.printf("\n; %s\n", node);
-    int after = labelId++;
+    String after = generateLabel("afterIf");
 
     for (IfNode.Case ifCase : node.cases()) {
       Node cond = ifCase.condition();
       cond.accept(this);
       // This is very inefficient, but understandable.
-      int thisLabel = labelId++;
-      int nextLabel = labelId++;
+      String thisLabel = generateLabel("then");
+      String nextLabel = generateLabel("elif");
       // if it's true, jump to this block
-      emit(new IfOp("r0", "then" + thisLabel));
+      emit(new IfOp("r0", thisLabel));
       // else, jump to the next one
-      emit(new Goto("elif" + nextLabel));
-      emit(new Label("then" + thisLabel));
+      emit(new Goto(nextLabel));
+      emit(new Label(thisLabel));
       ifCase.block().statements().forEach(stmt -> stmt.accept(this));
       // We're in a block , now jump completely after.
-      emit(new Goto("afterIf" + after));
-      emit(new Label("elif" + nextLabel));
+      emit(new Goto(after));
+      emit(new Label(nextLabel));
     }
     if (node.elseBlock() != null) {
       System.out.printf("\n; else:");
       node.elseBlock().statements().forEach(stmt -> stmt.accept(this));
     }
 
-    emit(new Label("afterIf" + after));
+    emit(new Label(after));
+  }
+  
+  @Override
+  public void visit(WhileNode node) {
+    System.out.printf("\n; %s\n", node);
+
+    String before = generateLabel("beforeWhile");
+    String after = generateLabel("afterWhile");
+
+    // push before and after on the stacks, for possible use by the "breka" and
+    // "continue" nodes.
+    emit(new Label(before));
+    node.condition().accept(this);
+    emit(new UnaryOp("r0", Type.NOT, "r0"));
+    emit(new IfOp("r0", after));
+    node.block().accept(this);
+    if (node.assignment().isPresent()) {
+      node.assignment().get().accept(this);
+    }
+    emit(new Goto(before));
+    emit(new Label(after));
   }
 
   @Override
@@ -212,8 +244,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(ProcedureNode node) {
     // Guard to prevent just falling into this method
-    int afterLabel = labelId++;
-    emit(new Goto("afterProc" + afterLabel));
+    String afterLabel = generateLabel("afterProc");
+    emit(new Goto(afterLabel));
 
     // note different mangling
     emit(new Label("d_" + node.name()));
@@ -224,7 +256,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     }
     emit(new Return());
 
-    emit(new Label("afterProc" + afterLabel));
+    emit(new Label(afterLabel));
   }
 
   private void emit(Op op) {
