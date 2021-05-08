@@ -68,6 +68,13 @@ public class Lexer {
     try {
       // Figure out which keyword it is
       KeywordType keywordType = KeywordType.valueOf(value.toUpperCase());
+
+      if (keywordType == KeywordType.TRUE) {
+        return new BoolToken(start, true);
+      } else if (keywordType == KeywordType.FALSE) {
+        return new BoolToken(start, false);
+      }
+
       return new KeywordToken(start, end, keywordType);
     } catch (Exception e) {
       return new Token(Type.VARIABLE, start, end, value);
@@ -109,8 +116,7 @@ public class Lexer {
         advance();
         return new Token(Type.MULT, start, oc);
       case '/':
-        advance();
-        return new Token(Type.DIV, start, oc);
+        return startsWithSlash(start);
       case '%':
         advance();
         return new Token(Type.MOD, start, oc);
@@ -131,6 +137,20 @@ public class Lexer {
       default:
         throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }
+  }
+
+  private Token startsWithSlash(Position start) {
+    advance(); // eat the first slash
+    if (cc == '/') {
+      advance(); // eat the second slash
+      while (cc != '\n' && cc != 0) {
+        advance();
+      }
+      line++;
+      col = 0;
+      return nextToken();
+    }
+    return new Token(Type.DIV, start, '/');
   }
 
   private Token startsWithNot(Position start) {

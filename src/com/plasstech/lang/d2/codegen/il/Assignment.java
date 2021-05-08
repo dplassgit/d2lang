@@ -4,6 +4,7 @@ public class Assignment extends Op {
   private final String lhs;
   private final String rhs;
 
+  // TODO: only allow reg=reg or reg=constant
   public Assignment(String lhs, String rhs) {
     this.lhs = lhs;
     this.rhs = rhs;

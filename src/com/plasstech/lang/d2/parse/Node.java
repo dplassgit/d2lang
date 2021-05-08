@@ -27,7 +27,7 @@ public abstract class Node {
   }
 
   public boolean isSimpleType() {
-    return type == Type.INT || type == Type.BOOL || type == Type.VARIABLE;
+    return type == Type.INT || type == Type.BOOL;
   }
 
   public VarType varType() {

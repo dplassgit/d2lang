@@ -1,6 +1,38 @@
 # Grammar
 
-## Implemented so far
+
+## Comments
+
+`//` to end of line is considered a comment.
+
+## Node types
+
+Node classes are:
+
+`StatementNodes`
+
+`abstract statementnode`
+
+`printnode extends statementnode`
+
+`assignmentnode extends statementnode`
+
+`binopnode extends node`
+
+`unaryNode extends node`
+
+`intNode extends node`
+
+`boolNode extends node`
+
+`varaccessNode extends node`
+
+`IfNode extends StatementNode` (also includes a repeated `Case`, which is like a node)
+
+This works.
+
+
+## Expression grammar implemented so far
 
 ```
 expr -> boolor
@@ -24,30 +56,6 @@ atom -> int constant
 	| boolean constant
 	| '(' expr ')'
 ```
-
-
-Node classes are:
-
-`StatementNodes`
-
-`abstract statementnode`
-
-`printnode extends statementnode`
-
-`assignmentnode extends statementnode`
-
-`binopnode extends node`
-
-`unaryNode extends node`
-
-`intNode extends node`
-
-`boolNode extends node`
-
-`varaccessNode extends node`
-
-
-This works.
 
 ## Full expression grammar
 

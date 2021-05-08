@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.plasstech.lang.d2.lex.BoolToken;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
@@ -179,9 +180,8 @@ public class Parser {
   }
 
   private Node compareTerm() {
-    return new BinOpFn(
-        ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT, Token.Type.LT, 
-          Token.Type.GEQ, Token.Type.LEQ)) {
+    return new BinOpFn(ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT,
+            Token.Type.LT, Token.Type.GEQ, Token.Type.LEQ)) {
       @Override
       Node nextRule() {
         return addSubTerm();
@@ -249,17 +249,10 @@ public class Parser {
       String name = token.text();
       advance();
       return new VariableNode(name, varToken.start());
-    } else if (token.type() == Token.Type.KEYWORD) {
-      KeywordToken kt = (KeywordToken) token;
-      if (kt.keyword() == KeywordType.TRUE || kt.keyword() == KeywordType.FALSE) {
-        advance();
-        return new BoolNode(kt.keyword() == KeywordType.TRUE, kt.end());
-      }
-      return new ErrorNode(
-              String.format("Unexpected keyword at %s: Found %s, expected literal, variable or '('",
-                      token.start(), token.text()),
-              token.start());
-
+    } else if (token.type() == Token.Type.BOOL) {
+      BoolToken bt = (BoolToken) token;
+      advance();
+      return new BoolNode(bt.value(), bt.end());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       Node expr = expr();
@@ -287,7 +280,7 @@ public class Parser {
     }
 
     BinOpFn(Token.Type tokenType) {
-      this.tokenTypes = Immutableset.of(tokenType);
+      this.tokenTypes = ImmutableSet.of(tokenType);
     }
 
     /** Call the next method, e.g., mulDivTerm */
