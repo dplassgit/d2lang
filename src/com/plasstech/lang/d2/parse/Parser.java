@@ -30,15 +30,16 @@ public class Parser {
   }
 
   public Node parse() {
-    return program();
+    try {
+      return program();
+    } catch (ParseException te) {
+      return te.errorNode();
+    }
   }
 
   private Node program() {
     // Read statements until EOF or "main"
     Node statements = statements(matchesEofOrMain());
-    if (statements.isError()) {
-      return statements;
-    }
 
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
     if (token.type() == Token.Type.EOF) {
@@ -50,19 +51,17 @@ public class Parser {
         advance(); // eat the main
         // TODO: parse arguments
         Node mainBlock = block();
-        if (mainBlock.isError()) {
-          return mainBlock;
-        }
         if (token.type() == Token.Type.EOF) {
           MainNode mainProc = new MainNode((BlockNode) mainBlock, kt.start());
           return new ProgramNode((BlockNode) statements, mainProc);
         }
-        return new ErrorNode(String.format("Unexpected token %s; expected EOF", token.toString()),
+        throw new ParseException(
+                String.format("Unexpected %s; expected EOF", token.text()),
                 token.start());
       }
     }
-    return new ErrorNode(
-            String.format("Unexpected token %s; expected 'main' or EOF", token.toString()),
+    throw new ParseException(
+            String.format("Unexpected %s; expected 'main' or EOF", token.text()),
             token.start());
   }
 
@@ -96,7 +95,7 @@ public class Parser {
   // This is a statements node surrounded by braces.
   private Node block() {
     if (token.type() != Token.Type.LBRACE) {
-      return new ErrorNode(String.format("Unexpected token %s; expected {", token.toString()),
+      throw new ParseException(String.format("Unexpected %s; expected {", token.text()),
               token.start());
     }
     advance();
@@ -121,22 +120,20 @@ public class Parser {
     } else if (token.type() == Token.Type.VARIABLE) {
       return assignment();
     }
-    return new ErrorNode(String.format("Unexpected token %s; expected print, assignment or if",
-            token.toString()), token.start());
+    throw new ParseException(String.format("Unexpected %s; expected 'print', assignment or 'if'",
+            token.text()), token.start());
   }
 
   private Node assignment() {
+    assert (token.type() == Token.Type.VARIABLE);
     VariableNode var = new VariableNode(token.text(), token.start());
     advance();
     if (token.type() != Token.Type.EQ) {
-      return new ErrorNode(String.format("Unexpected token %s; expected '='", token.toString()),
+      throw new ParseException(String.format("Unexpected %s; expected '='", token.text()),
               token.start());
     }
     advance();
     Node expr = expr();
-    if (expr.isError()) {
-      return expr;
-    }
     return new AssignmentNode(var, expr);
   }
 
@@ -144,9 +141,6 @@ public class Parser {
     assert (kt.keyword() == KeywordType.PRINT);
     advance();
     Node expr = expr();
-    if (expr.isError()) {
-      return expr;
-    }
     return new PrintNode(expr, kt.start());
   }
 
@@ -157,13 +151,7 @@ public class Parser {
     List<IfNode.Case> cases = new ArrayList<>();
 
     Node condition = expr();
-    if (condition.isError()) {
-      return condition;
-    }
     Node statements = block();
-    if (statements.isError()) {
-      return statements;
-    }
     cases.add(new IfNode.Case(condition, (BlockNode) statements));
 
     Node elseStatements = null;
@@ -174,13 +162,7 @@ public class Parser {
         advance();
 
         Node elifCondition = expr();
-        if (elifCondition.isError()) {
-          return elifCondition;
-        }
         Node elifStatements = block();
-        if (elifStatements.isError()) {
-          return elifStatements;
-        }
         cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
 
         if (token.type() == Token.Type.KEYWORD) {
@@ -193,9 +175,6 @@ public class Parser {
       if (elseOrElif != null && elseOrElif.keyword() == KeywordType.ELSE) {
         advance();
         elseStatements = block();
-        if (elseStatements.isError()) {
-          return elseStatements;
-        }
       }
     }
 
@@ -258,9 +237,6 @@ public class Parser {
       Token unaryToken = token;
       advance();
       Node expr = unary(); // should this be expr? unary? atom?
-      if (expr.isError()) {
-        return expr;
-      }
 
       if (expr.nodeType() == Node.Type.INT) {
         // We can simplify now
@@ -305,13 +281,12 @@ public class Parser {
         advance();
         return expr;
       } else {
-        return new ErrorNode(String.format("Unexpected string at %s: Found %s, expected ')'",
-                token.start(), token.text()), token.start());
+        throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
+                token.start());
       }
     } else {
-      return new ErrorNode(
-              String.format("Unexpected string at %s: Found %s, expected literal, variable or '('",
-                      token.start(), token.text()),
+      throw new ParseException(
+              String.format("Unexpected %s; expected literal, variable or '('", token.text()),
               token.start());
     }
   }
@@ -344,17 +319,11 @@ public class Parser {
      */
     Node parse() {
       Node left = nextRule();
-      if (left.isError()) {
-        return left;
-      }
 
       while (tokenTypes.contains(token.type())) {
         Token.Type operator = token.type();
         advance();
         Node right = nextRule();
-        if (right.isError()) {
-          return right;
-        }
         left = new BinOpNode(left, operator, right);
       }
 

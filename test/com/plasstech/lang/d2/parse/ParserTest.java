@@ -44,7 +44,7 @@ public class ParserTest {
   @Test
   public void parse_assignErrors() {
     assertParseError("Missing expression", "a=", "expected literal");
-    assertParseError("Missing close", "a=(3+", "expected ')'");
+    assertParseError("Missing close", "a=(3+", "expected literal");
     assertParseError("Missing close", "a=3+", "expected literal");
     assertParseError("Missing multiplicand", "a=3+5*", "expected literal");
     assertParseError("Missing multiplier", "a=3+*5", "expected literal");
@@ -420,11 +420,11 @@ public class ParserTest {
   public void parse_ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
     assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
-            "expected print");
+            "expected 'print");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
     assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
-            + "elif a==5 { print 5}else { print 6 print 7}", "Unexpected token ELIF");
+            + "elif a==5 { print 5}else { print 6 print 7}", "Unexpected ELIF");
   }
 
   @Test
@@ -473,7 +473,7 @@ public class ParserTest {
   @Test
   public void parse_mainError() {
     assertParseError("Missing open brace", "main", "expected {");
-    assertParseError("Missing close brace", "main {", "expected print");
+    assertParseError("Missing close brace", "main {", "expected 'print");
     assertParseError("Missing eof ", "main {} print ", "expected EOF");
     assertParseError("Missing eof ", "main { print ", "expected literal");
   }
@@ -504,6 +504,7 @@ public class ParserTest {
     Node node = parser.parse();
     assertWithMessage(message).that(node.isError()).isTrue();
     ErrorNode error = (ErrorNode) node;
+    System.err.println(error.message());
     assertThat(error.message()).contains(errorMsgContains);
   }
 }

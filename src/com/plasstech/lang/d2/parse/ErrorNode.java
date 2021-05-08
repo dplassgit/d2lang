@@ -12,11 +12,11 @@ public class ErrorNode extends Node {
   }
 
   public String message() {
-    return message;
+    return toString();
   }
 
   @Override
   public String toString() {
-    return String.format("Error %s at location %s", message, position().toString());
+    return String.format("Error at %s: %s ", position(), message);
   }
 }
