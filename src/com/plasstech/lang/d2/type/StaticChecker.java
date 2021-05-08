@@ -27,12 +27,10 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   public TypeCheckResult execute() {
-    root.statements().accept(this);
-
+    root.accept(this);
     if (error != null) {
       return new TypeCheckResult(error);
     }
-    // TODO: also accept the main procedure
     return new TypeCheckResult(symbolTable);
   }
 

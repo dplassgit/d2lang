@@ -23,8 +23,7 @@ public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenera
 
   @Override
   public List<String> generate() {
-    // For each child of root
-    root.statements().accept(this);
+    root.accept(this);
     return ImmutableList.of("; eof");
   }
 

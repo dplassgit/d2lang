@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.Optional;
 
+import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
 public class ProgramNode extends Node {
@@ -29,5 +30,13 @@ public class ProgramNode extends Node {
 
   public Optional<ProcedureNode> main() {
     return main;
+  }
+
+  @Override
+  public void accept(NodeVisitor visitor) {
+    statements.accept(visitor);
+    if (main.isPresent()) {
+      main.get().accept(visitor);
+    }
   }
 }

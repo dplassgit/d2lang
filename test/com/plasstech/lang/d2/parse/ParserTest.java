@@ -425,18 +425,61 @@ public class ParserTest {
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
     assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}", "Unexpected token ELIF");
-
   }
 
   @Test
   public void parse_mainEmpty() {
+    ProgramNode root = parseProgram("main{}");
+    assertThat(root.main().isPresent()).isTrue();
+  }
 
+  @Test
+  public void parse_statementThenMainEmpty() {
+    ProgramNode root = parseProgram("print 123 main{}");
+    BlockNode block = root.statements();
+    assertThat(block.statements()).hasSize(1);
+
+    PrintNode node = (PrintNode) block.statements().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.PRINT);
+    assertThat(node.position().line()).isEqualTo(1);
+    assertThat(node.position().column()).isEqualTo(1);
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
+    IntNode intNode = (IntNode) expr;
+    assertThat(intNode.value()).isEqualTo(123);
+    assertThat(intNode.position().line()).isEqualTo(1);
+    assertThat(intNode.position().column()).isEqualTo(7);
+    assertThat(root.main().isPresent()).isTrue();
+  }
+
+  @Test
+  public void parse_mainWithStatement() {
+    ProgramNode root = parseProgram("main{print 123 }");
+    BlockNode globalBlock = root.statements();
+    assertThat(globalBlock.statements()).isEmpty();
+    ProcedureNode main = root.main().get();
+    BlockNode block = main.statements();
+
+    PrintNode node = (PrintNode) block.statements().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.PRINT);
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
+    IntNode intNode = (IntNode) expr;
+    assertThat(intNode.value()).isEqualTo(123);
+  }
+
+  @Test
+  public void parse_mainError() {
+    assertParseError("Missing open brace", "main", "expected {");
+    assertParseError("Missing close brace", "main {", "expected print");
+    assertParseError("Missing eof ", "main {} print ", "expected EOF");
+    assertParseError("Missing eof ", "main { print ", "expected literal");
   }
 
   private BlockNode parseStatements(String expression) {
-    Lexer lexer = new Lexer(expression);
-    Parser parser = new Parser(lexer);
-    Node node = parser.parse();
+    Node node = parseProgram(expression);
     if (node.isError()) {
       ErrorNode error = (ErrorNode) node;
       fail(error.message());
@@ -444,8 +487,15 @@ public class ParserTest {
     return ((ProgramNode) node).statements();
   }
 
-  private void assertParseError(String message, String expressionToParse) {
-    assertParseError(message, expressionToParse, "");
+  private ProgramNode parseProgram(String expression) {
+    Lexer lexer = new Lexer(expression);
+    Parser parser = new Parser(lexer);
+    Node node = parser.parse();
+    if (node.isError()) {
+      ErrorNode error = (ErrorNode) node;
+      fail(error.message());
+    }
+    return (ProgramNode) node;
   }
 
   private void assertParseError(String message, String expressionToParse, String errorMsgContains) {

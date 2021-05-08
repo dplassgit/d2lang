@@ -41,7 +41,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public List<Op> generate() {
-    root.statements().accept(this);
+    root.accept(this);
     return operations;
   }
 

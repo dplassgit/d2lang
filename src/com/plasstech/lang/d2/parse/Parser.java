@@ -2,10 +2,9 @@ package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.BoolToken;
@@ -35,7 +34,8 @@ public class Parser {
   }
 
   private Node program() {
-    Node statements = statements(Token.Type.EOF, Optional.empty());
+    // Read statements until EOF or "main"
+    Node statements = statements(matchesEofOrMain());
     if (statements.isError()) {
       return statements;
     }
@@ -47,14 +47,18 @@ public class Parser {
       // if main, process main
       KeywordToken kt = (KeywordToken) token;
       if (kt.keyword() == KeywordType.MAIN) {
-        advance();
+        advance(); // eat the main
         // TODO: parse arguments
         Node mainBlock = block();
         if (mainBlock.isError()) {
           return mainBlock;
         }
-        ProcedureNode mainProc = new ProcedureNode((BlockNode) statements, kt.start());
-        return new ProgramNode((BlockNode) statements, mainProc);
+        if (token.type() == Token.Type.EOF) {
+          ProcedureNode mainProc = new ProcedureNode((BlockNode) mainBlock, kt.start());
+          return new ProgramNode((BlockNode) statements, mainProc);
+        }
+        return new ErrorNode(String.format("Unexpected token %s; expected EOF", token.toString()),
+                token.start());
       }
     }
     return new ErrorNode(
@@ -62,13 +66,24 @@ public class Parser {
             token.start());
   }
 
+  private Function<Token, Boolean> matchesEofOrMain() {
+    return token -> {
+      if (token.type() == Token.Type.EOF) {
+        return true;
+      }
+      if (token.type() == Token.Type.KEYWORD) {
+        KeywordToken kt = (KeywordToken) token;
+        return kt.keyword() == KeywordType.MAIN;
+      }
+      return false;
+    };
+  }
+
   // TODO: do not allow functions in blocks?
-  private Node statements(Token.Type blockEnd, Optional<KeywordType> keywordType) {
-    Preconditions.checkArgument(!((blockEnd == Token.Type.KEYWORD) ^ keywordType.isPresent()),
-            "If keyword token type is set, keyword type must be set");
+  private Node statements(Function<Token, Boolean> matcher) {
     List<StatementNode> children = new ArrayList<>();
     Position start = token.start();
-    while (!matches(blockEnd, keywordType)) { // token.type() != blockEnd) {
+    while (!matcher.apply(token)) {
       Node child = statement();
       if (child.isError() || !(child instanceof StatementNode)) {
         return child;
@@ -76,14 +91,6 @@ public class Parser {
       children.add((StatementNode) child);
     }
     return new BlockNode(children, start);
-  }
-
-  private boolean matches(Token.Type blockEnd, Optional<KeywordType> keywordType) {
-    if (token.type() == blockEnd && keywordType.isPresent()) {
-      KeywordToken kt = (KeywordToken) token;
-      return kt.keyword() == keywordType.get();
-    }
-    return token.type() == blockEnd;
   }
 
   // This is a statements node surrounded by braces.
@@ -94,7 +101,7 @@ public class Parser {
     }
     advance();
 
-    Node statements = statements(Token.Type.RBRACE, Optional.empty());
+    Node statements = statements(token -> token.type() == Token.Type.RBRACE);
     if (statements.isError()) {
       return statements;
     }
