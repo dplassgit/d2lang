@@ -60,8 +60,18 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void testGenerate_main() {
-    // AHA main *is* different.
     Lexer lexer = new Lexer("a=0 main {print a}");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    System.err.println(root);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, null);
+    codegen.generate();
+  }
+
+  @Test
+  public void testGenerate_while() {
+    Lexer lexer = new Lexer("i=0 while i < 30 do i = i+1 {} main {print i}");
     Parser parser = new Parser(lexer);
 
     ProgramNode root = (ProgramNode) parser.parse();

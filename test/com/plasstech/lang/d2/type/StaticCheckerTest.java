@@ -126,7 +126,7 @@ public class StaticCheckerTest {
     Node expr = node.expr();
     assertThat(expr.varType()).isEqualTo(VarType.BOOL);
   }
-  
+
   @Test
   public void execute_manybinops() {
     SymTab types = checkProgram("a=4 b=5  e=(a>=3)|!(b<3)");
@@ -302,6 +302,27 @@ public class StaticCheckerTest {
     assertThat(rhsNode.varType()).isEqualTo(VarType.INT);
   }
 
+  @Test
+  public void execute_while() {
+    Lexer lexer = new Lexer("i=0 while i < 30 do b = i == 1 { print i }");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of i").that(types.lookup("i")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
+  }
+
+  @Test
+  public void execute_whileError() {
+    assertExecuteError("while a { print a }", "UNKNOWN");
+    assertExecuteError("while 1 { print 1 }", "INT");
+    assertExecuteError("while true do i = false + 1{ }", "mismatch");
+    assertExecuteError("while true { i = false + 1}", "mismatch");
+  }
+
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
@@ -317,8 +338,11 @@ public class StaticCheckerTest {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     ProgramNode root = (ProgramNode) parser.parse();
+    System.out.println("Before: " + root);
     StaticChecker checker = new StaticChecker(root);
-    return execute(checker);
+    SymTab symTab = execute(checker);
+    System.out.println("After: " + root);
+    return symTab;
   }
 
   private SymTab execute(StaticChecker checker) {

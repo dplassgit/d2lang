@@ -25,7 +25,7 @@ public class VariableNode extends SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("VarNode: %s", name);
+    return String.format("VarNode: %s (%s)", name, varType());
   }
 
   @Override

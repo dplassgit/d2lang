@@ -10,6 +10,7 @@ import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
+import com.plasstech.lang.d2.parse.WhileNode;
 
 public class DefaultVisitor implements NodeVisitor {
 
@@ -51,5 +52,9 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(MainNode node) {
+  }
+
+  @Override
+  public void visit(WhileNode node) {
   }
 }

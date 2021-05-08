@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.plasstech.lang.d2.lex.Lexer;
@@ -8,6 +9,7 @@ import com.plasstech.lang.d2.parse.ProgramNode;
 
 public class CodeGeneratorTest {
 
+  @Ignore
   @Test
   public void testGenerate_print() {
     Lexer lexer = new Lexer("print 123");
@@ -18,6 +20,7 @@ public class CodeGeneratorTest {
     codegen.generate();
   }
 
+  @Ignore
   @Test
   public void testGenerate_assignments() {
     Lexer lexer = new Lexer(
