@@ -8,6 +8,7 @@ import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.IfNode;
+import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
@@ -191,6 +192,15 @@ public class StaticChecker extends DefaultVisitor {
           stmt.accept(this);
         }
       });
+    }
+  }
+
+  @Override
+  public void visit(MainNode node) {
+    // TODO: something about arguments? probably add to local symbol table
+    // Also TODO: how to reference arguments
+    if (node.statements() != null) {
+      node.statements().accept(this);
     }
   }
 }
