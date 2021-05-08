@@ -1,4 +1,4 @@
-// a=3
+a=3
 print 4 // 
 abc = 123// 
 c=abc-abc
