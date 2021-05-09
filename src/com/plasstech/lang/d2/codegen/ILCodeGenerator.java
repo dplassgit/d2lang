@@ -56,8 +56,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.println("#include <stdlib.h>");
     System.out.println("#include <stdio.h>");
     System.out.println("main() {");
-    for (String name : symTab.entries().keySet()) {
-      System.out.printf("int %s;\n", name);
+    if (symTab != null) {
+      for (String name : symTab.entries().keySet()) {
+        System.out.printf("int %s;\n", name);
+      }
     }
     System.out.printf("int t0;\n");
     root.accept(this);
@@ -216,12 +218,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(WhileNode node) {
     System.out.printf("\n// %s\n", node);
 
+    // push before and after on the stacks, for possible use by the "break" and "continue" nodes.
     String before = generateLabel("beforeWhile");
     whileStarts.push(before);
     String after = generateLabel("afterWhile");
     whileEnds.push(after);
-
-    // push before and after on the stacks, for possible use by the "break" and "continue" nodes.
 
     System.out.println("// while");
     emit(new Label(before));

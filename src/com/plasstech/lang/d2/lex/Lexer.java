@@ -134,6 +134,9 @@ public class Lexer {
       case '}':
         advance();
         return new Token(Type.RBRACE, start, oc);
+      case ':':
+        advance();
+        return new Token(Type.COLON, start, oc);
       default:
         throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }

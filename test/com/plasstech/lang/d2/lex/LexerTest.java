@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 public class LexerTest {
   @Test
   public void nextToken_singleSymbols() {
-    Lexer lexer = new Lexer("+-*/%()! =<>|&{}");
+    Lexer lexer = new Lexer("+-*/%()! =<>|&{}:");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
     token = lexer.nextToken();
@@ -41,6 +41,8 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.LBRACE);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.RBRACE);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.COLON);
   }
 
   @Test
@@ -129,7 +131,7 @@ public class LexerTest {
 
   @Test
   public void nextToken_keyword() {
-    Lexer lexer = new Lexer("print IF Else elif do while break continue");
+    Lexer lexer = new Lexer("print IF Else elif do while break continue int bool");
 
     KeywordToken token = (KeywordToken) lexer.nextToken();
     assertThat(token.keyword()).isEqualTo(KeywordType.PRINT);
@@ -147,6 +149,10 @@ public class LexerTest {
     assertThat(token.keyword()).isEqualTo(KeywordType.BREAK);
     token = (KeywordToken) lexer.nextToken();
     assertThat(token.keyword()).isEqualTo(KeywordType.CONTINUE);
+    token = (KeywordToken) lexer.nextToken();
+    assertThat(token.keyword()).isEqualTo(KeywordType.INT);
+    token = (KeywordToken) lexer.nextToken();
+    assertThat(token.keyword()).isEqualTo(KeywordType.BOOL);
   }
 
   @Test

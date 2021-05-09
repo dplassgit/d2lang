@@ -7,7 +7,7 @@ public class Token {
   public enum Type {
     KEYWORD, INT, BOOL, VARIABLE, EQ("=") /* = */, NOT("!"), PLUS("+"), MINUS("-"), LPAREN("("),
     RPAREN(")"), MULT("*"), DIV("/"), MOD("%"), AND("&&"), OR("||"), EQEQ("==") /* == */, LT("<"),
-    GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), LBRACE, RBRACE, EOF;
+    GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), LBRACE, RBRACE, COLON(":"), EOF;
 
     private final String val;
 
