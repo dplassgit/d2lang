@@ -110,7 +110,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(VariableNode node) {
     // Retrieve location of variable and provide it in t0
-    emit(new Load("t0", String.valueOf(node.name())));
+    emit(new Load("t0", node.name()));
   }
 
   @Override
