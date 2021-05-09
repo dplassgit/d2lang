@@ -23,7 +23,7 @@ public class BlockNode extends Node {
 
   @Override
   public String toString() {
-    return Joiner.on("\n").join(statements);
+    return Joiner.on("\n// ").join(statements);
   }
 
   @Override

@@ -13,7 +13,6 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Store;
-import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token.Type;
@@ -54,7 +53,15 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public List<Op> generate() {
+    System.out.println("#include <stdlib.h>");
+    System.out.println("#include <stdio.h>");
+    System.out.println("main() {");
+    for (String name : symTab.entries().keySet()) {
+      System.out.printf("int %s;\n", name);
+    }
+    System.out.printf("int t0;\n");
     root.accept(this);
+    System.out.println("}");
     return operations;
   }
 
@@ -63,7 +70,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.printf("\n// %s\n", node);
     Node expr = node.expr();
     expr.accept(this);
-    emit(new SysCall("$ffd2", "t0"));
+//    emit(new SysCall("$ffd2", "t0"));
+    System.out.println("\tprintf(\"%d\\n\", t0);");
   }
 
   private String generateLabel(String prefix) {
@@ -73,6 +81,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private String generateTemp() {
     tempId++;
+    System.out.printf("int t%d;\n", tempId);
     return String.format("t%d", tempId);
   }
 

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 
 /** Symbol Table. */
 public class SymTab {
@@ -32,6 +33,10 @@ public class SymTab {
     } else {
       return VarType.UNKNOWN;
     }
+  }
+
+  public ImmutableMap<String, VarType> entries() {
+    return ImmutableMap.copyOf(values);
   }
 
   public void add(String name, VarType varType) {

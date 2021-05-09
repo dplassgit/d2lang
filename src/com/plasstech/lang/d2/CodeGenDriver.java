@@ -38,7 +38,7 @@ public class CodeGenDriver {
     if (checkResult.isError()) {
       throw new RuntimeException(checkResult.message());
     }
-    System.out.println(root);
+//    System.out.println(root);
     ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
     cg.generate();
   }
