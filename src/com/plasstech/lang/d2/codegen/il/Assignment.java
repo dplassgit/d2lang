@@ -20,6 +20,6 @@ public class Assignment extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s = %s", lhs, rhs);
+    return String.format("\t%s = %s;", lhs, rhs);
   }
 }

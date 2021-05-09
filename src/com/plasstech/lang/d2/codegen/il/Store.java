@@ -20,6 +20,6 @@ public class Store extends Op {
 
   @Override
   public String toString() {
-    return String.format("\tstore(%s, %s)", destAddress, sourceRegister);
+    return String.format("\t%s = %s; // store", destAddress, sourceRegister);
   }
 }

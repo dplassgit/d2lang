@@ -16,6 +16,6 @@ public class Goto extends Op {
 
   @Override
   public String toString() {
-    return "\tgoto " + label;
+    return String.format("\tgoto %s;", label);
   }
 }

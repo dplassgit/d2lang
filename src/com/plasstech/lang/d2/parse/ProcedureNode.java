@@ -29,7 +29,7 @@ public class ProcedureNode extends Node {
 
   @Override
   public String toString() {
-    return String.format("ProcedureNode: %s (args TODO) returns %s:\n{%s}", name(),
+    return String.format("ProcedureNode: %s (args TODO) returns %s: {%s}", name(),
             "return type (TODO)", statements);
   }
 }

@@ -4,15 +4,15 @@ import com.plasstech.lang.d2.lex.Token;
 
 public class BinOp extends Op {
   private final String lhs;
-  private final Token.Type type;
+  private final Token.Type operator;
   private final String rhs1;
   private final String rhs2;
 
   // TODO: check the token type
-  public BinOp(String lhs, String rhs1, Token.Type type, String rhs2) {
+  public BinOp(String lhs, String rhs1, Token.Type operator, String rhs2) {
     this.lhs = lhs;
     this.rhs1 = rhs1;
-    this.type = type;
+    this.operator = operator;
     this.rhs2 = rhs2;
   }
 
@@ -21,7 +21,7 @@ public class BinOp extends Op {
   }
 
   public Token.Type type() {
-    return type;
+    return operator;
   }
 
   public String rhs1() {
@@ -34,6 +34,6 @@ public class BinOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s = %s %s %s", lhs, rhs1, type.name(), rhs2);
+    return String.format("\t%s = %s %s %s;", lhs, rhs1, operator.value(), rhs2);
   }
 }

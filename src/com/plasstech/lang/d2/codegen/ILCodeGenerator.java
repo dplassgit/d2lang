@@ -41,10 +41,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private final SymTab symTab;
 
   private final List<Op> operations = new ArrayList<>();
-  private final Registers registers = new Registers();
   private final Stack<String> whileStarts = new Stack<>();
   private final Stack<String> whileEnds = new Stack<>();
 
+  private int tempId;
   private int labelId;
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
@@ -60,10 +60,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(PrintNode node) {
-    System.out.printf("\n; %s\n", node);
+    System.out.printf("\n// %s\n", node);
     Node expr = node.expr();
     expr.accept(this);
-    emit(new SysCall("$ffd2", "r0"));
+    emit(new SysCall("$ffd2", "t0"));
   }
 
   private String generateLabel(String prefix) {
@@ -71,74 +71,72 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     return String.format("%s%d", prefix, labelId);
   }
 
+  private String generateTemp() {
+    tempId++;
+    return String.format("t%d", tempId);
+  }
+
   @Override
   public void visit(AssignmentNode node) {
-    System.out.printf("\n; %s\n", node);
+    System.out.printf("\n// %s\n", node);
 
     String name = node.variable().name();
     Node expr = node.expr();
     expr.accept(this);
-    emit(new Store(name, "r0"));
+    emit(new Store(name, "t0"));
   }
 
   @Override
   public void visit(IntNode node) {
-    // Provide constant in r0
-    emit(new Assignment("r0", String.valueOf(node.value())));
+    // Provide constant in t0
+    emit(new Assignment("t0", String.valueOf(node.value())));
   }
 
   @Override
   public void visit(BoolNode node) {
-    // Provide constant in r0
-    emit(new Assignment("r0", String.valueOf(node.value())));
+    // Provide constant in t0
+    emit(new Assignment("t0", String.valueOf(node.value())));
   }
 
   @Override
   public void visit(VariableNode node) {
-    // Retrieve location of variable and provide it in r0
-    emit(new Load("r0", String.valueOf(node.name())));
+    // Retrieve location of variable and provide it in t0
+    emit(new Load("t0", String.valueOf(node.name())));
   }
 
   @Override
   public void visit(BinOpNode node) {
-    System.out.printf("\n; %s\n", node);
+    System.out.printf("\n// %s\n", node);
 
-    // Calculate the value and set it in r0
+    // Calculate the value and set it in t0
     Node left = node.left();
-    // Source for the value of left - either a register or memory location or a
-    // value.
+    // Source for the value of left - either a register or memory location or a value.
     String leftSrc;
-    // Possible register
-    int leftReg = -1;
     // if left and right are "simple", just get it.
     if (left.isSimpleType()) {
       SimpleNode simpleLeft = (SimpleNode) left;
       leftSrc = simpleLeft.simpleValue();
     } else {
-      leftReg = registers.allocate();
+      leftSrc = generateTemp();
       left.accept(this);
-      // by definition, "left" has emitted its value in r0. store in rx
-      leftSrc = "r" + leftReg;
-      emit(new Assignment(leftSrc, "r0"));
+      // by definition, "left" has emitted its value in t0. store in rx
+      emit(new Assignment(leftSrc, "t0"));
     }
 
-    // Calculate the value and set it in r0
+    // Calculate the value and set it in t0
     Node right = node.right();
     // Source for the value of right - either a register or memory location or a
     // value.
     String rightSrc;
-    // Possible register
-    int rightReg = -1;
     // if left and right are "simple", just get it.
     if (right.isSimpleType()) {
       SimpleNode simpleRight = (SimpleNode) right;
       rightSrc = simpleRight.simpleValue();
     } else {
-      rightReg = registers.allocate();
+      rightSrc = generateTemp();
       right.accept(this);
-      // by definition, "left" has emitted its value in r0. store in rx
-      rightSrc = "r" + rightReg;
-      emit(new Assignment(rightSrc, "r0"));
+      // by definition, "left" has emitted its value in t0. store in rx
+      emit(new Assignment(rightSrc, "t0"));
     }
 
 //    switch (node.operator()) {
@@ -147,33 +145,26 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 //      case MULT:
 //      case PLUS:
 //      case EQEQ:
-    emit(new BinOp("r0", leftSrc, node.operator(), rightSrc));
+    emit(new BinOp("t0", leftSrc, node.operator(), rightSrc));
 //        break;
 //      default:
 //        emit("UNKNOWN OP " + node.operator());
 //        break;
 //    }
 
-    // now we can deallocate registers
-    if (leftReg != -1) {
-      registers.deallocate(leftReg);
-    }
-    if (rightReg != -1) {
-      registers.deallocate(rightReg);
-    }
   }
 
   @Override
   public void visit(UnaryNode node) {
-    System.out.printf("; %s\n", node);
-    // calculate the value and set it in r0
+    System.out.printf("\n// %s\n", node);
+    // calculate the value and set it in t0
     Node expr = node.expr();
     expr.accept(this);
 
     switch (node.operator()) {
       case NOT:
-      case MINUS: // want r0 to be 0-r0
-        emit(new UnaryOp("r0", node.operator(), "r0"));
+      case MINUS: // want t0 to be 0-t0
+        emit(new UnaryOp("t0", node.operator(), "t0"));
         break;
       case PLUS:
         // Intentionally do nothing.
@@ -185,7 +176,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(IfNode node) {
-    System.out.printf("\n; %s\n", node);
+    System.out.printf("\n// %s\n", node);
     String after = generateLabel("afterIf");
 
     for (IfNode.Case ifCase : node.cases()) {
@@ -195,7 +186,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       String thisLabel = generateLabel("then");
       String nextLabel = generateLabel("elif");
       // if it's true, jump to this block
-      emit(new IfOp("r0", thisLabel));
+      emit(new IfOp("t0", thisLabel));
       // else, jump to the next one
       emit(new Goto(nextLabel));
       emit(new Label(thisLabel));
@@ -205,7 +196,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       emit(new Label(nextLabel));
     }
     if (node.elseBlock() != null) {
-      System.out.printf("\n; else:");
+      System.out.printf("\n// else:");
       node.elseBlock().statements().forEach(stmt -> stmt.accept(this));
     }
 
@@ -214,7 +205,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(WhileNode node) {
-    System.out.printf("\n; %s\n", node);
+    System.out.printf("\n// %s\n", node);
 
     String before = generateLabel("beforeWhile");
     whileStarts.push(before);
@@ -223,13 +214,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     // push before and after on the stacks, for possible use by the "break" and "continue" nodes.
 
-    System.out.println("; while");
+    System.out.println("// while");
     emit(new Label(before));
     node.condition().accept(this);
-    emit(new UnaryOp("r0", Type.NOT, "r0"));
-    emit(new IfOp("r0", after));
+    emit(new UnaryOp("t0", Type.NOT, "t0"));
+    emit(new IfOp("t0", after));
 
-    System.out.println("; do");
+    System.out.println("// do");
     node.block().accept(this);
     if (node.assignment().isPresent()) {
       node.assignment().get().accept(this);
@@ -244,14 +235,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(BreakNode node) {
     // break = go to the end
-    System.out.println("; break");
+    System.out.println("// break");
     String after = whileEnds.peek();
     emit(new Goto(after));
   }
 
   @Override
   public void visit(ContinueNode node) {
-    System.out.println("; continue");
+    System.out.println("// continue");
     // continue = go to the beginning
     String before = whileStarts.peek();
     emit(new Goto(before));

@@ -18,7 +18,7 @@ public class IfNode extends StatementNode {
 
     @Override
     public String toString() {
-      return String.format("\nIfCaseNode: if (%s)\n{%s}", condition, block);
+      return String.format("IfCaseNode: if (%s) {%s}", condition, block);
     }
 
     public Node condition() {
@@ -56,10 +56,10 @@ public class IfNode extends StatementNode {
   @Override
   public String toString() {
     if (elseBlock != null) {
-      return String.format("IfNode:\n(%s)\nelse {\n%s}", cases(), elseBlock());
+      return String.format("IfNode: (%s) else {%s}", cases(), elseBlock());
     } else {
       // this isn't ideal, but shrug.
-      return String.format("IfNode:\n(%s)", cases());
+      return String.format("IfNode: (%s)", cases());
     }
   }
 }

@@ -38,6 +38,6 @@ public class WhileNode extends StatementNode {
 
   @Override
   public String toString() {
-    return String.format("WhileNode: while (%s) do (%s)\n{%s}", condition, assignment, block);
+    return String.format("WhileNode: while (%s) do (%s) {%s}", condition, assignment, block);
   }
 }

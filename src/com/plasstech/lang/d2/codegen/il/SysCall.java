@@ -19,6 +19,6 @@ public class SysCall extends Op {
 
   @Override
   public String toString() {
-    return String.format("\tcall %s, %s", callName, arg);
+    return String.format("\tcall(%s, %s);", callName, arg);
   }
 }

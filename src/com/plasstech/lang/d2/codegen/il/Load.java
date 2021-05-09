@@ -20,6 +20,6 @@ public class Load extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s = load(%s)", destRegister, sourceAddress);
+    return String.format("\t%s = %s; // load", destRegister, sourceAddress);
   }
 }

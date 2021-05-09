@@ -4,22 +4,22 @@ import com.plasstech.lang.d2.lex.Token;
 
 public class UnaryOp extends Op {
   private final String lhs;
-  private final Token.Type type;
+  private final Token.Type operator;
   private final String rhs;
 
   // TODO: check the token type
-  public UnaryOp(String lhs, Token.Type type, String rhs) {
+  public UnaryOp(String lhs, Token.Type operator, String rhs) {
     this.lhs = lhs;
     this.rhs = rhs;
-    this.type = type;
+    this.operator = operator;
   }
 
   public String lhs() {
     return lhs;
   }
 
-  public Token.Type type() {
-    return type;
+  public Token.Type operator() {
+    return operator;
   }
 
   public String rhs() {
@@ -28,6 +28,6 @@ public class UnaryOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s = %s %s", lhs, type.name(), rhs);
+    return String.format("\t%s = %s %s;", lhs, operator.value(), rhs);
   }
 }

@@ -19,6 +19,6 @@ public class IfOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("\tif %s goto %s", cond, dest);
+    return String.format("\tif (%s) goto %s;", cond, dest);
   }
 }
