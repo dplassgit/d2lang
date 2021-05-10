@@ -4,17 +4,19 @@
 ## Full Grammar
 
 ```
-program -> statements main
+program -> statements main?
 statements -> statement* 
-statement -> assignment | print | if | while | proc 
+statement -> assignment | print | if | while | proc | declaration
 main -> 'main' { statements }
 assignment -> variable '=' expr
 print -> 'print' expr
 if -> 'if' expr { statements } elif* else
 elif -> 'elif' expr {statements}
 else -> ('else' { statements })?
-while -> 'while' expr do { statements }
-do -> ('do' assignment)?
+while -> 'while' expr do? { statements }
+do -> 'do' assignment
+declaration -> variable ':' type
+type -> 'int' | 'bool'
 proc -> // TODO
 
 ```
@@ -28,29 +30,36 @@ proc -> // TODO
 
 Node classes are:
 
-`StatementNodes`
+`abstract class Node`
 
-`abstract statementnode`
+`BlockNode extends Node`
 
-`printnode extends statementnode`
+`abstract class StatementNode extends Node`
 
-`assignmentnode extends statementnode`
+`PrintNode extends StatementNode`
 
-`binopnode extends node`
-
-`unaryNode extends node`
-
-`intNode extends node`
-
-`boolNode extends node`
-
-`varaccessNode extends node`
+`AssignmentNode extends StatementNode`
 
 `IfNode extends StatementNode` (also includes a repeated `Case`, which is like a node)
+
+`DeclarationNode extends StatementNode`
+
+`WhileNode extends StatementNode`
 
 `ProcNode extends StatementNode`
 
 `MainNode extends ProcNode`
+
+`BinOpNode extends Node`
+
+`UnaryNode extends Node`
+
+`IntNode extends Node`
+
+`BoolNode extends Node`
+
+`VarAccessNode extends Node`
+
 
 This works.
 
@@ -83,7 +92,7 @@ atom -> int constant
 
 ## Full expression grammar
 
-Not implemented: shift
+Not implemented: shift, exponent, xor
 
 ```
 expr -> boolor
