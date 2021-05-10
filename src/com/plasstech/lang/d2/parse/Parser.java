@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.type.VarType;
 
 public class Parser {
 
@@ -142,11 +143,40 @@ public class Parser {
           break;
       }
     } else if (token.type() == Token.Type.VARIABLE) {
-      return assignment();
+      return assignmentOrDeclaration();
     }
 
     throw new ParseException(String
             .format("Unexpected %s; expected 'print', assignment, 'if' or 'while'", token.text()),
+            token.start());
+  }
+
+  private StatementNode assignmentOrDeclaration() {
+    if (token.type() != Token.Type.VARIABLE) {
+      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
+              token.start());
+    }
+    Token varToken = token;
+    advance();
+    if (token.type() == Token.Type.EQ) {
+      advance();
+      VariableNode var = new VariableNode(varToken.text(), varToken.start());
+      Node expr = expr();
+      return new AssignmentNode(var, expr);
+    } else if (token.type() == Token.Type.COLON) {
+      advance();
+      if (token.type() == Token.Type.KEYWORD) {
+        KeywordType declaredType = ((KeywordToken) token).keyword();
+        VarType varType = DeclarationNode.BUILTINS.get(declaredType);
+        if (varType != null) {
+          advance();
+          return new DeclarationNode(varToken.text(), varType, varToken.start());
+        }
+      }
+      throw new ParseException(String.format("Unexpected %s; expected INT or BOOL", token.text()),
+              token.start());
+    }
+    throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
             token.start());
   }
 

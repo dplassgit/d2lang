@@ -1,14 +1,15 @@
 package com.plasstech.lang.d2.parse;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeclarationNode extends StatementNode {
 
-  public final static ImmutableSet<
-          KeywordType> BUILTINS = ImmutableSet.of(KeywordType.BOOL, KeywordType.INT);
+  public final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
+          KeywordType.INT, VarType.INT, //
+          KeywordType.BOOL, VarType.BOOL);
 
   private final String varName;
   private final VarType type;

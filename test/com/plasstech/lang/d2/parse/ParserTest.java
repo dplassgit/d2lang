@@ -11,6 +11,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.type.VarType;
 
 public class ParserTest {
   @Test
@@ -578,6 +579,39 @@ public class ParserTest {
     assertParseError("Missing close brace", "main {", "expected 'print");
     assertParseError("Missing eof ", "main {} print ", "expected EOF");
     assertParseError("Missing eof ", "main { print ", "expected literal");
+  }
+
+  @Test
+  public void parse_declError() {
+    assertParseError("Missing type", "a:", "expected INT or BOOL");
+    assertParseError("Missing type", "a::", "expected INT or BOOL");
+    assertParseError("Missing close brace", "a:print", "expected INT or BOOL");
+  }
+
+  @Test
+  public void parse_decl() {
+    BlockNode root = parseStatements("a:int");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.name()).isEqualTo("a");
+    assertThat(declarationNode.declaredType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void parse_declBool() {
+    BlockNode root = parseStatements("a:bool");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.name()).isEqualTo("a");
+    assertThat(declarationNode.declaredType()).isEqualTo(VarType.BOOL);
   }
 
   private BlockNode parseStatements(String expression) {
