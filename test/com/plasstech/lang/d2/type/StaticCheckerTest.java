@@ -352,7 +352,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_declaration() {
-    Lexer lexer = new Lexer("a:int a=3");
+    Lexer lexer = new Lexer("a:int a=3 b=a");
     Parser parser = new Parser(lexer);
 
     ProgramNode root = (ProgramNode) parser.parse();

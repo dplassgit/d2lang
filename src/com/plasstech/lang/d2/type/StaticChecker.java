@@ -70,6 +70,9 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Type mismatch at %s: lhs (%s) is %s; rhs (%s) is %s",
               variable.position(), variable, existingType, right, right.varType()));
     }
+    if (!symbolTable.isAssigned(variable.name())) {
+      symbolTable.assign(variable.name(), right.varType());
+    }
     // all is good.
     variable.setVarType(right.varType());
     node.setVarType(right.varType());
