@@ -4,21 +4,21 @@
 ## Full Grammar
 
 ```
-program -> statements main
+program -> statements main?
 statements -> statement* 
-statement -> assignment | print | if | while | proc 
-main -> 'main' { statements }
+statement -> assignment | print | if | while | proc | declaration | 'break' | 'continue'
+main -> 'main' '{' statements '}'
 assignment -> variable '=' expr
 print -> 'print' expr
-if -> 'if' expr { statements } elif* else
-elif -> 'elif' expr {statements}
-else -> ('else' { statements })?
-while -> 'while' expr do { statements }
-do -> ('do' assignment)?
+if -> 'if' expr '{' statements '}' elif* else?
+elif -> 'elif' expr '{' statements '}'
+else -> 'else' '{' statements '}'
+while -> 'while' expr do? '{' statements '}'
+do -> 'do' assignment
+declaration -> variable ':' type
+type -> 'int' | 'bool'
 proc -> // TODO
-
 ```
-
 
 ## Comments
 
@@ -28,29 +28,36 @@ proc -> // TODO
 
 Node classes are:
 
-`StatementNodes`
+`abstract class Node`
 
-`abstract statementnode`
+`BlockNode extends Node`
 
-`printnode extends statementnode`
+`abstract class StatementNode extends Node`
 
-`assignmentnode extends statementnode`
+`PrintNode extends StatementNode`
 
-`binopnode extends node`
-
-`unaryNode extends node`
-
-`intNode extends node`
-
-`boolNode extends node`
-
-`varaccessNode extends node`
+`AssignmentNode extends StatementNode`
 
 `IfNode extends StatementNode` (also includes a repeated `Case`, which is like a node)
+
+`DeclarationNode extends StatementNode`
+
+`WhileNode extends StatementNode`
 
 `ProcNode extends StatementNode`
 
 `MainNode extends ProcNode`
+
+`BinOpNode extends Node`
+
+`UnaryNode extends Node`
+
+`IntNode extends Node`
+
+`BoolNode extends Node`
+
+`VarAccessNode extends Node`
+
 
 This works.
 
@@ -61,13 +68,13 @@ This works.
 ```
 expr -> boolor
 
-boolor -> booland (| booland)*
+boolor -> booland ('|' booland)*
 
-booland -> compare (& compare)*
+booland -> compare ('&' compare)*
 
 compare -> addsub (relop addsub)*
 
-relop -> == != > < >= <=
+relop -> '==' '!=' '>' '<' '>=' '<='
 
 addsub -> muldiv (+- muldiv)*
 
@@ -81,37 +88,7 @@ atom -> int constant
 	| '(' expr ')'
 ```
 
-## Full expression grammar
-
-Not implemented: shift
-
-```
-expr -> boolor
-
-boolor -> booland (| booland)*
-
-booland -> compare (& compare)*
-
-compare -> shift (relop shift)*
-
-relop -> == != > < >= <=
-
-shift -> addsub (shiftop addsub)
-
-shiftop -> << >>
-
-addsub -> muldiv (+- muldiv)*
-
-muldiv -> unary (*/% unary)*
-
-unary ->  atom | !-+ unary
-
-atom -> int constant
-	| variable name
-	| boolean constant
-	| string constant
-	| '(' expr ')'
-```
+Not implemented yet: shift, power, xor
 
 See [Java operators](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html)
 for reference
