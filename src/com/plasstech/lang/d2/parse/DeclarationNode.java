@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.type.VarType;
@@ -12,16 +13,11 @@ public class DeclarationNode extends StatementNode {
           KeywordType.BOOL, VarType.BOOL);
 
   private final String varName;
-  private final VarType type;
 
   DeclarationNode(String varName, VarType type, Position position) {
     super(Type.DECLARATION, position);
     this.varName = varName;
-    this.type = type;
-  }
-
-  public VarType declaredType() {
-    return type;
+    setVarType(type);
   }
 
   public String name() {
@@ -29,7 +25,12 @@ public class DeclarationNode extends StatementNode {
   }
 
   @Override
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
   public String toString() {
-    return String.format("DeclNode: %s: %s", varName, type.name().toLowerCase());
+    return String.format("DeclNode: %s: %s", varName, varType().name().toLowerCase());
   }
 }

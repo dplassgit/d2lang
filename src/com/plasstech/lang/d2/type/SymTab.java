@@ -9,10 +9,11 @@ import com.google.common.collect.ImmutableMap;
 /** Symbol Table. */
 public class SymTab {
 
-  private final Map<String, VarType> values = new HashMap<>();
-  private SymTab parent;
+  private final Map<String, Symbol> values = new HashMap<>();
+  private final SymTab parent;
 
   public SymTab() {
+    this.parent = null;
   }
 
   private SymTab(SymTab parent) {
@@ -23,26 +24,52 @@ public class SymTab {
     return new SymTab(this);
   }
 
-  public VarType lookup(String name) {
-    VarType varType = values.getOrDefault(name, VarType.UNKNOWN);
-    if (!varType.isUnknown()) {
-      return varType;
-    }
-    if (parent != null) {
-      return parent.lookup(name);
-    } else {
-      return VarType.UNKNOWN;
-    }
+  public boolean isAssigned(String name) {
+    Symbol sym = values.get(name);
+    return sym != null && sym.isAssigned();
   }
 
-  public ImmutableMap<String, VarType> entries() {
+  public VarType lookup(String name) {
+    Symbol sym = values.get(name);
+    if (sym == null) {
+      if (parent != null) {
+        return parent.lookup(name);
+      } else {
+        return VarType.UNKNOWN;
+      }
+    }
+    return sym.type();
+  }
+
+  public Symbol get(String name) {
+    return values.get(name);
+  }
+
+  public ImmutableMap<String, Symbol> entries() {
     return ImmutableMap.copyOf(values);
   }
 
-  public void add(String name, VarType varType) {
-    Preconditions.checkState(!values.containsKey(name), "Already recorded type for %s", name);
+  // It's only declared.
+  public void declare(String name, VarType varType) {
+    Preconditions.checkState(!values.containsKey(name),
+            "Type error: %s already declared as %s. Cannot be redeclared as %s.", name,
+            values.get(name), varType);
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
-    values.put(name, varType);
+    Symbol sym = new Symbol(name).setType(varType);
+    values.put(name, sym);
   }
 
+  public void assign(String name, VarType varType) {
+    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
+    Symbol sym = values.get(name);
+    if (sym != null) {
+      Preconditions.checkState(sym.type() == varType,
+              "Type error: %s already declared as %s. Cannot be redeclared as %s.", name,
+              sym.type(), varType);
+    } else {
+      sym = new Symbol(name).setType(varType);
+    }
+    sym.setAssigned();
+    values.put(name, sym);
+  }
 }

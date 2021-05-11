@@ -24,6 +24,12 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_printUnassigned() {
+    assertExecuteError("print a", "Indeterminable");
+    assertExecuteError("print (1-3)*a", "Indeterminable");
+  }
+
+  @Test
   public void execute_assignInt() {
     Lexer lexer = new Lexer("a=3");
     Parser parser = new Parser(lexer);
@@ -225,6 +231,14 @@ public class StaticCheckerTest {
   @Test
   public void execute_assignMismatch() {
     assertExecuteError("a=true b=3 b=a", "Type mismatch");
+    assertExecuteError("a=3 b=true b=a", "Type mismatch");
+  }
+
+  @Test
+  public void execute_declarationAssignMismatch() {
+    assertExecuteError("a:int b=true a=b", "Type mismatch");
+    assertExecuteError("a:bool b=a b=3", "used before assignment");
+    assertExecuteError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
@@ -253,7 +267,8 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_ifNotBoolCond_error() {
-    assertExecuteError("a=1 if a { print a }", "INT");
+    assertExecuteError("if 1 { print 2 }", "must be boolean; was INT");
+    assertExecuteError("a=1 if a { print a }", "must be boolean; was INT");
   }
 
   @Test
@@ -321,6 +336,30 @@ public class StaticCheckerTest {
     assertExecuteError("while 1 { print 1 }", "INT");
     assertExecuteError("while true do i = false + 1{ }", "mismatch");
     assertExecuteError("while true { i = false + 1}", "mismatch");
+  }
+
+  @Test
+  public void execute_declarationError() {
+    assertExecuteError("b=3 a=b a:int", "already declared as INT");
+    assertExecuteError("a=3 a:bool", "already declared as INT");
+    assertExecuteError("a:bool a:int", "already declared as BOOL");
+    assertExecuteError("a:bool a:bool", "already declared as BOOL");
+    // This may or may not be an error later
+    assertExecuteError("a:bool main {a:int}", "already declared as BOOL");
+    assertExecuteError("a:int b=a", "'a' used before assign");
+    assertExecuteError("a:int a=true", "mismatch");
+  }
+
+  @Test
+  public void execute_declaration() {
+    Lexer lexer = new Lexer("a:int a=3");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    SymTab types = execute(checker);
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
   private void assertExecuteError(String program, String messageShouldContain) {

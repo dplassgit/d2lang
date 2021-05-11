@@ -598,7 +598,7 @@ public class ParserTest {
 
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
     assertThat(declarationNode.name()).isEqualTo("a");
-    assertThat(declarationNode.declaredType()).isEqualTo(VarType.INT);
+    assertThat(declarationNode.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -611,7 +611,7 @@ public class ParserTest {
 
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
     assertThat(declarationNode.name()).isEqualTo("a");
-    assertThat(declarationNode.declaredType()).isEqualTo(VarType.BOOL);
+    assertThat(declarationNode.varType()).isEqualTo(VarType.BOOL);
   }
 
   private BlockNode parseStatements(String expression) {

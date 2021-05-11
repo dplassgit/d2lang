@@ -7,9 +7,11 @@ import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
+import com.plasstech.lang.d2.parse.DeclarationNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
+import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
@@ -37,16 +39,20 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
+  public void visit(PrintNode node) {
+    Node expr = node.expr();
+    expr.accept(this);
+    if (expr.varType().isUnknown()) {
+      // this is bad.
+      throw new TypeException(String.format("Type error at %s: Indeterminable type for %s",
+              expr.position(), expr));
+    }
+  }
+
+  @Override
   public void visit(AssignmentNode node) {
     // Make sure that the left = right
     VariableNode variable = node.variable();
-    VarType existingType = variable.varType();
-    if (existingType.isUnknown()) {
-      existingType = symbolTable.lookup(variable.name());
-      if (!existingType.isUnknown()) {
-        variable.setVarType(existingType);
-      }
-    }
 
     Node right = node.expr();
     right.accept(this);
@@ -56,14 +62,17 @@ public class StaticChecker extends DefaultVisitor {
               right.position(), right));
     }
 
-    if (variable.varType().isUnknown()) {
-      variable.setVarType(right.varType());
-      // Enter it in the local symbol table
-      symbolTable.add(variable.name(), right.varType());
-    } else if (variable.varType() != right.varType()) {
+    VarType existingType = symbolTable.lookup(variable.name());
+    if (existingType.isUnknown()) {
+      symbolTable.assign(variable.name(), right.varType());
+    } else if (existingType != right.varType()) {
+      // It was already in the symbol table. Possible that it's wrong
       throw new TypeException(String.format("Type mismatch at %s: lhs (%s) is %s; rhs (%s) is %s",
-              variable.position(), variable, variable.varType(), right, right.varType()));
+              variable.position(), variable, existingType, right, right.varType()));
     }
+    // all is good.
+    variable.setVarType(right.varType());
+    node.setVarType(right.varType());
   }
 
   @Override
@@ -71,7 +80,14 @@ public class StaticChecker extends DefaultVisitor {
     if (node.varType().isUnknown()) {
       // Look up variable in the (local) symbol table, and set it in the node.
       VarType existingType = symbolTable.lookup(node.name());
+
       if (!existingType.isUnknown()) {
+        if (!symbolTable.isAssigned(node.name())) {
+          // can't use it
+          throw new TypeException(
+                  String.format("Type error at %s: Variable '%s' used before assignment",
+                          node.position(), node.name()));
+        }
         node.setVarType(existingType);
       }
     }
@@ -180,5 +196,16 @@ public class StaticChecker extends DefaultVisitor {
     if (node.statements() != null) {
       node.statements().accept(this);
     }
+  }
+
+  @Override
+  public void visit(DeclarationNode node) {
+    VarType existingType = symbolTable.lookup(node.name());
+    if (existingType != VarType.UNKNOWN) {
+      throw new TypeException(
+              String.format("Type error at %s: variable '%s' already declared as %s",
+                      node.position(), node.name(), existingType.name()));
+    }
+    symbolTable.declare(node.name(), node.varType());
   }
 }

@@ -49,5 +49,5 @@ if a==3 {
 }
 
 main {
-  b:bool
+  f:bool
 }
