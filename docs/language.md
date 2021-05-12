@@ -4,7 +4,7 @@
 
 Built-ins: number, string, boolean, array?, map (via {}?), lambda (? - this causes havoc with scopes)
 
-Keywords: ```if, else, elif (?), for, do, while, break, continue, return, function, new (?), delete (?), keys, values (for the map), print, main```
+Keywords: ```if, else, elif, do, while, break, continue, return, function, new (?), delete (?), keys, values (for the map), print, main```
 
 No semicolons because why not.
 
@@ -49,4 +49,17 @@ proc foo(a:map,b,c) returns number
   d=a[b]+c() 
   return d
 }
+```
+
+## Chars and strings
+
+No "character" type - only strings, like Python. I *really* like the Python syntax for substrings.
+
+```
+"foo"[3]
+"foo"[1:3]
+"foo"+"bar"
+"foo%d" % 3
+"foo%s" % "bar"
+length("foo")
 ```
