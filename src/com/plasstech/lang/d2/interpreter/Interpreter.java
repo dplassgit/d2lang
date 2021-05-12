@@ -34,8 +34,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       ip++;
       op.accept(this);
       iterations++;
-      if (iterations > 1000) {
-        env.addOutput("Terminated after too many iterations");
+      if (iterations > 10000) {
+        env.addOutput("ERROR: Terminated after too many iterations");
         break;
       }
     }

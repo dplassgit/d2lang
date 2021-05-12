@@ -80,8 +80,8 @@ public class InterpreterTest {
     Lexer lexer = new Lexer("n=10\n" //
             + "n1 = 0\n" //
             + "n2 = 1\n" //
-            + "i=0 while i < n do i = i+1 {\n" //
-            + "  if i==0 {\n" //
+            + "i=0 while i < n*2-1 do i = i-1 {\n" //
+            + "  if (i%2)==0 {\n" //
             + "    continue\n" //
             + "  }\n" //
             + "  nth = n1 + n2\n" //
@@ -89,7 +89,6 @@ public class InterpreterTest {
             + "  n2 = nth\n" //
             + "  print nth\n" //
             + "}\n" //
-            + "print nth\n" //
             + "");
     Parser parser = new Parser(lexer);
 
@@ -105,7 +104,7 @@ public class InterpreterTest {
     System.err.println(env.toString());
     System.err.println(env.output());
     assertThat(env.getValue("nth")).isEqualTo(55);
-    assertThat(env.getValue("i")).isEqualTo(10);
+    assertThat(env.getValue("i")).isEqualTo(19);
   }
   
 }
