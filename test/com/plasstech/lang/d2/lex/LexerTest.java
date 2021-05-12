@@ -314,4 +314,26 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.EOF);
   }
+
+  @Test
+  public void nextToken_stringTick() {
+    Lexer lexer = new Lexer("'Hi'");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo("Hi");
+  }
+
+  @Test
+  public void nextToken_stringQuotes() {
+    Lexer lexer = new Lexer("\"Hi\"");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo("Hi");
+  }
+
+  @Test
+  public void nextToken_stringOpen_error() {
+    Lexer lexer = new Lexer("\"Hi");
+    lexer.nextToken();
+  }
 }

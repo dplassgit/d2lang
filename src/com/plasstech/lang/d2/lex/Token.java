@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    KEYWORD, INT, BOOL, VARIABLE, EQ("=") /* = */, NOT("!"), PLUS("+"), MINUS("-"), LPAREN("("),
+    KEYWORD, INT, BOOL, STRING, VARIABLE, EQ("=") /* = */, NOT("!"), PLUS("+"), MINUS("-"), LPAREN("("),
     RPAREN(")"), MULT("*"), DIV("/"), MOD("%"), AND("&&"), OR("||"), EQEQ("==") /* == */, LT("<"),
     GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), LBRACE, RBRACE, COLON(":"), EOF;
 
