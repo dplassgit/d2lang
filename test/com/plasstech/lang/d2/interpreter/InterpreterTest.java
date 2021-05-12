@@ -80,7 +80,7 @@ public class InterpreterTest {
     Lexer lexer = new Lexer("n=10\n" //
             + "n1 = 0\n" //
             + "n2 = 1\n" //
-            + "i=0 while i < n*2-1 do i = i-1 {\n" //
+            + "i=0 while i < n*2-1 do i = i+1 {\n" //
             + "  if (i%2)==0 {\n" //
             + "    continue\n" //
             + "  }\n" //
