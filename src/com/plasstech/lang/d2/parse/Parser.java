@@ -346,7 +346,11 @@ public class Parser {
     } else if (token.type() == Token.Type.BOOL) {
       BoolToken bt = (BoolToken) token;
       advance();
-      return new BoolNode(bt.value(), bt.end());
+      return new BoolNode(bt.value(), bt.start());
+    } else if (token.type() == Token.Type.STRING) {
+      Token stringToken = token;
+      advance();
+      return new StringNode(stringToken.text(), stringToken.start());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       Node expr = expr();

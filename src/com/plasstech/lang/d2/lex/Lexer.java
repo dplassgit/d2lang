@@ -141,7 +141,7 @@ public class Lexer {
       case '\'':
         return makeStringToken(start, oc);
       default:
-        throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
+        throw new ScannerException(String.format("Unknown character %c", cc), start);
     }
   }
 
@@ -210,6 +210,7 @@ public class Lexer {
     advance(); // eat the tick/quote
     StringBuilder sb = new StringBuilder();
     // TODO: fix backslash-escaping
+    boolean escape = false;
     while (cc != first && cc != 0) {
       if (!escape) {
         sb.append(cc);
@@ -218,12 +219,11 @@ public class Lexer {
     }
 
     if (cc == 0) {
-      throw new RuntimeException(String.format("Unclosed string literal at %s", start));
+      throw new ScannerException("Unclosed string literal", start);
     }
 
     advance(); // eat the closing tick/quote
     Position end = new Position(line, col);
-    return new Token(Type.STRING, start, end, sb.build());
+    return new Token(Type.STRING, start, end, sb.toString());
   }
-
 }

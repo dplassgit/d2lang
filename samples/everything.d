@@ -48,6 +48,14 @@ if a==3 {
   print 6
 }
 
+// x:string
+x="hi"
+x='hi'
+x=""
+x=" "
+y=x
+print y
+
 main {
   f:bool
 }

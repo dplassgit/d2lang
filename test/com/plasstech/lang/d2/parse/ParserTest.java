@@ -614,6 +614,55 @@ public class ParserTest {
     assertThat(declarationNode.varType()).isEqualTo(VarType.BOOL);
   }
 
+  @Test
+  public void parse_declString() {
+    BlockNode root = parseStatements("a:string");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.name()).isEqualTo("a");
+    assertThat(declarationNode.varType()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void parse_assignString() {
+    BlockNode root = parseStatements("a='hi'");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.STRING);
+  }
+
+  @Test
+  public void parse_addStrings() {
+    BlockNode root = parseStatements("a='hi' + 'Hi'");
+    System.err.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    assertThat(node.nodeType()).isEqualTo(Node.Type.ASSIGNMENT);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    Node expr = node.expr();
+    assertThat(expr.nodeType()).isEqualTo(Node.Type.BIN_OP);
+  }
+
   private BlockNode parseStatements(String expression) {
     Node node = parseProgram(expression);
     if (node.isError()) {

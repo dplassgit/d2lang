@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.parse.IntNode;
 import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
+import com.plasstech.lang.d2.parse.StringNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -44,4 +45,6 @@ public interface NodeVisitor {
   void visit(ContinueNode node);
 
   void visit(DeclarationNode node);
+
+  void visit(StringNode stringNode);
 }

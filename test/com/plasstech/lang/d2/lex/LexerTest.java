@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.lex;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
@@ -332,8 +333,24 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_stringEmpty() {
+    Lexer lexer = new Lexer("''");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo("");
+  }
+
+  @Test
+  public void nextToken_stringSpace() {
+    Lexer lexer = new Lexer("' '");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo(" ");
+  }
+
+  @Test
   public void nextToken_stringOpen_error() {
     Lexer lexer = new Lexer("\"Hi");
-    lexer.nextToken();
+    assertThrows(ScannerException.class, () -> lexer.nextToken());
   }
 }

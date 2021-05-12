@@ -22,7 +22,7 @@ public class Position {
 
   @Override
   public String toString() {
-    return String.format("%d,%d", line, column);
+    return String.format("line %d, column %d", line, column);
   }
 }
 
