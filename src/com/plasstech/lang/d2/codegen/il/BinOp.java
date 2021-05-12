@@ -20,7 +20,7 @@ public class BinOp extends Op {
     return lhs;
   }
 
-  public Token.Type type() {
+  public Token.Type operator() {
     return operator;
   }
 
@@ -36,4 +36,10 @@ public class BinOp extends Op {
   public String toString() {
     return String.format("\t%s = %s %s %s;", lhs, rhs1, operator.value(), rhs2);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
 }

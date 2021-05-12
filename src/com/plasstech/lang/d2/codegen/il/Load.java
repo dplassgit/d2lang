@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen.il;
 
-
 public class Load extends Op {
   private final String destRegister;
   private final String sourceAddress;
@@ -21,5 +20,10 @@ public class Load extends Op {
   @Override
   public String toString() {
     return String.format("\t%s = %s; // load", destRegister, sourceAddress);
+  }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
   }
 }

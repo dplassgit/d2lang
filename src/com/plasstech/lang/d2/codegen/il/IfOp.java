@@ -21,4 +21,9 @@ public class IfOp extends Op {
   public String toString() {
     return String.format("\tif (%s) goto %s;", cond, dest);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

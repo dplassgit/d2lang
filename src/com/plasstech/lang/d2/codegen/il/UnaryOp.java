@@ -30,4 +30,9 @@ public class UnaryOp extends Op {
   public String toString() {
     return String.format("\t%s = %s %s;", lhs, operator.value(), rhs);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

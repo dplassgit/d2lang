@@ -21,4 +21,9 @@ public class SysCall extends Op {
   public String toString() {
     return String.format("\tcall(%s, %s);", callName, arg);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

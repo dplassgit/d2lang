@@ -5,4 +5,9 @@ public class Stop extends Op {
   public String toString() {
     return "\texit(0);";
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

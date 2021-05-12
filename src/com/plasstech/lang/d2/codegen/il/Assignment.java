@@ -22,4 +22,9 @@ public class Assignment extends Op {
   public String toString() {
     return String.format("\t%s = %s;", lhs, rhs);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

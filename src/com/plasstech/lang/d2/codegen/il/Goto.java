@@ -1,6 +1,4 @@
-package com.plasstech.lang.d2.codegen;
-
-import com.plasstech.lang.d2.codegen.il.Op;
+package com.plasstech.lang.d2.codegen.il;
 
 public class Goto extends Op {
 
@@ -12,6 +10,11 @@ public class Goto extends Op {
 
   public String label() {
     return label;
+  }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
   }
 
   @Override

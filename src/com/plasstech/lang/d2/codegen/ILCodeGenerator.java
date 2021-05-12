@@ -6,6 +6,7 @@ import java.util.Stack;
 
 import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Load;
@@ -13,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Store;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token.Type;
@@ -72,8 +74,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.printf("\n// %s\n", node);
     Node expr = node.expr();
     expr.accept(this);
-//    emit(new SysCall("$ffd2", "t0"));
-    System.out.println("\tprintf(\"%d\\n\", t0);");
+    emit(new SysCall("$ffd2", "t0"));
+//    System.out.println("\tprintf(\"%d\\n\", t0);");
   }
 
   private String generateLabel(String prefix) {
@@ -253,7 +255,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(ContinueNode node) {
     System.out.println("// continue");
-    // continue = go to the beginning
+    // continue = go to the "increment"
     String before = whileStarts.peek();
     emit(new Goto(before));
   }

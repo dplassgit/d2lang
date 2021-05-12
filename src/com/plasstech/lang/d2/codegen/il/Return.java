@@ -6,4 +6,9 @@ public class Return extends Op {
   public String toString() {
     return "\treturn;";
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

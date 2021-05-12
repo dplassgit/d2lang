@@ -13,6 +13,12 @@ public class Label extends Op {
 
   @Override
   public String toString() {
-    return String.format("\n%s:\n\tt0=t0;", label);
+    return String.format("\n%s:\n", label);
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
 }
