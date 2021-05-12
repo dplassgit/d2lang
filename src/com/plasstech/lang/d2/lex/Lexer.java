@@ -137,6 +137,9 @@ public class Lexer {
       case ':':
         advance();
         return new Token(Type.COLON, start, oc);
+      case '"':
+      case '\'':
+        return makeStringToken(start, oc);
       default:
         throw new RuntimeException(String.format("Unknown character %c at location %s", cc, start));
     }
@@ -164,7 +167,6 @@ public class Lexer {
     advance();
     if (cc == '=') {
       Position end = new Position(line, col);
-      oc = cc;
       advance();
       return new Token(Type.NEQ, start, end, "!=");
     }
@@ -176,7 +178,6 @@ public class Lexer {
     advance();
     if (cc == '=') {
       Position end = new Position(line, col);
-      oc = cc;
       advance();
       return new Token(Type.GEQ, start, end, ">=");
     }
@@ -188,7 +189,6 @@ public class Lexer {
     advance();
     if (cc == '=') {
       Position end = new Position(line, col);
-      oc = cc;
       advance();
       return new Token(Type.LEQ, start, end, "<=");
     }
@@ -200,10 +200,30 @@ public class Lexer {
     advance();
     if (cc == '=') {
       Position end = new Position(line, col);
-      oc = cc;
       advance();
       return new Token(Type.EQEQ, start, end, "==");
     }
     return new Token(Type.EQ, start, oc);
   }
+
+  private Token makeStringToken(Position start, char first) {
+    advance(); // eat the tick/quote
+    StringBuilder sb = new StringBuilder();
+    // TODO: fix backslash-escaping
+    while (cc != first && cc != 0) {
+      if (!escape) {
+        sb.append(cc);
+      }
+      advance();
+    }
+
+    if (cc == 0) {
+      throw new RuntimeException(String.format("Unclosed string literal at %s", start));
+    }
+
+    advance(); // eat the closing tick/quote
+    Position end = new Position(line, col);
+    return new Token(Type.STRING, start, end, sb.build());
+  }
+
 }
