@@ -42,8 +42,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private final SymTab symTab;
 
   private final List<Op> operations = new ArrayList<>();
-  private final Stack<String> whileStarts = new Stack<>();
-  private final Stack<String> whileEnds = new Stack<>();
+  private final Stack<String> whileBreaks = new Stack<>();
+  private final Stack<String> whileContinues = new Stack<>();
 
   private int tempId;
   private int labelId;
@@ -220,11 +220,19 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(WhileNode node) {
     System.out.printf("\n// %s\n", node);
 
-    // push before and after on the stacks, for possible use by the "break" and "continue" nodes.
+    // before:
+    // ..test
+    // ..if done, goto after
+    // ..(loop code)
+    // increment/continue target:
+    // ..(increment code)
+    // ..goto before
+    // after/break target:
     String before = generateLabel("beforeWhile");
-    whileStarts.push(before);
+    String increment = generateLabel("increment");
     String after = generateLabel("afterWhile");
-    whileEnds.push(after);
+    whileContinues.push(increment);
+    whileBreaks.push(after);
 
     System.out.println("// while");
     emit(new Label(before));
@@ -234,21 +242,23 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     System.out.println("// do");
     node.block().accept(this);
+
+    emit(new Label(increment));
     if (node.assignment().isPresent()) {
       node.assignment().get().accept(this);
     }
     emit(new Goto(before));
 
     emit(new Label(after));
-    whileStarts.pop();
-    whileEnds.pop();
+    whileBreaks.pop();
+    whileContinues.pop();
   }
 
   @Override
   public void visit(BreakNode node) {
     // break = go to the end
     System.out.println("// break");
-    String after = whileEnds.peek();
+    String after = whileBreaks.peek();
     emit(new Goto(after));
   }
 
@@ -256,7 +266,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(ContinueNode node) {
     System.out.println("// continue");
     // continue = go to the "increment"
-    String before = whileStarts.peek();
+    String before = whileContinues.peek();
     emit(new Goto(before));
   }
 

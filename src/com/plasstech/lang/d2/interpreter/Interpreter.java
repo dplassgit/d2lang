@@ -45,13 +45,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Assignment op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    Integer rhsVal = env.getValue(op.rhs());
-
-    if (rhsVal != null) {
-      env.setValue(op.lhs(), rhsVal);
-    } else {
-      throw new IllegalStateException(String.format("RHS %s has no value", op.rhs()));
-    }
+    int rhsVal = resolve(op.rhs());
+    env.setValue(op.lhs(), rhsVal);
   }
 
   @Override
