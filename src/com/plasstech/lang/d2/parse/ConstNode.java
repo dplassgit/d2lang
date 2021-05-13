@@ -4,27 +4,28 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-public class StringNode extends SimpleNode {
-  private final String value;
+public class ConstNode<T> extends SimpleNode {
 
-  public StringNode(String value, Position position) {
-    super(Type.STRING, position);
+  private final T value;
+
+  ConstNode(Type type, T value, VarType varType, Position position) {
+    super(type, position);
     this.value = value;
-    setVarType(VarType.STRING);
+    setVarType(varType);
   }
 
-  public String value() {
+  public T value() {
     return value;
   }
 
   @Override
   public String simpleValue() {
-    return value;
+    return String.valueOf(value);
   }
 
   @Override
   public String toString() {
-    return String.format("StringNode: %s", value);
+    return String.format("ConstNode(%s): %s", nodeType().name().toLowerCase(), value);
   }
 
   @Override
