@@ -26,7 +26,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
     assertThat(intNode.position().line()).isEqualTo(1);
     assertThat(intNode.position().column()).isEqualTo(7);
@@ -67,7 +67,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(3);
   }
 
@@ -84,12 +84,12 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
-    assertThat(((BoolNode) expr).value()).isTrue();
+    assertThat(((ConstNode<Boolean>) expr).value()).isTrue();
 
     node = (AssignmentNode) root.statements().get(1);
     expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
-    assertThat(((BoolNode) expr).value()).isFalse();
+    assertThat(((ConstNode<Boolean>) expr).value()).isFalse();
   }
 
   @Test
@@ -108,10 +108,10 @@ public class ParserTest {
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BIN_OP);
 
     BinOpNode binOp = (BinOpNode) expr;
-    IntNode left = (IntNode) binOp.left();
+    ConstNode<Integer> left = (ConstNode<Integer>) binOp.left();
     assertThat(left.value()).isEqualTo(3);
     assertThat(binOp.operator()).isEqualTo(Token.Type.PLUS);
-    IntNode right = (IntNode) binOp.right();
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(4);
   }
 
@@ -131,10 +131,10 @@ public class ParserTest {
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BIN_OP);
 
     BinOpNode binOp = (BinOpNode) expr;
-    IntNode left = (IntNode) binOp.left();
+    ConstNode<Integer> left = (ConstNode<Integer>) binOp.left();
     assertThat(left.value()).isEqualTo(3);
     assertThat(binOp.operator()).isEqualTo(Token.Type.MULT);
-    IntNode right = (IntNode) binOp.right();
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(4);
   }
 
@@ -192,7 +192,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BOOL);
-    assertThat(((BoolNode) expr).value()).isFalse();
+    assertThat(((ConstNode<Boolean>) expr).value()).isFalse();
   }
 
   @Test
@@ -278,7 +278,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    assertThat(((IntNode) expr).value()).isEqualTo(value);
+    assertThat(((ConstNode<Integer>) expr).value()).isEqualTo(value);
   }
 
   @Test
@@ -344,7 +344,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(3);
   }
 
@@ -441,7 +441,7 @@ public class ParserTest {
     assertThat(whileNode.assignment().isPresent()).isFalse();
     Node condition = whileNode.condition();
     assertThat(condition.nodeType()).isEqualTo(Node.Type.BOOL);
-    assertThat(((BoolNode) condition).value()).isTrue();
+    assertThat(((ConstNode<Boolean>) condition).value()).isTrue();
     BlockNode block = whileNode.block();
     assertThat(block.statements()).isEmpty();
   }
@@ -461,7 +461,7 @@ public class ParserTest {
 
     Node expr = assignment.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(1);
   }
 
@@ -481,7 +481,7 @@ public class ParserTest {
     VariableNode left = (VariableNode) binOp.left();
     assertThat(left.name()).isEqualTo("i");
     assertThat(binOp.operator()).isEqualTo(Token.Type.LT);
-    IntNode right = (IntNode) binOp.right();
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(30);
   }
 
@@ -549,7 +549,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
     assertThat(intNode.position().line()).isEqualTo(1);
     assertThat(intNode.position().column()).isEqualTo(7);
@@ -569,7 +569,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.INT);
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
   }
 

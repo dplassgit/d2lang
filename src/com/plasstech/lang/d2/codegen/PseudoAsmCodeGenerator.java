@@ -6,8 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.BoolNode;
-import com.plasstech.lang.d2.parse.IntNode;
+import com.plasstech.lang.d2.parse.ConstNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
@@ -44,17 +43,10 @@ public class PseudoAsmCodeGenerator extends DefaultVisitor implements CodeGenera
   }
 
   @Override
-  public void visit(IntNode node) {
+  public <T> void visit(ConstNode<T> node) {
     System.out.printf("; %s\n", node);
     // Provide constant in r0
-    emit(String.format("ld r0, #%s", node.value()));
-  }
-
-  @Override
-  public void visit(BoolNode node) {
-    System.out.printf("; %s\n", node);
-    // Provide constant in r0
-    emit(String.format("ld r0, #%d", node.value() ? 1 : 0));
+    emit(String.format("ld r0, #%d", node.value()));// ? 1 : 0));
   }
 
   @Override

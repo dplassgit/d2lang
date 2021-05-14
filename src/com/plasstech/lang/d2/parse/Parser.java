@@ -316,11 +316,16 @@ public class Parser {
         if (unaryToken.type() == Token.Type.PLUS) {
           return expr;
         } else if (unaryToken.type() == Token.Type.MINUS) {
-          return new IntNode(-((IntNode) expr).value(), unaryToken.start());
+          @SuppressWarnings("unchecked")
+          ConstNode<Integer> in = (ConstNode<Integer>) expr;
+          return new ConstNode<Integer>(Node.Type.INT, -in.value(), VarType.INT,
+                  unaryToken.start());
         }
       } else if (expr.nodeType() == Node.Type.BOOL) {
         if (unaryToken.type() == Token.Type.NOT) {
-          return new BoolNode(!((BoolNode) expr).value(), unaryToken.start());
+          @SuppressWarnings("unchecked")
+          ConstNode<Boolean> cn = (ConstNode<Boolean>)expr;
+          return new ConstNode<Boolean>(Node.Type.BOOL, !cn.value(), VarType.BOOL, unaryToken.start());
         }
       }
 
@@ -337,7 +342,7 @@ public class Parser {
     if (token.type() == Token.Type.INT) {
       IntToken it = (IntToken) token;
       advance();
-      return new IntNode(it.value(), it.start());
+      return new ConstNode<Integer>(Node.Type.INT, it.value(), VarType.INT, it.start());
     } else if (token.type() == Token.Type.VARIABLE) {
       Token varToken = token;
       String name = token.text();
@@ -346,11 +351,11 @@ public class Parser {
     } else if (token.type() == Token.Type.BOOL) {
       BoolToken bt = (BoolToken) token;
       advance();
-      return new BoolNode(bt.value(), bt.start());
+      return new ConstNode<Boolean>(Node.Type.BOOL, bt.value(), VarType.BOOL, bt.start());
     } else if (token.type() == Token.Type.STRING) {
-      Token stringToken = token;
+      Token st = token;
       advance();
-      return new StringNode(stringToken.text(), stringToken.start());
+      return new ConstNode<String>(Node.Type.STRING, st.text(), VarType.STRING, st.start());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       Node expr = expr();
