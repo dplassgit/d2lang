@@ -1,14 +1,12 @@
 package com.plasstech.lang.d2.type;
 
-public class TypeException extends RuntimeException {
-  private final String error;
+import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Position;
 
-  public TypeException(String error) {
-    this.error = error;
+public class TypeException extends D2RuntimeException {
+  private static final long serialVersionUID = 314159L;
+
+  public TypeException(String message, Position position) {
+    super(message, position, "Type");
   }
-
-  public String error() {
-    return error;
-  }
-
 }

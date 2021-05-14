@@ -244,14 +244,30 @@ public class StaticCheckerTest {
   @Test
   public void execute_binOpMismatch() {
     for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
-      assertExecuteError(String.format("a=true%S3", op), "Type mismatch");
+      assertExecuteError(String.format("a=true %s 3", op), "Type mismatch");
+      assertExecuteError(String.format("a='hi' %s 3", op), "Type mismatch");
     }
   }
 
   @Test
   public void execute_binOpSingleCharMismatch() {
     for (char c : "+-<>|&".toCharArray()) {
-      assertExecuteError(String.format("a=true%c3", c), "Type mismatch");
+      assertExecuteError(String.format("a=true %c 3", c), "Type mismatch");
+      assertExecuteError(String.format("a='hi' %c 3", c), "Type mismatch");
+    }
+  }
+
+  @Test
+  public void execute_binOpStringInvalidOperator() {
+    for (char c : "|&".toCharArray()) {
+      assertExecuteError(String.format("a='hi' %c 'bye'", c), "Cannot apply");
+    }
+  }
+
+  @Test
+  public void execute_binOpStringValidOperator() {
+    for (String op : ImmutableList.of("+", "-", "<", ">", "==", "!=", "<=", ">=")) {
+      checkProgram(String.format("a='hi' %s 'bye'", op));
     }
   }
 
@@ -348,6 +364,8 @@ public class StaticCheckerTest {
     assertExecuteError("a:bool main {a:int}", "already declared as BOOL");
     assertExecuteError("a:int b=a", "'a' used before assign");
     assertExecuteError("a:int a=true", "mismatch");
+    assertExecuteError("a:string a=true", "mismatch");
+    assertExecuteError("a:int a=''", "mismatch");
   }
 
   @Test
@@ -368,7 +386,7 @@ public class StaticCheckerTest {
     ProgramNode root = (ProgramNode) parser.parse();
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
-    assertWithMessage("result error").that(result.isError()).isTrue();
+    assertWithMessage("result error for " + program).that(result.isError()).isTrue();
     System.err.println(result.message());
     assertThat(result.message()).contains(messageShouldContain);
   }

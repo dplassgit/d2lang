@@ -22,6 +22,10 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
+  private static final Set<Token.Type> STRING_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
+          Token.Type.LT, Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ,
+          Token.Type.PLUS, Token.Type.MINUS);
+
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
 
@@ -34,7 +38,7 @@ public class StaticChecker extends DefaultVisitor {
       root.accept(this);
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
-      return new TypeCheckResult(e.error());
+      return new TypeCheckResult(e.toString());
     }
   }
 
@@ -44,8 +48,7 @@ public class StaticChecker extends DefaultVisitor {
     expr.accept(this);
     if (expr.varType().isUnknown()) {
       // this is bad.
-      throw new TypeException(String.format("Type error at %s: Indeterminable type for %s",
-              expr.position(), expr));
+      throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
     }
   }
 
@@ -58,8 +61,7 @@ public class StaticChecker extends DefaultVisitor {
     right.accept(this);
     if (right.varType().isUnknown()) {
       // this is bad.
-      throw new TypeException(String.format("Type error at %s: Indeterminable type for %s",
-              right.position(), right));
+      throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
     VarType existingType = symbolTable.lookup(variable.name());
@@ -67,8 +69,8 @@ public class StaticChecker extends DefaultVisitor {
       symbolTable.assign(variable.name(), right.varType());
     } else if (existingType != right.varType()) {
       // It was already in the symbol table. Possible that it's wrong
-      throw new TypeException(String.format("Type mismatch at %s: lhs (%s) is %s; rhs (%s) is %s",
-              variable.position(), variable, existingType, right, right.varType()));
+      throw new TypeException(String.format("Type mismatch: lhs (%s) is %s; rhs (%s) is %s",
+              variable, existingType, right, right.varType()), variable.position());
     }
     if (!symbolTable.isAssigned(variable.name())) {
       symbolTable.assign(variable.name(), right.varType());
@@ -88,8 +90,8 @@ public class StaticChecker extends DefaultVisitor {
         if (!symbolTable.isAssigned(node.name())) {
           // can't use it
           throw new TypeException(
-                  String.format("Type error at %s: Variable '%s' used before assignment",
-                          node.position(), node.name()));
+                  String.format("Variable '%s' used before assignment", node.name()),
+                  node.position());
         }
         node.setVarType(existingType);
       }
@@ -106,26 +108,30 @@ public class StaticChecker extends DefaultVisitor {
     right.accept(this);
 
     if (left.varType().isUnknown()) {
-      throw new TypeException(
-              String.format("Type error at %s: Indeterminable type for %s", left.position(), left));
+      throw new TypeException(String.format("Indeterminable type for %s", left), left.position());
     }
     if (right.varType().isUnknown()) {
-      throw new TypeException(String.format("Type error at %s: Indeterminable type for %s",
-              right.position(), right));
+      throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
     if (left.varType() != right.varType()) {
-      throw new TypeException(String.format("Type mismatch at %s: lhs %s is %s; rhs %s is %s",
-              left.position(), left, left.varType(), right, right.varType()));
+      throw new TypeException(String.format("Type mismatch: lhs %s is %s; rhs %s is %s", left,
+              left.varType(), right, right.varType()), left.position());
     }
 
     // Check that they're not trying to, for example, multiply booleans
     if (left.varType() == VarType.BOOL && !COMPARISION_OPERATORS.contains(binOpNode.operator())) {
       throw new TypeException(
-              String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
-                      left.position(), binOpNode.operator()));
+              String.format("Cannot apply %s operator to boolean expression", binOpNode.operator()),
+              left.position());
     }
-    if (left.varType() == VarType.INT && COMPARISION_OPERATORS.contains(binOpNode.operator())) {
+    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(binOpNode.operator())) {
+      throw new TypeException(
+              String.format("Cannot apply %s operator to string expression", binOpNode.operator()),
+              left.position());
+    }
+    if ((left.varType() == VarType.INT || left.varType() == VarType.STRING)
+            && COMPARISION_OPERATORS.contains(binOpNode.operator())) {
       binOpNode.setVarType(VarType.BOOL);
     } else {
       binOpNode.setVarType(left.varType());
@@ -138,20 +144,19 @@ public class StaticChecker extends DefaultVisitor {
     expr.accept(this);
 
     if (expr.varType().isUnknown()) {
-      throw new TypeException(
-              String.format("Type error at %s: Indeterminable type for %s", expr.position(), expr));
+      throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
     }
 
     // Check that they're not trying to negate a boolean or "not" an int.
     if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
       throw new TypeException(
-              String.format("Type mismatch at %s: Cannot apply %s operator to boolean expression",
-                      expr.position(), unaryNode.operator()));
+              String.format("Cannot apply %s operator to boolean expression", unaryNode.operator()),
+              expr.position());
     }
     if (expr.varType() == VarType.INT && unaryNode.operator() == Token.Type.NOT) {
       throw new TypeException(
-              String.format("Type mismatch at %s: Cannot apply %s operator to int expression",
-                      expr.position(), unaryNode.operator()));
+              String.format("Cannot apply %s operator to int expression", unaryNode.operator()),
+              expr.position());
     }
     unaryNode.setVarType(expr.varType());
   }
@@ -162,9 +167,10 @@ public class StaticChecker extends DefaultVisitor {
       Node condition = ifCase.condition();
       condition.accept(this);
       if (condition.varType() != VarType.BOOL) {
-        throw new TypeException(String.format(
-                "Type mismatch at %s: Condition for 'if' or 'elif' must be boolean; was %s",
-                condition.position(), condition.varType()));
+        throw new TypeException(
+                String.format("Condition for 'if' or 'elif' must be boolean; was %s",
+                        condition.varType()),
+                condition.position());
       }
       ifCase.block().statements().forEach(stmt -> {
         stmt.accept(this);
@@ -183,8 +189,8 @@ public class StaticChecker extends DefaultVisitor {
     condition.accept(this);
     if (condition.varType() != VarType.BOOL) {
       throw new TypeException(
-              String.format("Type mismatch at %s: Condition for 'while' must be boolean; was %s",
-                      condition.position(), condition.varType()));
+              String.format("Condition for 'while' must be boolean; was %s", condition.varType()),
+              condition.position());
     }
     if (boolNode.assignment().isPresent()) {
       boolNode.assignment().get().accept(this);
@@ -206,8 +212,9 @@ public class StaticChecker extends DefaultVisitor {
     VarType existingType = symbolTable.lookup(node.name());
     if (existingType != VarType.UNKNOWN) {
       throw new TypeException(
-              String.format("Type error at %s: variable '%s' already declared as %s",
-                      node.position(), node.name(), existingType.name()));
+              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
+                      node.name(), existingType.name(), node.varType()),
+              node.position());
     }
     symbolTable.declare(node.name(), node.varType());
   }
