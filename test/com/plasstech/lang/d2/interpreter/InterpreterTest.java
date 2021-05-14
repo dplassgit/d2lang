@@ -107,4 +107,28 @@ public class InterpreterTest {
     assertThat(env.getValue("i")).isEqualTo(19);
   }
   
+  @Test
+  public void ifElse() {
+    Lexer lexer = new Lexer("n = 0 " //
+            + "while n < 10 do n = n + 1 {" //
+            + " if n == 1 { print -1 } " //
+            + " elif (n == 2) { print -2 } " //
+            + " else {" //
+            + "   if n==3 {print -3} " //
+            + "   else {print n}}" //
+            + "}");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    SymTab table = result.symbolTable();
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
+    List<Op> operators = codegen.generate();
+    Interpreter interpreter = new Interpreter(operators, table);
+    Environment env = interpreter.execute();
+
+    System.err.println(env.output());
+    assertThat(env.getValue("n")).isEqualTo(10);
+  }
 }

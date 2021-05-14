@@ -48,10 +48,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private int tempId;
   private int labelId;
+  private Symbol t0 = new Symbol("t0");
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
     this.root = root;
     this.symTab = symTab;
+    // This is potentially wrong.
+    t0.setType(VarType.INT);
   }
 
   @Override
@@ -61,24 +64,28 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.println("main() {");
     if (symTab != null) {
       for (Symbol symbol : symTab.entries().values()) {
-        switch (symbol.type()) {
-          case INT:
-          case BOOL:
-            System.out.printf("int %s;\n", symbol.name());
-            break;
-          case STRING:
-            System.out.printf("char *%s;\n", symbol.name());
-            break;
-          default:
-            System.out.printf("void *%s;\n", symbol.name());
-            break;
-        }
+        emitTypeDeclaration(symbol);
       }
     }
-    System.out.printf("int t0;\n");
+    emitTypeDeclaration(t0);
     root.accept(this);
     System.out.println("}");
     return operations;
+  }
+
+  private void emitTypeDeclaration(Symbol symbol) {
+    switch (symbol.type()) {
+      case INT:
+      case BOOL:
+        System.out.printf("int %s;\n", symbol.name());
+        break;
+      case STRING:
+        System.out.printf("char *%s;\n", symbol.name());
+        break;
+      default:
+        System.out.printf("void *%s;\n", symbol.name());
+        break;
+    }
   }
 
   @Override
@@ -126,7 +133,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public <T> void visit(ConstNode<T> node) {
     // Provide constant in t0
     if (node.nodeType() == Node.Type.STRING) {
-      // TODO: storage for strings
+      // TODO: figure out storage for strings
       emit(new Assignment("t0", String.format("\"%s\"", node.simpleValue())));
     } else {
       emit(new Assignment("t0", node.simpleValue()));
@@ -154,7 +161,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     } else {
       leftSrc = generateTemp(left.varType());
       left.accept(this);
-      // by definition, "left" has emitted its value in t0. store in rx
+      // by definition, "left" has emitted its value in t0. Copy to "leftSrc"
       emit(new Assignment(leftSrc, "t0"));
     }
 
@@ -170,7 +177,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     } else {
       rightSrc = generateTemp(left.varType());
       right.accept(this);
-      // by definition, "left" has emitted its value in t0. store in rx
+      // by definition, "right" has emitted its value in t0. Copy to "rightSrc"
       emit(new Assignment(rightSrc, "t0"));
     }
 
@@ -215,19 +222,18 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     String after = generateLabel("afterIf");
 
     for (IfNode.Case ifCase : node.cases()) {
+      String nextLabel = generateLabel("elif");
+
       Node cond = ifCase.condition();
       cond.accept(this);
-      // This is very inefficient, but understandable.
-      String thisLabel = generateLabel("then");
-      String nextLabel = generateLabel("elif");
-      // if it's true, jump to this block
-      emit(new IfOp("t0", thisLabel));
-      // else, jump to the next one
-      emit(new Goto(nextLabel));
-      emit(new Label(thisLabel));
+      // if it's not true, jump to the next block
+      emit(new UnaryOp("t0", Type.NOT, "t0"));
+      emit(new IfOp("t0", nextLabel));
+
       ifCase.block().statements().forEach(stmt -> stmt.accept(this));
       // We're in a block , now jump completely after.
       emit(new Goto(after));
+
       emit(new Label(nextLabel));
     }
     if (node.elseBlock() != null) {
@@ -246,10 +252,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // ..test
     // ..if done, goto after
     // ..(loop code)
-    // increment/continue target:
+    // increment: ("continue" target)
     // ..(increment code)
     // ..goto before
-    // after/break target:
+    // after: ("break" target)
     String before = generateLabel("beforeWhile");
     String increment = generateLabel("increment");
     String after = generateLabel("afterWhile");
