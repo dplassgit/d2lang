@@ -9,7 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.IntNode;
+import com.plasstech.lang.d2.parse.ConstNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
@@ -46,7 +46,7 @@ public class StaticCheckerTest {
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.varType()).isEqualTo(VarType.INT);
   }
 
@@ -67,7 +67,7 @@ public class StaticCheckerTest {
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
-    IntNode intNode = (IntNode) expr;
+    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.varType()).isEqualTo(VarType.INT);
   }
 
