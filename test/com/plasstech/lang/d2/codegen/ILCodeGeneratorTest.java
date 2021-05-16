@@ -28,6 +28,16 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void generate_stringAssignment() {
+    generateProgram("a:string a='hi' print a");
+  }
+
+  @Test
+  public void generate_stringExpression() {
+    generateProgram("a='hi' b=a+' world'");
+  }
+
+  @Test
   public void generate_hugeAssignment() {
     generateProgram("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
@@ -77,7 +87,7 @@ public class ILCodeGeneratorTest {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     ProgramNode root = (ProgramNode) parser.parse();
-    System.err.println(root);
+    System.err.printf("// %s\n", root.toString());
 
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();

@@ -19,6 +19,11 @@ public class SysCall extends Op {
 
   @Override
   public String toString() {
+    if (callName.equals("$ffd2")) {
+      // TODO: need type of "arg"
+      // print
+      return String.format("\tprintf(\"%%s\\n\", %s);", arg);
+    }
     return String.format("\tcall(%s, %s);", callName, arg);
   }
 
