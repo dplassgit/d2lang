@@ -259,16 +259,30 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_binOpStringInvalidOperator() {
-    for (char c : "|&".toCharArray()) {
-      assertExecuteError(String.format("a='hi' %c 'bye'", c), "Cannot apply");
+    for (char c : "|&-%*/".toCharArray()) {
+      assertExecuteError(String.format("a='hi' %c 'not'", c), "Cannot apply");
     }
   }
 
   @Test
   public void execute_binOpStringValidOperator() {
-    for (String op : ImmutableList.of("+", "-", "<", ">", "==", "!=", "<=", ">=")) {
+    for (String op : ImmutableList.of("+", "<", ">", "==", "!=", "<=", ">=")) {
       checkProgram(String.format("a='hi' %s 'bye'", op));
     }
+  }
+
+  @Test
+  public void execute_binOpStringComparatorBoolean() {
+    SymTab symTab = checkProgram("b:bool b='hi' == 'bye'");
+    assertThat(symTab.get("b").type()).isEqualTo(VarType.BOOL);
+  }
+
+  @Test
+  public void execute_binStringAdd() {
+    SymTab symTab = checkProgram("b='hi' a='bye' c=a+b");
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("b").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("c").type()).isEqualTo(VarType.STRING);
   }
 
   @Test

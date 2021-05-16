@@ -24,7 +24,9 @@ public class StaticChecker extends DefaultVisitor {
 
   private static final Set<Token.Type> STRING_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
           Token.Type.LT, Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ,
-          Token.Type.PLUS, Token.Type.MINUS);
+          Token.Type.PLUS
+  // , Token.Type.MOD // eventually
+  );
 
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
