@@ -11,13 +11,16 @@ public class SymTab {
 
   private final Map<String, Symbol> values = new HashMap<>();
   private final SymTab parent;
+  private SymbolStorage storage;
 
   public SymTab() {
     this.parent = null;
+    this.storage = SymbolStorage.GLOBAL;
   }
 
   private SymTab(SymTab parent) {
     this.parent = parent;
+    this.storage = SymbolStorage.LOCAL;
   }
 
   public SymTab spawn() {
@@ -55,7 +58,7 @@ public class SymTab {
             "Type error: %s already declared as %s. Cannot be redeclared as %s.", name,
             values.get(name), varType);
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
-    Symbol sym = new Symbol(name).setType(varType);
+    Symbol sym = new Symbol(name, storage).setType(varType);
     values.put(name, sym);
   }
 
@@ -67,7 +70,7 @@ public class SymTab {
               "Type error: %s already declared as %s. Cannot be assigned as %s.", name,
               sym.type(), varType);
     } else {
-      sym = new Symbol(name).setType(varType);
+      sym = new Symbol(name, storage).setType(varType);
     }
     sym.setAssigned();
     values.put(name, sym);

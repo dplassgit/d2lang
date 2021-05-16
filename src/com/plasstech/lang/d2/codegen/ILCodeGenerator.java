@@ -35,6 +35,7 @@ import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
+import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
@@ -48,7 +49,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private int tempId;
   private int labelId;
-  private Symbol t0 = new Symbol("t0");
+  private Symbol t0 = new Symbol("t0", SymbolStorage.GLOBAL);
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
     this.root = root;
