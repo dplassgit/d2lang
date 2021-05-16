@@ -10,11 +10,13 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Load;
+import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.TempLocation;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token.Type;
@@ -35,7 +37,6 @@ import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
-import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
@@ -49,13 +50,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private int tempId;
   private int labelId;
-  private Symbol t0 = new Symbol("t0", SymbolStorage.GLOBAL);
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
     this.root = root;
     this.symTab = symTab;
-    // This is potentially wrong.
-    t0.setType(VarType.INT);
   }
 
   @Override
@@ -68,7 +66,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         emitTypeDeclaration(symbol);
       }
     }
-    emitTypeDeclaration(t0);
     root.accept(this);
     System.out.println("}");
     return operations;
@@ -89,15 +86,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     }
   }
 
-  @Override
-  public void visit(PrintNode node) {
-    System.out.printf("\n// %s\n", node);
-    Node expr = node.expr();
-    expr.accept(this);
-    emit(new SysCall("$ffd2", "t0"));
-//    System.out.println("\tprintf(\"%d\\n\", t0);");
-  }
-
   private String generateLabel(String prefix) {
     labelId++;
     return String.format("%s%d", prefix, labelId);
@@ -105,19 +93,30 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private String generateTemp(VarType varType) {
     tempId++;
+    String name = String.format("temp%d", tempId);
     switch (varType) {
       case BOOL:
       case INT:
-        System.out.printf("int t%d;\n", tempId);
+        System.out.printf("int %s;\n", name);
         break;
       case STRING:
-        System.out.printf("char *t%d;\n", tempId);
+        System.out.printf("char *%s;\n", name);
         break;
       default:
-        System.out.printf("void *t%d;\n", tempId);
+        System.out.printf("void *%s;\n", name);
         break;
     }
-    return String.format("t%d", tempId);
+    symTab.declare(name, varType);
+    return name;
+  }
+
+  @Override
+  public void visit(PrintNode node) {
+    System.out.printf("\n// %s\n", node);
+    Node expr = node.expr();
+    expr.accept(this);
+    emit(new SysCall("$ffd2", expr.location().name()));
+//    System.out.println("\tprintf(\"%d\\n\", t0);");
   }
 
   @Override
@@ -127,24 +126,29 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     String name = node.variable().name();
     Node expr = node.expr();
     expr.accept(this);
-    emit(new Store(name, "t0"));
+    Location dest = expr.location();
+    emit(new Store(name, dest.name()));
   }
 
   @Override
   public <T> void visit(ConstNode<T> node) {
     // Provide constant in t0
+    String location = generateTemp(node.varType());
+    node.setLocation(new TempLocation(location));
     if (node.nodeType() == Node.Type.STRING) {
       // TODO: figure out storage for strings
-      emit(new Assignment("t0", String.format("\"%s\"", node.simpleValue())));
+      emit(new Assignment(location, String.format("\"%s\"", node.simpleValue())));
     } else {
-      emit(new Assignment("t0", node.simpleValue()));
+      emit(new Assignment(location, node.simpleValue()));
     }
   }
 
   @Override
   public void visit(VariableNode node) {
-    // Retrieve location of variable and provide it in t0
-    emit(new Load("t0", node.name()));
+    String location = generateTemp(node.varType());
+    node.setLocation(new TempLocation(location));
+    // Retrieve location of variable and provide it in a temp
+    emit(new Load(location, node.name()));
   }
 
   @Override
@@ -163,7 +167,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       leftSrc = generateTemp(left.varType());
       left.accept(this);
       // by definition, "left" has emitted its value in t0. Copy to "leftSrc"
-      emit(new Assignment(leftSrc, "t0"));
+      emit(new Assignment(leftSrc, left.location().name()));
     }
 
     // Calculate the value and set it in t0
@@ -179,7 +183,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       rightSrc = generateTemp(left.varType());
       right.accept(this);
       // by definition, "right" has emitted its value in t0. Copy to "rightSrc"
-      emit(new Assignment(rightSrc, "t0"));
+      emit(new Assignment(rightSrc, right.location().name()));
     }
 
 //    switch (node.operator()) {
@@ -188,7 +192,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 //      case MULT:
 //      case PLUS:
 //      case EQEQ:
-    emit(new BinOp("t0", leftSrc, node.operator(), rightSrc));
+    String location = generateTemp(node.varType());
+    node.setLocation(new TempLocation(location));
+    emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
 //        break;
 //      default:
 //        emit("UNKNOWN OP " + node.operator());
@@ -204,10 +210,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Node expr = node.expr();
     expr.accept(this);
 
+    String location = generateTemp(node.varType());
+    node.setLocation(new TempLocation(location));
+
     switch (node.operator()) {
       case NOT:
       case MINUS: // want t0 to be 0-t0
-        emit(new UnaryOp("t0", node.operator(), "t0"));
+        emit(new UnaryOp(location, node.operator(), location));
         break;
       case PLUS:
         // Intentionally do nothing.
@@ -227,9 +236,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
       Node cond = ifCase.condition();
       cond.accept(this);
+
+      String temp = generateTemp(cond.varType());
       // if it's not true, jump to the next block
-      emit(new UnaryOp("t0", Type.NOT, "t0"));
-      emit(new IfOp("t0", nextLabel));
+      // temp = !cond
+      // if temp skip to next block.
+      emit(new UnaryOp(temp, Type.NOT, cond.location().name()));
+      emit(new IfOp(temp, nextLabel));
 
       ifCase.block().statements().forEach(stmt -> stmt.accept(this));
       // We're in a block , now jump completely after.
@@ -265,9 +278,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     System.out.println("// while");
     emit(new Label(before));
-    node.condition().accept(this);
-    emit(new UnaryOp("t0", Type.NOT, "t0"));
-    emit(new IfOp("t0", after));
+    Node cond = node.condition();
+    cond.accept(this);
+
+    String temp = generateTemp(cond.varType());
+    emit(new UnaryOp(temp, Type.NOT, cond.location().name()));
+    emit(new IfOp(temp, after));
 
     System.out.println("// do");
     node.block().accept(this);

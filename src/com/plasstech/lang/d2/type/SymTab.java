@@ -52,17 +52,27 @@ public class SymTab {
     return ImmutableMap.copyOf(values);
   }
 
+  public Symbol declareTemp(String name, VarType varType) {
+    return declareInternal(name, varType);
+  }
+
   // It's only declared.
-  public void declare(String name, VarType varType) {
+  public Symbol declare(String name, VarType varType) {
+    // think about mangling this
+    return declareInternal(name, varType);
+  }
+
+  private Symbol declareInternal(String name, VarType varType) {
     Preconditions.checkState(!values.containsKey(name),
             "Type error: %s already declared as %s. Cannot be redeclared as %s.", name,
             values.get(name), varType);
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = new Symbol(name, storage).setType(varType);
     values.put(name, sym);
+    return sym;
   }
 
-  public void assign(String name, VarType varType) {
+  public Symbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
     if (sym != null) {
@@ -74,5 +84,6 @@ public class SymTab {
     }
     sym.setAssigned();
     values.put(name, sym);
+    return sym;
   }
 }

@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import com.google.common.base.Preconditions;
+import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
@@ -17,6 +18,7 @@ public abstract class Node {
   private final Type type;
   private final Position position;
   private VarType varType = VarType.UNKNOWN;
+  private Location location;
 
   Node(Type type, Position position) {
     this.type = type;
@@ -53,5 +55,14 @@ public abstract class Node {
 
   public void accept(NodeVisitor visitor) {
     // do nothing.
+  }
+
+  public void setLocation(Location location) {
+    Preconditions.checkState(this.location == null, "Location cannot be set again");
+    this.location = location;
+  }
+
+  public Location location() {
+    return location;
   }
 }
