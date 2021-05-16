@@ -28,14 +28,32 @@ public class InterpreterTest {
     SymTab table = result.symbolTable();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
     List<Op> operators = codegen.generate();
-//    for (int i = 0; i < operators.size(); ++i) {
-//      System.out.printf("%d: %s\n", i + 1, operators.get(i));
-//    }
     Interpreter interpreter = new Interpreter(operators, table);
     Environment env = interpreter.execute();
 
     System.err.println(env.output());
     assertThat(env.getValue("i")).isEqualTo(30);
+  }
+
+  @Test
+  public void whileLoopIncrement() {
+    Lexer lexer = new Lexer("i=0 while true do i=i+1 { i= i*2 if i > 1000 { break }}");
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    if (result.isError()) {
+      throw new RuntimeException(result.message());
+    }
+    SymTab table = result.symbolTable();
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
+    List<Op> operators = codegen.generate();
+    Interpreter interpreter = new Interpreter(operators, table);
+    Environment env = interpreter.execute();
+
+    System.err.println(env.output());
+    assertThat(env.getValue("i")).isEqualTo(1022);
   }
 
   @Test
@@ -106,7 +124,36 @@ public class InterpreterTest {
     assertThat(env.getValue("nth")).isEqualTo(55);
     assertThat(env.getValue("i")).isEqualTo(19);
   }
-  
+
+  @Test
+  public void fact() {
+    Lexer lexer = new Lexer( //
+            "          n= 10 fact = 1\n" //
+                    + "i=1 while i <= n do i = i+1 {\n" //
+                    + "  fact = fact*i\n" //
+                    + "  print fact\n" //
+                    + "}\n" //
+    );
+    Parser parser = new Parser(lexer);
+
+    ProgramNode root = (ProgramNode) parser.parse();
+    StaticChecker checker = new StaticChecker(root);
+    TypeCheckResult result = checker.execute();
+    if (result.isError()) {
+      throw new RuntimeException(result.message());
+    }
+    SymTab table = result.symbolTable();
+    CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
+    List<Op> operators = codegen.generate();
+    Interpreter interpreter = new Interpreter(operators, table);
+    Environment env = interpreter.execute();
+
+    System.err.println(env.toString());
+    System.err.println(env.output());
+    assertThat(env.getValue("i")).isEqualTo(11);
+    assertThat(env.getValue("fact")).isEqualTo(3628800);
+  }
+
   @Test
   public void ifElse() {
     Lexer lexer = new Lexer("n = 0 " //
