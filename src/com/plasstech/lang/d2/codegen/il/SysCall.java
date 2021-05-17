@@ -1,16 +1,20 @@
 package com.plasstech.lang.d2.codegen.il;
 
 public class SysCall extends Op {
-  private final String callName;
+  public enum Call {
+    PRINT
+  }
+
+  private final Call call;
   private final String arg;
 
-  public SysCall(String callName, String arg) {
-    this.callName = callName;
+  public SysCall(Call call, String arg) {
+    this.call = call;
     this.arg = arg;
   }
 
-  public String callName() {
-    return callName;
+  public Call call() {
+    return call;
   }
 
   public String arg() {
@@ -19,12 +23,12 @@ public class SysCall extends Op {
 
   @Override
   public String toString() {
-    if (callName.equals("$ffd2")) {
+    if (call == Call.PRINT) {
       // TODO: need type of "arg"
       // print
       return String.format("\tprintf(\"%%s\", %s);", arg);
     }
-    return String.format("\tcall(%s, %s);", callName, arg);
+    return String.format("\tcall(%s, %s);", call.name(), arg);
   }
 
   @Override

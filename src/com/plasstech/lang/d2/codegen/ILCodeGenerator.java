@@ -115,9 +115,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.printf("\n// %s\n", node);
     Node expr = node.expr();
     expr.accept(this);
-    emit(new SysCall("$ffd2", expr.location().name()));
+    emit(new SysCall(SysCall.Call.PRINT, expr.location().name()));
     if (node.isPrintln()) {
-      emit(new SysCall("$ffd2", "\"\\n\""));
+      emit(new SysCall(SysCall.Call.PRINT, "\"\\n\""));
     }
 //    System.out.println("\tprintf(\"%d\\n\", t0);");
   }
