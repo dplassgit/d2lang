@@ -8,15 +8,21 @@ import com.plasstech.lang.d2.common.Position;
  */
 public class PrintNode extends StatementNode {
   private final Node expr;
+  private final boolean println;
 
-  public PrintNode(Node expr, Position position) {
+  public PrintNode(Node expr, Position position, boolean println) {
     super(Type.PRINT, position);
     this.expr = expr;
+    this.println = println;
   }
 
   // May be a binop or atom, etc.
   public Node expr() {
     return expr;
+  }
+
+  public boolean isPrintln() {
+    return println;
   }
 
   @Override

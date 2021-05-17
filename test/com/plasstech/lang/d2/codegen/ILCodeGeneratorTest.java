@@ -33,6 +33,11 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void generate_println() {
+    generateProgram("a='world' print 'hello, ' println a");
+  }
+
+  @Test
   public void generate_stringExpression() {
     generateProgram("a='hi' b=a+' world'");
   }

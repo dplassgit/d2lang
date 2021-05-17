@@ -132,10 +132,12 @@ public class LexerTest {
 
   @Test
   public void nextToken_keyword() {
-    Lexer lexer = new Lexer("print IF Else elif do while break continue int bool");
+    Lexer lexer = new Lexer("print PrintLN IF Else elif do while break continue int bool");
 
     KeywordToken token = (KeywordToken) lexer.nextToken();
     assertThat(token.keyword()).isEqualTo(KeywordType.PRINT);
+    token = (KeywordToken) lexer.nextToken();
+    assertThat(token.keyword()).isEqualTo(KeywordType.PRINTLN);
     token = (KeywordToken) lexer.nextToken();
     assertThat(token.keyword()).isEqualTo(KeywordType.IF);
     token = (KeywordToken) lexer.nextToken();

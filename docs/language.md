@@ -4,7 +4,12 @@
 
 Built-ins: number, string, boolean, array?, map (via {}?), lambda (? - this causes havoc with scopes)
 
-Keywords: ```if, else, elif, do, while, break, continue, return, function, new (?), delete (?), keys, values (for the map), print, main```
+Keywords: 
+
+```
+if, else, elif, do, while, break, continue, return, proc, new (?), delete (?), keys, 
+values (for the map), print, println, main
+```
 
 No semicolons because why not.
 
@@ -18,7 +23,7 @@ Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
    }
 ```
 
-What about typedefs for type safety?
+What about typedefs for type safety? Records?
 
 ## `for` loop explorations
 
@@ -44,11 +49,16 @@ i=0 while i < 30 do i +=1 {
 ## Procedure definition
 
 ```
-proc foo(a:map,b,c) returns number 
+proc foo(a:map,b,c) returns int 
 {
   d=a[b]+c() 
   return d
 }
+```
+
+```
+proc foo(a:map,b,c) : int {
+} 
 ```
 
 ## Chars and strings
@@ -63,3 +73,9 @@ No "character" type - only strings, like Python. I *really* like the Python synt
 "foo%s" % "bar"
 length("foo")
 ```
+
+For IL:
+
+* allocate
+* strcat?
+* strcmp?

@@ -22,7 +22,7 @@ public class SysCall extends Op {
     if (callName.equals("$ffd2")) {
       // TODO: need type of "arg"
       // print
-      return String.format("\tprintf(\"%%s\\n\", %s);", arg);
+      return String.format("\tprintf(\"%%s\", %s);", arg);
     }
     return String.format("\tcall(%s, %s);", callName, arg);
   }

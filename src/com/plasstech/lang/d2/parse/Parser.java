@@ -113,7 +113,8 @@ public class Parser {
       KeywordToken kt = (KeywordToken) token;
       switch (kt.keyword()) {
         case PRINT:
-          return print(kt);
+        case PRINTLN:
+          return print(kt, kt.keyword() == KeywordType.PRINTLN);
 
         case IF:
           return ifStmt(kt);
@@ -197,11 +198,11 @@ public class Parser {
     return new AssignmentNode(var, expr);
   }
 
-  private PrintNode print(KeywordToken kt) {
-    assert (kt.keyword() == KeywordType.PRINT);
+  private PrintNode print(KeywordToken kt, boolean println) {
+    assert (kt.keyword() == KeywordType.PRINT || kt.keyword() == KeywordType.PRINTLN);
     advance();
     Node expr = expr();
-    return new PrintNode(expr, kt.start());
+    return new PrintNode(expr, kt.start(), println);
   }
 
   private IfNode ifStmt(KeywordToken kt) {
