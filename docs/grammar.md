@@ -5,19 +5,32 @@
 
 ```
 program -> statements main?
+
 statements -> statement* 
 statement -> assignment | print | if | while | proc | declaration | 'break' | 'continue'
-main -> 'main' '{' statements '}'
+
+main -> 'main' mainarg? '{' statements '}'
+mainarg -> '(' variable ')'
+
 assignment -> variable '=' expr
-print -> 'print' expr
+
+print -> 'print' expr | 'println' expr
+
 if -> 'if' expr '{' statements '}' elif* else?
 elif -> 'elif' expr '{' statements '}'
 else -> 'else' '{' statements '}'
+
 while -> 'while' expr do? '{' statements '}'
 do -> 'do' assignment
-declaration -> variable ':' type
-type -> 'int' | 'bool'
-proc -> // TODO
+
+declaration -> variable ':' type | variable ':' 'proc' procdef
+type -> 'int' | 'bool' | 'string'
+
+procdef -> params? returns? '{' statements '}'
+params -> '(' param (',' param)* ')'
+param -> variable (':' type)?
+returns -> 'returns' type
+
 ```
 
 ## Comments

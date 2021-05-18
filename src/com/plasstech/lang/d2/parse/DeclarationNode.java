@@ -11,7 +11,8 @@ public class DeclarationNode extends StatementNode {
   public final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
           KeywordType.INT, VarType.INT, //
           KeywordType.BOOL, VarType.BOOL, //
-          KeywordType.STRING, VarType.STRING);
+          KeywordType.STRING, VarType.STRING, //
+          KeywordType.PROC, VarType.PROC);
 
   private final String varName;
 

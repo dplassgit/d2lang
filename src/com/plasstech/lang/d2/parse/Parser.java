@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.VarType;
 
 public class Parser {
@@ -140,6 +141,11 @@ public class Parser {
           advance();
           return new ContinueNode(kt.start());
 
+        case RETURN:
+          advance();
+          Node expr = expr();
+          return new ReturnNode(kt.start(), expr);
+
         default:
           break;
       }
@@ -171,14 +177,100 @@ public class Parser {
         VarType varType = DeclarationNode.BUILTINS.get(declaredType);
         if (varType != null) {
           advance();
-          return new DeclarationNode(varToken.text(), varType, varToken.start());
+          if (varType == VarType.PROC) {
+            return procedure(varToken);
+          } else {
+            return new DeclarationNode(varToken.text(), varType, varToken.start());
+          }
         }
       }
-      throw new ParseException(String.format("Unexpected %s; expected INT or BOOL", token.text()),
+      throw new ParseException(
+              String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
               token.start());
     }
     throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
             token.start());
+  }
+
+  private ProcedureNode procedure(Token varToken) {
+    List<Parameter> params = formalParams();
+
+    VarType returnType = VarType.VOID;
+    if (matchesKeyword(token, KeywordType.RETURNS)) {
+      advance();
+      if (token.type() != Token.Type.KEYWORD) {
+        throw new ParseException(
+                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                token.start());
+      }
+      KeywordType declaredType = ((KeywordToken) token).keyword();
+      // this allows returns proc, which I don't like.
+      VarType varType = DeclarationNode.BUILTINS.get(declaredType);
+      if (varType == null) {
+        throw new ParseException(
+                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                token.start());
+      }
+      returnType = varType;
+      advance(); // eat the return type
+    }
+    if (token.type() != Token.Type.LBRACE) {
+      throw new ParseException(String.format("Unexpected %s; expected {", token.text()),
+              token.start());
+    }
+    BlockNode statements = block();
+    return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
+  }
+
+  private List<Parameter> formalParams() {
+    List<Parameter> params = new ArrayList<>();
+    if (token.type() != Token.Type.LPAREN) {
+      return params;
+    }
+    advance(); // eat the left paren
+    // Must be variable
+    while (token.type() != Token.Type.RPAREN && token.type() != Token.Type.EOF) {
+      if (token.type() != Token.Type.VARIABLE) {
+        throw new ParseException("expected variable", token.start());
+      }
+      Token paramName = token;
+      advance();
+      if (token.type() == Token.Type.COLON) {
+        advance();
+        if (token.type() != Token.Type.KEYWORD) {
+          throw new ParseException(
+                  String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                  token.start());
+        }
+        KeywordType declaredType = ((KeywordToken) token).keyword();
+        VarType paramType = DeclarationNode.BUILTINS.get(declaredType);
+        if (paramType == null) {
+          throw new ParseException(
+                  String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                  token.start());
+        } else {
+          // We have a param type
+          Parameter param = new Parameter(paramName.text(), paramType);
+          params.add(param);
+          advance(); // eat the param type
+        }
+      } else {
+        // no colon, just an unknown param type
+        Parameter param = new Parameter(paramName.text());
+        params.add(param);
+      }
+
+      // if it's a comma, eat it
+      if (token.type() == Token.Type.COMMA) {
+        advance();
+      }
+    }
+
+    if (token.type() != Token.Type.RPAREN) {
+      throw new ParseException("no right paren", token.start());
+    }
+    advance();
+    return params;
   }
 
   private AssignmentNode assignment() {
@@ -325,8 +417,9 @@ public class Parser {
       } else if (expr.nodeType() == Node.Type.BOOL) {
         if (unaryToken.type() == Token.Type.NOT) {
           @SuppressWarnings("unchecked")
-          ConstNode<Boolean> cn = (ConstNode<Boolean>)expr;
-          return new ConstNode<Boolean>(Node.Type.BOOL, !cn.value(), VarType.BOOL, unaryToken.start());
+          ConstNode<Boolean> cn = (ConstNode<Boolean>) expr;
+          return new ConstNode<Boolean>(Node.Type.BOOL, !cn.value(), VarType.BOOL,
+                  unaryToken.start());
         }
       }
 

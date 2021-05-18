@@ -323,8 +323,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     emit(new Label("_main"));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
-    if (node.statements() != null) {
-      node.statements().accept(this);
+    if (node.block() != null) {
+      node.block().accept(this);
     }
     emit(new Stop());
   }
@@ -339,9 +339,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     emit(new Label("d_" + node.name()));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
-    if (node.statements() != null) {
-      node.statements().accept(this);
+    if (node.block() != null) {
+      node.block().accept(this);
     }
+    // TODO: return the right thing (on the stack?)
+
     emit(new Return());
 
     emit(new Label(afterLabel));

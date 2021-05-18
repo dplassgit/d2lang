@@ -11,8 +11,8 @@ import com.plasstech.lang.d2.type.VarType;
  */
 public abstract class Node {
   public enum Type {
-    INT, KEYWORD, VARIABLE, PRINT, ERROR, ASSIGNMENT, EXPR, BLOCK, BIN_OP, BOOL, UNARY, IF,
-    MAIN, PROC, PROGRAM, WHILE, BREAK, CONTINUE, DECLARATION, STRING;
+    BOOL, INT, STRING, VARIABLE, BIN_OP, UNARY, PRINT, ASSIGNMENT, IF, WHILE, BREAK, CONTINUE,
+    DECLARATION, RETURN, MAIN, PROC, BLOCK, PROGRAM, ERROR;
   }
 
   private final Type type;

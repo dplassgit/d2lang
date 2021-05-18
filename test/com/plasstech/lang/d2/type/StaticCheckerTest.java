@@ -337,7 +337,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
 
-    AssignmentNode node = (AssignmentNode) root.main().get().statements().statements().get(1);
+    AssignmentNode node = (AssignmentNode) root.main().get().block().statements().get(1);
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);

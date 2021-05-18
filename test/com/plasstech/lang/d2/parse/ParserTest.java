@@ -573,7 +573,7 @@ public class ParserTest {
     BlockNode globalBlock = root.statements();
     assertThat(globalBlock.statements()).isEmpty();
     MainNode main = root.main().get();
-    BlockNode block = main.statements();
+    BlockNode block = main.block();
 
     PrintNode node = (PrintNode) block.statements().get(0);
     assertThat(node.nodeType()).isEqualTo(Node.Type.PRINT);
@@ -594,9 +594,9 @@ public class ParserTest {
 
   @Test
   public void parse_declError() {
-    assertParseError("Missing type", "a:", "expected INT or BOOL");
-    assertParseError("Missing type", "a::", "expected INT or BOOL");
-    assertParseError("Missing close brace", "a:print", "expected INT or BOOL");
+    assertParseError("Missing type", "a:", "expected INT, BOOL");
+    assertParseError("Missing type", "a::", "expected INT, BOOL");
+    assertParseError("Missing close brace", "a:print", "expected INT, BOOL");
   }
 
   @Test
@@ -672,6 +672,51 @@ public class ParserTest {
 
     Node expr = node.expr();
     assertThat(expr.nodeType()).isEqualTo(Node.Type.BIN_OP);
+  }
+
+  @Test
+  public void parse_simpleProcedure() {
+    // the simplest possible procedure
+    ProgramNode root = parseProgram("fib:proc {}");
+    System.err.println(root);
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+  }
+
+  @Test
+  public void parse_procedureWithParam() {
+    ProgramNode root = parseProgram("fib:proc(param) {}");
+    System.err.println(root);
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.parameters()).hasSize(1);
+  }
+
+  @Test
+  public void parse_procedureWithLocals() {
+    ProgramNode root = parseProgram("fib:proc() {local:int}");
+    System.err.println(root);
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.block().statements().get(0)).isInstanceOf(DeclarationNode.class);
+  }
+
+  @Test
+  public void parse_fullProcedure() {
+    ProgramNode root = parseProgram( //
+            "fib:proc(typed:int, nontyped) returns string {" //
+                    + "typed = typed + 1" //
+                    + "nontyped = typed + 1" //
+                    + "return 'hi'" //
+                    + "}"); //
+    System.err.println(root);
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.STRING);
+    assertThat(proc.parameters()).hasSize(2);
   }
 
   private BlockNode parseStatements(String expression) {

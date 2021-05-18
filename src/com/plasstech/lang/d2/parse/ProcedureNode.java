@@ -1,25 +1,71 @@
 package com.plasstech.lang.d2.parse;
 
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
+import com.plasstech.lang.d2.type.VarType;
 
-public class ProcedureNode extends Node {
-  private final BlockNode statements;
-  private final String name;
+public class ProcedureNode extends StatementNode {
+  public static class Parameter {
+    private final String name;
+    private final VarType type;
 
-  // TODO: capture name, parameters
-  ProcedureNode(String name, BlockNode statements, Position start) {
-    super(Type.PROC, start);
-    this.name = name; // TODO: mangle?
-    this.statements = statements;
+    public Parameter(String name, VarType type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    public Parameter(String name) {
+      this(name, VarType.UNKNOWN);
+    }
+
+    public String name() {
+      return name;
+    }
+
+    public VarType type() {
+      return type;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("FormalParam: %s:%s", name, type);
+    }
   }
+  
+  private final String name;
+  private final BlockNode block;
+  private final ImmutableList<Parameter> parameters;
+  private final VarType returnType;
 
-  public BlockNode statements() {
-    return statements;
+  ProcedureNode(String name, List<Parameter> params, VarType returnType, BlockNode block,
+          Position start) {
+    super(Type.PROC, start);
+
+    this.name = name; // TODO: mangle?
+    this.parameters = ImmutableList.copyOf(params);
+    this.returnType = returnType;
+    this.block = block;
+    this.setVarType(returnType); // is this required? couldn't we just "figure it out"?
   }
 
   public String name() {
     return name;
+  }
+
+  public ImmutableList<Parameter> parameters() {
+    return parameters;
+  }
+
+  // We should be allowed to set the return type
+  public VarType returnType() {
+    return returnType;
+  }
+
+  public BlockNode block() {
+    return block;
   }
 
   @Override
@@ -29,7 +75,7 @@ public class ProcedureNode extends Node {
 
   @Override
   public String toString() {
-    return String.format("ProcedureNode: %s (args TODO) returns %s: {%s}", name(),
-            "return type (TODO)", statements);
+    return String.format("ProcedureNode: %s: proc(%s) returns %s: {%s}", name(),
+            parameters, returnType, block);
   }
 }

@@ -204,8 +204,8 @@ public class StaticChecker extends DefaultVisitor {
   public void visit(MainNode node) {
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
-    if (node.statements() != null) {
-      node.statements().accept(this);
+    if (node.block() != null) {
+      node.block().accept(this);
     }
   }
 

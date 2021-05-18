@@ -140,6 +140,9 @@ public class Lexer {
       case '"':
       case '\'':
         return makeStringToken(start, oc);
+      case ',':
+        advance();
+        return new Token(Type.COMMA, start, oc);
       default:
         throw new ScannerException(String.format("Unknown character %c", cc), start);
     }
