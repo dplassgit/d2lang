@@ -10,7 +10,7 @@ public class AssignmentNode extends StatementNode {
   private final Node expr;
 
   AssignmentNode(VariableNode variable, Node expr) {
-    super(Type.ASSIGNMENT, variable.position());
+    super(variable.position());
     this.variable = variable;
     this.expr = expr;
   }

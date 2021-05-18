@@ -138,7 +138,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // Provide constant in t0
     String location = generateTemp(node.varType());
     node.setLocation(new TempLocation(location));
-    if (node.nodeType() == Node.Type.STRING) {
+    if (node.varType() == VarType.STRING) {
       // TODO: figure out storage for strings
       emit(new Assignment(location, String.format("\"%s\"", node.simpleValue())));
     } else {

@@ -9,7 +9,7 @@ public class ReturnNode extends StatementNode {
   private final Node expr;
 
   ReturnNode(Position position, Node expr) {
-    super(Node.Type.RETURN, position);
+    super(position);
     this.expr = expr;
   }
 

@@ -17,7 +17,7 @@ public class DeclarationNode extends StatementNode {
   private final String varName;
 
   DeclarationNode(String varName, VarType type, Position position) {
-    super(Type.DECLARATION, position);
+    super(position);
     this.varName = varName;
     setVarType(type);
   }

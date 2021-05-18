@@ -13,7 +13,7 @@ public class WhileNode extends StatementNode {
 
   public WhileNode(Node condition, Optional<AssignmentNode> assignment, BlockNode block,
           Position start) {
-    super(Type.WHILE, start);
+    super(start);
     this.condition = condition;
     this.assignment = assignment;
     this.block = block;

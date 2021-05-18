@@ -10,27 +10,17 @@ import com.plasstech.lang.d2.type.VarType;
  * Abstract base class for nodes in the parse tree.
  */
 public abstract class Node {
-  public enum Type {
-    BOOL, INT, STRING, VARIABLE, BIN_OP, UNARY, PRINT, ASSIGNMENT, IF, WHILE, BREAK, CONTINUE,
-    DECLARATION, RETURN, MAIN, PROC, BLOCK, PROGRAM, ERROR;
-  }
-
-  private final Type type;
   private final Position position;
   private VarType varType = VarType.UNKNOWN;
   private Location location;
 
-  Node(Type type, Position position) {
-    this.type = type;
+  Node(Position position) {
     this.position = position;
   }
 
-  public Type nodeType() {
-    return type;
-  }
-
+  // Indicates it's a simple type - constant or variable.
   public boolean isSimpleType() {
-    return type == Type.INT || type == Type.BOOL;
+    return false;
   }
 
   public VarType varType() {
@@ -46,7 +36,7 @@ public abstract class Node {
   }
 
   public boolean isError() {
-    return type == Type.ERROR;
+    return false;
   }
 
   public Position position() {

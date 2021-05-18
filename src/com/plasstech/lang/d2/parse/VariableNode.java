@@ -10,7 +10,7 @@ public class VariableNode extends SimpleNode {
   private final String name;
 
   public VariableNode(String name, Position position) {
-    super(Type.VARIABLE, position);
+    super(position);
     this.name = name;
   }
 

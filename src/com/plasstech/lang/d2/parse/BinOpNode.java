@@ -22,7 +22,7 @@ public class BinOpNode extends Node {
   private final Node right;
 
   BinOpNode(Node left, Token.Type operator, Node right) {
-    super(Node.Type.BIN_OP, left.position());
+    super(left.position());
     Preconditions.checkArgument(BINARY_OPERATORS.contains(operator),
             "Invalid opType " + operator.name());
     this.left = left;

@@ -12,7 +12,7 @@ public class UnaryNode extends Node {
   private final Node expr;
 
   UnaryNode(Token.Type operator, Node expr, Position position) {
-    super(Type.UNARY, position);
+    super(position);
     this.operator = operator;
     this.expr = expr;
   }

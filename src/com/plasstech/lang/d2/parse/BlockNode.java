@@ -13,7 +13,7 @@ public class BlockNode extends Node {
   private final List<StatementNode> statements;
 
   BlockNode(List<StatementNode> statements, Position position) {
-    super(Type.BLOCK, position);
+    super(position);
     this.statements = statements;
   }
 

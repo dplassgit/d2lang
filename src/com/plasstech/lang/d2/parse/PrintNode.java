@@ -11,7 +11,7 @@ public class PrintNode extends StatementNode {
   private final boolean println;
 
   public PrintNode(Node expr, Position position, boolean println) {
-    super(Type.PRINT, position);
+    super(position);
     this.expr = expr;
     this.println = println;
   }

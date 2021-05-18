@@ -7,8 +7,13 @@ public class ErrorNode extends Node {
   private final String message;
 
   public ErrorNode(String message, Position position) {
-    super(Type.ERROR, position);
+    super(position);
     this.message = message;
+  }
+
+  @Override
+  public boolean isError() {
+    return true;
   }
 
   public String message() {

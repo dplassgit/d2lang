@@ -11,10 +11,15 @@ public class ConstNode<T> extends SimpleNode {
 
   private final T value;
 
-  ConstNode(Type type, T value, VarType varType, Position position) {
-    super(type, position);
+  ConstNode(T value, VarType varType, Position position) {
+    super(position);
     this.value = value;
     setVarType(varType);
+  }
+
+  @Override
+  public boolean isSimpleType() {
+    return true;
   }
 
   public T value() {
@@ -28,7 +33,7 @@ public class ConstNode<T> extends SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("ConstNode(%s): %s", nodeType().name().toLowerCase(), value);
+    return String.format("ConstNode(%s): %s", varType().name().toLowerCase(), value);
   }
 
   @Override

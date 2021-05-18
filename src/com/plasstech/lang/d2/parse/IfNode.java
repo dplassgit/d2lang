@@ -34,7 +34,7 @@ public class IfNode extends StatementNode {
   private final BlockNode elseBlock;
 
   IfNode(List<Case> cases, BlockNode elseBlock, Position position) {
-    super(Type.IF, position);
+    super(position);
     Preconditions.checkArgument(cases != null, "cases cannot be null");
     this.cases = cases;
     this.elseBlock = elseBlock;

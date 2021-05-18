@@ -19,7 +19,7 @@ public class ProgramNode extends Node {
   }
 
   private ProgramNode(BlockNode statements, Optional<MainNode> maybeMain) {
-    super(Type.PROGRAM, new Position(0, 0));
+    super(new Position(0, 0));
     this.statements = statements;
     this.main = maybeMain;
   }

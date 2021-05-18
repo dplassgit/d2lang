@@ -42,7 +42,7 @@ public class ProcedureNode extends StatementNode {
 
   ProcedureNode(String name, List<Parameter> params, VarType returnType, BlockNode block,
           Position start) {
-    super(Type.PROC, start);
+    super(start);
 
     this.name = name; // TODO: mangle?
     this.parameters = ImmutableList.copyOf(params);
