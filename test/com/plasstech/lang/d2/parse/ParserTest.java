@@ -664,11 +664,13 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureWithFormals() {
+  public void parse_procedureErrors() {
     assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
     assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
     assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
     assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
+    assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
+    assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
   }
 
   @Test
@@ -706,6 +708,15 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_procedureCallExpression() {
+    ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
+    System.err.println(root);
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
+    Node expr = assignment.expr();
+    assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
   public void parse_procedureCallOneArgs() {
     ProgramNode root = parseProgram("a = doit(1)");
     System.err.println(root);
@@ -716,8 +727,8 @@ public class ParserTest {
 
   @Test
   public void parse_procedureCallNoClosing() {
-    assertParseError("Should fail", "a = doit(1 b=3", "expected , or )");
-    assertParseError("Should fail", "a = doit(1,)", "expected , or )");
+    assertParseError("Should fail", "a = doit(1 b=3", "expected ')");
+    assertParseError("Should fail", "a = doit(1,)", "expected literal");
   }
 
   @Test

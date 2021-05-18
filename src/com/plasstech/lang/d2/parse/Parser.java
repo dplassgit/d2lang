@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.BoolToken;
@@ -205,18 +206,13 @@ public class Parser {
       }
       KeywordType declaredType = ((KeywordToken) token).keyword();
       // this allows returns proc, which I don't like.
-      VarType varType = DeclarationNode.BUILTINS.get(declaredType);
-      if (varType == null) {
+      returnType = DeclarationNode.BUILTINS.get(declaredType);
+      if (returnType == null) {
         throw new ParseException(
                 String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
                 token.start());
       }
-      returnType = varType;
       advance(); // eat the return type
-    }
-    if (token.type() != Token.Type.LBRACE) {
-      throw new ParseException(String.format("Unexpected %s; expected {", token.text()),
-              token.start());
     }
     BlockNode statements = block();
     return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
@@ -228,55 +224,57 @@ public class Parser {
       return params;
     }
     advance(); // eat the left paren
-    // Must be variable
-    while (token.type() != Token.Type.RPAREN && token.type() != Token.Type.EOF) {
-      if (token.type() != Token.Type.VARIABLE) {
-        throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
-                token.start());
-      }
-      Token paramName = token;
-      advance();
-      if (token.type() == Token.Type.COLON) {
-        advance();
-        if (token.type() != Token.Type.KEYWORD) {
-          throw new ParseException(
-                  String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                  token.start());
-        }
-        KeywordType declaredType = ((KeywordToken) token).keyword();
-        VarType paramType = DeclarationNode.BUILTINS.get(declaredType);
-        if (paramType == null) {
-          throw new ParseException(
-                  String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                  token.start());
-        } else {
-          // We have a param type
-          Parameter param = new Parameter(paramName.text(), paramType);
-          params.add(param);
-          advance(); // eat the param type
-        }
-      } else {
-        // no colon, just an unknown param type
-        Parameter param = new Parameter(paramName.text());
-        params.add(param);
-      }
 
-      // if it's a comma, eat it
-      if (token.type() == Token.Type.COMMA) {
-        advance();
-      } else if (token.type() != Token.Type.RPAREN) {
-        throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
-                token.start());
-      }
-      // this is still broken
+    if (token.type() == Token.Type.RPAREN) {
+      advance(); // eat the right paren, done.
+      return params;
     }
 
-    if (token.type() != Token.Type.RPAREN) {
-      throw new ParseException(String.format("Unexpected %s; expected )", token.text()),
+    params = commaSeparated(new NextNode<Parameter>() {
+      @Override
+      public Parameter call() {
+        return formalParam();
+      }
+    });
+    if (token.type() == Token.Type.RPAREN) {
+      advance();
+    } else {
+      throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
               token.start());
     }
-    advance();
     return params;
+  }
+
+  private Parameter formalParam() {
+    if (token.type() != Token.Type.VARIABLE) {
+      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
+              token.start());
+    }
+
+    Token paramName = token;
+    advance();
+    if (token.type() == Token.Type.COLON) {
+      advance();
+      if (token.type() != Token.Type.KEYWORD) {
+        throw new ParseException(
+                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                token.start());
+      }
+      KeywordType declaredType = ((KeywordToken) token).keyword();
+      VarType paramType = DeclarationNode.BUILTINS.get(declaredType);
+      if (paramType == null) {
+        throw new ParseException(
+                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+                token.start());
+      } else {
+        // We have a param type
+        advance(); // eat the param type
+        return new Parameter(paramName.text(), paramType);
+      }
+    } else {
+      // no colon, just an unknown param type
+      return new Parameter(paramName.text());
+    }
   }
 
   private AssignmentNode assignment() {
@@ -476,28 +474,62 @@ public class Parser {
   }
 
   private CallNode procedureCall(Token varToken) {
-    assert token.type() == Token.Type.LPAREN;
-    List<ExprNode> actuals = new ArrayList<>();
-    advance();
-    while (token.type() != Token.Type.RPAREN && token.type() != Token.Type.EOF) {
-      ExprNode actual = expr();
-      actuals.add(actual);
-
-      if (token.type() == Token.Type.COMMA) {
-        advance(); // eat the comma
-      } else if (token.type() != Token.Type.RPAREN) {
-        // whoopsie.
-        throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
-                token.start());
-      }
-      // this is still broken
-    }
-    if (token.type() != Token.Type.RPAREN) {
-      throw new ParseException(String.format("Unexpected %s; expected )", token.text()),
+    if (token.type() != Token.Type.LPAREN) {
+      throw new ParseException(String.format("Unexpected %s; expected '('", token.text()),
               token.start());
     }
-    advance(); // eat the rparen
+    advance(); // eat the lparen
+
+    List<ExprNode> actuals;
+    if (token.type() == Token.Type.RPAREN) {
+      actuals = ImmutableList.of();
+    } else {
+      actuals = commaSeparatedExpressions();
+    }
+
+    if (token.type() == Token.Type.RPAREN) {
+      advance(); // eat the rparen
+    } else {
+      throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
+              token.start());
+    }
     return new CallNode(varToken.start(), varToken.text(), actuals);
+  }
+
+  private List<ExprNode> commaSeparatedExpressions() {
+    return commaSeparated(new NextNode<ExprNode>() {
+      @Override
+      public ExprNode call() {
+        return expr();
+      }
+    });
+  }
+
+  private <T> List<T> commaSeparated(NextNode<T> nextNode) {
+    List<T> nodes = new ArrayList<>();
+
+    T node = nextNode.call();
+    nodes.add(node);
+    if (token.type() == Token.Type.COMMA) {
+      // There's another one - let's go
+      advance();
+
+      while (token.type() != Token.Type.EOF) {
+        node = nextNode.call();
+        nodes.add(node);
+
+        if (token.type() == Token.Type.COMMA) {
+          advance(); // eat the comma
+        } else {
+          break;
+        }
+      }
+    }
+    return nodes;
+  }
+
+  private interface NextNode<T> {
+    T call();
   }
 
   /** Parses a binary operation function. */
