@@ -2,13 +2,19 @@
 
 ## Features
 
-Built-ins: number, string, boolean, array?, map (via {}?), lambda (? - this causes havoc with scopes)
+Built-in types: int, string, boolean, (eventually: array, map, lambda (but not closures))
 
-Keywords: 
+(Current) Keywords: 
 
 ```
-if, else, elif, do, while, break, continue, return, proc, new (?), delete (?), keys, 
-values (for the map), print, println, main
+int, string, boolean, if, else, elif, do, while, break, continue, returns, return, proc, 
+print, println, main
+```
+
+Eventually:
+
+```
+array(?), length, keys, values, new, delete
 ```
 
 No semicolons because why not.
@@ -39,7 +45,7 @@ For i = 1 until i == 30 update i=i+1
 for i=0 while i < 30 do i +=1 {
 ```
 
-**Winner?**
+**Winner!**
 
 ```
 i=0 while i < 30 do i +=1 {
@@ -49,7 +55,7 @@ i=0 while i < 30 do i +=1 {
 ## Procedure definition
 
 ```
-proc foo(a:map,b,c) returns int 
+foo:proc(a:map,b,c) returns int 
 {
   d=a[b]+c() 
   return d
@@ -57,7 +63,7 @@ proc foo(a:map,b,c) returns int
 ```
 
 ```
-proc foo(a:map,b,c) : int {
+foo:proc(a:map,b,c) : int {
 } 
 ```
 

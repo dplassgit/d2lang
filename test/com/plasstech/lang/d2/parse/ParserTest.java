@@ -13,6 +13,8 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.type.VarType;
 
+
+
 public class ParserTest {
   @Test
   public void parse_print() {
@@ -686,6 +688,15 @@ public class ParserTest {
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.STRING);
     assertThat(proc.parameters()).hasSize(2);
+  }
+
+  @Test
+  public void parse_procedureCall() {
+    ProgramNode root = parseProgram("a = doit(3, 4, 5)");
+    System.err.println(root);
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(1));
+    Node expr = assignment.expr();
+    assertThat(expr).isInstanceOf(CallNode.class);
   }
 
   private BlockNode parseStatements(String expression) {

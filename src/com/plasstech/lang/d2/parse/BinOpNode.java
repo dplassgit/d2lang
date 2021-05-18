@@ -11,17 +11,17 @@ import com.plasstech.lang.d2.type.VarType;
 /**
  * Binary operation: leftexpr <operation> rightexpr
  */
-public class BinOpNode extends Node {
+public class BinOpNode extends ExprNode {
   private static final Set<Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS,
           Token.Type.MINUS, Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.AND,
           Token.Type.OR, Token.Type.EQEQ, Token.Type.GT, Token.Type.LT, Token.Type.GEQ,
           Token.Type.LEQ, Token.Type.NEQ);
 
   private final Token.Type operator;
-  private final Node left;
-  private final Node right;
+  private final ExprNode left;
+  private final ExprNode right;
 
-  BinOpNode(Node left, Token.Type operator, Node right) {
+  BinOpNode(ExprNode left, Token.Type operator, ExprNode right) {
     super(left.position());
     Preconditions.checkArgument(BINARY_OPERATORS.contains(operator),
             "Invalid opType " + operator.name());
@@ -34,11 +34,11 @@ public class BinOpNode extends Node {
     return operator;
   }
 
-  public Node left() {
+  public ExprNode left() {
     return left;
   }
 
-  public Node right() {
+  public ExprNode right() {
     return right;
   }
 

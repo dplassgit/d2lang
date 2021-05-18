@@ -7,9 +7,9 @@ import com.plasstech.lang.d2.common.NodeVisitor;
  */
 public class AssignmentNode extends StatementNode {
   private final VariableNode variable;
-  private final Node expr;
+  private final ExprNode expr;
 
-  AssignmentNode(VariableNode variable, Node expr) {
+  AssignmentNode(VariableNode variable, ExprNode expr) {
     super(variable.position());
     this.variable = variable;
     this.expr = expr;
@@ -19,7 +19,7 @@ public class AssignmentNode extends StatementNode {
     return variable;
   }
 
-  public Node expr() {
+  public ExprNode expr() {
     return expr;
   }
 

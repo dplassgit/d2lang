@@ -168,7 +168,7 @@ public class Parser {
     if (token.type() == Token.Type.EQ) {
       advance();
       VariableNode var = new VariableNode(varToken.text(), varToken.start());
-      Node expr = expr();
+      ExprNode expr = expr();
       return new AssignmentNode(var, expr);
     } else if (token.type() == Token.Type.COLON) {
       advance();
@@ -286,7 +286,7 @@ public class Parser {
               token.start());
     }
     advance();
-    Node expr = expr();
+    ExprNode expr = expr();
     return new AssignmentNode(var, expr);
   }
 
@@ -347,62 +347,62 @@ public class Parser {
     return new WhileNode(condition, assignment, block, kt.start());
   }
 
-  private Node expr() {
+  private ExprNode expr() {
     return boolOr();
   }
 
-  private Node boolOr() {
+  private ExprNode boolOr() {
     return new BinOpFn(Token.Type.OR) {
       @Override
-      Node nextRule() {
+      ExprNode nextRule() {
         return boolAnd();
       }
     }.parse();
   }
 
-  private Node boolAnd() {
+  private ExprNode boolAnd() {
     return new BinOpFn(Token.Type.AND) {
       @Override
-      Node nextRule() {
+      ExprNode nextRule() {
         return compareTerm();
       }
     }.parse();
   }
 
-  private Node compareTerm() {
+  private ExprNode compareTerm() {
     return new BinOpFn(ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT,
             Token.Type.LT, Token.Type.GEQ, Token.Type.LEQ)) {
       @Override
-      Node nextRule() {
+      ExprNode nextRule() {
         return addSubTerm();
       }
     }.parse();
   }
 
-  private Node addSubTerm() {
+  private ExprNode addSubTerm() {
     return new BinOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS)) {
       @Override
-      Node nextRule() {
+      ExprNode nextRule() {
         return mulDivTerm();
       }
     }.parse();
   }
 
-  private Node mulDivTerm() {
+  private ExprNode mulDivTerm() {
     return new BinOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD)) {
       @Override
-      public Node nextRule() {
+      public ExprNode nextRule() {
         return unary();
       }
     }.parse();
   }
 
-  private Node unary() {
+  private ExprNode unary() {
     if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS
             || token.type() == Token.Type.NOT) {
       Token unaryToken = token;
       advance();
-      Node expr = unary(); // should this be expr? unary? atom?
+      ExprNode expr = unary(); // should this be expr? unary? atom?
 
       if (expr.varType() == VarType.INT) {
         // We can simplify now
@@ -430,7 +430,7 @@ public class Parser {
     return atom();
   }
 
-  private Node atom() {
+  private ExprNode atom() {
     if (token.type() == Token.Type.INT) {
       IntToken it = (IntToken) token;
       advance();
@@ -450,7 +450,7 @@ public class Parser {
       return new ConstNode<String>(st.text(), VarType.STRING, st.start());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
-      Node expr = expr();
+      ExprNode expr = expr();
       if (token.type() == Token.Type.RPAREN) {
         advance();
         return expr;
@@ -478,7 +478,7 @@ public class Parser {
     }
 
     /** Call the next method, e.g., mulDivTerm */
-    abstract Node nextRule();
+    abstract ExprNode nextRule();
 
     /**
      * Parse from the current location, repeatedly call "function", e.g.,:
@@ -491,13 +491,13 @@ public class Parser {
      *
      * expr -> term (+- term)*
      */
-    Node parse() {
-      Node left = nextRule();
+    ExprNode parse() {
+      ExprNode left = nextRule();
 
       while (tokenTypes.contains(token.type())) {
         Token.Type operator = token.type();
         advance();
-        Node right = nextRule();
+        ExprNode right = nextRule();
         left = new BinOpNode(left, operator, right);
       }
 

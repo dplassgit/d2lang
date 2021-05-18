@@ -5,13 +5,13 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.type.VarType;
 
-public class UnaryNode extends Node {
+public class UnaryNode extends ExprNode {
 
   private final Token.Type operator;
 
-  private final Node expr;
+  private final ExprNode expr;
 
-  UnaryNode(Token.Type operator, Node expr, Position position) {
+  UnaryNode(Token.Type operator, ExprNode expr, Position position) {
     super(position);
     this.operator = operator;
     this.expr = expr;
@@ -21,7 +21,7 @@ public class UnaryNode extends Node {
     return operator;
   }
 
-  public Node expr() {
+  public ExprNode expr() {
     return expr;
   }
 
