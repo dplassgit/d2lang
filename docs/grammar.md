@@ -30,7 +30,6 @@ procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
 param -> variable (':' type)?
 returns -> 'returns' type
-
 ```
 
 ## Comments
@@ -65,11 +64,9 @@ Node classes are:
 
 `UnaryNode extends Node`
 
-`IntNode extends Node`
+`ConstNode<T> extends Node`
 
-`BoolNode extends Node`
-
-`VarAccessNode extends Node`
+`VariableNode extends Node`
 
 
 This works.
@@ -98,6 +95,7 @@ unary ->  atom | !-+ unary
 atom -> int constant
 	| variable name
 	| boolean constant
+	| string constant
 	| '(' expr ')'
 ```
 
