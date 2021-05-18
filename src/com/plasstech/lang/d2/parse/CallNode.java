@@ -10,16 +10,16 @@ import com.plasstech.lang.d2.common.Position;
  */
 public class CallNode extends ExprNode {
 
-  private final VariableNode functionToCall;
+  private final String functionToCall;
   private final List<ExprNode> actuals;
 
-  CallNode(Position position, VariableNode functionToCall, List<ExprNode> actuals) {
+  CallNode(Position position, String functionToCall, List<ExprNode> actuals) {
     super(position);
     this.functionToCall = functionToCall;
     this.actuals = actuals;
   }
 
-  public VariableNode functionToCall() {
+  public String functionToCall() {
     return functionToCall;
   }
 
@@ -29,7 +29,7 @@ public class CallNode extends ExprNode {
 
   @Override
   public String toString() {
-    return String.format("CallNode: %s(%s)", functionToCall.name(), actuals);
+    return String.format("CallNode: %s(%s)", functionToCall, actuals);
   }
 
   @Override

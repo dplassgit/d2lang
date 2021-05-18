@@ -231,7 +231,8 @@ public class Parser {
     // Must be variable
     while (token.type() != Token.Type.RPAREN && token.type() != Token.Type.EOF) {
       if (token.type() != Token.Type.VARIABLE) {
-        throw new ParseException("expected variable", token.start());
+        throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
+                token.start());
       }
       Token paramName = token;
       advance();
@@ -263,11 +264,16 @@ public class Parser {
       // if it's a comma, eat it
       if (token.type() == Token.Type.COMMA) {
         advance();
+      } else if (token.type() != Token.Type.RPAREN) {
+        throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
+                token.start());
       }
+      // this is still broken
     }
 
     if (token.type() != Token.Type.RPAREN) {
-      throw new ParseException("no right paren", token.start());
+      throw new ParseException(String.format("Unexpected %s; expected )", token.text()),
+              token.start());
     }
     advance();
     return params;
@@ -439,7 +445,11 @@ public class Parser {
       Token varToken = token;
       String name = token.text();
       advance();
-      return new VariableNode(name, varToken.start());
+      if (token.type() != Token.Type.LPAREN) {
+        return new VariableNode(name, varToken.start());
+      } else {
+        return procedureCall(varToken);
+      }
     } else if (token.type() == Token.Type.BOOL) {
       BoolToken bt = (BoolToken) token;
       advance();
@@ -463,6 +473,31 @@ public class Parser {
               String.format("Unexpected %s; expected literal, variable or '('", token.text()),
               token.start());
     }
+  }
+
+  private CallNode procedureCall(Token varToken) {
+    assert token.type() == Token.Type.LPAREN;
+    List<ExprNode> actuals = new ArrayList<>();
+    advance();
+    while (token.type() != Token.Type.RPAREN && token.type() != Token.Type.EOF) {
+      ExprNode actual = expr();
+      actuals.add(actual);
+
+      if (token.type() == Token.Type.COMMA) {
+        advance(); // eat the comma
+      } else if (token.type() != Token.Type.RPAREN) {
+        // whoopsie.
+        throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
+                token.start());
+      }
+      // this is still broken
+    }
+    if (token.type() != Token.Type.RPAREN) {
+      throw new ParseException(String.format("Unexpected %s; expected )", token.text()),
+              token.start());
+    }
+    advance(); // eat the rparen
+    return new CallNode(varToken.start(), varToken.text(), actuals);
   }
 
   /** Parses a binary operation function. */

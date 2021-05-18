@@ -13,8 +13,6 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.type.VarType;
 
-
-
 public class ParserTest {
   @Test
   public void parse_print() {
@@ -666,6 +664,14 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_procedureWithFormals() {
+    assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
+    assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
+  }
+
+  @Test
   public void parse_procedureWithLocals() {
     ProgramNode root = parseProgram("fib:proc() {local:int}");
     System.err.println(root);
@@ -691,10 +697,41 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCall() {
-    ProgramNode root = parseProgram("a = doit(3, 4, 5)");
+  public void parse_procedureCallNoArgs() {
+    ProgramNode root = parseProgram("a = doit()");
     System.err.println(root);
-    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(1));
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
+    Node expr = assignment.expr();
+    assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
+  public void parse_procedureCallOneArgs() {
+    ProgramNode root = parseProgram("a = doit(1)");
+    System.err.println(root);
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
+    Node expr = assignment.expr();
+    assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
+  public void parse_procedureCallNoClosing() {
+    assertParseError("Should fail", "a = doit(1 b=3", "expected , or )");
+    assertParseError("Should fail", "a = doit(1,)", "expected , or )");
+  }
+
+  @Test
+  public void parse_procedureCallMultipleArgs() {
+    ProgramNode root = parseProgram("a = doit(1, 2, 3)");
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
+    Node expr = assignment.expr();
+    assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
+  public void parse_procedureNested() {
+    ProgramNode root = parseProgram("a = doit3(1, doit1(2), doit2(3, 4))");
+    AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     Node expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
