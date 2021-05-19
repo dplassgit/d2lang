@@ -644,6 +644,19 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_procedureErrors() {
+    assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
+    assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a: b) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a:) {}", "expected INT");
+    assertParseError("Should not be allowed", "fib:proc(a {}", "expected , or )");
+    assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
+    assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
+    assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
+  }
+
+  @Test
   public void parse_simpleProcedure() {
     // the simplest possible procedure
     ProgramNode root = parseProgram("fib:proc {}");
@@ -655,22 +668,28 @@ public class ParserTest {
 
   @Test
   public void parse_procedureWithParam() {
-    ProgramNode root = parseProgram("fib:proc(param) {}");
+    ProgramNode root = parseProgram("fib:proc(param1) {}");
     System.err.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
     assertThat(proc.parameters()).hasSize(1);
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).type()).isEqualTo(VarType.UNKNOWN);
   }
 
   @Test
-  public void parse_procedureErrors() {
-    assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
-    assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
-    assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
-    assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
+  public void parse_procedureWithParams() {
+    ProgramNode root = parseProgram("fib:proc(param1, param2: string) {}");
+    System.err.println(root);
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.parameters()).hasSize(2);
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).type()).isEqualTo(VarType.UNKNOWN);
+    assertThat(proc.parameters().get(1).name()).isEqualTo("param2");
+    assertThat(proc.parameters().get(1).type()).isEqualTo(VarType.STRING);
   }
 
   @Test
@@ -696,6 +715,7 @@ public class ParserTest {
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.STRING);
     assertThat(proc.parameters()).hasSize(2);
+    assertThat(proc.block().statements()).hasSize(3);
   }
 
   @Test
