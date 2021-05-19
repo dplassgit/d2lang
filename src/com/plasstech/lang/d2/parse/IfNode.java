@@ -6,7 +6,7 @@ import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
-public class IfNode extends StatementNode {
+public class IfNode extends AbstractNode implements StatementNode {
   public static class Case {
     private final Node condition;
     private final BlockNode block;

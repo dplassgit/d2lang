@@ -3,7 +3,7 @@ package com.plasstech.lang.d2.parse;
 import com.plasstech.lang.d2.common.Position;
 
 /** An error node. */
-public class ErrorNode extends Node {
+public class ErrorNode extends AbstractNode {
   private final String message;
 
   public ErrorNode(String message, Position position) {

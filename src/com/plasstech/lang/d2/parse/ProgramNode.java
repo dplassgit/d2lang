@@ -5,7 +5,7 @@ import java.util.Optional;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
-public class ProgramNode extends Node {
+public class ProgramNode extends AbstractNode {
 
   private final BlockNode statements;
   private final Optional<MainNode> main;

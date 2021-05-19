@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.type.VarType;
 /**
  * Declare a variable, e.g., "foo:int"
  */
-public class DeclarationNode extends StatementNode {
+public class DeclarationNode extends AbstractNode implements StatementNode {
 
   public final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
           KeywordType.INT, VarType.INT, //

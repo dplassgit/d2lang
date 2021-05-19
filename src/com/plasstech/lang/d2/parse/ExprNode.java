@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Abstract base class for a node that can be an expression.
  */
-public abstract class ExprNode extends Node {
+public abstract class ExprNode extends AbstractNode {
   ExprNode(Position position) {
     super(position);
   }

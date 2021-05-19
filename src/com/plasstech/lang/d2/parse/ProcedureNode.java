@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
-public class ProcedureNode extends StatementNode {
+public class ProcedureNode extends AbstractNode implements StatementNode {
   public static class Parameter {
     private final String name;
     private final VarType type;

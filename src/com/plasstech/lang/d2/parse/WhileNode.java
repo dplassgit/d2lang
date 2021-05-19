@@ -5,7 +5,7 @@ import java.util.Optional;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
-public class WhileNode extends StatementNode {
+public class WhileNode extends AbstractNode implements StatementNode {
 
   private final Node condition;
   private final Optional<AssignmentNode> assignment;

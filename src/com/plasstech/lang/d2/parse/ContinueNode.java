@@ -3,7 +3,7 @@ package com.plasstech.lang.d2.parse;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
-public class ContinueNode extends StatementNode {
+public class ContinueNode extends AbstractNode implements StatementNode {
 
   ContinueNode(Position position) {
     super(position);

@@ -4,7 +4,7 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-public class ReturnNode extends StatementNode {
+public class ReturnNode extends AbstractNode implements StatementNode {
 
   private final ExprNode expr;
 

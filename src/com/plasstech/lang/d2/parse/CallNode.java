@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Represents a node for calling a function/procedure with actual parameters
  */
-public class CallNode extends ExprNode {
+public class CallNode extends ExprNode implements StatementNode {
 
   private final String functionToCall;
   private final List<ExprNode> actuals;

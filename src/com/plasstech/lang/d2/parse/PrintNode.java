@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Print statement: print [expr]
  */
-public class PrintNode extends StatementNode {
+public class PrintNode extends AbstractNode implements StatementNode {
   private final Node expr;
   private final boolean println;
 

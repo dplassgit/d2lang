@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Represents a list of statements - a block inside a function/method/procedure.
  */
-public class BlockNode extends Node {
+public class BlockNode extends AbstractNode {
   private final List<StatementNode> statements;
 
   BlockNode(List<StatementNode> statements, Position position) {
