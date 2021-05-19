@@ -6,14 +6,14 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class ReturnNode extends StatementNode {
 
-  private final Node expr;
+  private final ExprNode expr;
 
-  ReturnNode(Position position, Node expr) {
+  ReturnNode(Position position, ExprNode expr) {
     super(position);
     this.expr = expr;
   }
 
-  public Node expr() {
+  public ExprNode expr() {
     return expr;
   }
 
@@ -33,6 +33,6 @@ public class ReturnNode extends StatementNode {
 
   @Override
   public void accept(NodeVisitor visitor) {
-//    visitor.visit(this);
+    visitor.visit(this);
   }
 }

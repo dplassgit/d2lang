@@ -1,6 +1,11 @@
 package com.plasstech.lang.d2.type;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.DefaultVisitor;
@@ -8,11 +13,15 @@ import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.DeclarationNode;
+import com.plasstech.lang.d2.parse.ExprNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
+import com.plasstech.lang.d2.parse.ProcedureNode;
+import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.ProgramNode;
+import com.plasstech.lang.d2.parse.ReturnNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -22,14 +31,16 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
-  private static final Set<Token.Type> STRING_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
-          Token.Type.LT, Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ,
-          Token.Type.PLUS
+  private static final Set<
+          Token.Type> STRING_OPERATORS = ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT,
+                  Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS
   // , Token.Type.MOD // eventually
   );
 
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
+
+  private Stack<ProcedureNode> procedures = new Stack<>();
 
   public StaticChecker(ProgramNode root) {
     this.root = root;
@@ -38,10 +49,23 @@ public class StaticChecker extends DefaultVisitor {
   public TypeCheckResult execute() {
     try {
       root.accept(this);
+      if (!procedures.isEmpty()) {
+        ProcedureNode top = procedures.peek();
+        throw new TypeException(
+                String.format("Still in procedure %s. (This should never happen)", top),
+                top.position());
+      }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
       return new TypeCheckResult(e.toString());
     }
+  }
+
+  private SymTab symbolTable() {
+    if (procedures.isEmpty()) {
+      return symbolTable;
+    }
+    return procedures.peek().symbolTable();
   }
 
   @Override
@@ -66,16 +90,16 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    VarType existingType = symbolTable.lookup(variable.name());
+    VarType existingType = symbolTable().lookup(variable.name());
     if (existingType.isUnknown()) {
-      symbolTable.assign(variable.name(), right.varType());
+      symbolTable().assign(variable.name(), right.varType());
     } else if (existingType != right.varType()) {
       // It was already in the symbol table. Possible that it's wrong
       throw new TypeException(String.format("Type mismatch: lhs (%s) is %s; rhs (%s) is %s",
               variable, existingType, right, right.varType()), variable.position());
     }
-    if (!symbolTable.isAssigned(variable.name())) {
-      symbolTable.assign(variable.name(), right.varType());
+    if (!symbolTable().isAssigned(variable.name())) {
+      symbolTable().assign(variable.name(), right.varType());
     }
     // all is good.
     variable.setVarType(right.varType());
@@ -86,10 +110,11 @@ public class StaticChecker extends DefaultVisitor {
   public void visit(VariableNode node) {
     if (node.varType().isUnknown()) {
       // Look up variable in the (local) symbol table, and set it in the node.
-      VarType existingType = symbolTable.lookup(node.name());
+      VarType existingType = symbolTable().lookup(node.name());
 
       if (!existingType.isUnknown()) {
-        if (!symbolTable.isAssigned(node.name())) {
+        // BUG- parameters can be referenced without being assigned
+        if (!symbolTable().isAssigned(node.name())) {
           // can't use it
           throw new TypeException(
                   String.format("Variable '%s' used before assignment", node.name()),
@@ -211,13 +236,88 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(DeclarationNode node) {
-    VarType existingType = symbolTable.lookup(node.name());
-    if (existingType != VarType.UNKNOWN) {
-      throw new TypeException(
-              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
-                      node.name(), existingType.name(), node.varType()),
-              node.position());
+//    VarType existingType = symbolTable().lookup(node.name());
+//    if (existingType != VarType.UNKNOWN) {
+//      throw new TypeException(
+//              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
+//                      node.name(), existingType.name(), node.varType()),
+//              node.position());
+//    }
+    symbolTable().declare(node.name(), node.varType());
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
+    // 1. make sure no duplicate arg names (this can be in the parser?)
+    List<String> paramNames = node.parameters().stream().map(Parameter::name)
+            .collect(toImmutableList());
+    Set<String> duplicates = new HashSet<>();
+    Set<String> uniques = new HashSet<>();
+    for (String param : paramNames) {
+      if (uniques.contains(param)) {
+        uniques.remove(param);
+        duplicates.add(param);
+      } else {
+        uniques.add(param);
+      }
     }
-    symbolTable.declare(node.name(), node.varType());
+    if (!duplicates.isEmpty()) {
+      throw new TypeException(String.format("Duplicate parameters %s in procedure declaration",
+              duplicates.toString()), node.position());
+    }
+    // 2. spawn symbol table & assign to the node.
+    SymTab child = symbolTable().spawn();
+    node.setSymbolTable(child);
+
+    // 3. push current procedure onto a stack, for symbol table AND return value checking
+    procedures.push(node);
+
+    // 4. add all args to symbol table
+    for (Parameter param : node.parameters()) {
+      // Should there be a child symbol table for parameters?
+      symbolTable().declareParam(param.name(), param.type());
+    }
+
+    // 5. this:
+    if (node.block() != null) {
+      node.block().accept(this);
+    }
+
+    // 6. make sure args all have a type
+    for (Parameter param : node.parameters()) {
+      VarType type = symbolTable().get(param.name()).type();
+      if (type == VarType.UNKNOWN) {
+        throw new TypeException(
+                String.format("Could not determine type of parameter %s", param.name()),
+                node.position());
+      }
+    }
+
+    procedures.pop();
+  }
+
+  @Override
+  public void visit(ReturnNode returnNode) {
+    if (procedures.isEmpty()) {
+      throw new TypeException("Cannot return from outside a procedure", returnNode.position());
+    }
+    ExprNode expr = returnNode.expr();
+    expr.accept(this);
+
+    ProcedureNode proc = procedures.peek();
+    VarType declared = proc.returnType();
+    VarType actual = returnNode.expr().varType();
+
+    if (actual == VarType.UNKNOWN) {
+      throw new TypeException(String.format("Indeterminable type for return statement %s", expr),
+              expr.position());
+    }
+
+    if (proc.varType() != expr.varType()) {
+      throw new TypeException(
+              String.format("Type mismatch: %s declared to return %s but returned %s", proc.name(),
+                      declared, actual),
+              returnNode.position());
+    }
   }
 }

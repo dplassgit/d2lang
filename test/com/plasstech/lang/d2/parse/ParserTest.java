@@ -728,6 +728,15 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_procedureCallNoReturn() {
+    ProgramNode root = parseProgram("doit()");
+    System.err.println(root);
+//    CallNode call = (CallNode) (root.statements().statements().get(0));
+//    Node expr = assignment.expr();
+//    assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
   public void parse_procedureCallExpression() {
     ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
     System.err.println(root);

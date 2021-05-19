@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -10,6 +11,7 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.ConstNode;
+import com.plasstech.lang.d2.parse.ErrorNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
@@ -394,6 +396,66 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
+  @Test
+  public void execute_procedure() {
+    checkProgram("fib:proc(n1:int, n2) returns int { n1=3 n2=n1 return n1}");
+    checkProgram("fib:proc(n:int) returns int { n=3 return n}");
+    checkProgram("fib:proc() {a=3} a=true");
+    checkProgram("a=true fib:proc() {a:int a=3} ");
+    checkProgram("fib:proc(n) returns int { n=3 return n}");
+    checkProgram("level1:proc() returns bool { " //
+            + " level2:proc() returns int  {n=3 return n}" //
+            + " return false" //
+            + "}" // + "\nlevel1()"); // void function calls don't parse yet.
+    );
+  }
+
+  @Test
+  public void execute_procedure_recursive() {
+    checkProgram("fib:proc(hn:int) returns int {" //
+            + "  if n <= 1 {" //
+            + "    return n" //
+            + "  } else {" //
+            + "    return fib(n-1) + fib(n-2)" //
+            + "  }" //
+            + "}" //
+            + "");
+  }
+
+  @Test
+  public void execute_procedure_iterative() {
+    checkProgram("fib2:proc (n:int) returns int {" //
+            + " n1 = 0 " //
+            + " n2 = 1 " //
+            + " i=1 while i < n do i = i + 1 { " //
+            + "  nth = n1 + n2 " //
+            + "  n1 = n2 " //
+            + "  n2 = nth " //
+            + " } " //
+            + " return nth " //
+            + "}");
+  }
+
+  @Test
+  public void execute_procedureBadParams() {
+    assertExecuteError("fib:proc(a, b, a) {}", "Duplicate parameter");
+    assertExecuteError("fib:proc() {a=3 a=true}", "Type mismatch");
+    assertExecuteError("a=true fib:proc() {a=3}", "Type mismatch");
+    assertExecuteError("fib:proc(n1) { }", "determine type of parameter");
+  }
+
+  @Test
+  public void execute_procedureReturnMismatch() {
+    assertExecuteError("fib:proc() returns bool {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc() {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
+  }
+
+  @Test
+  public void execute_nakedReturn() {
+    assertExecuteError("return 3", "outside a procedure");
+  }
+
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
@@ -408,11 +470,15 @@ public class StaticCheckerTest {
   private SymTab checkProgram(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
-    ProgramNode root = (ProgramNode) parser.parse();
-    System.out.println("Before: " + root);
-    StaticChecker checker = new StaticChecker(root);
+    Node node = parser.parse();
+    if (node.isError()) {
+      fail(((ErrorNode) node).message());
+    }
+    ProgramNode programRoot = (ProgramNode) node;
+    System.out.println("Before: " + programRoot);
+    StaticChecker checker = new StaticChecker(programRoot);
     SymTab symTab = execute(checker);
-    System.out.println("After: " + root);
+    System.out.println("After: " + programRoot);
     return symTab;
   }
 

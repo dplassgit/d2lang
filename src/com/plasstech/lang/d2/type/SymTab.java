@@ -57,6 +57,16 @@ public class SymTab {
   }
 
   // It's only declared.
+  public Symbol declareUnknownParam(String name) {
+    return declareParam(name, VarType.UNKNOWN);
+  }
+
+  // TODO: distinguish between locals, globals and parameters!
+  public Symbol declareParam(String name, VarType varType) {
+    return declareInternal(name, varType);
+  }
+
+  // It's only declared. TODO: distinguish between locals, globals and parameters!
   public Symbol declare(String name, VarType varType) {
     // think about mangling this
     return declareInternal(name, varType);
@@ -75,7 +85,7 @@ public class SymTab {
   public Symbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
-    if (sym != null) {
+    if (sym != null && sym.type() != VarType.UNKNOWN) {
       Preconditions.checkState(sym.type() == varType,
               "Type error: %s already declared as %s. Cannot be assigned as %s.", name,
               sym.type(), varType);

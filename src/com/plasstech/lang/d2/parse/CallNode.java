@@ -34,6 +34,6 @@ public class CallNode extends ExprNode {
 
   @Override
   public void accept(NodeVisitor visitor) {
-    super.accept(visitor);
+    visitor.visit(this);
   }
 }

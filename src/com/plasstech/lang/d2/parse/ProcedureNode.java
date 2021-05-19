@@ -5,6 +5,7 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
+import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ProcedureNode extends StatementNode {
@@ -34,11 +35,12 @@ public class ProcedureNode extends StatementNode {
       return String.format("FormalParam: %s:%s", name, type);
     }
   }
-  
+
   private final String name;
   private final BlockNode block;
   private final ImmutableList<Parameter> parameters;
   private final VarType returnType;
+  private SymTab symTab;
 
   ProcedureNode(String name, List<Parameter> params, VarType returnType, BlockNode block,
           Position start) {
@@ -68,6 +70,14 @@ public class ProcedureNode extends StatementNode {
     return block;
   }
 
+  public void setSymbolTable(SymTab symTab) {
+    this.symTab = symTab;
+  }
+
+  public SymTab symbolTable() {
+    return symTab;
+  }
+
   @Override
   public void accept(NodeVisitor visitor) {
     visitor.visit(this);
@@ -75,7 +85,8 @@ public class ProcedureNode extends StatementNode {
 
   @Override
   public String toString() {
-    return String.format("ProcedureNode: %s: proc(%s) returns %s: {%s}", name(),
-            parameters, returnType, block);
+    return String.format("ProcedureNode: %s: proc(%s) returns %s: {%s}", name(), parameters,
+            returnType, block);
   }
+
 }

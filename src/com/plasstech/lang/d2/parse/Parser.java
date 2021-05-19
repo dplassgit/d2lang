@@ -144,8 +144,7 @@ public class Parser {
 
         case RETURN:
           advance();
-          Node expr = expr();
-          return new ReturnNode(kt.start(), expr);
+          return new ReturnNode(kt.start(), expr());
 
         default:
           break;
