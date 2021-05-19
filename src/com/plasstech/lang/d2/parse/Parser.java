@@ -296,7 +296,7 @@ public class Parser {
   private PrintNode print(KeywordToken kt, boolean println) {
     assert (kt.keyword() == KeywordType.PRINT || kt.keyword() == KeywordType.PRINTLN);
     advance();
-    Node expr = expr();
+    ExprNode expr = expr();
     return new PrintNode(expr, kt.start(), println);
   }
 
@@ -340,7 +340,7 @@ public class Parser {
   private WhileNode whileStmt(KeywordToken kt) {
     assert (kt.keyword() == KeywordType.WHILE);
     advance();
-    Node condition = expr();
+    ExprNode condition = expr();
     Optional<AssignmentNode> assignment = Optional.empty();
     if (matchesKeyword(token, KeywordType.DO)) {
       advance();

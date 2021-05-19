@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
+/** Represents the main procedure of a program */
 public class MainNode extends ProcedureNode {
 
   public static final MainNode EMPTY = new MainNode(null, null);

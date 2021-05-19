@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.type.VarType;
 /**
  * Binary operation: leftexpr <operation> rightexpr
  */
-public class BinOpNode extends ExprNode {
+public class BinOpNode extends AbstractNode implements ExprNode {
   private static final Set<Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS,
           Token.Type.MINUS, Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.AND,
           Token.Type.OR, Token.Type.EQEQ, Token.Type.GT, Token.Type.LT, Token.Type.GEQ,

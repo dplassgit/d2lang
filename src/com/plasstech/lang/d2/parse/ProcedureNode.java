@@ -8,6 +8,9 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Represents a procedure declaration.
+ */
 public class ProcedureNode extends AbstractNode implements StatementNode {
   public static class Parameter {
     private final String name;

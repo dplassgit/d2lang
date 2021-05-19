@@ -412,7 +412,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_procedure_recursive() {
-    checkProgram("fib:proc(hn:int) returns int {" //
+    checkProgram("fib:proc(n:int) returns int {" //
             + "  if n <= 1 {" //
             + "    return n" //
             + "  } else {" //

@@ -6,6 +6,9 @@ import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
+/**
+ * If/elif/else node.
+ */
 public class IfNode extends AbstractNode implements StatementNode {
   public static class Case {
     private final Node condition;

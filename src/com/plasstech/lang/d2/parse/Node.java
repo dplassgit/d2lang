@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
- * Abstract base class for nodes in the parse tree.
+ * Interface type for nodes in the parse tree.
  */
 public interface Node {
 

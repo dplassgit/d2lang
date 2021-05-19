@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.type.VarType;
 
-public class UnaryNode extends ExprNode {
+public class UnaryNode extends AbstractNode implements ExprNode {
 
   private final Token.Type operator;
 
