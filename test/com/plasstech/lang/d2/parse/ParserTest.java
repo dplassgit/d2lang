@@ -24,7 +24,7 @@ public class ParserTest {
     assertThat(node.position().column()).isEqualTo(1);
     assertThat(node.isPrintln()).isFalse();
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
     assertThat(intNode.position().line()).isEqualTo(1);
@@ -71,7 +71,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(3);
   }
@@ -86,7 +86,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     assertThat(((ConstNode<Boolean>) expr).value()).isTrue();
 
     node = (AssignmentNode) root.statements().get(1);
@@ -104,7 +104,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
 
     BinOpNode binOp = (BinOpNode) expr;
     ConstNode<Integer> left = (ConstNode<Integer>) binOp.left();
@@ -126,7 +126,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
 
     BinOpNode binOp = (BinOpNode) expr;
 
@@ -154,7 +154,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     VariableNode atom = (VariableNode) expr;
     assertThat(atom.name()).isEqualTo("b");
   }
@@ -169,7 +169,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
     assertThat(unary.operator()).isEqualTo(Token.Type.MINUS);
     VariableNode right = (VariableNode) unary.expr();
@@ -214,7 +214,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     assertThat(((UnaryNode) expr).operator()).isEqualTo(Token.Type.NOT);
   }
 
@@ -228,10 +228,11 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
     assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
-    Node right = unary.expr();
+    VariableNode right = (VariableNode) unary.expr();
+    assertThat(right.name()).isEqualTo("b");
   }
 
   @Test
@@ -247,7 +248,6 @@ public class ParserTest {
     Node expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
     assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
-    Node right = unary.expr();
   }
 
   @Test
@@ -276,7 +276,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     assertThat(((ConstNode<Integer>) expr).value()).isEqualTo(value);
   }
 
@@ -340,7 +340,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(3);
   }
@@ -428,7 +428,7 @@ public class ParserTest {
 
     WhileNode whileNode = (WhileNode) statements.get(0);
     assertThat(whileNode.assignment().isPresent()).isFalse();
-    Node condition = whileNode.condition();
+    ExprNode condition = whileNode.condition();
     assertThat(((ConstNode<Boolean>) condition).value()).isTrue();
     BlockNode block = whileNode.block();
     assertThat(block.statements()).isEmpty();
@@ -447,7 +447,7 @@ public class ParserTest {
     VariableNode var = assignment.variable();
     assertThat(var.name()).isEqualTo("i");
 
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(1);
   }
@@ -461,7 +461,7 @@ public class ParserTest {
 
     WhileNode whileNode = (WhileNode) statements.get(0);
 
-    Node condition = whileNode.condition();
+    ExprNode condition = whileNode.condition();
 
     BinOpNode binOp = (BinOpNode) condition;
     VariableNode left = (VariableNode) binOp.left();
@@ -474,7 +474,6 @@ public class ParserTest {
   @Test
   public void parse_whileExprDoBlock() {
     BlockNode root = parseStatements("while i < 30 do i = 1 {print i a=i}");
-    System.err.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -488,7 +487,6 @@ public class ParserTest {
   @Test
   public void parse_whileBreak() {
     BlockNode root = parseStatements("while true {break continue}");
-    System.err.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -532,7 +530,7 @@ public class ParserTest {
     assertThat(node.position().line()).isEqualTo(1);
     assertThat(node.position().column()).isEqualTo(1);
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
     assertThat(intNode.position().line()).isEqualTo(1);
@@ -550,7 +548,7 @@ public class ParserTest {
 
     PrintNode node = (PrintNode) block.statements().get(0);
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
     assertThat(intNode.value()).isEqualTo(123);
   }
@@ -573,7 +571,6 @@ public class ParserTest {
   @Test
   public void parse_decl() {
     BlockNode root = parseStatements("a:int");
-    System.err.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -586,7 +583,6 @@ public class ParserTest {
   @Test
   public void parse_declBool() {
     BlockNode root = parseStatements("a:bool");
-    System.err.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -599,7 +595,6 @@ public class ParserTest {
   @Test
   public void parse_declString() {
     BlockNode root = parseStatements("a:string");
-    System.err.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -612,7 +607,7 @@ public class ParserTest {
   @Test
   public void parse_assignString() {
     BlockNode root = parseStatements("a='hi'");
-    System.err.println(root);
+    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -622,14 +617,14 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     assertThat(expr.varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void parse_addStrings() {
     BlockNode root = parseStatements("a='hi' + 'Hi'");
-    System.err.println(root);
+    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -639,7 +634,7 @@ public class ParserTest {
     VariableNode var = node.variable();
     assertThat(var.name()).isEqualTo("a");
 
-    Node expr = node.expr();
+    ExprNode expr = node.expr();
     assertThat(expr).isInstanceOf(BinOpNode.class);
   }
 
@@ -660,7 +655,7 @@ public class ParserTest {
   public void parse_simpleProcedure() {
     // the simplest possible procedure
     ProgramNode root = parseProgram("fib:proc {}");
-    System.err.println(root);
+    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -669,7 +664,7 @@ public class ParserTest {
   @Test
   public void parse_procedureWithParam() {
     ProgramNode root = parseProgram("fib:proc(param1) {}");
-    System.err.println(root);
+    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -681,7 +676,7 @@ public class ParserTest {
   @Test
   public void parse_procedureWithParams() {
     ProgramNode root = parseProgram("fib:proc(param1, param2: string) {}");
-    System.err.println(root);
+    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -695,7 +690,7 @@ public class ParserTest {
   @Test
   public void parse_procedureWithLocals() {
     ProgramNode root = parseProgram("fib:proc() {local:int}");
-    System.err.println(root);
+    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -710,7 +705,6 @@ public class ParserTest {
                     + "nontyped = typed + 1" //
                     + "return 'hi'" //
                     + "}"); //
-    System.err.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.STRING);
@@ -721,36 +715,37 @@ public class ParserTest {
   @Test
   public void parse_procedureCallNoArgs() {
     ProgramNode root = parseProgram("a = doit()");
-    System.err.println(root);
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
 
   @Test
-  public void parse_procedureCallNoReturn() {
-    ProgramNode root = parseProgram("doit()");
-    System.err.println(root);
-//    CallNode call = (CallNode) (root.statements().statements().get(0));
-//    Node expr = assignment.expr();
-//    assertThat(expr).isInstanceOf(CallNode.class);
+  public void parse_procedureCallAsStatement() {
+    ProgramNode root = parseProgram("doit(3)");
+    CallNode call = (CallNode) (root.statements().statements().get(0));
+    System.out.println(call);
+    assertThat(call.functionToCall()).isEqualTo("doit");
+    assertThat(call.actuals()).hasSize(1);
+    ExprNode param = call.actuals().get(0);
+    assertThat(param.isSimpleType()).isTrue();
   }
 
   @Test
   public void parse_procedureCallExpression() {
     ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
-    System.err.println(root);
+    System.out.println(root);
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
 
   @Test
   public void parse_procedureCallOneArgs() {
     ProgramNode root = parseProgram("a = doit(1)");
-    System.err.println(root);
+    System.out.println(root);
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
 
@@ -764,7 +759,7 @@ public class ParserTest {
   public void parse_procedureCallMultipleArgs() {
     ProgramNode root = parseProgram("a = doit(1, 2, 3)");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
 
@@ -772,7 +767,7 @@ public class ParserTest {
   public void parse_procedureNested() {
     ProgramNode root = parseProgram("a = doit3(1, doit1(2), doit2(3, 4))");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
-    Node expr = assignment.expr();
+    ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
   }
 

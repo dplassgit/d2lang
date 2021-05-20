@@ -236,13 +236,13 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(DeclarationNode node) {
-//    VarType existingType = symbolTable().lookup(node.name());
-//    if (existingType != VarType.UNKNOWN) {
-//      throw new TypeException(
-//              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
-//                      node.name(), existingType.name(), node.varType()),
-//              node.position());
-//    }
+    VarType existingType = symbolTable().lookup(node.name());
+    if (existingType != VarType.UNKNOWN) {
+      throw new TypeException(
+              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
+                      node.name(), existingType.name(), node.varType()),
+              node.position());
+    }
     symbolTable().declare(node.name(), node.varType());
   }
 

@@ -29,9 +29,8 @@ public class Parser {
     this.advance();
   }
 
-  private Token advance() {
+  private void advance() {
     token = lexer.nextToken();
-    return token;
   }
 
   public Node parse() {
@@ -68,24 +67,6 @@ public class Parser {
             token.start());
   }
 
-  private Function<Token, Boolean> matchesEofOrMain() {
-    return token -> {
-      if (token.type() == Token.Type.EOF) {
-        return true;
-      }
-      return matchesKeyword(token, KeywordType.MAIN);
-    };
-  }
-
-  private static Boolean matchesKeyword(Token token, KeywordType type) {
-    if (token.type() == Token.Type.KEYWORD) {
-      KeywordToken kt = (KeywordToken) token;
-      return kt.keyword() == type;
-    }
-    return false;
-  }
-
-  // TODO: do not allow functions in blocks?
   private BlockNode statements(Function<Token, Boolean> matcher) {
     List<StatementNode> children = new ArrayList<>();
     Position start = token.start();
@@ -150,7 +131,7 @@ public class Parser {
           break;
       }
     } else if (token.type() == Token.Type.VARIABLE) {
-      return assignmentOrDeclaration();
+      return assignmentDeclarationProcCall();
     }
 
     throw new ParseException(String
@@ -158,7 +139,7 @@ public class Parser {
             token.start());
   }
 
-  private StatementNode assignmentOrDeclaration() {
+  private StatementNode assignmentDeclarationProcCall() {
     if (token.type() != Token.Type.VARIABLE) {
       throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
               token.start());
@@ -187,6 +168,8 @@ public class Parser {
       throw new ParseException(
               String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
               token.start());
+    } else if (token.type() == Token.Type.LPAREN) {
+      return procedureCall(varToken);
     }
     throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
             token.start());
@@ -350,6 +333,67 @@ public class Parser {
     return new WhileNode(condition, assignment, block, kt.start());
   }
 
+  private CallNode procedureCall(Token varToken) {
+    if (token.type() != Token.Type.LPAREN) {
+      throw new ParseException(String.format("Unexpected %s; expected '('", token.text()),
+              token.start());
+    }
+    advance(); // eat the lparen
+
+    List<ExprNode> actuals;
+    if (token.type() == Token.Type.RPAREN) {
+      actuals = ImmutableList.of();
+    } else {
+      actuals = commaSeparatedExpressions();
+    }
+
+    if (token.type() == Token.Type.RPAREN) {
+      advance(); // eat the rparen
+    } else {
+      throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
+              token.start());
+    }
+    return new CallNode(varToken.start(), varToken.text(), actuals);
+  }
+
+  private List<ExprNode> commaSeparatedExpressions() {
+    return commaSeparated(new NextNode<ExprNode>() {
+      @Override
+      public ExprNode call() {
+        return expr();
+      }
+    });
+  }
+
+  private <T> List<T> commaSeparated(NextNode<T> nextNode) {
+    List<T> nodes = new ArrayList<>();
+
+    T node = nextNode.call();
+    nodes.add(node);
+    if (token.type() == Token.Type.COMMA) {
+      // There's another one - let's go
+      advance();
+
+      while (token.type() != Token.Type.EOF) {
+        node = nextNode.call();
+        nodes.add(node);
+
+        if (token.type() == Token.Type.COMMA) {
+          advance(); // eat the comma
+        } else {
+          break;
+        }
+      }
+    }
+    return nodes;
+  }
+
+  private interface NextNode<T> {
+    T call();
+  }
+
+  /** EXPRESSIONS */
+
   private ExprNode expr() {
     return boolOr();
   }
@@ -398,6 +442,46 @@ public class Parser {
         return unary();
       }
     }.parse();
+  }
+
+  /** Parses a binary operation function. */
+  private abstract class BinOpFn {
+    private final Set<Token.Type> tokenTypes;
+
+    BinOpFn(Set<Token.Type> tokenTypes) {
+      this.tokenTypes = tokenTypes;
+    }
+
+    BinOpFn(Token.Type tokenType) {
+      this.tokenTypes = ImmutableSet.of(tokenType);
+    }
+
+    /** Call the next method, e.g., mulDivTerm */
+    abstract ExprNode nextRule();
+
+    /**
+     * Parse from the current location, repeatedly call "function", e.g.,:
+     *
+     * here -> function (tokentype function)*
+     *
+     * where tokentype is in tokenTypes
+     *
+     * In the grammar:
+     *
+     * expr -> term (+- term)*
+     */
+    ExprNode parse() {
+      ExprNode left = nextRule();
+
+      while (tokenTypes.contains(token.type())) {
+        Token.Type operator = token.type();
+        advance();
+        ExprNode right = nextRule();
+        left = new BinOpNode(left, operator, right);
+      }
+
+      return left;
+    }
   }
 
   private ExprNode unary() {
@@ -472,102 +556,20 @@ public class Parser {
     }
   }
 
-  private CallNode procedureCall(Token varToken) {
-    if (token.type() != Token.Type.LPAREN) {
-      throw new ParseException(String.format("Unexpected %s; expected '('", token.text()),
-              token.start());
-    }
-    advance(); // eat the lparen
-
-    List<ExprNode> actuals;
-    if (token.type() == Token.Type.RPAREN) {
-      actuals = ImmutableList.of();
-    } else {
-      actuals = commaSeparatedExpressions();
-    }
-
-    if (token.type() == Token.Type.RPAREN) {
-      advance(); // eat the rparen
-    } else {
-      throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
-              token.start());
-    }
-    return new CallNode(varToken.start(), varToken.text(), actuals);
-  }
-
-  private List<ExprNode> commaSeparatedExpressions() {
-    return commaSeparated(new NextNode<ExprNode>() {
-      @Override
-      public ExprNode call() {
-        return expr();
+  private static Function<Token, Boolean> matchesEofOrMain() {
+    return token -> {
+      if (token.type() == Token.Type.EOF) {
+        return true;
       }
-    });
+      return matchesKeyword(token, KeywordType.MAIN);
+    };
   }
 
-  private <T> List<T> commaSeparated(NextNode<T> nextNode) {
-    List<T> nodes = new ArrayList<>();
-
-    T node = nextNode.call();
-    nodes.add(node);
-    if (token.type() == Token.Type.COMMA) {
-      // There's another one - let's go
-      advance();
-
-      while (token.type() != Token.Type.EOF) {
-        node = nextNode.call();
-        nodes.add(node);
-
-        if (token.type() == Token.Type.COMMA) {
-          advance(); // eat the comma
-        } else {
-          break;
-        }
-      }
+  private static Boolean matchesKeyword(Token token, KeywordType type) {
+    if (token.type() == Token.Type.KEYWORD) {
+      KeywordToken kt = (KeywordToken) token;
+      return kt.keyword() == type;
     }
-    return nodes;
-  }
-
-  private interface NextNode<T> {
-    T call();
-  }
-
-  /** Parses a binary operation function. */
-  private abstract class BinOpFn {
-    private final Set<Token.Type> tokenTypes;
-
-    BinOpFn(Set<Token.Type> tokenTypes) {
-      this.tokenTypes = tokenTypes;
-    }
-
-    BinOpFn(Token.Type tokenType) {
-      this.tokenTypes = ImmutableSet.of(tokenType);
-    }
-
-    /** Call the next method, e.g., mulDivTerm */
-    abstract ExprNode nextRule();
-
-    /**
-     * Parse from the current location, repeatedly call "function", e.g.,:
-     *
-     * here -> function (tokentype function)*
-     *
-     * where tokentype is in tokenTypes
-     *
-     * In the grammar:
-     *
-     * expr -> term (+- term)*
-     */
-    ExprNode parse() {
-      ExprNode left = nextRule();
-
-      while (tokenTypes.contains(token.type())) {
-        Token.Type operator = token.type();
-        advance();
-        ExprNode right = nextRule();
-        left = new BinOpNode(left, operator, right);
-      }
-
-      return left;
-    }
+    return false;
   }
 }
