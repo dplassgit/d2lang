@@ -85,7 +85,7 @@ public class SymTab {
   public Symbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
-    if (sym != null && sym.type() != VarType.UNKNOWN) {
+    if (sym != null && !sym.type().isUnknown()) {
       Preconditions.checkState(sym.type() == varType,
               "Type error: %s already declared as %s. Cannot be assigned as %s.", name,
               sym.type(), varType);

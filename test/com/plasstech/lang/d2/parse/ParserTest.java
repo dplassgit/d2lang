@@ -670,7 +670,7 @@ public class ParserTest {
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
     assertThat(proc.parameters()).hasSize(1);
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
-    assertThat(proc.parameters().get(0).type()).isEqualTo(VarType.UNKNOWN);
+    assertThat(proc.parameters().get(0).type().isUnknown()).isTrue();
   }
 
   @Test
@@ -682,7 +682,7 @@ public class ParserTest {
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
     assertThat(proc.parameters()).hasSize(2);
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
-    assertThat(proc.parameters().get(0).type()).isEqualTo(VarType.UNKNOWN);
+    assertThat(proc.parameters().get(0).type().isUnknown()).isTrue();
     assertThat(proc.parameters().get(1).name()).isEqualTo("param2");
     assertThat(proc.parameters().get(1).type()).isEqualTo(VarType.STRING);
   }

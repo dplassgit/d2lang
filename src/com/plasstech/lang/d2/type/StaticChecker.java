@@ -237,7 +237,7 @@ public class StaticChecker extends DefaultVisitor {
   @Override
   public void visit(DeclarationNode node) {
     VarType existingType = symbolTable().lookup(node.name());
-    if (existingType != VarType.UNKNOWN) {
+    if (!existingType.isUnknown()) {
       throw new TypeException(
               String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
                       node.name(), existingType.name(), node.varType()),
@@ -286,7 +286,7 @@ public class StaticChecker extends DefaultVisitor {
     // 6. make sure args all have a type
     for (Parameter param : node.parameters()) {
       VarType type = symbolTable().get(param.name()).type();
-      if (type == VarType.UNKNOWN) {
+      if (type.isUnknown()) {
         throw new TypeException(
                 String.format("Could not determine type of parameter %s", param.name()),
                 node.position());
@@ -308,7 +308,7 @@ public class StaticChecker extends DefaultVisitor {
     VarType declared = proc.returnType();
     VarType actual = returnNode.expr().varType();
 
-    if (actual == VarType.UNKNOWN) {
+    if (actual.isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for return statement %s", expr),
               expr.position());
     }
