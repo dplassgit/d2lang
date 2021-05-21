@@ -1,21 +1,22 @@
-# The D(2) Language
+# The D(2) Language Features
 
-## Features
+## Types & Keywords
 
 Built-in types: int, string, boolean, (eventually: array, map, record, lambda (but not closures))
 
-(Current) Keywords: 
+Current keywords (excluding built-in types)
 
 ```
-int, string, boolean, if, else, elif, do, while, break, continue, returns, return, proc, 
-print, println, main
+if, else, elif, do, while, break, continue, return, proc, print, println, main
 ```
 
 Eventually:
 
 ```
-array(?), length, keys, values, new, delete
+error, array(?), length, keys, values, new, delete, asc, chr
 ```
+
+## Oddities
 
 No semicolons because why not.
 
@@ -28,8 +29,6 @@ Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
      // Even if one line
    }
 ```
-
-What about typedefs for type safety? Records?
 
 ## `for` loop explorations
 
@@ -73,7 +72,7 @@ foo:proc(a:map,b,c) returns int
 }
 ```
 
-Future: (Issue #26)
+Now:
 
 ```
 foo:proc(a:map,b,c) : int {
@@ -94,3 +93,4 @@ No "character" type - only strings, like Python. I *really* like the Python synt
 "foo%s" % "bar"
 length("foo")
 ```
+
