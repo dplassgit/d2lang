@@ -40,37 +40,41 @@ returns -> 'returns' type
 
 Node classes are:
 
-`abstract class Node`
+`interface Node`
 
-`BlockNode extends Node`
+`abstract class AbstractNode implements Node`
 
-`abstract class StatementNode extends Node`
+`BlockNode extends AbstractNode`
 
-`PrintNode extends StatementNode`
+`interface StatementNode extends Node`
 
-`AssignmentNode extends StatementNode`
+`PrintNode extends AbstractNode implements StatementNode`
 
-`IfNode extends StatementNode` (also includes a repeated `Case`, which is like a node)
+`AssignmentNode extends AbstractNode implements  StatementNode`
 
-`DeclarationNode extends StatementNode`
+`IfNode extends AbstractNode implements StatementNode` (also includes a repeated `Case`, which is like a node)
 
-`WhileNode extends StatementNode`
+`DeclarationNode extends AbstractNode implements StatementNode`
 
-`ProcNode extends StatementNode`
+`WhileNode extends AbstractNode implements StatementNode`
+
+`ProcNode extends AbstractNode implements StatementNode`
 
 `MainNode extends ProcNode`
 
-`BinOpNode extends Node`
+`interface ExprNode extends Node` 
 
-`UnaryNode extends Node`
+`BinOpNode extends AbstractNode implements ExprNode`
 
-`ConstNode<T> extends Node`
+`UnaryNode extends AbstractNode implements ExprNode`
 
-`VariableNode extends Node`
+`ConstNode<T> extends AbstractNode implements ExprNode`
 
+`VariableNode extends AbstractNode implements ExprNode`
 
-This works.
+This allows function/procedure calls to be both expressions (that return something) and stand-alone (either return void or throwaway the value.)
 
+`CallNode extends AbstractNode implements ExprNode, StatementNode`
 
 
 ## Expression grammar implemented so far
@@ -97,6 +101,7 @@ atom -> int constant
 	| boolean constant
 	| string constant
 	| '(' expr ')'
+  | variable '(' expressions ')'
 ```
 
 Not implemented yet: shift, power, xor
