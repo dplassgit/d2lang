@@ -1,47 +1,15 @@
 package com.plasstech.lang.d2.type;
 
-public class Symbol {
-  private final String name;
-  private final SymbolStorage storage;
-  private boolean assigned;
-  private VarType type;
+public interface Symbol {
 
-  // future: location (memory, stack, register)
-  // maybe future: scope (sym tab?)
+  Symbol setType(VarType varType);
 
-  public Symbol(String name, SymbolStorage storage) {
-    this.name = name;
-    this.storage = storage;
-  }
+  Symbol setAssigned();
 
-  public String name() {
-    return name;
-  }
+  VarType type();
 
-  public boolean isAssigned() {
-    return assigned;
-  }
+  boolean isAssigned();
 
-  public Symbol setAssigned() {
-    this.assigned = true;
-    return this;
-  }
+  String name();
 
-  public VarType type() {
-    return type;
-  }
-
-  public Symbol setType(VarType type) {
-    this.type = type;
-    return this;
-  }
-
-  public SymbolStorage storage() {
-    return storage;
-  }
-
-  @Override
-  public int hashCode() {
-    return name.toLowerCase().hashCode();
-  }
 }

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.parse.ProcedureNode;
 
 /** Symbol Table. */
 public class SymTab {
@@ -33,15 +34,28 @@ public class SymTab {
   }
 
   public VarType lookup(String name) {
-    Symbol sym = values.get(name);
+    return lookup(name, true);
+  }
+
+  public VarType lookup(String name, boolean inherit) {
+    Symbol sym;
+    if (inherit) {
+      sym = getRecursive(name);
+    } else {
+      sym = get(name);
+    }
     if (sym == null) {
-      if (parent != null) {
-        return parent.lookup(name);
-      } else {
-        return VarType.UNKNOWN;
-      }
+      return VarType.UNKNOWN;
     }
     return sym.type();
+  }
+
+  public Symbol getRecursive(String name) {
+    Symbol sym = values.get(name);
+    if (sym == null && parent != null) {
+      return parent.getRecursive(name);
+    }
+    return sym;
   }
 
   public Symbol get(String name) {
@@ -56,14 +70,24 @@ public class SymTab {
     return declareInternal(name, varType);
   }
 
-  // It's only declared.
-  public Symbol declareUnknownParam(String name) {
-    return declareParam(name, VarType.UNKNOWN);
-  }
-
   // TODO: distinguish between locals, globals and parameters!
   public Symbol declareParam(String name, VarType varType) {
-    return declareInternal(name, varType);
+    Symbol param = declareInternal(name, varType);
+    param.setAssigned(); // parameters are always assigned, by definition.
+    return param;
+  }
+
+  public ProcSymbol declareProc(ProcedureNode node) {
+    Symbol sym = getRecursive(node.name());
+    if (sym != null) {
+      throw new TypeException(
+              String.format("%s already declared as %s. Cannot be redeclared as procedure.",
+                      node.name(), sym.type()),
+              node.position());
+    }
+    ProcSymbol procSymbol = new ProcSymbol(node);
+    values.put(node.name(), procSymbol);
+    return procSymbol;
   }
 
   // It's only declared. TODO: distinguish between locals, globals and parameters!
@@ -74,10 +98,10 @@ public class SymTab {
 
   private Symbol declareInternal(String name, VarType varType) {
     Preconditions.checkState(!values.containsKey(name),
-            "Type error: %s already declared as %s. Cannot be redeclared as %s.", name,
-            values.get(name), varType);
-    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
-    Symbol sym = new Symbol(name, storage).setType(varType);
+            "%s already declared as %s. Cannot be redeclared as %s.", name, values.get(name),
+            varType);
+//    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
+    Symbol sym = new VariableSymbol(name).setType(varType);
     values.put(name, sym);
     return sym;
   }
@@ -87,10 +111,10 @@ public class SymTab {
     Symbol sym = values.get(name);
     if (sym != null && !sym.type().isUnknown()) {
       Preconditions.checkState(sym.type() == varType,
-              "Type error: %s already declared as %s. Cannot be assigned as %s.", name,
-              sym.type(), varType);
+              "Type error: %s already declared as %s. Cannot be assigned as %s.", name, sym.type(),
+              varType);
     } else {
-      sym = new Symbol(name, storage).setType(varType);
+      sym = new VariableSymbol(name).setType(varType);
     }
     sym.setAssigned();
     values.put(name, sym);

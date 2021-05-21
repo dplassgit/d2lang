@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
+import com.plasstech.lang.d2.parse.CallNode;
 import com.plasstech.lang.d2.parse.DeclarationNode;
 import com.plasstech.lang.d2.parse.ExprNode;
 import com.plasstech.lang.d2.parse.IfNode;
@@ -57,7 +58,8 @@ public class StaticChecker extends DefaultVisitor {
       }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
-      return new TypeCheckResult(e.toString());
+      throw e;
+//      return new TypeCheckResult(e.toString());
     }
   }
 
@@ -90,7 +92,7 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    VarType existingType = symbolTable().lookup(variable.name());
+    VarType existingType = symbolTable().lookup(variable.name(), true);
     if (existingType.isUnknown()) {
       symbolTable().assign(variable.name(), right.varType());
     } else if (existingType != right.varType()) {
@@ -109,8 +111,8 @@ public class StaticChecker extends DefaultVisitor {
   @Override
   public void visit(VariableNode node) {
     if (node.varType().isUnknown()) {
-      // Look up variable in the (local) symbol table, and set it in the node.
-      VarType existingType = symbolTable().lookup(node.name());
+      // Look up variable in the (current) symbol table, and set it in the node.
+      VarType existingType = symbolTable().lookup(node.name(), true);
 
       if (!existingType.isUnknown()) {
         // BUG- parameters can be referenced without being assigned
@@ -123,6 +125,15 @@ public class StaticChecker extends DefaultVisitor {
         node.setVarType(existingType);
       }
     }
+  }
+
+  @Override
+  public void visit(CallNode callNode) {
+    // 1. make sure the function is really a function
+    // 2. make sure the arg length is right.
+    // 3. eval parameter expressions.
+    // 4. for each param, if param type is unknown, set it from the expr if possible
+    // 5. make sure expr types == param types
   }
 
   @Override
@@ -236,7 +247,8 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(DeclarationNode node) {
-    VarType existingType = symbolTable().lookup(node.name());
+    // Don't go up to the parent symbol table; this allows scoping
+    VarType existingType = symbolTable().lookup(node.name(), false);
     if (!existingType.isUnknown()) {
       throw new TypeException(
               String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
@@ -265,6 +277,10 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Duplicate parameters %s in procedure declaration",
               duplicates.toString()), node.position());
     }
+
+    // Add this procedure to the symbol table
+    symbolTable().declareProc(node);
+
     // 2. spawn symbol table & assign to the node.
     SymTab child = symbolTable().spawn();
     node.setSymbolTable(child);
@@ -274,7 +290,6 @@ public class StaticChecker extends DefaultVisitor {
 
     // 4. add all args to symbol table
     for (Parameter param : node.parameters()) {
-      // Should there be a child symbol table for parameters?
       symbolTable().declareParam(param.name(), param.type());
     }
 
