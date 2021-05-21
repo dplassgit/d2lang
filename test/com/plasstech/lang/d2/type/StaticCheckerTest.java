@@ -451,6 +451,12 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_procedureNoReturn() {
+    assertExecuteError("fib:proc():int {}", "Type mismatch");
+    assertExecuteError("fib:proc():bool {if false {return 1}}", "Type mismatch");
+  }
+
+  @Test
   public void execute_nakedReturn() {
     assertExecuteError("return 3", "outside a procedure");
   }
