@@ -58,8 +58,8 @@ public class StaticChecker extends DefaultVisitor {
       }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
-      throw e;
-//      return new TypeCheckResult(e.toString());
+//      throw e;
+      return new TypeCheckResult(e.toString());
     }
   }
 
@@ -128,12 +128,51 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
-  public void visit(CallNode callNode) {
+  public void visit(CallNode node) {
     // 1. make sure the function is really a function
+    Symbol maybeProc = symbolTable().getRecursive(node.functionToCall());
+    if (maybeProc == null || maybeProc.type() != VarType.PROC) {
+      throw new TypeException(String.format("Procedure %s is unknown", node.functionToCall()),
+              node.position());
+    }
     // 2. make sure the arg length is right.
+    ProcSymbol proc = (ProcSymbol) maybeProc;
+    if (proc.node().parameters().size() != node.actuals().size()) {
+      throw new TypeException(
+              String.format("Wrong number of arguments to procedure %s: found %d, expected %d",
+                      node.functionToCall(), node.actuals().size(),
+                      proc.node().parameters().size()),
+              node.position());
+    }
     // 3. eval parameter expressions.
+    node.actuals().forEach(actual -> actual.accept(this));
+
     // 4. for each param, if param type is unknown, set it from the expr if possible
-    // 5. make sure expr types == param types
+    for (int i = 0; i < node.actuals().size(); ++i) {
+      Parameter formal = proc.node().parameters().get(i);
+      ExprNode actual = node.actuals().get(i);
+      if (formal.type() == VarType.UNKNOWN) {
+        if (actual.varType() == VarType.UNKNOWN) {
+          // wah.
+          throw new TypeException(
+                  String.format("Indeterminable type for parameter %s of procedure %s",
+                          formal.name(), proc.name()),
+                  node.position());
+        } else {
+          formal.setVarType(actual.varType());
+        }
+      }
+      // 5. make sure expr types == param types
+      if (formal.type() != actual.varType()) {
+        throw new TypeException(
+                String.format(
+                        "Type mismatch for parameter %s of procedure %s: found %s, expected %s",
+                        formal.name(), proc.name(), actual.varType(), formal.type()),
+                node.position());
+      }
+    }
+    // 6. set the type of the expression to the return type of the node
+    node.setVarType(proc.node().returnType());
   }
 
   @Override

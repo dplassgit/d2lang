@@ -9,10 +9,11 @@ public class ProcSymbol extends AbstractSymbol {
   public ProcSymbol(ProcedureNode node) {
     super(node.name());
     this.node = node;
+    this.setType(VarType.PROC);
   }
 
   // Maybe think about this?
-  public ProcedureNode procedureNode() {
+  public ProcedureNode node() {
     return node;
   }
 }

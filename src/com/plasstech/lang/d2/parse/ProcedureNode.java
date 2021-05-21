@@ -14,7 +14,7 @@ import com.plasstech.lang.d2.type.VarType;
 public class ProcedureNode extends AbstractNode implements StatementNode {
   public static class Parameter {
     private final String name;
-    private final VarType type;
+    private VarType type;
 
     public Parameter(String name, VarType type) {
       this.name = name;
@@ -31,6 +31,10 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
 
     public VarType type() {
       return type;
+    }
+
+    public void setVarType(VarType varType) {
+      this.type = varType;
     }
 
     @Override

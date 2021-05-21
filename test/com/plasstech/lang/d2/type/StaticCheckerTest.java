@@ -406,8 +406,7 @@ public class StaticCheckerTest {
     checkProgram("level1:proc() returns bool { " //
             + " level2:proc() returns int  {n=3 return n}" //
             + " return false" //
-            + "}" // + "\nlevel1()"); // void function calls don't parse yet.
-    );
+            + "} level1()"); //
   }
 
   @Test
@@ -454,6 +453,33 @@ public class StaticCheckerTest {
   @Test
   public void execute_nakedReturn() {
     assertExecuteError("return 3", "outside a procedure");
+  }
+
+  @Test
+  public void execute_callErrors() {
+    assertExecuteError("foo(3)", "Procedure foo is unknown");
+    assertExecuteError("a:int a(3)", "Procedure a is unknown");
+    assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "Procedure inner is unknown");
+    // wrong number of params
+    assertExecuteError("fib:proc(){} fib(3)",
+            "Wrong number of arguments to procedure fib: found 1, expected 0");
+    assertExecuteError("fib:proc(n:int){} fib(3, 4)",
+            "Wrong number of arguments to procedure fib: found 2, expected 1");
+    // indeterminable arg type
+    assertExecuteError("fib:proc(n) {fib(n)}",
+            "Indeterminable type for parameter n of procedure fib");
+    // wrong arg type
+    assertExecuteError("fib:proc(n:int) {} fib(false)",
+            "Type mismatch for parameter n of procedure fib: found BOOL, expected INT");
+  }
+
+  @Test
+  public void callInnerProc() {
+    checkProgram("level1:proc() returns bool { " //
+            + " level2:proc() returns int  {n=3 return n}" //
+            + " m=level2()" //
+            + " return m==3" //
+            + "}"); //
   }
 
   private void assertExecuteError(String program, String messageShouldContain) {
