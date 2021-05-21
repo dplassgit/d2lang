@@ -5,7 +5,7 @@ import com.plasstech.lang.d2.common.Position;
 
 public class KeywordToken extends Token {
   public enum KeywordType {
-    PRINT, PRINTLN, TRUE, FALSE, IF, ELSE, ELIF, MAIN, PROC, RETURNS, RETURN, WHILE, DO, BREAK,
+    PRINT, PRINTLN, TRUE, FALSE, IF, ELSE, ELIF, MAIN, PROC, RETURN, WHILE, DO, BREAK,
     CONTINUE, INT, BOOL, STRING;
   }
 

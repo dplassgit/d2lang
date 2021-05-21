@@ -179,7 +179,7 @@ public class Parser {
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
-    if (matchesKeyword(token, KeywordType.RETURNS)) {
+    if (token.type() == Token.Type.COLON) {
       advance();
       if (token.type() != Token.Type.KEYWORD) {
         throw new ParseException(

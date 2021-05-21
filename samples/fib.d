@@ -1,5 +1,5 @@
 // Define recursive fibonacci
-fib: proc(n: int) returns int {
+fib: proc(n: int) : int {
   if n <= 1 {
     return n
   } else {
@@ -9,7 +9,7 @@ fib: proc(n: int) returns int {
 }
 
 // Define iterative fibonacci
-fib2:proc(n: int) returns int {
+fib2:proc(n: int): int {
   n1 = 0
   n2 = 1
   i=1 while i < n do i =i+ 1 {

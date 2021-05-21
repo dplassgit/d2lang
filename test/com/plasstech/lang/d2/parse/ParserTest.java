@@ -700,7 +700,7 @@ public class ParserTest {
   @Test
   public void parse_fullProcedure() {
     ProgramNode root = parseProgram( //
-            "fib:proc(typed:int, nontyped) returns string {" //
+            "fib:proc(typed:int, nontyped) : string {" //
                     + "typed = typed + 1" //
                     + "nontyped = typed + 1" //
                     + "return 'hi'" //

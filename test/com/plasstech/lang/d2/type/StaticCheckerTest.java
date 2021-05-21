@@ -398,20 +398,20 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_procedure() {
-    checkProgram("fib:proc(n1:int, n2) returns int { n1=3 n2=n1 return n1}");
-    checkProgram("fib:proc(n:int) returns int { n=3 return n}");
+    checkProgram("fib:proc(n1:int, n2) : int { n1=3 n2=n1 return n1}");
+    checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram("fib:proc() {a=3} a=true");
     checkProgram("a=true fib:proc() {a:int a=3} ");
-    checkProgram("fib:proc(n) returns int { n=3 return n}");
-    checkProgram("level1:proc() returns bool { " //
-            + " level2:proc() returns int  {n=3 return n}" //
+    checkProgram("fib:proc(n) : int { n=3 return n}");
+    checkProgram("level1:proc() : bool { " //
+            + " level2:proc() : int  {n=3 return n}" //
             + " return false" //
             + "} level1()"); //
   }
 
   @Test
   public void execute_procedure_recursive() {
-    checkProgram("fib:proc(n:int) returns int {" //
+    checkProgram("fib:proc(n:int) : int {" //
             + "  if n <= 1 {" //
             + "    return n" //
             + "  } else {" //
@@ -423,7 +423,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_procedure_iterative() {
-    checkProgram("fib2:proc (n:int) returns int {" //
+    checkProgram("fib2:proc (n:int) : int {" //
             + " n1 = 0 " //
             + " n2 = 1 " //
             + " i=1 while i < n do i = i + 1 { " //
@@ -445,7 +445,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_procedureReturnMismatch() {
-    assertExecuteError("fib:proc() returns bool {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc() : bool {return 3}", "Type mismatch");
     assertExecuteError("fib:proc() {return 3}", "Type mismatch");
     assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
   }
@@ -475,8 +475,8 @@ public class StaticCheckerTest {
 
   @Test
   public void callInnerProc() {
-    checkProgram("level1:proc() returns bool { " //
-            + " level2:proc() returns int  {n=3 return n}" //
+    checkProgram("level1:proc() : bool { " //
+            + " level2:proc() : int  {n=3 return n}" //
             + " m=level2()" //
             + " return m==3" //
             + "}"); //
