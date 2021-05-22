@@ -135,7 +135,8 @@ public class Parser {
     }
 
     throw new ParseException(String
-            .format("Unexpected %s; expected 'print', assignment, 'if' or 'while'", token.text()),
+            .format("Unexpected %s; expected 'print', assignment, 'if', 'while', 'return', 'continue' or 'break'",
+                    token.text()),
             token.start());
   }
 
@@ -259,23 +260,6 @@ public class Parser {
     }
   }
 
-  private AssignmentNode assignment() {
-    if (token.type() != Token.Type.VARIABLE) {
-      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
-              token.start());
-    }
-
-    VariableNode var = new VariableNode(token.text(), token.start());
-    advance();
-    if (token.type() != Token.Type.EQ) {
-      throw new ParseException(String.format("Unexpected %s; expected '='", token.text()),
-              token.start());
-    }
-    advance();
-    ExprNode expr = expr();
-    return new AssignmentNode(var, expr);
-  }
-
   private PrintNode print(KeywordToken kt, boolean println) {
     assert (kt.keyword() == KeywordType.PRINT || kt.keyword() == KeywordType.PRINTLN);
     advance();
@@ -324,13 +308,13 @@ public class Parser {
     assert (kt.keyword() == KeywordType.WHILE);
     advance();
     ExprNode condition = expr();
-    Optional<AssignmentNode> assignment = Optional.empty();
+    Optional<StatementNode> doStatement = Optional.empty();
     if (matchesKeyword(token, KeywordType.DO)) {
       advance();
-      assignment = Optional.of(assignment());
+      doStatement = Optional.of(statement());
     }
     BlockNode block = block();
-    return new WhileNode(condition, assignment, block, kt.start());
+    return new WhileNode(condition, doStatement, block, kt.start());
   }
 
   private CallNode procedureCall(Token varToken) {

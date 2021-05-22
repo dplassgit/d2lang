@@ -59,11 +59,10 @@ Keywords: [
 ]
 
 Lexer: record {
-  text: string
+  text: string // full text
   line: int
   col:int 
-  // location inside text
-  loc: int
+  loc: int  // location inside text
   cc: string // current character
 }
 
@@ -132,7 +131,8 @@ makeText:proc(start:Position):Token {
 
   i=0 while i < Keywords.length() do i = i + 1 {
     if value == Keywords[i] {
-      return new Token(Type_KEYWORD, start, end, value)
+      return new Token(Type_KEYWORD, start, end, i)
+    }
   }
 
   return new Token(Type_VARIABLE, start, end, value)

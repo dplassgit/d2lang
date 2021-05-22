@@ -292,8 +292,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     node.block().accept(this);
 
     emit(new Label(increment));
-    if (node.assignment().isPresent()) {
-      node.assignment().get().accept(this);
+    if (node.doStatement().isPresent()) {
+      node.doStatement().get().accept(this);
     }
     emit(new Goto(before));
 

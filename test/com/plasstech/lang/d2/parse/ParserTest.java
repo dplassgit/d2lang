@@ -427,7 +427,7 @@ public class ParserTest {
     assertThat(statements).hasSize(1);
 
     WhileNode whileNode = (WhileNode) statements.get(0);
-    assertThat(whileNode.assignment().isPresent()).isFalse();
+    assertThat(whileNode.doStatement().isPresent()).isFalse();
     ExprNode condition = whileNode.condition();
     assertThat(((ConstNode<Boolean>) condition).value()).isTrue();
     BlockNode block = whileNode.block();
@@ -443,7 +443,7 @@ public class ParserTest {
 
     WhileNode whileNode = (WhileNode) statements.get(0);
 
-    AssignmentNode assignment = whileNode.assignment().get();
+    AssignmentNode assignment = (AssignmentNode) whileNode.doStatement().get();
     VariableNode var = assignment.variable();
     assertThat(var.name()).isEqualTo("i");
 
@@ -500,12 +500,17 @@ public class ParserTest {
   }
 
   @Test
+  public void parse_whileNotAssignment() {
+    BlockNode root = parseStatements("while true do advance(3) {}");
+  }
+
+  @Test
   public void parse_whileError() {
     assertParseError("Missing expression", "while print", "expected literal");
     assertParseError("Missing open brace", "while a==3 print", "expected {");
     assertParseError("Missing close brace", "while a==3 {print", "expected literal");
-    assertParseError("Missing do assignment", "while a==3 do {print}", "expected variable");
-    assertParseError("Bad do assignment", "while a==3 do print {print}", "expected variable");
+    assertParseError("Missing do assignment", "while a==3 do {print}", "expected 'print'");
+    assertParseError("Bad do assignment", "while a==3 do print {print}", "expected literal");
     assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
     assertParseError("Unexpected continue", "continue", "CONTINUE keyword");
     assertParseError("Unexpected break", "break", "BREAK keyword");

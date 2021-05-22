@@ -9,14 +9,14 @@ import com.plasstech.lang.d2.common.Position;
 public class WhileNode extends AbstractNode implements StatementNode {
 
   private final ExprNode condition;
-  private final Optional<AssignmentNode> assignment;
+  private final Optional<StatementNode> doStatement;
   private final BlockNode block;
 
-  public WhileNode(ExprNode condition, Optional<AssignmentNode> assignment, BlockNode block,
+  public WhileNode(ExprNode condition, Optional<StatementNode> doStatement, BlockNode block,
           Position start) {
     super(start);
     this.condition = condition;
-    this.assignment = assignment;
+    this.doStatement = doStatement;
     this.block = block;
   }
 
@@ -24,8 +24,8 @@ public class WhileNode extends AbstractNode implements StatementNode {
     return condition;
   }
 
-  public Optional<AssignmentNode> assignment() {
-    return assignment;
+  public Optional<StatementNode> doStatement() {
+    return doStatement;
   }
 
   public BlockNode block() {
@@ -39,6 +39,6 @@ public class WhileNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("WhileNode: while (%s) do (%s) {%s}", condition, assignment, block);
+    return String.format("WhileNode: while (%s) do (%s) {%s}", condition, doStatement, block);
   }
 }

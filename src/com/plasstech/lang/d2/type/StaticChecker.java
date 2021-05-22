@@ -275,8 +275,8 @@ public class StaticChecker extends DefaultVisitor {
               String.format("Condition for 'while' must be boolean; was %s", condition.varType()),
               condition.position());
     }
-    if (boolNode.assignment().isPresent()) {
-      boolNode.assignment().get().accept(this);
+    if (boolNode.doStatement().isPresent()) {
+      boolNode.doStatement().get().accept(this);
     }
     boolNode.block().accept(this);
   }
