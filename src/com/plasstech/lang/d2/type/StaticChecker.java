@@ -42,6 +42,7 @@ public class StaticChecker extends DefaultVisitor {
   private final SymTab symbolTable = new SymTab();
 
   private Stack<ProcedureNode> procedures = new Stack<>();
+  private Set<ProcedureNode> needsReturn = new HashSet<>();
 
   public StaticChecker(ProgramNode root) {
     this.root = root;
@@ -326,6 +327,9 @@ public class StaticChecker extends DefaultVisitor {
 
     // 3. push current procedure onto a stack, for symbol table AND return value checking
     procedures.push(node);
+    if (node.returnType() != VarType.VOID) {
+      needsReturn.add(node);
+    }
 
     // 4. add all args to symbol table
     for (Parameter param : node.parameters()) {
@@ -342,11 +346,20 @@ public class StaticChecker extends DefaultVisitor {
       VarType type = symbolTable().get(param.name()).type();
       if (type.isUnknown()) {
         throw new TypeException(
-                String.format("Could not determine type of parameter %s", param.name()),
+                String.format("Could not determine type of parameter %s ", param.name()),
                 node.position());
       }
     }
 
+    if (node.returnType() != VarType.VOID) {
+      if (needsReturn.contains(node)) {
+        // no return statement seen.
+        throw new TypeException(
+                String.format("No 'return' statement for procedure %s ", node.name()),
+                node.position());
+
+      }
+    }
     procedures.pop();
   }
 
@@ -359,6 +372,7 @@ public class StaticChecker extends DefaultVisitor {
     expr.accept(this);
 
     ProcedureNode proc = procedures.peek();
+    needsReturn.remove(proc);
     VarType declared = proc.returnType();
     VarType actual = returnNode.expr().varType();
 
