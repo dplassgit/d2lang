@@ -478,6 +478,8 @@ public class StaticCheckerTest {
     // wrong arg type
     assertExecuteError("fib:proc(n:int) {} fib(false)",
             "Type mismatch for parameter n of procedure fib: found BOOL, expected INT");
+    // can't assign to void
+    assertExecuteError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
   }
 
   @Test

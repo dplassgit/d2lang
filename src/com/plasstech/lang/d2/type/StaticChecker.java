@@ -92,6 +92,11 @@ public class StaticChecker extends DefaultVisitor {
       // this is bad.
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
+    if (right.varType() == VarType.VOID) {
+      // this is bad.
+      throw new TypeException(String.format("Cannot assign value of void expression %s", right),
+              right.position());
+    }
 
     VarType existingType = symbolTable().lookup(variable.name(), true);
     if (existingType.isUnknown()) {
