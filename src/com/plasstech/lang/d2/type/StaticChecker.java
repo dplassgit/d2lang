@@ -305,9 +305,9 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(ProcedureNode node) {
-    // 1. make sure no duplicate arg names (this can be in the parser?)
+    // 1. make sure no duplicate arg names
     List<String> paramNames = node.parameters().stream().map(Parameter::name)
-            .collect(toImmutableList());
+        .collect(toImmutableList());
     Set<String> duplicates = new HashSet<>();
     Set<String> uniques = new HashSet<>();
     for (String param : paramNames) {
@@ -319,8 +319,8 @@ public class StaticChecker extends DefaultVisitor {
       }
     }
     if (!duplicates.isEmpty()) {
-      throw new TypeException(String.format("Duplicate parameters %s in procedure declaration",
-              duplicates.toString()), node.position());
+      throw new TypeException(String.format("Duplicate parameter names: %s in procedure %s",
+          duplicates.toString(), node.name()), node.position());
     }
 
     // Add this procedure to the symbol table
@@ -351,8 +351,8 @@ public class StaticChecker extends DefaultVisitor {
       VarType type = symbolTable().get(param.name()).type();
       if (type.isUnknown()) {
         throw new TypeException(
-                String.format("Could not determine type of parameter %s ", param.name()),
-                node.position());
+            String.format("Could not determine type of parameter %s of procedure %s", param.name(), node.name()),
+            node.position());
       }
     }
 
@@ -360,12 +360,60 @@ public class StaticChecker extends DefaultVisitor {
       if (needsReturn.contains(node)) {
         // no return statement seen.
         throw new TypeException(
-                String.format("No 'return' statement for procedure %s ", node.name()),
-                node.position());
+            String.format("No 'return' statement for procedure %s ", node.name()),
+            node.position());
 
+      }
+      // make sure that all *codepaths* have a return
+      if (!checkAllPathsHaveReturn(node)) {
+        throw new TypeException(
+            String.format("Not all codepaths end with 'return' for procedure %s ", node.name()),
+            node.position());
       }
     }
     procedures.pop();
+  }
+
+  private boolean checkAllPathsHaveReturn(ProcedureNode node) {
+    return checkAllPathsHaveReturn(node.block());
+  }
+
+  private boolean checkAllPathsHaveReturn(BlockNode node) {
+    /*
+     * If there’s a top-level “return” in this block, return true
+     * Else for each statement in the block:
+     *   Ok = true
+     *   If it’s an “ifNode”:
+     *     For each ”case”: ok = ok & check “case” block
+     *     If “else” exists, ok = ok & check “else” block
+     *   return ok
+     */
+    for (StatementNode stmt : node.statements()) {
+      if (stmt instanceof ReturnNode) {
+        return true;
+      }
+    }
+
+    boolean ok = true;
+    for (StatementNode stmt : node.statements()) {
+      if (stmt instanceof IfNode) {
+        IfNode ifNode = (IfNEode) stmt;
+        for (Case ifCase: ifNode.cases) {
+          // Is "&=" right? should it be just =?
+          ok &= checkAllPathsHaveReturn(ifCase.block());
+        }
+        BlockNode elseBlock = ifNode.elseBlock();
+        if (elseBlock != null) {
+          ok &= checkAllPathsHaveReturn(elseBlock);
+        }
+        if (!ok) {
+          // is this right?
+          return false;
+        }
+      }
+    }
+
+    return ok;
   }
 
   @Override

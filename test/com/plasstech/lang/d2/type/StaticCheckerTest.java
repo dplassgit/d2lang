@@ -453,8 +453,9 @@ public class StaticCheckerTest {
   @Test
   public void execute_procedureNoReturn() {
     assertExecuteError("fib:proc():int {}", "No 'return' statement");
-    // this needs a lot more analysis to be detectable.
-    // assertExecuteError("fib:proc():bool {if false {return false}}", "Type mismatch");
+    assertExecuteError("fib:proc():bool {if false {return false}}", "Not all codepaths");
+    assertExecuteError("fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
+    assertExecuteError("fib:proc():bool {if false {if true {return false} elif false {return true} else {print 'hi'}}}", "Not all codepaths");
   }
 
   @Test
