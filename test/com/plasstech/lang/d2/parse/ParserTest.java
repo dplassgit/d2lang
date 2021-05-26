@@ -654,13 +654,15 @@ public class ParserTest {
     assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
     assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
     assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
+    assertParseError("Should not be allowed", "fib:proc() {return", "Unexpected EOF");
+    assertParseError("Should not be allowed", "fib:proc() {return {", "Unexpected {");
+    assertParseError("Should not be allowed", "fib:proc() {return )}", "Unexpected )");
   }
 
   @Test
   public void parse_simpleProcedure() {
     // the simplest possible procedure
     ProgramNode root = parseProgram("fib:proc {}");
-    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -669,7 +671,6 @@ public class ParserTest {
   @Test
   public void parse_procedureWithParam() {
     ProgramNode root = parseProgram("fib:proc(param1) {}");
-    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -681,7 +682,6 @@ public class ParserTest {
   @Test
   public void parse_procedureWithParams() {
     ProgramNode root = parseProgram("fib:proc(param1, param2: string) {}");
-    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -695,7 +695,6 @@ public class ParserTest {
   @Test
   public void parse_procedureWithLocals() {
     ProgramNode root = parseProgram("fib:proc() {local:int}");
-    System.out.println(root);
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -710,11 +709,29 @@ public class ParserTest {
                     + "nontyped = typed + 1" //
                     + "return 'hi'" //
                     + "}"); //
+    System.out.println(root);
+
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.STRING);
     assertThat(proc.parameters()).hasSize(2);
     assertThat(proc.block().statements()).hasSize(3);
+  }
+
+  @Test
+  public void parse_returnVoid() {
+    ProgramNode root = parseProgram("fib:proc() {return}");
+    System.out.println(root);
+
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.block().statements()).hasSize(1);
+    ReturnNode returnNode = (ReturnNode) proc.block().statements().get(0);
+    assertThat(returnNode.expr().isPresent()).isFalse();
+
+    // This is allowed, but the static checker will eventually prevent it
+    parseProgram("fib:proc() {return print 'hi'}");
   }
 
   @Test
@@ -769,7 +786,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureNested() {
+  public void parse_procedureCallNested() {
     ProgramNode root = parseProgram("a = doit3(1, doit1(2), doit2(3, 4))");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();

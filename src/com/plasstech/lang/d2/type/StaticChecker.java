@@ -417,28 +417,32 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
-  public void visit(ReturnNode returnNode) {
+  public void visit(ReturnNode node) {
     if (procedures.isEmpty()) {
-      throw new TypeException("Cannot return from outside a procedure", returnNode.position());
+      throw new TypeException("Cannot return from outside a procedure", node.position());
     }
-    ExprNode expr = returnNode.expr();
-    expr.accept(this);
+    if (node.expr().isPresent()) {
+      ExprNode expr = node.expr().get();
+      expr.accept(this);
+      node.setVarType(expr.varType());
+    }
 
     ProcedureNode proc = procedures.peek();
     needsReturn.remove(proc);
     VarType declared = proc.returnType();
-    VarType actual = returnNode.expr().varType();
+    VarType actual = node.varType();
 
     if (actual.isUnknown()) {
-      throw new TypeException(String.format("Indeterminable type for return statement %s", expr),
-              expr.position());
+      throw new TypeException(
+              String.format("Indeterminable type for return statement %s", node),
+              node.position());
     }
 
-    if (proc.varType() != expr.varType()) {
+    if (proc.varType() != actual) {
       throw new TypeException(
               String.format("Type mismatch: %s declared to return %s but returned %s", proc.name(),
                       declared, actual),
-              returnNode.position());
+              node.position());
     }
   }
 }

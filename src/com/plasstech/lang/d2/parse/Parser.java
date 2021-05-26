@@ -20,6 +20,10 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class Parser {
 
+  private static final Set<Token.Type> EXPRESSION_STARTS = ImmutableSet.of(Token.Type.VARIABLE,
+          Token.Type.LPAREN, Token.Type.MINUS, Token.Type.PLUS, Token.Type.NOT, Token.Type.INT,
+          Token.Type.STRING, Token.Type.BOOL);
+
   private final Lexer lexer;
   private Token token;
   private int inWhile;
@@ -125,7 +129,7 @@ public class Parser {
 
         case RETURN:
           advance();
-          return new ReturnNode(kt.start(), expr());
+          return returnStmt(kt.start());
 
         default:
           break;
@@ -134,10 +138,18 @@ public class Parser {
       return assignmentDeclarationProcCall();
     }
 
-    throw new ParseException(String
-            .format("Unexpected %s; expected 'print', assignment, 'if', 'while', 'return', 'continue' or 'break'",
-                    token.text()),
-            token.start());
+    throw new ParseException(String.format(
+            "Unexpected %s; expected 'print', assignment, 'if', 'while', 'return', 'continue' or 'break'",
+            token.text()), token.start());
+  }
+
+  private ReturnNode returnStmt(Position start) {
+    // either it's the start of an expression, or else it's void.
+    if (EXPRESSION_STARTS.contains(token.type())) {
+      return new ReturnNode(start, expr());
+    }
+    // return void, probably.
+    return new ReturnNode(start);
   }
 
   private StatementNode assignmentDeclarationProcCall() {
