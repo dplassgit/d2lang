@@ -13,17 +13,21 @@ public interface Node {
   // Indicates it's a simple type - constant or variable.
   boolean isSimpleType();
 
+  /** Variable type */
   VarType varType();
 
   void setVarType(VarType varType);
 
   boolean isError();
 
+  /** Position of this node in the input text. */
   Position position();
 
+  /** Visitor pattern. */
   void accept(NodeVisitor visitor);
 
-  void setLocation(Location location);
-
+  /** Storage location (e.g., memory, register, stack) for this node */
   Location location();
+
+  void setLocation(Location location);
 }

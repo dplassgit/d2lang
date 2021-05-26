@@ -1,5 +1,6 @@
 
-advance:proc(this:string) {
+advance:proc(this:string):string {
+	return this
 }
 
 makeInt:proc(this:string, start:string):string  {

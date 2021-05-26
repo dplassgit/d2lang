@@ -1,19 +1,27 @@
 package com.plasstech.lang.d2.parse;
 
+import java.util.Optional;
+
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ReturnNode extends AbstractNode implements StatementNode {
 
-  private final ExprNode expr;
+  private final Optional<ExprNode> expr;
 
   ReturnNode(Position position, ExprNode expr) {
     super(position);
-    this.expr = expr;
+    this.expr = Optional.of(expr);
   }
 
-  public ExprNode expr() {
+  ReturnNode(Position position) {
+    super(position);
+    this.expr = Optional.empty();
+    this.setVarType(VarType.VOID);
+  }
+
+  public Optional<ExprNode> expr() {
     return expr;
   }
 
@@ -21,8 +29,10 @@ public class ReturnNode extends AbstractNode implements StatementNode {
   public void setVarType(VarType varType) {
     super.setVarType(varType);
     // This is weird.
-    if (expr.varType().isUnknown()) {
-      expr.setVarType(varType);
+    if (expr.isPresent()) {
+      if (expr.get().varType().isUnknown()) {
+        expr.get().setVarType(varType);
+      }
     }
   }
 

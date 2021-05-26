@@ -445,9 +445,12 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_procedureReturnMismatch() {
-    assertExecuteError("fib:proc() : bool {return 3}", "Type mismatch");
-    assertExecuteError("fib:proc() {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc():bool {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc(a):int {a='hi' return a}", "Type mismatch");
     assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
+
+    assertExecuteError("fib:proc() {return 3}", "Type mismatch");
+    assertExecuteError("fib:proc():int {return}", "Type mismatch");
   }
 
   @Test
@@ -494,10 +497,13 @@ public class StaticCheckerTest {
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
-    ProgramNode root = (ProgramNode) parser.parse();
+    Node rootNode = parser.parse();
+    assertWithMessage("Should have passed parse for:\n " + program).that(rootNode.isError())
+            .isFalse();
+    ProgramNode root = (ProgramNode) rootNode;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
-    assertWithMessage("result error for " + program).that(result.isError()).isTrue();
+    assertWithMessage("Should have result error for:\n " + program).that(result.isError()).isTrue();
     System.err.println(result.message());
     assertThat(result.message()).contains(messageShouldContain);
   }
