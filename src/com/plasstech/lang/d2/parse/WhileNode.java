@@ -12,8 +12,8 @@ public class WhileNode extends AbstractNode implements StatementNode {
   private final Optional<StatementNode> doStatement;
   private final BlockNode block;
 
-  public WhileNode(ExprNode condition, Optional<StatementNode> doStatement, BlockNode block,
-          Position start) {
+  WhileNode(ExprNode condition, Optional<StatementNode> doStatement, BlockNode block,
+      Position start) {
     super(start);
     this.condition = condition;
     this.doStatement = doStatement;

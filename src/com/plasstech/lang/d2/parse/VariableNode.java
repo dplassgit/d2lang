@@ -6,10 +6,10 @@ import com.plasstech.lang.d2.common.Position;
 /**
  * Represents a variable access, or a variable assignment.
  */
-public class VariableNode extends SimpleNode {
+public class VariableNode extends AbstractNode implements SimpleNode {
   private final String name;
 
-  public VariableNode(String name, Position position) {
+  VariableNode(String name, Position position) {
     super(position);
     this.name = name;
   }

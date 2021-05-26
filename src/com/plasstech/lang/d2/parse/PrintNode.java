@@ -10,7 +10,7 @@ public class PrintNode extends AbstractNode implements StatementNode {
   private final ExprNode expr;
   private final boolean println;
 
-  public PrintNode(ExprNode expr, Position position, boolean println) {
+  PrintNode(ExprNode expr, Position position, boolean println) {
     super(position);
     this.expr = expr;
     this.println = println;

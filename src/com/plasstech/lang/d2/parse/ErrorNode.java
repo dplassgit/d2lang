@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 public class ErrorNode extends AbstractNode {
   private final String message;
 
-  public ErrorNode(String message, Position position) {
+  ErrorNode(String message, Position position) {
     super(position);
     this.message = message;
   }
