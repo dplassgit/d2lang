@@ -204,6 +204,23 @@ public class LexerTest {
   }
 
   @Test
+  public void nextToken_underscore() {
+    Lexer lexer = new Lexer("TYPE_token _token token_ _");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("TYPE_token");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("_token");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("token_");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.text()).isEqualTo("_");
+  }
+
+  @Test
   public void nextToken_assign() {
     Lexer lexer = new Lexer("a = 3");
 

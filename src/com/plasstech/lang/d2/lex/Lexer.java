@@ -44,7 +44,7 @@ public class Lexer {
     Position start = new Position(line, col);
     if (Character.isDigit(cc)) {
       return makeInt(start);
-    } else if (Character.isLetter(cc)) {
+    } else if (Character.isLetter(cc) || cc == '_') {
       return makeText(start);
     } else if (cc != 0) {
       return makeSymbol(start);
@@ -55,11 +55,11 @@ public class Lexer {
 
   private Token makeText(Position start) {
     StringBuilder sb = new StringBuilder();
-    if (Character.isLetter(cc)) {
+    if (Character.isLetter(cc) || cc=='_') {
       sb.append(cc);
       advance();
     }
-    while (Character.isLetterOrDigit(cc)) {
+    while (Character.isLetterOrDigit(cc) || cc == '_') {
       sb.append(cc);
       advance();
     }
