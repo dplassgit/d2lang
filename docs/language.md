@@ -13,7 +13,7 @@ if, else, elif, do, while, break, continue, return, proc, print, println, main
 Eventually:
 
 ```
-error, array(?), length, keys, values, new, delete, asc, chr
+error, record, array(?), length, keys, values, new, delete(?), asc, chr
 ```
 
 ## Oddities
@@ -79,7 +79,7 @@ foo:proc(a:map,b,c) : int {
 } 
 ```
 
-Should the return type be optional? We can infer it from the return statement and/or calls. Sure.
+Should the return type be optional? We can infer it from the return statement and/or calls. Yes, but not implemented yet.
 
 ## Chars and strings
 
@@ -94,3 +94,55 @@ No "character" type - only strings, like Python. I *really* like the Python synt
 length("foo")
 ```
 
+## Future thoughts:
+
+### Records
+
+Definition:
+
+```
+Token: record {
+  name: string
+  value: int
+}
+```
+
+Usage:
+
+```
+t:Token
+t = new Token("Name", 3)
+```
+
+The constructor takes the arguments in order they were defined.
+
+What about recursive structures?
+
+### Arrays
+
+Everything else is like strings (!)
+
+```
+keywords=["hi", "bye"]
+```
+
+#### Declaration explorations
+
+```
+keywords:Array of int
+keywords:array{int}
+keywords:array[int]
+keywords:int array
+keywords:[int] // either this one
+keywords:int[] // or this one
+```
+
+What about multi-dimensional arrays?
+
+#### Allocating explorations
+
+```
+keywords = new array[int](3)
+keywords = new int[3] // defaults to zeros
+keywords = int[3] // defaults to zeros
+```
