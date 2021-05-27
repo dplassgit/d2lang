@@ -456,9 +456,42 @@ public class StaticCheckerTest {
   @Test
   public void execute_procedureNoReturn() {
     assertExecuteError("fib:proc():int {}", "No 'return' statement");
-    assertExecuteError("fib:proc():bool {if false {return false}}", "Not all codepaths");
-    assertExecuteError("fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
-    assertExecuteError("fib:proc():bool {if false {if true {return false} elif false {return true} else {print 'hi'}}}", "Not all codepaths");
+    assertExecuteError("fib:proc():bool {" //
+            + "if false {" //
+            + " return false" //
+            + "}" //
+            + "}", "Not all codepaths");
+    assertExecuteError( //
+            "fib:proc():bool {" //
+                    + "if false {" //
+                    + "  if true {" //
+                    + "    return false" //
+                    + "  } elif false {" //
+                    + "    return true" //
+                    + "  } else {" //
+                    + "    print 'hi'" //
+                    + "  }" //
+                    + "}" //
+                    + "}", //
+            "Not all codepaths");
+    assertExecuteError("fib:proc():bool {if false {return false} else {print 'hi'}}",
+            "Not all codepaths");
+    assertExecuteError("fob:proc():int {" //
+            + "if (false) {" //
+            + "  if (true) {" //
+            + "  } elif (3==3) {" //
+            + "  } else {" //
+            + "  }" //
+            + "} elif (3==3) {" //
+            + "  if (true) {" //
+            + "    return 3" //
+            + "  } elif (3==3) {" //
+            + "    return 3" //
+            + "  } else {" //
+            + "    return 3" //
+            + "  }" //
+            + "}" //
+            + "}", "Not all codepaths");
   }
 
   @Test

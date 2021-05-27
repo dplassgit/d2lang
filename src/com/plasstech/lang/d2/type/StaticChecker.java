@@ -12,10 +12,12 @@ import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
+import com.plasstech.lang.d2.parse.BlockNode;
 import com.plasstech.lang.d2.parse.CallNode;
 import com.plasstech.lang.d2.parse.DeclarationNode;
 import com.plasstech.lang.d2.parse.ExprNode;
 import com.plasstech.lang.d2.parse.IfNode;
+import com.plasstech.lang.d2.parse.IfNode.Case;
 import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
@@ -23,6 +25,7 @@ import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.ReturnNode;
+import com.plasstech.lang.d2.parse.StatementNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -379,14 +382,18 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
-    /*
-     * If there’s a top-level “return” in this block, return true
-     * Else for each statement in the block:
-     *   Ok = true
-     *   If it’s an “ifNode”:
-     *     For each ”case”: ok = ok & check “case” block
-     *     If “else” exists, ok = ok & check “else” block
-     *   return ok
+    /**
+     * <pre>
+     * If there's a top-level "return" in this block, return true 
+     * Else for each statement in the block: 
+     *    If it's an "ifNode": 
+     *      Ok = true 
+     *      For each "case": ok = ok & check "case" block 
+     *      If "else" exists, ok = ok & check "else" block
+     *      if no "else", ok = false
+     *      if ok == true return true
+     * return false
+     * </pre>
      */
     for (StatementNode stmt : node.statements()) {
       if (stmt instanceof ReturnNode) {
@@ -394,26 +401,31 @@ public class StaticChecker extends DefaultVisitor {
       }
     }
 
-    boolean ok = true;
+    // for each 'if' find if there's a
     for (StatementNode stmt : node.statements()) {
       if (stmt instanceof IfNode) {
-        IfNode ifNode = (IfNEode) stmt;
-        for (Case ifCase: ifNode.cases) {
-          // Is "&=" right? should it be just =?
+        IfNode ifNode = (IfNode) stmt;
+        boolean ok = true;
+        for (Case ifCase : ifNode.cases()) {
+          // make sure all the arms have a return
           ok &= checkAllPathsHaveReturn(ifCase.block());
         }
         BlockNode elseBlock = ifNode.elseBlock();
         if (elseBlock != null) {
+          // make sure the else has a return
           ok &= checkAllPathsHaveReturn(elseBlock);
+        } else {
+          // no "else" - no good.
+          ok = false;
         }
-        if (!ok) {
-          // is this right?
-          return false;
+        if (ok) {
+          // all arms of the "if" had a "return"
+          return true;
         }
       }
     }
 
-    return ok;
+    return false;
   }
 
   @Override
