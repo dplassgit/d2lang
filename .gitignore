@@ -26,3 +26,9 @@ generated/
 
 # vim
 .swp
+
+# Bazel
+bazel-bin
+bazel-d2lang
+bazel-out
+bazel-testlogs
