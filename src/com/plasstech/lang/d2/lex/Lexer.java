@@ -6,9 +6,9 @@ import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
   private final String text;
-  private int line, col;
-  // location inside text
-  private int loc;
+
+  private int line, col; // current line & colum=n
+  private int loc; // location inside text
   private char cc; // current character
 
   public Lexer(String text) {
@@ -53,6 +53,10 @@ public class Lexer {
     return new Token(Type.EOF, start);
   }
 
+  /** 
+   * Read letters/numbers/underscore until whitespace.
+   * Then figure out if it's a keyword or a variable.
+   */
   private Token makeText(Position start) {
     StringBuilder sb = new StringBuilder();
     if (Character.isLetter(cc) || cc=='_') {
@@ -63,6 +67,7 @@ public class Lexer {
       sb.append(cc);
       advance();
     }
+
     String value = sb.toString();
     Position end = new Position(line, col);
     try {
@@ -77,6 +82,7 @@ public class Lexer {
 
       return new KeywordToken(start, end, keywordType);
     } catch (Exception e) {
+      // Not a keyword, must be a variable.
       return new Token(Type.VARIABLE, start, end, value);
     }
   }
@@ -151,26 +157,27 @@ public class Lexer {
   private Token startsWithSlash(Position start) {
     advance(); // eat the first slash
     if (cc == '/') {
+      // It's a comment! Advance until the next line or EOF.
       advance(); // eat the second slash
       while (cc != '\n' && cc != 0) {
-        advance();
+        advance(); // advance until newline or EOF.
       }
       if (cc != 0) {
-        advance();
+        advance(); // eat the newline
       }
       line++;
       col = 0;
-      return nextToken();
+      return nextToken(); // risky, but /shrug.
     }
     return new Token(Type.DIV, start, '/');
   }
 
   private Token startsWithNot(Position start) {
     char oc = cc;
-    advance();
+    advance(); // eat the !
     if (cc == '=') {
       Position end = new Position(line, col);
-      advance();
+      advance(); // eat the =
       return new Token(Type.NEQ, start, end, "!=");
     }
     return new Token(Type.NOT, start, oc);
@@ -178,10 +185,10 @@ public class Lexer {
 
   private Token startsWithGt(Position start) {
     char oc = cc;
-    advance();
+    advance(); // eat the >
     if (cc == '=') {
       Position end = new Position(line, col);
-      advance();
+      advance(); // eat the =
       return new Token(Type.GEQ, start, end, ">=");
     }
     return new Token(Type.GT, start, oc);
@@ -189,10 +196,10 @@ public class Lexer {
 
   private Token startsWithLt(Position start) {
     char oc = cc;
-    advance();
+    advance(); // eat the <
     if (cc == '=') {
       Position end = new Position(line, col);
-      advance();
+      advance(); // eat the =
       return new Token(Type.LEQ, start, end, "<=");
     }
     return new Token(Type.LT, start, oc);
@@ -200,21 +207,23 @@ public class Lexer {
 
   private Token startsWithEq(Position start) {
     char oc = cc;
-    advance();
+    advance(); // eat the =
     if (cc == '=') {
       Position end = new Position(line, col);
-      advance();
+      advance(); // eat the second =
       return new Token(Type.EQEQ, start, end, "==");
     }
     return new Token(Type.EQ, start, oc);
   }
 
-  private Token makeStringToken(Position start, char first) {
-    advance(); // eat the tick/quote
+  private Token makeStringToken(Position start, char openingChar) {
+    advance(); // eat the opening tick/quote
     StringBuilder sb = new StringBuilder();
+
     // TODO: fix backslash-escaping
     boolean escape = false;
-    while (cc != first && cc != 0) {
+    // Take all characters until the closing tick/quote
+    while (cc != openingChar && cc != 0) {
       if (!escape) {
         sb.append(cc);
       }
