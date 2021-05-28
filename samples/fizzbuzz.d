@@ -8,6 +8,6 @@ i=1 while i < 100 do i = i + 1 {
     print "Buzz, "
   } else {
     print i
-    print ", "
+    println ', '
   }
 }

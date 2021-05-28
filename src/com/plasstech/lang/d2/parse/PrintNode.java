@@ -27,7 +27,7 @@ public class PrintNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("PrintNode: print %s", expr.toString());
+    return String.format("PrintNode: print%s %s", (println ? "ln" : ""), expr.toString());
   }
 
   @Override

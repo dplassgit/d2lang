@@ -45,14 +45,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Assignment op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int rhsVal = resolve(op.rhs());
+    Object rhsVal = resolve(op.rhs());
     env.setValue(op.lhs(), rhsVal);
   }
 
   @Override
   public void visit(Load op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    Integer rhsVal = env.getValue(op.sourceAddress());
+    Object rhsVal = env.getValue(op.sourceAddress());
     if (rhsVal != null) {
       env.setValue(op.destRegister(), rhsVal);
     } else {
@@ -63,7 +63,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Store op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    Integer rhsVal = env.getValue(op.sourceRegister());
+    Object rhsVal = env.getValue(op.sourceRegister());
     if (rhsVal != null) {
       env.setValue(op.destAddress(), rhsVal);
     } else {
@@ -74,8 +74,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(IfOp ifOp) {
 //    System.err.printf("%d: Visit %s\n", ip, ifOp);
-    Integer cond = env.getValue(ifOp.condition());
-    if (cond == 1) {
+    Object cond = env.getValue(ifOp.condition());
+    if (cond.equals(1)) {
       for (int i = 0; i < code.size(); ++i) {
         Op op = code.get(i);
         if (op instanceof Label) {
@@ -111,8 +111,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(BinOp op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int r1 = resolve(op.rhs1());
-    int r2 = resolve(op.rhs2());
+    int r1 = (Integer) resolve(op.rhs1());
+    int r2 = (Integer) resolve(op.rhs2());
     int result;
     switch (op.operator()) {
       case AND:
@@ -163,7 +163,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(UnaryOp op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int r1 = resolve(op.rhs());
+    int r1 = (Integer) resolve(op.rhs());
     int result;
     switch (op.operator()) {
       case MINUS:
@@ -178,7 +178,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     env.setValue(op.lhs(), result);
   }
 
-  private int resolve(String val) {
+  private Object resolve(Object oval) {
+    String val = oval.toString();
     if (val.equals("true")) {
       return 1;
     } else if (val.equals("false")) {
@@ -187,14 +188,18 @@ public class Interpreter extends DefaultOpcodeVisitor {
       // register/temp
       return env.getValue(val);
     } else {
-      return Integer.parseInt(val);
+      try {
+        return Integer.parseInt(val);
+      } catch (NumberFormatException e) {
+        return val;
+      }
     }
   }
 
   @Override
   public void visit(SysCall op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int val = resolve(op.arg());
+    Object val = resolve(op.arg());
     // assume all system calls are prints.
     env.addOutput(String.valueOf(val));
   }

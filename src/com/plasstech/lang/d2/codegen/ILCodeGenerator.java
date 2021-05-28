@@ -117,9 +117,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     expr.accept(this);
     emit(new SysCall(SysCall.Call.PRINT, expr.location().name()));
     if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, "\"\\n\""));
+      emit(new SysCall(SysCall.Call.PRINT, "\n"));
     }
-//    System.out.println("\tprintf(\"%d\\n\", t0);");
   }
 
   @Override
@@ -138,12 +137,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // Provide constant in t0
     String location = generateTemp(node.varType());
     node.setLocation(new TempLocation(location));
-    if (node.varType() == VarType.STRING) {
-      // TODO: figure out storage for strings
-      emit(new Assignment(location, String.format("\"%s\"", node.simpleValue())));
-    } else {
-      emit(new Assignment(location, node.simpleValue()));
-    }
+    // TODO: figure out storage for strings
+    emit(new Assignment(location, node.simpleValue()));
   }
 
   @Override
