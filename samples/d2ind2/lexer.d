@@ -8,6 +8,7 @@ Token: record {
   start: Position
   end: Position
   value: String
+  int_value: int
 }
 
 Type_INT=1
@@ -37,8 +38,10 @@ Type_COLON=24
 Type_COMMA=25
 Type_KEYWORD=26
 Type_EOF=0
+Type_TRUE=27
+Type_FALSE=28
 
-Keywords: [
+KEYWORDS: [
 'print',
 'println',
 'true',
@@ -55,7 +58,9 @@ Keywords: [
 'continue',
 'int',
 'bool',
-'string'
+'string',
+'record',
+'error'
 ]
 
 Lexer: record {
@@ -66,7 +71,7 @@ Lexer: record {
   cc: string // current character
 }
 
-init_lexer: proc(text: string): Lexer {
+new_lexer: proc(text: string): Lexer {
   this=new Lexer(
     text, // text
     1,  // line
@@ -79,7 +84,7 @@ init_lexer: proc(text: string): Lexer {
 }
 
 advance: proc(this: Lexer) {
-  if (this.loc < this.text.length()) {
+  if (this.loc < this.text.length) {
     this.cc=this.text[this.loc]
     this.col=this.col + 1
   } else {
@@ -111,7 +116,19 @@ nextToken: proc(this: Lexer): Token {
   return new Token(Type_EOF, this.start)
 }
 
-makeText:proc(start:Position):Token {
+isLetter: proc(c:string):bool {
+  return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
+}
+
+isDigit: proc(c:string):bool {
+  return c>='0' & c <= '9'
+}
+
+isLetterOrDigit: proc(c:string):bool {
+  return isLetter(c) | isDigit(c)
+}
+
+makeText: proc(this:Lexer, start:Position):Token {
   value=""
   if (isLetter(this.cc)) {
     value=value + this.cc
@@ -124,30 +141,30 @@ makeText:proc(start:Position):Token {
   end=new Position(this.line, this.col)
 
   if value == 'true' {
-    return new Token(TOKEN_true, start)
+    return new Token(Type_TRUE, start, end, value)
   } elif value == 'false' {
-    return new Token(TOKEN_false, start)
+    return new Token(Type_FALSE, start, end, value)
   }
 
-  i=0 while i < Keywords.length() do i = i + 1 {
-    if value == Keywords[i] {
-      return new Token(Type_KEYWORD, start, end, i)
+  i=0 while i < KEYWORDS.length do i = i + 1 {
+    if value == KEYWORDS[i] {
+      return new Token(Type_KEYWORD, start, end, value, i)
     }
   }
 
   return new Token(Type_VARIABLE, start, end, value)
 }
 
-makeInt:proc(this:Lexer, start:Position):IntToken  {
+makeInt: proc(this:Lexer, start:Position):Token {
   value=0
-  while this.cc >='0' & this.cc <='9' do advance(this) {
-    value=value * 10 + (asc(this.cc[0]) - '0')
+  while this.cc >= '0' & this.cc <= '9' do advance(this) {
+    value=value * 10 + (asc(this.cc) - asc('0'))
   }
   end=new Position(this.line, this.col)
-  return new IntToken(start, end, value)
+  return new Token(TYPE_int, start, end, new String(value), value)
 }
 
-makeSymbol:proc(this:Lexer, start:Position):Token {
+makeSymbol: proc(this:Lexer, start:Position):Token {
   oc=this.cc
   if oc == '=' {
     return startsWithEq(this, start)
@@ -202,7 +219,7 @@ makeSymbol:proc(this:Lexer, start:Position):Token {
   }
 }
 
-startsWithSlash:proc(this: Lexer, start: Position): Token {
+startsWithSlash: proc(this: Lexer, start: Position): Token {
   advance(this) // eat the first slash
   if (this.cc == '/') {
     advance(this) // eat the second slash
@@ -219,7 +236,7 @@ startsWithSlash:proc(this: Lexer, start: Position): Token {
   return new Token(Type_DIV, start, '/')
 }
 
-startsWithNot:proc(this: Lexer, start: Position) :Token{
+startsWithNot: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
@@ -230,7 +247,7 @@ startsWithNot:proc(this: Lexer, start: Position) :Token{
   return new Token(Type_NOT, start, oc)
 }
 
-startsWithGt:proc(this: Lexer, start: Position) :Token{
+startsWithGt: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
@@ -241,7 +258,7 @@ startsWithGt:proc(this: Lexer, start: Position) :Token{
   return new Token(Type_GT, start, oc)
 }
 
-startsWithLt:proc(this: Lexer, start: Position) :Token{
+startsWithLt: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
@@ -252,18 +269,18 @@ startsWithLt:proc(this: Lexer, start: Position) :Token{
   return new Token(Type_LT, start, oc)
 }
 
-startsWithEq:proc(this: Lexer, start: Position) :Token{
+startsWithEq: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
     end=new Position(this.line, this.col)
     advance(this)
-    return new Token(Type_EQEQ, start, end, " == ")
+    return new Token(Type_EQEQ, start, end, "==")
   }
   return new Token(Type_EQ, start, oc)
 }
 
-makeStringToken:proc(this: Lexer, start: Position, first: String) :Token {
+makeStringToken: proc(this: Lexer, start: Position, first: String): Token {
   advance(this) // eat the tick/quote
   sb=""
   escape=false

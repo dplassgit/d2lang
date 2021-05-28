@@ -7,7 +7,11 @@ import java.util.Map;
 
 public class Environment {
   private final List<String> output = new ArrayList<>();
-  private final Map<String, Integer> values = new HashMap<>();
+  private final Map<String, Object> values = new HashMap<>();
+
+  public void setValue(String name, Object value) {
+    values.put(name, value);
+  }
 
   public void setValue(String name, boolean value) {
     if (value) {
@@ -21,7 +25,7 @@ public class Environment {
     values.put(name, value);
   }
 
-  public Integer getValue(String name) {
+  public Object getValue(String name) {
     return values.get(name);
   }
 

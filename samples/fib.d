@@ -1,18 +1,18 @@
 // Define recursive fibonacci
-fib: proc(n: int) : int {
+recursive_fib: proc(n: int) : int {
   if n <= 1 {
     return n
   } else {
     // forward call
-    return fib(n-1) + fib2(n-2)
+    return recursive_fib(n - 1) + iterative_fib(n - 2)
   }
 }
 
 // Define iterative fibonacci
-fib2:proc(n: int): int {
+iterative_fib:proc(n: int): int {
   n1 = 0
   n2 = 1
-  i=1 while i < n do i =i+ 1 {
+  i=1 while i < n do i = i + 1 {
     nth = n1 + n2
     n1 = n2
     n2 = nth
@@ -21,13 +21,14 @@ fib2:proc(n: int): int {
 }
 
 main {
-  f1 = fib(5)
-  f2 = fib2(5)
-  if f1 != f2 {
+  recursive = recursive_fib(5)
+  iterative = iterative_fib(5)
+  if recursive != iterative {
     println "Oops, they're different..."
-    print "f1=" print f1 print ", f2=" println f2
+    print "recursive=" print recursive 
+    print ", iterative=" println iterative
   } else {
-    print "Yay, same: " println f1
+    print "Yay, same: " println recursive
   }
 }
 
