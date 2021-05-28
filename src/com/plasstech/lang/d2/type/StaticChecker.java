@@ -106,7 +106,7 @@ public class StaticChecker extends DefaultVisitor {
       symbolTable().assign(variable.name(), right.varType());
     } else if (existingType != right.varType()) {
       // It was already in the symbol table. Possible that it's wrong
-      throw new TypeException(String.format("Type mismatch: lhs (%s) is %s; rhs (%s) is %s",
+      throw new TypeException(String.format("Type mismatch: (%s) is %s but (%s) is %s",
               variable, existingType, right, right.varType()), variable.position());
     }
     if (!symbolTable().isAssigned(variable.name())) {
@@ -201,7 +201,7 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     if (left.varType() != right.varType()) {
-      throw new TypeException(String.format("Type mismatch: lhs %s is %s; rhs %s is %s", left,
+      throw new TypeException(String.format("Type mismatch: %s is %s; %s is %s", left,
               left.varType(), right, right.varType()), left.position());
     }
 
