@@ -92,7 +92,7 @@ public class ILCodeGeneratorTest {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     ProgramNode root = (ProgramNode) parser.parse();
-    System.err.printf("// %s\n", root.toString());
+    System.out.printf("// %s\n", root.toString());
 
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();

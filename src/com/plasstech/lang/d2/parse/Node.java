@@ -20,6 +20,8 @@ public interface Node {
 
   boolean isError();
 
+  String message();
+
   /** Position of this node in the input text. */
   Position position();
 

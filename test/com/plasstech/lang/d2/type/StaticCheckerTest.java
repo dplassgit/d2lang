@@ -11,7 +11,6 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.ConstNode;
-import com.plasstech.lang.d2.parse.ErrorNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
@@ -547,7 +546,7 @@ public class StaticCheckerTest {
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
     if (node.isError()) {
-      fail(((ErrorNode) node).message());
+      fail(node.message());
     }
     ProgramNode programRoot = (ProgramNode) node;
     System.out.println("Before: " + programRoot);
