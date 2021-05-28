@@ -14,3 +14,5 @@ Use Eclipse
 
 `git push origin trunk`
 
+Use the DAT(!) instead of password.
+
