@@ -1,18 +1,24 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
 import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Load;
 import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.StackLocation;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
@@ -23,15 +29,19 @@ import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
 import com.plasstech.lang.d2.parse.BreakNode;
+import com.plasstech.lang.d2.parse.CallNode;
 import com.plasstech.lang.d2.parse.ConstNode;
 import com.plasstech.lang.d2.parse.ContinueNode;
+import com.plasstech.lang.d2.parse.ExprNode;
 import com.plasstech.lang.d2.parse.IfNode;
 import com.plasstech.lang.d2.parse.MainNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
+import com.plasstech.lang.d2.parse.ReturnNode;
 import com.plasstech.lang.d2.parse.SimpleNode;
+import com.plasstech.lang.d2.parse.StatementNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -50,6 +60,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private int tempId;
   private int labelId;
+  private Stack<ProcedureNode> procedures = new Stack<>();
 
   public ILCodeGenerator(ProgramNode root, SymTab symTab) {
     this.root = root;
@@ -164,14 +175,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     } else {
       leftSrc = generateTemp(left.varType());
       left.accept(this);
-      // by definition, "left" has emitted its value in t0. Copy to "leftSrc"
+      // "left" has its value in "location". Copy to "leftSrc"
       emit(new Assignment(leftSrc, left.location().name()));
     }
 
     // Calculate the value and set it in t0
     Node right = node.right();
-    // Source for the value of right - either a register or memory location or a
-    // value.
+    // Source for the value of right - either a register or memory location or a value.
     String rightSrc;
     // if left and right are "simple", just get it.
     if (right.isSimpleType()) {
@@ -180,7 +190,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     } else {
       rightSrc = generateTemp(left.varType());
       right.accept(this);
-      // by definition, "right" has emitted its value in t0. Copy to "rightSrc"
+      // "right" has its value in "location". Copy to "rightSrc"
       emit(new Assignment(rightSrc, right.location().name()));
     }
 
@@ -325,23 +335,62 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   }
 
   @Override
+  public void visit(ReturnNode node) {
+    if (node.expr().isPresent()) {
+      node.expr().get().accept(this);
+      // copy the location of the result to the current procedure's destination.
+      Location exprLoc = node.expr().get().location();
+      Location procDest = procedures.peek().location();
+      // copy the exprloc to the dest
+      emit(new Assignment(procDest.name(), exprLoc.name()));
+      emit(new Return(procDest));
+    } else {
+      emit(new Return());
+    }
+  }
+
+  @Override
   public void visit(ProcedureNode node) {
+    procedures.push(node);
+    if (node.returnType() != VarType.VOID) {
+      // generate a destination
+      String tempDestination = generateTemp(node.returnType());
+      node.setLocation(new TempLocation(tempDestination));
+    }
     // Guard to prevent just falling into this method
     String afterLabel = generateLabel("afterProc");
+
     emit(new Goto(afterLabel));
 
-    // note different mangling
-    emit(new Label("d_" + node.name()));
+    // note mangling
+    emit(new ProcEntry("d_" + node.name()));
+
     // TODO: something about arguments? probably add to local symbol table
-    // Also TODO: how to reference arguments
-    if (node.block() != null) {
-      node.block().accept(this);
-    }
-    // TODO: return the right thing (on the stack?)
+    // Also TODO: how to reference arguments???
+    node.block().accept(this);
 
-    emit(new Return());
-
+    // there should have already been a regular "return" with the value.
+    emit(new ProcExit());
     emit(new Label(afterLabel));
+    procedures.pop();
+  }
+
+  @Override
+  public void visit(CallNode node) {
+    // 1. accept each actual
+    for (ExprNode actual : node.actuals()) {
+      actual.accept(this);
+    }
+    // 2. emit call(parameters)
+    emit(new Call("d_" + node.functionToCall(),
+            node.actuals().stream().map(Node::location).collect(toImmutableList())));
+    if (node instanceof StatementNode) {
+      // just call it (TODO: throw away the value from the stack?)
+    } else {
+      // 3. put result location into node.location (???)
+      // this is going to fail...
+      node.setLocation(new StackLocation("top"));
+    }
   }
 
   private void emit(Op op) {

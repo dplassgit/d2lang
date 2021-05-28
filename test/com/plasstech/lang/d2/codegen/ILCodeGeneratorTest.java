@@ -88,10 +88,23 @@ public class ILCodeGeneratorTest {
                     + "print -1");
   }
 
+  @Test
+  public void generate_procVoid() {
+    generateProgram("f:proc() {print 'hi'} main{ f() }");
+  }
+
+  @Test
+  public void generate_procInt() {
+    generateProgram("f:proc():int {return 3} main{ x=f() }");
+  }
+
   private List<Op> generateProgram(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     ProgramNode root = (ProgramNode) parser.parse();
+    if (root.isError()) {
+      fail(root.message());
+    }
     System.out.printf("// %s\n", root.toString());
 
     StaticChecker checker = new StaticChecker(root);

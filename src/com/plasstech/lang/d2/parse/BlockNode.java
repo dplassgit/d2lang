@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.parse;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
 
@@ -11,6 +12,11 @@ import com.plasstech.lang.d2.common.Position;
  */
 public class BlockNode extends AbstractNode {
   private final List<StatementNode> statements;
+
+  BlockNode(Position position) {
+    super(position);
+    this.statements = ImmutableList.of();
+  }
 
   BlockNode(List<StatementNode> statements, Position position) {
     super(position);
