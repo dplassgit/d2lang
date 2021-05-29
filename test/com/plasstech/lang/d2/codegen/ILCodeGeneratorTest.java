@@ -22,6 +22,11 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void simpleIf() {
+    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
+  }
+
+  @Test
   public void generate_assignments() {
     generateProgram(
             "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");

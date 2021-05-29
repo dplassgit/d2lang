@@ -22,4 +22,9 @@ public class Transfer extends Op {
   public String toString() {
     return String.format("\t%s=%s;", destination.toString(), source.toString());
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }

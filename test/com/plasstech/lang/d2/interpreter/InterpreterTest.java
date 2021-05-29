@@ -18,6 +18,13 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class InterpreterTest {
   @Test
+  public void stringTest() {
+    Environment env = execute("i='hi' println i");
+    assertThat(env.getValue("i")).isEqualTo("hi");
+    assertThat(env.output()).containsExactly("hi", "\n");
+  }
+
+  @Test
   public void whileLoop() {
     Environment env = execute("i=0 while i < 30 do i=i+1 { print i }");
     assertThat(env.getValue("i")).isEqualTo(30);

@@ -59,36 +59,30 @@ public class Interpreter extends DefaultOpcodeVisitor {
 //    System.err.printf("%d: Visit %s\n", ip, ifOp);
     Object cond = resolve(ifOp.condition());
     if (cond.equals(1)) {
-      for (int i = 0; i < code.size(); ++i) {
-        Op op = code.get(i);
-        if (op instanceof Label) {
-          Label label = (Label) op;
-          if (label.label().equals(ifOp.destination())) {
-//            System.err.println("Going to " + label.label());
-            ip = i;
-            return;
-          }
-        }
-      }
-      throw new IllegalStateException("Could not find destination label " + ifOp.destination());
+      String dest = ifOp.destination();
+      gotoLabel(dest);
     }
   }
 
   @Override
-  public void visit(Goto gotoOp) {
+  public void visit(Goto op) {
 //    System.err.printf("%d: Visit %s\n", ip, gotoOp);
+    gotoLabel(op.label());
+  }
+
+  private void gotoLabel(String dest) {
     for (int i = 0; i < code.size(); ++i) {
       Op op = code.get(i);
       if (op instanceof Label) {
         Label label = (Label) op;
-        if (label.label().equals(gotoOp.label())) {
-//          System.err.println("Going to " + label.label());
+        if (label.label().equals(dest)) {
+//            System.err.println("Going to " + label.label());
           ip = i;
           return;
         }
       }
     }
-    throw new IllegalStateException("Could not find destination label " + gotoOp.label());
+    throw new IllegalStateException("Could not find destination label " + dest);
   }
 
   @Override
@@ -146,7 +140,15 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(UnaryOp op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int r1 = (Integer) resolve(op.rhs());
+    Object rhs = resolve(op.rhs());
+    int r1;
+    if (rhs == Boolean.TRUE) {
+      r1 = 1;
+    } else if (rhs == Boolean.FALSE) {
+      r1 = 0;
+    } else {
+      r1 = (Integer) rhs;
+    }
     int result;
     switch (op.operator()) {
       case MINUS:
@@ -171,29 +173,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-//  private Object resolve(Object oval) {
-//    String val = oval.toString();
-//    if (val.equals("true")) {
-//      return 1;
-//    } else if (val.equals("false")) {
-//      return 0;
-//    } else if (val.startsWith("t")) {
-//      // register/temp
-//      return env.getValue(val);
-//    } else {
-//      try {
-//        return Integer.parseInt(val);
-//      } catch (NumberFormatException e) {
-//        return val;
-//      }
-//    }
-//  }
-//
   @Override
   public void visit(SysCall op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
     Object val = resolve(op.arg());
-    // assume all system calls are prints.
+    // TODO: don't assume all system calls are prints.
     env.addOutput(String.valueOf(val));
   }
 

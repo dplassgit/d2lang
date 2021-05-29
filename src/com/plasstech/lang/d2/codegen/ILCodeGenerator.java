@@ -32,7 +32,6 @@ import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
-import com.plasstech.lang.d2.parse.SimpleNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -168,8 +167,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Operand leftSrc;
     // if left and right are "simple", just get it.
     if (left.isSimpleType()) {
-      SimpleNode simpleLeft = (SimpleNode) left;
-      leftSrc = new ConstantOperand(simpleLeft.simpleValue());
+      ConstNode<?> simpleLeft = (ConstNode<?>) left;
+      leftSrc = new ConstantOperand(simpleLeft.value());
     } else {
       left.accept(this);
       // should we copy left's location to a new temp?!
@@ -183,8 +182,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Operand rightSrc;
     // if left and right are "simple", just get it.
     if (right.isSimpleType()) {
-      SimpleNode simpleRight = (SimpleNode) right;
-      rightSrc = new ConstantOperand(simpleRight.simpleValue());
+      ConstNode<?> simpleRight = (ConstNode<?>) right;
+      rightSrc = new ConstantOperand(simpleRight.value());
     } else {
       right.accept(this);
       // should we copy right's location to a new temp?!
