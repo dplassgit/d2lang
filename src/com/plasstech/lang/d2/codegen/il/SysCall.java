@@ -6,9 +6,9 @@ public class SysCall extends Op {
   }
 
   private final Call call;
-  private final String arg;
+  private final Operand arg;
 
-  public SysCall(Call call, String arg) {
+  public SysCall(Call call, Operand arg) {
     this.call = call;
     this.arg = arg;
   }
@@ -17,7 +17,7 @@ public class SysCall extends Op {
     return call;
   }
 
-  public String arg() {
+  public Operand arg() {
     return arg;
   }
 

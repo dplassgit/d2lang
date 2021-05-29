@@ -2,17 +2,18 @@ package com.plasstech.lang.d2.interpreter;
 
 import java.util.List;
 
-import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Load;
+import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Operand;
 import com.plasstech.lang.d2.codegen.il.Stop;
-import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymTab;
 
@@ -43,69 +44,45 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   @Override
-  public void visit(Assignment op) {
+  public void visit(Transfer op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    Object rhsVal = resolve(op.rhs());
-    env.setValue(op.lhs(), rhsVal);
-  }
-
-  @Override
-  public void visit(Load op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
-    Object rhsVal = env.getValue(op.sourceAddress());
+    Object rhsVal = resolve(op.source());
     if (rhsVal != null) {
-      env.setValue(op.destRegister(), rhsVal);
+      env.setValue(op.destination(), rhsVal);
     } else {
-      throw new IllegalStateException(String.format("RHS %s has no value", op.sourceAddress()));
-    }
-  }
-
-  @Override
-  public void visit(Store op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
-    Object rhsVal = env.getValue(op.sourceRegister());
-    if (rhsVal != null) {
-      env.setValue(op.destAddress(), rhsVal);
-    } else {
-      throw new IllegalStateException(String.format("RHS %s has no value", op.sourceRegister()));
+      throw new IllegalStateException(String.format("RHS %s has no value", op.source()));
     }
   }
 
   @Override
   public void visit(IfOp ifOp) {
 //    System.err.printf("%d: Visit %s\n", ip, ifOp);
-    Object cond = env.getValue(ifOp.condition());
+    Object cond = resolve(ifOp.condition());
     if (cond.equals(1)) {
-      for (int i = 0; i < code.size(); ++i) {
-        Op op = code.get(i);
-        if (op instanceof Label) {
-          Label label = (Label) op;
-          if (label.label().equals(ifOp.destination())) {
-//            System.err.println("Going to " + label.label());
-            ip = i;
-            return;
-          }
-        }
-      }
-      throw new IllegalStateException("Could not find destination label " + ifOp.destination());
+      String dest = ifOp.destination();
+      gotoLabel(dest);
     }
   }
 
   @Override
-  public void visit(Goto gotoOp) {
+  public void visit(Goto op) {
 //    System.err.printf("%d: Visit %s\n", ip, gotoOp);
+    gotoLabel(op.label());
+  }
+
+  private void gotoLabel(String dest) {
     for (int i = 0; i < code.size(); ++i) {
       Op op = code.get(i);
       if (op instanceof Label) {
         Label label = (Label) op;
-        if (label.label().equals(gotoOp.label())) {
-//          System.err.println("Going to " + label.label());
+        if (label.label().equals(dest)) {
+//            System.err.println("Going to " + label.label());
           ip = i;
           return;
         }
       }
     }
-    throw new IllegalStateException("Could not find destination label " + gotoOp.label());
+    throw new IllegalStateException("Could not find destination label " + dest);
   }
 
   @Override
@@ -157,13 +134,21 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown binop " + op.operator());
     }
-    env.setValue(op.lhs(), result);
+    env.setValue(op.destination(), result);
   }
 
   @Override
   public void visit(UnaryOp op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
-    int r1 = (Integer) resolve(op.rhs());
+    Object rhs = resolve(op.rhs());
+    int r1;
+    if (rhs == Boolean.TRUE) {
+      r1 = 1;
+    } else if (rhs == Boolean.FALSE) {
+      r1 = 0;
+    } else {
+      r1 = (Integer) rhs;
+    }
     int result;
     switch (op.operator()) {
       case MINUS:
@@ -175,24 +160,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown unaryop " + op.operator());
     }
-    env.setValue(op.lhs(), result);
+    env.setValue(op.destination(), result);
   }
 
-  private Object resolve(Object oval) {
-    String val = oval.toString();
-    if (val.equals("true")) {
-      return 1;
-    } else if (val.equals("false")) {
-      return 0;
-    } else if (val.startsWith("t")) {
-      // register/temp
-      return env.getValue(val);
+  private Object resolve(Operand operand) {
+    if (operand instanceof ConstantOperand) {
+      return ((ConstantOperand) operand).value();
     } else {
-      try {
-        return Integer.parseInt(val);
-      } catch (NumberFormatException e) {
-        return val;
-      }
+      // symbol
+      String name = ((Location) operand).name();
+      return env.getValue(name);
     }
   }
 
@@ -200,7 +177,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(SysCall op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
     Object val = resolve(op.arg());
-    // assume all system calls are prints.
+    // TODO: don't assume all system calls are prints.
     env.addOutput(String.valueOf(val));
   }
 

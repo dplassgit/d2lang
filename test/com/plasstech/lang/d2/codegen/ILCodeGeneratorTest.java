@@ -22,6 +22,11 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void simpleIf() {
+    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
+  }
+
+  @Test
   public void generate_assignments() {
     generateProgram(
             "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
@@ -96,6 +101,11 @@ public class ILCodeGeneratorTest {
   @Test
   public void generate_procInt() {
     generateProgram("f:proc():int {return 3} main{ x=f() }");
+  }
+
+  @Test
+  public void generate_procArg() {
+    generateProgram("f:proc(n:int, m:int):int {return n+m} main{ a=3 x=f(1, a) f(2,3) }");
   }
 
   private List<Op> generateProgram(String program) {

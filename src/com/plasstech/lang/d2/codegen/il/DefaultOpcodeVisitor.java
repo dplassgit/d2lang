@@ -11,15 +11,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
   }
 
   @Override
-  public void visit(Assignment op) {
-  }
-
-  @Override
   public void visit(BinOp op) {
-  }
-
-  @Override
-  public void visit(Load op) {
   }
 
   @Override
@@ -28,10 +20,6 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(Stop op) {
-  }
-
-  @Override
-  public void visit(Store op) {
   }
 
   @Override
@@ -44,5 +32,9 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(Goto op) {
+  }
+
+  @Override
+  public void visit(Transfer op) {
   }
 }

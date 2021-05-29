@@ -6,23 +6,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import com.plasstech.lang.d2.codegen.il.Assignment;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Load;
 import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Operand;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.StackLocation;
 import com.plasstech.lang.d2.codegen.il.Stop;
-import com.plasstech.lang.d2.codegen.il.Store;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.TempLocation;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token.Type;
@@ -40,8 +40,6 @@ import com.plasstech.lang.d2.parse.PrintNode;
 import com.plasstech.lang.d2.parse.ProcedureNode;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.parse.ReturnNode;
-import com.plasstech.lang.d2.parse.SimpleNode;
-import com.plasstech.lang.d2.parse.StatementNode;
 import com.plasstech.lang.d2.parse.UnaryNode;
 import com.plasstech.lang.d2.parse.VariableNode;
 import com.plasstech.lang.d2.parse.WhileNode;
@@ -102,7 +100,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     return String.format("%s%d", prefix, labelId);
   }
 
-  private String generateTemp(VarType varType) {
+  private TempLocation generateTemp(VarType varType) {
     tempId++;
     String name = String.format("temp%d", tempId);
     switch (varType) {
@@ -118,7 +116,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         break;
     }
     symTab.declare(name, varType);
-    return name;
+    return new TempLocation(name);
   }
 
   @Override
@@ -126,72 +124,79 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     System.out.printf("\n// %s\n", node);
     Node expr = node.expr();
     expr.accept(this);
-    emit(new SysCall(SysCall.Call.PRINT, expr.location().name()));
+    emit(new SysCall(SysCall.Call.PRINT, expr.location()));
     if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, "\n"));
+      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand("\n")));
     }
   }
 
   @Override
   public void visit(AssignmentNode node) {
-//    System.out.printf("\n// %s\n", node);
+    System.out.printf("\n// %s\n", node);
 
     String name = node.variable().name();
+    Location dest = new StackLocation(name); // ???
+    node.variable().setLocation(dest);
+
     Node expr = node.expr();
     expr.accept(this);
-    Location dest = expr.location();
-    emit(new Store(name, dest.name()));
+    Location source = expr.location();
+
+    emit(new Transfer(dest, source));
   }
 
   @Override
   public <T> void visit(ConstNode<T> node) {
-    // Provide constant in t0
-    String location = generateTemp(node.varType());
-    node.setLocation(new TempLocation(location));
+    TempLocation destination = generateTemp(node.varType());
+
+    // TODO: Should this be a thing? should we just set the "location" of the node to a constant
+    // "location"?
+    node.setLocation(destination);
+
     // TODO: figure out storage for strings
-    emit(new Assignment(location, node.simpleValue()));
+    ConstantOperand constOperand = new ConstantOperand(node.value());
+    Transfer transfer = new Transfer(destination, constOperand);
+    emit(transfer);
   }
 
   @Override
   public void visit(VariableNode node) {
-    String location = generateTemp(node.varType());
-    node.setLocation(new TempLocation(location));
+    StackLocation source = new StackLocation(node.name());
+    TempLocation destination = generateTemp(node.varType());
+    node.setLocation(destination);
     // Retrieve location of variable and provide it in a temp
-    emit(new Load(location, node.name()));
+    emit(new Transfer(destination, source));
   }
 
   @Override
   public void visit(BinOpNode node) {
-    System.out.printf("\n// %s\n", node);
-
     // Calculate the value and set it in t0
     Node left = node.left();
     // Source for the value of left - either a register or memory location or a value.
-    String leftSrc;
+    Operand leftSrc;
     // if left and right are "simple", just get it.
     if (left.isSimpleType()) {
-      SimpleNode simpleLeft = (SimpleNode) left;
-      leftSrc = simpleLeft.simpleValue();
+      ConstNode<?> simpleLeft = (ConstNode<?>) left;
+      leftSrc = new ConstantOperand(simpleLeft.value());
     } else {
-      leftSrc = generateTemp(left.varType());
       left.accept(this);
-      // "left" has its value in "location". Copy to "leftSrc"
-      emit(new Assignment(leftSrc, left.location().name()));
+      // should we copy left's location to a new temp?!
+      leftSrc = left.location();
     }
 
     // Calculate the value and set it in t0
     Node right = node.right();
-    // Source for the value of right - either a register or memory location or a value.
-    String rightSrc;
+    // Source for the value of right - either a register or memory location or a
+    // value or a constant.
+    Operand rightSrc;
     // if left and right are "simple", just get it.
     if (right.isSimpleType()) {
-      SimpleNode simpleRight = (SimpleNode) right;
-      rightSrc = simpleRight.simpleValue();
+      ConstNode<?> simpleRight = (ConstNode<?>) right;
+      rightSrc = new ConstantOperand(simpleRight.value());
     } else {
-      rightSrc = generateTemp(left.varType());
       right.accept(this);
-      // "right" has its value in "location". Copy to "rightSrc"
-      emit(new Assignment(rightSrc, right.location().name()));
+      // should we copy right's location to a new temp?!
+      rightSrc = right.location();
     }
 
 //    switch (node.operator()) {
@@ -200,8 +205,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 //      case MULT:
 //      case PLUS:
 //      case EQEQ:
-    String location = generateTemp(node.varType());
-    node.setLocation(new TempLocation(location));
+    TempLocation location = generateTemp(node.varType());
+    node.setLocation(location);
     emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
 //        break;
 //      default:
@@ -213,18 +218,17 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(UnaryNode node) {
-    System.out.printf("\n// %s\n", node);
     // calculate the value and set it in t0
     Node expr = node.expr();
     expr.accept(this);
 
-    String location = generateTemp(node.varType());
-    node.setLocation(new TempLocation(location));
+    TempLocation location = generateTemp(node.varType());
+    node.setLocation(location);
 
     switch (node.operator()) {
       case NOT:
-      case MINUS: // want t0 to be 0-t0
-        emit(new UnaryOp(location, node.operator(), location));
+      case MINUS:
+        emit(new UnaryOp(location, node.operator(), expr.location()));
         break;
       case PLUS:
         // Intentionally do nothing.
@@ -237,6 +241,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(IfNode node) {
     System.out.printf("\n// %s\n", node);
+
     String after = generateLabel("afterIf");
 
     for (IfNode.Case ifCase : node.cases()) {
@@ -245,11 +250,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       Node cond = ifCase.condition();
       cond.accept(this);
 
-      String temp = generateTemp(cond.varType());
+      TempLocation temp = generateTemp(cond.varType());
       // if it's not true, jump to the next block
       // temp = !cond
       // if temp skip to next block.
-      emit(new UnaryOp(temp, Type.NOT, cond.location().name()));
+      emit(new UnaryOp(temp, Type.NOT, cond.location()));
       emit(new IfOp(temp, nextLabel));
 
       ifCase.block().statements().forEach(stmt -> stmt.accept(this));
@@ -286,12 +291,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     System.out.println("// while");
     emit(new Label(before));
-    Node cond = node.condition();
-    cond.accept(this);
+    Node condition = node.condition();
+    condition.accept(this);
 
-    String temp = generateTemp(cond.varType());
-    emit(new UnaryOp(temp, Type.NOT, cond.location().name()));
-    emit(new IfOp(temp, after));
+    TempLocation notCondition = generateTemp(condition.varType());
+    emit(new UnaryOp(notCondition, Type.NOT, condition.location()));
+    emit(new IfOp(notCondition, after));
 
     System.out.println("// do");
     node.block().accept(this);
@@ -325,6 +330,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(MainNode node) {
+    System.out.println("// main");
     emit(new Label("_main"));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
@@ -342,7 +348,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       Location exprLoc = node.expr().get().location();
       Location procDest = procedures.peek().location();
       // copy the exprloc to the dest
-      emit(new Assignment(procDest.name(), exprLoc.name()));
+      emit(new Transfer(procDest, exprLoc));
       emit(new Return(procDest));
     } else {
       emit(new Return());
@@ -354,8 +360,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     procedures.push(node);
     if (node.returnType() != VarType.VOID) {
       // generate a destination
-      String tempDestination = generateTemp(node.returnType());
-      node.setLocation(new TempLocation(tempDestination));
+      TempLocation tempDestination = generateTemp(node.returnType());
+      node.setLocation(tempDestination);
     }
     // Guard to prevent just falling into this method
     String afterLabel = generateLabel("afterProc");
@@ -381,16 +387,22 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     for (ExprNode actual : node.actuals()) {
       actual.accept(this);
     }
+
     // 2. emit call(parameters)
-    emit(new Call("d_" + node.functionToCall(),
-            node.actuals().stream().map(Node::location).collect(toImmutableList())));
-    if (node instanceof StatementNode) {
-      // just call it (TODO: throw away the value from the stack?)
-    } else {
+
+    Call call;
+    if (node.varType() != VarType.VOID) {
       // 3. put result location into node.location (???)
-      // this is going to fail...
-      node.setLocation(new StackLocation("top"));
+      Location location = generateTemp(node.varType());
+      node.setLocation(location);
+      call = new Call(location, "d_" + node.functionToCall(),
+              node.actuals().stream().map(Node::location).collect(toImmutableList()));
+    } else {
+      // No return value
+      call = new Call("noreturnd_" + node.functionToCall(),
+              node.actuals().stream().map(Node::location).collect(toImmutableList()));
     }
+    emit(call);
   }
 
   private void emit(Op op) {

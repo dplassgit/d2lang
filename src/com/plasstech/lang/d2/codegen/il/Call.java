@@ -7,10 +7,16 @@ public class Call extends Op {
 
   private final String functionToCall;
   private final ImmutableList<Location> actualLocations;
+  private final Location destination;
 
-  public Call(String functionToCall, ImmutableList<Location> actuals) {
+  public Call(Location destination, String functionToCall, ImmutableList<Location> actuals) {
+    this.destination = destination;
     this.functionToCall = functionToCall;
     this.actualLocations = actuals;
+  }
+
+  public Call(String functionToCall, ImmutableList<Location> actuals) {
+    this(null, functionToCall, actuals);
   }
 
   public String functionToCall() {
@@ -23,6 +29,11 @@ public class Call extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
+    if (destination != null) {
+      return String.format("\t%s = %s(%s);", destination.name(), functionToCall,
+              Joiner.on(",").join(actualLocations));
+    } else {
+      return String.format("\t%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
+    }
   }
 }
