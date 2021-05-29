@@ -6,17 +6,13 @@ public interface OpcodeVisitor {
 
   void visit(IfOp op);
 
-  void visit(Assignment op);
+  void visit(Transfer op);
 
   void visit(BinOp op);
-
-  void visit(Load op);
 
   void visit(Return op);
 
   void visit(Stop op);
-
-  void visit(Store op);
 
   void visit(SysCall op);
 

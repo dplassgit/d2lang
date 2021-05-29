@@ -5,19 +5,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.plasstech.lang.d2.codegen.il.Location;
+
 public class Environment {
   private final List<String> output = new ArrayList<>();
   private final Map<String, Object> values = new HashMap<>();
 
-  public void setValue(String name, Object value) {
-    values.put(name, value);
+  public void setValue(Location location, Object value) {
+    // TODO: can think about mangling here
+    values.put(location.name(), value);
   }
 
-  public void setValue(String name, boolean value) {
+  public void setValue(Location location, boolean value) {
     if (value) {
-      values.put(name, 1);
+      setValue(location, 1);
     } else {
-      values.put(name, 0);
+      setValue(location, 0);
     }
   }
 
@@ -26,6 +29,7 @@ public class Environment {
   }
 
   public Object getValue(String name) {
+    // TODO: can think about mangling here
     return values.get(name);
   }
 
