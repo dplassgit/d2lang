@@ -39,6 +39,7 @@ public class InterpreterDriver {
       throw new RuntimeException(((ErrorNode) node).message());
     }
     ProgramNode root = (ProgramNode) node;
+    System.out.println("PARSED PROGRAM:");
     System.out.println(root);
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult checkResult = checker.execute();
@@ -49,6 +50,8 @@ public class InterpreterDriver {
     List<Op> opcodes = cg.generate();
     Interpreter interpreter = new Interpreter(opcodes, checkResult.symbolTable());
     Environment env = interpreter.execute();
+    System.out.println("------------------------------");
+    System.out.println("System out:");
     System.out.println(Joiner.on("").join(env.output()));
   }
 }

@@ -72,8 +72,9 @@ public class InterpreterTest {
 
   @Test
   public void fact() {
-    Environment env = execute(
-            "          n= 10 fact = 1\n" //
+    Environment env = execute(//
+            "          n= 10 " //
+                    + "fact = 1\n" //
                     + "i=1 while i <= n do i = i+1 {\n" //
                     + "  fact = fact*i\n" //
                     + "  print fact\n" //
@@ -95,6 +96,14 @@ public class InterpreterTest {
             + "   else {print n}}" //
             + "}");
     assertThat(env.getValue("n")).isEqualTo(10);
+  }
+
+  @Test
+  public void bools() {
+    Environment env = execute("a=true b = !a");
+
+    assertThat(env.getValue("a")).isEqualTo(true);
+    assertThat(env.getValue("b")).isEqualTo(false);
   }
 
   private Environment execute(String program) {

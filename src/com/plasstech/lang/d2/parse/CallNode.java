@@ -12,11 +12,13 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   private final String functionToCall;
   private final List<ExprNode> actuals;
+  private final boolean isStatement;
 
-  CallNode(Position position, String functionToCall, List<ExprNode> actuals) {
+  CallNode(Position position, String functionToCall, List<ExprNode> actuals, boolean isStatement) {
     super(position);
     this.functionToCall = functionToCall;
     this.actuals = actuals;
+    this.isStatement = isStatement;
   }
 
   public String functionToCall() {
@@ -35,5 +37,9 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
   @Override
   public void accept(NodeVisitor visitor) {
     visitor.visit(this);
+  }
+
+  public boolean isStatement() {
+    return isStatement;
   }
 }

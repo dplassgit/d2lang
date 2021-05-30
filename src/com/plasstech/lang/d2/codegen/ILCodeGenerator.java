@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ConstantOperand;
@@ -222,16 +223,16 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Node expr = node.expr();
     expr.accept(this);
 
-    TempLocation location = generateTemp(node.varType());
-    node.setLocation(location);
+    TempLocation destination = generateTemp(node.varType());
+    node.setLocation(destination);
 
     switch (node.operator()) {
       case NOT:
       case MINUS:
-        emit(new UnaryOp(location, node.operator(), expr.location()));
+        emit(new UnaryOp(destination, node.operator(), expr.location()));
         break;
       case PLUS:
-        // Intentionally do nothing.
+        emit(new Transfer(destination, expr.location()));
         break;
       default:
         break;
@@ -257,7 +258,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       emit(new UnaryOp(temp, Type.NOT, cond.location()));
       emit(new IfOp(temp, nextLabel));
 
-      ifCase.block().statements().forEach(stmt -> stmt.accept(this));
+      ifCase.block().accept(this);
       // We're in a block , now jump completely after.
       emit(new Goto(after));
 
@@ -265,7 +266,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     }
     if (node.elseBlock() != null) {
       System.out.printf("\n// else:");
-      node.elseBlock().statements().forEach(stmt -> stmt.accept(this));
+      node.elseBlock().accept(this);
     }
 
     emit(new Label(after));
@@ -383,24 +384,23 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(CallNode node) {
-    // 1. accept each actual
+    // 1. generate each actual
     for (ExprNode actual : node.actuals()) {
       actual.accept(this);
     }
 
     // 2. emit call(parameters)
-
     Call call;
-    if (node.varType() != VarType.VOID) {
-      // 3. put result location into node.location (???)
+    ImmutableList<Location> actualLocations = node.actuals().stream().map(Node::location)
+            .collect(toImmutableList());
+    if (node.isStatement()) {
+      // No return value
+      call = new Call("d_" + node.functionToCall(), actualLocations);
+    } else {
+      // 3. put result location into node.location
       Location location = generateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, "d_" + node.functionToCall(),
-              node.actuals().stream().map(Node::location).collect(toImmutableList()));
-    } else {
-      // No return value
-      call = new Call("noreturnd_" + node.functionToCall(),
-              node.actuals().stream().map(Node::location).collect(toImmutableList()));
+      call = new Call(location, "d_" + node.functionToCall(), actualLocations);
     }
     emit(call);
   }

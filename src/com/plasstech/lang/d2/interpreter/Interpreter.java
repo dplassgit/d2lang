@@ -149,7 +149,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else {
       r1 = (Integer) rhs;
     }
-    int result;
+    Object result;
     switch (op.operator()) {
       case MINUS:
         result = 0 - r1;
