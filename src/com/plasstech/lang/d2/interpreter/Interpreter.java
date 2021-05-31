@@ -184,13 +184,18 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private Object resolve(Operand operand) {
+    Object value;
     if (operand instanceof ConstantOperand) {
-      return ((ConstantOperand) operand).value();
+      value = ((ConstantOperand) operand).value();
     } else {
       // symbol
       String name = ((Location) operand).name();
-      return envs.peek().getValue(name);
+      value = envs.peek().getValue(name);
     }
+    if (value instanceof Boolean) {
+      return (value == Boolean.TRUE) ? 1 : 0;
+    }
+    return value;
   }
 
   @Override

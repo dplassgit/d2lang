@@ -103,7 +103,7 @@ public class InterpreterTest {
   public void bools() {
     Environment env = execute("a=true b = !a");
 
-    assertThat(env.getValue("a")).isEqualTo(true);
+    assertThat(env.getValue("a")).isEqualTo(1);
     assertThat(env.getValue("b")).isEqualTo(0);
   }
 
