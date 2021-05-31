@@ -44,6 +44,11 @@ abstract class AbstractNode implements Node {
   }
 
   @Override
+  public String message() {
+    throw new IllegalStateException("No error for non-error node");
+  }
+
+  @Override
   public Position position() {
     return position;
   }

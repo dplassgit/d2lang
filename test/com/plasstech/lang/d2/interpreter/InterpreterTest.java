@@ -10,6 +10,7 @@ import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
@@ -17,6 +18,13 @@ import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class InterpreterTest {
+  @Test
+  public void stringTest() {
+    Environment env = execute("i='hi' println i");
+    assertThat(env.getValue("i")).isEqualTo("hi");
+    assertThat(env.output()).containsExactly("hi", "\n");
+  }
+
   @Test
   public void whileLoop() {
     Environment env = execute("i=0 while i < 30 do i=i+1 { print i }");
@@ -65,8 +73,9 @@ public class InterpreterTest {
 
   @Test
   public void fact() {
-    Environment env = execute(
-            "          n= 10 fact = 1\n" //
+    Environment env = execute(//
+            "          n= 10 " //
+                    + "fact = 1\n" //
                     + "i=1 while i <= n do i = i+1 {\n" //
                     + "  fact = fact*i\n" //
                     + "  print fact\n" //
@@ -90,10 +99,52 @@ public class InterpreterTest {
     assertThat(env.getValue("n")).isEqualTo(10);
   }
 
+  @Test
+  public void bools() {
+    Environment env = execute("a=true b = !a");
+
+    assertThat(env.getValue("a")).isEqualTo(1);
+    assertThat(env.getValue("b")).isEqualTo(0);
+  }
+
+  @Test
+  public void procCall() {
+    Environment env = execute("f:proc(a:int):int { print a return a+1} main{x=f(3)}");
+    assertThat(env.getValue("x")).isEqualTo(4);
+  }
+
+  @Test
+  public void recursiveProcCall() {
+    Environment env = execute(
+            "        f:proc(a:int):int { " //
+                    + "  if a==1 { return a } " //
+                    + "  else {return a*f(a-1)}} " //
+                    + "main{x=f(3)}");
+    assertThat(env.getValue("x")).isEqualTo(6);
+  }
+  
+  @Test
+  public void dualRecursiveProcCall() {
+    Environment env = execute( //
+            "fib: proc(n: int) : int {\n" //
+                    + "  if n <= 1 {\n" //
+                    + "    return n \n" //
+                    + "  } else {\n" //
+                    + "    return fib(n - 1) + fib(n - 2)\n" //
+                    + "  }\n" //
+                    + "}\n" //
+                    + "x = fib(10)"); //
+    assertThat(env.getValue("x")).isEqualTo(55);
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
-    ProgramNode root = (ProgramNode) parser.parse();
+    Node parseNode = parser.parse();
+    if (parseNode.isError()) {
+      throw new RuntimeException(parseNode.message());
+    }
+    ProgramNode root = (ProgramNode) parseNode;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     if (result.isError()) {

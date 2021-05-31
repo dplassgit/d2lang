@@ -22,6 +22,11 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void simpleIf() {
+    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
+  }
+
+  @Test
   public void generate_assignments() {
     generateProgram(
             "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
@@ -88,11 +93,29 @@ public class ILCodeGeneratorTest {
                     + "print -1");
   }
 
+  @Test
+  public void generate_procVoid() {
+    generateProgram("f:proc() {print 'hi'} main{ f() }");
+  }
+
+  @Test
+  public void generate_procInt() {
+    generateProgram("f:proc():int {return 3} main{ x=f() }");
+  }
+
+  @Test
+  public void generate_procArg() {
+    generateProgram("f:proc(n:int, m:int):int {return n+m} main{ a=3 x=f(1, a) f(2,3) }");
+  }
+
   private List<Op> generateProgram(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     ProgramNode root = (ProgramNode) parser.parse();
-    System.err.printf("// %s\n", root.toString());
+    if (root.isError()) {
+      fail(root.message());
+    }
+    System.out.printf("// %s\n", root.toString());
 
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();

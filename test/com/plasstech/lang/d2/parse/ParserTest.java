@@ -47,7 +47,7 @@ public class ParserTest {
 
     Node node = parser.parse();
     assertThat(node.isError()).isTrue();
-    System.err.println(((ErrorNode) node).message());
+    System.err.println(node.message());
   }
 
   @Test
@@ -501,7 +501,7 @@ public class ParserTest {
 
   @Test
   public void parse_whileNotAssignment() {
-    BlockNode root = parseStatements("while true do advance(3) {}");
+    parseStatements("while true do advance(3) {}");
   }
 
   @Test
@@ -794,12 +794,8 @@ public class ParserTest {
   }
 
   private BlockNode parseStatements(String expression) {
-    Node node = parseProgram(expression);
-    if (node.isError()) {
-      ErrorNode error = (ErrorNode) node;
-      fail(error.message());
-    }
-    return ((ProgramNode) node).statements();
+    ProgramNode node = parseProgram(expression);
+    return node.statements();
   }
 
   private ProgramNode parseProgram(String expression) {
@@ -807,8 +803,7 @@ public class ParserTest {
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
     if (node.isError()) {
-      ErrorNode error = (ErrorNode) node;
-      fail(error.message());
+      fail(node.message());
     }
     return (ProgramNode) node;
   }
@@ -818,8 +813,7 @@ public class ParserTest {
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
     assertWithMessage(message).that(node.isError()).isTrue();
-    ErrorNode error = (ErrorNode) node;
-    System.err.println(error.message());
-    assertThat(error.message()).contains(errorMsgContains);
+    System.err.println(node.message());
+    assertThat(node.message()).contains(errorMsgContains);
   }
 }

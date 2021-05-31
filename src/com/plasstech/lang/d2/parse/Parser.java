@@ -182,7 +182,7 @@ public class Parser {
               String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
               token.start());
     } else if (token.type() == Token.Type.LPAREN) {
-      return procedureCall(varToken);
+      return procedureCall(varToken, true);
     }
     throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
             token.start());
@@ -329,7 +329,7 @@ public class Parser {
     return new WhileNode(condition, doStatement, block, kt.start());
   }
 
-  private CallNode procedureCall(Token varToken) {
+  private CallNode procedureCall(Token varToken, boolean isStatement) {
     if (token.type() != Token.Type.LPAREN) {
       throw new ParseException(String.format("Unexpected %s; expected '('", token.text()),
               token.start());
@@ -349,7 +349,7 @@ public class Parser {
       throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
               token.start());
     }
-    return new CallNode(varToken.start(), varToken.text(), actuals);
+    return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
   }
 
   private List<ExprNode> commaSeparatedExpressions() {
@@ -525,7 +525,7 @@ public class Parser {
       if (token.type() != Token.Type.LPAREN) {
         return new VariableNode(name, varToken.start());
       } else {
-        return procedureCall(varToken);
+        return procedureCall(varToken, false);
       }
     } else if (token.type() == Token.Type.BOOL) {
       BoolToken bt = (BoolToken) token;

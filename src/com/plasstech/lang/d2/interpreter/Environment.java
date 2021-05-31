@@ -5,28 +5,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.plasstech.lang.d2.codegen.il.Location;
+
 public class Environment {
   private final List<String> output = new ArrayList<>();
   private final Map<String, Object> values = new HashMap<>();
+  private final Environment parent;
 
-  public void setValue(String name, Object value) {
-    values.put(name, value);
+  Environment() {
+    parent = null;
   }
 
-  public void setValue(String name, boolean value) {
+  private Environment(Environment parent) {
+    this.parent = parent;
+  }
+
+  Environment spawn() {
+    return new Environment(this);
+  }
+
+  public Environment parent() {
+    return parent;
+  }
+
+  public void setValue(Location location, Object value) {
+    // TODO: can think about mangling here
+    values.put(location.name(), value);
+  }
+
+  public void setValue(Location location, boolean value) {
     if (value) {
-      values.put(name, 1);
+      setValue(location, 1);
     } else {
-      values.put(name, 0);
+      setValue(location, 0);
     }
   }
 
-  public void setValue(String name, int value) {
-    values.put(name, value);
-  }
-
   public Object getValue(String name) {
-    return values.get(name);
+    // TODO: can think about mangling here
+    Object value = values.get(name);
+    if (value == null && parent() != null) {
+      return parent().getValue(name);
+    }
+    return value;
   }
 
   public List<String> output() {

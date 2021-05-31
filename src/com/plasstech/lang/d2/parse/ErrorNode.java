@@ -16,6 +16,7 @@ public class ErrorNode extends AbstractNode {
     return true;
   }
 
+  @Override
   public String message() {
     return toString();
   }

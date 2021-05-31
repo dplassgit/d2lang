@@ -3,32 +3,32 @@ package com.plasstech.lang.d2.codegen.il;
 import com.plasstech.lang.d2.lex.Token;
 
 public class UnaryOp extends Op {
-  private final String lhs;
+  private final Location destination;
   private final Token.Type operator;
-  private final String rhs;
+  private final Operand operand;
 
   // TODO: check the token type
-  public UnaryOp(String lhs, Token.Type operator, String rhs) {
-    this.lhs = lhs;
-    this.rhs = rhs;
+  public UnaryOp(Location destination, Token.Type operator, Operand operand) {
+    this.destination = destination;
+    this.operand = operand;
     this.operator = operator;
   }
 
-  public String lhs() {
-    return lhs;
+  public Location destination() {
+    return destination;
   }
 
   public Token.Type operator() {
     return operator;
   }
 
-  public String rhs() {
-    return rhs;
+  public Operand rhs() {
+    return operand;
   }
 
   @Override
   public String toString() {
-    return String.format("\t%s = %s %s;", lhs, operator.value(), rhs);
+    return String.format("\t%s = %s %s;", destination, operator.value(), operand);
   }
 
   @Override
