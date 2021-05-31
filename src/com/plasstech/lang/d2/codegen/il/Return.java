@@ -4,23 +4,24 @@ import java.util.Optional;
 
 public class Return extends Op {
 
-  private final Optional<Location> location;
+  private final Optional<Location> returnValueLocation;
 
   public Return() {
-    this.location = Optional.empty();
+    this.returnValueLocation = Optional.empty();
   }
 
   public Return(Location location) {
-    this.location = Optional.of(location);
+    this.returnValueLocation = Optional.of(location);
   }
 
-  public Optional<Location> location() {
-    return location;
+  public Optional<Location> returnValueLocation() {
+    return returnValueLocation;
   }
 
   @Override
   public String toString() {
-    return String.format("\treturn %s;", location.isPresent() ? location.toString() : "");
+    return String.format("\treturn %s;",
+            returnValueLocation.isPresent() ? returnValueLocation.get().toString() : "");
   }
 
   @Override

@@ -1,8 +1,10 @@
 package com.plasstech.lang.d2.interpreter;
 
 import java.util.List;
+import java.util.Stack;
 
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -11,36 +13,54 @@ import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Operand;
+import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.StackLocation;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class Interpreter extends DefaultOpcodeVisitor {
 
   private final List<Op> code;
-  private final Environment env = new Environment();
   private int ip;
   private int iterations;
   private boolean running = true;
+  private final SymTab table;
+  private final Environment rootEnv = new Environment();
+  private final Stack<Integer> ipStack = new Stack<>();
+  private final Stack<Environment> envs = new Stack<>();
 
   public Interpreter(List<Op> code, SymTab table) {
     this.code = code;
+    this.table = table;
+    envs.push(rootEnv);
   }
 
   public Environment execute() {
     while (running) {
       Op op = code.get(ip);
       ip++;
+      try {
       op.accept(this);
+      } catch (RuntimeException re) {
+        System.err.println("Exception at " + op);
+        System.err.println(envs.peek());
+        throw re;
+      }
       iterations++;
       if (iterations > 10000) {
-        env.addOutput("ERROR: Terminated after too many iterations");
+        System.err.println("ERROR: Terminated after too many iterations");
         break;
       }
     }
-    return env;
+    if (!ipStack.isEmpty()) {
+      System.err.println("Stack not empty");
+    }
+    return envs.peek();
   }
 
   @Override
@@ -48,7 +68,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 //    System.err.printf("%d: Visit %s\n", ip, op);
     Object rhsVal = resolve(op.source());
     if (rhsVal != null) {
-      env.setValue(op.destination(), rhsVal);
+      setValue(op.destination(), rhsVal);
     } else {
       throw new IllegalStateException(String.format("RHS %s has no value", op.source()));
     }
@@ -134,7 +154,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown binop " + op.operator());
     }
-    env.setValue(op.destination(), result);
+    setValue(op.destination(), result);
   }
 
   @Override
@@ -160,7 +180,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown unaryop " + op.operator());
     }
-    env.setValue(op.destination(), result);
+    setValue(op.destination(), result);
   }
 
   private Object resolve(Operand operand) {
@@ -169,7 +189,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else {
       // symbol
       String name = ((Location) operand).name();
-      return env.getValue(name);
+      return envs.peek().getValue(name);
     }
   }
 
@@ -178,12 +198,68 @@ public class Interpreter extends DefaultOpcodeVisitor {
 //    System.err.printf("%d: Visit %s\n", ip, op);
     Object val = resolve(op.arg());
     // TODO: don't assume all system calls are prints.
-    env.addOutput(String.valueOf(val));
+    rootEnv.addOutput(String.valueOf(val));
   }
 
   @Override
   public void visit(Stop op) {
 //    System.err.printf("%d: Visit %s\n", ip, op);
     running = false;
+  }
+
+  @Override
+  public void visit(Call op) {
+//    System.err.printf("%d: Visit %s\n", ip, op);
+
+    // 1. push return location onto stack (NOTE, not ip, which is the next op already)
+    ipStack.push(ip - 1);
+
+    // 2. spawn environment
+    Environment childEnv = envs.peek().spawn();
+
+    // 3. look up each actual parameter in old environment and add to child environment as formal
+    // name from symbol table
+    ProcSymbol procSymbol = (ProcSymbol) table.get(op.functionToCall());
+    for (int i = 0; i < op.actualLocations().size(); ++i) {
+      Location actualSource = op.actualLocations().get(i);
+      Parameter formalParam = procSymbol.node().parameters().get(i);
+      StackLocation formal = new StackLocation(formalParam.name());
+      childEnv.setValue(formal, resolve(actualSource));
+    }
+
+    // 4. update environment to be child environment
+    envs.push(childEnv);
+
+    // 5. goto destination
+    gotoLabel(procSymbol.name());
+  }
+
+  @Override
+  public void visit(Return op) {
+//    System.err.printf("%d: Visit %s\n", ip, op);
+
+    // 1. if there's a return value, look it up in environment
+    Object retValue = null;
+    if (op.returnValueLocation().isPresent()) {
+      retValue = resolve(op.returnValueLocation().get());
+    }
+
+    // 2. pop environment
+    envs.pop();
+
+    // 3. pop ip
+    int oldIp = ipStack.pop();
+
+    // 4. look at call op - if there's a destination, set it in environment
+    if (retValue != null) {
+      Op callOpAsOp = code.get(oldIp);
+      Call callOp = (Call) callOpAsOp;
+      setValue(callOp.destination(), retValue);
+    }
+    ip = oldIp + 1;
+  }
+
+  private void setValue(Location location, Object value) {
+    envs.peek().setValue(location, value);
   }
 }

@@ -10,6 +10,23 @@ import com.plasstech.lang.d2.codegen.il.Location;
 public class Environment {
   private final List<String> output = new ArrayList<>();
   private final Map<String, Object> values = new HashMap<>();
+  private final Environment parent;
+
+  Environment() {
+    parent = null;
+  }
+
+  private Environment(Environment parent) {
+    this.parent = parent;
+  }
+
+  Environment spawn() {
+    return new Environment(this);
+  }
+
+  public Environment parent() {
+    return parent;
+  }
 
   public void setValue(Location location, Object value) {
     // TODO: can think about mangling here
@@ -24,13 +41,13 @@ public class Environment {
     }
   }
 
-  public void setValue(String name, int value) {
-    values.put(name, value);
-  }
-
   public Object getValue(String name) {
     // TODO: can think about mangling here
-    return values.get(name);
+    Object value = values.get(name);
+    if (value == null && parent() != null) {
+      return parent().getValue(name);
+    }
+    return value;
   }
 
   public List<String> output() {

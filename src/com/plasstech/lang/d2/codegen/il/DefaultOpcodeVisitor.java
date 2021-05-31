@@ -37,4 +37,8 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
   @Override
   public void visit(Transfer op) {
   }
+
+  @Override
+  public void visit(Call op) {
+  }
 }

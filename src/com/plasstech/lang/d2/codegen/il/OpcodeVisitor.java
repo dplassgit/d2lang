@@ -19,5 +19,7 @@ public interface OpcodeVisitor {
   void visit(UnaryOp op);
 
   void visit(Goto op);
+
+  void visit(Call op);
 }
 

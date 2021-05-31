@@ -10,6 +10,7 @@ import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
@@ -106,10 +107,44 @@ public class InterpreterTest {
     assertThat(env.getValue("b")).isEqualTo(0);
   }
 
+  @Test
+  public void procCall() {
+    Environment env = execute("f:proc(a:int):int { print a return a+1} main{x=f(3)}");
+    assertThat(env.getValue("x")).isEqualTo(4);
+  }
+
+  @Test
+  public void recursiveProcCall() {
+    Environment env = execute(
+            "        f:proc(a:int):int { " //
+                    + "  if a==1 { return a } " //
+                    + "  else {return a*f(a-1)}} " //
+                    + "main{x=f(3)}");
+    assertThat(env.getValue("x")).isEqualTo(6);
+  }
+  
+  @Test
+  public void dualRecursiveProcCall() {
+    Environment env = execute( //
+            "fib: proc(n: int) : int {\n" //
+                    + "  if n <= 1 {\n" //
+                    + "    return n \n" //
+                    + "  } else {\n" //
+                    + "    return fib(n - 1) + fib(n - 2)\n" //
+                    + "  }\n" //
+                    + "}\n" //
+                    + "x = fib(10)"); //
+    assertThat(env.getValue("x")).isEqualTo(55);
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
-    ProgramNode root = (ProgramNode) parser.parse();
+    Node parseNode = parser.parse();
+    if (parseNode.isError()) {
+      throw new RuntimeException(parseNode.message());
+    }
+    ProgramNode root = (ProgramNode) parseNode;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     if (result.isError()) {

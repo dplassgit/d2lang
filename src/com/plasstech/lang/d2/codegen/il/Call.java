@@ -27,13 +27,22 @@ public class Call extends Op {
     return actualLocations;
   }
 
+  public Location destination() {
+    return destination;
+  }
+
   @Override
   public String toString() {
-    if (destination != null) {
-      return String.format("\t%s = %s(%s);", destination.name(), functionToCall,
+    if (destination() != null) {
+      return String.format("\t%s = %s(%s);", destination().name(), functionToCall,
               Joiner.on(",").join(actualLocations));
     } else {
       return String.format("\t%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
     }
+  }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
   }
 }

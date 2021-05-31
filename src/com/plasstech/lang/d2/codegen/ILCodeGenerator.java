@@ -373,8 +373,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     emit(new Goto(afterLabel));
 
-    // note mangling
-    emit(new ProcEntry("d_" + node.name()));
+    // TODO: mangle?!
+    emit(new ProcEntry(node.name()));
+    // This is the real entry point.
+    emit(new Label(node.name()));
 
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments???
@@ -399,12 +401,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
             .collect(toImmutableList());
     if (node.isStatement()) {
       // No return value
-      call = new Call("d_" + node.functionToCall(), actualLocations);
+      call = new Call(node.functionToCall(), actualLocations);
     } else {
       // 3. put result location into node.location
       Location location = generateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, "d_" + node.functionToCall(), actualLocations);
+      call = new Call(location, node.functionToCall(), actualLocations);
     }
     emit(call);
   }
