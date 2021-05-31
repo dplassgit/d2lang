@@ -84,8 +84,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private void emitTypeDeclaration(Symbol symbol) {
     switch (symbol.type()) {
       case INT:
-      case BOOL:
         System.out.printf("int %s;\n", symbol.name());
+        break;
+      case BOOL:
+        System.out.printf("int %s; // (bool)\n", symbol.name());
         break;
       case STRING:
         System.out.printf("char *%s;\n", symbol.name());
@@ -105,9 +107,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     tempId++;
     String name = String.format("temp%d", tempId);
     switch (varType) {
-      case BOOL:
       case INT:
         System.out.printf("int %s;\n", name);
+        break;
+      case BOOL:
+        System.out.printf("int %s; // (bool)\n", name);
         break;
       case STRING:
         System.out.printf("char *%s;\n", name);

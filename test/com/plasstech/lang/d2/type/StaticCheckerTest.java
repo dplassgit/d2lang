@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.AssignmentNode;
 import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.ConstNode;
+import com.plasstech.lang.d2.parse.ExprNode;
 import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.ProgramNode;
@@ -46,9 +46,8 @@ public class StaticCheckerTest {
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
-    Node expr = node.expr();
-    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
-    assertThat(intNode.varType()).isEqualTo(VarType.INT);
+    ExprNode expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -67,9 +66,8 @@ public class StaticCheckerTest {
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
-    Node expr = node.expr();
-    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
-    assertThat(intNode.varType()).isEqualTo(VarType.INT);
+    ExprNode expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -251,8 +249,22 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_goodBooleanBinOp() {
+    for (String op : ImmutableList.of("==", "|", "&", "<", ">")) {
+      checkProgram(String.format("a=true %s false", op));
+    }
+  }
+
+  @Test
+  public void execute_badBooleanBinOp() {
+    for (String op : ImmutableList.of(">=", "<=")) {
+      assertExecuteError(String.format("a=true %s false", op), "Cannot apply");
+    }
+  }
+
+  @Test
   public void execute_binOpSingleCharMismatch() {
-    for (char c : "+-<>|&".toCharArray()) {
+    for (char c : "+-|&".toCharArray()) {
       assertExecuteError(String.format("a=true %c 3", c), "Type mismatch");
       assertExecuteError(String.format("a='hi' %c 3", c), "Type mismatch");
     }

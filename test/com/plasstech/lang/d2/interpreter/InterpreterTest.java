@@ -103,7 +103,7 @@ public class InterpreterTest {
     Environment env = execute("a=true b = !a");
 
     assertThat(env.getValue("a")).isEqualTo(true);
-    assertThat(env.getValue("b")).isEqualTo(false);
+    assertThat(env.getValue("b")).isEqualTo(0);
   }
 
   private Environment execute(String program) {

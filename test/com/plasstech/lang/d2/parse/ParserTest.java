@@ -501,7 +501,7 @@ public class ParserTest {
 
   @Test
   public void parse_whileNotAssignment() {
-    BlockNode root = parseStatements("while true do advance(3) {}");
+    parseStatements("while true do advance(3) {}");
   }
 
   @Test

@@ -35,11 +35,14 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
-  private static final Set<
-          Token.Type> STRING_OPERATORS = ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT,
-                  Token.Type.GT, Token.Type.LEQ, Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS
-  // , Token.Type.MOD // eventually
-  );
+  private static final Set<Token.Type> STRING_OPERATORS = //
+          ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
+                  Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS
+          // , Token.Type.MOD // eventually
+          );
+
+  private static final Set<Token.Type> BOOLEAN_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
+          Token.Type.LT, Token.Type.GT, Token.Type.NEQ, Token.Type.AND, Token.Type.OR);
 
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
@@ -106,8 +109,8 @@ public class StaticChecker extends DefaultVisitor {
       symbolTable().assign(variable.name(), right.varType());
     } else if (existingType != right.varType()) {
       // It was already in the symbol table. Possible that it's wrong
-      throw new TypeException(String.format("Type mismatch: (%s) is %s but (%s) is %s",
-              variable, existingType, right, right.varType()), variable.position());
+      throw new TypeException(String.format("Type mismatch: (%s) is %s but (%s) is %s", variable,
+              existingType, right, right.varType()), variable.position());
     }
     if (!symbolTable().isAssigned(variable.name())) {
       symbolTable().assign(variable.name(), right.varType());
@@ -206,7 +209,7 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Check that they're not trying to, for example, multiply booleans
-    if (left.varType() == VarType.BOOL && !COMPARISION_OPERATORS.contains(binOpNode.operator())) {
+    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(binOpNode.operator())) {
       throw new TypeException(
               String.format("Cannot apply %s operator to boolean expression", binOpNode.operator()),
               left.position());
@@ -310,7 +313,7 @@ public class StaticChecker extends DefaultVisitor {
   public void visit(ProcedureNode node) {
     // 1. make sure no duplicate arg names
     List<String> paramNames = node.parameters().stream().map(Parameter::name)
-        .collect(toImmutableList());
+            .collect(toImmutableList());
     Set<String> duplicates = new HashSet<>();
     Set<String> uniques = new HashSet<>();
     for (String param : paramNames) {
@@ -323,7 +326,7 @@ public class StaticChecker extends DefaultVisitor {
     }
     if (!duplicates.isEmpty()) {
       throw new TypeException(String.format("Duplicate parameter names: %s in procedure %s",
-          duplicates.toString(), node.name()), node.position());
+              duplicates.toString(), node.name()), node.position());
     }
 
     // Add this procedure to the symbol table
@@ -354,8 +357,9 @@ public class StaticChecker extends DefaultVisitor {
       VarType type = symbolTable().get(param.name()).type();
       if (type.isUnknown()) {
         throw new TypeException(
-            String.format("Could not determine type of parameter %s of procedure %s", param.name(), node.name()),
-            node.position());
+                String.format("Could not determine type of parameter %s of procedure %s",
+                        param.name(), node.name()),
+                node.position());
       }
     }
 
@@ -363,15 +367,15 @@ public class StaticChecker extends DefaultVisitor {
       if (needsReturn.contains(node)) {
         // no return statement seen.
         throw new TypeException(
-            String.format("No 'return' statement for procedure %s ", node.name()),
-            node.position());
+                String.format("No 'return' statement for procedure %s ", node.name()),
+                node.position());
 
       }
       // make sure that all *codepaths* have a return
       if (!checkAllPathsHaveReturn(node)) {
         throw new TypeException(
-            String.format("Not all codepaths end with 'return' for procedure %s ", node.name()),
-            node.position());
+                String.format("Not all codepaths end with 'return' for procedure %s ", node.name()),
+                node.position());
       }
     }
     procedures.pop();
@@ -445,8 +449,7 @@ public class StaticChecker extends DefaultVisitor {
     VarType actual = node.varType();
 
     if (actual.isUnknown()) {
-      throw new TypeException(
-              String.format("Indeterminable type for return statement %s", node),
+      throw new TypeException(String.format("Indeterminable type for return statement %s", node),
               node.position());
     }
 
