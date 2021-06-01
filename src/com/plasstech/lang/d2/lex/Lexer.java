@@ -152,6 +152,12 @@ public class Lexer {
       case ',':
         advance();
         return new Token(Type.COMMA, start, oc);
+      case '[':
+        advance();
+        return new Token(Type.LBRACKET, start, oc);
+      case ']':
+        advance();
+        return new Token(Type.RBRACKET, start, oc);
       default:
         throw new ScannerException(String.format("Unknown character %c", cc), start);
     }

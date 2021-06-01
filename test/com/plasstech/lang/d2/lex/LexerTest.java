@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 public class LexerTest {
   @Test
   public void nextToken_singleSymbols() {
-    Lexer lexer = new Lexer("+-*/%()! =<>|&{}:");
+    Lexer lexer = new Lexer("+-*/%()! =<>|&{}:[]");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
     token = lexer.nextToken();
@@ -44,6 +44,10 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.RBRACE);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.COLON);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.LBRACKET);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.RBRACKET);
   }
 
   @Test

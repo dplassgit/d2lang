@@ -7,13 +7,15 @@ public class Token {
   public enum Type {
     KEYWORD, INT, BOOL, STRING, VARIABLE, EQ("="), NOT("!"), PLUS("+"), MINUS("-"), LPAREN("("),
     RPAREN(")"), MULT("*"), DIV("/"), MOD("%"), AND("&&"), OR("||"), EQEQ("=="), LT("<"),
-    GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), LBRACE, RBRACE, COLON(":"), COMMA(","), EOF;
+    GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), LBRACE, RBRACE, COLON(":"), COLON(":"), COMMA(","),
+    LBRACKET("["), RBRACKET("]"), EOF;
 
     private final String val;
 
     public String value() {
       return val;
     }
+
     Type(String val) {
       this.val = val;
     }
