@@ -115,7 +115,7 @@ public class ILCodeGeneratorTest {
     if (root.isError()) {
       fail(root.message());
     }
-    System.out.printf("// %s\n", root.toString());
+//    System.out.printf("// %s\n", root.toString());
 
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();

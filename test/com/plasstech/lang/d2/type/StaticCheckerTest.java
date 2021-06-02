@@ -561,10 +561,10 @@ public class StaticCheckerTest {
       fail(node.message());
     }
     ProgramNode programRoot = (ProgramNode) node;
-    System.out.println("Before: " + programRoot);
+//    System.out.println("Before: " + programRoot);
     StaticChecker checker = new StaticChecker(programRoot);
     SymTab symTab = execute(checker);
-    System.out.println("After: " + programRoot);
+//    System.out.println("After: " + programRoot);
     return symTab;
   }
 
