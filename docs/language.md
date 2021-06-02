@@ -62,7 +62,7 @@ proc foo(a:map,b,c) returns int {
 }
 ```
 
-Current grammar: 
+Intermediate grammar: 
 
 ```
 foo:proc(a:map,b,c) returns int 
@@ -116,15 +116,22 @@ t = new Token("Name", 3)
 
 The constructor takes the arguments in order they were defined.
 
-What about recursive structures?
+What about recursive structures? It should be OK as long as we create the symbol upon entry instead of exit, and allow nulls.
 
 ### Arrays
 
-Everything else is like strings (!)
+Everything is like strings
 
 ```
 keywords=["hi", "bye"]
+keywords[0] = 'sorry' // assign
+keywords[1:3] // slice
+print keywords[-1] // "bye"
 ```
+
+Length: `array.length` like Java. This will require some parsing finesse.
+
+(vs length(array) like Python).
 
 #### Declaration explorations
 
@@ -133,16 +140,28 @@ keywords:Array of int
 keywords:array{int}
 keywords:array[int]
 keywords:int array
-keywords:[int] // either this one
-keywords:int[] // or this one
+keywords:[int]
+keywords:int[] // winner because multidimensional arrays.
 ```
 
-What about multi-dimensional arrays?
+Should we allow the size at declaration time? No. Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
 
-#### Allocating explorations
+#### Multi-dimensional
+
+```
+keywords:int[][]
+```
+
+#### Constants
+
+```
+keywords=[1,2,3,4]
+```
+
+#### Allocating 
 
 ```
 keywords = new array[int](3)
-keywords = new int[3] // defaults to zeros
 keywords = int[3] // defaults to zeros
+keywords = new int[3] // defaults to zeros -- winner, because why not
 ```
