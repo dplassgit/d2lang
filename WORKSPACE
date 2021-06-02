@@ -15,7 +15,6 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 maven_install(
     artifacts = [
-        "com.google.flogger:flogger:0.3.1",
         "junit:junit:4.13.2",
         "com.google.guava:guava:30.1.1-jre",
         "com.google.truth:truth:1.1.3",
@@ -28,4 +27,12 @@ maven_install(
     ],
     fetch_sources=True,
     fetch_javadoc=True,
+)
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "google_bazel_common",
+    commit = "9d1beb9294151cb1b28cd4b4dc842fd7559f9147",
+    remote = "git://github.com/google/bazel-common.git",
 )
