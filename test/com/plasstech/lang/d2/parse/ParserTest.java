@@ -723,7 +723,6 @@ public class ParserTest {
                     + "nontyped = typed + 1" //
                     + "return 'hi'" //
                     + "}"); //
-//    System.out.println(root);
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -735,7 +734,6 @@ public class ParserTest {
   @Test
   public void parse_returnVoid() {
     ProgramNode root = parseProgram("fib:proc() {return}");
-//    System.out.println(root);
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -760,7 +758,7 @@ public class ParserTest {
   public void parse_procedureCallAsStatement() {
     ProgramNode root = parseProgram("doit(3)");
     CallNode call = (CallNode) (root.statements().statements().get(0));
-//    System.out.println(call);
+
     assertThat(call.functionToCall()).isEqualTo("doit");
     assertThat(call.actuals()).hasSize(1);
     ExprNode param = call.actuals().get(0);
@@ -770,7 +768,7 @@ public class ParserTest {
   @Test
   public void parse_procedureCallExpression() {
     ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
-//    System.out.println(root);
+
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
@@ -779,7 +777,7 @@ public class ParserTest {
   @Test
   public void parse_procedureCallOneArgs() {
     ProgramNode root = parseProgram("a = doit(1)");
-//    System.out.println(root);
+
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
