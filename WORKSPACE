@@ -20,6 +20,7 @@ maven_install(
         "com.google.flogger:flogger:0.6",
         "com.google.flogger:flogger-system-backend:0.6",
         "com.google.truth:truth:1.1.3",
+        "com.github.pcj:google-options:jar:1.0.0",
         "com.google.truth.extensions:truth-java8-extension:1.1.3",
     ],
     repositories = [
@@ -38,3 +39,4 @@ git_repository(
     commit = "9d1beb9294151cb1b28cd4b4dc842fd7559f9147",
     remote = "git://github.com/google/bazel-common.git",
 )
+

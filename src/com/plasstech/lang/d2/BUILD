@@ -1,7 +1,9 @@
 java_binary(name="LexerDriver",
             srcs=["LexerDriver.java"],
             deps=[
+              "//src/com/plasstech/lang/d2/common",
               "//src/com/plasstech/lang/d2/lex",
+              "@maven//:com_github_pcj_google_options",
             ],
             )
 
@@ -58,16 +60,18 @@ java_binary(name="InterpreterDriver",
             )
 
 java_library(name="execution_environment",
-    srcs=glob(["*.java"]),
-    deps=[
-        "//src/com/plasstech/lang/d2/codegen",
-        "//src/com/plasstech/lang/d2/codegen/il",
-        "//src/com/plasstech/lang/d2/interpreter",
-        "//src/com/plasstech/lang/d2/lex",
-        "//src/com/plasstech/lang/d2/parse",
-        "//src/com/plasstech/lang/d2/parse/node",
-        "//src/com/plasstech/lang/d2/type",
-        "@maven//:com_google_guava_guava",
-    ],
-    visibility=["//visibility:public"],
- )
+             srcs=glob(["*.java"]),
+             deps=[
+                 "//src/com/plasstech/lang/d2/codegen",
+                 "//src/com/plasstech/lang/d2/codegen/il",
+                 "//src/com/plasstech/lang/d2/common",
+                 "//src/com/plasstech/lang/d2/interpreter",
+                 "//src/com/plasstech/lang/d2/lex",
+                 "//src/com/plasstech/lang/d2/parse",
+                 "//src/com/plasstech/lang/d2/parse/node",
+                 "//src/com/plasstech/lang/d2/type",
+                 "@maven//:com_google_guava_guava",
+                 "@maven//:com_github_pcj_google_options",
+             ],
+             visibility=["//visibility:public"],
+             )
