@@ -69,6 +69,9 @@ public class Lexer {
     }
 
     String value = sb.toString();
+    if (value.startsWith("__")) {
+      throw new ScannerException(String.format("Illegal variable name %s", value), start);
+    }
     Position end = new Position(line, col);
     try {
       // Figure out which keyword it is
