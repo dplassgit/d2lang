@@ -107,7 +107,7 @@ public class StaticChecker extends DefaultVisitor {
     VarType existingType = symbolTable().lookup(variable.name(), true);
     if (existingType.isUnknown()) {
       symbolTable().assign(variable.name(), right.varType());
-    } else if (existingType != right.varType()) {
+    } else if (!existingType.equals(right.varType())) {
       // It was already in the symbol table. Possible that it's wrong
       throw new TypeException(String.format("Type mismatch: (%s) is %s but (%s) is %s", variable,
               existingType, right, right.varType()), variable.position());
@@ -163,8 +163,8 @@ public class StaticChecker extends DefaultVisitor {
     for (int i = 0; i < node.actuals().size(); ++i) {
       Parameter formal = proc.node().parameters().get(i);
       ExprNode actual = node.actuals().get(i);
-      if (formal.type() == VarType.UNKNOWN) {
-        if (actual.varType() == VarType.UNKNOWN) {
+      if (formal.type().isUnknown()) {
+        if (actual.varType().isUnknown()) {
           // wah.
           throw new TypeException(
                   String.format("Indeterminable type for parameter %s of procedure %s",
@@ -175,7 +175,7 @@ public class StaticChecker extends DefaultVisitor {
         }
       }
       // 5. make sure expr types == param types
-      if (formal.type() != actual.varType()) {
+      if (!formal.type().equals(actual.varType())) {
         throw new TypeException(
                 String.format(
                         "Type mismatch for parameter %s of procedure %s: found %s, expected %s",
@@ -203,7 +203,7 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    if (left.varType() != right.varType()) {
+    if (!left.varType().equals(right.varType())) {
       throw new TypeException(String.format("Type mismatch: %s is %s; %s is %s", left,
               left.varType(), right, right.varType()), left.position());
     }
@@ -290,10 +290,7 @@ public class StaticChecker extends DefaultVisitor {
   @Override
   public void visit(MainNode node) {
     // TODO: something about arguments? probably add to local symbol table
-    // Also TODO: how to reference arguments
-    if (node.block() != null) {
-      node.block().accept(this);
-    }
+    node.block().accept(this);
   }
 
   @Override
@@ -348,9 +345,7 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // 5. this:
-    if (node.block() != null) {
-      node.block().accept(this);
-    }
+    node.block().accept(this);
 
     // 6. make sure args all have a type
     for (Parameter param : node.parameters()) {
@@ -445,18 +440,18 @@ public class StaticChecker extends DefaultVisitor {
 
     ProcedureNode proc = procedures.peek();
     needsReturn.remove(proc);
-    VarType declared = proc.returnType();
-    VarType actual = node.varType();
+    VarType declaredReturnType = proc.returnType();
+    VarType actualReturnType = node.varType();
 
-    if (actual.isUnknown()) {
+    if (actualReturnType.isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for return statement %s", node),
               node.position());
     }
 
-    if (proc.varType() != actual) {
+    if (!proc.varType().equals(actualReturnType)) {
       throw new TypeException(
               String.format("Type mismatch: %s declared to return %s but returned %s", proc.name(),
-                      declared, actual),
+                      declaredReturnType, actualReturnType),
               node.position());
     }
   }

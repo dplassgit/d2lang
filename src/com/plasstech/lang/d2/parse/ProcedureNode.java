@@ -53,11 +53,11 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
           Position start) {
     super(start);
 
-    this.name = name; // TODO: mangle?
+    this.name = name;
     this.parameters = ImmutableList.copyOf(params);
     this.returnType = returnType;
-    this.block = block;
-    this.setVarType(returnType); // is this required? couldn't we just "figure it out"?
+    this.block = (block != null) ? block : BlockNode.EMPTY;
+    this.setVarType(returnType); // TODO(Issue #34): Infer return type
   }
 
   public String name() {

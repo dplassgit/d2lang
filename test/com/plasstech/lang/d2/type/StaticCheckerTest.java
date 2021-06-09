@@ -447,15 +447,16 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedureBadParams() {
+  public void execute_procedure_badParams() {
     assertExecuteError("fib:proc(a, b, a) {}", "Duplicate parameter");
     assertExecuteError("fib:proc() {a=3 a=true}", "Type mismatch");
     assertExecuteError("a=true fib:proc() {a=3}", "Type mismatch");
     assertExecuteError("fib:proc(n1) { }", "determine type of parameter");
+    assertExecuteError("fib:proc(n:int) {} fib(true)", "Type mismatch");
   }
 
   @Test
-  public void execute_procedureReturnMismatch() {
+  public void execute_procedure_returnMismatch() {
     assertExecuteError("fib:proc():bool {return 3}", "Type mismatch");
     assertExecuteError("fib:proc(a):int {a='hi' return a}", "Type mismatch");
     assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
@@ -465,7 +466,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedureNoReturn() {
+  public void execute_procedure_noReturn() {
     assertExecuteError("fib:proc():int {}", "No 'return' statement");
     assertExecuteError("fib:proc():bool {" //
             + "if false {" //
