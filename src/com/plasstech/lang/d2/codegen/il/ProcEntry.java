@@ -10,7 +10,7 @@ public class ProcEntry extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s() {", name());
+    return String.format("%s() {", name());
   }
 
   public String name() {

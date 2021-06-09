@@ -25,9 +25,9 @@ public class SysCall extends Op {
   public String toString() {
     if (call == Call.PRINT) {
       // TODO: need type of "arg", because it may be an int variable or a string constant.
-      return String.format("\tprintf(\"%%s\", %s);", arg);
+      return String.format("printf(\"%%s\", %s);", arg);
     }
-    return String.format("\tcall(%s, %s);", call.name(), arg);
+    return String.format("call(%s, %s);", call.name(), arg);
   }
 
   @Override

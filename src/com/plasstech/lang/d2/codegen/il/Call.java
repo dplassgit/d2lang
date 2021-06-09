@@ -34,10 +34,10 @@ public class Call extends Op {
   @Override
   public String toString() {
     if (destination() != null) {
-      return String.format("\t%s = %s(%s);", destination().name(), functionToCall,
+      return String.format("%s = %s(%s);", destination().name(), functionToCall,
               Joiner.on(",").join(actualLocations));
     } else {
-      return String.format("\t%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
+      return String.format("%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
     }
   }
 

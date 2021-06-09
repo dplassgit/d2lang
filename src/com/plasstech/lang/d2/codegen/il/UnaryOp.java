@@ -28,7 +28,7 @@ public class UnaryOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("\t%s = %s %s;", destination, operator.value(), operand);
+    return String.format("%s = %s %s;", destination, operator.value(), operand);
   }
 
   @Override

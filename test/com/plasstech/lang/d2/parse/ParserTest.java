@@ -42,12 +42,7 @@ public class ParserTest {
 
   @Test
   public void parse_printErr() {
-    Lexer lexer = new Lexer("print");
-    Parser parser = new Parser(lexer);
-
-    Node node = parser.parse();
-    assertThat(node.isError()).isTrue();
-    System.err.println(node.message());
+    assertParseError("Unexpected EOF", "print", "Unexpected EOF");
   }
 
   @Test
@@ -825,7 +820,7 @@ public class ParserTest {
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
     assertWithMessage(message).that(node.isError()).isTrue();
-    System.err.println(node.message());
+//    System.err.println(node.message());
     assertThat(node.message()).contains(errorMsgContains);
   }
 }

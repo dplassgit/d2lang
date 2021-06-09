@@ -41,7 +41,7 @@ Type_EOF=0
 Type_TRUE=27
 Type_FALSE=28
 
-KEYWORDS: [
+KEYWORDS=[
 'print',
 'println',
 'true',

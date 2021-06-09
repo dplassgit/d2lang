@@ -549,7 +549,6 @@ public class StaticCheckerTest {
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     assertWithMessage("Should have result error for:\n " + program).that(result.isError()).isTrue();
-    System.err.println(result.message());
     assertThat(result.message()).contains(messageShouldContain);
   }
 
@@ -561,10 +560,8 @@ public class StaticCheckerTest {
       fail(node.message());
     }
     ProgramNode programRoot = (ProgramNode) node;
-//    System.out.println("Before: " + programRoot);
     StaticChecker checker = new StaticChecker(programRoot);
     SymTab symTab = execute(checker);
-//    System.out.println("After: " + programRoot);
     return symTab;
   }
 

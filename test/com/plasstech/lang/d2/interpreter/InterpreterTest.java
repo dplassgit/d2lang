@@ -159,8 +159,8 @@ public class InterpreterTest {
     Interpreter interpreter = new Interpreter(operators, table);
     Environment env = interpreter.execute();
 
-    System.err.println(env.toString());
-    System.err.println(env.output());
+    System.out.println(env.toString());
+    System.out.println(env.output());
     return env;
   }
 }

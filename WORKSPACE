@@ -17,6 +17,8 @@ maven_install(
     artifacts = [
         "junit:junit:4.13.2",
         "com.google.guava:guava:30.1.1-jre",
+        "com.google.flogger:flogger:0.6",
+        "com.google.flogger:flogger-system-backend:0.6",
         "com.google.truth:truth:1.1.3",
         "com.google.truth.extensions:truth-java8-extension:1.1.3",
     ],

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ConstantOperand;
@@ -48,6 +49,8 @@ import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final ProgramNode root;
   private final SymTab symTab;
@@ -359,7 +362,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   }
 
   private void emit(Op op) {
-//    System.out.println(op);
+    logger.atInfo().log(op.toString());
     operations.add(op);
   }
 }

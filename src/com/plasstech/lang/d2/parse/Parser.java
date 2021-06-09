@@ -153,10 +153,8 @@ public class Parser {
   }
 
   private StatementNode assignmentDeclarationProcCall() {
-    if (token.type() != Token.Type.VARIABLE) {
-      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
-              token.start());
-    }
+    assert (token.type() == Token.Type.VARIABLE);
+
     Token varToken = token;
     advance();
     if (token.type() == Token.Type.EQ) {
@@ -330,10 +328,7 @@ public class Parser {
   }
 
   private CallNode procedureCall(Token varToken, boolean isStatement) {
-    if (token.type() != Token.Type.LPAREN) {
-      throw new ParseException(String.format("Unexpected %s; expected '('", token.text()),
-              token.start());
-    }
+    assert (token.type() == Token.Type.LPAREN);
     advance(); // eat the lparen
 
     List<ExprNode> actuals;
@@ -367,7 +362,7 @@ public class Parser {
     T node = nextNode.call();
     nodes.add(node);
     if (token.type() == Token.Type.COMMA) {
-      // There's another one - let's go
+      // There's another entry in this list - let's go
       advance();
 
       while (token.type() != Token.Type.EOF) {
