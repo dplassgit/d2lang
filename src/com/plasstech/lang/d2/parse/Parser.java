@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.BoolToken;
@@ -19,6 +20,12 @@ import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.VarType;
 
 public class Parser {
+
+  private final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
+          KeywordType.INT, VarType.INT, //
+          KeywordType.BOOL, VarType.BOOL, //
+          KeywordType.STRING, VarType.STRING, //
+          KeywordType.PROC, VarType.PROC); //
 
   private static final Set<Token.Type> EXPRESSION_STARTS = ImmutableSet.of(Token.Type.VARIABLE,
           Token.Type.LPAREN, Token.Type.MINUS, Token.Type.PLUS, Token.Type.NOT, Token.Type.INT,
@@ -166,12 +173,14 @@ public class Parser {
       advance();
       if (token.type() == Token.Type.KEYWORD) {
         KeywordType declaredType = ((KeywordToken) token).keyword();
-        VarType varType = DeclarationNode.BUILTINS.get(declaredType);
+        VarType varType = BUILTINS.get(declaredType);
         if (varType != null) {
           advance();
           if (varType == VarType.PROC) {
             return procedure(varToken);
           } else {
+            // TODO: see if it's an array declaration and build a "compound type" from the
+            // declaration, e.g., "array of int"
             return new DeclarationNode(varToken.text(), varType, varToken.start());
           }
         }
@@ -198,9 +207,8 @@ public class Parser {
                 token.start());
       }
       KeywordType declaredType = ((KeywordToken) token).keyword();
-      // this allows returns proc, which I don't like.
-      returnType = DeclarationNode.BUILTINS.get(declaredType);
-      if (returnType == null) {
+      returnType = BUILTINS.get(declaredType);
+      if (returnType == null || returnType == VarType.PROC) {
         throw new ParseException(
                 String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
                 token.start());
@@ -219,7 +227,7 @@ public class Parser {
     advance(); // eat the left paren
 
     if (token.type() == Token.Type.RPAREN) {
-      advance(); // eat the right paren, done.
+      advance(); // eat the right paren, and done.
       return params;
     }
 
@@ -254,7 +262,7 @@ public class Parser {
                 token.start());
       }
       KeywordType declaredType = ((KeywordToken) token).keyword();
-      VarType paramType = DeclarationNode.BUILTINS.get(declaredType);
+      VarType paramType = BUILTINS.get(declaredType);
       if (paramType == null) {
         throw new ParseException(
                 String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),

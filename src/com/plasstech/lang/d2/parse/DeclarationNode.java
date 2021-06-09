@@ -1,21 +1,13 @@
 package com.plasstech.lang.d2.parse;
 
-import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.NodeVisitor;
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
  * Declare a variable, e.g., "foo:int"
  */
 public class DeclarationNode extends AbstractNode implements StatementNode {
-
-  public final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
-          KeywordType.INT, VarType.INT, //
-          KeywordType.BOOL, VarType.BOOL, //
-          KeywordType.STRING, VarType.STRING, //
-          KeywordType.PROC, VarType.PROC); // TODO I hate this.
 
   private final String varName;
 

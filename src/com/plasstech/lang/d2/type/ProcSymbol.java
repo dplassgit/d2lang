@@ -9,7 +9,7 @@ public class ProcSymbol extends AbstractSymbol {
   public ProcSymbol(ProcedureNode node) {
     super(node.name());
     this.node = node;
-    this.setType(VarType.PROC);
+    this.setType(VarType.PROC); // TODO: make this into its complex type!!!
   }
 
   // Maybe think about this?
@@ -19,7 +19,7 @@ public class ProcSymbol extends AbstractSymbol {
 
   @Override
   public String toString() {
-    return String.format("%s: proc(%s) returns %s", name(), node.parameters().toString(),
+    return String.format("%s: proc(%s): %s", name(), node.parameters().toString(),
             node.returnType().toString());
   }
 }

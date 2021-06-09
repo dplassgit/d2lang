@@ -532,11 +532,11 @@ public class StaticCheckerTest {
 
   @Test
   public void callInnerProc() {
-    checkProgram("level1:proc() : bool { " //
-            + " level2:proc() : int  {n=3 return n}" //
-            + " m=level2()" //
-            + " return m==3" //
-            + "}"); //
+    checkProgram("level1: proc(): bool {\n" //
+            + "     level2: proc(): int {n=3 return n}\n" //
+            + "     m=level2()\n" //
+            + "     return m==3\n" //
+            + "}\n"); //
   }
 
   private void assertExecuteError(String program, String messageShouldContain) {
