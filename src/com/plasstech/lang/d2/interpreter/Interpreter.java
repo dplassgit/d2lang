@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.interpreter;
 import java.util.List;
 import java.util.Stack;
 
+import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ConstantOperand;
@@ -24,6 +25,7 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class Interpreter extends DefaultOpcodeVisitor {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<Op> code;
   private int ip;
@@ -45,7 +47,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Op op = code.get(ip);
       ip++;
       try {
-      op.accept(this);
+        op.accept(this);
+        logger.atInfo().log("%d: %s", ip, op);
       } catch (RuntimeException re) {
         System.err.println("Exception at " + op);
         System.err.println(envs.peek());
@@ -65,7 +68,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Transfer op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
     Object rhsVal = resolve(op.source());
     if (rhsVal != null) {
       setValue(op.destination(), rhsVal);
@@ -76,7 +78,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(IfOp ifOp) {
-//    System.err.printf("%d: Visit %s\n", ip, ifOp);
     Object cond = resolve(ifOp.condition());
     if (cond.equals(1)) {
       String dest = ifOp.destination();
@@ -86,7 +87,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Goto op) {
-//    System.err.printf("%d: Visit %s\n", ip, gotoOp);
     gotoLabel(op.label());
   }
 
@@ -96,7 +96,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
       if (op instanceof Label) {
         Label label = (Label) op;
         if (label.label().equals(dest)) {
-//            System.err.println("Going to " + label.label());
           ip = i;
           return;
         }
@@ -107,7 +106,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(BinOp op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
     int r1 = (Integer) resolve(op.rhs1());
     int r2 = (Integer) resolve(op.rhs2());
     int result;
@@ -159,7 +157,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(UnaryOp op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
     Object rhs = resolve(op.rhs());
     int r1;
     if (rhs == Boolean.TRUE) {
@@ -200,7 +197,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(SysCall op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
     Object val = resolve(op.arg());
     // TODO: don't assume all system calls are prints.
     rootEnv.addOutput(String.valueOf(val));
@@ -208,14 +204,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Stop op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
     running = false;
   }
 
   @Override
   public void visit(Call op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
-
     // 1. push return location onto stack (NOTE, not ip, which is the next op already)
     ipStack.push(ip - 1);
 
@@ -241,8 +234,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Return op) {
-//    System.err.printf("%d: Visit %s\n", ip, op);
-
     // 1. if there's a return value, look it up in environment
     Object retValue = null;
     if (op.returnValueLocation().isPresent()) {

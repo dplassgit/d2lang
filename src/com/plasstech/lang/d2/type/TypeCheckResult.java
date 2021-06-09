@@ -28,5 +28,4 @@ public class TypeCheckResult {
   public String message() {
     return message;
   }
-
 }

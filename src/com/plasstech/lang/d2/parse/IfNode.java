@@ -21,7 +21,7 @@ public class IfNode extends AbstractNode implements StatementNode {
 
     @Override
     public String toString() {
-      return String.format("IfCaseNode: if (%s) {%s}", condition, block);
+      return String.format("\nif (%s) {%s}", condition, block);
     }
 
     public Node condition() {
@@ -59,7 +59,7 @@ public class IfNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (elseBlock != null) {
-      return String.format("IfNode: (%s) else {%s}", cases(), elseBlock());
+      return String.format("IfNode: (%s) else\n{%s}", cases(), elseBlock());
     } else {
       // this isn't ideal, but shrug.
       return String.format("IfNode: (%s)", cases());

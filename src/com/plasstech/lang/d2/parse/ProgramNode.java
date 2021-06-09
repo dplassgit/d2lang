@@ -43,7 +43,7 @@ public class ProgramNode extends AbstractNode {
   @Override
   public String toString() {
     if (main.isPresent()) {
-      return String.format("ProgramNode: %s %s", statements(), main.get());
+      return String.format("ProgramNode: %s\n%s", statements(), main.get());
     } else {
       return String.format("ProgramNode: %s", statements());
     }

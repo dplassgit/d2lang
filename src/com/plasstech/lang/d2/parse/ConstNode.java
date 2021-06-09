@@ -33,7 +33,11 @@ public class ConstNode<T> extends AbstractNode implements SimpleNode {
 
   @Override
   public String toString() {
-    return String.format("ConstNode(%s): %s", varType().name().toLowerCase(), value);
+    if (value instanceof String) {
+      return String.format("{ConstNode(%s): '%s'}", varType().name().toLowerCase(), value);
+    } else {
+      return String.format("{ConstNode(%s): %s}", varType().name().toLowerCase(), value);
+    }
   }
 
   @Override

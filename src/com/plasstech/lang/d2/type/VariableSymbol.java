@@ -10,4 +10,8 @@ public class VariableSymbol extends AbstractSymbol {
     return SymbolStorage.GLOBAL;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s: %s", name(), type().toString());
+  }
 }

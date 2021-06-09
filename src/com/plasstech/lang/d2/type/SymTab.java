@@ -120,4 +120,9 @@ public class SymTab {
     values.put(name, sym);
     return sym;
   }
+
+  @Override
+  public String toString() {
+    return values.values().toString();
+  }
 }

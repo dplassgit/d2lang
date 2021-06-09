@@ -621,7 +621,6 @@ public class ParserTest {
   @Test
   public void parse_assignString() {
     BlockNode root = parseStatements("a='hi'");
-//    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -638,7 +637,6 @@ public class ParserTest {
   @Test
   public void parse_addStrings() {
     BlockNode root = parseStatements("a='hi' + 'Hi'");
-//    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -820,7 +818,6 @@ public class ParserTest {
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
     assertWithMessage(message).that(node.isError()).isTrue();
-//    System.err.println(node.message());
     assertThat(node.message()).contains(errorMsgContains);
   }
 }

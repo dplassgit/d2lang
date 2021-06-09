@@ -39,19 +39,29 @@ public class InterpreterDriver {
       throw new RuntimeException(((ErrorNode) node).message());
     }
     ProgramNode root = (ProgramNode) node;
-    System.out.println("PARSED PROGRAM:");
+    System.out.println("\nPARSED PROGRAM:");
     System.out.println(root);
+
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult checkResult = checker.execute();
     if (checkResult.isError()) {
       throw new RuntimeException(checkResult.message());
     }
+    System.out.println("\nTYPE-CHECKED PROGRAM:");
+    System.out.println(root);
+
+    System.out.println("\nSYMBOL TABLE:");
+    System.out.println(checkResult.symbolTable());
+
     CodeGenerator<Op> cg = new ILCodeGenerator(root, checkResult.symbolTable());
     List<Op> opcodes = cg.generate();
     Interpreter interpreter = new Interpreter(opcodes, checkResult.symbolTable());
+
     Environment env = interpreter.execute();
+
     System.out.println("------------------------------");
-    System.out.println("System out:");
+    System.out.println("SYSTEM.OUT:");
+    System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(env.output()));
   }
 }

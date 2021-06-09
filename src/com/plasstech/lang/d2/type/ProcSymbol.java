@@ -16,4 +16,10 @@ public class ProcSymbol extends AbstractSymbol {
   public ProcedureNode node() {
     return node;
   }
+
+  @Override
+  public String toString() {
+    return String.format("%s: proc(%s) returns %s", name(), node.parameters().toString(),
+            node.returnType().toString());
+  }
 }

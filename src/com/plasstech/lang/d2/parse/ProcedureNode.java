@@ -39,7 +39,7 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
 
     @Override
     public String toString() {
-      return String.format("FormalParam: %s:%s", name, type);
+      return String.format("%s:%s", name, type);
     }
   }
 
@@ -92,7 +92,7 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("ProcedureNode: %s: proc(%s) returns %s: {%s}", name(), parameters,
+    return String.format("ProcedureNode: %s: proc(%s) returns %s:\n{%s}", name(), parameters,
             returnType, block);
   }
 

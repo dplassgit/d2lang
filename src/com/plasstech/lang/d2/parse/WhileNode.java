@@ -39,6 +39,11 @@ public class WhileNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("WhileNode: while (%s) do (%s) {%s}", condition, doStatement, block);
+    if (doStatement.isPresent()) {
+      return String.format("WhileNode: while (%s) do (%s) {%s}", condition, doStatement.get(),
+              block);
+    } else {
+      return String.format("WhileNode: while (%s) {%s}", condition, block);
+    }
   }
 }

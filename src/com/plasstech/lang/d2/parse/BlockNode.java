@@ -11,6 +11,8 @@ import com.plasstech.lang.d2.common.Position;
  * Represents a list of statements - a block inside a function/method/procedure.
  */
 public class BlockNode extends AbstractNode {
+  public static final BlockNode EMPTY = new BlockNode(null);
+
   private final List<StatementNode> statements;
 
   BlockNode(Position position) {
@@ -29,7 +31,7 @@ public class BlockNode extends AbstractNode {
 
   @Override
   public String toString() {
-    return Joiner.on("\n// ").join(statements);
+    return "\n" + Joiner.on('\n').join(statements);
   }
 
   @Override

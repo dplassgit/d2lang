@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -159,8 +160,13 @@ public class InterpreterTest {
     Interpreter interpreter = new Interpreter(operators, table);
     Environment env = interpreter.execute();
 
+    System.out.println("Environment:");
+    System.out.println("------------");
     System.out.println(env.toString());
-    System.out.println(env.output());
+    System.out.println("------------");
+    System.out.println("Sysout:");
+    System.out.println("-------");
+    System.out.println(Joiner.on('\n').join(env.output()));
     return env;
   }
 }
