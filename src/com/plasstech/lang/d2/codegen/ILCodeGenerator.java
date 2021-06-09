@@ -76,12 +76,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private String generateLabel(String prefix) {
     labelId++;
-    return String.format("%s%d", prefix, labelId);
+    return String.format("_%s%d", prefix, labelId);
   }
 
   private TempLocation generateTemp(VarType varType) {
     tempId++;
-    String name = String.format("temp%d", tempId);
+    String name = String.format("_temp%d", tempId);
     symTab.declare(name, varType);
     // TODO: keep the vartype with the location
     return new TempLocation(name);
