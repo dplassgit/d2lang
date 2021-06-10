@@ -533,7 +533,26 @@ public class Parser {
       // do that exact optimization yet.
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
     }
-    return atom();
+    return arrayGet();
+  }
+
+  private ExprNode arrayGet() {
+    ExprNode left = atom();
+
+    // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
+    if (token.type() == Token.Type.LBRACKET) {
+      advance();
+      ExprNode index = expr();
+      if (token.type() == Token.Type.RBRACKET) {
+        advance();
+        left = new BinOpNode(left, Token.Type.LBRACKET, index);
+      } else {
+        throw new ParseException(String.format("Unexpected %s; expected ']'", token),
+                token.start());
+      }
+    }
+
+    return left;
   }
 
   private ExprNode atom() {
@@ -545,10 +564,10 @@ public class Parser {
       Token varToken = token;
       String name = token.text();
       advance();
-      if (token.type() != Token.Type.LPAREN) {
-        return new VariableNode(name, varToken.start());
-      } else {
+      if (token.type() == Token.Type.LPAREN) {
         return procedureCall(varToken, false);
+      } else {
+        return new VariableNode(name, varToken.start());
       }
     } else if (token.type() == Token.Type.BOOL) {
       BoolToken bt = (BoolToken) token;

@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -816,6 +817,57 @@ public class ParserTest {
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
+  }
+
+  @Test
+  public void parse_arrayGet() {
+    BlockNode root = parseStatements("a=b[3+c]");
+//    System.out.println(root);
+
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    BinOpNode expr = (BinOpNode) node.expr();
+    assertThat(expr.left()).isInstanceOf(VariableNode.class);
+    assertThat(expr.operator()).isEqualTo(Token.Type.LBRACKET);
+    assertThat(expr.right()).isInstanceOf(BinOpNode.class);
+  }
+
+  @Test
+  @Ignore("Issue #38: Support multidimensional arrays")
+  public void parse_multiDimArrayGet() {
+    BlockNode root = parseStatements("a=b[3+c][4][5]");
+    System.out.println(root);
+  }
+
+  @Test
+  public void parse_arrayGetWeirdYetParseable() {
+    parseStatements("a=3[4+c]"); // will fail type checker
+    parseStatements("a='hi'['lol']"); // will fail type checker
+    parseStatements("a=fn()[4+c]");
+  }
+
+  @Test
+  @Ignore("Assignments are still broken")
+  public void parse_arraySet() {
+    parseStatements("a[3] = 4");
+  }
+
+  @Test
+  @Ignore
+  public void parse_arrayStmt() {
+    parseStatements("fn()[fn()]");
+  }
+
+  @Test
+  public void parse_arrayGetError() {
+    assertParseError("No closing bracket", "a=3[4+c b", "expected ']'");
+    assertParseError("No closing bracket", "a=3[4+c b]", "expected ']'");
   }
 
   private BlockNode parseStatements(String expression) {

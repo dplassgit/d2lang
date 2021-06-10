@@ -14,7 +14,7 @@ public class BinOpNode extends AbstractNode implements ExprNode {
   private static final Set<Token.Type> BINARY_OPERATORS = ImmutableSet.of(Token.Type.PLUS,
           Token.Type.MINUS, Token.Type.MULT, Token.Type.DIV, Token.Type.MOD, Token.Type.AND,
           Token.Type.OR, Token.Type.EQEQ, Token.Type.GT, Token.Type.LT, Token.Type.GEQ,
-          Token.Type.LEQ, Token.Type.NEQ);
+          Token.Type.LEQ, Token.Type.NEQ, Token.Type.LBRACKET);
 
   private final Token.Type operator;
   private final ExprNode left;
