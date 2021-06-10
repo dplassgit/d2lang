@@ -1,15 +1,27 @@
 package com.plasstech.lang.d2.type;
 
+import com.plasstech.lang.d2.parse.node.ExprNode;
+
 public class ArrayType implements VarType {
   private final VarType baseType;
+  private final ExprNode arraySize;
 
-  public ArrayType(VarType baseType) {
+  public ArrayType(VarType baseType, ExprNode arraySize) {
     this.baseType = baseType;
+    this.arraySize = arraySize;
   }
 
   @Override
   public String name() {
     return String.format("array:%s", baseType.name());
+  }
+
+  public VarType baseType() {
+    return baseType;
+  }
+
+  public ExprNode arraySizeExpr() {
+    return arraySize;
   }
 
   @Override

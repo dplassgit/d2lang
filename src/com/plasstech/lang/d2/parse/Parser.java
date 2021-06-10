@@ -14,6 +14,8 @@ import com.plasstech.lang.d2.lex.BoolToken;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
+import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -28,16 +30,15 @@ import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.lex.Token;
 
 public class Parser {
 
@@ -193,14 +194,19 @@ public class Parser {
       advance();
       if (token.type() == Token.Type.KEYWORD) {
         KeywordType declaredType = ((KeywordToken) token).keyword();
+
+        // TODO: this may have to be relaxed when we have records
         VarType varType = BUILTINS.get(declaredType);
         if (varType != null) {
           advance();
           if (varType == VarType.PROC) {
             return procedure(varToken);
           } else {
-            // TODO: see if it's an array declaration and build a "compound type" from the
+            // See if it's an array declaration and build a "compound type" from the
             // declaration, e.g., "array of int"
+            if (token.type() == Token.Type.LBRACKET) {
+              return arrayDeclaration(varToken, varType);
+            }
             return new DeclarationNode(varToken.text(), varType, varToken.start());
           }
         }
@@ -213,6 +219,20 @@ public class Parser {
     }
     throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
             token.start());
+  }
+
+  private DeclarationNode arrayDeclaration(Token varToken, VarType baseVarType) {
+    assert (token.type() == Token.Type.LBRACKET);
+    advance();
+    // The size can be variable.
+    ExprNode arraySize = expr();
+    ArrayType arrayType = new ArrayType(baseVarType, arraySize);
+    if (token.type() != Token.Type.RBRACKET) {
+      throw new ParseException(String.format("Unexpected %s; expected '['", token.text()),
+              token.start());
+    }
+    advance();
+    return new DeclarationNode(varToken.text(), arrayType, varToken.start());
   }
 
   private ProcedureNode procedure(Token varToken) {

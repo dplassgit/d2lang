@@ -295,6 +295,8 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(DeclarationNode node) {
+    // TODO: if it's an array, evaluate the size of the array, and make sure its type is int
+
     // Don't go up to the parent symbol table; this allows scoping
     VarType existingType = symbolTable().lookup(node.name(), false);
     if (!existingType.isUnknown()) {

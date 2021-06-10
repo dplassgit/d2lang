@@ -32,6 +32,7 @@ import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ParserTest {
@@ -822,7 +823,6 @@ public class ParserTest {
   @Test
   public void parse_arrayGet() {
     BlockNode root = parseStatements("a=b[3+c]");
-//    System.out.println(root);
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -836,6 +836,41 @@ public class ParserTest {
     assertThat(expr.left()).isInstanceOf(VariableNode.class);
     assertThat(expr.operator()).isEqualTo(Token.Type.LBRACKET);
     assertThat(expr.right()).isInstanceOf(BinOpNode.class);
+  }
+
+  @Test
+  public void parse_arrayDecl() {
+    BlockNode root = parseStatements("a:int[3]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.name()).isEqualTo("a");
+    assertThat(declarationNode.varType()).isInstanceOf(ArrayType.class);
+    ArrayType arrType = (ArrayType) declarationNode.varType();
+    assertThat(arrType.baseType()).isEqualTo(VarType.INT);
+    assertThat(arrType.arraySizeExpr()).isInstanceOf(ConstNode.class);
+  }
+
+  @Test
+  public void parse_arrayDeclVariableSize() {
+    BlockNode root = parseStatements("a:int[b+3]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.name()).isEqualTo("a");
+    assertThat(declarationNode.varType()).isInstanceOf(ArrayType.class);
+    ArrayType arrType = (ArrayType) declarationNode.varType();
+    assertThat(arrType.baseType()).isEqualTo(VarType.INT);
+    assertThat(arrType.arraySizeExpr()).isInstanceOf(BinOpNode.class);
+  }
+
+  @Test
+  public void parse_arrayDeclError() {
+    assertParseError("Should not parse incomplete array decl", "a:int[3", "expected '['");
+    assertParseError("Should not parse incomplete array decl", "a:int[3 4]", "expected '['");
+    assertParseError("Should not parse bad base array type", "a:hello[3]", "expected INT");
   }
 
   @Test

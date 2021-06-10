@@ -70,7 +70,6 @@ public class SymTab {
     return declareInternal(name, varType);
   }
 
-  // TODO: distinguish between locals, globals and parameters!
   public Symbol declareParam(String name, VarType varType) {
     Symbol param = declareInternal(name, varType);
     param.setAssigned(); // parameters are always assigned, by definition.
@@ -90,9 +89,8 @@ public class SymTab {
     return procSymbol;
   }
 
-  // It's only declared. TODO: distinguish between locals, globals and parameters!
+  // It's only declared. TODO: distinguish between locals & globals
   public Symbol declare(String name, VarType varType) {
-    // think about mangling this
     return declareInternal(name, varType);
   }
 
