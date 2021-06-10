@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.plasstech.lang.d2.parse.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
 
 /** Symbol Table. */
 public class SymTab {

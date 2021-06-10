@@ -1,0 +1,9 @@
+java_library(name="il",
+             srcs=glob(["*.java"]),
+             deps=[
+                 "//src/com/plasstech/lang/d2/lex",
+                 "//src/com/plasstech/lang/d2/codegen:location",
+                 "@maven//:com_google_guava_guava",
+             ],
+             visibility=["//visibility:public"],
+             )

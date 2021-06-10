@@ -1,0 +1,15 @@
+java_library(name="interpreter",
+             srcs=glob(["*.java"]),
+             deps=[
+                 "//src/com/plasstech/lang/d2/codegen",
+                 "//src/com/plasstech/lang/d2/codegen:location",
+                 "//src/com/plasstech/lang/d2/codegen/il",
+                 "//src/com/plasstech/lang/d2/lex",
+                 "//src/com/plasstech/lang/d2/parse",
+                 "//src/com/plasstech/lang/d2/parse/node",
+                 "//src/com/plasstech/lang/d2/type",
+                 "@maven//:com_google_flogger_flogger",
+                 "@maven//:com_google_guava_guava",
+             ],
+             visibility=["//visibility:public"],
+             )

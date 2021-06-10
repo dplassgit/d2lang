@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import com.plasstech.lang.d2.codegen.Operand;
+
 public class SysCall extends Op {
   public enum Call {
     PRINT

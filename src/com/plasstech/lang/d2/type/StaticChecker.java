@@ -8,27 +8,27 @@ import java.util.Set;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
-import com.plasstech.lang.d2.common.DefaultVisitor;
 import com.plasstech.lang.d2.lex.Token;
-import com.plasstech.lang.d2.parse.AssignmentNode;
-import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.BlockNode;
-import com.plasstech.lang.d2.parse.CallNode;
-import com.plasstech.lang.d2.parse.DeclarationNode;
-import com.plasstech.lang.d2.parse.ExprNode;
-import com.plasstech.lang.d2.parse.IfNode;
-import com.plasstech.lang.d2.parse.IfNode.Case;
-import com.plasstech.lang.d2.parse.MainNode;
-import com.plasstech.lang.d2.parse.Node;
-import com.plasstech.lang.d2.parse.PrintNode;
-import com.plasstech.lang.d2.parse.ProcedureNode;
-import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
-import com.plasstech.lang.d2.parse.ProgramNode;
-import com.plasstech.lang.d2.parse.ReturnNode;
-import com.plasstech.lang.d2.parse.StatementNode;
-import com.plasstech.lang.d2.parse.UnaryNode;
-import com.plasstech.lang.d2.parse.VariableNode;
-import com.plasstech.lang.d2.parse.WhileNode;
+import com.plasstech.lang.d2.parse.node.AssignmentNode;
+import com.plasstech.lang.d2.parse.node.BinOpNode;
+import com.plasstech.lang.d2.parse.node.BlockNode;
+import com.plasstech.lang.d2.parse.node.CallNode;
+import com.plasstech.lang.d2.parse.node.DeclarationNode;
+import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.IfNode.Case;
+import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.parse.node.PrintNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.ReturnNode;
+import com.plasstech.lang.d2.parse.node.StatementNode;
+import com.plasstech.lang.d2.parse.node.UnaryNode;
+import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.WhileNode;
 
 public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> COMPARISION_OPERATORS = ImmutableSet.of(Token.Type.AND,
@@ -47,8 +47,8 @@ public class StaticChecker extends DefaultVisitor {
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
 
-  private Stack<ProcedureNode> procedures = new Stack<>();
-  private Set<ProcedureNode> needsReturn = new HashSet<>();
+  private Stack<ProcSymbol> procedures = new Stack<>();
+  private Set<ProcSymbol> needsReturn = new HashSet<>();
 
   public StaticChecker(ProgramNode root) {
     this.root = root;
@@ -58,10 +58,10 @@ public class StaticChecker extends DefaultVisitor {
     try {
       root.accept(this);
       if (!procedures.isEmpty()) {
-        ProcedureNode top = procedures.peek();
+        ProcSymbol top = procedures.peek();
         throw new TypeException(
                 String.format("Still in procedure %s. (This should never happen)", top),
-                top.position());
+                top.node().position());
       }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
@@ -74,7 +74,7 @@ public class StaticChecker extends DefaultVisitor {
     if (procedures.isEmpty()) {
       return symbolTable;
     }
-    return procedures.peek().symbolTable();
+    return procedures.peek().symTab();
   }
 
   @Override
@@ -327,16 +327,16 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Add this procedure to the symbol table
-    symbolTable().declareProc(node);
+    ProcSymbol procSymbol = symbolTable().declareProc(node);
 
     // 2. spawn symbol table & assign to the node.
     SymTab child = symbolTable().spawn();
-    node.setSymbolTable(child);
+    procSymbol.setSymTab(child);
 
     // 3. push current procedure onto a stack, for symbol table AND return value checking
-    procedures.push(node);
+    procedures.push(procSymbol);
     if (node.returnType() != VarType.VOID) {
-      needsReturn.add(node);
+      needsReturn.add(procSymbol);
     }
 
     // 4. add all args to symbol table
@@ -344,7 +344,7 @@ public class StaticChecker extends DefaultVisitor {
       symbolTable().declareParam(param.name(), param.type());
     }
 
-    // 5. this:
+    // 5. process the statements in the procedure:
     node.block().accept(this);
 
     // 6. make sure args all have a type
@@ -359,7 +359,7 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     if (node.returnType() != VarType.VOID) {
-      if (needsReturn.contains(node)) {
+      if (needsReturn.contains(procSymbol)) {
         // no return statement seen.
         throw new TypeException(
                 String.format("No 'return' statement for procedure %s ", node.name()),
@@ -438,7 +438,7 @@ public class StaticChecker extends DefaultVisitor {
       node.setVarType(expr.varType());
     }
 
-    ProcedureNode proc = procedures.peek();
+    ProcSymbol proc = procedures.peek();
     needsReturn.remove(proc);
     VarType declaredReturnType = proc.returnType();
     VarType actualReturnType = node.varType();
@@ -448,7 +448,7 @@ public class StaticChecker extends DefaultVisitor {
               node.position());
     }
 
-    if (!proc.varType().equals(actualReturnType)) {
+    if (!proc.node().varType().equals(actualReturnType)) {
       throw new TypeException(
               String.format("Type mismatch: %s declared to return %s but returned %s", proc.name(),
                       declaredReturnType, actualReturnType),

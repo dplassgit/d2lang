@@ -11,6 +11,26 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.parse.node.AssignmentNode;
+import com.plasstech.lang.d2.parse.node.BinOpNode;
+import com.plasstech.lang.d2.parse.node.BlockNode;
+import com.plasstech.lang.d2.parse.node.BreakNode;
+import com.plasstech.lang.d2.parse.node.CallNode;
+import com.plasstech.lang.d2.parse.node.ConstNode;
+import com.plasstech.lang.d2.parse.node.ContinueNode;
+import com.plasstech.lang.d2.parse.node.DeclarationNode;
+import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.parse.node.PrintNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.ReturnNode;
+import com.plasstech.lang.d2.parse.node.StatementNode;
+import com.plasstech.lang.d2.parse.node.UnaryNode;
+import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ParserTest {

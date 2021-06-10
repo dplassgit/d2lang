@@ -4,23 +4,23 @@ import java.util.List;
 import java.util.Stack;
 
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
-import com.plasstech.lang.d2.codegen.il.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Location;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.codegen.il.Operand;
 import com.plasstech.lang.d2.codegen.il.Return;
-import com.plasstech.lang.d2.codegen.il.StackLocation;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.parse.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 

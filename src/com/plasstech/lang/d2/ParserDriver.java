@@ -5,8 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.parse.node.Node;
 
 public class ParserDriver {
 

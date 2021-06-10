@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.lex.Token;
 
 public class UnaryOp extends Op {

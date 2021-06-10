@@ -2,6 +2,8 @@ package com.plasstech.lang.d2.codegen.il;
 
 import java.util.Optional;
 
+import com.plasstech.lang.d2.codegen.Location;
+
 public class Return extends Op {
 
   private final Optional<Location> returnValueLocation;

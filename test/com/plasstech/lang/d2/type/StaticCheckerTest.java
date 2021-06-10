@@ -8,14 +8,14 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.AssignmentNode;
-import com.plasstech.lang.d2.parse.BinOpNode;
-import com.plasstech.lang.d2.parse.ExprNode;
-import com.plasstech.lang.d2.parse.Node;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.ProgramNode;
-import com.plasstech.lang.d2.parse.UnaryNode;
-import com.plasstech.lang.d2.parse.VariableNode;
+import com.plasstech.lang.d2.parse.node.AssignmentNode;
+import com.plasstech.lang.d2.parse.node.BinOpNode;
+import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.UnaryNode;
+import com.plasstech.lang.d2.parse.node.VariableNode;
 
 public class StaticCheckerTest {
 
