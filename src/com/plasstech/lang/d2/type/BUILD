@@ -1,5 +1,11 @@
+VAR_TYPES = [
+    "ArrayType.java",
+    "SimpleType.java",
+    "VarType.java",
+]
+
 java_library(name="type",
-             srcs=glob(["*.java"], exclude=["ArrayType.java", "SimpleType.java", "VarType.java"]),
+             srcs=glob(["*.java"], exclude=VAR_TYPES),
              deps=[
                  ":var_types",
                  "//src/com/plasstech/lang/d2/common",
@@ -11,6 +17,6 @@ java_library(name="type",
              )
 
 java_library(name="var_types",
-             srcs=["ArrayType.java", "SimpleType.java", "VarType.java"],
+             srcs=VAR_TYPES,
              visibility=["//visibility:public"],
              )
