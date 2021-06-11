@@ -9,6 +9,7 @@ import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -295,8 +296,6 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(DeclarationNode node) {
-    // TODO: if it's an array, evaluate the size of the array, and make sure its type is int
-
     // Don't go up to the parent symbol table; this allows scoping
     VarType existingType = symbolTable().lookup(node.name(), false);
     if (!existingType.isUnknown()) {
@@ -305,6 +304,32 @@ public class StaticChecker extends DefaultVisitor {
                       node.name(), existingType.name(), node.varType()),
               node.position());
     }
+
+    symbolTable().declare(node.name(), node.varType());
+  }
+
+  @Override
+  public void visit(ArrayDeclarationNode node) {
+    VarType existingType = symbolTable().lookup(node.name(), false);
+    if (!existingType.isUnknown()) {
+      throw new TypeException(
+              String.format("Variable '%s' already declared as %s, cannot be redeclared as %s",
+                      node.name(), existingType.name(), node.varType()),
+              node.position());
+    }
+
+    // Make sure size type is int
+    ExprNode arraySizeExpr = node.sizeExpr();
+    if (arraySizeExpr.varType().isUnknown()) {
+      throw new TypeException("Indeterminable type for array size; must be INT",
+              arraySizeExpr.position());
+    }
+    if (arraySizeExpr.varType() != VarType.INT) {
+      throw new TypeException(
+              String.format("Array size must be INT; was %s", arraySizeExpr.varType()),
+              arraySizeExpr.position());
+    }
+
     symbolTable().declare(node.name(), node.varType());
   }
 

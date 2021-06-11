@@ -241,6 +241,24 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void execute_declarationArray() {
+    checkProgram("a:int[3]");
+    checkProgram("b=3 a:int[b]");
+    checkProgram("b:proc():int {return 0} a:string[b()]");
+  }
+
+  @Test
+  public void execute_declarationArrayMismatch() {
+    assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
+    assertExecuteError("a:int[false]", "Array size must be INT; was BOOL");
+    assertExecuteError("a:int['hi']", "Array size must be INT; was STRING");
+    assertExecuteError("a:string['hi']", "Array size must be INT; was STRING");
+    assertExecuteError("b:proc() {} a:string[b()]", "Array size must be INT; was VOID");
+    // this fails in an unexpected way ("used before assignment")
+    // assertExecuteError("b:proc() {} a:string[b]", "Array size must be INT; was PROC");
+  }
+
+  @Test
   public void execute_binOpMismatch() {
     for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
       assertExecuteError(String.format("a=true %s 3", op), "Type mismatch");

@@ -12,6 +12,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -844,12 +845,13 @@ public class ParserTest {
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
-    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
-    assertThat(declarationNode.name()).isEqualTo("a");
-    assertThat(declarationNode.varType()).isInstanceOf(ArrayType.class);
-    ArrayType arrType = (ArrayType) declarationNode.varType();
+    ArrayDeclarationNode node = (ArrayDeclarationNode) statements.get(0);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.varType()).isInstanceOf(ArrayType.class);
+    assertThat(node.sizeExpr()).isInstanceOf(ConstNode.class);
+
+    ArrayType arrType = (ArrayType) node.varType();
     assertThat(arrType.baseType()).isEqualTo(VarType.INT);
-    assertThat(arrType.arraySizeExpr()).isInstanceOf(ConstNode.class);
   }
 
   @Test
@@ -858,12 +860,13 @@ public class ParserTest {
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
-    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
-    assertThat(declarationNode.name()).isEqualTo("a");
-    assertThat(declarationNode.varType()).isInstanceOf(ArrayType.class);
-    ArrayType arrType = (ArrayType) declarationNode.varType();
+    ArrayDeclarationNode node = (ArrayDeclarationNode) statements.get(0);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.varType()).isInstanceOf(ArrayType.class);
+    assertThat(node.sizeExpr()).isInstanceOf(BinOpNode.class);
+
+    ArrayType arrType = (ArrayType) node.varType();
     assertThat(arrType.baseType()).isEqualTo(VarType.INT);
-    assertThat(arrType.arraySizeExpr()).isInstanceOf(BinOpNode.class);
   }
 
   @Test

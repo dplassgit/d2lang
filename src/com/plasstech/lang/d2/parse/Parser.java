@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.lex.KeywordToken;
 import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -226,13 +227,13 @@ public class Parser {
     advance();
     // The size can be variable.
     ExprNode arraySize = expr();
-    ArrayType arrayType = new ArrayType(baseVarType, arraySize);
+    ArrayType arrayType = new ArrayType(baseVarType);
     if (token.type() != Token.Type.RBRACKET) {
       throw new ParseException(String.format("Unexpected %s; expected '['", token.text()),
               token.start());
     }
     advance();
-    return new DeclarationNode(varToken.text(), arrayType, varToken.start());
+    return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
   }
 
   private ProcedureNode procedure(Token varToken) {

@@ -1,14 +1,10 @@
 package com.plasstech.lang.d2.type;
 
-import com.plasstech.lang.d2.parse.node.ExprNode;
-
 public class ArrayType implements VarType {
   private final VarType baseType;
-  private final ExprNode arraySize;
 
-  public ArrayType(VarType baseType, ExprNode arraySize) {
+  public ArrayType(VarType baseType) {
     this.baseType = baseType;
-    this.arraySize = arraySize;
   }
 
   @Override
@@ -18,10 +14,6 @@ public class ArrayType implements VarType {
 
   public VarType baseType() {
     return baseType;
-  }
-
-  public ExprNode arraySizeExpr() {
-    return arraySize;
   }
 
   @Override

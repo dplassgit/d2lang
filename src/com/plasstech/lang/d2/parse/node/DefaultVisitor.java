@@ -61,4 +61,8 @@ public class DefaultVisitor implements NodeVisitor {
   @Override
   public void visit(ReturnNode returnNode) {
   }
+
+  @Override
+  public void visit(ArrayDeclarationNode node) {
+  }
 }
