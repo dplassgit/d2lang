@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
@@ -106,58 +107,88 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(BinOp op) {
-    int r1 = (Integer) resolve(op.rhs1());
-    int r2 = (Integer) resolve(op.rhs2());
-    int result;
+    Object left = resolve(op.left());
+    Object right = resolve(op.right());
+
+    Object result;
+    if (left instanceof Integer && right instanceof Integer) {
+      result = visitBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof String && right instanceof String) {
+      result = visitBinOp(op, (String) left, (String) right);
+    } else if (left instanceof String && right instanceof Integer) {
+      result = visitBinOp(op, (String) left, (Integer) right);
+    } else {
+      result = 0;
+    }
+
+    setValue(op.destination(), result);
+  }
+
+  private Object visitBinOp(BinOp op, String left, Integer right) {
+    if (op.operator() == Token.Type.LBRACKET) {
+      return "" + left.charAt(right);
+    }
+    throw new IllegalStateException("Unknown string/int binop " + op.operator());
+  }
+
+  private Object visitBinOp(BinOp op, String left, String right) {
+    switch (op.operator()) {
+      case EQEQ:
+        return left.equals(right) ? 1 : 0;
+      case GEQ:
+        return left.compareTo(right) != -1;
+      case GT:
+        return left.compareTo(right) == 1;
+      case LEQ:
+        return left.compareTo(right) != 1;
+      case LT:
+        return left.compareTo(right) == -1;
+      case NEQ:
+        return left.equals(right) ? 0 : 1;
+      case PLUS:
+        return left + right;
+
+      default:
+        throw new IllegalStateException("Unknown string binop " + op.operator());
+    }
+  }
+
+  private int visitBinOp(BinOp op, int left, int right) {
     switch (op.operator()) {
       case AND:
-        result = ((r1 != 0) && (r2 != 0)) ? 1 : 0;
-        break;
+        return ((left != 0) && (right != 0)) ? 1 : 0;
       case OR:
-        result = ((r1 != 0) || (r2 != 0)) ? 1 : 0;
-        break;
+        return ((left != 0) || (right != 0)) ? 1 : 0;
       case DIV:
-        result = r1 / r2;
-        break;
+        return left / right;
       case EQEQ:
-        result = (r1 == r2) ? 1 : 0;
-        break;
+        return (left == right) ? 1 : 0;
       case GEQ:
-        result = (r1 >= r2) ? 1 : 0;
-        break;
+        return (left >= right) ? 1 : 0;
       case GT:
-        result = (r1 > r2) ? 1 : 0;
-        break;
+        return (left > right) ? 1 : 0;
       case LEQ:
-        result = (r1 <= r2) ? 1 : 0;
-        break;
+        return (left <= right) ? 1 : 0;
       case LT:
-        result = (r1 < r2) ? 1 : 0;
-        break;
+        return (left < right) ? 1 : 0;
       case MINUS:
-        result = r1 - r2;
-        break;
+        return left - right;
       case MOD:
-        result = r1 % r2;
-        break;
+        return left % right;
       case MULT:
-        result = r1 * r2;
-        break;
+        return left * right;
       case NEQ:
-        result = (r1 != r2) ? 1 : 0;
-        break;
+        return (left != right) ? 1 : 0;
       case PLUS:
-        result = r1 + r2;
-        break;
+        return left + right;
       default:
-        throw new IllegalStateException("Unknown binop " + op.operator());
+        throw new IllegalStateException("Unknown int binop " + op.operator());
     }
-    setValue(op.destination(), result);
   }
 
   @Override
   public void visit(UnaryOp op) {
-    Object rhs = resolve(op.rhs());
+    Object rhs = resolve(op.operand());
     int r1;
     if (rhs == Boolean.TRUE) {
       r1 = 1;

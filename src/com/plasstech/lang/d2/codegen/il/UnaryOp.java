@@ -24,7 +24,7 @@ public class UnaryOp extends Op {
     return operator;
   }
 
-  public Operand rhs() {
+  public Operand operand() {
     return operand;
   }
 

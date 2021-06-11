@@ -138,6 +138,39 @@ public class InterpreterTest {
     assertThat(env.getValue("x")).isEqualTo(55);
   }
 
+  @Test
+  public void stringIndex() {
+    Environment env = execute("a='hi' b=a[1]");
+    assertThat(env.getValue("a")).isEqualTo("hi");
+    assertThat(env.getValue("b")).isEqualTo("i");
+  }
+
+  @Test
+  public void constStringIndex() {
+    Environment env = execute("a='hi'[1]");
+    assertThat(env.getValue("a")).isEqualTo("i");
+  }
+
+  @Test
+  public void stringAdd() {
+    Environment env = execute("a='hi' b=a + ' there'");
+    assertThat(env.getValue("a")).isEqualTo("hi");
+    assertThat(env.getValue("b")).isEqualTo("hi there");
+  }
+
+  @Test
+  public void stringMultipleAdds() {
+    Environment env = execute("a='hi' b=a + ' ' + a");
+    assertThat(env.getValue("a")).isEqualTo("hi");
+    assertThat(env.getValue("b")).isEqualTo("hi hi");
+  }
+
+  @Test
+  public void stringAddSelf() {
+    Environment env = execute("a='hi ' a = a + a");
+    assertThat(env.getValue("a")).isEqualTo("hi hi ");
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);

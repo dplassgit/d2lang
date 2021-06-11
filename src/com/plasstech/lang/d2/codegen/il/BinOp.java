@@ -7,15 +7,15 @@ import com.plasstech.lang.d2.lex.Token;
 public class BinOp extends Op {
   private final Location destination;
   private final Token.Type operator;
-  private final Operand rhs1;
-  private final Operand rhs2;
+  private final Operand left;
+  private final Operand right;
 
-  // TODO: check the token type
-  public BinOp(Location destination, Operand rhs1, Token.Type operator, Operand rhs2) {
+  // TODO: add types, to aid in codegen
+  public BinOp(Location destination, Operand left, Token.Type operator, Operand right) {
     this.destination = destination;
-    this.rhs1 = rhs1;
+    this.left = left;
     this.operator = operator;
-    this.rhs2 = rhs2;
+    this.right = right;
   }
 
   public Location destination() {
@@ -26,17 +26,17 @@ public class BinOp extends Op {
     return operator;
   }
 
-  public Operand rhs1() {
-    return rhs1;
+  public Operand left() {
+    return left;
   }
 
-  public Operand rhs2() {
-    return rhs2;
+  public Operand right() {
+    return right;
   }
 
   @Override
   public String toString() {
-    return String.format("%s = %s %s %s;", destination, rhs1, operator.value(), rhs2);
+    return String.format("%s = %s %s %s;", destination, left, operator.value(), right);
   }
 
   @Override

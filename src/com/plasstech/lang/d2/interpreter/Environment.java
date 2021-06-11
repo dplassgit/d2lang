@@ -29,7 +29,6 @@ public class Environment {
   }
 
   public void setValue(Location location, Object value) {
-    // TODO: can think about mangling here
     values.put(location.name(), value);
   }
 
@@ -42,7 +41,6 @@ public class Environment {
   }
 
   public Object getValue(String name) {
-    // TODO: can think about mangling here
     Object value = values.get(name);
     if (value == null && parent() != null) {
       return parent().getValue(name);

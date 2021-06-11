@@ -51,10 +51,14 @@ if a==3 {
 // x:string
 x="hi"
 x='hi'
-x=""
-x=" "
+z=""
+z=" "
+x=x+z
+x=x+' there'
 y=x
-print y
+println ""
+println "y = " + y
+println "first letter of x = " + x[0]
 
 main {
   f:bool
