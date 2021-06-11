@@ -108,6 +108,16 @@ public class ILCodeGeneratorTest {
     generateProgram("f:proc(n:int, m:int):int {return n+m} main{ a=3 x=f(1, a) f(2,3) }");
   }
 
+  @Test
+  public void generate_stringIndex() {
+    generateProgram("a='hi' b=a[1]");
+  }
+
+  @Test
+  public void generate_constStringIndex() {
+    generateProgram("a='hi'[1]");
+  }
+
   private List<Op> generateProgram(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);

@@ -13,7 +13,6 @@ public abstract class Location implements Operand {
 
   @Override
   public String toString() {
-    //return String.format("%s (%s)", name, this.getClass().getSimpleName());
-    return name;
+    return String.format("/* (%s) */ %s", this.getClass().getSimpleName(), name);
   }
 }
