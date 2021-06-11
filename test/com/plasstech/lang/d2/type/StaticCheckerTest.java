@@ -260,7 +260,7 @@ public class StaticCheckerTest {
 
   @Test
   public void execute_binOpMismatch() {
-    for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
+    for (String op : ImmutableList.of("==", "!=")) {
       assertExecuteError(String.format("a=true %s 3", op), "Type mismatch");
       assertExecuteError(String.format("a='hi' %s 3", op), "Type mismatch");
     }
@@ -277,15 +277,26 @@ public class StaticCheckerTest {
   public void execute_badBooleanBinOp() {
     for (String op : ImmutableList.of(">=", "<=")) {
       assertExecuteError(String.format("a=true %s false", op), "Cannot apply");
+      assertExecuteError(String.format("a=true %s 3", op), "Cannot apply");
     }
   }
 
   @Test
-  public void execute_binOpSingleCharMismatch() {
-    for (char c : "+-|&".toCharArray()) {
-      assertExecuteError(String.format("a=true %c 3", c), "Type mismatch");
-      assertExecuteError(String.format("a='hi' %c 3", c), "Type mismatch");
+  public void execute_badBooleanSingleCharMismatch() {
+    for (char c : "+-".toCharArray()) {
+      assertExecuteError(String.format("a=true %c 3", c), "Cannot apply");
     }
+    for (char c : "|&".toCharArray()) {
+      assertExecuteError(String.format("a=true %c 3", c), "Type mismatch");
+    }
+  }
+
+  @Test
+  public void execute_badStringSingleCharMismatch() {
+    for (char c : "-|&".toCharArray()) {
+      assertExecuteError(String.format("a='hi' %c 3", c), "Cannot apply");
+    }
+    assertExecuteError("a='hi' + 3", "Type mismatch");
   }
 
   @Test
@@ -314,6 +325,25 @@ public class StaticCheckerTest {
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("b").type()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("c").type()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void execute_stringIndex() {
+    SymTab symTab = checkProgram("b='hi' a=b[1]");
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void execute_stringIndexConstant() {
+    SymTab symTab = checkProgram("a='hi'[1]");
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void execute_badStringIndex() {
+    assertExecuteError("b='hi' a=b['bye']", "string index must be INT");
+    assertExecuteError("b='hi' a=b[false]", "string index must be INT");
+    assertExecuteError("b='hi' a='hi'[b]", "string index must be INT");
   }
 
   @Test
@@ -395,8 +425,8 @@ public class StaticCheckerTest {
   public void execute_whileError() {
     assertExecuteError("while a { print a }", "UNKNOWN");
     assertExecuteError("while 1 { print 1 }", "INT");
-    assertExecuteError("while true do i = false + 1{ }", "mismatch");
-    assertExecuteError("while true { i = false + 1}", "mismatch");
+    assertExecuteError("while true do i = false + 1 {}", "Cannot apply");
+    assertExecuteError("while true {i = false + 1}", "Cannot apply");
   }
 
   @Test
@@ -568,7 +598,8 @@ public class StaticCheckerTest {
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     assertWithMessage("Should have result error for:\n " + program).that(result.isError()).isTrue();
-    assertThat(result.message()).contains(messageShouldContain);
+    assertWithMessage("Should have correct error for:\n " + program).that(result.message())
+            .contains(messageShouldContain);
   }
 
   private SymTab checkProgram(String program) {

@@ -38,7 +38,7 @@ public class StaticChecker extends DefaultVisitor {
 
   private static final Set<Token.Type> STRING_OPERATORS = //
           ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
-                  Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS
+                  Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS, Token.Type.LBRACKET
           // , Token.Type.MOD // eventually
           );
 
@@ -189,12 +189,12 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
-  public void visit(BinOpNode binOpNode) {
-    // Make sure that the left = right
-    Node left = binOpNode.left();
+  public void visit(BinOpNode node) {
+    // Make sure that the left type = right type, mostly.
+    Node left = node.left();
     left.accept(this);
 
-    Node right = binOpNode.right();
+    Node right = node.right();
     right.accept(this);
 
     if (left.varType().isUnknown()) {
@@ -204,27 +204,33 @@ public class StaticChecker extends DefaultVisitor {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    if (!left.varType().equals(right.varType())) {
+    // Check that they're not trying to, for example, multiply booleans
+    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(node.operator())) {
+      throw new TypeException(
+              String.format("Cannot apply %s operator to boolean expression", node.operator()),
+              left.position());
+    }
+    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(node.operator())) {
+      throw new TypeException(
+              String.format("Cannot apply %s operator to string expression", node.operator()),
+              left.position());
+    }
+    if (left.varType() == VarType.STRING && node.operator() == Token.Type.LBRACKET) {
+      if (right.varType() != VarType.INT) {
+        throw new TypeException(
+                String.format("Type mismatch: string index must be INT; was %s", right.varType()),
+                right.position());
+      }
+    } else if (!left.varType().equals(right.varType())) {
       throw new TypeException(String.format("Type mismatch: %s is %s; %s is %s", left,
               left.varType(), right, right.varType()), left.position());
     }
 
-    // Check that they're not trying to, for example, multiply booleans
-    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(binOpNode.operator())) {
-      throw new TypeException(
-              String.format("Cannot apply %s operator to boolean expression", binOpNode.operator()),
-              left.position());
-    }
-    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(binOpNode.operator())) {
-      throw new TypeException(
-              String.format("Cannot apply %s operator to string expression", binOpNode.operator()),
-              left.position());
-    }
     if ((left.varType() == VarType.INT || left.varType() == VarType.STRING)
-            && COMPARISION_OPERATORS.contains(binOpNode.operator())) {
-      binOpNode.setVarType(VarType.BOOL);
+            && COMPARISION_OPERATORS.contains(node.operator())) {
+      node.setVarType(VarType.BOOL);
     } else {
-      binOpNode.setVarType(left.varType());
+      node.setVarType(left.varType());
     }
   }
 
