@@ -344,6 +344,7 @@ public class StaticCheckerTest {
     assertExecuteError("b='hi' a=b['bye']", "string index must be INT");
     assertExecuteError("b='hi' a=b[false]", "string index must be INT");
     assertExecuteError("b='hi' a='hi'[b]", "string index must be INT");
+    assertExecuteError("b=3 a=b[3]", "Cannot apply LBRACKET operator to int expression");
   }
 
   @Test

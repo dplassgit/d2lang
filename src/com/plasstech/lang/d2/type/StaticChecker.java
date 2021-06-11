@@ -36,6 +36,11 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.OR, Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
           Token.Type.GEQ, Token.Type.NEQ);
 
+  private static final Set<Token.Type> INT_OPERATORS = //
+          ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
+                  Token.Type.GEQ, Token.Type.NEQ, Token.Type.DIV, Token.Type.MINUS, Token.Type.MOD,
+                  Token.Type.MULT, Token.Type.PLUS);
+
   private static final Set<Token.Type> STRING_OPERATORS = //
           ImmutableSet.of(Token.Type.EQEQ, Token.Type.LT, Token.Type.GT, Token.Type.LEQ,
                   Token.Type.GEQ, Token.Type.NEQ, Token.Type.PLUS, Token.Type.LBRACKET
@@ -208,6 +213,11 @@ public class StaticChecker extends DefaultVisitor {
     if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(node.operator())) {
       throw new TypeException(
               String.format("Cannot apply %s operator to boolean expression", node.operator()),
+              left.position());
+    }
+    if (left.varType() == VarType.INT && !INT_OPERATORS.contains(node.operator())) {
+      throw new TypeException(
+              String.format("Cannot apply %s operator to int expression", node.operator()),
               left.position());
     }
     if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(node.operator())) {
