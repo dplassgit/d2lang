@@ -29,4 +29,9 @@ public class ArrayType implements VarType {
   public int hashCode() {
     return 23 * name().hashCode() + 7;
   }
+
+  @Override
+  public String toString() {
+    return name();
+  }
 }

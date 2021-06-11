@@ -50,6 +50,9 @@ public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> BOOLEAN_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
           Token.Type.LT, Token.Type.GT, Token.Type.NEQ, Token.Type.AND, Token.Type.OR);
 
+  private static final Set<Token.Type> ARRAY_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
+          Token.Type.NEQ, Token.Type.LBRACKET);
+
   private final ProgramNode root;
   private final SymTab symbolTable = new SymTab();
 

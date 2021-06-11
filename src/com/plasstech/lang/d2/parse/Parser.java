@@ -581,6 +581,14 @@ public class Parser {
       IntToken it = (IntToken) token;
       advance();
       return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+    } else if (token.type() == Token.Type.BOOL) {
+      BoolToken bt = (BoolToken) token;
+      advance();
+      return new ConstNode<Boolean>(bt.value(), VarType.BOOL, bt.start());
+    } else if (token.type() == Token.Type.STRING) {
+      Token st = token;
+      advance();
+      return new ConstNode<String>(st.text(), VarType.STRING, st.start());
     } else if (token.type() == Token.Type.VARIABLE) {
       Token varToken = token;
       String name = token.text();
@@ -590,14 +598,6 @@ public class Parser {
       } else {
         return new VariableNode(name, varToken.start());
       }
-    } else if (token.type() == Token.Type.BOOL) {
-      BoolToken bt = (BoolToken) token;
-      advance();
-      return new ConstNode<Boolean>(bt.value(), VarType.BOOL, bt.start());
-    } else if (token.type() == Token.Type.STRING) {
-      Token st = token;
-      advance();
-      return new ConstNode<String>(st.text(), VarType.STRING, st.start());
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       ExprNode expr = expr();
@@ -608,11 +608,80 @@ public class Parser {
         throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
                 token.start());
       }
+    } else if (token.type() == Token.Type.LBRACKET) {
+      // array literal
+      return arrayLiteral();
     } else {
       throw new ParseException(
               String.format("Unexpected %s; expected literal, variable or '('", token.text()),
               token.start());
     }
+  }
+
+  private ExprNode arrayLiteral() {
+    assert (token.type() == Token.Type.LBRACKET);
+
+    Token openBracket = token;
+    // Array constant/literal.
+    advance(); // eat left bracket
+
+    // Future version:
+    // List<ExprNode> values = commaSeparatedExpressions();
+
+    // For first iteration: only allow const int[] or const string[] or const bool[]
+    if (token.type() != Token.Type.RBRACKET) {
+    List<ConstNode<?>> values = commaSeparated(new NextNode<ConstNode<?>>() {
+      @Override
+      public ConstNode<?> call() {
+        ExprNode atom = atom();
+        if (atom instanceof ConstNode) {
+          return (ConstNode<?>) atom;
+        }
+
+        throw new ParseException(
+                String.format("Illegal entry %s in array literal; only scalar literals allowed",
+                        token.text()),
+                token.start());
+      }
+    });
+
+    if (token.type() != Token.Type.RBRACKET) {
+      throw new ParseException(String.format("Unexpected %s; expected ']'", token.text()),
+              token.start());
+    }
+    advance(); // eat rbracket
+
+    VarType baseType = values.get(0).varType();
+    ArrayType arrayType = new ArrayType(baseType);
+
+    // TODO: check all values to make sure they're the same type
+    for (int i = 1; i < values.size(); ++i) {
+      if (!values.get(i).varType().equals(baseType)) {
+        throw new ParseException(
+                String.format("Inconsistent types in array literal; first was %s but one was %s",
+                        baseType, values.get(i).varType()),
+                openBracket.start());
+      }
+    }
+    if (baseType == VarType.BOOL) {
+      Boolean[] valuesArray = values.stream().map(node -> node.value()).toArray(Boolean[]::new);
+      return new ConstNode<Boolean[]>(valuesArray, arrayType, openBracket.start());
+    } else if (baseType == VarType.STRING) {
+      String[] valuesArray = values.stream().map(node -> node.value()).toArray(String[]::new);
+      return new ConstNode<String[]>(valuesArray, arrayType, openBracket.start());
+    } else if (baseType == VarType.INT) {
+      Integer[] valuesArray = values.stream().map(node -> node.value()).toArray(Integer[]::new);
+      return new ConstNode<Integer[]>(valuesArray, arrayType, openBracket.start());
+    }
+    throw new ParseException(
+            String.format("Illegal type %s in array literal; only scalar literals allowed",
+                    baseType.toString()),
+            openBracket.start());
+  } else {
+    // empty array constants
+    // will this ever be allowed?
+    throw new ParseException("Empty array constants are not allowed yet", token.start());
+  }
   }
 
   private static Function<Token, Boolean> matchesEofOrMain() {

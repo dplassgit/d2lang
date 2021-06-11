@@ -38,7 +38,7 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class ParserTest {
   @Test
-  public void parse_print() {
+  public void print() {
     BlockNode root = parseStatements("print 123");
     assertThat(root.statements()).hasSize(1);
 
@@ -55,7 +55,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_println() {
+  public void println() {
     BlockNode root = parseStatements("println 123");
     assertThat(root.statements()).hasSize(1);
 
@@ -64,12 +64,12 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_printErr() {
+  public void printError() {
     assertParseError("Unexpected EOF", "print", "Unexpected EOF");
   }
 
   @Test
-  public void parse_assignErrors() {
+  public void assignErrors() {
     assertParseError("Missing expression", "a=", "expected literal");
     assertParseError("Missing close", "a=(3+", "expected literal");
     assertParseError("Missing close", "a=3+", "expected literal");
@@ -80,7 +80,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignInt() {
+  public void assignInt() {
     BlockNode root = parseStatements("a=3");
     assertThat(root.statements()).hasSize(1);
 
@@ -95,7 +95,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignTrueFalse() {
+  public void assignBoolean() {
     BlockNode root = parseStatements("a=true b=FALSE");
     assertThat(root.statements()).hasSize(2);
 
@@ -113,7 +113,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignmentAdd() {
+  public void assignAdd() {
     BlockNode root = parseStatements("a=3 + 4");
     assertThat(root.statements()).hasSize(1);
 
@@ -135,7 +135,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignmentMul() {
+  public void assignMult() {
     BlockNode root = parseStatements("a=3 * 4");
     assertThat(root.statements()).hasSize(1);
 
@@ -158,12 +158,12 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignmentAddChained() {
+  public void assignAddChained() {
     parseStatements("a=3+4*b-5");
   }
 
   @Test
-  public void parse_assignment() {
+  public void assign() {
     BlockNode root = parseStatements("a=b");
     assertThat(root.statements()).hasSize(1);
 
@@ -178,7 +178,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryMinus() {
+  public void unaryMinus() {
     BlockNode root = parseStatements("a=-b");
     assertThat(root.statements()).hasSize(1);
 
@@ -195,7 +195,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryMinusConstant() {
+  public void unaryMinusConstant() {
     BlockNode root = parseStatements("a=-3");
     assertThat(root.statements()).hasSize(1);
 
@@ -209,7 +209,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryPlusConstant() {
+  public void unaryPlusConstant() {
     BlockNode root = parseStatements("a=+3");
     assertThat(root.statements()).hasSize(1);
 
@@ -223,7 +223,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryNotConstant() {
+  public void unaryNotConstant() {
     BlockNode root = parseStatements("a=!true");
     assertThat(root.statements()).hasSize(1);
 
@@ -237,7 +237,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryNot() {
+  public void unaryNot() {
     BlockNode root = parseStatements("a=!b");
     assertThat(root.statements()).hasSize(1);
 
@@ -251,7 +251,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryPlus() {
+  public void unaryPlus() {
     BlockNode root = parseStatements("a=+b");
     assertThat(root.statements()).hasSize(1);
 
@@ -268,7 +268,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryExpr() {
+  public void unaryExpr() {
     BlockNode root = parseStatements("a=+(b+-c)");
     assertThat(root.statements()).hasSize(1);
 
@@ -283,7 +283,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_unaryNegativeInt() {
+  public void unaryNegativeInt() {
     assertUnaryAssignConstant("a=-5", -5);
     assertUnaryAssignConstant("a=-+5", -5);
     assertUnaryAssignConstant("a=+-5", -5);
@@ -291,7 +291,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_multipleUnary() {
+  public void multipleUnary() {
     assertUnaryAssignConstant("a=++5", 5);
     assertUnaryAssignConstant("a=+++5", 5);
     assertUnaryAssignConstant("a=--5", 5);
@@ -313,21 +313,21 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_each_binop_single() {
+  public void binopOperator() {
     for (char c : "+-*/%><|&".toCharArray()) {
       parseStatements(String.format("a=b%c5", c));
     }
   }
 
   @Test
-  public void parse_each_binop_multiple() {
+  public void binopCompare() {
     for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
       parseStatements(String.format("a=b%s5", op));
     }
   }
 
   @Test
-  public void parse_allExprTypes_exceptAndOr() {
+  public void allExprTypes_exceptAndOr() {
     // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
@@ -338,7 +338,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_allExprTypes() {
+  public void allExprTypes() {
     BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
@@ -349,7 +349,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_program() {
+  public void program() {
     BlockNode root = parseStatements("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
 
     List<StatementNode> statements = root.statements();
@@ -363,7 +363,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignmentParens() {
+  public void assignParens() {
     BlockNode root = parseStatements("a=(3)");
 
     assertThat(root.statements()).hasSize(1);
@@ -378,7 +378,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_if() {
+  public void parseIf() {
     BlockNode root = parseStatements("if a==3 { print a a=4 }");
 
     List<StatementNode> statements = root.statements();
@@ -391,7 +391,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifEmpty() {
+  public void ifEmptyBlock() {
     BlockNode root = parseStatements("if a==3 { }");
 
     List<StatementNode> statements = root.statements();
@@ -405,7 +405,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifNested() {
+  public void ifNested() {
     BlockNode root = parseStatements("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a"
             + " } " + "} }" + "else { print 4 print a}");
 
@@ -418,7 +418,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifElse() {
+  public void ifElse() {
     BlockNode root = parseStatements("if a==3 { print a } else { print 4 print a}");
 
     List<StatementNode> statements = root.statements();
@@ -430,7 +430,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifElif() {
+  public void ifElif() {
     BlockNode root = parseStatements("if a==3 { print a } elif a==4 { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}");
     List<StatementNode> statements = root.statements();
@@ -442,7 +442,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_ifError() {
+  public void ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
     assertParseError("Missing close brace", "if a==3 { print a } else {print 4", "expected 'print");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
@@ -452,7 +452,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_while() {
+  public void whileTrue() {
     BlockNode root = parseStatements("while true {}");
 
     List<StatementNode> statements = root.statements();
@@ -467,7 +467,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_whileDo() {
+  public void whileDo() {
     BlockNode root = parseStatements("while true do i = 1 {}");
 
     List<StatementNode> statements = root.statements();
@@ -485,7 +485,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_whileExprDo() {
+  public void whileExprDo() {
     BlockNode root = parseStatements("while i < 30 do i = 1 {}");
 
     List<StatementNode> statements = root.statements();
@@ -504,7 +504,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_whileExprDoBlock() {
+  public void whileExprDoBlock() {
     BlockNode root = parseStatements("while i < 30 do i = 1 {print i a=i}");
 
     List<StatementNode> statements = root.statements();
@@ -517,7 +517,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_whileBreak() {
+  public void whileBreak() {
     BlockNode root = parseStatements("while true {break continue}");
 
     List<StatementNode> statements = root.statements();
@@ -532,12 +532,12 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_whileNotAssignment() {
+  public void whileDoNotAssignment() {
     parseStatements("while true do advance(3) {}");
   }
 
   @Test
-  public void parse_whileError() {
+  public void whileError() {
     assertParseError("Missing expression", "while print", "expected literal");
     assertParseError("Missing open brace", "while a==3 print", "expected {");
     assertParseError("Missing close brace", "while a==3 {print", "expected literal");
@@ -552,13 +552,13 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_mainEmpty() {
+  public void mainEmpty() {
     ProgramNode root = parseProgram("main{}");
     assertThat(root.main().isPresent()).isTrue();
   }
 
   @Test
-  public void parse_statementThenMainEmpty() {
+  public void statementThenMainEmpty() {
     ProgramNode root = parseProgram("print 123 main{}");
     BlockNode block = root.statements();
     assertThat(block.statements()).hasSize(1);
@@ -576,8 +576,8 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_mainWithStatement() {
-    ProgramNode root = parseProgram("main{print 123 }");
+  public void mainWithStatement() {
+    ProgramNode root = parseProgram("main{ print 123 }");
     BlockNode globalBlock = root.statements();
     assertThat(globalBlock.statements()).isEmpty();
     MainNode main = root.main().get();
@@ -591,7 +591,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_mainError() {
+  public void mainError() {
     assertParseError("Missing open brace", "main", "expected {");
     assertParseError("Missing close brace", "main {", "expected 'print");
     assertParseError("Missing eof ", "main {} print ", "expected EOF");
@@ -599,14 +599,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_declError() {
-    assertParseError("Missing type", "a:", "expected INT, BOOL");
-    assertParseError("Missing type", "a::", "expected INT, BOOL");
-    assertParseError("Missing close brace", "a:print", "expected INT, BOOL");
-  }
-
-  @Test
-  public void parse_decl() {
+  public void decl() {
     BlockNode root = parseStatements("a:int");
 
     List<StatementNode> statements = root.statements();
@@ -618,7 +611,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_declBool() {
+  public void declBool() {
     BlockNode root = parseStatements("a:bool");
 
     List<StatementNode> statements = root.statements();
@@ -630,7 +623,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_declString() {
+  public void declString() {
     BlockNode root = parseStatements("a:string");
 
     List<StatementNode> statements = root.statements();
@@ -642,7 +635,14 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_assignString() {
+  public void declarationError() {
+    assertParseError("Missing type", "a:", "expected INT, BOOL");
+    assertParseError("Missing type", "a::", "expected INT, BOOL");
+    assertParseError("Missing close brace", "a:print", "expected INT, BOOL");
+  }
+
+  @Test
+  public void assignString() {
     BlockNode root = parseStatements("a='hi'");
 
     List<StatementNode> statements = root.statements();
@@ -658,7 +658,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_addStrings() {
+  public void addStrings() {
     BlockNode root = parseStatements("a='hi' + 'Hi'");
 
     List<StatementNode> statements = root.statements();
@@ -674,7 +674,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureErrors() {
+  public void procErrors() {
     assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
     assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
     assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
@@ -690,7 +690,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_simpleProcedure() {
+  public void simpleProc() {
     // the simplest possible procedure
     ProgramNode root = parseProgram("fib:proc {}");
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
@@ -699,7 +699,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureWithParam() {
+  public void procWithParam() {
     ProgramNode root = parseProgram("fib:proc(param1) {}");
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -710,7 +710,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureWithParams() {
+  public void procWith2Params() {
     ProgramNode root = parseProgram("fib:proc(param1, param2: string) {}");
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -723,7 +723,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureWithLocals() {
+  public void procWithLocals() {
     ProgramNode root = parseProgram("fib:proc() {local:int}");
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -732,7 +732,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_fullProcedure() {
+  public void fullProc() {
     ProgramNode root = parseProgram( //
             "fib:proc(typed:int, nontyped) : string {" //
                     + "typed = typed + 1" //
@@ -748,7 +748,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_returnVoid() {
+  public void procReturnVoid() {
     ProgramNode root = parseProgram("fib:proc() {return}");
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
@@ -763,7 +763,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallNoArgs() {
+  public void procCallNoArgs() {
     ProgramNode root = parseProgram("a = doit()");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
@@ -771,7 +771,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallAsStatement() {
+  public void procCallAsStatement() {
     ProgramNode root = parseProgram("doit(3)");
     CallNode call = (CallNode) (root.statements().statements().get(0));
 
@@ -782,7 +782,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallExpression() {
+  public void procCallAsExpression() {
     ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
 
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
@@ -791,7 +791,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallOneArgs() {
+  public void procCallOneArgs() {
     ProgramNode root = parseProgram("a = doit(1)");
 
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
@@ -800,13 +800,13 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallNoClosing() {
+  public void procCallErrors() {
     assertParseError("Should fail", "a = doit(1 b=3", "expected ')");
     assertParseError("Should fail", "a = doit(1,)", "expected literal");
   }
 
   @Test
-  public void parse_procedureCallMultipleArgs() {
+  public void procCallMultipleArgs() {
     ProgramNode root = parseProgram("a = doit(1, 2, 3)");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
@@ -814,7 +814,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_procedureCallNested() {
+  public void procCallNested() {
     ProgramNode root = parseProgram("a = doit3(1, doit1(2), doit2(3, 4))");
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
@@ -822,7 +822,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_arrayGet() {
+  public void arrayGet() {
     BlockNode root = parseStatements("a=b[3+c]");
 
     List<StatementNode> statements = root.statements();
@@ -840,7 +840,14 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_arrayDecl() {
+  public void arrayGetWeirdYetParseable() {
+    parseStatements("a=3[4+c]"); // will fail type checker
+    parseStatements("a='hi'['lol']"); // will fail type checker
+    parseStatements("a=fn()[4+c]");
+  }
+
+  @Test
+  public void arrayDecl() {
     BlockNode root = parseStatements("a:int[3]");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -855,7 +862,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_arrayDeclVariableSize() {
+  public void arrayDeclVariableSize() {
     BlockNode root = parseStatements("a:int[b+3]");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -870,7 +877,7 @@ public class ParserTest {
   }
 
   @Test
-  public void parse_arrayDeclError() {
+  public void arrayDeclError() {
     assertParseError("Should not parse incomplete array decl", "a:int[3", "expected '['");
     assertParseError("Should not parse incomplete array decl", "a:int[3 4]", "expected '['");
     assertParseError("Should not parse bad base array type", "a:hello[3]", "expected INT");
@@ -878,34 +885,87 @@ public class ParserTest {
 
   @Test
   @Ignore("Issue #38: Support multidimensional arrays")
-  public void parse_multiDimArrayGet() {
+  public void multiDimArrayGet() {
     BlockNode root = parseStatements("a=b[3+c][4][5]");
     System.out.println(root);
   }
 
   @Test
-  public void parse_arrayGetWeirdYetParseable() {
-    parseStatements("a=3[4+c]"); // will fail type checker
-    parseStatements("a='hi'['lol']"); // will fail type checker
-    parseStatements("a=fn()[4+c]");
-  }
-
-  @Test
   @Ignore("Assignments are still broken")
-  public void parse_arraySet() {
+  public void arraySet() {
     parseStatements("a[3] = 4");
   }
 
   @Test
   @Ignore
-  public void parse_arrayStmt() {
+  public void arrayStmt() {
     parseStatements("fn()[fn()]");
   }
 
   @Test
-  public void parse_arrayGetError() {
+  public void arrayGetError() {
     assertParseError("No closing bracket", "a=3[4+c b", "expected ']'");
     assertParseError("No closing bracket", "a=3[4+c b]", "expected ']'");
+  }
+
+  @Test
+  public void literalIntArray() {
+    BlockNode root = parseStatements("a=[1,2,3]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    @SuppressWarnings("unchecked")
+    ConstNode<Integer[]> array = (ConstNode<Integer[]>) expr;
+    assertThat(array.value()[0]).isEqualTo(1);
+  }
+
+  @Test
+  public void literalStringArray() {
+    BlockNode root = parseStatements("a=['one', 'two', 'three']");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    @SuppressWarnings("unchecked")
+    ConstNode<String[]> array = (ConstNode<String[]>) expr;
+    assertThat(array.value()[0]).isEqualTo("one");
+  }
+
+  @Test
+  public void literalBoolArray() {
+    BlockNode root = parseStatements("a=[true, false]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    @SuppressWarnings("unchecked")
+    ConstNode<Boolean[]> array = (ConstNode<Boolean[]>) expr;
+    assertThat(array.value()[0]).isTrue();
+    assertThat(array.value()[1]).isFalse();
+  }
+
+  @Test
+  public void literalArrayErrors() {
+    assertParseError("Should not parse", "a=[]", "Empty");
+    assertParseError("Should not parse", "a=[a]", "only scalar");
+    assertParseError("Should not parse", "a=[a+1]", "only scalar");
+    assertParseError("Should not parse", "a=[1,'hi']", "Inconsistent types");
   }
 
   private BlockNode parseStatements(String expression) {

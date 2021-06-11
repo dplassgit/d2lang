@@ -247,6 +247,7 @@ public class StaticCheckerTest {
     checkProgram("b:proc():int {return 0} a:string[b()]");
   }
 
+
   @Test
   public void execute_declarationArrayMismatch() {
     assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
