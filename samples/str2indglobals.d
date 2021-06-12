@@ -7,7 +7,7 @@ lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
 advance: proc() {
-  if (lexer_text[lexer_loc] != '$') {
+  if lexer_loc < length(lexer_text) { //[lexer_loc] != '$' {
     lexer_cc=lexer_text[lexer_loc]
   } else {
     // Indicates no more characters

@@ -297,7 +297,17 @@ public class StaticChecker extends DefaultVisitor {
               String.format("Cannot apply %s operator to int expression", unaryNode.operator()),
               expr.position());
     }
-    unaryNode.setVarType(expr.varType());
+    if (unaryNode.operator() == Token.Type.LENGTH) {
+      if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
+        throw new TypeException(
+                String.format("Type mismatch: LENGTH function must take STRING or ARRAY; was %s",
+                        expr.varType()),
+                expr.position());
+      }
+      unaryNode.setVarType(VarType.INT);
+    } else {
+      unaryNode.setVarType(expr.varType());
+    }
   }
 
   @Override

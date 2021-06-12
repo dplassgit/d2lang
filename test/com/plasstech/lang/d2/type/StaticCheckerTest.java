@@ -133,7 +133,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void manybinops() {
+  public void manyBinOps() {
     SymTab types = checkProgram("a=4 b=5  e=(a>=3)|!(b<3)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
@@ -154,6 +154,26 @@ public class StaticCheckerTest {
   @Test
   public void assignIntUnaryFailure() {
     assertExecuteError("a=3 b=!a", "NOT");
+  }
+
+  @Test
+  public void lengthNotStringFailure() {
+    assertExecuteError("a=length(false)", "Cannot apply LENGTH");
+    assertExecuteError("a=length(3)", "must take STRING");
+  }
+
+  @Test
+  public void lengthString() {
+    SymTab types = checkProgram("a=length('hi')");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    types = checkProgram("b='hi' a=length(b)");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void lengthArray() {
+    SymTab types = checkProgram("a=length([1,2,3])");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
   @Test
