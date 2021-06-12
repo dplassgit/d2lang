@@ -171,6 +171,14 @@ public class InterpreterTest {
     assertThat(env.getValue("a")).isEqualTo("hi hi ");
   }
 
+  @Test
+  public void arrayIter() {
+    Environment env = execute(
+            "a=[2,4,6] i=0 while i < 3 do i = i + 1 { print a[i] }");
+    assertThat(env.getValue("a")).isEqualTo(new Integer[] { 2, 4, 6 });
+    assertThat(env.output()).containsExactly("2", "4", "6");
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);

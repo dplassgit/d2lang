@@ -117,11 +117,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
+    } else if (left.getClass().isArray() && right instanceof Integer) {
+      result = visitBinOp(op, (Object[]) left, (Integer) right);
     } else {
-      result = 0;
+      result = -42;
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitBinOp(BinOp op, Object[] left, int right) {
+    if (op.operator() == Token.Type.LBRACKET) {
+      return left[right];
+    }
+    throw new IllegalStateException("Unknown array/int binop " + op.operator());
   }
 
   private Object visitBinOp(BinOp op, String left, Integer right) {
