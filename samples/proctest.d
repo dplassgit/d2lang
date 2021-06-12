@@ -40,6 +40,7 @@ notok2:proc(): int {
 		  return 3
 	  }
   }
+  return 5
   //} else {
 	  //print 3
 	  //return 5

@@ -50,70 +50,58 @@ KEYWORDS=[
 'error'
 ]
 
-Position: record {
-  line: int
-  col: int
-}
-  
-Token: record {
-  type: int
-  start: record Position
-  end: record Position
-  value: String
-  int_value: int
+// Global for token:
+token_type: int
+token_value: String
+token_int: int
+token_string: string
+
+// Global for lexer:
+lexer_text: string // full text
+lexer_line: int
+lexer_col:int 
+lexer_loc: int  // location inside text
+lexer_cc: string // current character
+
+new_lexer: proc(text: string) {
+  lexer_text = text
+  lexer_line = 1
+  lexer_col = 0
+  lexer_loc = 0
+  lecer_cc = ''
+  advance()
 }
 
-Lexer: record {
-  text: string // full text
-  line: int
-  col:int 
-  loc: int  // location inside text
-  cc: string // current character
-}
-
-new_lexer: proc(text: string): record Lexer {
-  this=new Lexer(
-    text, // text
-    1,  // line
-    0,  // col
-    0,  //loc
-    ''  // cc
-  )
-  advance(this)
-  return this
-}
-
-advance: proc(this: record Lexer) {
-  if (this.loc < this.text.length) {
-    this.cc=this.text[this.loc]
-    this.col=this.col + 1
+advance: proc() {
+  if (lexer_loc < lexer_text.length) {
+    lexer_cc=lexer_text[lexer_loc]
+    lexer_col=lexer_col + 1
   } else {
     // Indicates no more characters
-    this.cc=0
+    lexer_cc=0
   }
-  this.loc=this.loc + 1
+  lexer_loc=lexer_loc + 1
 }
 
-nextToken: proc(this: record Lexer): record Token {
+nextToken: proc(): String {
   // skip unwanted whitespace
-  while (this.cc == ' ' | this.cc == '\n' | this.cc == '\t' | this.cc == '\r') {
-    if (this.cc == '\n') {
-      this.line=this.line + 1
-      this.col=0
+  while (lexer_cc == ' ' | lexer_cc == '\n' | lexer_cc == '\t' | lexer_cc == '\r') {
+    if (cc == '\n') {
+      lexer_line=lexer_line + 1
+      lexer_col=0
     }
-    advance(this)
+    advance()
   }
 
-  start=new Position(this.line, this.col)
-  if (isDigit(this.cc)) {
-    return makeInt(this, start)
-  } else if (isLetter(this.cc)) {
-    return makeText(this, start)
-  } else if (this.cc !=0) {
-    return makeSymbol(this, start)
+  if (isDigit(lexer_cc)) {
+    return makeInt()
+  } else if (isLetter(lexer_cc)) {
+    return makeText()
+  } else if (cc !=0) {
+    return makeSymbol()
   }
 
-  return new Token(Type_EOF, this.start)
+  return Token(Type_EOF)
 }
 
 isLetter: proc(c:string):bool {
@@ -128,44 +116,50 @@ isLetterOrDigit: proc(c:string):bool {
   return isLetter(c) | isDigit(c)
 }
 
-makeText: proc(this:record Lexer, start:record Position):record Token {
+Token: proc(type: int): String {
+  token_type = type
+  return ""
+}
+
+makeText: proc():String {
   value=""
-  if (isLetter(this.cc)) {
-    value=value + this.cc
-    advance(this)
+  if (isLetter(lexer_cc)) {
+    value=value + lexer_cc
+    advance()
   }
-  while (isLetterOrDigit(this.cc)) {
-    value=value + this.cc
-    advance(this)
+  while (isLetterOrDigit(lexer_cc)) {
+    value=value + lexer_cc
+    advance()
   }
-  end=new Position(this.line, this.col)
 
   if value == 'true' {
-    return new Token(Type_TRUE, start, end, value)
+    return Token(Type_TRUE)
   } elif value == 'false' {
-    return new Token(Type_FALSE, start, end, value)
+    return Token(Type_FALSE)
   }
 
   i=0 while i < KEYWORDS.length do i = i + 1 {
     if value == KEYWORDS[i] {
-      return new Token(Type_KEYWORD, start, end, value, i)
+      return Token(Type_KEYWORD, value, i)
     }
   }
 
-  return new Token(Type_VARIABLE, start, end, value)
+  return Token(Type_VARIABLE, value)
 }
 
-makeInt: proc(this:record Lexer, start:record Position):record Token {
+makeInt: proc() {
   value=0
-  while this.cc >= '0' & this.cc <= '9' do advance(this) {
-    value=value * 10 + (asc(this.cc) - asc('0'))
+
+  while lexer_cc >= '0' & lexer_cc <= '9' do advance() {
+    value=value * 10 + (asc(lexer_cc) - asc('0'))
   }
-  end=new Position(this.line, this.col)
+  token_type = TYPE_int
+  token_int = value
   return new Token(TYPE_int, start, end, new String(value), value)
 }
 
 makeSymbol: proc(this:record Lexer, start:record Position):record Token {
-  oc=this.cc
+  oc=lexer_cc
   if oc == '=' {
     return startsWithEq(this, start)
   } elif oc == '<' {
@@ -215,32 +209,32 @@ makeSymbol: proc(this:record Lexer, start:record Position):record Token {
     advance(this)
     return new Token(Type_COMMA, start, oc)
   } else {
-    error "Unknown character %c" % this.cc
+    error "Unknown character %c" % lexer_cc
   }
 }
 
 startsWithSlash: proc(this: record Lexer, start: record Position): record Token {
   advance(this) // eat the first slash
-  if (this.cc == '/') {
+  if (lexer_cc == '/') {
     advance(this) // eat the second slash
-    while (this.cc !='\n' & this.cc !=0) {
+    while (lexer_cc !='\n' & lexer_cc !=0) {
       advance(this)
     }
-    if (this.cc !=0) {
+    if (lexer_cc !=0) {
       advance(this)
     }
-    this.line=this.line + 1
-    this.col=0
+    lexer_line=lexer_line + 1
+    lexer_col=0
     return nextrecord Token(this)
   }
   return new record Token(Type_DIV, start, '/')
 }
 
 startsWithNot: proc(this: record Lexer, start: record Position): record Token {
-  oc=this.cc
+  oc=lexer_cc
   advance(this)
-  if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+  if (lexer_cc == '=') {
+    end=new record Position(lexer_line, lexer_col)
     advance(this)
     return new record Token(Type_NEQ, start, end, "!=")
   }
@@ -248,10 +242,10 @@ startsWithNot: proc(this: record Lexer, start: record Position): record Token {
 }
 
 startsWithGt: proc(this: record Lexer, start: record Position): record Token {
-  oc=this.cc
+  oc=lexer_cc
   advance(this)
-  if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+  if (lexer_cc == '=') {
+    end=new record Position(lexer_line, lexer_col)
     advance(this)
     return new record Token(Type_GEQ, start, end, ">=")
   }
@@ -259,10 +253,10 @@ startsWithGt: proc(this: record Lexer, start: record Position): record Token {
 }
 
 startsWithLt: proc(this: record Lexer, start: record Position): record Token {
-  oc=this.cc
+  oc=lexer_cc
   advance(this)
-  if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+  if (lexer_cc == '=') {
+    end=new record Position(lexer_line, lexer_col)
     advance(this)
     return new record Token(Type_LEQ, start, end, "<=")
   }
@@ -270,10 +264,10 @@ startsWithLt: proc(this: record Lexer, start: record Position): record Token {
 }
 
 startsWithEq: proc(this: record Lexer, start: record Position): record Token {
-  oc=this.cc
+  oc=lexer_cc
   advance(this)
-  if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+  if (lexer_cc == '=') {
+    end=new record Position(lexer_line, lexer_col)
     advance(this)
     return new record Token(Type_EQEQ, start, end, "==")
   }
@@ -285,18 +279,18 @@ makeStringToken: proc(this: record Lexer, start: record Position, first: String)
   sb=""
   escape=false
   // TODO: fix backslash-escaping
-  while this.cc !=first & this.cc !=0 {
+  while lexer_cc !=first & lexer_cc !=0 {
     if (!escape) {
-      sb=sb + this.cc
+      sb=sb + lexer_cc
     }
     advance(this)
   }
 
-  if (this.cc == 0) {
+  if (lexer_cc == 0) {
     error "Unclosed string literal at %d,%d" % start.line, start.col
   }
 
   advance(this) // eat the closing tick/quote
-  end=new record Position(this.line, this.col)
-  return new record Token(Type_STRING, this.start, this.end, sb)
+  end=new record Position(lexer_line, lexer_col)
+  return new record Token(Type_STRING, lexer_start, lexer_end, sb)
 }
