@@ -210,7 +210,7 @@ makeSymbol: proc(this:record Lexer, start:record Position):record Token {
     advance(this)
     return new Token(Type_COLON, start, oc)
   } elif oc == '"'  | oc == '\'' {
-    return makeStringrecord Token(start, oc)
+    return makeStringToken(start, oc)
   } elif oc == ',' {
     advance(this)
     return new Token(Type_COMMA, start, oc)

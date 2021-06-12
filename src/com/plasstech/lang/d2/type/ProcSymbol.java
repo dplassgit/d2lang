@@ -35,4 +35,10 @@ public class ProcSymbol extends AbstractSymbol {
   public VarType returnType() {
     return node().returnType();
   }
+
+  @Override
+  public SymbolStorage storage() {
+    // TODO: this might be a local if it's nested
+    return SymbolStorage.GLOBAL;
+  }
 }

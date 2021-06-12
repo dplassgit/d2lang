@@ -99,7 +99,7 @@ public class SymTab {
             "%s already declared as %s. Cannot be redeclared as %s.", name, values.get(name),
             varType);
 //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
-    Symbol sym = new VariableSymbol(name).setType(varType);
+    Symbol sym = new VariableSymbol(name, this.storage).setType(varType);
     values.put(name, sym);
     return sym;
   }
@@ -112,7 +112,7 @@ public class SymTab {
               "Type error: %s already declared as %s. Cannot be assigned as %s.", name, sym.type(),
               varType);
     } else {
-      sym = new VariableSymbol(name).setType(varType);
+      sym = new VariableSymbol(name, this.storage).setType(varType);
     }
     sym.setAssigned();
     values.put(name, sym);

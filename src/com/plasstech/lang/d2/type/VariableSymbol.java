@@ -2,12 +2,16 @@ package com.plasstech.lang.d2.type;
 
 public class VariableSymbol extends AbstractSymbol {
 
-  public VariableSymbol(String name) {
+  private final SymbolStorage storage;
+
+  public VariableSymbol(String name, SymbolStorage storage) {
     super(name);
+    this.storage = storage;
   }
 
+  @Override
   public SymbolStorage storage() {
-    return SymbolStorage.GLOBAL;
+    return storage;
   }
 
   @Override

@@ -12,4 +12,5 @@ public interface Symbol {
 
   String name();
 
+  SymbolStorage storage();
 }

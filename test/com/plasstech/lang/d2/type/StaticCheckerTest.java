@@ -234,14 +234,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declarationAssignMismatch() {
+  public void declAssignMismatch() {
     assertExecuteError("a:int b=true a=b", "Type mismatch");
     assertExecuteError("a:bool b=a b=3", "used before assignment");
     assertExecuteError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
-  public void declarationArray() {
+  public void declArray() {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
@@ -249,7 +249,7 @@ public class StaticCheckerTest {
 
 
   @Test
-  public void declarationArrayMismatch() {
+  public void declArrayMismatch() {
     assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
     assertExecuteError("a:int[false]", "Array size must be INT; was BOOL");
     assertExecuteError("a:int['hi']", "Array size must be INT; was STRING");
@@ -469,6 +469,23 @@ public class StaticCheckerTest {
     assertExecuteError("a:string a=true", "mismatch");
     assertExecuteError("a:int a=''", "mismatch");
   }
+  
+  @Test
+  public void globalDeclsAreNeverUndefined() {
+    // Tests bug#39
+    checkProgram(//
+            "a:string " //
+                    + "p: proc {" //
+                    + "  print a" //
+                    + "}"//
+                    + "setup: proc {" //
+                    + "  a = 'hi'" //
+                    + "}" //
+                    + "setup()" //
+                    + "p()");
+  }
+
+
 
   @Test
   public void decl() {

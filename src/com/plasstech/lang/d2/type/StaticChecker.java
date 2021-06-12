@@ -134,10 +134,12 @@ public class StaticChecker extends DefaultVisitor {
     if (node.varType().isUnknown()) {
       // Look up variable in the (current) symbol table, and set it in the node.
       VarType existingType = symbolTable().lookup(node.name(), true);
-
       if (!existingType.isUnknown()) {
-        // BUG- parameters can be referenced without being assigned
-        if (!symbolTable().isAssigned(node.name())) {
+        // BUG- parameters can be referenced without being assigned...
+        Symbol symbol = symbolTable().getRecursive(node.name());
+        if (symbol.storage() == SymbolStorage.GLOBAL && !procedures.isEmpty()) {
+          // Globals can be referenced inside a proc without being assigned.
+        } else if (!symbolTable().isAssigned(node.name())) {
           // can't use it
           throw new TypeException(
                   String.format("Variable '%s' used before assignment", node.name()),

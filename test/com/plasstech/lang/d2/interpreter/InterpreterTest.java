@@ -195,6 +195,24 @@ public class InterpreterTest {
     assertThat(env.getValue("e")).isEqualTo(0);
   }
 
+  @Test
+  public void globalReference() {
+    // Tests bug#39
+    Environment env = execute("a:string a='bye'" //
+            + "p: proc {" //
+            + "  println a" //
+            + "}"//
+            + "setup: proc {" //
+            + "  a = 'hi'" //
+            + "}" //
+            + "// main {" //
+            + "  setup()" //
+            + "  p()" //
+            + "// }");
+    assertThat(env.getValue("a")).isEqualTo("hi");
+    assertThat(env.output()).containsExactly("hi");
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
@@ -205,6 +223,7 @@ public class InterpreterTest {
     ProgramNode root = (ProgramNode) parseNode;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
+    System.out.println(root);
     if (result.isError()) {
       throw new RuntimeException(result.message());
     }

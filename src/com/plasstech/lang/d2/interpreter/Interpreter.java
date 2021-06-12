@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
@@ -269,6 +270,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
     // 5. goto destination
     gotoLabel(procSymbol.name());
+  }
+
+  @Override
+  public void visit(ProcExit op) {
+    // if we get here, it means the method should have returned void. It may be an error, shrug.
+    logger.atWarning().log("ProcExit reached - doing return void instead");
+    visit(new Return());
   }
 
   @Override

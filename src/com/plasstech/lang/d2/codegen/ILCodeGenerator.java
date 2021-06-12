@@ -40,7 +40,9 @@ import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
@@ -48,7 +50,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final ProgramNode root;
-  private final SymTab symTab;
+  private final SymTab symbolTable;
 
   private final List<Op> operations = new ArrayList<>();
   private final Stack<String> whileBreaks = new Stack<>();
@@ -56,17 +58,24 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private int tempId;
   private int labelId;
-  private Stack<ProcedureNode> procedures = new Stack<>();
+  private Stack<ProcSymbol> procedures = new Stack<>();
 
-  public ILCodeGenerator(ProgramNode root, SymTab symTab) {
+  public ILCodeGenerator(ProgramNode root, SymTab symbolTable) {
     this.root = root;
-    this.symTab = symTab;
+    this.symbolTable = symbolTable;
   }
 
   @Override
   public List<Op> generate() {
     root.accept(this);
     return operations;
+  }
+
+  private SymTab symbolTable() {
+    if (procedures.isEmpty()) {
+      return symbolTable;
+    }
+    return procedures.peek().symTab();
   }
 
   private String generateLabel(String prefix) {
@@ -77,7 +86,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private TempLocation generateTemp(VarType varType) {
     tempId++;
     String name = String.format("__temp%d", tempId);
-    symTab.declare(name, varType);
+    symbolTable().declare(name, varType);
     // TODO: keep the vartype with the location
     return new TempLocation(name);
   }
@@ -95,7 +104,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(AssignmentNode node) {
     String name = node.variable().name();
-    Location dest = new StackLocation(name); // this may be a global or a local/parameter (stack)
+
+    // Look up storage in current symbol table
+    // this may be a global or a local/parameter (stack)
+    Location dest = lookupLocation(name);
     node.variable().setLocation(dest);
 
     Node expr = node.expr();
@@ -103,6 +115,16 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Location source = expr.location();
 
     emit(new Transfer(dest, source));
+  }
+
+  private Location lookupLocation(String name) {
+    Symbol variable = symbolTable().getRecursive(name);
+    switch (variable.storage()) {
+      case GLOBAL:
+        return new MemoryAddress(name);
+      default:
+        return new StackLocation(name);
+    }
   }
 
   @Override
@@ -121,9 +143,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(VariableNode node) {
-    StackLocation source = new StackLocation(node.name());
+    // this may be a global or a local/parameter (stack)
+    Location source = lookupLocation(node.name());
+
     TempLocation destination = generateTemp(node.varType());
     node.setLocation(destination);
+
     // Retrieve location of variable and provide it in a temp
     emit(new Transfer(destination, source));
   }
@@ -140,7 +165,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       leftSrc = new ConstantOperand(simpleLeft.value());
     } else {
       left.accept(this);
-      // should we copy left's location to a new temp?!
+
+      // should we copy to a new temp?!
       leftSrc = left.location();
     }
 
@@ -155,25 +181,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       rightSrc = new ConstantOperand(simpleRight.value());
     } else {
       right.accept(this);
-      // should we copy right's location to a new temp?!
+      // should we copy to a new temp?!
       rightSrc = right.location();
     }
 
-//    switch (node.operator()) {
-//      case MINUS:
-//      case DIV:
-//      case MULT:
-//      case PLUS:
-//      case EQEQ:
     TempLocation location = generateTemp(node.varType());
     node.setLocation(location);
+    // location = leftSrc (operator) rightSrc
     emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
-//        break;
-//      default:
-//        emit("UNKNOWN OP " + node.operator());
-//        break;
-//    }
-
   }
 
   @Override
@@ -191,6 +206,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         emit(new UnaryOp(destination, node.operator(), expr.location()));
         break;
       case PLUS:
+        // tiny optimization
         emit(new Transfer(destination, expr.location()));
         break;
       default:
@@ -296,7 +312,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       node.expr().get().accept(this);
       // copy the location of the result to the current procedure's destination.
       Location exprLoc = node.expr().get().location();
-      Location procDest = procedures.peek().location();
+      Location procDest = procedures.peek().node().location();
       // copy the exprloc to the dest
       emit(new Transfer(procDest, exprLoc));
       emit(new Return(procDest));
@@ -307,7 +323,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(ProcedureNode node) {
-    procedures.push(node);
+    // Look up procedure in current scope
+    ProcSymbol procSym = (ProcSymbol) symbolTable().getRecursive(node.name());
+    assert (procSym != null);
+
+    procedures.push(procSym);
+
     if (node.returnType() != VarType.VOID) {
       // generate a destination
       TempLocation tempDestination = generateTemp(node.returnType());
@@ -330,6 +351,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // there should have already been a regular "return" with the value.
     emit(new ProcExit());
     emit(new Label(afterLabel));
+
     procedures.pop();
   }
 

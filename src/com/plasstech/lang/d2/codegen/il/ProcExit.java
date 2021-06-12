@@ -5,4 +5,9 @@ public class ProcExit extends Op {
   public String toString() {
     return "} // end proc";
   }
+
+  @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
 }
