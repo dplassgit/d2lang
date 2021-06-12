@@ -525,9 +525,9 @@ public class Parser {
   }
 
   private ExprNode unary() {
+    Token unaryToken = token;
     if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS
             || token.type() == Token.Type.NOT) {
-      Token unaryToken = token;
       advance();
       ExprNode expr = unary(); // should this be expr? unary? atom?
 
@@ -553,6 +553,18 @@ public class Parser {
       // However, at this point we don't have types in the expr tree yet so we can't
       // do that exact optimization yet.
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
+    } else if (matchesKeyword(token, KeywordType.LENGTH)) {
+      advance();
+      if (token.type() != Token.Type.LPAREN) {
+        throw new ParseException(String.format("Expected '(', found %s", token), token.start());
+      }
+      advance();
+      ExprNode hopefullyAString = expr();
+      if (token.type() != Token.Type.RPAREN) {
+        throw new ParseException(String.format("Expected ')', found %s", token), token.start());
+      }
+      advance();
+      return new UnaryNode(Token.Type.LENGTH, hopefullyAString, unaryToken.start());
     }
     return arrayGet();
   }

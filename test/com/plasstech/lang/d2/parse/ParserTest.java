@@ -313,6 +313,23 @@ public class ParserTest {
   }
 
   @Test
+  public void unaryLength() {
+    BlockNode root = parseStatements("a=length('hi')");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.operator()).isEqualTo(Token.Type.LENGTH);
+    ConstNode<String> right = (ConstNode<String>) unary.expr();
+    assertThat(right.value()).isEqualTo("hi");
+  }
+
+  @Test
   public void binopOperator() {
     for (char c : "+-*/%><|&".toCharArray()) {
       parseStatements(String.format("a=b%c5", c));

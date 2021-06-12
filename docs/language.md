@@ -94,6 +94,15 @@ No "character" type - only strings, like Python. I *really* like the Python synt
 length("foo")
 ```
 
+### String length explorations
+
+```
+length("foo") // requires better built-in support but may be implementable as a quasi-unary operator
+"foo".length  // also requires some built-in support
+#"foo"        // pro: standard unary operator, a little built-in support. con: weird
+"foo"#        // pro: ? con: weird. trailing operator
+```
+
 ## Future thoughts:
 
 ### Records
