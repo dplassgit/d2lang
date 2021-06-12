@@ -116,18 +116,18 @@ public class InterpreterTest {
 
   @Test
   public void recursiveProcCall() {
-    Environment env = execute(
-            "        f:proc(a:int):int { " //
+    Environment env = execute(//
+            "          f:proc(a:int):int { " //
                     + "  if a==1 { return a } " //
                     + "  else {return a*f(a-1)}} " //
                     + "main{x=f(3)}");
     assertThat(env.getValue("x")).isEqualTo(6);
   }
-  
+
   @Test
   public void dualRecursiveProcCall() {
     Environment env = execute( //
-            "fib: proc(n: int) : int {\n" //
+            "          fib: proc(n: int) : int {\n" //
                     + "  if n <= 1 {\n" //
                     + "    return n \n" //
                     + "  } else {\n" //
@@ -173,10 +173,26 @@ public class InterpreterTest {
 
   @Test
   public void arrayIter() {
-    Environment env = execute(
-            "a=[2,4,6] i=0 while i < 3 do i = i + 1 { print a[i] }");
+    Environment env = execute("a=[2,4,6] i=0 while i < 3 do i = i + 1 { print a[i] }");
     assertThat(env.getValue("a")).isEqualTo(new Integer[] { 2, 4, 6 });
     assertThat(env.output()).containsExactly("2", "4", "6");
+  }
+
+  @Test
+  public void compareString() {
+    Environment env = execute(//
+            "        isDigit: proc(c: string): bool { return c >= '0' & c <= '9' }" + //
+                    "a = isDigit(' ')" + //
+                    "b = isDigit('0')" + //
+                    "c = isDigit('1')" + //
+                    "d = isDigit('9')" + //
+                    "e = isDigit('z')" + //
+                    "");
+    assertThat(env.getValue("a")).isEqualTo(0);
+    assertThat(env.getValue("b")).isEqualTo(1);
+    assertThat(env.getValue("c")).isEqualTo(1);
+    assertThat(env.getValue("d")).isEqualTo(1);
+    assertThat(env.getValue("e")).isEqualTo(0);
   }
 
   private Environment execute(String program) {

@@ -49,7 +49,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
       ip++;
       try {
         op.accept(this);
-        logger.atInfo().log("%d: %s", ip, op);
       } catch (RuntimeException re) {
         System.err.println("Exception at " + op);
         System.err.println(envs.peek());
@@ -145,13 +144,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case EQEQ:
         return left.equals(right) ? 1 : 0;
       case GEQ:
-        return left.compareTo(right) != -1;
+        return (left.compareTo(right) >= 0) ? 1 : 0;
       case GT:
-        return left.compareTo(right) == 1;
+        return (left.compareTo(right) > 0) ? 1 : 0;
       case LEQ:
-        return left.compareTo(right) != 1;
+        return (left.compareTo(right) <= 0) ? 1 : 0;
       case LT:
-        return left.compareTo(right) == -1;
+        return (left.compareTo(right) < 0) ? 1 : 0;
       case NEQ:
         return left.equals(right) ? 0 : 1;
       case PLUS:
