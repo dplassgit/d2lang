@@ -20,18 +20,18 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 public class StaticCheckerTest {
 
   @Test
-  public void execute_print() {
+  public void print() {
     checkProgram("print 123");
   }
 
   @Test
-  public void execute_printUnassigned() {
+  public void printUnassigned() {
     assertExecuteError("print a", "Indeterminable");
     assertExecuteError("print (1-3)*a", "Indeterminable");
   }
 
   @Test
-  public void execute_assignInt() {
+  public void assignInt() {
     Lexer lexer = new Lexer("a=3");
     Parser parser = new Parser(lexer);
 
@@ -51,7 +51,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignUnaryIntConst() {
+  public void assignUnaryIntConst() {
     Lexer lexer = new Lexer("a=-3");
     Parser parser = new Parser(lexer);
 
@@ -71,7 +71,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignUnaryVar() {
+  public void assignUnaryVar() {
     Lexer lexer = new Lexer("a=3 b=-a");
     Parser parser = new Parser(lexer);
 
@@ -92,7 +92,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignUnaryExpr() {
+  public void assignUnaryExpr() {
     Lexer lexer = new Lexer("a=3 b=-(a+3)");
     Parser parser = new Parser(lexer);
 
@@ -113,7 +113,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignBool() {
+  public void assignBool() {
     Lexer lexer = new Lexer("a=true");
     Parser parser = new Parser(lexer);
 
@@ -133,7 +133,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_manybinops() {
+  public void manybinops() {
     SymTab types = checkProgram("a=4 b=5  e=(a>=3)|!(b<3)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
@@ -142,36 +142,36 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignBoolConstantUnaryError() {
+  public void assignBoolConstantUnaryError() {
     assertExecuteError("a=-true", "MINUS");
   }
 
   @Test
-  public void execute_assignBoolUnaryError() {
-    assertExecuteError("a=true\nb=-a", "MINUS");
+  public void assignBoolUnaryError() {
+    assertExecuteError("a=true b=-a", "MINUS");
   }
 
   @Test
-  public void execute_assignIntUnaryFailure() {
-    assertExecuteError("a=3\nb=!a", "NOT");
+  public void assignIntUnaryFailure() {
+    assertExecuteError("a=3 b=!a", "NOT");
   }
 
   @Test
-  public void execute_assignBoolConstantUnary() {
+  public void assignBoolConstantUnary() {
     SymTab types = checkProgram("a=!true");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
   }
 
   @Test
-  public void execute_assignBoolUnary() {
-    SymTab types = checkProgram("a=true\nb=!a");
+  public void assignBoolUnary() {
+    SymTab types = checkProgram("a=true b=!a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
   }
 
   @Test
-  public void execute_assignExpr() {
+  public void assignExpr() {
     Lexer lexer = new Lexer("a=3+4-9");
     Parser parser = new Parser(lexer);
 
@@ -192,17 +192,17 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignExprIndeterminable() {
+  public void assignExprIndeterminable() {
     assertExecuteError("a=3+(4-b)", "Indeterminable type");
   }
 
   @Test
-  public void execute_assignExprIndeterminableMultiple() {
+  public void assignExprIndeterminableMultiple() {
     assertExecuteError("a=3 b=a+3 c=d", "Indeterminable type");
   }
 
   @Test
-  public void execute_assignMulti() {
+  public void assignMulti() {
     Lexer lexer = new Lexer("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
     Parser parser = new Parser(lexer);
 
@@ -228,20 +228,20 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_assignMismatch() {
+  public void assignMismatch() {
     assertExecuteError("a=true b=3 b=a", "Type mismatch");
     assertExecuteError("a=3 b=true b=a", "Type mismatch");
   }
 
   @Test
-  public void execute_declarationAssignMismatch() {
+  public void declarationAssignMismatch() {
     assertExecuteError("a:int b=true a=b", "Type mismatch");
     assertExecuteError("a:bool b=a b=3", "used before assignment");
     assertExecuteError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
-  public void execute_declarationArray() {
+  public void declarationArray() {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
@@ -249,7 +249,7 @@ public class StaticCheckerTest {
 
 
   @Test
-  public void execute_declarationArrayMismatch() {
+  public void declarationArrayMismatch() {
     assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
     assertExecuteError("a:int[false]", "Array size must be INT; was BOOL");
     assertExecuteError("a:int['hi']", "Array size must be INT; was STRING");
@@ -260,7 +260,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_binOpMismatch() {
+  public void binOpMismatch() {
     for (String op : ImmutableList.of("==", "!=")) {
       assertExecuteError(String.format("a=true %s 3", op), "Type mismatch");
       assertExecuteError(String.format("a='hi' %s 3", op), "Type mismatch");
@@ -268,14 +268,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_goodBooleanBinOp() {
+  public void goodBooleanBinOp() {
     for (String op : ImmutableList.of("==", "|", "&", "<", ">")) {
       checkProgram(String.format("a=true %s false", op));
     }
   }
 
   @Test
-  public void execute_badBooleanBinOp() {
+  public void badBooleanBinOp() {
     for (String op : ImmutableList.of(">=", "<=")) {
       assertExecuteError(String.format("a=true %s false", op), "Cannot apply");
       assertExecuteError(String.format("a=true %s 3", op), "Cannot apply");
@@ -283,7 +283,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_badBooleanSingleCharMismatch() {
+  public void badBooleanSingleCharMismatch() {
     for (char c : "+-".toCharArray()) {
       assertExecuteError(String.format("a=true %c 3", c), "Cannot apply");
     }
@@ -293,7 +293,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_badStringSingleCharMismatch() {
+  public void badStringSingleCharMismatch() {
     for (char c : "-|&".toCharArray()) {
       assertExecuteError(String.format("a='hi' %c 3", c), "Cannot apply");
     }
@@ -301,27 +301,27 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_binOpStringInvalidOperator() {
+  public void binOpStringInvalidOperator() {
     for (char c : "|&-%*/".toCharArray()) {
       assertExecuteError(String.format("a='hi' %c 'not'", c), "Cannot apply");
     }
   }
 
   @Test
-  public void execute_binOpStringValidOperator() {
+  public void binOpStringValidOperator() {
     for (String op : ImmutableList.of("+", "<", ">", "==", "!=", "<=", ">=")) {
       checkProgram(String.format("a='hi' %s 'bye'", op));
     }
   }
 
   @Test
-  public void execute_binOpStringComparatorBoolean() {
+  public void binOpStringComparatorBoolean() {
     SymTab symTab = checkProgram("b:bool b='hi' == 'bye'");
     assertThat(symTab.get("b").type()).isEqualTo(VarType.BOOL);
   }
 
   @Test
-  public void execute_binStringAdd() {
+  public void binStringAdd() {
     SymTab symTab = checkProgram("b='hi' a='bye' c=a+b");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("b").type()).isEqualTo(VarType.STRING);
@@ -329,19 +329,44 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_stringIndex() {
+  public void stringIndex() {
     SymTab symTab = checkProgram("b='hi' a=b[1]");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
   }
 
   @Test
-  public void execute_stringIndexConstant() {
+  public void stringIndexConstant() {
     SymTab symTab = checkProgram("a='hi'[1]");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
   }
 
   @Test
-  public void execute_badStringIndex() {
+  public void badArrayIndex() {
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr['bye']", "array index must be INT");
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr[false]", "array index must be INT");
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr[b]", "array index must be INT");
+  }
+
+  @Test
+  public void arrayIndex() {
+    SymTab symTab = checkProgram("arr=[1,2,3] a=arr[1]");
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void arrayStringIndex() {
+    SymTab symTab = checkProgram("arr=['a', 'b', 'c'] a=arr[1 + 1]");
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void arrayIndexConstant() {
+    SymTab symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
+    assertThat(symTab.get("a").type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void badStringIndex() {
     assertExecuteError("b='hi' a=b['bye']", "string index must be INT");
     assertExecuteError("b='hi' a=b[false]", "string index must be INT");
     assertExecuteError("b='hi' a='hi'[b]", "string index must be INT");
@@ -349,43 +374,43 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_ifElifElse() {
+  public void ifElifElse() {
     checkProgram("a=1 if a==1 { print a } elif a == 2 {print 2} else {print 3}");
   }
 
   @Test
-  public void execute_ifBool() {
+  public void ifBool() {
     checkProgram("a=true if a { print a }");
   }
 
   @Test
-  public void execute_ifNotBoolCond_error() {
+  public void ifNotBoolCond_error() {
     assertExecuteError("if 1 { print 2 }", "must be boolean; was INT");
     assertExecuteError("a=1 if a { print a }", "must be boolean; was INT");
   }
 
   @Test
-  public void execute_ifNotBoolCondNested_error() {
+  public void ifNotBoolCondNested_error() {
     assertExecuteError("a=1 if a==1 { if (a==1) { if b {print a } } }", "UNKNOWN");
   }
 
   @Test
-  public void execute_errorInIf() {
+  public void errorInIf() {
     assertExecuteError("a=1 if a==1 { a=b }", "Indeterminable");
   }
 
   @Test
-  public void execute_errorInElse() {
+  public void errorInElse() {
     assertExecuteError("a=1 if a==1 {} else {a=b }", "Indeterminable");
   }
 
   @Test
-  public void execute_mainError() {
+  public void mainError() {
     assertExecuteError("a=1 main { if a==1 {} else {a=b}}", "Indeterminable");
   }
 
   @Test
-  public void execute_main() {
+  public void main() {
     Lexer lexer = new Lexer("main {a=3 b=a c=b+4 d=b==c e=3<4 f=d==true}");
     Parser parser = new Parser(lexer);
 
@@ -411,7 +436,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_while() {
+  public void whileLoop() {
     Lexer lexer = new Lexer("i=0 while i < 30 do b = i == 1 { print i }");
     Parser parser = new Parser(lexer);
 
@@ -424,7 +449,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_whileError() {
+  public void whileError() {
     assertExecuteError("while a { print a }", "UNKNOWN");
     assertExecuteError("while 1 { print 1 }", "INT");
     assertExecuteError("while true do i = false + 1 {}", "Cannot apply");
@@ -432,7 +457,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_declarationError() {
+  public void declError() {
     assertExecuteError("b=3 a=b a:int", "already declared as INT");
     assertExecuteError("a=3 a:bool", "already declared as INT");
     assertExecuteError("a:bool a:int", "already declared as BOOL");
@@ -446,7 +471,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_declaration() {
+  public void decl() {
     Lexer lexer = new Lexer("a:int a=3 b=a");
     Parser parser = new Parser(lexer);
 
@@ -458,7 +483,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure() {
+  public void proc() {
     checkProgram("fib:proc(n1:int, n2) : int { n1=3 n2=n1 return n1}");
     checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram("fib:proc() {a=3} a=true");
@@ -471,7 +496,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure_recursive() {
+  public void procRecursive() {
     checkProgram("fib:proc(n:int) : int {" //
             + "  if n <= 1 {" //
             + "    return n" //
@@ -483,7 +508,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure_iterative() {
+  public void procIterative() {
     checkProgram("fib2:proc (n:int) : int {" //
             + " n1 = 0 " //
             + " n2 = 1 " //
@@ -497,7 +522,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure_badParams() {
+  public void procParams() {
     assertExecuteError("fib:proc(a, b, a) {}", "Duplicate parameter");
     assertExecuteError("fib:proc() {a=3 a=true}", "Type mismatch");
     assertExecuteError("a=true fib:proc() {a=3}", "Type mismatch");
@@ -506,7 +531,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure_returnMismatch() {
+  public void procMismatch() {
     assertExecuteError("fib:proc():bool {return 3}", "Type mismatch");
     assertExecuteError("fib:proc(a):int {a='hi' return a}", "Type mismatch");
     assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
@@ -516,7 +541,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_procedure_noReturn() {
+  public void procReturn() {
     assertExecuteError("fib:proc():int {}", "No 'return' statement");
     assertExecuteError("fib:proc():bool {" //
             + "if false {" //
@@ -557,12 +582,12 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void execute_nakedReturn() {
+  public void nakedReturn() {
     assertExecuteError("return 3", "outside a procedure");
   }
 
   @Test
-  public void execute_callErrors() {
+  public void callErrors() {
     assertExecuteError("foo(3)", "Procedure foo is unknown");
     assertExecuteError("a:int a(3)", "Procedure a is unknown");
     assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "Procedure inner is unknown");

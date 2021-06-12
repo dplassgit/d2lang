@@ -13,6 +13,10 @@ public class ConstantOperand implements Operand {
 
   @Override
   public String toString() {
-    return "/* (ConstOperand) */ " + value.toString();
+    if (value instanceof String) {
+      return String.format("/* (ConstOperand) */ \"%s\"", value.toString());
+    } else {
+      return "/* (ConstOperand) */ " + value.toString();
+    }
   }
 }

@@ -961,6 +961,19 @@ public class ParserTest {
   }
 
   @Test
+  public void literalArrayIndex() {
+    BlockNode root = parseStatements("a=[true, false][1]");
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    BinOpNode expr = (BinOpNode) node.expr();
+    assertThat(expr.left()).isInstanceOf(ConstNode.class);
+    assertThat(expr.right()).isInstanceOf(ConstNode.class);
+  }
+
+  @Test
   public void literalArrayErrors() {
     assertParseError("Should not parse", "a=[]", "Empty");
     assertParseError("Should not parse", "a=[a]", "only scalar");

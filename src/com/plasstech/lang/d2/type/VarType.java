@@ -30,4 +30,8 @@ public interface VarType {
   default boolean isUnknown() {
     return this == UNKNOWN;
   }
+  
+  default boolean isArray() {
+    return this instanceof ArrayType;
+  }
 }

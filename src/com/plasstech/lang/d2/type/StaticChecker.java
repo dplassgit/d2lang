@@ -234,6 +234,18 @@ public class StaticChecker extends DefaultVisitor {
                 String.format("Type mismatch: string index must be INT; was %s", right.varType()),
                 right.position());
       }
+      node.setVarType(VarType.STRING);
+      return;
+    } else if (left.varType().isArray() && node.operator() == Token.Type.LBRACKET) {
+      if (right.varType() != VarType.INT) {
+        throw new TypeException(
+                String.format("Type mismatch: array index must be INT; was %s", right.varType()),
+                right.position());
+      }
+      // I hate this.
+      ArrayType arrayType = (ArrayType) left.varType();
+      node.setVarType(arrayType.baseType());
+      return;
     } else if (!left.varType().equals(right.varType())) {
       throw new TypeException(String.format("Type mismatch: %s is %s; %s is %s", left,
               left.varType(), right, right.varType()), left.position());
