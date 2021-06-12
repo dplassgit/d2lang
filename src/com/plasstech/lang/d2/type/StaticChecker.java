@@ -64,6 +64,13 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   public TypeCheckResult execute() {
+    ProcGatherer gatherer = new ProcGatherer(symbolTable);
+    try {
+      root.accept(gatherer);
+    } catch (TypeException e) {
+      return new TypeCheckResult(e.toString());
+    }
+
     try {
       root.accept(this);
       if (!procedures.isEmpty()) {
@@ -125,7 +132,8 @@ public class StaticChecker extends DefaultVisitor {
         // It was already in the symbol table. Possible that it's wrong
         throw new TypeException(
                 String.format("Type mismatch: '%s' declared as %s but RHS (%s) is %s", variable,
-                sym.type(), right, right.varType()), variable.position());
+                        sym.type(), right, right.varType()),
+                variable.position());
       }
 
       sym.setAssigned();
@@ -395,11 +403,22 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Add this procedure to the symbol table
-    ProcSymbol procSymbol = symbolTable().declareProc(node);
-
-    // 2. spawn symbol table & assign to the node.
-    SymTab child = symbolTable().spawn();
-    procSymbol.setSymTab(child);
+    Symbol sym = symbolTable().get(node.name());
+    boolean innerProc = sym == null;
+    ProcSymbol procSymbol = null;
+    if (sym == null) {
+      // nested proc; spawn symbol table & assign to the node.
+      procSymbol = symbolTable().declareProc(node);
+      SymTab child = symbolTable().spawn();
+      procSymbol.setSymTab(child);
+    } else if (sym.type() != VarType.PROC) {
+      throw new TypeException(
+              String.format("Cannot define a procedure with the same name as another global: %s",
+                      node.name()),
+              node.position());
+    } else {
+      procSymbol = (ProcSymbol) sym;
+    }
 
     // 3. push current procedure onto a stack, for symbol table AND return value checking
     procedures.push(procSymbol);
@@ -407,9 +426,11 @@ public class StaticChecker extends DefaultVisitor {
       needsReturn.add(procSymbol);
     }
 
-    // 4. add all args to symbol table
-    for (Parameter param : node.parameters()) {
-      symbolTable().declareParam(param.name(), param.type());
+    // 4. add all args to local symbol table
+    if (innerProc) {
+      for (Parameter param : node.parameters()) {
+        symbolTable().declareParam(param.name(), param.type());
+      }
     }
 
     // 5. process the statements in the procedure:
@@ -432,7 +453,6 @@ public class StaticChecker extends DefaultVisitor {
         throw new TypeException(
                 String.format("No 'return' statement for procedure %s ", node.name()),
                 node.position());
-
       }
       // make sure that all *codepaths* have a return
       if (!checkAllPathsHaveReturn(node)) {

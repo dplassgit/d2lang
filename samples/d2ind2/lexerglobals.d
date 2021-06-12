@@ -155,7 +155,7 @@ makeInt: proc():string {
   return IntToken(Type_INT, value, value_as_string)
 }
 
-startsWithSlash: proc() {
+startsWithSlash: proc():String {
   advance() // eat the first slash
   if (lexer_cc == '/') {
     advance() // eat the second slash
@@ -172,7 +172,7 @@ startsWithSlash: proc() {
   return Token(Type_DIV, '/')
 }
 
-startsWithNot: proc(){
+startsWithNot: proc():String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -182,7 +182,7 @@ startsWithNot: proc(){
   return Token(Type_NOT, oc)
 }
 
-startsWithGt: proc(){
+startsWithGt: proc():String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -192,7 +192,7 @@ startsWithGt: proc(){
   return Token(Type_GT, oc)
 }
 
-startsWithLt: proc(){
+startsWithLt: proc():String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -202,7 +202,7 @@ startsWithLt: proc(){
   return Token(Type_LT, oc)
 }
 
-startsWithEq: proc(){
+startsWithEq: proc():String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -215,14 +215,14 @@ startsWithEq: proc(){
 makeString: proc(first: String): string {
   advance() // eat the tick/quote
   sb=""
-  // TODO: fix backslash-escaping
   while lexer_cc != first & lexer_cc != '' {
     sb=sb + lexer_cc
     advance()
   }
 
-  if (lexer_cc == 0) {
-    print "Unclosed string literal at " + lexer_line
+  if (lexer_cc == '') {
+    print "Unclosed string literal at "  println lexer_line
+    print 1/0
   }
 
   advance() // eat the closing tick/quote
@@ -281,6 +281,8 @@ makeSymbol: proc(): string {
     return Token(Type_COMMA, oc)
   } else {
     print "Unknown character" + lexer_cc
+    print 1/0
+    return Token(Type_EOF, 'Unknown')
   }
 }
 
@@ -298,7 +300,7 @@ nextToken: proc(): String {
     return makeInt()
   } elif (isLetter(lexer_cc)) {
     return makeText()
-  } elif (cc !=0) {
+  } elif (lexer_cc != '') {
     return makeSymbol()
   }
 
@@ -307,5 +309,12 @@ nextToken: proc(): String {
 
 main {
   text = "print 'hi'$"
+  new_lexer(text)
+
+  println nextToken()
+
+  while token_type != Type_EOF {
+    println nextToken()
+  }
 
 }
