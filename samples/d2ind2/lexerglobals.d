@@ -162,25 +162,15 @@ makeInt: proc() {
 
   while isDigit(lexer_cc) do advance() {
     value=value * 10
-    if lexer_cc == '1' {
-      value = value + 1
-    } elif lexer_cc == '2' {
-      value = value + 2
-    } elif lexer_cc == '3' {
-      value = value + 3
-    } elif lexer_cc == '4' {
-      value = value + 4
-    } elif lexer_cc == '5' {
-      value = value + 5
-    } elif lexer_cc == '6' {
-      value = value + 6
-    } elif lexer_cc == '7' {
-      value = value + 7
-    } elif lexer_cc == '8' {
-      value = value + 8
-    } elif lexer_cc == '9' {
-      value = value + 9
-    }
+    if lexer_cc == '1' { value = value + 1 }
+    elif lexer_cc == '2' { value = value + 2 }
+    elif lexer_cc == '3' { value = value + 3 }
+    elif lexer_cc == '4' { value = value + 4 }
+    elif lexer_cc == '5' { value = value + 5 }
+    elif lexer_cc == '6' { value = value + 6 }
+    elif lexer_cc == '7' { value = value + 7 }
+    elif lexer_cc == '8' { value = value + 8 }
+    elif lexer_cc == '9' { value = value + 9 }
 
     // value = value * 10 + (asc(lexer_cc) - 48)
     value_as_string = value_as_string + lexer_cc

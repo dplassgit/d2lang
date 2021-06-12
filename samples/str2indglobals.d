@@ -2,26 +2,46 @@ isDigit: proc(c: string): bool {
   return c >= '0' & c <= '9'
 }
 
-str2int: proc(s: string): int {
-  val = 0
-  i = 0 while isDigit(s[i]) do i = i + 1 {
-    val = val * 10
-    c = s[i]
-    if c == '1' {val = val + 1}
-    if c == '2' {val = val + 2}
-    if c == '3' {val = val + 3}
-    if c == '4' {val = val + 4}
-    if c == '5' {val = val + 5}
-    if c == '6' {val = val + 6}
-    if c == '7' {val = val + 7}
-    if c == '8' {val = val + 8}
-    if c == '9' {val = val + 9}
+lexer_text: string // full text
+lexer_loc: int  // location inside text
+lexer_cc: string // current character
+
+advance: proc() {
+  if (lexer_text[lexer_loc] != '$') {
+    lexer_cc=lexer_text[lexer_loc]
+  } else {
+    // Indicates no more characters
+    lexer_cc=''
   }
-  return val
+  lexer_loc=lexer_loc + 1
+}
+
+makeInt: proc(): int {
+  value=0
+  while isDigit(lexer_cc) do advance() {
+    value = value * 10
+    if lexer_cc == '1' { value = value + 1 }
+    elif lexer_cc == '2' { value = value + 2 }
+    elif lexer_cc == '3' { value = value + 3 }
+    elif lexer_cc == '4' { value = value + 4 }
+    elif lexer_cc == '5' { value = value + 5 }
+    elif lexer_cc == '6' { value = value + 6 }
+    elif lexer_cc == '7' { value = value + 7 }
+    elif lexer_cc == '8' { value = value + 8 }
+    elif lexer_cc == '9' { value = value + 9 }
+  }
+  return value
+}
+
+new_lexer: proc(text: string) {
+  lexer_text = text
+  lexer_loc = 0
+  lexer_cc = ''
+  advance()
 }
 
 main {
+  new_lexer("314" + "159 $")
   print "Should be 314159:"
-  pi = str2int("314" + "159 ")
-  print pi
+  print makeInt()
 }
