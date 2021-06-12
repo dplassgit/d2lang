@@ -113,18 +113,26 @@ public class StaticChecker extends DefaultVisitor {
               right.position());
     }
 
-    VarType existingType = symbolTable().lookup(variable.name(), true);
-    if (existingType.isUnknown()) {
+    Symbol sym = symbolTable().getRecursive(variable.name());
+    if (sym == null) {
+      // brand new in all scopes. Assign in curren scope.
       symbolTable().assign(variable.name(), right.varType());
-    } else if (!existingType.equals(right.varType())) {
-      // It was already in the symbol table. Possible that it's wrong
-      throw new TypeException(String.format("Type mismatch: (%s) is %s but (%s) is %s", variable,
-              existingType, right, right.varType()), variable.position());
+    } else {
+      // already known in some scope. Update.
+      if (sym.type().isUnknown()) {
+        sym.setType(right.varType());
+      } else if (!sym.type().equals(right.varType())) {
+        // It was already in the symbol table. Possible that it's wrong
+        throw new TypeException(
+                String.format("Type mismatch: '%s' declared as %s but RHS (%s) is %s", variable,
+                sym.type(), right, right.varType()), variable.position());
+      }
+
+      sym.setAssigned();
     }
-    if (!symbolTable().isAssigned(variable.name())) {
-      symbolTable().assign(variable.name(), right.varType());
-    }
+
     // all is good.
+    // TODO: why do we need variable.vartype, node.vartype and symbol.type?
     variable.setVarType(right.varType());
     node.setVarType(right.varType());
   }

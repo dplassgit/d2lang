@@ -1,12 +1,17 @@
-VAR_TYPES = [
+VAR_TYPE_FILES = [
     "ArrayType.java",
     "SimpleType.java",
     "VarType.java",
 ]
 
+STORAGE_FILES = [
+    "SymbolStorage.java",
+]
+
 java_library(name="type",
-             srcs=glob(["*.java"], exclude=VAR_TYPES),
+             srcs=glob(["*.java"], exclude=VAR_TYPE_FILES + STORAGE_FILES),
              deps=[
+                 ":storage",
                  ":var_types",
                  "//src/com/plasstech/lang/d2/common",
                  "//src/com/plasstech/lang/d2/lex",
@@ -17,6 +22,11 @@ java_library(name="type",
              )
 
 java_library(name="var_types",
-             srcs=VAR_TYPES,
+             srcs=VAR_TYPE_FILES,
+             visibility=["//visibility:public"],
+             )
+
+java_library(name="storage",
+             srcs=STORAGE_FILES,
              visibility=["//visibility:public"],
              )

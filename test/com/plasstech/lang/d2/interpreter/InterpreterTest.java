@@ -199,18 +199,15 @@ public class InterpreterTest {
   public void globalReference() {
     // Tests bug#39
     Environment env = execute("a:string a='bye'" //
-            + "p: proc {" //
-            + "  println a" //
-            + "}"//
             + "setup: proc {" //
             + "  a = 'hi'" //
+            + "  b = 'bee'" //
             + "}" //
-            + "// main {" //
+            + "main {" //
             + "  setup()" //
-            + "  p()" //
-            + "// }");
+            + "}");
     assertThat(env.getValue("a")).isEqualTo("hi");
-    assertThat(env.output()).containsExactly("hi");
+    assertThat(env.getValue("b")).isNull();
   }
 
   private Environment execute(String program) {

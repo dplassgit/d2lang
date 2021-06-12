@@ -26,4 +26,7 @@ java_library(name="codegen",
 java_library(name="location",
              srcs=LOCATION_SRCS,
              visibility=["//visibility:public"],
+             deps=[
+                 "//src/com/plasstech/lang/d2/type:storage",
+             ],
              )

@@ -25,6 +25,7 @@ import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -303,6 +304,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private void setValue(Location location, Object value) {
+    // If it's a global symbol, write into root environment.
+    if (location.storage() == SymbolStorage.GLOBAL) {
+      rootEnv.setValue(location, value);
+      return;
+    }
+    // Write into "current" environment instead.
     envs.peek().setValue(location, value);
   }
 }

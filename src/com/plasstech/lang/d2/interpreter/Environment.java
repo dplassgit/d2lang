@@ -11,16 +11,13 @@ public class Environment {
   private final List<String> output = new ArrayList<>();
   private final Map<String, Object> values = new HashMap<>();
   private final Environment parent;
-  private final String name;
 
   Environment() {
-    name = "Root";
     parent = null;
   }
 
   private Environment(Environment parent) {
     this.parent = parent;
-    this.name = "Child of " + parent.name;
   }
 
   Environment spawn() {
@@ -32,7 +29,6 @@ public class Environment {
   }
 
   public void setValue(Location location, Object value) {
-    System.out.printf("env %s: Setting %s to %s\n", this.name, location.name(), value);
     values.put(location.name(), value);
   }
 
@@ -45,13 +41,10 @@ public class Environment {
   }
 
   public Object getValue(String name) {
-    System.out.printf("env %s: Getting value of %s\n", this.name, name);
     Object value = values.get(name);
     if (value == null && parent() != null) {
-      System.out.printf("Looking in parent for value of %s\n", name);
       return parent().getValue(name);
     }
-    System.out.printf("env %s: Got value of %s: %s\n", this.name, name, value);
     return value;
   }
 

@@ -1,6 +1,7 @@
 a:string
 
 p: proc() {
+  println "Should print 'hi':"
   print a
 }
 
