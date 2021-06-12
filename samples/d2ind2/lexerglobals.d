@@ -45,10 +45,11 @@ KEYWORDS=[
 'continue',
 'int',
 'bool',
-'string',
-'record',
-'error'
+'string'
+// 'record'
+// 'error'
 ]
+KEYWORDS_LENGTH = 17
 
 // Global for token:
 token_type: int
@@ -62,55 +63,16 @@ lexer_col:int
 lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
-new_lexer: proc(text: string) {
-  lexer_text = text
-  lexer_line = 1
-  lexer_col = 0
-  lexer_loc = 0
-  lexer_cc = ''
-  advance()
-}
-
-Token: proc(type: int, value: string) {
+Token: proc(type: int, value: string): string {
   token_type = type
   token_string = value
+  return "Token: " + value
 }
 
-IntToken: proc(type: int, ti: int, value: string) {
+IntToken: proc(type: int, ti: int, value: string): string {
   Token(type, value)
   token_int = ti
-}
-
-advance: proc() {
-  if (lexer_loc < lexer_text.length) {
-    lexer_cc=lexer_text[lexer_loc]
-    lexer_col=lexer_col + 1
-  } else {
-    // Indicates no more characters
-    lexer_cc=0
-  }
-  lexer_loc=lexer_loc + 1
-}
-
-nextToken: proc(): String {
-  // skip unwanted whitespace
-  while (lexer_cc == ' ' | lexer_cc == '\n' | lexer_cc == '\t' | lexer_cc == '\r') {
-    if (cc == '\n') {
-      lexer_line=lexer_line + 1
-      lexer_col=0
-    }
-    advance()
-  }
-
-  if (isDigit(lexer_cc)) {
-    return makeInt()
-  } else if (isLetter(lexer_cc)) {
-    return makeText()
-  } else if (cc !=0) {
-    return makeSymbol()
-  }
-
-  return Token(Type_EOF, '')
+  return "IntToken: " + value
 }
 
 isLetter: proc(c:string):bool {
@@ -125,9 +87,24 @@ isLetterOrDigit: proc(c:string):bool {
   return isLetter(c) | isDigit(c)
 }
 
-Token: proc(type: int): String {
-  token_type = type
-  return ""
+advance: proc() {
+  if (lexer_text[lexer_loc] != '$') { //lexer_loc < lexer_text.length) {
+    lexer_cc=lexer_text[lexer_loc]
+    lexer_col=lexer_col + 1
+  } else {
+    // Indicates no more characters
+    lexer_cc=''
+  }
+  lexer_loc=lexer_loc + 1
+}
+
+new_lexer: proc(text: string) {
+  lexer_text = text
+  lexer_line = 1
+  lexer_col = 0
+  lexer_loc = 0
+  lexer_cc = ''
+  advance()
 }
 
 makeText: proc():String {
@@ -142,21 +119,21 @@ makeText: proc():String {
   }
 
   if value == 'true' {
-    return Token(Type_TRUE)
+    return Token(Type_TRUE, 'true')
   } elif value == 'false' {
-    return Token(Type_FALSE)
+    return Token(Type_FALSE, 'false')
   }
 
-  i=0 while i < KEYWORDS.length do i = i + 1 {
+  i=0 while i < KEYWORDS_LENGTH do i = i + 1 {
     if value == KEYWORDS[i] {
-      return Token(Type_KEYWORD, value, i)
+      return Token(Type_KEYWORD, value)
     }
   }
 
   return Token(Type_VARIABLE, value)
 }
 
-makeInt: proc() {
+makeInt: proc():string {
   value=0
   value_as_string = ''
 
@@ -175,10 +152,84 @@ makeInt: proc() {
     // value = value * 10 + (asc(lexer_cc) - 48)
     value_as_string = value_as_string + lexer_cc
   }
-  return IntToken(TYPE_int, value, value_as_string)
+  return IntToken(Type_INT, value, value_as_string)
 }
 
-makeSymbol: proc(){
+startsWithSlash: proc() {
+  advance() // eat the first slash
+  if (lexer_cc == '/') {
+    advance() // eat the second slash
+    while (lexer_cc !='\n' & lexer_cc != '') {
+      advance()
+    }
+    if (lexer_cc != '') {
+      advance()
+    }
+    lexer_line=lexer_line + 1
+    lexer_col=0
+    return nextToken()
+  }
+  return Token(Type_DIV, '/')
+}
+
+startsWithNot: proc(){
+  oc=lexer_cc
+  advance()
+  if (lexer_cc == '=') {
+    advance()
+    return Token(Type_NEQ, "!=")
+  }
+  return Token(Type_NOT, oc)
+}
+
+startsWithGt: proc(){
+  oc=lexer_cc
+  advance()
+  if (lexer_cc == '=') {
+    advance()
+    return Token(Type_GEQ, ">=")
+  }
+  return Token(Type_GT, oc)
+}
+
+startsWithLt: proc(){
+  oc=lexer_cc
+  advance()
+  if (lexer_cc == '=') {
+    advance()
+    return Token(Type_LEQ, "<=")
+  }
+  return Token(Type_LT, oc)
+}
+
+startsWithEq: proc(){
+  oc=lexer_cc
+  advance()
+  if (lexer_cc == '=') {
+    advance()
+    return Token(Type_EQEQ, "==")
+  }
+  return Token(Type_EQ, oc)
+}
+
+makeString: proc(first: String): string {
+  advance() // eat the tick/quote
+  sb=""
+  // TODO: fix backslash-escaping
+  while lexer_cc != first & lexer_cc != '' {
+    sb=sb + lexer_cc
+    advance()
+  }
+
+  if (lexer_cc == 0) {
+    print "Unclosed string literal at " + lexer_line
+  }
+
+  advance() // eat the closing tick/quote
+  return Token(Type_STRING, sb)
+}
+
+makeSymbol: proc(): string {
   oc=lexer_cc
   if oc == '=' {
     return startsWithEq()
@@ -188,128 +239,73 @@ makeSymbol: proc(){
     return startsWithGt()
   } elif oc == '+' {
     advance()
-    return new Token(Type_PLUS, oc)
+    return Token(Type_PLUS, oc)
   } elif oc == '-' {
     advance()
-    return new Token(Type_MINUS, oc)
+    return Token(Type_MINUS, oc)
   } elif oc == '(' {
     advance()
-    return new Token(Type_LPAREN, oc)
+    return Token(Type_LPAREN, oc)
   } elif oc == ')' {
     advance()
-    return new Token(Type_RPAREN, oc)
+    return Token(Type_RPAREN, oc)
   } elif oc == '*' {
     advance()
-    return new Token(Type_MULT, oc)
+    return Token(Type_MULT, oc)
   } elif oc == '/' {
     return startsWithSlash()
   } elif oc == '%' {
     advance()
-    return new Token(Type_MOD, oc)
+    return Token(Type_MOD, oc)
   } elif oc == '&' {
     advance()
-    return new Token(Type_AND, oc)
+    return Token(Type_AND, oc)
   } elif oc == '|' {
     advance()
-    return new Token(Type_OR, oc)
+    return Token(Type_OR, oc)
   } elif oc == '!' {
     return startsWithNot()
   } elif oc == '{' {
     advance()
-    return new Token(Type_LBRACE, oc)
+    return Token(Type_LBRACE, oc)
   } elif oc == '}' {
     advance()
-    return new Token(Type_RBRACE, oc)
+    return Token(Type_RBRACE, oc)
   } elif oc == ':' {
     advance()
-    return new Token(Type_COLON, oc)
+    return Token(Type_COLON, oc)
   } elif oc == '"'  | oc == "'" { // d FTW
     return makeString(oc)
   } elif oc == ',' {
     advance()
-    return new Token(Type_COMMA, oc)
+    return Token(Type_COMMA, oc)
   } else {
-    error "Unknown character" + lexer_cc
+    print "Unknown character" + lexer_cc
   }
 }
 
-startsWithSlash: proc() {
-  advance() // eat the first slash
-  if (lexer_cc == '/') {
-    advance() // eat the second slash
-    while (lexer_cc !='\n' & lexer_cc !=0) {
-      advance()
-    }
-    if (lexer_cc !=0) {
-      advance()
-    }
-    lexer_line=lexer_line + 1
-    lexer_col=0
-    return nextToken()
-  }
-  return new record Token(Type_DIV, '/')
-}
-
-startsWithNot: proc(){
-  oc=lexer_cc
-  advance()
-  if (lexer_cc == '=') {
-    end=new record Position(lexer_line, lexer_col)
-    advance()
-    return new record Token(Type_NEQ, "!=")
-  }
-  return new record Token(Type_NOT, oc)
-}
-
-startsWithGt: proc(){
-  oc=lexer_cc
-  advance()
-  if (lexer_cc == '=') {
-    end=new record Position(lexer_line, lexer_col)
-    advance()
-    return new record Token(Type_GEQ, ">=")
-  }
-  return new record Token(Type_GT, oc)
-}
-
-startsWithLt: proc(){
-  oc=lexer_cc
-  advance()
-  if (lexer_cc == '=') {
-    end=new record Position(lexer_line, lexer_col)
-    advance()
-    return new record Token(Type_LEQ, "<=")
-  }
-  return new record Token(Type_LT, oc)
-}
-
-startsWithEq: proc(){
-  oc=lexer_cc
-  advance()
-  if (lexer_cc == '=') {
-    end=new record Position(lexer_line, lexer_col)
-    advance()
-    return new record Token(Type_EQEQ, "==")
-  }
-  return new record Token(Type_EQ, oc)
-}
-
-makeStringToken: proc(first: String){
-  advance() // eat the tick/quote
-  sb=""
-  escape=false
-  // TODO: fix backslash-escaping
-  while lexer_cc != first & lexer_cc !=0 {
-    if (!escape) {
-      sb=sb + lexer_cc
+nextToken: proc(): String {
+  // skip unwanted whitespace
+  while (lexer_cc == ' ' | lexer_cc == '\n' | lexer_cc == '\t' | lexer_cc == '\r') {
+    if (lexer_cc == '\n') {
+      lexer_line=lexer_line + 1
+      lexer_col=0
     }
     advance()
   }
 
-  if (lexer_cc == 0) {
-    error "Unclosed string literal at " + lexer_line
+  if (isDigit(lexer_cc)) {
+    return makeInt()
+  } elif (isLetter(lexer_cc)) {
+    return makeText()
+  } elif (cc !=0) {
+    return makeSymbol()
   }
 
-  advance() // eat the closing tick/quote
-  return new record Token(Type_STRING, sb)
+  return Token(Type_EOF, '')
+}
+
+main {
+  text = "print 'hi'$"
+
 }
