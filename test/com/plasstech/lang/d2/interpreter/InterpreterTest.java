@@ -212,10 +212,25 @@ public class InterpreterTest {
 
   @Test
   public void lengths() {
-    Environment env = execute("a=length('hi') " //
-            + "b=length([1,2,3])");
+    Environment env = execute(//
+            "          a=length('hi') " //
+                    + "b=length([1,2,3])");
     assertThat(env.getValue("a")).isEqualTo(2);
     assertThat(env.getValue("b")).isEqualTo(3);
+  }
+
+  @Test
+  public void ascAndChr() {
+    Environment env = execute(//
+            "          a=asc('A') " //
+                    + "b=chr(66) " //
+                    + "c=asc(chr(67)) " //
+                    + "d=chr(asc('D')) " //
+    );
+    assertThat(env.getValue("a")).isEqualTo(65);
+    assertThat(env.getValue("b")).isEqualTo("B");
+    assertThat(env.getValue("c")).isEqualTo(67);
+    assertThat(env.getValue("d")).isEqualTo("D");
   }
 
   @Test

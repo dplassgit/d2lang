@@ -204,6 +204,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       case NOT:
       case MINUS:
       case LENGTH:
+      case ASC:
+      case CHR:
         emit(new UnaryOp(destination, node.operator(), expr.location()));
         break;
       case PLUS:

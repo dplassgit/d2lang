@@ -225,6 +225,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case LENGTH:
         return rhs.length();
+      case ASC:
+        return (int) rhs.charAt(0);
       default:
         throw new IllegalStateException("Unknown string unaryop " + op.operator());
     }
@@ -244,6 +246,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return 0 - r1;
       case NOT:
         return (r1 == 0) ? 1 : 0;
+      case CHR:
+        return "" + (char) r1;
       default:
         throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
     }
