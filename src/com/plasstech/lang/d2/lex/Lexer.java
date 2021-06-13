@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.lex;
 
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token.Type;
 
@@ -9,6 +12,15 @@ public class Lexer {
   private int line, col; // current line & colum=n
   private int loc; // location inside text
   private char cc; // current character
+
+  private Map<Character, Character> BACKSLASH_ESCAPE_MAP = //
+          ImmutableMap.<Character, Character>builder() //
+                  .put('n', '\n') //
+                  .put('r', '\r') //
+                  .put('t', '\t') //
+                  .put('"', '"') //
+                  .put('\'', '\'') //
+                  .put('\\', '\\').build();
 
   public Lexer(String text) {
     this.text = text;
@@ -52,13 +64,13 @@ public class Lexer {
     return new Token(Type.EOF, start);
   }
 
-  /** 
-   * Read letters/numbers/underscore until whitespace.
-   * Then figure out if it's a keyword or a variable.
+  /**
+   * Read letters/numbers/underscore until whitespace. Then figure out if it's a keyword or a
+   * variable.
    */
   private Token makeText(Position start) {
     StringBuilder sb = new StringBuilder();
-    if (Character.isLetter(cc) || cc=='_') {
+    if (Character.isLetter(cc) || cc == '_') {
       sb.append(cc);
       advance();
     }
@@ -221,13 +233,21 @@ public class Lexer {
   private Token makeStringToken(Position start, char openingChar) {
     advance(); // eat the opening tick/quote
     StringBuilder sb = new StringBuilder();
-
-    // TODO: fix backslash-escaping
     boolean escape = false;
     // Take all characters until the closing tick/quote
-    while (cc != openingChar && cc != 0) {
+    while ((cc != openingChar || escape) && cc != 0) {
       if (!escape) {
-        sb.append(cc);
+        escape = (cc == '\\');
+        if (!escape) {
+          sb.append(cc);
+        }
+      } else {
+        Character escaped = BACKSLASH_ESCAPE_MAP.get(cc);
+        if (escaped == null) {
+          throw new ScannerException("Unknown backslash escape: \\" + cc, start);
+        }
+        sb.append(escaped);
+        escape = false;
       }
       advance();
     }

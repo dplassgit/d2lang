@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 
 public class LexerTest {
   @Test
-  public void nextToken_singleSymbols() {
+  public void singleSymbols() {
     Lexer lexer = new Lexer("+-*/%()! =<>|&{}:[]");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
@@ -50,7 +50,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_doubleSymbols() {
+  public void doubleSymbols() {
     Lexer lexer = new Lexer("== <= >= !=");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.EQEQ);
@@ -63,15 +63,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_int() {
-    Lexer lexer = new Lexer("3");
-    IntToken token = (IntToken) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
-    assertThat(token.value()).isEqualTo(3);
-  }
-
-  @Test
-  public void nextToken_longerint() {
+  public void longerInt() {
     Lexer lexer = new Lexer("1234");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.INT);
@@ -79,7 +71,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_eof() {
+  public void eof() {
     Lexer lexer = new Lexer("1");
     lexer.nextToken();
     Token token = lexer.nextToken();
@@ -87,7 +79,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_twoNumbers() {
+  public void twoNumbers() {
     Lexer lexer = new Lexer("1 2");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.INT);
@@ -99,7 +91,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_whiteSpace() {
+  public void whiteSpace() {
     Lexer lexer = new Lexer("1\n\t 23");
     IntToken token = (IntToken) lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.INT);
@@ -121,7 +113,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_trueFalse() {
+  public void trueFalse() {
     Lexer lexer = new Lexer("true false True FALSE");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Token.Type.TRUE);
@@ -134,7 +126,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_keyword() {
+  public void keyword() {
     Lexer lexer = new Lexer(
             "print PrintLN IF Else elif do while break continue int bool proc return length asc"
                     + " chr");
@@ -190,7 +182,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_mixed() {
+  public void mixed() {
     Lexer lexer = new Lexer("print 3 p");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Token.Type.PRINT);
@@ -206,7 +198,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_longNotKeyword() {
+  public void longNotKeyword() {
     Lexer lexer = new Lexer("printed");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.VARIABLE);
@@ -214,7 +206,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_variable() {
+  public void variable() {
     Lexer lexer = new Lexer("prin");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.VARIABLE);
@@ -222,7 +214,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_variableAlnum() {
+  public void variableAlnum() {
     Lexer lexer = new Lexer("prin2");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.VARIABLE);
@@ -230,7 +222,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_underscore() {
+  public void underscore() {
     Lexer lexer = new Lexer("TYPE_token token_ token_with_lots_of_ _leading_ok _");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.VARIABLE);
@@ -250,13 +242,13 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_double_underscore_not_allowed() {
+  public void double_underscore_not_allowed() {
     assertThrows(ScannerException.class, () -> new Lexer("__token").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer("__").nextToken());
   }
 
   @Test
-  public void nextToken_assign() {
+  public void assign() {
     Lexer lexer = new Lexer("a = 3");
 
     Token token = lexer.nextToken();
@@ -272,7 +264,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_assign_expr() {
+  public void assign_expr() {
     Lexer lexer = new Lexer("a=3+4");
 
     Token token = lexer.nextToken();
@@ -296,7 +288,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_comment() {
+  public void comment() {
     Lexer lexer = new Lexer("1// ignored\na");
 
     Token token = lexer.nextToken();
@@ -312,7 +304,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_commentEom() {
+  public void commentEom() {
     Lexer lexer = new Lexer("1// ignored\n");
 
     Token token = lexer.nextToken();
@@ -324,7 +316,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_commentEol() {
+  public void commentEol() {
     Lexer lexer = new Lexer("1// ignored");
 
     Token token = lexer.nextToken();
@@ -336,7 +328,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_commentCrLf() {
+  public void commentCrLf() {
     Lexer lexer = new Lexer("1// ignored\r\n");
 
     Token token = lexer.nextToken();
@@ -348,7 +340,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_commentLfCr() {
+  public void commentLfCr() {
     Lexer lexer = new Lexer("1// ignored\n\r");
 
     Token token = lexer.nextToken();
@@ -360,7 +352,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_commentsEol() {
+  public void commentsEol() {
     Lexer lexer = new Lexer("1// ignored\n// so is this...\nb");
 
     Token token = lexer.nextToken();
@@ -376,7 +368,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_stringTick() {
+  public void stringTick() {
     Lexer lexer = new Lexer("'Hi'");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.STRING);
@@ -384,7 +376,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_stringQuotes() {
+  public void stringQuotes() {
     Lexer lexer = new Lexer("\"Hi\"");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.STRING);
@@ -392,7 +384,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_stringEmpty() {
+  public void stringEmpty() {
     Lexer lexer = new Lexer("''");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.STRING);
@@ -400,7 +392,7 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_stringSpace() {
+  public void stringSpace() {
     Lexer lexer = new Lexer("' '");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.STRING);
@@ -408,8 +400,39 @@ public class LexerTest {
   }
 
   @Test
-  public void nextToken_stringOpen_error() {
+  public void stringOpen_error() {
     Lexer lexer = new Lexer("\"Hi");
     assertThrows(ScannerException.class, () -> lexer.nextToken());
+  }
+
+  @Test
+  public void backslashEscapes() {
+    // Trust me.
+    String input = "'\\n \\\\ \\' \\\"'";
+    Lexer lexer = new Lexer(input);
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo("\n \\ ' \"");
+  }
+
+  @Test
+  public void backslashEscapesDoubleQuotes() {
+    // Trust me.
+    String input = "\" \\n \\\\ \\' \\\" \"";
+    Lexer lexer = new Lexer(input);
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.text()).isEqualTo(" \n \\ ' \" ");
+  }
+
+  @Test
+  public void bad_backslashes() {
+    assertThrows(ScannerException.class, () -> new Lexer("'\\a'").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("'\\0'").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("'\\v'").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("'\\N'").nextToken());
+    ScannerException exception = assertThrows(ScannerException.class,
+            () -> new Lexer("'\\").nextToken());
+    assertThat(exception).hasMessageThat().contains("Unclosed");
   }
 }

@@ -149,7 +149,7 @@ startsWithSlash: proc():String {
   advance() // eat the first slash
   if (lexer_cc == '/') {
     advance() // eat the second slash
-    while (lexer_cc != chr(10) & lexer_cc != '') {
+    while (lexer_cc != '\n' & lexer_cc != '') {
       advance()
     }
     if (lexer_cc != '') {
@@ -283,8 +283,8 @@ makeSymbol: proc(): string {
 
 nextToken: proc(): String {
   // skip unwanted whitespace
-  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(8) | lexer_cc == chr(13)) {
-    if (lexer_cc == chr(10)) {
+  while (lexer_cc == ' ' | lexer_cc == '\n' | lexer_cc == '\t' | lexer_cc == '\r') {
+    if (lexer_cc == '\n') {
       lexer_line=lexer_line + 1
       lexer_col=0
     }
@@ -569,6 +569,8 @@ makeSymbol: proc(): string {
   } elif oc == ':' {
     advance()
     return Token(Type_COLON, oc)
+  } elif oc == '\"'  | oc == \"'\" { // d FTW
+    return makeString(oc)
   } elif oc == ',' {
     advance()
     return Token(Type_COMMA, oc)
