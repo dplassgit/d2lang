@@ -321,12 +321,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
     // 3. pop ip
     int oldIp = ipStack.pop();
-
     // 4. look at call op - if there's a destination, set it in environment
     if (retValue != null) {
       Op callOpAsOp = code.get(oldIp);
       Call callOp = (Call) callOpAsOp;
-      setValue(callOp.destination(), retValue);
+      if (callOp.destination().isPresent()) {
+        setValue(callOp.destination().get(), retValue);
+      }
     }
     ip = oldIp + 1;
   }

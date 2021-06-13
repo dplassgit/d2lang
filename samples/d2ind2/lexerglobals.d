@@ -88,7 +88,8 @@ isLetterOrDigit: proc(c:string):bool {
 }
 
 advance: proc() {
-  if (lexer_text[lexer_loc] != '$') { //lexer_loc < lexer_text.length) {
+  // if (lexer_text[lexer_loc] != '$') { //lexer_loc < lexer_text.length) {
+  if lexer_loc < length(lexer_text) {
     lexer_cc=lexer_text[lexer_loc]
     lexer_col=lexer_col + 1
   } else {
@@ -308,7 +309,7 @@ nextToken: proc(): String {
 }
 
 main {
-  text = "print 'hi'$"
+  text = "print 'hi' a = a + 1"
   new_lexer(text)
 
   println nextToken()

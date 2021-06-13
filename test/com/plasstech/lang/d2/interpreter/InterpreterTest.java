@@ -218,6 +218,11 @@ public class InterpreterTest {
     assertThat(env.getValue("b")).isEqualTo(3);
   }
 
+  @Test
+  public void ignoreReturnValue() {
+    execute("a:proc(): string { return 'aproc' } a()");
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
