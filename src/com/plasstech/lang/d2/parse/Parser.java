@@ -644,58 +644,58 @@ public class Parser {
 
     // For first iteration: only allow const int[] or const string[] or const bool[]
     if (token.type() != Token.Type.RBRACKET) {
-    List<ConstNode<?>> values = commaSeparated(new NextNode<ConstNode<?>>() {
-      @Override
-      public ConstNode<?> call() {
-        ExprNode atom = atom();
-        if (atom instanceof ConstNode) {
-          return (ConstNode<?>) atom;
-        }
+      List<ConstNode<?>> values = commaSeparated(new NextNode<ConstNode<?>>() {
+        @Override
+        public ConstNode<?> call() {
+          ExprNode atom = atom();
+          if (atom instanceof ConstNode) {
+            return (ConstNode<?>) atom;
+          }
 
-        throw new ParseException(
-                String.format("Illegal entry %s in array literal; only scalar literals allowed",
-                        token.text()),
+          throw new ParseException(
+                  String.format("Illegal entry %s in array literal; only scalar literals allowed",
+                          token.text()),
+                  token.start());
+        }
+      });
+
+      if (token.type() != Token.Type.RBRACKET) {
+        throw new ParseException(String.format("Unexpected %s; expected ']'", token.text()),
                 token.start());
       }
-    });
+      advance(); // eat rbracket
 
-    if (token.type() != Token.Type.RBRACKET) {
-      throw new ParseException(String.format("Unexpected %s; expected ']'", token.text()),
-              token.start());
-    }
-    advance(); // eat rbracket
+      VarType baseType = values.get(0).varType();
+      ArrayType arrayType = new ArrayType(baseType);
 
-    VarType baseType = values.get(0).varType();
-    ArrayType arrayType = new ArrayType(baseType);
-
-    // TODO: check all values to make sure they're the same type
-    for (int i = 1; i < values.size(); ++i) {
-      if (!values.get(i).varType().equals(baseType)) {
-        throw new ParseException(
-                String.format("Inconsistent types in array literal; first was %s but one was %s",
-                        baseType, values.get(i).varType()),
-                openBracket.start());
+      // TODO: check all values to make sure they're the same type
+      for (int i = 1; i < values.size(); ++i) {
+        if (!values.get(i).varType().equals(baseType)) {
+          throw new ParseException(
+                  String.format("Inconsistent types in array literal; first was %s but one was %s",
+                          baseType, values.get(i).varType()),
+                  openBracket.start());
+        }
       }
+      if (baseType == VarType.BOOL) {
+        Boolean[] valuesArray = values.stream().map(node -> node.value()).toArray(Boolean[]::new);
+        return new ConstNode<Boolean[]>(valuesArray, arrayType, openBracket.start());
+      } else if (baseType == VarType.STRING) {
+        String[] valuesArray = values.stream().map(node -> node.value()).toArray(String[]::new);
+        return new ConstNode<String[]>(valuesArray, arrayType, openBracket.start());
+      } else if (baseType == VarType.INT) {
+        Integer[] valuesArray = values.stream().map(node -> node.value()).toArray(Integer[]::new);
+        return new ConstNode<Integer[]>(valuesArray, arrayType, openBracket.start());
+      }
+      throw new ParseException(
+              String.format("Illegal type %s in array literal; only scalar literals allowed",
+                      baseType.toString()),
+              openBracket.start());
+    } else {
+      // empty array constants
+      // will this ever be allowed?
+      throw new ParseException("Empty array constants are not allowed yet", token.start());
     }
-    if (baseType == VarType.BOOL) {
-      Boolean[] valuesArray = values.stream().map(node -> node.value()).toArray(Boolean[]::new);
-      return new ConstNode<Boolean[]>(valuesArray, arrayType, openBracket.start());
-    } else if (baseType == VarType.STRING) {
-      String[] valuesArray = values.stream().map(node -> node.value()).toArray(String[]::new);
-      return new ConstNode<String[]>(valuesArray, arrayType, openBracket.start());
-    } else if (baseType == VarType.INT) {
-      Integer[] valuesArray = values.stream().map(node -> node.value()).toArray(Integer[]::new);
-      return new ConstNode<Integer[]>(valuesArray, arrayType, openBracket.start());
-    }
-    throw new ParseException(
-            String.format("Illegal type %s in array literal; only scalar literals allowed",
-                    baseType.toString()),
-            openBracket.start());
-  } else {
-    // empty array constants
-    // will this ever be allowed?
-    throw new ParseException("Empty array constants are not allowed yet", token.start());
-  }
   }
 
   private static Function<Token, Boolean> matchesEofOrMain() {

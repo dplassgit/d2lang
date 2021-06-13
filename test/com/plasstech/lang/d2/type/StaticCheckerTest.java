@@ -158,7 +158,7 @@ public class StaticCheckerTest {
 
   @Test
   public void lengthNotStringFailure() {
-    assertExecuteError("a=length(false)", "Cannot apply LENGTH");
+    assertExecuteError("a=length(false)", "cannot apply LENGTH");
     assertExecuteError("a=length(3)", "must take STRING");
   }
 
@@ -174,6 +174,34 @@ public class StaticCheckerTest {
   public void lengthArray() {
     SymTab types = checkProgram("a=length([1,2,3])");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void ascError() {
+    assertExecuteError("a=asc(false)", "cannot apply ASC");
+    assertExecuteError("a=asc(3)", "must take STRING");
+  }
+
+  @Test
+  public void asc() {
+    SymTab types = checkProgram("a=asc('h')");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    types = checkProgram("b='hello' a=asc(b)");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void chrError() {
+    assertExecuteError("a=chr(false)", "cannot apply CHR");
+    assertExecuteError("a=chr('hi')", "must take INT");
+  }
+
+  @Test
+  public void chr() {
+    SymTab types = checkProgram("a=chr(65)");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
+    types = checkProgram("b=66 a=chr(b)");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
   }
 
   @Test

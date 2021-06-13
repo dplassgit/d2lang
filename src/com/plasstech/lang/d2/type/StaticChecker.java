@@ -289,25 +289,60 @@ public class StaticChecker extends DefaultVisitor {
     // Check that they're not trying to negate a boolean or "not" an int.
     if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
       throw new TypeException(
-              String.format("Cannot apply %s operator to boolean expression", unaryNode.operator()),
+              String.format("Type mismatch: cannot apply %s operator to BOOL expression",
+                      unaryNode.operator()),
               expr.position());
     }
-    if (expr.varType() == VarType.INT && unaryNode.operator() == Token.Type.NOT) {
-      throw new TypeException(
-              String.format("Cannot apply %s operator to int expression", unaryNode.operator()),
-              expr.position());
+
+    // General checks for each operator:
+    switch (unaryNode.operator()) {
+      case MINUS:
+        if (expr.varType() != VarType.INT) {
+          throw new TypeException(String
+                  .format("Type mismatch: unary negation must take INT; was %s", expr.varType()),
+                  expr.position());
+        }
+        break;
+      case NOT:
+        if (expr.varType() != VarType.BOOL) {
+          throw new TypeException(
+                  String.format("Type mismatch: boolean NOT must take BOOL; was %s",
+                          expr.varType()),
+                  expr.position());
+        }
+        break;
+      case LENGTH:
+        if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
+          throw new TypeException(
+                  String.format("Type mismatch: LENGTH must take STRING or ARRAY; was %s",
+                          expr.varType()),
+                  expr.position());
+        }
+        unaryNode.setVarType(VarType.INT);
+        // NOTE RETURN
+        return;
+      case ASC:
+        if (expr.varType() != VarType.STRING) {
+          throw new TypeException(String
+                  .format("Type mismatch: ASC must take STRING; was %s", expr.varType()),
+                  expr.position());
+        }
+        unaryNode.setVarType(VarType.INT);
+        // NOTE RETURN
+        return;
+      case CHR:
+        if (expr.varType() != VarType.INT) {
+          throw new TypeException(String.format("Type mismatch: CHR must take INT; was %s",
+                  expr.varType()), expr.position());
+        }
+        unaryNode.setVarType(VarType.STRING);
+        // NOTE RETURN
+        return;
+      default:
+        break;
     }
-    if (unaryNode.operator() == Token.Type.LENGTH) {
-      if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
-        throw new TypeException(
-                String.format("Type mismatch: LENGTH function must take STRING or ARRAY; was %s",
-                        expr.varType()),
-                expr.position());
-      }
-      unaryNode.setVarType(VarType.INT);
-    } else {
-      unaryNode.setVarType(expr.varType());
-    }
+    // Output type is the same as input type, unless overridden in a "case", above.
+    unaryNode.setVarType(expr.varType());
   }
 
   @Override
