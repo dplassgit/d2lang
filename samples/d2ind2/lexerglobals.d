@@ -138,18 +138,7 @@ makeInt: proc():string {
   value_as_string = ''
 
   while isDigit(lexer_cc) do advance() {
-    value=value * 10
-    if lexer_cc == '1' { value = value + 1 }
-    elif lexer_cc == '2' { value = value + 2 }
-    elif lexer_cc == '3' { value = value + 3 }
-    elif lexer_cc == '4' { value = value + 4 }
-    elif lexer_cc == '5' { value = value + 5 }
-    elif lexer_cc == '6' { value = value + 6 }
-    elif lexer_cc == '7' { value = value + 7 }
-    elif lexer_cc == '8' { value = value + 8 }
-    elif lexer_cc == '9' { value = value + 9 }
-
-    // value = value * 10 + (asc(lexer_cc) - 48)
+    value=value * 10 + asc(lexer_cc) - asc('0')
     value_as_string = value_as_string + lexer_cc
   }
   return IntToken(Type_INT, value, value_as_string)
@@ -308,7 +297,7 @@ nextToken: proc(): String {
 }
 
 main {
-  text = "print 'hi' a = a + 1"
+  text = "print 'hi' a = a + 314 0"
   new_lexer(text)
 
   print nextToken() print " " println token_type

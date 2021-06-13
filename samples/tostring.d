@@ -7,7 +7,7 @@ toString: proc(i: int): string {
   val = ''
   while i > 0 do i = i / 10 {
     c = i % 10
-    d = NUMBERS[c]
+    d = chr(c+asc('0')) // NUMBERS[c]
     val = d + val
   }
   return val
