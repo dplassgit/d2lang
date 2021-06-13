@@ -5,10 +5,18 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    KEYWORD, INT, BOOL, STRING, VARIABLE, EQ("="), NOT("!"), PLUS("+"), MINUS("-"), LPAREN("("),
-    RPAREN(")"), MULT("*"), DIV("/"), MOD("%"), AND("&"), OR("|"), EQEQ("=="), LT("<"), GT(">"),
-    LEQ("<="), GEQ(">="), NEQ("!="), LBRACE("{"), RBRACE("}"), COLON(":"), COMMA(","),
-    LBRACKET("["), RBRACKET("]"), LENGTH, EOF;
+    KEYWORD, INT, BOOL, STRING, VARIABLE, //
+    EQ("="), NOT("!"), //
+    EQEQ("=="), LT("<"), GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), //
+    AND("&"), OR("|"), //
+    PLUS("+"), MINUS("-"), MULT("*"), DIV("/"), MOD("%"), //
+    LPAREN("("), RPAREN(")"), //
+    LBRACE("{"), RBRACE("}"), //
+    LBRACKET("["), RBRACKET("]"), //
+    COLON(":"), COMMA(","), //
+    // Unary operators:
+    LENGTH, CHR, ASC, //
+    EOF;
 
     private final String val;
 

@@ -553,7 +553,8 @@ public class Parser {
       // However, at this point we don't have types in the expr tree yet so we can't
       // do that exact optimization yet.
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
-    } else if (matchesKeyword(token, KeywordType.LENGTH)) {
+    } else if (matchesUnaryKeyword(token)) {
+      KeywordToken keywordToken = (KeywordToken) unaryToken;
       advance();
       if (token.type() != Token.Type.LPAREN) {
         throw new ParseException(String.format("Expected '(', found %s", token), token.start());
@@ -564,7 +565,8 @@ public class Parser {
         throw new ParseException(String.format("Expected ')', found %s", token), token.start());
       }
       advance();
-      return new UnaryNode(Token.Type.LENGTH, hopefullyAString, unaryToken.start());
+      return new UnaryNode(keywordToken.keyword().unaryOperator(), hopefullyAString,
+              unaryToken.start());
     }
     return arrayGet();
   }
@@ -705,10 +707,18 @@ public class Parser {
     };
   }
 
-  private static Boolean matchesKeyword(Token token, KeywordType type) {
+  private static boolean matchesKeyword(Token token, KeywordType type) {
     if (token.type() == Token.Type.KEYWORD) {
       KeywordToken kt = (KeywordToken) token;
       return kt.keyword() == type;
+    }
+    return false;
+  }
+
+  private static Boolean matchesUnaryKeyword(Token token) {
+    if (token.type() == Token.Type.KEYWORD) {
+      KeywordToken kt = (KeywordToken) token;
+      return kt.keyword().isUnary();
     }
     return false;
   }

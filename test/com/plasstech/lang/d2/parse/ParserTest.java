@@ -330,6 +330,40 @@ public class ParserTest {
   }
 
   @Test
+  public void unaryAsc() {
+    BlockNode root = parseStatements("a=asc('hi')");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.operator()).isEqualTo(Token.Type.ASC);
+    ConstNode<?> right = (ConstNode<?>) unary.expr();
+    assertThat(right.value()).isEqualTo("hi");
+  }
+
+  @Test
+  public void unaryChr() {
+    BlockNode root = parseStatements("a=chr(65)");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    UnaryNode unary = (UnaryNode) expr;
+    assertThat(unary.operator()).isEqualTo(Token.Type.CHR);
+    ConstNode<?> right = (ConstNode<?>) unary.expr();
+    assertThat(right.value()).isEqualTo(65);
+  }
+
+  @Test
   public void binopOperator() {
     for (char c : "+-*/%><|&".toCharArray()) {
       parseStatements(String.format("a=b%c5", c));
