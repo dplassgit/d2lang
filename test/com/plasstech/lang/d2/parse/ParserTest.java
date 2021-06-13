@@ -495,11 +495,13 @@ public class ParserTest {
   @Test
   public void ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
-    assertParseError("Missing close brace", "if a==3 { print a } else {print 4", "expected 'print");
+    assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
+            "Unexpected start of statement 'EOF'");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
     assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
-            + "elif a==5 { print 5}else { print 6 print 7}", "Unexpected ELIF");
+            + "elif a==5 { print 5}else { print 6 print 7}",
+            "Unexpected start of statement 'ELIF'");
   }
 
   @Test
@@ -592,14 +594,16 @@ public class ParserTest {
     assertParseError("Missing expression", "while print", "expected literal");
     assertParseError("Missing open brace", "while a==3 print", "expected {");
     assertParseError("Missing close brace", "while a==3 {print", "expected literal");
-    assertParseError("Missing do assignment", "while a==3 do {print}", "expected 'print'");
+    assertParseError("Missing do assignment", "while a==3 do {print}",
+            "Unexpected start of statement '{'");
     assertParseError("Bad do assignment", "while a==3 do print {print}", "expected literal");
     assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
-    assertParseError("Unexpected continue", "continue", "CONTINUE keyword");
-    assertParseError("Unexpected break", "break", "BREAK keyword");
-    assertParseError("Unexpected break", "if true {break while true {continue }}", "BREAK keyword");
+    assertParseError("Unexpected continue", "continue", "CONTINUE not found in WHILE");
+    assertParseError("Unexpected break", "break", "BREAK not found in WHILE");
+    assertParseError("Unexpected break", "if true {break while true {continue }}",
+            "BREAK not found in WHILE");
     assertParseError("Unexpected continue", "if true {continue while true {break}}",
-            "CONTINUE keyword");
+            "CONTINUE not found in WHILE");
   }
 
   @Test
@@ -644,7 +648,7 @@ public class ParserTest {
   @Test
   public void mainError() {
     assertParseError("Missing open brace", "main", "expected {");
-    assertParseError("Missing close brace", "main {", "expected 'print");
+    assertParseError("Missing close brace", "main {", "Unexpected start of statement 'EOF'");
     assertParseError("Missing eof ", "main {} print ", "expected EOF");
     assertParseError("Missing eof ", "main { print ", "expected literal");
   }
@@ -735,9 +739,12 @@ public class ParserTest {
     assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
     assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
     assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
-    assertParseError("Should not be allowed", "fib:proc() {return", "Unexpected EOF");
-    assertParseError("Should not be allowed", "fib:proc() {return {", "Unexpected {");
-    assertParseError("Should not be allowed", "fib:proc() {return )}", "Unexpected )");
+    assertParseError("Should not be allowed", "fib:proc() {return",
+            "Unexpected start of statement 'EOF'");
+    assertParseError("Should not be allowed", "fib:proc() {return {",
+            "Unexpected start of statement '{'");
+    assertParseError("Should not be allowed", "fib:proc() {return )}",
+            "Unexpected start of statement ')'");
   }
 
   @Test

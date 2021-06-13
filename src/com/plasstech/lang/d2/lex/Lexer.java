@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.lex;
 
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Token.Type;
 
 public class Lexer {
@@ -75,15 +74,9 @@ public class Lexer {
     Position end = new Position(line, col);
     try {
       // Figure out which keyword it is
-      KeywordType keywordType = KeywordType.valueOf(value.toUpperCase());
+      Token.Type keywordType = Token.Type.valueOf(value.toUpperCase());
 
-      if (keywordType == KeywordType.TRUE) {
-        return new BoolToken(start, true);
-      } else if (keywordType == KeywordType.FALSE) {
-        return new BoolToken(start, false);
-      }
-
-      return new KeywordToken(start, end, keywordType);
+      return new Token(keywordType, start);
     } catch (Exception e) {
       // Not a keyword, must be a variable.
       return new Token(Type.VARIABLE, start, end, value);

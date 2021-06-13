@@ -10,12 +10,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.BoolToken;
 import com.plasstech.lang.d2.lex.IntToken;
-import com.plasstech.lang.d2.lex.KeywordToken;
-import com.plasstech.lang.d2.lex.KeywordToken.KeywordType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -43,15 +41,19 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class Parser {
 
-  private final static ImmutableMap<KeywordType, VarType> BUILTINS = ImmutableMap.of( //
-          KeywordType.INT, VarType.INT, //
-          KeywordType.BOOL, VarType.BOOL, //
-          KeywordType.STRING, VarType.STRING, //
-          KeywordType.PROC, VarType.PROC); //
+  private final static ImmutableMap<Token.Type, VarType> BUILTINS = ImmutableMap.of( //
+          Token.Type.INT, VarType.INT, //
+          Token.Type.BOOL, VarType.BOOL, //
+          Token.Type.STRING, VarType.STRING, //
+          Token.Type.PROC, VarType.PROC); //
 
   private static final Set<Token.Type> EXPRESSION_STARTS = ImmutableSet.of(Token.Type.VARIABLE,
           Token.Type.LPAREN, Token.Type.MINUS, Token.Type.PLUS, Token.Type.NOT, Token.Type.INT,
-          Token.Type.STRING, Token.Type.BOOL);
+          Token.Type.STRING, Token.Type.BOOL, Token.Type.TRUE, Token.Type.FALSE, Token.Type.LENGTH,
+          Token.Type.ASC, Token.Type.CHR);
+
+  private static Set<Type> UNARY_KEYWORDS = ImmutableSet.of(//
+          Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
 
   private final Lexer lexer;
   private Token token;
@@ -81,15 +83,15 @@ public class Parser {
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
     if (token.type() == Token.Type.EOF) {
       return new ProgramNode(statements);
-    } else if (token.type() == Token.Type.KEYWORD) {
+    } else if (token.type().isKeyword()) {
       // if main, process main
-      KeywordToken kt = (KeywordToken) token;
-      if (kt.keyword() == KeywordType.MAIN) {
+      if (token.type() == Token.Type.MAIN) {
+        Token start = token;
         advance(); // eat the main
         // TODO: parse arguments
         BlockNode mainBlock = block();
         if (token.type() == Token.Type.EOF) {
-          MainNode mainProc = new MainNode(mainBlock, kt.start());
+          MainNode mainProc = new MainNode(mainBlock, start.start());
           return new ProgramNode(statements, mainProc);
         }
         throw new ParseException(String.format("Unexpected %s; expected EOF", token.text()),
@@ -124,41 +126,39 @@ public class Parser {
   }
 
   private StatementNode statement() {
-    if (token.type() == Token.Type.KEYWORD) {
-
-      KeywordToken kt = (KeywordToken) token;
-      switch (kt.keyword()) {
+    if (token.type().isKeyword()) {
+      switch (token.type()) {
         case PRINT:
         case PRINTLN:
-          return print(kt, kt.keyword() == KeywordType.PRINTLN);
+          return print(token);
 
         case IF:
-          return ifStmt(kt);
+          return ifStmt(token);
 
         case WHILE: {
           inWhile++;
-          WhileNode whileStmt = whileStmt(kt);
+          WhileNode whileStmt = whileStmt(token);
           inWhile--;
           return whileStmt;
         }
 
         case BREAK:
           if (inWhile == 0) {
-            throw new ParseException("BREAK keyword not in while block", kt.start());
+            throw new ParseException("BREAK not found in WHILE block", token.start());
           }
           advance();
-          return new BreakNode(kt.start());
+          return new BreakNode(token.start());
 
         case CONTINUE:
           if (inWhile == 0) {
-            throw new ParseException("CONTINUE keyword not in while block", kt.start());
+            throw new ParseException("CONTINUE not found in WHILE block", token.start());
           }
           advance();
-          return new ContinueNode(kt.start());
+          return new ContinueNode(token.start());
 
         case RETURN:
           advance();
-          return returnStmt(kt.start());
+          return returnStmt(token.start());
 
         default:
           break;
@@ -167,9 +167,8 @@ public class Parser {
       return assignmentDeclarationProcCall();
     }
 
-    throw new ParseException(String.format(
-            "Unexpected %s; expected 'print', assignment, 'if', 'while', 'return', 'continue' or 'break'",
-            token.text()), token.start());
+    throw new ParseException(String.format("Unexpected start of statement '%s'", token.text()),
+            token.start());
   }
 
   private ReturnNode returnStmt(Position start) {
@@ -193,8 +192,8 @@ public class Parser {
       return new AssignmentNode(var, expr);
     } else if (token.type() == Token.Type.COLON) {
       advance();
-      if (token.type() == Token.Type.KEYWORD) {
-        KeywordType declaredType = ((KeywordToken) token).keyword();
+      if (token.type().isKeyword()) {
+        Token.Type declaredType = token.type();
 
         // TODO: this may have to be relaxed when we have records
         VarType varType = BUILTINS.get(declaredType);
@@ -242,12 +241,12 @@ public class Parser {
     VarType returnType = VarType.VOID;
     if (token.type() == Token.Type.COLON) {
       advance();
-      if (token.type() != Token.Type.KEYWORD) {
+      if (!token.type().isKeyword()) {
         throw new ParseException(
                 String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
                 token.start());
       }
-      KeywordType declaredType = ((KeywordToken) token).keyword();
+      Token.Type declaredType = token.type();
       returnType = BUILTINS.get(declaredType);
       if (returnType == null || returnType == VarType.PROC) {
         throw new ParseException(
@@ -297,12 +296,12 @@ public class Parser {
     advance();
     if (token.type() == Token.Type.COLON) {
       advance();
-      if (token.type() != Token.Type.KEYWORD) {
+      if (!token.type().isKeyword()) {
         throw new ParseException(
                 String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
                 token.start());
       }
-      KeywordType declaredType = ((KeywordToken) token).keyword();
+      Token.Type declaredType = token.type();
       VarType paramType = BUILTINS.get(declaredType);
       if (paramType == null) {
         throw new ParseException(
@@ -319,15 +318,15 @@ public class Parser {
     }
   }
 
-  private PrintNode print(KeywordToken kt, boolean println) {
-    assert (kt.keyword() == KeywordType.PRINT || kt.keyword() == KeywordType.PRINTLN);
+  private PrintNode print(Token printToken) {
+    assert (printToken.type() == Token.Type.PRINT || printToken.type() == Token.Type.PRINTLN);
     advance();
     ExprNode expr = expr();
-    return new PrintNode(expr, kt.start(), println);
+    return new PrintNode(expr, printToken.start(), printToken.type() == Token.Type.PRINTLN);
   }
 
-  private IfNode ifStmt(KeywordToken kt) {
-    assert (kt.keyword() == KeywordType.IF);
+  private IfNode ifStmt(Token kt) {
+    assert (kt.type() == Token.Type.IF);
     advance();
 
     List<IfNode.Case> cases = new ArrayList<>();
@@ -337,24 +336,24 @@ public class Parser {
     cases.add(new IfNode.Case(condition, (BlockNode) statements));
 
     Node elseStatements = null;
-    if (token.type() == Token.Type.KEYWORD) {
-      KeywordToken elseOrElif = (KeywordToken) token;
+    if (token.type().isKeyword()) {
+      Token elseOrElif = token;
       // while elif: get condition, get statements, add to case list.
-      while (elseOrElif != null && elseOrElif.keyword() == KeywordType.ELIF) {
+      while (elseOrElif != null && elseOrElif.type() == Token.Type.ELIF) {
         advance();
 
         Node elifCondition = expr();
         Node elifStatements = block();
         cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
 
-        if (token.type() == Token.Type.KEYWORD) {
-          elseOrElif = (KeywordToken) token;
+        if (token.type().isKeyword()) {
+          elseOrElif = token;
         } else {
           elseOrElif = null;
         }
       }
 
-      if (elseOrElif != null && elseOrElif.keyword() == KeywordType.ELSE) {
+      if (elseOrElif != null && elseOrElif.type() == Token.Type.ELSE) {
         advance();
         elseStatements = block();
       }
@@ -363,12 +362,12 @@ public class Parser {
     return new IfNode(cases, (BlockNode) elseStatements, kt.start());
   }
 
-  private WhileNode whileStmt(KeywordToken kt) {
-    assert (kt.keyword() == KeywordType.WHILE);
+  private WhileNode whileStmt(Token kt) {
+    assert (kt.type() == Token.Type.WHILE);
     advance();
     ExprNode condition = expr();
     Optional<StatementNode> doStatement = Optional.empty();
-    if (matchesKeyword(token, KeywordType.DO)) {
+    if (token.type() == Token.Type.DO) {
       advance();
       doStatement = Optional.of(statement());
     }
@@ -553,8 +552,8 @@ public class Parser {
       // However, at this point we don't have types in the expr tree yet so we can't
       // do that exact optimization yet.
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
-    } else if (matchesUnaryKeyword(token)) {
-      KeywordToken keywordToken = (KeywordToken) unaryToken;
+    } else if (isUnaryKeyword(token)) {
+      Token keywordToken = unaryToken;
       advance();
       if (token.type() != Token.Type.LPAREN) {
         throw new ParseException(String.format("Expected '(', found %s", token), token.start());
@@ -565,10 +564,13 @@ public class Parser {
         throw new ParseException(String.format("Expected ')', found %s", token), token.start());
       }
       advance();
-      return new UnaryNode(keywordToken.keyword().unaryOperator(), hopefullyAString,
-              unaryToken.start());
+      return new UnaryNode(keywordToken.type(), hopefullyAString, unaryToken.start());
     }
     return arrayGet();
+  }
+
+  private static boolean isUnaryKeyword(Token token) {
+    return UNARY_KEYWORDS.contains(token.type());
   }
 
   private ExprNode arrayGet() {
@@ -595,10 +597,10 @@ public class Parser {
       IntToken it = (IntToken) token;
       advance();
       return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
-    } else if (token.type() == Token.Type.BOOL) {
-      BoolToken bt = (BoolToken) token;
+    } else if (token.type() == Token.Type.TRUE || token.type() == Token.Type.FALSE) {
+      Token bt = token;
       advance();
-      return new ConstNode<Boolean>(bt.value(), VarType.BOOL, bt.start());
+      return new ConstNode<Boolean>(bt.type() == Token.Type.TRUE, VarType.BOOL, bt.start());
     } else if (token.type() == Token.Type.STRING) {
       Token st = token;
       advance();
@@ -703,23 +705,7 @@ public class Parser {
       if (token.type() == Token.Type.EOF) {
         return true;
       }
-      return matchesKeyword(token, KeywordType.MAIN);
+      return token.type() == Token.Type.MAIN;
     };
-  }
-
-  private static boolean matchesKeyword(Token token, KeywordType type) {
-    if (token.type() == Token.Type.KEYWORD) {
-      KeywordToken kt = (KeywordToken) token;
-      return kt.keyword() == type;
-    }
-    return false;
-  }
-
-  private static Boolean matchesUnaryKeyword(Token token) {
-    if (token.type() == Token.Type.KEYWORD) {
-      KeywordToken kt = (KeywordToken) token;
-      return kt.keyword().isUnary();
-    }
-    return false;
   }
 }

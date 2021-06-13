@@ -238,6 +238,20 @@ public class InterpreterTest {
     execute("a:proc(): string { return 'aproc' } a()");
   }
 
+  @Test
+  public void returnNotNull() {
+    Environment env = execute("a:proc(): int { return asc('b') } b=a()");
+    assertThat(env.getValue("b")).isEqualTo(98);
+    env = execute("a:proc(): int { return length('abc') } b=a()");
+    assertThat(env.getValue("b")).isEqualTo(3);
+    env = execute("a:proc(): string { return chr(66) } b=a()");
+    assertThat(env.getValue("b")).isEqualTo("B");
+    env = execute("a:proc(): bool { return true } b=a()");
+    assertThat(env.getValue("b")).isEqualTo(1);
+    env = execute("a:proc(): bool { return false } b=a()");
+    assertThat(env.getValue("b")).isEqualTo(0);
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);

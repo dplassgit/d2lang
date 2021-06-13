@@ -5,31 +5,36 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    KEYWORD, INT, BOOL, STRING, VARIABLE, //
-    EQ("="), NOT("!"), //
-    EQEQ("=="), LT("<"), GT(">"), LEQ("<="), GEQ(">="), NEQ("!="), //
-    AND("&"), OR("|"), //
-    PLUS("+"), MINUS("-"), MULT("*"), DIV("/"), MOD("%"), //
-    LPAREN("("), RPAREN(")"), //
-    LBRACE("{"), RBRACE("}"), //
-    LBRACKET("["), RBRACKET("]"), //
-    COLON(":"), COMMA(","), //
+    INT(true), BOOL(true), // indicates the "bool" keyword"
+    STRING(true), VARIABLE, //
+    PRINT(true), PRINTLN(true), TRUE(true), FALSE(true), IF(true), ELSE(true), ELIF(true), //
+    MAIN(true), PROC(true), RETURN(true), WHILE(true), DO(true), BREAK(true), CONTINUE(true), //
     // Unary operators:
-    LENGTH, CHR, ASC, //
+    LENGTH(true), CHR(true), ASC(true), //
+    EQ, //
+    EQEQ, LT, GT, LEQ, GEQ, NEQ, //
+    // Booleans
+    NOT, AND, OR, //
+    // Binary
+    PLUS, MINUS, MULT, DIV, MOD, //
+    LPAREN, RPAREN, //
+    LBRACE, RBRACE, //
+    LBRACKET, RBRACKET, //
+    COLON, COMMA, //
     EOF;
 
-    private final String val;
-
-    public String value() {
-      return val;
-    }
-
-    Type(String val) {
-      this.val = val;
-    }
+    private final boolean keyword;
 
     Type() {
-      this.val = name();
+      this(false);
+    }
+
+    Type(boolean keyword) {
+      this.keyword = keyword;
+    }
+
+    public boolean isKeyword() {
+      return keyword;
     }
   }
 

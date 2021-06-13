@@ -213,7 +213,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         emit(new Transfer(destination, expr.location()));
         break;
       default:
-        logger.atWarning().log("No code generated for operator %s", node.operator().value());
+        logger.atWarning().log("No code generated for operator %s", node.operator());
         break;
     }
   }
