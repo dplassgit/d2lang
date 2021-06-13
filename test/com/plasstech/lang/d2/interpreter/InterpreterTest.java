@@ -210,6 +210,14 @@ public class InterpreterTest {
     assertThat(env.getValue("b")).isNull();
   }
 
+  @Test
+  public void lengths() {
+    Environment env = execute("a=length('hi') " //
+            + "b=length([1,2,3])");
+    assertThat(env.getValue("a")).isEqualTo(2);
+    assertThat(env.getValue("b")).isEqualTo(3);
+  }
+
   private Environment execute(String program) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);

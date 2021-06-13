@@ -17,7 +17,7 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 public class ILCodeGeneratorTest {
 
   @Test
-  public void generate_print() {
+  public void print() {
     generateProgram("print 123");
   }
 
@@ -27,28 +27,28 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
-  public void generate_assignments() {
+  public void assignments() {
     generateProgram(
             "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
   }
 
   @Test
-  public void generate_stringAssignment() {
+  public void stringAssignment() {
     generateProgram("a:string a='hi' print a");
   }
 
   @Test
-  public void generate_println() {
+  public void println() {
     generateProgram("a='world' print 'hello, ' println a");
   }
 
   @Test
-  public void generate_stringExpression() {
+  public void stringExpression() {
     generateProgram("a='hi' b=a+' world'");
   }
 
   @Test
-  public void generate_hugeAssignment() {
+  public void hugeAssignment() {
     generateProgram("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
@@ -56,33 +56,33 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
-  public void generate_if() {
+  public void ifStmt() {
     generateProgram("a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} "
                     + "else {print 2} print 3");
   }
 
   @Test
-  public void generate_main() {
+  public void main() {
     generateProgram("a=0 main {print a}");
   }
 
   @Test
-  public void generate_while() {
+  public void whileStmt() {
     generateProgram("i=0 while i < 30 do i = i+1 {print i}");
   }
 
   @Test
-  public void generate_whileContinue() {
+  public void whileContinue() {
     generateProgram("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1");
   }
 
   @Test
-  public void generate_whileBreak() {
+  public void whileBreak() {
     generateProgram("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1");
   }
 
   @Test
-  public void generate_whileNestedBreak() {
+  public void whileNestedBreak() {
     generateProgram(
             "i=0 while i < 30 do i = i+1 { "
                     + "  j = 0 while j < 10 do j = j + 1 { " //
@@ -94,28 +94,33 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
-  public void generate_procVoid() {
+  public void procVoid() {
     generateProgram("f:proc() {print 'hi'} main{ f() }");
   }
 
   @Test
-  public void generate_procInt() {
+  public void procInt() {
     generateProgram("f:proc():int {return 3} main{ x=f() }");
   }
 
   @Test
-  public void generate_procArg() {
+  public void procArg() {
     generateProgram("f:proc(n:int, m:int):int {return n+m} main{ a=3 x=f(1, a) f(2,3) }");
   }
 
   @Test
-  public void generate_stringIndex() {
+  public void stringIndex() {
     generateProgram("a='hi' b=a[1]");
   }
 
   @Test
-  public void generate_constStringIndex() {
+  public void constStringIndex() {
     generateProgram("a='hi'[1]");
+  }
+
+  @Test
+  public void stringLength() {
+    generateProgram("a=length('hi')");
   }
 
   private List<Op> generateProgram(String program) {

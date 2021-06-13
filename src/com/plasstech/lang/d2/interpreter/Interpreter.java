@@ -199,6 +199,38 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(UnaryOp op) {
     Object rhs = resolve(op.operand());
+    Object result = null;
+    if (rhs instanceof Boolean || rhs instanceof Integer) {
+      result = visitUnaryInt(op, rhs);
+    } else if (rhs instanceof String) {
+      result = visitUnaryString(op, (String) rhs);
+    } else if (rhs.getClass().isArray()) {
+      result = visitUnaryArray(op, (Object[]) rhs);
+    } else {
+      throw new IllegalStateException("Unknown unary op operand " + rhs);
+    }
+    setValue(op.destination(), result);
+  }
+
+  private Object visitUnaryArray(UnaryOp op, Object[] rhs) {
+    switch (op.operator()) {
+      case LENGTH:
+        return rhs.length;
+      default:
+        throw new IllegalStateException("Unknown array unaryop " + op.operator());
+    }
+  }
+
+  private Object visitUnaryString(UnaryOp op, String rhs) {
+    switch (op.operator()) {
+      case LENGTH:
+        return rhs.length();
+      default:
+        throw new IllegalStateException("Unknown string unaryop " + op.operator());
+    }
+  }
+
+  private Object visitUnaryInt(UnaryOp op, Object rhs) {
     int r1;
     if (rhs == Boolean.TRUE) {
       r1 = 1;
@@ -207,18 +239,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else {
       r1 = (Integer) rhs;
     }
-    Object result;
     switch (op.operator()) {
       case MINUS:
-        result = 0 - r1;
-        break;
+        return 0 - r1;
       case NOT:
-        result = (r1 == 0) ? 1 : 0;
-        break;
+        return (r1 == 0) ? 1 : 0;
       default:
-        throw new IllegalStateException("Unknown unaryop " + op.operator());
+        throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
     }
-    setValue(op.destination(), result);
   }
 
   private Object resolve(Operand operand) {

@@ -203,6 +203,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     switch (node.operator()) {
       case NOT:
       case MINUS:
+      case LENGTH:
         emit(new UnaryOp(destination, node.operator(), expr.location()));
         break;
       case PLUS:
@@ -210,6 +211,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         emit(new Transfer(destination, expr.location()));
         break;
       default:
+        logger.atWarning().log("No code generated for operator %s", node.operator().value());
         break;
     }
   }
