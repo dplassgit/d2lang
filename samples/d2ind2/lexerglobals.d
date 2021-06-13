@@ -49,7 +49,6 @@ KEYWORDS=[
 // 'record'
 // 'error'
 ]
-KEYWORDS_LENGTH = 17
 
 // Global for token:
 token_type: int
@@ -125,7 +124,7 @@ makeText: proc():String {
     return Token(Type_FALSE, 'false')
   }
 
-  i=0 while i < KEYWORDS_LENGTH do i = i + 1 {
+  i=0 while i < length(KEYWORDS) do i = i + 1 {
     if value == KEYWORDS[i] {
       return Token(Type_KEYWORD, value)
     }
@@ -312,10 +311,15 @@ main {
   text = "print 'hi' a = a + 1"
   new_lexer(text)
 
-  println nextToken()
+  print nextToken() print " " println token_type
+
+  if token_type != Type_KEYWORD {
+    print "Expected " print Type_KEYWORD print " but was " println token_type
+    print 1/0
+  }
 
   while token_type != Type_EOF {
-    println nextToken()
+    print nextToken() print " " println token_type
   }
 
 }
