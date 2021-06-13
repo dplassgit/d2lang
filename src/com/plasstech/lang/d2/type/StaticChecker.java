@@ -50,6 +50,7 @@ public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> BOOLEAN_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
           Token.Type.LT, Token.Type.GT, Token.Type.NEQ, Token.Type.AND, Token.Type.OR);
 
+  // TODO(#14): implement EQEQ and NEQ for arrays
   private static final Set<Token.Type> ARRAY_OPERATORS = ImmutableSet.of(Token.Type.EQEQ,
           Token.Type.NEQ, Token.Type.LBRACKET);
 
@@ -98,7 +99,6 @@ public class StaticChecker extends DefaultVisitor {
     Node expr = node.expr();
     expr.accept(this);
     if (expr.varType().isUnknown()) {
-      // this is bad.
       throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
     }
   }
@@ -111,21 +111,19 @@ public class StaticChecker extends DefaultVisitor {
     Node right = node.expr();
     right.accept(this);
     if (right.varType().isUnknown()) {
-      // this is bad.
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
     if (right.varType() == VarType.VOID) {
-      // this is bad.
       throw new TypeException(String.format("Cannot assign value of void expression %s", right),
               right.position());
     }
 
     Symbol sym = symbolTable().getRecursive(variable.name());
     if (sym == null) {
-      // brand new in all scopes. Assign in curren scope.
+      // Brand new symbol in all scopes. Assign in current scope.
       symbolTable().assign(variable.name(), right.varType());
     } else {
-      // already known in some scope. Update.
+      // Already known in some scope. Update.
       if (sym.type().isUnknown()) {
         sym.setType(right.varType());
       } else if (!sym.type().equals(right.varType())) {
@@ -139,7 +137,7 @@ public class StaticChecker extends DefaultVisitor {
       sym.setAssigned();
     }
 
-    // all is good.
+    // All is good.
     // TODO: why do we need variable.vartype, node.vartype and symbol.type?
     variable.setVarType(right.varType());
     node.setVarType(right.varType());
@@ -231,39 +229,51 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Check that they're not trying to, for example, multiply booleans
+    // TODO: CLEAN THIS UP
     if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-              String.format("Cannot apply %s operator to boolean expression", node.operator()),
+              String.format("Cannot apply %s operator to BOOL expression", node.operator()),
               left.position());
     }
     if (left.varType() == VarType.INT && !INT_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-              String.format("Cannot apply %s operator to int expression", node.operator()),
+              String.format("Cannot apply %s operator to INT expression", node.operator()),
               left.position());
     }
     if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-              String.format("Cannot apply %s operator to string expression", node.operator()),
+              String.format("Cannot apply %s operator to STRING expression", node.operator()),
               left.position());
     }
+    if (left.varType().isArray() && !ARRAY_OPERATORS.contains(node.operator())) {
+      throw new TypeException(
+              String.format("Cannot apply %s operator to ARRAY expression", node.operator()),
+              left.position());
+    }
+
+    // string[int] and array[int] testing.
     if (left.varType() == VarType.STRING && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-                String.format("Type mismatch: string index must be INT; was %s", right.varType()),
+                String.format("Type mismatch: STRING index must be INT; was %s", right.varType()),
                 right.position());
       }
       node.setVarType(VarType.STRING);
+      // NOTE RETURN
       return;
+
     } else if (left.varType().isArray() && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-                String.format("Type mismatch: array index must be INT; was %s", right.varType()),
+                String.format("Type mismatch: ARRAY index must be INT; was %s", right.varType()),
                 right.position());
       }
       // I hate this.
       ArrayType arrayType = (ArrayType) left.varType();
       node.setVarType(arrayType.baseType());
+      // NOTE RETURN
       return;
+
     } else if (!left.varType().equals(right.varType())) {
       throw new TypeException(String.format("Type mismatch: %s is %s; %s is %s", left,
               left.varType(), right, right.varType()), left.position());

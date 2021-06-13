@@ -390,9 +390,9 @@ public class StaticCheckerTest {
 
   @Test
   public void badArrayIndex() {
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr['bye']", "array index must be INT");
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr[false]", "array index must be INT");
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr[b]", "array index must be INT");
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
+    assertExecuteError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
   }
 
   @Test
@@ -414,11 +414,19 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void badArrayOperators() {
+    for (char c : "+-/%".toCharArray()) {
+      assertExecuteError(String.format("a1 = [1,2,3] %c [2,3,4]", c),
+              "operator to ARRAY expression");
+    }
+  }
+
+  @Test
   public void badStringIndex() {
-    assertExecuteError("b='hi' a=b['bye']", "string index must be INT");
-    assertExecuteError("b='hi' a=b[false]", "string index must be INT");
-    assertExecuteError("b='hi' a='hi'[b]", "string index must be INT");
-    assertExecuteError("b=3 a=b[3]", "Cannot apply LBRACKET operator to int expression");
+    assertExecuteError("b='hi' a=b['bye']", "STRING index must be INT");
+    assertExecuteError("b='hi' a=b[false]", "STRING index must be INT");
+    assertExecuteError("b='hi' a='hi'[b]", "STRING index must be INT");
+    assertExecuteError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
   }
 
   @Test
