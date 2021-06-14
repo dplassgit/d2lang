@@ -4,11 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
-import java.util.List;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
@@ -35,6 +30,9 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class ParserTest {
   @Test
@@ -390,10 +388,12 @@ public class ParserTest {
 
   @Test
   public void allExprTypes() {
-    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
-            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
-            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
+    BlockNode root =
+        parseStatements(
+            "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+                + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
+                + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
+                + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(2);
@@ -457,8 +457,16 @@ public class ParserTest {
 
   @Test
   public void ifNested() {
-    BlockNode root = parseStatements("if a==3 { " + "if a==4 { " + " if a == 5 {" + "   print a"
-            + " } " + "} }" + "else { print 4 print a}");
+    BlockNode root =
+        parseStatements(
+            "      if a==3 { "
+                + "  if a==4 { "
+                + "   if a == 5 {"
+                + "     print a"
+                + "   } "
+                + "  }"
+                + "}"
+                + "else { print 4 print a}");
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -482,8 +490,12 @@ public class ParserTest {
 
   @Test
   public void ifElif() {
-    BlockNode root = parseStatements("if a==3 { print a } elif a==4 { print 4 print a} "
-            + "elif a==5 { print 5}else { print 6 print 7}");
+    BlockNode root =
+        parseStatements(
+            "      if a==3 { print a } "
+                + "elif a==4 { print 4 print a} "
+                + "elif a==5 { print 5}"
+                + "else { print 6 print 7}");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -495,13 +507,17 @@ public class ParserTest {
   @Test
   public void ifError() {
     assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
-    assertParseError("Missing close brace", "if a==3 { print a } else {print 4",
-            "Unexpected start of statement 'EOF'");
+    assertParseError(
+        "Missing close brace",
+        "if a==3 { print a } else {print 4",
+        "Unexpected start of statement 'EOF'");
     assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
     assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
-    assertParseError("Extra elif", "if a==3 { print a } else  { print 4 print a} "
+    assertParseError(
+        "Extra elif",
+        "if a==3 { print a } else  { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}",
-            "Unexpected start of statement 'ELIF'");
+        "Unexpected start of statement 'ELIF'");
   }
 
   @Test
@@ -594,16 +610,18 @@ public class ParserTest {
     assertParseError("Missing expression", "while print", "expected literal");
     assertParseError("Missing open brace", "while a==3 print", "expected {");
     assertParseError("Missing close brace", "while a==3 {print", "expected literal");
-    assertParseError("Missing do assignment", "while a==3 do {print}",
-            "Unexpected start of statement '{'");
+    assertParseError(
+        "Missing do assignment", "while a==3 do {print}", "Unexpected start of statement '{'");
     assertParseError("Bad do assignment", "while a==3 do print {print}", "expected literal");
     assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
     assertParseError("Unexpected continue", "continue", "CONTINUE not found in WHILE");
     assertParseError("Unexpected break", "break", "BREAK not found in WHILE");
-    assertParseError("Unexpected break", "if true {break while true {continue }}",
-            "BREAK not found in WHILE");
-    assertParseError("Unexpected continue", "if true {continue while true {break}}",
-            "CONTINUE not found in WHILE");
+    assertParseError(
+        "Unexpected break", "if true {break while true {continue }}", "BREAK not found in WHILE");
+    assertParseError(
+        "Unexpected continue",
+        "if true {continue while true {break}}",
+        "CONTINUE not found in WHILE");
   }
 
   @Test
@@ -739,12 +757,12 @@ public class ParserTest {
     assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
     assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
     assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
-    assertParseError("Should not be allowed", "fib:proc() {return",
-            "Unexpected start of statement 'EOF'");
-    assertParseError("Should not be allowed", "fib:proc() {return {",
-            "Unexpected start of statement '{'");
-    assertParseError("Should not be allowed", "fib:proc() {return )}",
-            "Unexpected start of statement ')'");
+    assertParseError(
+        "Should not be allowed", "fib:proc() {return", "Unexpected start of statement 'EOF'");
+    assertParseError(
+        "Should not be allowed", "fib:proc() {return {", "Unexpected start of statement '{'");
+    assertParseError(
+        "Should not be allowed", "fib:proc() {return )}", "Unexpected start of statement ')'");
   }
 
   @Test
@@ -791,12 +809,13 @@ public class ParserTest {
 
   @Test
   public void fullProc() {
-    ProgramNode root = parseProgram( //
-            "fib:proc(typed:int, nontyped) : string {" //
-                    + "typed = typed + 1" //
-                    + "nontyped = typed + 1" //
-                    + "return 'hi'" //
-                    + "}"); //
+    ProgramNode root =
+        parseProgram(
+            "      fib:proc(typed:int, nontyped) : string {"
+                + "  typed = typed + 1"
+                + "  nontyped = typed + 1"
+                + "  return 'hi'"
+                + "}");
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");

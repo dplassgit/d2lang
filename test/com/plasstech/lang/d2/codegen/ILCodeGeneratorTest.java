@@ -2,10 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import static org.junit.Assert.fail;
 
-import java.util.List;
-
-import org.junit.Test;
-
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -13,6 +9,8 @@ import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
+import java.util.List;
+import org.junit.Test;
 
 public class ILCodeGeneratorTest {
 
@@ -28,8 +26,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void assignments() {
-    generateProgram(
-            "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
+    generateProgram("a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
   }
 
   @Test
@@ -49,7 +46,8 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void hugeAssignment() {
-    generateProgram("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+    generateProgram(
+        "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
             + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
@@ -57,8 +55,8 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void ifStmt() {
-    generateProgram("a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} "
-                    + "else {print 2} print 3");
+    generateProgram(
+        "a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} else {print 2} print 3");
   }
 
   @Test
@@ -84,13 +82,13 @@ public class ILCodeGeneratorTest {
   @Test
   public void whileNestedBreak() {
     generateProgram(
-            "i=0 while i < 30 do i = i+1 { "
-                    + "  j = 0 while j < 10 do j = j + 1 { " //
-                    + "    print j break" //
-                    + "  }" //
-                    + "   if i > 10  { break } print i" //
-                    + "}" //
-                    + "print -1");
+        "i=0 while i < 30 do i = i+1 { "
+            + "  j = 0 while j < 10 do j = j + 1 { "
+            + "    print j break"
+            + "  }"
+            + "   if i > 10  { break } print i"
+            + "}"
+            + "print -1");
   }
 
   @Test

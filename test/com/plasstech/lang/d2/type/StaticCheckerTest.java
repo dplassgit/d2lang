@@ -4,8 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -16,6 +14,7 @@ import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
+import org.junit.Test;
 
 public class StaticCheckerTest {
 
@@ -295,7 +294,6 @@ public class StaticCheckerTest {
     checkProgram("b:proc():int {return 0} a:string[b()]");
   }
 
-
   @Test
   public void declArrayMismatch() {
     assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
@@ -416,8 +414,8 @@ public class StaticCheckerTest {
   @Test
   public void badArrayOperators() {
     for (char c : "+-/%".toCharArray()) {
-      assertExecuteError(String.format("a1 = [1,2,3] %c [2,3,4]", c),
-              "operator to ARRAY expression");
+      assertExecuteError(
+          String.format("a1 = [1,2,3] %c [2,3,4]", c), "operator to ARRAY expression");
     }
   }
 
@@ -525,23 +523,21 @@ public class StaticCheckerTest {
     assertExecuteError("a:string a=true", "mismatch");
     assertExecuteError("a:int a=''", "mismatch");
   }
-  
+
   @Test
   public void globalDeclsAreNeverUndefined() {
     // Tests bug#39
-    checkProgram(//
-            "a:string " //
-                    + "p: proc {" //
-                    + "  print a" //
-                    + "}"//
-                    + "setup: proc {" //
-                    + "  a = 'hi'" //
-                    + "}" //
-                    + "setup()" //
-                    + "p()");
+    checkProgram(
+        "      a:string "
+            + "p: proc {"
+            + "  print a"
+            + "}"
+            + "setup: proc {"
+            + "  a = 'hi'"
+            + "}"
+            + "setup() "
+            + "p()");
   }
-
-
 
   @Test
   public void decl() {
@@ -562,35 +558,38 @@ public class StaticCheckerTest {
     checkProgram("fib:proc() {a=3} a=true");
     checkProgram("a=true fib:proc() {a:int a=3} ");
     checkProgram("fib:proc(n) : int { n=3 return n}");
-    checkProgram("level1:proc() : bool { " //
-            + " level2:proc() : int  {n=3 return n}" //
-            + " return false" //
-            + "} level1()"); //
+    checkProgram(
+        "level1:proc() : bool { "
+            + " level2:proc() : int  {n=3 return n}"
+            + " return false"
+            + "} level1()");
   }
 
   @Test
   public void procRecursive() {
-    checkProgram("fib:proc(n:int) : int {" //
-            + "  if n <= 1 {" //
-            + "    return n" //
-            + "  } else {" //
-            + "    return fib(n-1) + fib(n-2)" //
-            + "  }" //
-            + "}" //
+    checkProgram(
+        "fib:proc(n:int) : int {"
+            + "  if n <= 1 {"
+            + "    return n"
+            + "  } else {"
+            + "    return fib(n-1) + fib(n-2)"
+            + "  }"
+            + "}"
             + "");
   }
 
   @Test
   public void procIterative() {
-    checkProgram("fib2:proc (n:int) : int {" //
-            + " n1 = 0 " //
-            + " n2 = 1 " //
-            + " i=1 while i < n do i = i + 1 { " //
-            + "  nth = n1 + n2 " //
-            + "  n1 = n2 " //
-            + "  n2 = nth " //
-            + " } " //
-            + " return nth " //
+    checkProgram(
+        "fib2:proc (n:int) : int {"
+            + " n1 = 0 "
+            + " n2 = 1 "
+            + " i=1 while i < n do i = i + 1 { "
+            + "  nth = n1 + n2 "
+            + "  n1 = n2 "
+            + "  n2 = nth "
+            + " } "
+            + " return nth "
             + "}");
   }
 
@@ -616,42 +615,46 @@ public class StaticCheckerTest {
   @Test
   public void procReturn() {
     assertExecuteError("fib:proc():int {}", "No 'return' statement");
-    assertExecuteError("fib:proc():bool {" //
-            + "if false {" //
-            + " return false" //
-            + "}" //
-            + "}", "Not all codepaths");
-    assertExecuteError( //
-            "fib:proc():bool {" //
-                    + "if false {" //
-                    + "  if true {" //
-                    + "    return false" //
-                    + "  } elif false {" //
-                    + "    return true" //
-                    + "  } else {" //
-                    + "    print 'hi'" //
-                    + "  }" //
-                    + "}" //
-                    + "}", //
-            "Not all codepaths");
-    assertExecuteError("fib:proc():bool {if false {return false} else {print 'hi'}}",
-            "Not all codepaths");
-    assertExecuteError("fob:proc():int {" //
-            + "if (false) {" //
-            + "  if (true) {" //
-            + "  } elif (3==3) {" //
-            + "  } else {" //
-            + "  }" //
-            + "} elif (3==3) {" //
-            + "  if (true) {" //
-            + "    return 3" //
-            + "  } elif (3==3) {" //
-            + "    return 3" //
-            + "  } else {" //
-            + "    return 3" //
-            + "  }" //
-            + "}" //
-            + "}", "Not all codepaths");
+    assertExecuteError(
+        "fib:proc():bool {"
+            + "if false {"
+            + " return false"
+            + "}"
+            + "}",
+        "Not all codepaths");
+    assertExecuteError(
+        "fib:proc():bool {"
+            + "if false {"
+            + "  if true {"
+            + "    return false"
+            + "  } elif false {"
+            + "    return true"
+            + "  } else {"
+            + "    print 'hi'"
+            + "  }"
+            + "}"
+            + "}",
+        "Not all codepaths");
+    assertExecuteError(
+        "fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
+    assertExecuteError(
+        "fob:proc():int {"
+            + "if (false) {"
+            + "  if (true) {"
+            + "  } elif (3==3) {"
+            + "  } else {"
+            + "  }"
+            + "} elif (3==3) {"
+            + "  if (true) {"
+            + "    return 3"
+            + "  } elif (3==3) {"
+            + "    return 3"
+            + "  } else {"
+            + "    return 3"
+            + "  }"
+            + "}"
+            + "}",
+        "Not all codepaths");
   }
 
   @Test
@@ -665,41 +668,46 @@ public class StaticCheckerTest {
     assertExecuteError("a:int a(3)", "Procedure a is unknown");
     assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "Procedure inner is unknown");
     // wrong number of params
-    assertExecuteError("fib:proc(){} fib(3)",
-            "Wrong number of arguments to procedure fib: found 1, expected 0");
-    assertExecuteError("fib:proc(n:int){} fib(3, 4)",
-            "Wrong number of arguments to procedure fib: found 2, expected 1");
+    assertExecuteError(
+        "fib:proc(){} fib(3)", "Wrong number of arguments to procedure fib: found 1, expected 0");
+    assertExecuteError(
+        "fib:proc(n:int){} fib(3, 4)",
+        "Wrong number of arguments to procedure fib: found 2, expected 1");
     // indeterminable arg type
-    assertExecuteError("fib:proc(n) {fib(n)}",
-            "Indeterminable type for parameter n of procedure fib");
+    assertExecuteError(
+        "fib:proc(n) {fib(n)}", "Indeterminable type for parameter n of procedure fib");
     // wrong arg type
-    assertExecuteError("fib:proc(n:int) {} fib(false)",
-            "Type mismatch for parameter n of procedure fib: found BOOL, expected INT");
+    assertExecuteError(
+        "fib:proc(n:int) {} fib(false)",
+        "Type mismatch for parameter n of procedure fib: found BOOL, expected INT");
     // can't assign to void
     assertExecuteError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
   }
 
   @Test
   public void callInnerProc() {
-    checkProgram("level1: proc(): bool {\n" //
-            + "     level2: proc(): int {n=3 return n}\n" //
-            + "     m=level2()\n" //
-            + "     return m==3\n" //
-            + "}\n"); //
+    checkProgram(
+        "      level1: proc(): bool {\n"
+            + "  level2: proc(): int {n=3 return n}\n"
+            + "  m=level2()\n"
+            + "  return m==3\n"
+            + "}\n");
   }
 
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     Node rootNode = parser.parse();
-    assertWithMessage("Should have passed parse for:\n " + program).that(rootNode.isError())
-            .isFalse();
+    assertWithMessage("Should have passed parse for:\n " + program)
+        .that(rootNode.isError())
+        .isFalse();
     ProgramNode root = (ProgramNode) rootNode;
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult result = checker.execute();
     assertWithMessage("Should have result error for:\n " + program).that(result.isError()).isTrue();
-    assertWithMessage("Should have correct error for:\n " + program).that(result.message())
-            .contains(messageShouldContain);
+    assertWithMessage("Should have correct error for:\n " + program)
+        .that(result.message())
+        .contains(messageShouldContain);
   }
 
   private SymTab checkProgram(String program) {

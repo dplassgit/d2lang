@@ -3,9 +3,8 @@ package com.plasstech.lang.d2.lex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-
 import com.plasstech.lang.d2.lex.Token.Type;
+import org.junit.Test;
 
 public class LexerTest {
   @Test
@@ -127,9 +126,10 @@ public class LexerTest {
 
   @Test
   public void keyword() {
-    Lexer lexer = new Lexer(
+    Lexer lexer =
+        new Lexer(
             "print PrintLN IF Else elif do while break continue int bool proc return length asc"
-                    + " chr");
+                + " chr");
 
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Token.Type.PRINT);
@@ -431,8 +431,8 @@ public class LexerTest {
     assertThrows(ScannerException.class, () -> new Lexer("'\\0'").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer("'\\v'").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer("'\\N'").nextToken());
-    ScannerException exception = assertThrows(ScannerException.class,
-            () -> new Lexer("'\\").nextToken());
+    ScannerException exception =
+        assertThrows(ScannerException.class, () -> new Lexer("'\\").nextToken());
     assertThat(exception).hasMessageThat().contains("Unclosed");
   }
 }
