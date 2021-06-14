@@ -2,19 +2,10 @@ package com.plasstech.lang.d2.interpreter;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.base.Joiner;
-import com.plasstech.lang.d2.codegen.CodeGenerator;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
-import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymTab;
-import com.plasstech.lang.d2.type.TypeCheckResult;
-import java.util.List;
 import org.junit.Test;
+
+import com.google.common.base.Joiner;
+import com.plasstech.lang.d2.ExecutionEnvironment;
 
 public class InterpreterTest {
   @Test
@@ -257,27 +248,9 @@ public class InterpreterTest {
   }
 
   private Environment execute(String program) {
-    Lexer lexer = new Lexer(program);
-    Parser parser = new Parser(lexer);
-    Node parseNode = parser.parse();
-    if (parseNode.isError()) {
-      throw new RuntimeException(parseNode.message());
-    }
-    ProgramNode root = (ProgramNode) parseNode;
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    System.out.println(root);
-    if (result.isError()) {
-      throw new RuntimeException(result.message());
-    }
-
-    SymTab table = result.symbolTable();
-
-    CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
-    List<Op> operators = codegen.generate();
-
-    Interpreter interpreter = new Interpreter(operators, table);
-    Environment env = interpreter.execute();
+    ExecutionEnvironment ee = new ExecutionEnvironment(program, true);
+    Environment env = ee.execute();
+    System.out.println(ee.programNode());
 
     System.out.println("Environment:");
     System.out.println("------------");

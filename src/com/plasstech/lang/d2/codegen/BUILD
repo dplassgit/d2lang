@@ -28,5 +28,6 @@ java_library(name="location",
              visibility=["//visibility:public"],
              deps=[
                  "//src/com/plasstech/lang/d2/type:storage",
+                 "@maven//:com_google_guava_guava",
              ],
              )

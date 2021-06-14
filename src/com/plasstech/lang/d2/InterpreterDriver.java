@@ -1,22 +1,11 @@
 package com.plasstech.lang.d2;
 
-import com.google.common.base.Joiner;
-import com.plasstech.lang.d2.codegen.CodeGenerator;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.interpreter.Environment;
-import com.plasstech.lang.d2.interpreter.Interpreter;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ErrorNode;
-import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
-import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
+
+import com.google.common.base.Joiner;
+import com.plasstech.lang.d2.interpreter.Environment;
 
 public class InterpreterDriver {
 
@@ -30,33 +19,13 @@ public class InterpreterDriver {
       e.printStackTrace();
       return;
     }
-    // 2. lex
-    Lexer lex = new Lexer(text);
-    Parser parser = new Parser(lex);
-    Node node = parser.parse();
-    if (node.isError()) {
-      throw new RuntimeException(((ErrorNode) node).message());
-    }
-    ProgramNode root = (ProgramNode) node;
+    ExecutionEnvironment ee = new ExecutionEnvironment(text, true);
+    Environment env = ee.execute();
     System.out.println("\nPARSED PROGRAM:");
-    System.out.println(root);
-
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult checkResult = checker.execute();
-    if (checkResult.isError()) {
-      throw new RuntimeException(checkResult.message());
-    }
-    System.out.println("\nTYPE-CHECKED PROGRAM:");
-    System.out.println(root);
+    System.out.println(ee.programNode());
 
     System.out.println("\nSYMBOL TABLE:");
-    System.out.println(checkResult.symbolTable());
-
-    CodeGenerator<Op> cg = new ILCodeGenerator(root, checkResult.symbolTable());
-    List<Op> opcodes = cg.generate();
-    Interpreter interpreter = new Interpreter(opcodes, checkResult.symbolTable());
-
-    Environment env = interpreter.execute();
+    System.out.println(ee.symbolTable());
 
     System.out.println("------------------------------");
     System.out.println("SYSTEM.OUT:");

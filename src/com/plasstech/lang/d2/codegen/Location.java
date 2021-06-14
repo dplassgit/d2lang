@@ -15,7 +15,7 @@ public abstract class Location implements Operand {
 
   @Override
   public String toString() {
-    return String.format("/* (%s) */ %s", this.getClass().getSimpleName(), name);
+    return name;
   }
 
   public abstract SymbolStorage storage();

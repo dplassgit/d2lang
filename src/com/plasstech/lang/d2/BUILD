@@ -42,6 +42,7 @@ java_binary(name="CodeGenDriver",
 java_binary(name="InterpreterDriver",
             srcs=["InterpreterDriver.java"],
             deps=[
+              ":execution_environment",
               "//src/com/plasstech/lang/d2/codegen",
               "//src/com/plasstech/lang/d2/codegen/il",
               "//src/com/plasstech/lang/d2/interpreter",
@@ -55,3 +56,18 @@ java_binary(name="InterpreterDriver",
               "@maven//:com_google_flogger_flogger_system_backend",
             ],
             )
+
+java_library(name="execution_environment",
+    srcs=glob(["*.java"]),
+    deps=[
+        "//src/com/plasstech/lang/d2/codegen",
+        "//src/com/plasstech/lang/d2/codegen/il",
+        "//src/com/plasstech/lang/d2/interpreter",
+        "//src/com/plasstech/lang/d2/lex",
+        "//src/com/plasstech/lang/d2/parse",
+        "//src/com/plasstech/lang/d2/parse/node",
+        "//src/com/plasstech/lang/d2/type",
+        "@maven//:com_google_guava_guava",
+    ],
+    visibility=["//visibility:public"],
+ )
