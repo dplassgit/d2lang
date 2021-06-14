@@ -714,9 +714,9 @@ public class StaticCheckerTest {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
-    if (node.isError()) {
-      fail(node.message());
-    }
+    assertWithMessage("Should have passed parse for:\n " + program)
+        .that(node.isError())
+        .isFalse();
     ProgramNode programRoot = (ProgramNode) node;
     StaticChecker checker = new StaticChecker(programRoot);
     SymTab symTab = execute(checker);
@@ -725,7 +725,7 @@ public class StaticCheckerTest {
 
   private SymTab execute(StaticChecker checker) {
     TypeCheckResult result = checker.execute();
-    assertWithMessage("unexpected error: " + result.message()).that(result.isError()).isFalse();
+    assertWithMessage("Unexpected error: " + result.message()).that(result.isError()).isFalse();
     return result.symbolTable();
   }
 }

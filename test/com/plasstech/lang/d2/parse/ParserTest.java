@@ -63,18 +63,18 @@ public class ParserTest {
 
   @Test
   public void printError() {
-    assertParseError("Unexpected EOF", "print", "Unexpected EOF");
+    assertParseError("print", "Unexpected EOF");
   }
 
   @Test
   public void assignErrors() {
-    assertParseError("Missing expression", "a=", "expected literal");
-    assertParseError("Missing close", "a=(3+", "expected literal");
-    assertParseError("Missing close", "a=3+", "expected literal");
-    assertParseError("Missing multiplicand", "a=3+5*", "expected literal");
-    assertParseError("Missing multiplier", "a=3+*5", "expected literal");
-    assertParseError("Missing add", "a=3**5", "expected literal");
-    assertParseError("Missing expression", "a=print", "expected literal");
+    assertParseError("a=", "expected literal");
+    assertParseError("a=(3+", "expected literal");
+    assertParseError("a=3+", "expected literal");
+    assertParseError("a=3+5*", "expected literal");
+    assertParseError("a=3+*5", "expected literal");
+    assertParseError("a=3**5", "expected literal");
+    assertParseError("a=print", "expected literal");
   }
 
   @Test
@@ -506,15 +506,13 @@ public class ParserTest {
 
   @Test
   public void ifError() {
-    assertParseError("Missing open brace", "if a==3 { print a } else print 4}", "expected {");
+    assertParseError("if a==3 { print a } else print 4}", "expected {");
     assertParseError(
-        "Missing close brace",
         "if a==3 { print a } else {print 4",
         "Unexpected start of statement 'EOF'");
-    assertParseError("Missing open brace", "if a==3 print a } else {print 4", "expected {");
-    assertParseError("Missing expression brace", "if print a else {print 4", "expected literal");
+    assertParseError("if a==3 print a } else {print 4", "expected {");
+    assertParseError("if print a else {print 4", "expected literal");
     assertParseError(
-        "Extra elif",
         "if a==3 { print a } else  { print 4 print a} "
             + "elif a==5 { print 5}else { print 6 print 7}",
         "Unexpected start of statement 'ELIF'");
@@ -607,21 +605,16 @@ public class ParserTest {
 
   @Test
   public void whileError() {
-    assertParseError("Missing expression", "while print", "expected literal");
-    assertParseError("Missing open brace", "while a==3 print", "expected {");
-    assertParseError("Missing close brace", "while a==3 {print", "expected literal");
-    assertParseError(
-        "Missing do assignment", "while a==3 do {print}", "Unexpected start of statement '{'");
-    assertParseError("Bad do assignment", "while a==3 do print {print}", "expected literal");
-    assertParseError("Bad statement", "while a==3 do a=a+1 {a=}", "expected literal");
-    assertParseError("Unexpected continue", "continue", "CONTINUE not found in WHILE");
-    assertParseError("Unexpected break", "break", "BREAK not found in WHILE");
-    assertParseError(
-        "Unexpected break", "if true {break while true {continue }}", "BREAK not found in WHILE");
-    assertParseError(
-        "Unexpected continue",
-        "if true {continue while true {break}}",
-        "CONTINUE not found in WHILE");
+    assertParseError("while print", "expected literal");
+    assertParseError("while a==3 print", "expected {");
+    assertParseError("while a==3 {print", "expected literal");
+    assertParseError("while a==3 do {print}", "Unexpected start of statement '{'");
+    assertParseError("while a==3 do print {print}", "expected literal");
+    assertParseError("while a==3 do a=a+1 {a=}", "expected literal");
+    assertParseError("continue", "CONTINUE not found in WHILE");
+    assertParseError("break", "BREAK not found in WHILE");
+    assertParseError("if true {break while true {continue }}", "BREAK not found in WHILE");
+    assertParseError("if true {continue while true {break}}", "CONTINUE not found in WHILE");
   }
 
   @Test
@@ -665,10 +658,10 @@ public class ParserTest {
 
   @Test
   public void mainError() {
-    assertParseError("Missing open brace", "main", "expected {");
-    assertParseError("Missing close brace", "main {", "Unexpected start of statement 'EOF'");
-    assertParseError("Missing eof ", "main {} print ", "expected EOF");
-    assertParseError("Missing eof ", "main { print ", "expected literal");
+    assertParseError("main", "expected {");
+    assertParseError("main {", "Unexpected start of statement 'EOF'");
+    assertParseError("main {} print ", "expected EOF");
+    assertParseError("main { print ", "expected literal");
   }
 
   @Test
@@ -709,9 +702,9 @@ public class ParserTest {
 
   @Test
   public void declarationError() {
-    assertParseError("Missing type", "a:", "expected INT, BOOL");
-    assertParseError("Missing type", "a::", "expected INT, BOOL");
-    assertParseError("Missing close brace", "a:print", "expected INT, BOOL");
+    assertParseError("a:", "expected INT, BOOL");
+    assertParseError("a::", "expected INT, BOOL");
+    assertParseError("a:print", "expected INT, BOOL");
   }
 
   @Test
@@ -748,21 +741,18 @@ public class ParserTest {
 
   @Test
   public void procErrors() {
-    assertParseError("Should not be allowed", "fib:proc(a:int b) {}", "expected , or )");
-    assertParseError("Should not be allowed", "fib:proc(a:bad, b) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a:, b) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a: b) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a:) {}", "expected INT");
-    assertParseError("Should not be allowed", "fib:proc(a {}", "expected , or )");
-    assertParseError("Should not be allowed", "fib:proc(a:int, ) {}", "expected variable");
-    assertParseError("Should not be allowed", "fib:proc(a:int) print a", "expected {");
-    assertParseError("Should not be allowed", "fib:proc  print a", "expected {");
-    assertParseError(
-        "Should not be allowed", "fib:proc() {return", "Unexpected start of statement 'EOF'");
-    assertParseError(
-        "Should not be allowed", "fib:proc() {return {", "Unexpected start of statement '{'");
-    assertParseError(
-        "Should not be allowed", "fib:proc() {return )}", "Unexpected start of statement ')'");
+    assertParseError("fib:proc(a:int b) {}", "expected , or )");
+    assertParseError("fib:proc(a:bad, b) {}", "expected INT");
+    assertParseError("fib:proc(a:, b) {}", "expected INT");
+    assertParseError("fib:proc(a: b) {}", "expected INT");
+    assertParseError("fib:proc(a:) {}", "expected INT");
+    assertParseError("fib:proc(a {}", "expected , or )");
+    assertParseError("fib:proc(a:int, ) {}", "expected variable");
+    assertParseError("fib:proc(a:int) print a", "expected {");
+    assertParseError("fib:proc  print a", "expected {");
+    assertParseError("fib:proc() {return", "Unexpected start of statement 'EOF'");
+    assertParseError("fib:proc() {return {", "Unexpected start of statement '{'");
+    assertParseError("fib:proc() {return )}", "Unexpected start of statement ')'");
   }
 
   @Test
@@ -878,8 +868,8 @@ public class ParserTest {
 
   @Test
   public void procCallErrors() {
-    assertParseError("Should fail", "a = doit(1 b=3", "expected ')");
-    assertParseError("Should fail", "a = doit(1,)", "expected literal");
+    assertParseError("a = doit(1 b=3", "expected ')");
+    assertParseError("a = doit(1,)", "expected literal");
   }
 
   @Test
@@ -955,9 +945,9 @@ public class ParserTest {
 
   @Test
   public void arrayDeclError() {
-    assertParseError("Should not parse incomplete array decl", "a:int[3", "expected '['");
-    assertParseError("Should not parse incomplete array decl", "a:int[3 4]", "expected '['");
-    assertParseError("Should not parse bad base array type", "a:hello[3]", "expected INT");
+    assertParseError("a:int[3", "expected '['");
+    assertParseError("a:int[3 4]", "expected '['");
+    assertParseError("a:hello[3]", "expected INT, BOOL, STRING");
   }
 
   @Test
@@ -981,8 +971,8 @@ public class ParserTest {
 
   @Test
   public void arrayGetError() {
-    assertParseError("No closing bracket", "a=3[4+c b", "expected ']'");
-    assertParseError("No closing bracket", "a=3[4+c b]", "expected ']'");
+    assertParseError("a=3[4+c b", "expected ']'");
+    assertParseError("a=3[4+c b]", "expected ']'");
   }
 
   @Test
@@ -1052,10 +1042,10 @@ public class ParserTest {
 
   @Test
   public void literalArrayErrors() {
-    assertParseError("Should not parse", "a=[]", "Empty");
-    assertParseError("Should not parse", "a=[a]", "only scalar");
-    assertParseError("Should not parse", "a=[a+1]", "only scalar");
-    assertParseError("Should not parse", "a=[1,'hi']", "Inconsistent types");
+    assertParseError("a=[]", "Empty");
+    assertParseError("a=[a]", "only scalar");
+    assertParseError("a=[a+1]", "only scalar");
+    assertParseError("a=[1,'hi']", "Inconsistent types");
   }
 
   private BlockNode parseStatements(String expression) {
@@ -1073,11 +1063,11 @@ public class ParserTest {
     return (ProgramNode) node;
   }
 
-  private void assertParseError(String message, String expressionToParse, String errorMsgContains) {
+  private void assertParseError(String expressionToParse, String errorMsgContains) {
     Lexer lexer = new Lexer(expressionToParse);
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
-    assertWithMessage(message).that(node.isError()).isTrue();
+    assertWithMessage("Should be an error node").that(node.isError()).isTrue();
     assertThat(node.message()).contains(errorMsgContains);
   }
 }
