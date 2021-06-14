@@ -1,14 +1,11 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
 
-/**
- * Represents a procedure declaration.
- */
+/** Represents a procedure declaration. */
 public class ProcedureNode extends AbstractNode implements StatementNode {
   public static class Parameter {
     private final String name;
@@ -46,8 +43,8 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
   private final ImmutableList<Parameter> parameters;
   private final VarType returnType;
 
-  public ProcedureNode(String name, List<Parameter> params, VarType returnType, BlockNode block,
-          Position start) {
+  public ProcedureNode(
+      String name, List<Parameter> params, VarType returnType, BlockNode block, Position start) {
     super(start);
 
     this.name = name;
@@ -81,8 +78,7 @@ public class ProcedureNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("ProcedureNode: %s: proc(%s) returns %s:\n{%s}", name(), parameters,
-            returnType, block);
+    return String.format(
+        "ProcedureNode: %s: proc(%s) returns %s:\n{%s}", name(), parameters, returnType, block);
   }
-
 }

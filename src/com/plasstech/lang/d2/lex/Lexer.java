@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.lex;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token.Type;
+import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -14,13 +13,14 @@ public class Lexer {
   private char cc; // current character
 
   private Map<Character, Character> BACKSLASH_ESCAPE_MAP = //
-          ImmutableMap.<Character, Character>builder() //
-                  .put('n', '\n') //
-                  .put('r', '\r') //
-                  .put('t', '\t') //
-                  .put('"', '"') //
-                  .put('\'', '\'') //
-                  .put('\\', '\\').build();
+      ImmutableMap.<Character, Character>builder() //
+          .put('n', '\n') //
+          .put('r', '\r') //
+          .put('t', '\t') //
+          .put('"', '"') //
+          .put('\'', '\'') //
+          .put('\\', '\\')
+          .build();
 
   public Lexer(String text) {
     this.text = text;

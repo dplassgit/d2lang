@@ -1,11 +1,10 @@
 package com.plasstech.lang.d2.interpreter;
 
+import com.plasstech.lang.d2.codegen.Location;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.plasstech.lang.d2.codegen.Location;
 
 public class Environment {
   private final List<String> output = new ArrayList<>();

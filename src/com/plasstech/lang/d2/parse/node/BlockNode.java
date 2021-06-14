@@ -1,14 +1,11 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
+import java.util.List;
 
-/**
- * Represents a list of statements - a block inside a function/method/procedure.
- */
+/** Represents a list of statements - a block inside a function/method/procedure. */
 public class BlockNode extends AbstractNode {
   public static final BlockNode EMPTY = new BlockNode(null);
 

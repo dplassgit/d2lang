@@ -1,8 +1,6 @@
 package com.plasstech.lang.d2.parse.node;
 
-/**
- * Assignment: variable = <expression>
- */
+/** Assignment: variable = <expression> */
 public class AssignmentNode extends AbstractNode implements StatementNode {
   private final VariableNode variable;
   private final ExprNode expr;

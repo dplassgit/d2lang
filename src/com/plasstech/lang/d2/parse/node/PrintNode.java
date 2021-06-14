@@ -2,9 +2,7 @@ package com.plasstech.lang.d2.parse.node;
 
 import com.plasstech.lang.d2.common.Position;
 
-/**
- * Print statement: print [expr] or println [expr]
- */
+/** Print statement: print [expr] or println [expr] */
 public class PrintNode extends AbstractNode implements StatementNode {
   private final ExprNode expr;
   private final boolean println;

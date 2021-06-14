@@ -8,5 +8,4 @@ public class Optimizer {
   public Optimizer(Node root) {
     this.root = root;
   }
-
 }

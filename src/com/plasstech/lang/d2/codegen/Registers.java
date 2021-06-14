@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.common.base.Preconditions;
 
 public class Registers {
   // these are the USED registers
@@ -34,8 +33,8 @@ public class Registers {
   }
 
   public void deallocate(int id) {
-    Preconditions.checkState(used.get(id),
-            String.format("Register %d not allocated in register bank", id));
+    Preconditions.checkState(
+        used.get(id), String.format("Register %d not allocated in register bank", id));
     used.set(id, false);
   }
 }

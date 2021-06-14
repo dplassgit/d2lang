@@ -8,8 +8,8 @@ public class ArrayDeclarationNode extends DeclarationNode {
 
   private final ExprNode sizeExpr;
 
-  public ArrayDeclarationNode(String varName, ArrayType type, Position position,
-          ExprNode sizeExpr) {
+  public ArrayDeclarationNode(
+      String varName, ArrayType type, Position position, ExprNode sizeExpr) {
     super(varName, type, position);
     this.sizeExpr = sizeExpr;
   }

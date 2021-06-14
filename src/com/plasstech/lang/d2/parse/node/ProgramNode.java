@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.Optional;
-
 import com.plasstech.lang.d2.common.Position;
+import java.util.Optional;
 
 public class ProgramNode extends AbstractNode {
 

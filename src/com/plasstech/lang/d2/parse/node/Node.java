@@ -4,9 +4,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-/**
- * Interface type for nodes in the parse tree.
- */
+/** Interface type for nodes in the parse tree. */
 public interface Node {
 
   // Indicates it's a simple type - constant or variable.

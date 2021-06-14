@@ -2,9 +2,7 @@ package com.plasstech.lang.d2.parse.node;
 
 import com.plasstech.lang.d2.common.Position;
 
-/**
- * Represents a variable access, or a variable assignment.
- */
+/** Represents a variable access, or a variable assignment. */
 public class VariableNode extends AbstractNode implements SimpleNode {
   private final String name;
 

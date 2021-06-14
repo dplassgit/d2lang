@@ -20,8 +20,8 @@ public class ProcSymbol extends AbstractSymbol {
 
   @Override
   public String toString() {
-    return String.format("%s: proc(%s): %s", name(), node.parameters().toString(),
-            node.returnType().toString());
+    return String.format(
+        "%s: proc(%s): %s", name(), node.parameters().toString(), node.returnType().toString());
   }
 
   public void setSymTab(SymTab symtab) {

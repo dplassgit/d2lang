@@ -1,11 +1,10 @@
 package com.plasstech.lang.d2;
 
+import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.lex.Token;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.lex.Token;
 
 public class LexerDriver {
 

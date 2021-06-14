@@ -13,5 +13,4 @@ public class RegisterLocation extends Location {
   public SymbolStorage storage() {
     return SymbolStorage.REGISTER;
   }
-
 }

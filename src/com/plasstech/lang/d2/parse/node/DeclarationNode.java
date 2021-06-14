@@ -3,9 +3,7 @@ package com.plasstech.lang.d2.parse.node;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-/**
- * Declare a variable, e.g., "foo:int"
- */
+/** Declare a variable, e.g., "foo:int" */
 public class DeclarationNode extends AbstractNode implements StatementNode {
 
   private final String varName;

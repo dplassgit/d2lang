@@ -2,10 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -44,6 +40,9 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
 
@@ -368,8 +367,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     // 2. emit call(parameters)
     Call call;
-    ImmutableList<Location> actualLocations = node.actuals().stream().map(Node::location)
-            .collect(toImmutableList());
+    ImmutableList<Location> actualLocations =
+        node.actuals().stream().map(Node::location).collect(toImmutableList());
     if (node.isStatement()) {
       // No return value
       call = new Call(node.functionToCall(), actualLocations);

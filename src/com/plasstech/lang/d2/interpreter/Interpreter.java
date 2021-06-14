@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.interpreter;
 
-import java.util.List;
-import java.util.Stack;
-
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -26,6 +23,8 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import java.util.List;
+import java.util.Stack;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

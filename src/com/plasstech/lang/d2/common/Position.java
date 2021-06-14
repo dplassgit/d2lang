@@ -1,8 +1,6 @@
 package com.plasstech.lang.d2.common;
 
-/**
- * Represents a location in the file: line and column.
- */
+/** Represents a location in the file: line and column. */
 public class Position {
   private final int line;
   private final int column;
@@ -25,4 +23,3 @@ public class Position {
     return String.format("line %d, column %d", line, column);
   }
 }
-

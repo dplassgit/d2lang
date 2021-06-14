@@ -3,66 +3,50 @@ package com.plasstech.lang.d2.parse.node;
 public class DefaultVisitor implements NodeVisitor {
 
   @Override
-  public void visit(PrintNode node) {
-  }
+  public void visit(PrintNode node) {}
 
   @Override
-  public void visit(AssignmentNode node) {
-  }
+  public void visit(AssignmentNode node) {}
 
   @Override
-  public void visit(IfNode ifNode) {
-  }
+  public void visit(IfNode ifNode) {}
 
   @Override
-  public void visit(BinOpNode node) {
-  }
+  public void visit(BinOpNode node) {}
 
   @Override
-  public void visit(VariableNode node) {
-  }
+  public void visit(VariableNode node) {}
 
   @Override
-  public <T> void visit(ConstNode<T> node) {
-  }
+  public <T> void visit(ConstNode<T> node) {}
 
   @Override
-  public void visit(UnaryNode unaryNode) {
-  }
+  public void visit(UnaryNode unaryNode) {}
 
   @Override
-  public void visit(ProcedureNode node) {
-  }
+  public void visit(ProcedureNode node) {}
 
   @Override
-  public void visit(MainNode node) {
-  }
+  public void visit(MainNode node) {}
 
   @Override
-  public void visit(WhileNode node) {
-  }
+  public void visit(WhileNode node) {}
 
   @Override
-  public void visit(BreakNode node) {
-  }
+  public void visit(BreakNode node) {}
 
   @Override
-  public void visit(ContinueNode node) {
-  }
+  public void visit(ContinueNode node) {}
 
   @Override
-  public void visit(DeclarationNode node) {
-  }
+  public void visit(DeclarationNode node) {}
 
   @Override
-  public void visit(CallNode callNode) {
-  }
+  public void visit(CallNode callNode) {}
 
   @Override
-  public void visit(ReturnNode returnNode) {
-  }
+  public void visit(ReturnNode returnNode) {}
 
   @Override
-  public void visit(ArrayDeclarationNode node) {
-  }
+  public void visit(ArrayDeclarationNode node) {}
 }

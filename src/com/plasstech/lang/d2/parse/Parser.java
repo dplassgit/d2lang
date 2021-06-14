@@ -1,11 +1,5 @@
 package com.plasstech.lang.d2.parse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -38,22 +32,39 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
 public class Parser {
 
-  private final static ImmutableMap<Token.Type, VarType> BUILTINS = ImmutableMap.of( //
-          Token.Type.INT, VarType.INT, //
-          Token.Type.BOOL, VarType.BOOL, //
-          Token.Type.STRING, VarType.STRING, //
-          Token.Type.PROC, VarType.PROC); //
+  private static final ImmutableMap<Token.Type, VarType> BUILTINS =
+      ImmutableMap.of(
+          Token.Type.INT, VarType.INT,
+          Token.Type.BOOL, VarType.BOOL,
+          Token.Type.STRING, VarType.STRING,
+          Token.Type.PROC, VarType.PROC);
 
-  private static final Set<Token.Type> EXPRESSION_STARTS = ImmutableSet.of(Token.Type.VARIABLE,
-          Token.Type.LPAREN, Token.Type.MINUS, Token.Type.PLUS, Token.Type.NOT, Token.Type.INT,
-          Token.Type.STRING, Token.Type.BOOL, Token.Type.TRUE, Token.Type.FALSE, Token.Type.LENGTH,
-          Token.Type.ASC, Token.Type.CHR);
+  private static final Set<Token.Type> EXPRESSION_STARTS =
+      ImmutableSet.of(
+          Token.Type.VARIABLE,
+          Token.Type.LPAREN,
+          Token.Type.MINUS,
+          Token.Type.PLUS,
+          Token.Type.NOT,
+          Token.Type.INT,
+          Token.Type.STRING,
+          Token.Type.BOOL,
+          Token.Type.TRUE,
+          Token.Type.FALSE,
+          Token.Type.LENGTH,
+          Token.Type.ASC,
+          Token.Type.CHR);
 
-  private static Set<Type> UNARY_KEYWORDS = ImmutableSet.of(//
-          Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
+  private static Set<Type> UNARY_KEYWORDS =
+      ImmutableSet.of(Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
 
   private final Lexer lexer;
   private Token token;
@@ -94,12 +105,12 @@ public class Parser {
           MainNode mainProc = new MainNode(mainBlock, start.start());
           return new ProgramNode(statements, mainProc);
         }
-        throw new ParseException(String.format("Unexpected %s; expected EOF", token.text()),
-                token.start());
+        throw new ParseException(
+            String.format("Unexpected %s; expected EOF", token.text()), token.start());
       }
     }
-    throw new ParseException(String.format("Unexpected %s; expected 'main' or EOF", token.text()),
-            token.start());
+    throw new ParseException(
+        String.format("Unexpected %s; expected 'main' or EOF", token.text()), token.start());
   }
 
   private BlockNode statements(Function<Token, Boolean> matcher) {
@@ -115,8 +126,8 @@ public class Parser {
   // This is a statements node surrounded by braces.
   private BlockNode block() {
     if (token.type() != Token.Type.LBRACE) {
-      throw new ParseException(String.format("Unexpected %s; expected {", token.text()),
-              token.start());
+      throw new ParseException(
+          String.format("Unexpected %s; expected {", token.text()), token.start());
     }
     advance();
 
@@ -135,12 +146,13 @@ public class Parser {
         case IF:
           return ifStmt(token);
 
-        case WHILE: {
-          inWhile++;
-          WhileNode whileStmt = whileStmt(token);
-          inWhile--;
-          return whileStmt;
-        }
+        case WHILE:
+          {
+            inWhile++;
+            WhileNode whileStmt = whileStmt(token);
+            inWhile--;
+            return whileStmt;
+          }
 
         case BREAK:
           if (inWhile == 0) {
@@ -167,8 +179,8 @@ public class Parser {
       return assignmentDeclarationProcCall();
     }
 
-    throw new ParseException(String.format("Unexpected start of statement '%s'", token.text()),
-            token.start());
+    throw new ParseException(
+        String.format("Unexpected start of statement '%s'", token.text()), token.start());
   }
 
   private ReturnNode returnStmt(Position start) {
@@ -212,13 +224,13 @@ public class Parser {
         }
       }
       throw new ParseException(
-              String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
-              token.start());
+          String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
+          token.start());
     } else if (token.type() == Token.Type.LPAREN) {
       return procedureCall(varToken, true);
     }
-    throw new ParseException(String.format("Unexpected %s; expected '=' or ':'", token.text()),
-            token.start());
+    throw new ParseException(
+        String.format("Unexpected %s; expected '=' or ':'", token.text()), token.start());
   }
 
   private DeclarationNode arrayDeclaration(Token varToken, VarType baseVarType) {
@@ -228,8 +240,8 @@ public class Parser {
     ExprNode arraySize = expr();
     ArrayType arrayType = new ArrayType(baseVarType);
     if (token.type() != Token.Type.RBRACKET) {
-      throw new ParseException(String.format("Unexpected %s; expected '['", token.text()),
-              token.start());
+      throw new ParseException(
+          String.format("Unexpected %s; expected '['", token.text()), token.start());
     }
     advance();
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
@@ -243,15 +255,15 @@ public class Parser {
       advance();
       if (!token.type().isKeyword()) {
         throw new ParseException(
-                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                token.start());
+            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            token.start());
       }
       Token.Type declaredType = token.type();
       returnType = BUILTINS.get(declaredType);
       if (returnType == null || returnType == VarType.PROC) {
         throw new ParseException(
-                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                token.start());
+            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            token.start());
       }
       advance(); // eat the return type
     }
@@ -271,25 +283,27 @@ public class Parser {
       return params;
     }
 
-    params = commaSeparated(new NextNode<Parameter>() {
-      @Override
-      public Parameter call() {
-        return formalParam();
-      }
-    });
+    params =
+        commaSeparated(
+            new NextNode<Parameter>() {
+              @Override
+              public Parameter call() {
+                return formalParam();
+              }
+            });
     if (token.type() == Token.Type.RPAREN) {
       advance();
     } else {
-      throw new ParseException(String.format("Unexpected %s; expected , or )", token.text()),
-              token.start());
+      throw new ParseException(
+          String.format("Unexpected %s; expected , or )", token.text()), token.start());
     }
     return params;
   }
 
   private Parameter formalParam() {
     if (token.type() != Token.Type.VARIABLE) {
-      throw new ParseException(String.format("Unexpected %s; expected variable", token.text()),
-              token.start());
+      throw new ParseException(
+          String.format("Unexpected %s; expected variable", token.text()), token.start());
     }
 
     Token paramName = token;
@@ -298,15 +312,15 @@ public class Parser {
       advance();
       if (!token.type().isKeyword()) {
         throw new ParseException(
-                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                token.start());
+            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            token.start());
       }
       Token.Type declaredType = token.type();
       VarType paramType = BUILTINS.get(declaredType);
       if (paramType == null) {
         throw new ParseException(
-                String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
-                token.start());
+            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            token.start());
       } else {
         // We have a param type
         advance(); // eat the param type
@@ -389,19 +403,20 @@ public class Parser {
     if (token.type() == Token.Type.RPAREN) {
       advance(); // eat the rparen
     } else {
-      throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
-              token.start());
+      throw new ParseException(
+          String.format("Unexpected %s; expected ')'", token.text()), token.start());
     }
     return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
   }
 
   private List<ExprNode> commaSeparatedExpressions() {
-    return commaSeparated(new NextNode<ExprNode>() {
-      @Override
-      public ExprNode call() {
-        return expr();
-      }
-    });
+    return commaSeparated(
+        new NextNode<ExprNode>() {
+          @Override
+          public ExprNode call() {
+            return expr();
+          }
+        });
   }
 
   private <T> List<T> commaSeparated(NextNode<T> nextNode) {
@@ -432,7 +447,6 @@ public class Parser {
   }
 
   /** EXPRESSIONS */
-
   private ExprNode expr() {
     return boolOr();
   }
@@ -456,8 +470,14 @@ public class Parser {
   }
 
   private ExprNode compareTerm() {
-    return new BinOpFn(ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.GT,
-            Token.Type.LT, Token.Type.GEQ, Token.Type.LEQ)) {
+    return new BinOpFn(
+        ImmutableSet.of(
+            Token.Type.EQEQ,
+            Token.Type.NEQ,
+            Token.Type.GT,
+            Token.Type.LT,
+            Token.Type.GEQ,
+            Token.Type.LEQ)) {
       @Override
       ExprNode nextRule() {
         return addSubTerm();
@@ -501,13 +521,13 @@ public class Parser {
     /**
      * Parse from the current location, repeatedly call "function", e.g.,:
      *
-     * here -> function (tokentype function)*
+     * <p>here -> function (tokentype function)*
      *
-     * where tokentype is in tokenTypes
+     * <p>where tokentype is in tokenTypes
      *
-     * In the grammar:
+     * <p>In the grammar:
      *
-     * expr -> term (+- term)*
+     * <p>expr -> term (+- term)*
      */
     ExprNode parse() {
       ExprNode left = nextRule();
@@ -525,8 +545,9 @@ public class Parser {
 
   private ExprNode unary() {
     Token unaryToken = token;
-    if (token.type() == Token.Type.MINUS || token.type() == Token.Type.PLUS
-            || token.type() == Token.Type.NOT) {
+    if (token.type() == Token.Type.MINUS
+        || token.type() == Token.Type.PLUS
+        || token.type() == Token.Type.NOT) {
       advance();
       ExprNode expr = unary(); // should this be expr? unary? atom?
 
@@ -584,8 +605,8 @@ public class Parser {
         advance();
         left = new BinOpNode(left, Token.Type.LBRACKET, index);
       } else {
-        throw new ParseException(String.format("Unexpected %s; expected ']'", token),
-                token.start());
+        throw new ParseException(
+            String.format("Unexpected %s; expected ']'", token), token.start());
       }
     }
 
@@ -621,16 +642,16 @@ public class Parser {
         advance();
         return expr;
       } else {
-        throw new ParseException(String.format("Unexpected %s; expected ')'", token.text()),
-                token.start());
+        throw new ParseException(
+            String.format("Unexpected %s; expected ')'", token.text()), token.start());
       }
     } else if (token.type() == Token.Type.LBRACKET) {
       // array literal
       return arrayLiteral();
     } else {
       throw new ParseException(
-              String.format("Unexpected %s; expected literal, variable or '('", token.text()),
-              token.start());
+          String.format("Unexpected %s; expected literal, variable or '('", token.text()),
+          token.start());
     }
   }
 
@@ -646,24 +667,27 @@ public class Parser {
 
     // For first iteration: only allow const int[] or const string[] or const bool[]
     if (token.type() != Token.Type.RBRACKET) {
-      List<ConstNode<?>> values = commaSeparated(new NextNode<ConstNode<?>>() {
-        @Override
-        public ConstNode<?> call() {
-          ExprNode atom = atom();
-          if (atom instanceof ConstNode) {
-            return (ConstNode<?>) atom;
-          }
+      List<ConstNode<?>> values =
+          commaSeparated(
+              new NextNode<ConstNode<?>>() {
+                @Override
+                public ConstNode<?> call() {
+                  ExprNode atom = atom();
+                  if (atom instanceof ConstNode) {
+                    return (ConstNode<?>) atom;
+                  }
 
-          throw new ParseException(
-                  String.format("Illegal entry %s in array literal; only scalar literals allowed",
+                  throw new ParseException(
+                      String.format(
+                          "Illegal entry %s in array literal; only scalar literals allowed",
                           token.text()),
-                  token.start());
-        }
-      });
+                      token.start());
+                }
+              });
 
       if (token.type() != Token.Type.RBRACKET) {
-        throw new ParseException(String.format("Unexpected %s; expected ']'", token.text()),
-                token.start());
+        throw new ParseException(
+            String.format("Unexpected %s; expected ']'", token.text()), token.start());
       }
       advance(); // eat rbracket
 
@@ -674,9 +698,10 @@ public class Parser {
       for (int i = 1; i < values.size(); ++i) {
         if (!values.get(i).varType().equals(baseType)) {
           throw new ParseException(
-                  String.format("Inconsistent types in array literal; first was %s but one was %s",
-                          baseType, values.get(i).varType()),
-                  openBracket.start());
+              String.format(
+                  "Inconsistent types in array literal; first was %s but one was %s",
+                  baseType, values.get(i).varType()),
+              openBracket.start());
         }
       }
       if (baseType == VarType.BOOL) {
@@ -690,9 +715,10 @@ public class Parser {
         return new ConstNode<Integer[]>(valuesArray, arrayType, openBracket.start());
       }
       throw new ParseException(
-              String.format("Illegal type %s in array literal; only scalar literals allowed",
-                      baseType.toString()),
-              openBracket.start());
+          String.format(
+              "Illegal type %s in array literal; only scalar literals allowed",
+              baseType.toString()),
+          openBracket.start());
     } else {
       // empty array constants
       // will this ever be allowed?

@@ -2,13 +2,12 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * "Gathers" all procedure definitions in the (global) symbol table, so you can make
@@ -24,8 +23,8 @@ class ProcGatherer extends DefaultVisitor {
   @Override
   public void visit(ProcedureNode node) {
     // 1. make sure no duplicate arg names
-    List<String> paramNames = node.parameters().stream().map(Parameter::name)
-            .collect(toImmutableList());
+    List<String> paramNames =
+        node.parameters().stream().map(Parameter::name).collect(toImmutableList());
     Set<String> duplicates = new HashSet<>();
     Set<String> uniques = new HashSet<>();
     for (String param : paramNames) {
@@ -37,8 +36,10 @@ class ProcGatherer extends DefaultVisitor {
       }
     }
     if (!duplicates.isEmpty()) {
-      throw new TypeException(String.format("Duplicate parameter names: %s in procedure %s",
-              duplicates.toString(), node.name()), node.position());
+      throw new TypeException(
+          String.format(
+              "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name()),
+          node.position());
     }
 
     // Add this procedure to the symbol table

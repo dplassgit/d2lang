@@ -5,22 +5,55 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    INT(true), BOOL(true), // indicates the "bool" keyword"
-    STRING(true), VARIABLE, //
-    PRINT(true), PRINTLN(true), TRUE(true), FALSE(true), IF(true), ELSE(true), ELIF(true), //
-    MAIN(true), PROC(true), RETURN(true), WHILE(true), DO(true), BREAK(true), CONTINUE(true), //
+    INT(true),
+    BOOL(true), // indicates the "bool" keyword"
+    STRING(true),
+    VARIABLE,
+    PRINT(true),
+    PRINTLN(true),
+    TRUE(true),
+    FALSE(true),
+    IF(true),
+    ELSE(true),
+    ELIF(true),
+    MAIN(true),
+    PROC(true),
+    RETURN(true),
+    WHILE(true),
+    DO(true),
+    BREAK(true),
+    CONTINUE(true),
     // Unary operators:
-    LENGTH(true), CHR(true), ASC(true), //
-    EQ, //
-    EQEQ, LT, GT, LEQ, GEQ, NEQ, //
+    LENGTH(true),
+    CHR(true),
+    ASC(true),
+    // Comparisons:
+    EQ,
+    EQEQ,
+    LT,
+    GT,
+    LEQ,
+    GEQ,
+    NEQ,
     // Booleans
-    NOT, AND, OR, //
+    NOT,
+    AND,
+    OR,
     // Binary
-    PLUS, MINUS, MULT, DIV, MOD, //
-    LPAREN, RPAREN, //
-    LBRACE, RBRACE, //
-    LBRACKET, RBRACKET, //
-    COLON, COMMA, //
+    PLUS,
+    MINUS,
+    MULT,
+    DIV,
+    MOD,
+    // Separators
+    LPAREN,
+    RPAREN,
+    LBRACE,
+    RBRACE,
+    LBRACKET,
+    RBRACKET,
+    COLON,
+    COMMA,
     EOF;
 
     private final boolean keyword;
@@ -77,7 +110,7 @@ public class Token {
 
   @Override
   public String toString() {
-    return String.format("%s (%s, [%s - %s])", value, type.name(), start.toString(),
-            end.toString());
+    return String.format(
+        "%s (%s, [%s - %s])", value, type.name(), start.toString(), end.toString());
   }
 }

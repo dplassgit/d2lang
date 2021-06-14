@@ -12,5 +12,4 @@ public class TempLocation extends Location {
     // TODO: might be a register
     return SymbolStorage.LOCAL;
   }
-
 }

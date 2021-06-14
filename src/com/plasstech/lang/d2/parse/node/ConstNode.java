@@ -4,9 +4,7 @@ import com.google.common.base.MoreObjects;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-/**
- * Represents an int, boolean, string or (someday) float constant node.
- */
+/** Represents an int, boolean, string or (someday) float constant node. */
 public class ConstNode<T> extends AbstractNode implements SimpleNode {
 
   private final T value;

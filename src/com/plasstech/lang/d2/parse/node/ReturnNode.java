@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.Optional;
-
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Optional;
 
 public class ReturnNode extends AbstractNode implements StatementNode {
 

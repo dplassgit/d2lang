@@ -14,5 +14,4 @@ public class StackLocation extends Location {
     // TODO: might be a parameter
     return SymbolStorage.LOCAL;
   }
-
 }
