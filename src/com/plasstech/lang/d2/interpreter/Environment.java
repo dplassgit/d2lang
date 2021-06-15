@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.interpreter;
 
-import com.plasstech.lang.d2.codegen.Location;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.plasstech.lang.d2.codegen.Location;
 
 public class Environment {
   private final List<String> output = new ArrayList<>();
@@ -45,6 +46,17 @@ public class Environment {
       return parent().getValue(name);
     }
     return value;
+  }
+
+  public Map<String, Object> variables() {
+    Map<String, Object> variablesOnly = new HashMap<>();
+    for (Map.Entry<String, Object> value : values.entrySet()) {
+      if (!value.getKey().startsWith("__")) {
+        // not a temp
+        variablesOnly.put(value.getKey(), value.getValue());
+      }
+    }
+    return variablesOnly;
   }
 
   public List<String> output() {

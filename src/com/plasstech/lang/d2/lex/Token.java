@@ -36,9 +36,9 @@ public class Token {
     GEQ,
     NEQ,
     // Booleans
-    NOT,
-    AND,
-    OR,
+    NOT(true),
+    AND(true),
+    OR(true),
     // Binary
     PLUS,
     MINUS,

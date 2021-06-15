@@ -1,9 +1,10 @@
 package com.plasstech.lang.d2.lex;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token.Type;
-import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -87,12 +88,13 @@ public class Lexer {
     try {
       // Figure out which keyword it is
       Token.Type keywordType = Token.Type.valueOf(value.toUpperCase());
-
-      return new Token(keywordType, start);
+      if (keywordType.isKeyword()) {
+        return new Token(keywordType, start);
+      }
     } catch (Exception e) {
-      // Not a keyword, must be a variable.
-      return new Token(Type.VARIABLE, start, end, value);
     }
+    // Not a keyword, must be a variable.
+    return new Token(Type.VARIABLE, start, end, value);
   }
 
   private IntToken makeInt(Position start) {

@@ -1,7 +1,9 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -15,62 +17,22 @@ public class ILOptimizerTest {
 
   @Test
   public void plusZero() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 0 + 1 b = a + 0 c = 2 + 0");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(1);
-    assertThat(env.getValue("b")).isEqualTo(1);
-    assertThat(env.getValue("c")).isEqualTo(2);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(1);
-    assertThat(env.getValue("b")).isEqualTo(1);
-    assertThat(env.getValue("c")).isEqualTo(2);
+    optimizeAssertSameVariables("a = 0 + 1 b = a + 0 c = 2 + 0");
   }
 
   @Test
   public void plusConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 2 + 3");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(5);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(5);
+    optimizeAssertSameVariables("a = 2 + 3");
   }
 
   @Test
   public void minusConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 2 - 3");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(-1);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(-1);
+    optimizeAssertSameVariables("a = 2 - 3");
   }
 
   @Test
   public void divConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 10 / 2");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(5);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(5);
+    optimizeAssertSameVariables("a = 10 / 2");
   }
 
   @Test
@@ -93,74 +55,60 @@ public class ILOptimizerTest {
 
   @Test
   public void modConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 14 % 5");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(4);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(4);
+    optimizeAssertSameVariables("a = 14 % 5");
   }
 
   @Test
   public void plusStringConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 'hi' + ' there'");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo("hi there");
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo("hi there");
+    optimizeAssertSameVariables("a = 'hi' + ' there'");
   }
 
   @Test
   public void timesZero() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 1 * 2 b = a * 0 d = 3 * 0");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(2);
-    assertThat(env.getValue("b")).isEqualTo(0);
-    assertThat(env.getValue("d")).isEqualTo(0);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(2);
-    assertThat(env.getValue("b")).isEqualTo(0);
-    assertThat(env.getValue("d")).isEqualTo(0);
+    optimizeAssertSameVariables("a = 1 * 2 b = a * 0 d = 3 * 0");
   }
 
   @Test
   public void timesConstants() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 2 * 3");
-    Environment env = ee.execute();
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    assertThat(env.getValue("a")).isEqualTo(6);
-
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
-    assertThat(env.getValue("a")).isEqualTo(6);
+    optimizeAssertSameVariables("a = 2 * 3");
   }
 
   @Test
-  public void arrayConstants() {
-    ExecutionEnvironment ee =
-        new ExecutionEnvironment("a=[2,4,6] i=0 while i < 3 do i = i + 1 { print a[i] }");
+  public void andConstant() {
+    optimizeAssertSameVariables("a = true b = a & true");
+    optimizeAssertSameVariables("a = true b = true and a");
+    optimizeAssertSameVariables("a = true and true");
+    optimizeAssertSameVariables("a = true & false");
+    optimizeAssertSameVariables("a = false and true");
+    optimizeAssertSameVariables("a = false and false");
+  }
+
+  @Test
+  public void orConstant() {
+    optimizeAssertSameVariables("a = true b = a | true");
+    optimizeAssertSameVariables("a = true b = true or a");
+    optimizeAssertSameVariables("a = true or true");
+    optimizeAssertSameVariables("a = true or false");
+    optimizeAssertSameVariables("a = false | true");
+    optimizeAssertSameVariables("a = false or false");
+  }
+
+  private void optimizeAssertSameVariables(String program) {
+    ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment env = ee.execute();
     System.out.println(Joiner.on("\n").join(ee.ilCode()));
+
+    List<Op> originalCode = new ArrayList<>(ee.ilCode());
 
     List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
     System.out.println("\nOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(optimized));
-    env = ee.execute(optimized);
+    Environment env2 = ee.execute(optimized);
+    assertThat(env2.variables()).isEqualTo(env.variables());
+    assertThat(env2.output()).isEqualTo(env.output());
+
+    assertWithMessage("Should have made at least one optimization")
+        .that(originalCode)
+        .isNotEqualTo(optimized);
   }
 }
