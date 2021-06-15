@@ -4,5 +4,6 @@ public enum SymbolStorage {
   GLOBAL,
   LOCAL,
   PARAM,
-  REGISTER;
+  REGISTER,
+  TEMP;
 }

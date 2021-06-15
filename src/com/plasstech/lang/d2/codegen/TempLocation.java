@@ -9,7 +9,6 @@ public class TempLocation extends Location {
 
   @Override
   public SymbolStorage storage() {
-    // TODO: might be a register
-    return SymbolStorage.LOCAL;
+    return SymbolStorage.TEMP;
   }
 }

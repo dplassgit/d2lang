@@ -10,3 +10,11 @@ if (a==3) {
   a=4
 }
 
+if true {
+  print 'true'
+}
+if false {
+  print 'You should never see this'
+  a = a / 0
+}
+

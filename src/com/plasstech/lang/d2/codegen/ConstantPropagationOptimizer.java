@@ -1,0 +1,91 @@
+package com.plasstech.lang.d2.codegen;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.Nop;
+import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
+
+public class ConstantPropagationOptimizer extends LineOptimizer {
+  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private Visitor visitor;
+  // Map from temp name to constant value
+  private Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
+
+  public ConstantPropagationOptimizer(List<Op> code) {
+    super(code);
+    this.visitor = new Visitor();
+  }
+
+  @Override
+  public void doOptimize(Op op) {
+    op.accept(visitor);
+  }
+
+  private class Visitor extends DefaultOpcodeVisitor {
+
+    @Override
+    public void visit(Transfer op) {
+      Location dest = op.destination();
+      Operand source = op.source();
+      if (dest instanceof TempLocation && source instanceof ConstantOperand) {
+        // easy case: temps are never overwritten.
+        logger.atInfo().log("Potentially replacing %s with %s", dest.name(), source);
+        tempConstants.put(dest.name(), (ConstantOperand<?>) source);
+        replaceCurrent(new Nop());
+      } else if (source instanceof TempLocation) {
+        // look it up
+        TempLocation sourceTemp = (TempLocation) source;
+        ConstantOperand<?> replacement = tempConstants.get(sourceTemp.name());
+        if (replacement != null) {
+          replaceCurrent(new Transfer(dest, replacement));
+        }
+      }
+    }
+
+    @Override
+    public void visit(UnaryOp op) {
+      Operand source = op.operand();
+      if (source instanceof TempLocation) {
+        // look it up
+        TempLocation sourceTemp = (TempLocation) source;
+        ConstantOperand<?> replacement = tempConstants.get(sourceTemp.name());
+        if (replacement != null) {
+          replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement));
+        }
+      }
+    }
+
+    @Override
+    public void visit(BinOp op) {
+      Operand left = op.left();
+      if (left instanceof TempLocation) {
+        // look it up
+        TempLocation sourceTemp = (TempLocation) left;
+        ConstantOperand<?> replacement = tempConstants.get(sourceTemp.name());
+        if (replacement != null) {
+          left = replacement;
+        }
+      }
+      Operand right = op.right();
+      if (right instanceof TempLocation) {
+        // look it up
+        TempLocation sourceTemp = (TempLocation) right;
+        ConstantOperand<?> replacement = tempConstants.get(sourceTemp.name());
+        if (replacement != null) {
+          right = replacement;
+        }
+      }
+      if (left != op.left() || right != op.right()) {
+        replaceCurrent(new BinOp(op.destination(), left, op.operator(), right));
+      }
+    }
+  }
+}

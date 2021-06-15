@@ -127,6 +127,12 @@ public class ILOptimizerTest {
     optimizeAssertSameVariables("a = 4<=3");
   }
 
+  @Test
+  public void constantPropagationTransfer() {
+    optimizeAssertSameVariables("a = 4 b = a");
+    optimizeAssertSameVariables("a = chr(65) b = a");
+  }
+
   private void optimizeAssertSameVariables(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment env = ee.execute();
