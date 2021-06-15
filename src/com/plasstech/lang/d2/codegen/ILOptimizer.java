@@ -17,7 +17,6 @@ public class ILOptimizer implements Optimizer {
     ArithmeticOptimizer arithmetic = new ArithmeticOptimizer(program);
     while (arithmetic.optimize()) {
       iterations++;
-      arithmetic.reset();
     }
     System.err.println("Iterations: " + iterations);
     return program;

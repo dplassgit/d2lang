@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
-public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimizer {
+public class ArithmeticOptimizer extends DefaultOpcodeVisitor {
   private static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
   private static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1);
   private static final ConstantOperand<Boolean> FALSE = new ConstantOperand<Boolean>(false);
@@ -23,10 +23,6 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
 
   public ArithmeticOptimizer(List<Op> code) {
     this.code = code;
-  }
-
-  public void reset() {
-    this.changed = false;
   }
 
   public boolean optimize() {
@@ -45,11 +41,11 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
 
     switch (op.operator()) {
       case MULT:
-        optimizeMult(op, left, right);
+        optimizeMultiply(op, left, right);
         return;
 
       case PLUS:
-        optimizePlus(op, left, right);
+        optimizeAdd(op, left, right);
         return;
 
       case MINUS:
@@ -57,11 +53,11 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
         return;
 
       case DIV:
-        optimizeDiv(op, left, right);
+        optimizeDivide(op, left, right);
         return;
 
       case MOD:
-        optimizeMod(op, left, right);
+        optimizeModulo(op, left, right);
         return;
 
       case AND:
@@ -72,75 +68,63 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
         optimizeOr(op, left, right);
         return;
 
+      case EQEQ:
+        optimizeEq(op.destination(), left, right, (a, b) -> a.equals(b));
+        return;
+
+      case NEQ:
+        optimizeEq(op.destination(), left, right, (a, b) -> !a.equals(b));
+        return;
+
+      case LEQ:
+        optimizeCompare(op.destination(), left, right, (a, b) -> a <= b);
+        return;
+
+      case LT:
+        optimizeCompare(op.destination(), left, right, (a, b) -> a < b);
+        return;
+
+      case GEQ:
+        optimizeCompare(op.destination(), left, right, (a, b) -> a >= b);
+        return;
+
+      case GT:
+        optimizeCompare(op.destination(), left, right, (a, b) -> a > b);
+        return;
+
       default:
         return;
     }
   }
 
-  private void optimizeMod(BinOp op, Operand left, Operand right) {
-    optimizeArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Integer, Integer, Integer>() {
-          @Override
-          public Integer apply(Integer t, Integer u) {
-            return t % u;
-          }
-        });
+  private void optimizeModulo(BinOp op, Operand left, Operand right) {
+    optimizeArith(op.destination(), left, right, (t, u) -> t % u);
   }
 
-  private void optimizeDiv(BinOp op, Operand left, Operand right) {
+  private void optimizeDivide(BinOp op, Operand left, Operand right) {
     try {
-    optimizeArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Integer, Integer, Integer>() {
-          @Override
-          public Integer apply(Integer t, Integer u) {
-            return t / u;
-          }
-        });
+      optimizeArith(op.destination(), left, right, (t, u) -> t / u);
     } catch (ArithmeticException e) {
       logger.atWarning().log("Cannot optimize dividing by zero!");
     }
   }
 
   private void optimizeSubtract(BinOp op, Operand left, Operand right) {
-    optimizeArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Integer, Integer, Integer>() {
-          @Override
-          public Integer apply(Integer t, Integer u) {
-            return t - u;
-          }
-        });
+    optimizeArith(op.destination(), left, right, (t, u) -> t - u);
   }
 
-  private void optimizePlus(BinOp op, Operand left, Operand right) {
+  private void optimizeAdd(BinOp op, Operand left, Operand right) {
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
-      if (optimizeArith(
-          op.destination(),
-          left,
-          right,
-          new BiFunction<Integer, Integer, Integer>() {
-            @Override
-            public Integer apply(Integer t, Integer u) {
-              return t + u;
-            }
-          })) {
+      if (optimizeArith(op.destination(), left, right, (t, u) -> t + u)) {
         return;
       } else {
         ConstantOperand leftConstant = (ConstantOperand) left;
-        ConstantOperand rightConstant = (ConstantOperand) right;
         if (leftConstant.value() instanceof String) {
-          String leftval = (String) leftConstant.value();
-          String rightval = (String) rightConstant.value();
+          ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
           replaceCurrent(
-              new Transfer(op.destination(), new ConstantOperand<String>(leftval + rightval)));
+              new Transfer(
+                  op.destination(),
+                  new ConstantOperand<String>(leftConstant.value() + rightConstant.value())));
           return;
         }
       }
@@ -156,17 +140,8 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
     }
   }
 
-  private void optimizeMult(BinOp op, Operand left, Operand right) {
-    if (optimizeArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Integer, Integer, Integer>() {
-          @Override
-          public Integer apply(Integer t, Integer u) {
-            return t * u;
-          }
-        })) {
+  private void optimizeMultiply(BinOp op, Operand left, Operand right) {
+    if (optimizeArith(op.destination(), left, right, (t, u) -> t * u)) {
       return;
     } else if (left.equals(ZERO) || right.equals(ZERO)) {
       // replace with destination = 0
@@ -182,16 +157,7 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
   }
 
   private void optimizeAnd(BinOp op, Operand left, Operand right) {
-    if (optimizeBoolArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Boolean, Boolean, Boolean>() {
-          @Override
-          public Boolean apply(Boolean t, Boolean u) {
-            return t && u;
-          }
-        })) {
+    if (optimizeBoolArith(op.destination(), left, right, (t, u) -> t && u)) {
       return;
     } else if (left.equals(FALSE) || right.equals(FALSE)) {
       // replace with destination = FALSE
@@ -207,16 +173,7 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
   }
 
   private void optimizeOr(BinOp op, Operand left, Operand right) {
-    if (optimizeBoolArith(
-        op.destination(),
-        left,
-        right,
-        new BiFunction<Boolean, Boolean, Boolean>() {
-          @Override
-          public Boolean apply(Boolean t, Boolean u) {
-            return t || u;
-          }
-        })) {
+    if (optimizeBoolArith(op.destination(), left, right, (t, u) -> t || u)) {
       return;
     } else if (left.equals(TRUE) || right.equals(TRUE)) {
       // either one is true, it's true
@@ -232,6 +189,42 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
     }
   }
 
+  private boolean optimizeCompare(
+      Location destination,
+      Operand left,
+      Operand right,
+      BiFunction<Integer, Integer, Boolean> fun) {
+
+    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
+      ConstantOperand leftConstant = (ConstantOperand) left;
+      if (leftConstant.value() instanceof Integer) {
+        ConstantOperand rightConstant = (ConstantOperand) right;
+        Integer leftval = (Integer) leftConstant.value();
+        Integer rightval = (Integer) rightConstant.value();
+        replaceCurrent(
+            new Transfer(destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean optimizeEq(
+      Location destination, Operand left, Operand right, BiFunction<Object, Object, Boolean> fun) {
+
+    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
+      ConstantOperand leftConstant = (ConstantOperand) left;
+      ConstantOperand rightConstant = (ConstantOperand) right;
+      replaceCurrent(
+          new Transfer(
+              destination,
+              new ConstantOperand<Boolean>(
+                  fun.apply(leftConstant.value(), rightConstant.value()))));
+      return true;
+    }
+    return false;
+  }
+
   private boolean optimizeArith(
       Location destination,
       Operand left,
@@ -240,8 +233,8 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
-      ConstantOperand rightConstant = (ConstantOperand) right;
       if (leftConstant.value() instanceof Integer) {
+        ConstantOperand rightConstant = (ConstantOperand) right;
         int leftval = (int) leftConstant.value();
         int rightval = (int) rightConstant.value();
         replaceCurrent(
@@ -260,8 +253,8 @@ public class ArithmeticOptimizer extends DefaultOpcodeVisitor implements Optimiz
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
-      ConstantOperand rightConstant = (ConstantOperand) right;
       if (leftConstant.value() instanceof Boolean) {
+        ConstantOperand rightConstant = (ConstantOperand) right;
         boolean leftval = (boolean) leftConstant.value();
         boolean rightval = (boolean) rightConstant.value();
         replaceCurrent(

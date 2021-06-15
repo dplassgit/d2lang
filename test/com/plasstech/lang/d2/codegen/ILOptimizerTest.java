@@ -65,7 +65,7 @@ public class ILOptimizerTest {
 
   @Test
   public void timesZero() {
-    optimizeAssertSameVariables("a = 1 * 2 b = a * 0 d = 3 * 0");
+    optimizeAssertSameVariables("a = 1 * 0 b = a * 0 d = 3 * 0");
   }
 
   @Test
@@ -91,6 +91,40 @@ public class ILOptimizerTest {
     optimizeAssertSameVariables("a = true or false");
     optimizeAssertSameVariables("a = false | true");
     optimizeAssertSameVariables("a = false or false");
+  }
+
+  @Test
+  public void eqIntConstant() {
+    optimizeAssertSameVariables("a = 3==3");
+    optimizeAssertSameVariables("a = 4==3");
+    optimizeAssertSameVariables("a = 3!=3");
+    optimizeAssertSameVariables("a = 4!=3");
+  }
+
+  @Test
+  public void eqStringConstant() {
+    optimizeAssertSameVariables("a = 'hi' == 'bye'");
+    optimizeAssertSameVariables("a = 'hi' == 'hi'");
+    optimizeAssertSameVariables("a = 'hi' != 'bye'");
+    optimizeAssertSameVariables("a = 'hi' != 'hi'");
+  }
+
+  @Test
+  public void eqBoolConstant() {
+    optimizeAssertSameVariables("a = true == true");
+    optimizeAssertSameVariables("a = true != true");
+    optimizeAssertSameVariables("a = true == false");
+    optimizeAssertSameVariables("a = true != false");
+    optimizeAssertSameVariables("a = false == false");
+    optimizeAssertSameVariables("a = false != false");
+  }
+
+  @Test
+  public void ltGtIntConstant() {
+    optimizeAssertSameVariables("a = 3>3");
+    optimizeAssertSameVariables("a = 4>=3");
+    optimizeAssertSameVariables("a = 3<3");
+    optimizeAssertSameVariables("a = 4<=3");
   }
 
   private void optimizeAssertSameVariables(String program) {
