@@ -2,21 +2,21 @@ package com.plasstech.lang.d2.codegen.il;
 
 import java.util.Optional;
 
-import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 
 public class Return extends Op {
 
-  private final Optional<Location> returnValueLocation;
+  private final Optional<Operand> returnValueLocation;
 
   public Return() {
     this.returnValueLocation = Optional.empty();
   }
 
-  public Return(Location location) {
-    this.returnValueLocation = Optional.of(location);
+  public Return(Operand operand) {
+    this.returnValueLocation = Optional.of(operand);
   }
 
-  public Optional<Location> returnValueLocation() {
+  public Optional<Operand> returnValueLocation() {
     return returnValueLocation;
   }
 

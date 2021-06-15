@@ -27,6 +27,8 @@ public class InterpreterDriver {
     System.out.println("\nSYMBOL TABLE:");
     System.out.println(ee.symbolTable());
 
+    System.out.println("\nINTERMEDIATE CODE:");
+    System.out.println(Joiner.on("\n").join(ee.ilCode()));
     System.out.println("------------------------------");
     System.out.println("SYSTEM.OUT:");
     System.out.println("------------------------------");
