@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.interpreter;
 
+import java.util.List;
+import java.util.Stack;
+
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -23,8 +26,6 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
-import java.util.List;
-import java.util.Stack;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -291,7 +292,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     // name from symbol table
     ProcSymbol procSymbol = (ProcSymbol) table.get(op.functionToCall());
     for (int i = 0; i < op.actualLocations().size(); ++i) {
-      Location actualSource = op.actualLocations().get(i);
+      Operand actualSource = op.actualLocations().get(i);
       Parameter formalParam = procSymbol.node().parameters().get(i);
       StackLocation formal = new StackLocation(formalParam.name());
       childEnv.setValue(formal, resolve(actualSource));

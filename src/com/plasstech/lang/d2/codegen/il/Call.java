@@ -5,28 +5,34 @@ import java.util.Optional;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 
 public class Call extends Op {
 
   private final String functionToCall;
-  private final ImmutableList<Location> actualLocations;
+  private final ImmutableList<Operand> actualLocations;
   private final Optional<Location> destination;
 
-  public Call(Location destination, String functionToCall, ImmutableList<Location> actuals) {
-    this.destination = Optional.ofNullable(destination);
+  public Call(
+      Optional<Location> destination, String functionToCall, ImmutableList<Operand> actuals) {
+    this.destination = destination;
     this.functionToCall = functionToCall;
     this.actualLocations = actuals;
   }
 
-  public Call(String functionToCall, ImmutableList<Location> actuals) {
-    this(null, functionToCall, actuals);
+  public Call(Location destination, String functionToCall, ImmutableList<Operand> actuals) {
+    this(Optional.of(destination), functionToCall, actuals);
+  }
+
+  public Call(String functionToCall, ImmutableList<Operand> actuals) {
+    this(Optional.empty(), functionToCall, actuals);
   }
 
   public String functionToCall() {
     return functionToCall;
   }
 
-  public ImmutableList<Location> actualLocations() {
+  public ImmutableList<Operand> actualLocations() {
     return actualLocations;
   }
 
@@ -37,10 +43,11 @@ public class Call extends Op {
   @Override
   public String toString() {
     if (destination().isPresent()) {
-      return String.format("%s = %s(%s);", destination().get().name(), functionToCall,
-              Joiner.on(",").join(actualLocations));
+      return String.format(
+          "%s = %s(%s);",
+          destination().get().name(), functionToCall, Joiner.on(", ").join(actualLocations));
     } else {
-      return String.format("%s(%s);", functionToCall, Joiner.on(",").join(actualLocations));
+      return String.format("%s(%s);", functionToCall, Joiner.on(", ").join(actualLocations));
     }
   }
 

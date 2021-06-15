@@ -133,6 +133,22 @@ public class ILOptimizerTest {
     optimizeAssertSameVariables("a = chr(65) b = a");
   }
 
+  @Test
+  public void constantPropIf() {
+    optimizeAssertSameVariables("a = 4 if a ==3 { print a}");
+  }
+
+  @Test
+  public void constantPropReturn() {
+    optimizeAssertSameVariables("a:proc():int { return 3} print a()");
+  }
+
+  @Test
+  public void constantPropCall() {
+    optimizeAssertSameVariables(
+        "a:proc(n:int, m:int):int { return n+1} b=4 print a(4, b) print a(b+2, 4+6)");
+  }
+
   private void optimizeAssertSameVariables(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment env = ee.execute();
