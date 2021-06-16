@@ -35,6 +35,22 @@ public class ArithmeticOptimizer extends LineOptimizer {
     public void visit(UnaryOp opcode) {
       Operand operand = opcode.operand();
       switch (opcode.operator()) {
+        case LENGTH:
+          if (operand instanceof ConstantOperand<?>) {
+            ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+            Object value = constant.value();
+            if (value instanceof String) {
+              String valueString = (String) value;
+              replaceCurrent(
+                  new Transfer(
+                      opcode.destination(), new ConstantOperand<Integer>(valueString.length())));
+            } else if (value.getClass().isArray()) {
+              Object[] array = (Object[]) value;
+              replaceCurrent(
+                  new Transfer(opcode.destination(), new ConstantOperand<Integer>(array.length)));
+            }
+          }
+          return;
         case ASC:
           if (operand instanceof ConstantOperand<?>) {
             ConstantOperand<String> constant = (ConstantOperand<String>) operand;

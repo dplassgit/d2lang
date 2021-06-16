@@ -23,6 +23,8 @@ public class ConstantPropagationOptimizer extends LineOptimizer {
   private Visitor visitor;
   // Map from temp name to constant value
   private Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
+  // Map from temp name to temp value (canonical value)
+  private Map<String, TempLocation> simpleTemps = new HashMap<>();
 
   public ConstantPropagationOptimizer(List<Op> code) {
     super(code);

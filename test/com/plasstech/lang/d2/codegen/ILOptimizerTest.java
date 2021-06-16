@@ -141,6 +141,19 @@ public class ILOptimizerTest {
   public void constantChr() {
     optimizeAssertSameVariables("a = chr(65) b = a");
   }
+
+  @Test
+  public void constantStringLength() {
+    optimizeAssertSameVariables("a = length('abc') b = a");
+  }
+
+  @Test
+  public void constantArrayLength() {
+    optimizeAssertSameVariables("a = length([1,2,3,4]) b = a");
+    optimizeAssertSameVariables("a = length([true, false]) b = a");
+    optimizeAssertSameVariables("a = length(['a', 'b', 'c']) b = a");
+  }
+
   @Test
   public void constantPropIf() {
     optimizeAssertSameVariables("a = 4 if a ==3 { print a}");
