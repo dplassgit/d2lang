@@ -13,8 +13,8 @@ public class ILOptimizer implements Optimizer {
     int iterations = 0;
 
     boolean changed = false;
-    ArithmeticOptimizer arithmetic = new ArithmeticOptimizer();
-    ConstantPropagationOptimizer cpOptimizer = new ConstantPropagationOptimizer();
+    Optimizer arithmetic = new ArithmeticOptimizer();
+    Optimizer constantProp = new ConstantPropagationOptimizer();
     do {
       changed = false;
       // It optimizes in-place.
@@ -27,7 +27,7 @@ public class ILOptimizer implements Optimizer {
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
       }
-      maybeOptimized = cpOptimizer.optimize(program);
+      maybeOptimized = constantProp.optimize(program);
       if (!maybeOptimized.equals(program)) {
         iterations++;
         program = maybeOptimized;
