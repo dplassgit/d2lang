@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
 import java.util.function.BiFunction;
 
 import com.google.common.flogger.FluentLogger;
@@ -18,12 +17,7 @@ public class ArithmeticOptimizer extends LineOptimizer {
 
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private Visitor visitor;
-
-  public ArithmeticOptimizer(List<Op> code) {
-    super(code);
-    this.visitor = new Visitor();
-  }
+  private Visitor visitor = new Visitor();
 
   @Override
   public void doOptimize(Op op) {

@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
@@ -20,16 +19,11 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 public class ConstantPropagationOptimizer extends LineOptimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private Visitor visitor;
+  private Visitor visitor = new Visitor();
   // Map from temp name to constant value
   private Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
   // Map from temp name to temp value (canonical value)
   private Map<String, TempLocation> simpleTemps = new HashMap<>();
-
-  public ConstantPropagationOptimizer(List<Op> code) {
-    super(code);
-    this.visitor = new Visitor();
-  }
 
   @Override
   public void doOptimize(Op op) {
@@ -37,7 +31,6 @@ public class ConstantPropagationOptimizer extends LineOptimizer {
   }
 
   private class Visitor extends DefaultOpcodeVisitor {
-
     @Override
     public void visit(Transfer op) {
       Location dest = op.destination();

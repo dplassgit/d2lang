@@ -44,7 +44,7 @@ public class ILOptimizerTest {
     }
     System.out.println(Joiner.on("\n").join(ee.ilCode()));
 
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
+    List<Op> optimized = new ILOptimizer().optimize(ee.ilCode());
     System.out.println("\nOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(optimized));
     try {
@@ -177,7 +177,7 @@ public class ILOptimizerTest {
 
     List<Op> originalCode = new ArrayList<>(ee.ilCode());
 
-    List<Op> optimized = new ILOptimizer(ee.ilCode()).optimize();
+    List<Op> optimized = new ILOptimizer().optimize(ee.ilCode());
     System.out.println("\nOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(optimized));
     Environment env2 = ee.execute(optimized);
