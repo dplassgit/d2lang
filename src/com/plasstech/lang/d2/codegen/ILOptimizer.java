@@ -13,23 +13,28 @@ public class ILOptimizer implements Optimizer {
     this.program = new ArrayList<>(program);
   }
 
-  public List<Op> optimize(/* TODO: options */) {
+  public List<Op> optimize(/* TODO: options */ ) {
     int iterations = 0;
 
-    // It optimizes in-place
-    ArithmeticOptimizer arithmetic = new ArithmeticOptimizer(program);
-    // TODO: Do a big loop
-    while (arithmetic.optimize()) {
+    boolean changed = false;
+    do {
+      changed = false;
+      // It optimizes in-place.
+      // TODO: change optimize method to return status with changed & list of ops.
+      ArithmeticOptimizer arithmetic = new ArithmeticOptimizer(program);
+      if (arithmetic.optimize()) {
+        System.out.println("\nARITHMETIC OPTIMIZED:");
+        System.out.println(Joiner.on("\n").join(program));
+        changed = true;
+      }
+      ConstantPropagationOptimizer cpOptimizer = new ConstantPropagationOptimizer(program);
+      if (cpOptimizer.optimize()) {
+        System.out.println("\nCONSTANT OPTIMIZED:");
+        System.out.println(Joiner.on("\n").join(program));
+        changed = true;
+      }
       iterations++;
-      System.out.println("\nARITHMETIC OPTIMIZED:");
-      System.out.println(Joiner.on("\n").join(program));
-    }
-    ConstantPropagationOptimizer cpOptimizer = new ConstantPropagationOptimizer(program);
-    while (cpOptimizer.optimize()) {
-      iterations++;
-      System.out.println("\nCONSTANT OPTIMIZED:");
-      System.out.println(Joiner.on("\n").join(program));
-    }
+    } while (changed);
     System.err.println("Iterations: " + iterations);
     return program;
   }

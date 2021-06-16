@@ -130,9 +130,17 @@ public class ILOptimizerTest {
   @Test
   public void constantPropagationTransfer() {
     optimizeAssertSameVariables("a = 4 b = a");
-    optimizeAssertSameVariables("a = chr(65) b = a");
   }
 
+  @Test
+  public void constantAsc() {
+    optimizeAssertSameVariables("a = asc('b') b = a");
+  }
+
+  @Test
+  public void constantChr() {
+    optimizeAssertSameVariables("a = chr(65) b = a");
+  }
   @Test
   public void constantPropIf() {
     optimizeAssertSameVariables("a = 4 if a ==3 { print a}");

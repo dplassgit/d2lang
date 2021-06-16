@@ -8,6 +8,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 
 public class ArithmeticOptimizer extends LineOptimizer {
   private static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
@@ -30,6 +31,34 @@ public class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private class Visitor extends DefaultOpcodeVisitor {
+    @Override
+    public void visit(UnaryOp opcode) {
+      Operand operand = opcode.operand();
+      switch (opcode.operator()) {
+        case ASC:
+          if (operand instanceof ConstantOperand<?>) {
+            ConstantOperand<String> constant = (ConstantOperand<String>) operand;
+            String value = constant.value();
+            char first = value.charAt(0);
+            replaceCurrent(
+                new Transfer(opcode.destination(), new ConstantOperand<Integer>((int) first)));
+          }
+          return;
+        case CHR:
+          if (operand instanceof ConstantOperand<?>) {
+            ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
+            int value = constant.value();
+            replaceCurrent(
+                new Transfer(
+                    opcode.destination(),
+                    new ConstantOperand<String>("" + Character.valueOf((char) value))));
+          }
+          return;
+        default:
+          return;
+      }
+    }
+
     @Override
     public void visit(BinOp op) {
       Operand left = op.left();
