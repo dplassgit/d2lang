@@ -2,32 +2,34 @@
 
 ## Types & Keywords
 
-Built-in types: int, string, boolean, (eventually: array, map, record, lambda (but not closures))
+Current built-in types: int, string, boolean, constant arrays
+
+Eventually: (more arrays), map?, record, lambda? (but not closures)
 
 Current keywords (excluding built-in types)
 
 ```
-if, else, elif, do, while, break, continue, return, proc, print, println, main
+if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length
 ```
 
 Eventually:
 
 ```
-error, record, array(?), length, keys, values, new, delete(?), asc, chr
+error?, exit, input, record, array(?), keys?, values?, new, delete(?), null
 ```
 
 ## Oddities
 
 No semicolons because why not.
 
-Do I want `*=` (& siblings)?
+Do I want `*=` (& siblings)? **Yes**
 
 Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
 
 ```
-   if a < 3 {
-     // Even if one line
-   }
+if a < 3 {
+  // Even if one line
+}
 ```
 
 ## `for` loop explorations
@@ -76,6 +78,8 @@ Now:
 
 ```
 foo:proc(a:map,b,c) : int {
+  d=a[b]+c() 
+  return d
 } 
 ```
 
@@ -128,10 +132,11 @@ t = new Token("Name", 3)
 OR (much easier to parse?!)
 ```
 t: record Token
-t = new record Token("Name", 3)
+t = record new Token("Name", 3)
+// t = record Token("Name", 3)?
 ```
 
-The constructor takes the arguments in order they were defined.
+The "constructor" takes the arguments in order they were defined. Any trailing skipped arguments are set to default.
 
 What about recursive structures? It should be OK as long as we create the symbol upon entry instead of exit, and allow nulls.
 
