@@ -103,6 +103,8 @@ length("foo") // requires better built-in support but may be implementable as a 
 "foo"#        // pro: ? con: weird. trailing operator
 ```
 
+Winner: `length("foo")`
+
 ## Future thoughts:
 
 ### Records
@@ -123,6 +125,12 @@ t:Token
 t = new Token("Name", 3)
 ```
 
+OR (much easier to parse?!)
+```
+t: record Token
+t = new record Token("Name", 3)
+```
+
 The constructor takes the arguments in order they were defined.
 
 What about recursive structures? It should be OK as long as we create the symbol upon entry instead of exit, and allow nulls.
@@ -135,12 +143,12 @@ Everything is like strings
 keywords=["hi", "bye"]
 keywords[0] = 'sorry' // assign
 keywords[1:3] // slice
-print keywords[-1] // "bye"
+print keywords[-1] // "bye" // not implemented yet
 ```
 
-Length: `array.length` like Java. This will require some parsing finesse.
+Length: `array.length` like Java? This will require some parsing finesse.
 
-(vs length(array) like Python).
+Winner: `length(array)`
 
 #### Declaration explorations
 
@@ -151,9 +159,10 @@ keywords:array[int]
 keywords:int array
 keywords:[int]
 keywords:int[] // winner because multidimensional arrays.
+keywords:int[3] // winner because multidimensional arrays.
 ```
 
-Should we allow the size at declaration time? No. Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
+Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
 
 #### Multi-dimensional
 
@@ -170,7 +179,7 @@ keywords=[1,2,3,4]
 #### Allocating 
 
 ```
-keywords = new array[int](3)
+keywords = new array[int](3) // yuk
 keywords = int[3] // defaults to zeros
 keywords = new int[3] // defaults to zeros -- winner, because why not
 ```

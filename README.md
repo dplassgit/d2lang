@@ -6,11 +6,11 @@ A simple type-inferred language compiler.
 
 ## Directions
 
-Use Eclipse
+Use Eclipse, or [bazel](https://github.com/bazelbuild/bazel).
 
 ## git
 
-`git clone https://github.com/dplassgit/d2lang.git` clones into `d2lang` subdirectory.
+`git clone git@github.com:dplassgit/d2lang.git` clones into `d2lang` subdirectory.
 
 `git pull`
 

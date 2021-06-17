@@ -7,10 +7,10 @@
 program -> statements main?
 
 statements -> statement* 
-statement -> assignment | print | if | while | proc | declaration | 'break' | 'continue'
+statement -> assignment | print | if | while | proc | declaration | 'break' | 'continue' | return_stmt | procedure_call
 
 main -> 'main' mainarg? '{' statements '}'
-mainarg -> '(' variable ')'
+mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> variable '=' expr
 
@@ -24,12 +24,16 @@ while -> 'while' expr do? '{' statements '}'
 do -> 'do' assignment
 
 declaration -> variable ':' type | variable ':' 'proc' procdef
-type -> 'int' | 'bool' | 'string'
+type -> 'int' | 'bool' | 'string' | type '[' expr ']'
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
-param -> variable (':' type)?
-returns -> 'returns' type
+param -> variable (':' type)? // currently, must specify type
+returns -> ':' type
+
+return_stmt -> 'return' expr?
+
+procedure_call -> variable '(' comma-separated-expressions ')'
 ```
 
 ## Comments
@@ -94,14 +98,16 @@ addsub -> muldiv (+- muldiv)*
 
 muldiv -> unary (*/% unary)*
 
-unary ->  atom | !-+ unary
+unary ->  array | !-+ unary
 
-atom -> int constant
-	| variable name
-	| boolean constant
-	| string constant
+array -> atom ('[' expr ']')
+
+atom -> int_constant
+	| boolean_constant
+	| string_constant
+	| variable_name
+  | variable_name '(' comma-separated-expressions ')'
 	| '(' expr ')'
-  | variable '(' expressions ')'
 ```
 
 Not implemented yet: shift, power, xor
