@@ -41,12 +41,14 @@ public class ExecutionEnvironment {
     Parser parser = new Parser(lexer);
     Node parseNode = parser.parse();
     if (parseNode.isError()) {
+      // TODO: Throw the ParseException instead.
       throw new RuntimeException(parseNode.message());
     }
     programNode = (ProgramNode) parseNode;
     StaticChecker checker = new StaticChecker(programNode);
     typeCheckResult = checker.execute();
     if (typeCheckResult.isError()) {
+      // TODO: Throw the TypeException instead.
       throw new RuntimeException(typeCheckResult.message());
     }
 

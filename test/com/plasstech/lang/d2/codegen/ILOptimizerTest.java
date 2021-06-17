@@ -2,10 +2,18 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -168,6 +176,52 @@ public class ILOptimizerTest {
   public void constantPropCall() {
     optimizeAssertSameVariables(
         "a:proc(n:int, m:int):int { return n+1} b=4 print a(4, b) print a(b+2, 4+6)");
+  }
+
+  @Test
+  public void multipleReturns() {
+    optimizeAssertSameVariables(
+        "toString: proc(i: int): string {\r\n"
+            + "  if i == 0 {\r\n"
+            + "    return '0'\r\n"
+            + "  }\r\n"
+            + "  val = ''\r\n"
+            + "  return val\r\n"
+            + "}"
+            + "  println toString(314159)\r\n");
+  }
+
+  @Test
+  @Ignore("Very slow")
+  public void lexerInD() {
+    String path = "samples/d2ind2/lexerglobals.d";
+    testFromFile(path);
+  }
+
+  @Test
+  public void testAllSamples() throws Exception {
+    List<File> files =
+        Files.list(Paths.get("samples"))
+            .filter(Files::isRegularFile)
+            .filter(path -> path.toString().endsWith(".d"))
+            .map(Path::toFile)
+            .collect(Collectors.toList());
+    for (File file : files) {
+      testFromFile(file.getAbsolutePath());
+    }
+  }
+
+  private void testFromFile(String path) {
+    try {
+      String text = new String(Files.readAllBytes(Paths.get(path)));
+      optimizeAssertSameVariables(text);
+    } catch (IOException e) {
+      e.printStackTrace();
+      fail("Could not read " + path);
+    } catch (RuntimeException e) {
+      e.printStackTrace();
+      fail("Could not compile " + path + " " + e.getMessage());
+    }
   }
 
   private void optimizeAssertSameVariables(String program) {

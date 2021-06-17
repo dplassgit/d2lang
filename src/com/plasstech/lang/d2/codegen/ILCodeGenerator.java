@@ -91,6 +91,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     return new TempLocation(name);
   }
 
+  private StackLocation generateStack(VarType varType) {
+    tempId++;
+    String name = String.format("__stack%d", tempId);
+    symbolTable().declare(name, varType);
+    // TODO: keep the vartype with the location
+    return new StackLocation(name);
+  }
+
   @Override
   public void visit(PrintNode node) {
     Node expr = node.expr();
@@ -335,20 +343,18 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     if (node.returnType() != VarType.VOID) {
       // generate a destination
-      TempLocation tempDestination = generateTemp(node.returnType());
-      node.setLocation(tempDestination);
+      StackLocation returnValueDestination = generateStack(node.returnType());
+      node.setLocation(returnValueDestination);
     }
     // Guard to prevent just falling into this method
     String afterLabel = generateLabel("afterProc");
 
     emit(new Goto(afterLabel));
 
-    // TODO: mangle?!
     emit(new ProcEntry(node.name()));
     // This is the real entry point.
     emit(new Label(node.name()));
 
-    // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments???
     node.block().accept(this);
 

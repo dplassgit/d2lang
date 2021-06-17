@@ -11,7 +11,7 @@ public class StackLocation extends Location {
 
   @Override
   public SymbolStorage storage() {
-    // TODO: might be a parameter
+    // TODO: might be a parameter (but still on the stack, shrug)
     return SymbolStorage.LOCAL;
   }
 }
