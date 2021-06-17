@@ -17,10 +17,6 @@ public class ArithmeticOptimizer extends LineOptimizer {
 
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  public ArithmeticOptimizer(List<Op> code) {
-    super(code);
-  }
-
   @Override
   public void visit(UnaryOp opcode) {
     Operand operand = opcode.operand();

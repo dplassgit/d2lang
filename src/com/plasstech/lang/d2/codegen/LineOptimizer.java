@@ -1,27 +1,27 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.google.common.flogger.FluentLogger;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import java.util.List;
+import java.util.ArrayList;
 
 abstract class LineOptimizer extends DefaultOpcodeVisitor {
-  protected final List<Op> code;
-  private boolean changed;
-  protected int ip;
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  public LineOptimizer(List<Op> code) {
-    this.code = code;
-  }
+  private List<Op> code;
+  private boolean changed;
+  private int ip;
 
-  public final boolean optimize() {
+  public final ImmutableList<Op> optimize(ImmutableList<Op> input) {
+    this.code = new ArrayList<>(input);
     changed = false;
     for (ip = 0; ip < code.size(); ++ip) {
       Op op = code.get(ip);
       op.accept(this);
     }
-    return changed;
+    return ImmutableList.copyOf(this.code);
   }
 
   public boolean isChanged() {

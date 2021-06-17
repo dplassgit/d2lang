@@ -23,10 +23,6 @@ public class ConstantPropagationOptimizer extends LineOptimizer {
   // Map from temp name to temp value (canonical value) (not used yet)
   // private Map<String, TempLocation> simpleTemps = new HashMap<>();
 
-  public ConstantPropagationOptimizer(List<Op> code) {
-    super(code);
-  }
-
   @Override
   public void visit(Transfer op) {
     Location dest = op.destination();
