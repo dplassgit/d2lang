@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import java.util.List;
 
-abstract class LineOptimizer {
+abstract class LineOptimizer extends DefaultOpcodeVisitor {
   protected final List<Op> code;
   private boolean changed;
   protected int ip;
@@ -18,12 +19,10 @@ abstract class LineOptimizer {
     changed = false;
     for (ip = 0; ip < code.size(); ++ip) {
       Op op = code.get(ip);
-      doOptimize(op);
+      op.accept(this);
     }
     return changed;
   }
-
-  abstract void doOptimize(Op op);
 
   public boolean isChanged() {
     return changed;
