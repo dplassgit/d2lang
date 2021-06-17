@@ -31,6 +31,16 @@ public class ILOptimizerTest {
   }
 
   @Test
+  public void minusZero() {
+    optimizeAssertSameVariables("a = 2 b=a-0");
+  }
+
+  @Test
+  public void zeroMinus() {
+    optimizeAssertSameVariables("a = 2 b=0-a");
+  }
+
+  @Test
   public void divConstants() {
     optimizeAssertSameVariables("a = 10 / 2");
   }

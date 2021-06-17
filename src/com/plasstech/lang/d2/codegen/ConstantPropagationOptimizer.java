@@ -1,9 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -16,6 +12,9 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ConstantPropagationOptimizer extends LineOptimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -23,8 +22,8 @@ public class ConstantPropagationOptimizer extends LineOptimizer {
   private Visitor visitor;
   // Map from temp name to constant value
   private Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
-  // Map from temp name to temp value (canonical value)
-  private Map<String, TempLocation> simpleTemps = new HashMap<>();
+  // Map from temp name to temp value (canonical value) (not used yet)
+  // private Map<String, TempLocation> simpleTemps = new HashMap<>();
 
   public ConstantPropagationOptimizer(List<Op> code) {
     super(code);
@@ -32,7 +31,7 @@ public class ConstantPropagationOptimizer extends LineOptimizer {
   }
 
   @Override
-  public void doOptimize(Op op) {
+  void doOptimize(Op op) {
     op.accept(visitor);
   }
 

@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
-
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.Op;
+import java.util.List;
 
 abstract class LineOptimizer {
   protected final List<Op> code;
@@ -24,7 +23,7 @@ abstract class LineOptimizer {
     return changed;
   }
 
-  protected abstract void doOptimize(Op op);
+  abstract void doOptimize(Op op);
 
   public boolean isChanged() {
     return changed;
@@ -39,4 +38,4 @@ abstract class LineOptimizer {
     logger.atInfo().log("Replacing ip %d: %s with %s", ip, code.get(ip), newOp);
     code.set(ip, newOp);
   }
- }
+}

@@ -1,14 +1,14 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
-import java.util.function.BiFunction;
-
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.lex.Token;
+import java.util.List;
+import java.util.function.BiFunction;
 
 public class ArithmeticOptimizer extends LineOptimizer {
   private static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
@@ -26,7 +26,7 @@ public class ArithmeticOptimizer extends LineOptimizer {
   }
 
   @Override
-  public void doOptimize(Op op) {
+  void doOptimize(Op op) {
     op.accept(visitor);
   }
 
@@ -151,14 +151,29 @@ public class ArithmeticOptimizer extends LineOptimizer {
     }
 
     private void optimizeSubtract(BinOp op, Operand left, Operand right) {
-      optimizeArith(op.destination(), left, right, (t, u) -> t - u);
+      if (optimizeArith(op.destination(), left, right, (t, u) -> t - u)) {
+        return;
+      }
+      if (left.equals(ZERO)) {
+        // Replace with destination = -right
+        // This may not be any better than 0-right...
+        replaceCurrent(new UnaryOp(op.destination(), Token.Type.MINUS, right));
+        return;
+      } else if (right.equals(ZERO)) {
+        // replace with destination = left
+        replaceCurrent(new Transfer(op.destination(), op.left()));
+        return;
+      }
     }
 
     private void optimizeAdd(BinOp op, Operand left, Operand right) {
       if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
+        // May be ints strings or arrays (?)
         if (optimizeArith(op.destination(), left, right, (t, u) -> t + u)) {
+          // Ints.
           return;
         } else {
+          // Strings
           ConstantOperand leftConstant = (ConstantOperand) left;
           if (leftConstant.value() instanceof String) {
             ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
@@ -205,9 +220,11 @@ public class ArithmeticOptimizer extends LineOptimizer {
         replaceCurrent(new Transfer(op.destination(), FALSE));
         return;
       } else if (left.equals(TRUE)) {
+        // true and right == right
         replaceCurrent(new Transfer(op.destination(), op.right()));
         return;
       } else if (right.equals(TRUE)) {
+        // left and true == left
         replaceCurrent(new Transfer(op.destination(), op.left()));
         return;
       }
@@ -221,15 +238,20 @@ public class ArithmeticOptimizer extends LineOptimizer {
         replaceCurrent(new Transfer(op.destination(), TRUE));
         return;
       } else if (left.equals(FALSE)) {
-        // the other is false, use right
+        // false or right = right
         replaceCurrent(new Transfer(op.destination(), op.right()));
         return;
       } else if (right.equals(FALSE)) {
+        // left or false = left
         replaceCurrent(new Transfer(op.destination(), op.left()));
         return;
       }
     }
 
+    /**
+     * If both operands are constant integers, apply the given function to the constants and replace
+     * the opcode with result. E.g., op=3<4 becomes op=true
+     */
     private boolean optimizeCompare(
         Location destination,
         Operand left,
@@ -251,6 +273,10 @@ public class ArithmeticOptimizer extends LineOptimizer {
       return false;
     }
 
+    /**
+     * If both operands are constants, apply the given function to the constants and replace the
+     * opcode with result. E.g., t='a'=='b' becomes t=false
+     */
     private boolean optimizeEq(
         Location destination,
         Operand left,
@@ -270,6 +296,10 @@ public class ArithmeticOptimizer extends LineOptimizer {
       return false;
     }
 
+    /**
+     * If both operands are constant integers, apply the given function to those ints and replace
+     * the opcode with the new constant. E.g., t=3+4 becomes t=7
+     */
     private boolean optimizeArith(
         Location destination,
         Operand left,
@@ -291,6 +321,10 @@ public class ArithmeticOptimizer extends LineOptimizer {
       return false;
     }
 
+    /**
+     * If both operands are constant booleans, apply the given function to those booleans and
+     * replace the opcode with the new constant. E.g., t=true or false becomes t=true
+     */
     private boolean optimizeBoolArith(
         Location destination,
         Operand left,
