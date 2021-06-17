@@ -2,32 +2,34 @@
 
 ## Types & Keywords
 
-Built-in types: int, string, boolean, (eventually: array, map, record, lambda (but not closures))
+Current built-in types: int, string, boolean, constant arrays
+
+Eventually: (more arrays), map?, record, lambda? (but not closures)
 
 Current keywords (excluding built-in types)
 
 ```
-if, else, elif, do, while, break, continue, return, proc, print, println, main
+if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length
 ```
 
 Eventually:
 
 ```
-error, record, array(?), length, keys, values, new, delete(?), asc, chr
+error?, exit, input, record, array(?), keys?, values?, new, delete(?), null
 ```
 
 ## Oddities
 
 No semicolons because why not.
 
-Do I want `*=` (& siblings)?
+Do I want `*=` (& siblings)? **Yes**
 
 Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
 
 ```
-   if a < 3 {
-     // Even if one line
-   }
+if a < 3 {
+  // Even if one line
+}
 ```
 
 ## `for` loop explorations
@@ -76,6 +78,8 @@ Now:
 
 ```
 foo:proc(a:map,b,c) : int {
+  d=a[b]+c() 
+  return d
 } 
 ```
 
@@ -103,6 +107,8 @@ length("foo") // requires better built-in support but may be implementable as a 
 "foo"#        // pro: ? con: weird. trailing operator
 ```
 
+Winner: `length("foo")`
+
 ## Future thoughts:
 
 ### Records
@@ -123,7 +129,14 @@ t:Token
 t = new Token("Name", 3)
 ```
 
-The constructor takes the arguments in order they were defined.
+OR (much easier to parse?!)
+```
+t: record Token
+t = record new Token("Name", 3)
+// t = record Token("Name", 3)?
+```
+
+The "constructor" takes the arguments in order they were defined. Any trailing skipped arguments are set to default.
 
 What about recursive structures? It should be OK as long as we create the symbol upon entry instead of exit, and allow nulls.
 
@@ -135,12 +148,12 @@ Everything is like strings
 keywords=["hi", "bye"]
 keywords[0] = 'sorry' // assign
 keywords[1:3] // slice
-print keywords[-1] // "bye"
+print keywords[-1] // "bye" // not implemented yet
 ```
 
-Length: `array.length` like Java. This will require some parsing finesse.
+Length: `array.length` like Java? This will require some parsing finesse.
 
-(vs length(array) like Python).
+Winner: `length(array)`
 
 #### Declaration explorations
 
@@ -151,9 +164,10 @@ keywords:array[int]
 keywords:int array
 keywords:[int]
 keywords:int[] // winner because multidimensional arrays.
+keywords:int[3] // winner because multidimensional arrays.
 ```
 
-Should we allow the size at declaration time? No. Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
+Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
 
 #### Multi-dimensional
 
@@ -170,7 +184,7 @@ keywords=[1,2,3,4]
 #### Allocating 
 
 ```
-keywords = new array[int](3)
+keywords = new array[int](3) // yuk
 keywords = int[3] // defaults to zeros
 keywords = new int[3] // defaults to zeros -- winner, because why not
 ```
