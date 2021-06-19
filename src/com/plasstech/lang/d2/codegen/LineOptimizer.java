@@ -38,4 +38,10 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor {
     logger.atInfo().log("Replacing ip %d: %s with %s", ip, code.get(ip), newOp);
     code.set(ip, newOp);
   }
+
+  protected void replaceAt(int theIp, Op newOp) {
+    setChanged(true);
+    logger.atInfo().log("Replacing ip %d: %s with %s", theIp, code.get(theIp), newOp);
+    code.set(theIp, newOp);
+  }
 }

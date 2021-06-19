@@ -6,6 +6,7 @@ import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class DeadCodeOptimizer extends LineOptimizer {
@@ -18,7 +19,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
     }
     if (op.condition().equals(ConstantOperand.FALSE)
         || op.condition().equals(ConstantOperand.ZERO)) {
-      replaceCurrent(Nop.INSTANCE);
+      replaceCurrent(new Nop(op));
     }
   }
 
@@ -29,14 +30,14 @@ public class DeadCodeOptimizer extends LineOptimizer {
 
     if (dest.equals(source)) {
       // a=a is dead. unfortunately this almost never happens...
-      replaceCurrent(Nop.INSTANCE);
+      replaceCurrent(new Nop(op));
       return;
     }
   }
 
   @Override
   public void visit(Goto op) {
-    // if there only nops or labels between here and dest, we can skip this.
+    // 1. if there only nops or labels between here and dest, we don't have to goto.
     boolean onlyLabels = true;
     for (int testip = ip + 1; testip < code.size(); ++testip) {
       Op testop = code.get(testip);
@@ -56,7 +57,20 @@ public class DeadCodeOptimizer extends LineOptimizer {
       }
     }
     if (onlyLabels) {
-      replaceCurrent(Nop.INSTANCE);
+      replaceCurrent(new Nop(op));
+      return;
+    }
+    // 2. any code between a goto and a label is dead.
+    for (int testip = ip + 1; testip < code.size(); ++testip) {
+      Op testop = code.get(testip);
+      if (testop instanceof Nop) {
+        continue;
+      }
+      if (testop instanceof Label || testop instanceof ProcEntry) {
+        break;
+      } else {
+        replaceAt(testip, new Nop(testop));
+      }
     }
   }
 }

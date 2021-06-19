@@ -66,7 +66,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       // easy case: temps are never overwritten.
       logger.atInfo().log("Potentially replacing temp %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
-      replaceCurrent(Nop.INSTANCE);
+      replaceCurrent(new Nop(op));
     } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
       logger.atInfo().log("Potentially replacing stack %s with %s", dest.name(), source);
