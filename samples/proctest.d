@@ -5,7 +5,7 @@ ok:proc(): int {
 }
 
 notok:proc(): int {
-	      return 3
+ return 3
 }
 
 notok2:proc(): int {
@@ -45,5 +45,4 @@ notok2:proc(): int {
 	  //print 3
 	  //return 5
   //}
-
 }
