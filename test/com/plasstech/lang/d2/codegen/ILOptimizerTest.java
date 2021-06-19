@@ -168,7 +168,7 @@ public class ILOptimizerTest {
 
   @Test
   public void constantPropIf() {
-    TestUtils.optimizeAssertSameVariables("a = 4 if a ==3 { print a}");
+    TestUtils.optimizeAssertSameVariables("b:proc() {a = 4 if a == (2+2) {print a}} b()");
   }
 
   @Test
@@ -193,5 +193,21 @@ public class ILOptimizerTest {
             + "  return val\r\n"
             + "}"
             + "  println toString(314159)\r\n");
+  }
+
+  @Test
+  public void deadIf() {
+    TestUtils.optimizeAssertSameVariables("a=4 if true {a=3} print a");
+  }
+
+  @Test
+  public void deadWhile() {
+    TestUtils.optimizeAssertSameVariables("a=4 while false {a=3} print a");
+    TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>4 {a=3} print a} p()");
+  }
+
+  @Test
+  public void deadAssignment() {
+    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a}");
   }
 }

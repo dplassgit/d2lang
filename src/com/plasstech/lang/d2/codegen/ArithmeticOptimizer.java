@@ -9,11 +9,6 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.lex.Token;
 
 class ArithmeticOptimizer extends LineOptimizer {
-  private static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
-  private static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1);
-  private static final ConstantOperand<Boolean> FALSE = new ConstantOperand<Boolean>(false);
-  private static final ConstantOperand<Boolean> TRUE = new ConstantOperand<Boolean>(true);
-
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
@@ -21,7 +16,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     Operand operand = opcode.operand();
     switch (opcode.operator()) {
       case LENGTH:
-        if (operand instanceof ConstantOperand<?>) {
+        if (operand.isConstant()) {
           ConstantOperand<?> constant = (ConstantOperand<?>) operand;
           Object value = constant.value();
           if (value instanceof String) {
@@ -36,8 +31,30 @@ class ArithmeticOptimizer extends LineOptimizer {
           }
         }
         return;
+      case NOT:
+        if (operand.isConstant()) {
+          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+          Object value = constant.value();
+          if (value instanceof Boolean) {
+            boolean valueBoolean = (Boolean) value;
+            replaceCurrent(
+                new Transfer(opcode.destination(), new ConstantOperand<Boolean>(!valueBoolean)));
+          }
+        }
+        return;
+      case MINUS:
+        if (operand.isConstant()) {
+          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+          Object value = constant.value();
+          if (value instanceof Integer) {
+            int valueInt = (Integer) value;
+            replaceCurrent(
+                new Transfer(opcode.destination(), new ConstantOperand<Integer>(valueInt)));
+          }
+        }
+        return;
       case ASC:
-        if (operand instanceof ConstantOperand<?>) {
+        if (operand.isConstant()) {
           ConstantOperand<String> constant = (ConstantOperand<String>) operand;
           String value = constant.value();
           char first = value.charAt(0);
@@ -46,7 +63,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         }
         return;
       case CHR:
-        if (operand instanceof ConstantOperand<?>) {
+        if (operand.isConstant()) {
           ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
           int value = constant.value();
           replaceCurrent(
@@ -139,12 +156,12 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeArith(op.destination(), left, right, (t, u) -> t - u)) {
       return;
     }
-    if (left.equals(ZERO)) {
+    if (left.equals(ConstantOperand.ZERO)) {
       // Replace with destination = -right
       // This may not be any better than 0-right...
       replaceCurrent(new UnaryOp(op.destination(), Token.Type.MINUS, right));
       return;
-    } else if (right.equals(ZERO)) {
+    } else if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
@@ -170,11 +187,11 @@ class ArithmeticOptimizer extends LineOptimizer {
         }
       }
     }
-    if (left.equals(ZERO)) {
+    if (left.equals(ConstantOperand.ZERO)) {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } else if (right.equals(ZERO)) {
+    } else if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
@@ -184,14 +201,14 @@ class ArithmeticOptimizer extends LineOptimizer {
   private void optimizeMultiply(BinOp op, Operand left, Operand right) {
     if (optimizeArith(op.destination(), left, right, (t, u) -> t * u)) {
       return;
-    } else if (left.equals(ZERO) || right.equals(ZERO)) {
+    } else if (left.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO)) {
       // replace with destination = 0
-      replaceCurrent(new Transfer(op.destination(), ZERO));
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
       return;
-    } else if (left.equals(ONE)) {
+    } else if (left.equals(ConstantOperand.ONE)) {
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } else if (right.equals(ONE)) {
+    } else if (right.equals(ConstantOperand.ONE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
@@ -200,15 +217,15 @@ class ArithmeticOptimizer extends LineOptimizer {
   private void optimizeAnd(BinOp op, Operand left, Operand right) {
     if (optimizeBoolArith(op.destination(), left, right, (t, u) -> t && u)) {
       return;
-    } else if (left.equals(FALSE) || right.equals(FALSE)) {
+    } else if (left.equals(ConstantOperand.FALSE) || right.equals(ConstantOperand.FALSE)) {
       // replace with destination = FALSE
-      replaceCurrent(new Transfer(op.destination(), FALSE));
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.FALSE));
       return;
-    } else if (left.equals(TRUE)) {
+    } else if (left.equals(ConstantOperand.TRUE)) {
       // true and right == right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } else if (right.equals(TRUE)) {
+    } else if (right.equals(ConstantOperand.TRUE)) {
       // left and true == left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
@@ -218,15 +235,15 @@ class ArithmeticOptimizer extends LineOptimizer {
   private void optimizeOr(BinOp op, Operand left, Operand right) {
     if (optimizeBoolArith(op.destination(), left, right, (t, u) -> t || u)) {
       return;
-    } else if (left.equals(TRUE) || right.equals(TRUE)) {
+    } else if (left.equals(ConstantOperand.TRUE) || right.equals(ConstantOperand.TRUE)) {
       // either one is true, it's true
-      replaceCurrent(new Transfer(op.destination(), TRUE));
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.TRUE));
       return;
-    } else if (left.equals(FALSE)) {
+    } else if (left.equals(ConstantOperand.FALSE)) {
       // false or right = right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } else if (right.equals(FALSE)) {
+    } else if (right.equals(ConstantOperand.FALSE)) {
       // left or false = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;

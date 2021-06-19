@@ -19,8 +19,6 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 
 class ConstantPropagationOptimizer extends LineOptimizer {
-  private static final Nop NOP = new Nop();
-
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from temp name to constant value
@@ -59,27 +57,21 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand source = op.source();
     Location dest = op.destination();
 
-    if (dest.equals(source)) {
-      // nothing
-      replaceCurrent(NOP);
-      return;
-    }
-
     if (dest instanceof StackLocation) {
       // We're changing the value of a stack variable; remove any old setting
       stackConstants.remove(dest.name());
     }
 
-    if (dest instanceof TempLocation && source instanceof ConstantOperand) {
+    if (dest instanceof TempLocation && source.isConstant()) {
       // easy case: temps are never overwritten.
       logger.atInfo().log("Potentially replacing temp %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
-      replaceCurrent(NOP);
-    } else if (dest instanceof StackLocation && source instanceof ConstantOperand) {
+      replaceCurrent(Nop.INSTANCE);
+    } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
       logger.atInfo().log("Potentially replacing stack %s with %s", dest.name(), source);
       stackConstants.put(dest.name(), (ConstantOperand<?>) source);
-    } else if (!(source instanceof ConstantOperand)) {
+    } else if (!source.isConstant()) {
       ConstantOperand<?> replacement = findReplacementConstant(source);
       if (replacement != null) {
         replaceCurrent(new Transfer(dest, replacement));

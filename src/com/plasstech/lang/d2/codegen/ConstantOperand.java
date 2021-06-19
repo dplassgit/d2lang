@@ -3,6 +3,11 @@ package com.plasstech.lang.d2.codegen;
 import com.google.common.base.Joiner;
 
 public class ConstantOperand<T> implements Operand {
+  public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
+  public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1);
+  public static final ConstantOperand<Boolean> FALSE = new ConstantOperand<Boolean>(false);
+  public static final ConstantOperand<Boolean> TRUE = new ConstantOperand<Boolean>(true);
+
   private final T value;
 
   public ConstantOperand(T value) {
@@ -11,6 +16,11 @@ public class ConstantOperand<T> implements Operand {
 
   public T value() {
     return value;
+  }
+
+  @Override
+  public boolean isConstant() {
+    return true;
   }
 
   @Override
