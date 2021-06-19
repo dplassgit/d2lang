@@ -359,6 +359,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     node.block().accept(this);
 
     // there should have already been a regular "return" with the value.
+    emit(new Return());
     emit(new ProcExit());
     emit(new Label(afterLabel));
 
