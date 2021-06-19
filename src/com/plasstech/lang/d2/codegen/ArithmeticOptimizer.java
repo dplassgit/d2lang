@@ -141,10 +141,22 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeModulo(BinOp op, Operand left, Operand right) {
-    optimizeArith(op.destination(), left, right, (t, u) -> t % u);
+    if (right.equals(ConstantOperand.ONE)) {
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      return;
+    }
+    try {
+      optimizeArith(op.destination(), left, right, (t, u) -> t % u);
+    } catch (ArithmeticException e) {
+      logger.atWarning().log("Cannot optimize mod zero!");
+    }
   }
 
   private void optimizeDivide(BinOp op, Operand left, Operand right) {
+    if (right.equals(ConstantOperand.ONE)) {
+      replaceCurrent(new Transfer(op.destination(), op.left()));
+      return;
+    }
     try {
       optimizeArith(op.destination(), left, right, (t, u) -> t / u);
     } catch (ArithmeticException e) {
@@ -267,8 +279,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         Integer leftval = (Integer) leftConstant.value();
         Integer rightval = (Integer) rightConstant.value();
         replaceCurrent(
-            new Transfer(
-                destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
+            new Transfer(destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
         return true;
       }
     }
@@ -280,10 +291,7 @@ class ArithmeticOptimizer extends LineOptimizer {
    * opcode with result. E.g., t='a'=='b' becomes t=false
    */
   private boolean optimizeEq(
-      Location destination,
-      Operand left,
-      Operand right,
-      BiFunction<Object, Object, Boolean> fun) {
+      Location destination, Operand left, Operand right, BiFunction<Object, Object, Boolean> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -299,8 +307,8 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   /**
-   * If both operands are constant integers, apply the given function to those ints and replace
-   * the opcode with the new constant. E.g., t=3+4 becomes t=7
+   * If both operands are constant integers, apply the given function to those ints and replace the
+   * opcode with the new constant. E.g., t=3+4 becomes t=7
    */
   private boolean optimizeArith(
       Location destination,
@@ -315,8 +323,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         int leftval = (int) leftConstant.value();
         int rightval = (int) rightConstant.value();
         replaceCurrent(
-            new Transfer(
-                destination, new ConstantOperand<Integer>(fun.apply(leftval, rightval))));
+            new Transfer(destination, new ConstantOperand<Integer>(fun.apply(leftval, rightval))));
         return true;
       }
     }
@@ -324,8 +331,8 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   /**
-   * If both operands are constant booleans, apply the given function to those booleans and
-   * replace the opcode with the new constant. E.g., t=true or false becomes t=true
+   * If both operands are constant booleans, apply the given function to those booleans and replace
+   * the opcode with the new constant. E.g., t=true or false becomes t=true
    */
   private boolean optimizeBoolArith(
       Location destination,
@@ -340,8 +347,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         boolean leftval = (boolean) leftConstant.value();
         boolean rightval = (boolean) rightConstant.value();
         replaceCurrent(
-            new Transfer(
-                destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
+            new Transfer(destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
         return true;
       }
     }

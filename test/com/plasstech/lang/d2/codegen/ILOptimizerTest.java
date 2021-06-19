@@ -51,6 +51,11 @@ public class ILOptimizerTest {
   }
 
   @Test
+  public void divByOne() {
+    TestUtils.optimizeAssertSameVariables("a = 10 b=a/1");
+  }
+
+  @Test
   public void divByZero() {
     ExecutionEnvironment ee = new ExecutionEnvironment("a = 1 / 0");
     try {
@@ -71,6 +76,12 @@ public class ILOptimizerTest {
   @Test
   public void modConstants() {
     TestUtils.optimizeAssertSameVariables("a = 14 % 5");
+    TestUtils.optimizeAssertSameVariables("a = 14 % 14");
+  }
+
+  @Test
+  public void modByOne() {
+    TestUtils.optimizeAssertSameVariables("a = 14 b=a%1");
   }
 
   @Test
@@ -80,12 +91,14 @@ public class ILOptimizerTest {
 
   @Test
   public void timesZero() {
-    TestUtils.optimizeAssertSameVariables("a = 1 * 0 b = a * 0 d = 3 * 0");
+    TestUtils.optimizeAssertSameVariables("a = 1 * 0 b = a * 0 d = 0 * 3");
   }
 
   @Test
   public void timesConstants() {
     TestUtils.optimizeAssertSameVariables("a = 2 * 3");
+    TestUtils.optimizeAssertSameVariables("a = 1 * 3");
+    TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
   }
 
   @Test
