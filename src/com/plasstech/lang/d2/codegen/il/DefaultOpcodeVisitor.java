@@ -45,4 +45,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
   @Override
   public void visit(ProcExit op) {
   }
+
+  @Override
+  public void visit(ProcEntry op) {}
 }

@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.lex.Token;
 
-public class ArithmeticOptimizer extends LineOptimizer {
+class ArithmeticOptimizer extends LineOptimizer {
   private static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
   private static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1);
   private static final ConstantOperand<Boolean> FALSE = new ConstantOperand<Boolean>(false);

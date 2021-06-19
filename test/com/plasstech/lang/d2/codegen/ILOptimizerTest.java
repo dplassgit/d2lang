@@ -138,6 +138,13 @@ public class ILOptimizerTest {
   }
 
   @Test
+  public void constantPropagationBooleans() {
+    TestUtils.optimizeAssertSameVariables("a = true b = a and true c = b and false d=a and b");
+    TestUtils.optimizeAssertSameVariables(
+        "f:proc() {a = true b = a and true c = b and false d=a and b}");
+  }
+
+  @Test
   public void constantAsc() {
     TestUtils.optimizeAssertSameVariables("a = asc('b') b = a");
   }
