@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -227,10 +228,18 @@ public class ILOptimizerTest {
   public void deadWhile() {
     TestUtils.optimizeAssertSameVariables("a=4 while false {a=3} print a");
     TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>4 {a=3} print a} p()");
+    TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>0 {break} print a} p()");
   }
 
   @Test
+  @Ignore
   public void deadAssignment() {
     TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a}");
+  }
+
+  @Test
+  public void deadAfterReturn() {
+    TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4}");
+    TestUtils.optimizeAssertSameVariables("p:proc(a:bool): int {if a {return 4} a=false return 5}");
   }
 }

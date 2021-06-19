@@ -7,6 +7,8 @@ import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
+import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class DeadCodeOptimizer extends LineOptimizer {
@@ -66,9 +68,27 @@ public class DeadCodeOptimizer extends LineOptimizer {
       if (testop instanceof Nop) {
         continue;
       }
-      if (testop instanceof Label || testop instanceof ProcEntry) {
+      if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
         break;
       } else {
+        logger.atInfo().log("Nopping statement between goto and next label");
+        replaceAt(testip, new Nop(testop));
+      }
+    }
+  }
+
+  @Override
+  public void visit(Return op) {
+    // 2. any code between a return and a label is dead.
+    for (int testip = ip + 1; testip < code.size(); ++testip) {
+      Op testop = code.get(testip);
+      if (testop instanceof Nop) {
+        continue;
+      }
+      if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
+        break;
+      } else {
+        logger.atInfo().log("Nopping statement after return");
         replaceAt(testip, new Nop(testop));
       }
     }
