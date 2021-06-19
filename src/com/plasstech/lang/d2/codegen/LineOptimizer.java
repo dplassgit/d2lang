@@ -11,9 +11,9 @@ import com.plasstech.lang.d2.codegen.il.Op;
 abstract class LineOptimizer extends DefaultOpcodeVisitor {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private List<Op> code;
   private boolean changed;
-  private int ip;
+  protected List<Op> code;
+  protected int ip;
 
   public final ImmutableList<Op> optimize(ImmutableList<Op> input) {
     this.code = new ArrayList<>(input);

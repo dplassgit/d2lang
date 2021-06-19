@@ -16,7 +16,7 @@ public class ILOptimizer implements Optimizer {
 
     boolean changed = false;
     ArithmeticOptimizer arithmetic = new ArithmeticOptimizer();
-    ConstantPropagationOptimizer cpOptimizer = new ConstantPropagationOptimizer();
+    ConstantPropagationOptimizer cpo = new ConstantPropagationOptimizer();
     DeadCodeOptimizer dco = new DeadCodeOptimizer();
     do {
       changed = false;
@@ -26,8 +26,8 @@ public class ILOptimizer implements Optimizer {
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
       }
-      program = cpOptimizer.optimize(program);
-      if (cpOptimizer.isChanged()) {
+      program = cpo.optimize(program);
+      if (cpo.isChanged()) {
         System.out.println("\nCONSTANT OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
