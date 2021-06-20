@@ -10,7 +10,6 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -64,9 +63,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (dest instanceof TempLocation && source.isConstant()) {
       // easy case: temps are never overwritten.
-      logger.atInfo().log("Potentially replacing temp %s with %s", dest.name(), source);
+      logger.atInfo().log("Replacing temp %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
-      replaceCurrent(new Nop(op));
+      deleteCurrent();
     } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
       logger.atInfo().log("Potentially replacing stack %s with %s", dest.name(), source);

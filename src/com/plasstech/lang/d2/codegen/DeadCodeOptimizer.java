@@ -21,7 +21,18 @@ public class DeadCodeOptimizer extends LineOptimizer {
     }
     if (op.condition().equals(ConstantOperand.FALSE)
         || op.condition().equals(ConstantOperand.ZERO)) {
-      replaceCurrent(new Nop(op));
+      deleteCurrent();
+    }
+    if (ip < code.size()) {
+      Op next = code.get(ip + 1);
+      if (next instanceof Goto) {
+        Goto nextGoto = (Goto) next;
+        if (op.destination().equals(nextGoto.label())) {
+          logger.atInfo().log("Nopping 'if' followed by 'goto' to same place");
+          // both the "if" and the "goto" goto the same place, so one is redundant.
+          deleteCurrent();
+        }
+      }
     }
   }
 
@@ -32,7 +43,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
 
     if (dest.equals(source)) {
       // a=a is dead. unfortunately this almost never happens...
-      replaceCurrent(new Nop(op));
+      deleteCurrent();
       return;
     }
   }
@@ -59,7 +70,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
       }
     }
     if (onlyLabels) {
-      replaceCurrent(new Nop(op));
+      deleteCurrent();
       return;
     }
     // 2. any code between a goto and a label is dead.

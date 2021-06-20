@@ -22,18 +22,21 @@ public class ILOptimizer implements Optimizer {
       changed = false;
       program = arithmetic.optimize(program);
       if (arithmetic.isChanged()) {
+        iterations++;
         System.out.println("\nARITHMETIC OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
       }
       program = cpo.optimize(program);
       if (cpo.isChanged()) {
+        iterations++;
         System.out.println("\nCONSTANT OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
       }
       program = dco.optimize(program);
       if (dco.isChanged()) {
+        iterations++;
         System.out.println("\nDEAD CODE OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         changed = true;

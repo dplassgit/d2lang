@@ -225,9 +225,17 @@ public class ILOptimizerTest {
   }
 
   @Test
-  public void deadWhile() {
+  public void deadWhileFalse() {
     TestUtils.optimizeAssertSameVariables("a=4 while false {a=3} print a");
+  }
+
+  @Test
+  public void deadWhile() {
     TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>4 {a=3} print a} p()");
+  }
+
+  @Test
+  public void deadWhileImmediateBreak() {
     TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>0 {break} print a} p()");
   }
 
