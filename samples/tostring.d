@@ -1,14 +1,10 @@
-NUMBERS = "0123456789"
-
 toString: proc(i: int): string {
   if i == 0 {
     return '0'
   }
   val = ''
   while i > 0 do i = i / 10 {
-    c = i % 10
-    d = chr(c+asc('0')) // NUMBERS[c]
-    val = d + val
+    val = chr((i % 10) +asc('0')) + val
   }
   return val
 }
