@@ -106,11 +106,11 @@ public class Parser {
           return new ProgramNode(statements, mainProc);
         }
         throw new ParseException(
-            String.format("Unexpected %s; expected EOF", token.text()), token.start());
+            String.format("Unexpected '%s'; expected EOF", token.text()), token.start());
       }
     }
     throw new ParseException(
-        String.format("Unexpected %s; expected 'main' or EOF", token.text()), token.start());
+        String.format("Unexpected '%s'; expected 'main' or EOF", token.text()), token.start());
   }
 
   private BlockNode statements(Function<Token, Boolean> matcher) {
@@ -127,7 +127,7 @@ public class Parser {
   private BlockNode block() {
     if (token.type() != Token.Type.LBRACE) {
       throw new ParseException(
-          String.format("Unexpected %s; expected {", token.text()), token.start());
+          String.format("Unexpected '%s'; expected '{'", token.text()), token.start());
     }
     advance();
 
@@ -224,13 +224,13 @@ public class Parser {
         }
       }
       throw new ParseException(
-          String.format("Unexpected %s; expected INT, BOOL, STRING or PROC", token.text()),
+          String.format("Unexpected '%s'; expected INT, BOOL, STRING or PROC", token.text()),
           token.start());
     } else if (token.type() == Token.Type.LPAREN) {
       return procedureCall(varToken, true);
     }
     throw new ParseException(
-        String.format("Unexpected %s; expected '=' or ':'", token.text()), token.start());
+        String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
   }
 
   private DeclarationNode arrayDeclaration(Token varToken, VarType baseVarType) {
@@ -241,7 +241,7 @@ public class Parser {
     ArrayType arrayType = new ArrayType(baseVarType);
     if (token.type() != Token.Type.RBRACKET) {
       throw new ParseException(
-          String.format("Unexpected %s; expected '['", token.text()), token.start());
+          String.format("Unexpected '%s'; expected '['", token.text()), token.start());
     }
     advance();
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
@@ -255,14 +255,14 @@ public class Parser {
       advance();
       if (!token.type().isKeyword()) {
         throw new ParseException(
-            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
             token.start());
       }
       Token.Type declaredType = token.type();
       returnType = BUILTINS.get(declaredType);
       if (returnType == null || returnType == VarType.PROC) {
         throw new ParseException(
-            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
             token.start());
       }
       advance(); // eat the return type
@@ -295,7 +295,7 @@ public class Parser {
       advance();
     } else {
       throw new ParseException(
-          String.format("Unexpected %s; expected , or )", token.text()), token.start());
+          String.format("Unexpected '%s'; expected ',' or ')'", token.text()), token.start());
     }
     return params;
   }
@@ -303,7 +303,7 @@ public class Parser {
   private Parameter formalParam() {
     if (token.type() != Token.Type.VARIABLE) {
       throw new ParseException(
-          String.format("Unexpected %s; expected variable", token.text()), token.start());
+          String.format("Unexpected '%s'; expected variable", token.text()), token.start());
     }
 
     Token paramName = token;
@@ -312,14 +312,14 @@ public class Parser {
       advance();
       if (!token.type().isKeyword()) {
         throw new ParseException(
-            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
             token.start());
       }
       Token.Type declaredType = token.type();
       VarType paramType = BUILTINS.get(declaredType);
       if (paramType == null) {
         throw new ParseException(
-            String.format("Unexpected %s; expected INT, BOOL or STRING", token.text()),
+            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
             token.start());
       } else {
         // We have a param type
@@ -404,7 +404,7 @@ public class Parser {
       advance(); // eat the rparen
     } else {
       throw new ParseException(
-          String.format("Unexpected %s; expected ')'", token.text()), token.start());
+          String.format("Unexpected '%s'; expected ')'", token.text()), token.start());
     }
     return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
   }
@@ -577,12 +577,12 @@ public class Parser {
       Token keywordToken = unaryToken;
       advance();
       if (token.type() != Token.Type.LPAREN) {
-        throw new ParseException(String.format("Expected '(', found %s", token), token.start());
+        throw new ParseException(String.format("Unexpected '%s'; expected '('", token), token.start());
       }
       advance();
       ExprNode hopefullyAString = expr();
       if (token.type() != Token.Type.RPAREN) {
-        throw new ParseException(String.format("Expected ')', found %s", token), token.start());
+        throw new ParseException(String.format("Unexpected '%s'; expected ')'", token), token.start());
       }
       advance();
       return new UnaryNode(keywordToken.type(), hopefullyAString, unaryToken.start());
@@ -606,7 +606,7 @@ public class Parser {
         left = new BinOpNode(left, Token.Type.LBRACKET, index);
       } else {
         throw new ParseException(
-            String.format("Unexpected %s; expected ']'", token), token.start());
+            String.format("Unexpected '%s'; expected ']'", token), token.start());
       }
     }
 
@@ -643,14 +643,14 @@ public class Parser {
         return expr;
       } else {
         throw new ParseException(
-            String.format("Unexpected %s; expected ')'", token.text()), token.start());
+            String.format("Unexpected '%s'; expected ')'", token.text()), token.start());
       }
     } else if (token.type() == Token.Type.LBRACKET) {
       // array literal
       return arrayLiteral();
     } else {
       throw new ParseException(
-          String.format("Unexpected %s; expected literal, variable or '('", token.text()),
+          String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
           token.start());
     }
   }
@@ -687,7 +687,7 @@ public class Parser {
 
       if (token.type() != Token.Type.RBRACKET) {
         throw new ParseException(
-            String.format("Unexpected %s; expected ']'", token.text()), token.start());
+            String.format("Unexpected '%s'; expected ']'", token.text()), token.start());
       }
       advance(); // eat rbracket
 
