@@ -17,9 +17,9 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor {
   protected int ip;
   protected Op currentOp;
 
-  public final ImmutableList<Op> optimize(ImmutableList<Op> input) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     this.code = new ArrayList<>(input);
-    changed = false;
+    setChanged(false);
     for (ip = 0; ip < code.size(); ++ip) {
       currentOp = code.get(ip);
       currentOp.accept(this);
@@ -35,23 +35,27 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor {
     this.changed = changed;
   }
 
-  protected void deleteCurrent() {
-    // Replace the current op with a nop.
-    Op newOp = new Nop(currentOp);
-    setChanged(true);
-    logger.atInfo().log("Replacing ip %d: %s with %s", ip, currentOp, newOp);
-    code.set(ip, newOp);
-  }
-
-  protected void replaceCurrent(Op newOp) {
-    setChanged(true);
-    logger.atInfo().log("Replacing ip %d: %s with %s", ip, currentOp, newOp);
-    code.set(ip, newOp);
-  }
-
+  /** Replace the given op with the given nop. */
   protected void replaceAt(int theIp, Op newOp) {
     setChanged(true);
     logger.atInfo().log("Replacing ip %d: %s with %s", theIp, code.get(theIp), newOp);
     code.set(theIp, newOp);
+  }
+
+  /** Replace the current op with the given nop. */
+  protected void replaceCurrent(Op newOp) {
+    replaceAt(ip, newOp);
+  }
+
+  /** Replace the given op with a nop. */
+  protected void deleteAt(int theIp) {
+    Op theOp = code.get(theIp);
+    Op newOp = new Nop(theOp);
+    replaceAt(theIp, newOp);
+  }
+
+  /** Replace the current op with a nop. */
+  protected void deleteCurrent() {
+    deleteAt(ip);
   }
 }

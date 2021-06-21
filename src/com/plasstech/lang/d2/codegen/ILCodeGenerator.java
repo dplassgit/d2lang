@@ -309,7 +309,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(MainNode node) {
-    emit(new Label("_main"));
+    emit(new Label("__main"));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
     if (node.block() != null) {
