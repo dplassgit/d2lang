@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.lex;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token.Type;
+import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -13,13 +12,13 @@ public class Lexer {
   private int loc; // location inside text
   private char cc; // current character
 
-  private Map<Character, Character> BACKSLASH_ESCAPE_MAP = //
-      ImmutableMap.<Character, Character>builder() //
-          .put('n', '\n') //
-          .put('r', '\r') //
-          .put('t', '\t') //
-          .put('"', '"') //
-          .put('\'', '\'') //
+  private Map<Character, Character> BACKSLASH_ESCAPE_MAP =
+      ImmutableMap.<Character, Character>builder()
+          .put('n', '\n')
+          .put('r', '\r')
+          .put('t', '\t')
+          .put('"', '"')
+          .put('\'', '\'')
           .put('\\', '\\')
           .build();
 
@@ -166,7 +165,7 @@ public class Lexer {
         advance();
         return new Token(Type.RBRACKET, start, oc);
       default:
-        throw new ScannerException(String.format("Unknown character %c", cc), start);
+        throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
     }
   }
 
