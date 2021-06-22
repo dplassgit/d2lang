@@ -3,8 +3,9 @@ package com.plasstech.lang.d2.lex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import com.plasstech.lang.d2.lex.Token.Type;
 import org.junit.Test;
+
+import com.plasstech.lang.d2.lex.Token.Type;
 
 public class LexerTest {
   @Test
@@ -67,6 +68,14 @@ public class LexerTest {
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.INT);
     assertThat(token.text()).isEqualTo("1234");
+    IntToken itt = (IntToken) token;
+    assertThat(itt.value()).isEqualTo(1234);
+  }
+
+  @Test
+  public void tooLongInt() {
+    Lexer lexer = new Lexer("1234567890123");
+    assertThrows(ScannerException.class, () -> lexer.nextToken());
   }
 
   @Test

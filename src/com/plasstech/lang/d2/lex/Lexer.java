@@ -1,9 +1,10 @@
 package com.plasstech.lang.d2.lex;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token.Type;
-import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -97,13 +98,18 @@ public class Lexer {
   }
 
   private IntToken makeInt(Position start) {
-    int value = 0;
+    StringBuilder sb = new StringBuilder();
     while (Character.isDigit(cc)) {
-      value = value * 10 + (cc - '0');
+      sb.append(cc);
       advance();
     }
-    Position end = new Position(line, col);
-    return new IntToken(start, end, value);
+    try {
+      Position end = new Position(line, col);
+      int value = Integer.parseInt(sb.toString());
+      return new IntToken(start, end, value);
+    } catch (Exception e) {
+      throw new ScannerException(String.format("Int too big %s", sb), start);
+    }
   }
 
   private Token makeSymbol(Position start) {
