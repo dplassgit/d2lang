@@ -5,9 +5,10 @@ import com.plasstech.lang.d2.common.Position;
 public class Token {
 
   public enum Type {
-    INT(true),
-    BOOL(true), // indicates the "bool" keyword"
-    STRING(true),
+    // Keywords:
+    INT(true), // indicates the "int" keyword
+    BOOL(true), // indicates the "bool" keyword
+    STRING(true), // indicates the "string" keyword
     VARIABLE,
     PRINT(true),
     PRINTLN(true),
@@ -30,7 +31,7 @@ public class Token {
     MAP(true), // for future expansion
     INPUT(true), // for future expansion
     EXIT(true), // for future expansion
-    // Unary operators:
+    // Unary operators (& keywords)
     LENGTH(true),
     CHR(true),
     ASC(true),
@@ -42,16 +43,18 @@ public class Token {
     LEQ,
     GEQ,
     NEQ,
-    // Booleans
+    // Booleans operators (& keywords)
     NOT(true),
     AND(true),
     OR(true),
-    // Binary
+    // Binary operators
     PLUS,
     MINUS,
     MULT,
     DIV,
     MOD,
+    SHIFT_LEFT,
+    SHIFT_RIGHT,
     // Separators
     LPAREN,
     RPAREN,
@@ -61,6 +64,7 @@ public class Token {
     RBRACKET,
     COLON,
     COMMA,
+    DOT,
     EOF;
 
     private final boolean keyword;

@@ -211,6 +211,10 @@ public class Lexer {
       Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(Type.GEQ, start, end, ">=");
+    } else if (cc == '>') {
+      Position end = new Position(line, col);
+      advance(); // eat the >
+      return new Token(Type.SHIFT_RIGHT, start, end, ">>");
     }
     return new Token(Type.GT, start, oc);
   }
@@ -222,6 +226,10 @@ public class Lexer {
       Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(Type.LEQ, start, end, "<=");
+    } else if (cc == '<') {
+      Position end = new Position(line, col);
+      advance(); // eat the <
+      return new Token(Type.SHIFT_LEFT, start, end, "<<");
     }
     return new Token(Type.LT, start, oc);
   }

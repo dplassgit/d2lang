@@ -51,7 +51,7 @@ public class LexerTest {
 
   @Test
   public void doubleSymbols() {
-    Lexer lexer = new Lexer("== <= >= !=");
+    Lexer lexer = new Lexer("== <= >= != >> <<");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.EQEQ);
     token = lexer.nextToken();
@@ -60,6 +60,10 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.GEQ);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.NEQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.SHIFT_RIGHT);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.SHIFT_LEFT);
   }
 
   @Test

@@ -93,6 +93,24 @@ public class ParserTest {
   }
 
   @Test
+  public void assignShiftLeft() {
+    BlockNode root = parseStatements("a=b<<3");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    ExprNode expr = node.expr();
+    BinOpNode binOp = (BinOpNode) expr;
+    VariableNode left = (VariableNode) binOp.left();
+    assertThat(left.name()).isEqualTo("b");
+
+    assertThat(binOp.operator()).isEqualTo(Token.Type.SHIFT_LEFT);
+
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
+    assertThat(right.value()).isEqualTo(3);
+  }
+
+  @Test
   public void assignBoolean() {
     BlockNode root = parseStatements("a=true b=FALSE");
     assertThat(root.statements()).hasSize(2);
