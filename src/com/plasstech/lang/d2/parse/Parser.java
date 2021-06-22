@@ -480,6 +480,15 @@ public class Parser {
             Token.Type.LEQ)) {
       @Override
       ExprNode nextRule() {
+        return shiftTerm();
+      }
+    }.parse();
+  }
+
+  private ExprNode shiftTerm() {
+    return new BinOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT)) {
+      @Override
+      ExprNode nextRule() {
         return addSubTerm();
       }
     }.parse();

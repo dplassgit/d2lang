@@ -23,7 +23,9 @@ public class BinOpNode extends AbstractNode implements ExprNode {
           Token.Type.GEQ,
           Token.Type.LEQ,
           Token.Type.NEQ,
-          Token.Type.LBRACKET);
+          Token.Type.LBRACKET,
+          Token.Type.SHIFT_LEFT,
+          Token.Type.SHIFT_RIGHT);
 
   private final Token.Type operator;
   private final ExprNode left;
