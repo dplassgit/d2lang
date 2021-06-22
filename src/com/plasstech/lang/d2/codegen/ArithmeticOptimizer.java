@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
@@ -160,7 +159,20 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     try {
-      optimizeArith(op.destination(), left, right, (t, u) -> t / u);
+      if (optimizeArith(op.destination(), left, right, (t, u) -> t / u)) {
+        return;
+      } else if (right.isConstant()) {
+        int power = powerOfTwo(right);
+        if (power != 0) {
+          replaceCurrent(
+              new BinOp(
+                  op.destination(),
+                  left,
+                  Token.Type.SHIFT_RIGHT,
+                  new ConstantOperand<Integer>(power)));
+          return;
+        }
+      }
     } catch (ArithmeticException e) {
       logger.atWarning().log("Cannot optimize dividing by zero!");
     }
@@ -225,7 +237,46 @@ class ArithmeticOptimizer extends LineOptimizer {
     } else if (right.equals(ConstantOperand.ONE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
+    } else if (left.isConstant()) {
+      int power = powerOfTwo(left);
+      if (power != 0) {
+        replaceCurrent(
+            new BinOp(
+                op.destination(),
+                right,
+                Token.Type.SHIFT_LEFT,
+                new ConstantOperand<Integer>(power)));
+      }
+    } else if (right.isConstant()) {
+      int power = powerOfTwo(right);
+      if (power != 0) {
+        replaceCurrent(
+            new BinOp(
+                op.destination(),
+                left,
+                Token.Type.SHIFT_LEFT,
+                new ConstantOperand<Integer>(power)));
+      }
     }
+  }
+
+  private static int powerOfTwo(Operand operand) {
+    @SuppressWarnings("unchecked")
+    ConstantOperand<Integer> oc = (ConstantOperand<Integer>) operand;
+    int value = oc.value();
+    if (value < 2) {
+      return 0;
+    }
+    int test = 1;
+    int power = 0;
+    do {
+      if (test == value) {
+        return power;
+      }
+      test *= 2;
+      power++;
+    } while (test <= value && power < 32);
+    return 0;
   }
 
   private void optimizeAnd(BinOp op, Operand left, Operand right) {
