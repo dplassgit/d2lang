@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.List;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -38,12 +37,17 @@ public class ILOptimizerTest {
 
   @Test
   public void minusItself() {
-    TestUtils.optimizeAssertSameVariables("f:proc() {a = 2 b=a-a}");
+    TestUtils.optimizeAssertSameVariables("p:proc() {a = 2 b=a-a println b} p()");
   }
 
   @Test
   public void zeroMinus() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a = 0 b=a--3} p()");
+    TestUtils.optimizeAssertSameVariables("p:proc() {a = 0 b=a--3 println b} p()");
+  }
+
+  @Test
+  public void unaryMinus() {
+    TestUtils.optimizeAssertSameVariables("p:proc() {a = 3 b=-a println b} p()");
   }
 
   @Test
@@ -165,7 +169,11 @@ public class ILOptimizerTest {
   public void constantPropagationBooleans() {
     TestUtils.optimizeAssertSameVariables("a = true b = a and true c = b and false d=a and b");
     TestUtils.optimizeAssertSameVariables(
-        "f:proc() {a = true b = a and true c = b and false d=a and b}");
+        "f:proc() {"
+            + "  a = true b = a and true c = b and false d=a and b "
+            + "  print a print b print c print d"
+            + "} "
+            + "f()");
   }
 
   @Test
@@ -203,7 +211,7 @@ public class ILOptimizerTest {
   @Test
   public void constantPropCall() {
     TestUtils.optimizeAssertSameVariables(
-        "a:proc(n:int, m:int):int { return n+1} b=4 print a(4, b) print a(b+2, 4+6)");
+        "a:proc(n:int, m:int):int { return n+1} " + "b=4 print a(4, b) print a(b+2, 4+6)");
   }
 
   @Test
@@ -216,7 +224,7 @@ public class ILOptimizerTest {
             + "  val = ''\r\n"
             + "  return val\r\n"
             + "}"
-            + "  println toString(314159)\r\n");
+            + "println toString(314159)\r\n");
   }
 
   @Test
@@ -240,14 +248,22 @@ public class ILOptimizerTest {
   }
 
   @Test
-  @Ignore
   public void deadAssignment() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a}");
+    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a print a} p()");
   }
 
   @Test
   public void deadAfterReturn() {
-    TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4}");
-    TestUtils.optimizeAssertSameVariables("p:proc(a:bool): int {if a {return 4} a=false return 5}");
+    TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4} print p()");
+    TestUtils.optimizeAssertSameVariables(
+        "p:proc(a:bool): int {"
+            + " if a {return 4} a=false return 5"
+            + "} "
+            + "print p(true) print p(false)");
+  }
+
+  @Test
+  public void deadAssignments() {
+    TestUtils.optimizeAssertSameVariables("p:proc(){a:int a=4} p()");
   }
 }

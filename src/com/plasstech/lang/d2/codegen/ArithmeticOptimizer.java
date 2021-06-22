@@ -49,7 +49,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           if (value instanceof Integer) {
             int valueInt = (Integer) value;
             replaceCurrent(
-                new Transfer(opcode.destination(), new ConstantOperand<Integer>(valueInt)));
+                new Transfer(opcode.destination(), new ConstantOperand<Integer>(-valueInt)));
           }
         }
         return;

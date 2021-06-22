@@ -19,6 +19,7 @@ public class ILOptimizer implements Optimizer {
     ConstantPropagationOptimizer cpo = new ConstantPropagationOptimizer();
     DeadCodeOptimizer dco = new DeadCodeOptimizer();
     DeadLabelOptimizer dlo = new DeadLabelOptimizer();
+    DeadAssignmentOptimizer dao = new DeadAssignmentOptimizer(); // heh.
     do {
       changed = false;
 
@@ -50,6 +51,14 @@ public class ILOptimizer implements Optimizer {
       if (dlo.isChanged()) {
         iterations++;
         System.out.println("\nDEAD LABEL OPTIMIZED:");
+        System.out.println(Joiner.on("\n").join(program));
+        changed = true;
+      }
+
+      program = dao.optimize(program);
+      if (dao.isChanged()) {
+        iterations++;
+        System.out.println("\nDEAD ASSIGNMENT OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         changed = true;
       }
