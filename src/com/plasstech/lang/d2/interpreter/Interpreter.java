@@ -191,6 +191,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return (left != right) ? 1 : 0;
       case PLUS:
         return left + right;
+      case SHIFT_LEFT:
+        return left << right;
+      case SHIFT_RIGHT:
+        return left >> right;
       default:
         throw new IllegalStateException("Unknown int binop " + op.operator());
     }

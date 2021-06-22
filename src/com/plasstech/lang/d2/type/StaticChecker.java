@@ -54,7 +54,9 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.MINUS,
           Token.Type.MOD,
           Token.Type.MULT,
-          Token.Type.PLUS);
+          Token.Type.PLUS,
+          Token.Type.SHIFT_LEFT,
+          Token.Type.SHIFT_RIGHT);
 
   private static final Set<Token.Type> STRING_OPERATORS = //
       ImmutableSet.of(
