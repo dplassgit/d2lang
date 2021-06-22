@@ -1,6 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -270,7 +272,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       Location destination,
       Operand left,
       Operand right,
-      BiFunction<Integer, Integer, Boolean> fun) {
+      BiPredicate<Integer, Integer> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -279,7 +281,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         Integer leftval = (Integer) leftConstant.value();
         Integer rightval = (Integer) rightConstant.value();
         replaceCurrent(
-            new Transfer(destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
+            new Transfer(destination, new ConstantOperand<Boolean>(fun.test(leftval, rightval))));
         return true;
       }
     }
@@ -291,7 +293,7 @@ class ArithmeticOptimizer extends LineOptimizer {
    * opcode with result. E.g., t='a'=='b' becomes t=false
    */
   private boolean optimizeEq(
-      Location destination, Operand left, Operand right, BiFunction<Object, Object, Boolean> fun) {
+      Location destination, Operand left, Operand right, BiPredicate<Object, Object> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -300,7 +302,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           new Transfer(
               destination,
               new ConstantOperand<Boolean>(
-                  fun.apply(leftConstant.value(), rightConstant.value()))));
+                  fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
     }
     return false;
@@ -314,7 +316,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       Location destination,
       Operand left,
       Operand right,
-      BiFunction<Integer, Integer, Integer> fun) {
+      BinaryOperator<Integer> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -338,7 +340,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       Location destination,
       Operand left,
       Operand right,
-      BiFunction<Boolean, Boolean, Boolean> fun) {
+      BinaryOperator<Boolean> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;

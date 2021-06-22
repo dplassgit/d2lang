@@ -284,14 +284,7 @@ public class Parser {
       return params;
     }
 
-    params =
-        commaSeparated(
-            new NextNode<Parameter>() {
-              @Override
-              public Parameter call() {
-                return formalParam();
-              }
-            });
+    params = commaSeparated(() -> formalParam());
     if (token.type() == Token.Type.RPAREN) {
       advance();
     } else {
@@ -411,26 +404,20 @@ public class Parser {
   }
 
   private List<ExprNode> commaSeparatedExpressions() {
-    return commaSeparated(
-        new NextNode<ExprNode>() {
-          @Override
-          public ExprNode call() {
-            return expr();
-          }
-        });
+    return commaSeparated(() -> expr());
   }
 
-  private <T> List<T> commaSeparated(NextNode<T> nextNode) {
+  private <T> List<T> commaSeparated(Supplier<T> nextNode) {
     List<T> nodes = new ArrayList<>();
 
-    T node = nextNode.call();
+    T node = nextNode.get();
     nodes.add(node);
     if (token.type() == Token.Type.COMMA) {
       // There's another entry in this list - let's go
       advance();
 
       while (token.type() != Token.Type.EOF) {
-        node = nextNode.call();
+        node = nextNode.get();
         nodes.add(node);
 
         if (token.type() == Token.Type.COMMA) {
@@ -441,10 +428,6 @@ public class Parser {
       }
     }
     return nodes;
-  }
-
-  private interface NextNode<T> {
-    T call();
   }
 
   /** EXPRESSIONS */
@@ -462,29 +445,29 @@ public class Parser {
 
   private ExprNode compareTerm() {
     return new BinOpFn(
-        ImmutableSet.of(
-            Token.Type.EQEQ,
-            Token.Type.NEQ,
-            Token.Type.GT,
-            Token.Type.LT,
-            Token.Type.GEQ,
-            Token.Type.LEQ))
-    .parse(() -> shiftTerm());
+            ImmutableSet.of(
+                Token.Type.EQEQ,
+                Token.Type.NEQ,
+                Token.Type.GT,
+                Token.Type.LT,
+                Token.Type.GEQ,
+                Token.Type.LEQ))
+        .parse(() -> shiftTerm());
   }
 
   private ExprNode shiftTerm() {
-    return new BinOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT)) 
-      .parse(() -> addSubTerm());
+    return new BinOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT))
+        .parse(() -> addSubTerm());
   }
 
   private ExprNode addSubTerm() {
     return new BinOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS))
-      .parse(() -> mulDivTerm());
+        .parse(() -> mulDivTerm());
   }
 
   private ExprNode mulDivTerm() {
     return new BinOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD))
-       .parse(() -> unary());
+        .parse(() -> unary());
   }
 
   /** Parses a binary operation function. */
@@ -558,12 +541,14 @@ public class Parser {
       Token keywordToken = unaryToken;
       advance();
       if (token.type() != Token.Type.LPAREN) {
-        throw new ParseException(String.format("Unexpected '%s'; expected '('", token), token.start());
+        throw new ParseException(
+            String.format("Unexpected '%s'; expected '('", token), token.start());
       }
       advance();
       ExprNode hopefullyAString = expr();
       if (token.type() != Token.Type.RPAREN) {
-        throw new ParseException(String.format("Unexpected '%s'; expected ')'", token), token.start());
+        throw new ParseException(
+            String.format("Unexpected '%s'; expected ')'", token), token.start());
       }
       advance();
       return new UnaryNode(keywordToken.type(), hopefullyAString, unaryToken.start());
@@ -650,20 +635,17 @@ public class Parser {
     if (token.type() != Token.Type.RBRACKET) {
       List<ConstNode<?>> values =
           commaSeparated(
-              new NextNode<ConstNode<?>>() {
-                @Override
-                public ConstNode<?> call() {
-                  ExprNode atom = atom();
-                  if (atom instanceof ConstNode) {
-                    return (ConstNode<?>) atom;
-                  }
-
-                  throw new ParseException(
-                      String.format(
-                          "Illegal entry %s in array literal; only scalar literals allowed",
-                          token.text()),
-                      token.start());
+              () -> {
+                ExprNode atom = atom();
+                if (atom instanceof ConstNode) {
+                  return (ConstNode<?>) atom;
                 }
+
+                throw new ParseException(
+                    String.format(
+                        "Illegal entry %s in array literal; only scalar literals allowed",
+                        token.text()),
+                    token.start());
               });
 
       if (token.type() != Token.Type.RBRACKET) {
