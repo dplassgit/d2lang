@@ -14,4 +14,17 @@ public class StackLocation extends Location {
     // TODO: might be a parameter (but still on the stack, shrug)
     return SymbolStorage.LOCAL;
   }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof StackLocation)) {
+      return false;
+    }
+    return this.name().equals(((StackLocation) that).name());
+  }
+
+  @Override
+  public int hashCode() {
+    return 37 + 11 * this.name().hashCode();
+  }
 }

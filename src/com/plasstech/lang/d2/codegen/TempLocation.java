@@ -11,4 +11,17 @@ public class TempLocation extends Location {
   public SymbolStorage storage() {
     return SymbolStorage.TEMP;
   }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof TempLocation)) {
+      return false;
+    }
+    return this.name().equals(((TempLocation) that).name());
+  }
+
+  @Override
+  public int hashCode() {
+    return 41 + 13 * this.name().hashCode();
+  }
 }

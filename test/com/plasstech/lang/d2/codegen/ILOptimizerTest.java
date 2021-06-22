@@ -101,7 +101,7 @@ public class ILOptimizerTest {
 
   @Test
   public void timesConstants() {
-    TestUtils.optimizeAssertSameVariables("a = 2 * 3");
+    TestUtils.optimizeAssertSameVariables("a = 2 * 3 f:proc(){} f()");
     TestUtils.optimizeAssertSameVariables("a = 1 * 3");
     TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
   }
@@ -248,11 +248,6 @@ public class ILOptimizerTest {
   }
 
   @Test
-  public void deadAssignment() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a print a} p()");
-  }
-
-  @Test
   public void deadAfterReturn() {
     TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4} print p()");
     TestUtils.optimizeAssertSameVariables(
@@ -263,7 +258,13 @@ public class ILOptimizerTest {
   }
 
   @Test
+  public void deadAssignment() {
+    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a print a} p()");
+  }
+
+  @Test
   public void deadAssignments() {
-    TestUtils.optimizeAssertSameVariables("p:proc(){a:int a=4} p()");
+    TestUtils.optimizeAssertSameVariables("p:proc(b:int):int {a=b c=b return a+1} print p(3)");
+    TestUtils.optimizeAssertSameVariables("b=3 a=b c=b print a+1");
   }
 }

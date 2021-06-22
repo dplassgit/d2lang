@@ -22,23 +22,21 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 public class DeadAssignmentOptimizer extends LineOptimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  // Map from name to line number
-  private final Map<String, Integer> assignments = new HashMap<>();
+  // Map from object to line number
+  private final Map<Location, Integer> assignments = new HashMap<>();
 
   private void recordAssignment(Location destination) {
     if (destination.storage() != SymbolStorage.GLOBAL) {
-      assignments.put(destination.name(), ip);
+      assignments.put(destination, ip);
     }
   }
 
   private boolean deleteRecentlyAssigned(Location destination) {
-    if (destination.storage() != SymbolStorage.GLOBAL) {
-      Integer loc = assignments.get(destination.name());
-      if (loc != null) {
-        assignments.remove(destination.name());
-        deleteAt(loc);
-        return true;
-      }
+    Integer loc = assignments.get(destination);
+    if (loc != null) {
+      assignments.remove(destination);
+      deleteAt(loc);
+      return true;
     }
     return false;
   }
@@ -46,7 +44,7 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   private void markAsUsed(Operand source) {
     if (!source.isConstant()) {
       Location sourceLocation = (Location) source;
-      assignments.remove(sourceLocation.name());
+      assignments.remove(sourceLocation);
     }
   }
 

@@ -26,7 +26,11 @@ public class TestUtils {
     Environment env2 = ee.execute(optimized);
     assertThat(env2.variables()).isEqualTo(env.variables());
     assertThat(env2.output()).isEqualTo(env.output());
-  
+
+    System.out.println("\nSYSTEM.OUT:");
+    System.out.println("------------------------------");
+    System.out.println(Joiner.on("").join(env.output()));
+
     assertWithMessage("Should have made at least one optimization")
         .that(originalCode)
         .isNotEqualTo(optimized);

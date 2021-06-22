@@ -26,7 +26,11 @@ public class ConstantOperand<T> implements Operand {
   @Override
   public String toString() {
     if (value instanceof String) {
-      return String.format("\"%s\"", value.toString());
+      String valueString = value.toString();
+      if (valueString.length() > 40) {
+        valueString = valueString.substring(0, 40) + "...";
+      }
+      return String.format("\"%s\"", valueString);
     } else if (value.getClass().isArray()){
       Object[] valArray = (Object[]) value;
       return String.format("[%s]", Joiner.on(", ").join(valArray));
