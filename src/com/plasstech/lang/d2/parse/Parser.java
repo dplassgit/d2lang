@@ -1,12 +1,5 @@
 package com.plasstech.lang.d2.parse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -40,6 +33,12 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Parser {
 
@@ -451,75 +450,64 @@ public class Parser {
   }
 
   private ExprNode boolOr() {
-    return new BinOpFn(Token.Type.OR).parse(() -> boolAnd());
+    return binOpFn(Token.Type.OR, () -> boolAnd());
   }
 
   private ExprNode boolAnd() {
-    return new BinOpFn(Token.Type.AND).parse(() -> compareTerm());
+    return binOpFn(Token.Type.AND, () -> compareTerm());
   }
 
   private ExprNode compareTerm() {
-    return new BinOpFn(
-            ImmutableSet.of(
-                Token.Type.EQEQ,
-                Token.Type.NEQ,
-                Token.Type.GT,
-                Token.Type.LT,
-                Token.Type.GEQ,
-                Token.Type.LEQ))
-        .parse(() -> shiftTerm());
+    return binOpFn(
+        ImmutableSet.of(
+            Token.Type.EQEQ,
+            Token.Type.NEQ,
+            Token.Type.GT,
+            Token.Type.LT,
+            Token.Type.GEQ,
+            Token.Type.LEQ),
+        () -> shiftTerm());
   }
 
   private ExprNode shiftTerm() {
-    return new BinOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT))
-        .parse(() -> addSubTerm());
+    return binOpFn(
+        ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSubTerm());
   }
 
   private ExprNode addSubTerm() {
-    return new BinOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS))
-        .parse(() -> mulDivTerm());
+    return binOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS), () -> mulDivTerm());
   }
 
   private ExprNode mulDivTerm() {
-    return new BinOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD))
-        .parse(() -> unary());
+    return binOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD), () -> unary());
   }
 
-  /** Parses a binary operation function. */
-  private class BinOpFn {
-    private final Set<Token.Type> tokenTypes;
+  private ExprNode binOpFn(Token.Type tokenType, Supplier<ExprNode> nextRule) {
+    return binOpFn(ImmutableSet.of(tokenType), nextRule);
+  }
 
-    BinOpFn(Set<Token.Type> tokenTypes) {
-      this.tokenTypes = tokenTypes;
+  /**
+   * Parse from the current location, repeatedly call "nextRule", e.g.,:
+   *
+   * <p>here -> nextRule (tokentype nextRule)*
+   *
+   * <p>where tokentype is in tokenTypes
+   *
+   * <p>Example, in the grammar:
+   *
+   * <p>expr -> term (+- term)*
+   */
+  private ExprNode binOpFn(Set<Token.Type> tokenTypes, Supplier<ExprNode> nextRule) {
+    ExprNode left = nextRule.get();
+
+    while (tokenTypes.contains(token.type())) {
+      Token.Type operator = token.type();
+      advance();
+      ExprNode right = nextRule.get();
+      left = new BinOpNode(left, operator, right);
     }
 
-    BinOpFn(Token.Type tokenType) {
-      this.tokenTypes = ImmutableSet.of(tokenType);
-    }
-
-    /**
-     * Parse from the current location, repeatedly call "function", e.g.,:
-     *
-     * <p>here -> function (tokentype function)*
-     *
-     * <p>where tokentype is in tokenTypes
-     *
-     * <p>In the grammar:
-     *
-     * <p>expr -> term (+- term)*
-     */
-    ExprNode parse(Supplier<ExprNode> nextRule) {
-      ExprNode left = nextRule.get();
-
-      while (tokenTypes.contains(token.type())) {
-        Token.Type operator = token.type();
-        advance();
-        ExprNode right = nextRule.get();
-        left = new BinOpNode(left, operator, right);
-      }
-
-      return left;
-    }
+    return left;
   }
 
   private ExprNode unary() {
