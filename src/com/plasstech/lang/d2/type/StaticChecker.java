@@ -107,7 +107,7 @@ public class StaticChecker extends DefaultVisitor {
       if (!procedures.isEmpty()) {
         ProcSymbol top = procedures.peek();
         throw new TypeException(
-            String.format("Still in procedure %s. (This should never happen)", top),
+            String.format("Still in PROC '%s'. (This should never happen)", top),
             top.node().position());
       }
       return new TypeCheckResult(symbolTable);
@@ -160,7 +160,7 @@ public class StaticChecker extends DefaultVisitor {
         // It was already in the symbol table. Possible that it's wrong
         throw new TypeException(
             String.format(
-                "Type mismatch: '%s' declared as %s but RHS (%s) is %s",
+                "'%s' declared as %s but RHS (%s) is %s",
                 variable, sym.type(), right, right.varType()),
             variable.position());
       }
@@ -200,14 +200,14 @@ public class StaticChecker extends DefaultVisitor {
     Symbol maybeProc = symbolTable().getRecursive(node.functionToCall());
     if (maybeProc == null || maybeProc.type() != VarType.PROC) {
       throw new TypeException(
-          String.format("Procedure %s is unknown", node.functionToCall()), node.position());
+          String.format("PROC '%s' is unknown", node.functionToCall()), node.position());
     }
     // 2. make sure the arg length is right.
     ProcSymbol proc = (ProcSymbol) maybeProc;
     if (proc.node().parameters().size() != node.actuals().size()) {
       throw new TypeException(
           String.format(
-              "Wrong number of arguments to procedure %s: found %d, expected %d",
+              "Wrong number of arguments to PROC '%s': found %d, expected %d",
               node.functionToCall(), node.actuals().size(), proc.node().parameters().size()),
           node.position());
     }
@@ -223,7 +223,7 @@ public class StaticChecker extends DefaultVisitor {
           // wah.
           throw new TypeException(
               String.format(
-                  "Indeterminable type for parameter %s of procedure %s",
+                  "Indeterminable type for parameter '%s' of PROC '%s'",
                   formal.name(), proc.name()),
               node.position());
         } else {
@@ -234,7 +234,7 @@ public class StaticChecker extends DefaultVisitor {
       if (!formal.type().equals(actual.varType())) {
         throw new TypeException(
             String.format(
-                "Type mismatch for parameter %s of procedure %s: found %s, expected %s",
+                "Type mismatch for parameter '%s' to PROC '%s': found %s, expected %s",
                 formal.name(), proc.name(), actual.varType(), formal.type()),
             node.position());
       }
@@ -263,22 +263,22 @@ public class StaticChecker extends DefaultVisitor {
     // TODO: CLEAN THIS UP
     if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to BOOL expression", node.operator()),
+          String.format("Cannot apply %s operator to BOOL expression", node.operator().name()),
           left.position());
     }
     if (left.varType() == VarType.INT && !INT_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to INT expression", node.operator()),
+          String.format("Cannot apply %s operator to INT expression", node.operator().name()),
           left.position());
     }
     if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to STRING expression", node.operator()),
+          String.format("Cannot apply %s operator to STRING expression", node.operator().name()),
           left.position());
     }
     if (left.varType().isArray() && !ARRAY_OPERATORS.contains(node.operator())) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to ARRAY expression", node.operator()),
+          String.format("Cannot apply %s operator to ARRAY expression", node.operator().name()),
           left.position());
     }
 
@@ -286,7 +286,7 @@ public class StaticChecker extends DefaultVisitor {
     if (left.varType() == VarType.STRING && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-            String.format("Type mismatch: STRING index must be INT; was %s", right.varType()),
+            String.format("STRING index must be INT; was %s", right.varType()),
             right.position());
       }
       node.setVarType(VarType.STRING);
@@ -296,7 +296,7 @@ public class StaticChecker extends DefaultVisitor {
     } else if (left.varType().isArray() && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-            String.format("Type mismatch: ARRAY index must be INT; was %s", right.varType()),
+            String.format("ARRAY index must be INT; was %s", right.varType()),
             right.position());
       }
       // I hate this.
@@ -333,7 +333,7 @@ public class StaticChecker extends DefaultVisitor {
     if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
       throw new TypeException(
           String.format(
-              "Type mismatch: cannot apply %s operator to BOOL expression", unaryNode.operator()),
+              "Cannot apply %s operator to BOOL expression", unaryNode.operator().name()),
           expr.position());
     }
 
@@ -342,14 +342,14 @@ public class StaticChecker extends DefaultVisitor {
       case MINUS:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
-              String.format("Type mismatch: unary negation must take INT; was %s", expr.varType()),
+              String.format("MINUS must take INT; was %s", expr.varType()),
               expr.position());
         }
         break;
       case NOT:
         if (expr.varType() != VarType.BOOL) {
           throw new TypeException(
-              String.format("Type mismatch: boolean NOT must take BOOL; was %s", expr.varType()),
+              String.format("NOT must take BOOL; was %s", expr.varType()),
               expr.position());
         }
         break;
@@ -357,7 +357,7 @@ public class StaticChecker extends DefaultVisitor {
         if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
           throw new TypeException(
               String.format(
-                  "Type mismatch: LENGTH must take STRING or ARRAY; was %s", expr.varType()),
+                  "LENGTH must take STRING or ARRAY; was %s", expr.varType()),
               expr.position());
         }
         unaryNode.setVarType(VarType.INT);
@@ -366,7 +366,7 @@ public class StaticChecker extends DefaultVisitor {
       case ASC:
         if (expr.varType() != VarType.STRING) {
           throw new TypeException(
-              String.format("Type mismatch: ASC must take STRING; was %s", expr.varType()),
+              String.format("ASC must take STRING; was %s", expr.varType()),
               expr.position());
         }
         unaryNode.setVarType(VarType.INT);
@@ -375,7 +375,7 @@ public class StaticChecker extends DefaultVisitor {
       case CHR:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
-              String.format("Type mismatch: CHR must take INT; was %s", expr.varType()),
+              String.format("CHR must take INT; was %s", expr.varType()),
               expr.position());
         }
         unaryNode.setVarType(VarType.STRING);
@@ -396,7 +396,7 @@ public class StaticChecker extends DefaultVisitor {
       if (condition.varType() != VarType.BOOL) {
         throw new TypeException(
             String.format(
-                "Condition for 'if' or 'elif' must be boolean; was %s", condition.varType()),
+                "Condition for IF or ELIF must be BOOL; was %s", condition.varType()),
             condition.position());
       }
       ifCase
@@ -423,7 +423,7 @@ public class StaticChecker extends DefaultVisitor {
     condition.accept(this);
     if (condition.varType() != VarType.BOOL) {
       throw new TypeException(
-          String.format("Condition for 'while' must be boolean; was %s", condition.varType()),
+          String.format("Condition for WHILE must be BOOL; was %s", condition.varType()),
           condition.position());
     }
     if (boolNode.doStatement().isPresent()) {
@@ -497,7 +497,7 @@ public class StaticChecker extends DefaultVisitor {
     if (!duplicates.isEmpty()) {
       throw new TypeException(
           String.format(
-              "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name()),
+              "Duplicate formal parameter '%s' declared in PROC '%s'", duplicates.toString(), node.name()),
           node.position());
     }
 
@@ -513,7 +513,7 @@ public class StaticChecker extends DefaultVisitor {
     } else if (sym.type() != VarType.PROC) {
       throw new TypeException(
           String.format(
-              "Cannot define a procedure with the same name as another global: %s", node.name()),
+              "Cannot define PROC '%s' with the same name as a global", node.name()),
           node.position());
     } else {
       procSymbol = (ProcSymbol) sym;
@@ -541,7 +541,7 @@ public class StaticChecker extends DefaultVisitor {
       if (type.isUnknown()) {
         throw new TypeException(
             String.format(
-                "Could not determine type of parameter %s of procedure %s",
+                "Could not determine type of formal parameter '%s' of PROC '%s'",
                 param.name(), node.name()),
             node.position());
       }
@@ -551,12 +551,12 @@ public class StaticChecker extends DefaultVisitor {
       if (needsReturn.contains(procSymbol)) {
         // no return statement seen.
         throw new TypeException(
-            String.format("No 'return' statement for procedure %s ", node.name()), node.position());
+            String.format("No RETURN statement for PROC '%s'", node.name()), node.position());
       }
       // make sure that all *codepaths* have a return
       if (!checkAllPathsHaveReturn(node)) {
         throw new TypeException(
-            String.format("Not all codepaths end with 'return' for procedure %s ", node.name()),
+            String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
             node.position());
       }
     }
@@ -619,7 +619,7 @@ public class StaticChecker extends DefaultVisitor {
   @Override
   public void visit(ReturnNode node) {
     if (procedures.isEmpty()) {
-      throw new TypeException("Cannot return from outside a procedure", node.position());
+      throw new TypeException("Cannot RETURN from outside a PROC", node.position());
     }
     if (node.expr().isPresent()) {
       ExprNode expr = node.expr().get();
@@ -634,13 +634,13 @@ public class StaticChecker extends DefaultVisitor {
 
     if (actualReturnType.isUnknown()) {
       throw new TypeException(
-          String.format("Indeterminable type for return statement %s", node), node.position());
+          String.format("Indeterminable type for RETURN statement %s", node), node.position());
     }
 
     if (!proc.node().varType().equals(actualReturnType)) {
       throw new TypeException(
           String.format(
-              "Type mismatch: %s declared to return %s but returned %s",
+              "PROC '%s' declared to return %s but returned %s",
               proc.name(), declaredReturnType, actualReturnType),
           node.position());
     }

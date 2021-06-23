@@ -157,7 +157,7 @@ public class StaticCheckerTest {
 
   @Test
   public void lengthNotStringFailure() {
-    assertExecuteError("a=length(false)", "cannot apply LENGTH");
+    assertExecuteError("a=length(false)", "Cannot apply LENGTH");
     assertExecuteError("a=length(3)", "must take STRING");
   }
 
@@ -177,7 +177,7 @@ public class StaticCheckerTest {
 
   @Test
   public void ascError() {
-    assertExecuteError("a=asc(false)", "cannot apply ASC");
+    assertExecuteError("a=asc(false)", "Cannot apply ASC");
     assertExecuteError("a=asc(3)", "must take STRING");
   }
 
@@ -191,7 +191,7 @@ public class StaticCheckerTest {
 
   @Test
   public void chrError() {
-    assertExecuteError("a=chr(false)", "cannot apply CHR");
+    assertExecuteError("a=chr(false)", "Cannot apply CHR");
     assertExecuteError("a=chr('hi')", "must take INT");
   }
 
@@ -276,13 +276,13 @@ public class StaticCheckerTest {
 
   @Test
   public void assignMismatch() {
-    assertExecuteError("a=true b=3 b=a", "Type mismatch");
-    assertExecuteError("a=3 b=true b=a", "Type mismatch");
+    assertExecuteError("a=true b=3 b=a", "declared as INT");
+    assertExecuteError("a=3 b=true b=a", "declared as BOOL");
   }
 
   @Test
   public void declAssignMismatch() {
-    assertExecuteError("a:int b=true a=b", "Type mismatch");
+    assertExecuteError("a:int b=true a=b", "declared as INT");
     assertExecuteError("a:bool b=a b=3", "used before assignment");
     assertExecuteError("a=3 a:bool", "already declared as INT");
   }
@@ -439,8 +439,8 @@ public class StaticCheckerTest {
 
   @Test
   public void ifNotBoolCond_error() {
-    assertExecuteError("if 1 { print 2 }", "must be boolean; was INT");
-    assertExecuteError("a=1 if a { print a }", "must be boolean; was INT");
+    assertExecuteError("if 1 { print 2 }", "must be BOOL; was INT");
+    assertExecuteError("a=1 if a { print a }", "must be BOOL; was INT");
   }
 
   @Test
@@ -519,9 +519,9 @@ public class StaticCheckerTest {
     // This may or may not be an error later
     assertExecuteError("a:bool main {a:int}", "already declared as BOOL");
     assertExecuteError("a:int b=a", "'a' used before assign");
-    assertExecuteError("a:int a=true", "mismatch");
-    assertExecuteError("a:string a=true", "mismatch");
-    assertExecuteError("a:int a=''", "mismatch");
+    assertExecuteError("a:int a=true", "declared as INT");
+    assertExecuteError("a:string a=true", "declared as STRING");
+    assertExecuteError("a:int a=''", "declared as INT");
   }
 
   @Test
@@ -596,25 +596,25 @@ public class StaticCheckerTest {
   @Test
   public void procParams() {
     assertExecuteError("fib:proc(a, b, a) {}", "Duplicate parameter");
-    assertExecuteError("fib:proc() {a=3 a=true}", "Type mismatch");
-    assertExecuteError("a=true fib:proc() {a=3}", "Type mismatch");
-    assertExecuteError("fib:proc(n1) { }", "determine type of parameter");
-    assertExecuteError("fib:proc(n:int) {} fib(true)", "Type mismatch");
+    assertExecuteError("fib:proc() {a=3 a=true}", "declared as INT");
+    assertExecuteError("a=true fib:proc() {a=3}", "declared as BOOL");
+    assertExecuteError("fib:proc(n1) { }", "determine type of formal parameter");
+    assertExecuteError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
   }
 
   @Test
   public void procMismatch() {
-    assertExecuteError("fib:proc():bool {return 3}", "Type mismatch");
-    assertExecuteError("fib:proc(a):int {a='hi' return a}", "Type mismatch");
-    assertExecuteError("fib:proc(a:int) {a=3 return a}", "Type mismatch");
+    assertExecuteError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
+    assertExecuteError("fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
+    assertExecuteError("fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
 
-    assertExecuteError("fib:proc() {return 3}", "Type mismatch");
-    assertExecuteError("fib:proc():int {return}", "Type mismatch");
+    assertExecuteError("fib:proc() {return 3}", "declared to return VOID but returned INT");
+    assertExecuteError("fib:proc():int {return}", "declared to return INT but returned VOID");
   }
 
   @Test
   public void procReturn() {
-    assertExecuteError("fib:proc():int {}", "No 'return' statement");
+    assertExecuteError("fib:proc():int {}", "No RETURN statement");
     assertExecuteError(
         "fib:proc():bool {"
             + "if false {"
@@ -659,27 +659,27 @@ public class StaticCheckerTest {
 
   @Test
   public void nakedReturn() {
-    assertExecuteError("return 3", "outside a procedure");
+    assertExecuteError("return 3", "outside a PROC");
   }
 
   @Test
   public void callErrors() {
-    assertExecuteError("foo(3)", "Procedure foo is unknown");
-    assertExecuteError("a:int a(3)", "Procedure a is unknown");
-    assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "Procedure inner is unknown");
+    assertExecuteError("foo(3)", "PROC 'foo' is unknown");
+    assertExecuteError("a:int a(3)", "PROC 'a' is unknown");
+    assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "PROC 'inner' is unknown");
     // wrong number of params
     assertExecuteError(
-        "fib:proc(){} fib(3)", "Wrong number of arguments to procedure fib: found 1, expected 0");
+        "fib:proc(){} fib(3)", "Wrong number of arguments to PROC 'fib': found 1, expected 0");
     assertExecuteError(
         "fib:proc(n:int){} fib(3, 4)",
-        "Wrong number of arguments to procedure fib: found 2, expected 1");
+        "Wrong number of arguments to PROC 'fib': found 2, expected 1");
     // indeterminable arg type
     assertExecuteError(
-        "fib:proc(n) {fib(n)}", "Indeterminable type for parameter n of procedure fib");
+        "fib:proc(n) {fib(n)}", "Indeterminable type for parameter 'n' of PROC 'fib'");
     // wrong arg type
     assertExecuteError(
         "fib:proc(n:int) {} fib(false)",
-        "Type mismatch for parameter n of procedure fib: found BOOL, expected INT");
+        "Type mismatch for parameter 'n' to PROC 'fib': found BOOL, expected INT");
     // can't assign to void
     assertExecuteError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
   }

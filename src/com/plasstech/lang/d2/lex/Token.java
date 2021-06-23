@@ -36,49 +36,68 @@ public class Token {
     CHR(true),
     ASC(true),
     // Comparisons:
-    EQ,
-    EQEQ,
-    LT,
-    GT,
-    LEQ,
-    GEQ,
-    NEQ,
+    EQ("="),
+    EQEQ("=="),
+    LT("<"),
+    GT(">"),
+    LEQ("<="),
+    GEQ(">="),
+    NEQ("!="),
     // Booleans operators (& keywords)
     NOT(true),
     AND(true),
     OR(true),
     // Binary operators
-    PLUS,
-    MINUS,
-    MULT,
-    DIV,
-    MOD,
-    SHIFT_LEFT,
-    SHIFT_RIGHT,
+    PLUS("+"),
+    MINUS("-"),
+    MULT("*"),
+    DIV("/"),
+    MOD("%"),
+    SHIFT_LEFT("<<"),
+    SHIFT_RIGHT(">>"),
     // Separators
-    LPAREN,
-    RPAREN,
-    LBRACE,
-    RBRACE,
-    LBRACKET,
-    RBRACKET,
-    COLON,
-    COMMA,
-    DOT,
+    LPAREN("("),
+    RPAREN(")"),
+    LBRACE("{"),
+    RBRACE("}"),
+    LBRACKET("["),
+    RBRACKET("]"),
+    COLON(":"),
+    COMMA(","),
+    DOT("."),
     EOF;
 
+    private final String abbreviation;
     private final boolean keyword;
 
     Type() {
-      this(false);
+      this(false, null);
+    }
+
+    Type(String abbreviation) {
+      this(false, abbreviation);
     }
 
     Type(boolean keyword) {
+      this(keyword, null);
+    }
+
+    Type(boolean keyword, String abbreviation) {
       this.keyword = keyword;
+      if (abbreviation == null) {
+        this.abbreviation = name();
+      } else {
+        this.abbreviation = abbreviation;
+      }
     }
 
     public boolean isKeyword() {
       return keyword;
+    }
+
+    @Override
+    public String toString() {
+      return abbreviation;
     }
   }
 
