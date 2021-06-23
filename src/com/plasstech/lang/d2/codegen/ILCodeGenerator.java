@@ -29,6 +29,7 @@ import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -314,6 +315,16 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // Also TODO: how to reference arguments
     if (node.block() != null) {
       node.block().accept(this);
+    }
+    emit(new Stop());
+  }
+
+  @Override
+  public void visit(ExitNode node) {
+    if (node.exitMessage().isPresent()) {
+      node.exitMessage().get().accept(this);
+      Location messageLocation = node.exitMessage().get().location();
+      emit(new SysCall(SysCall.Call.MESSAGE, messageLocation));
     }
     emit(new Stop());
   }

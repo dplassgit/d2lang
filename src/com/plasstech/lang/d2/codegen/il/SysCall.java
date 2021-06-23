@@ -4,6 +4,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 
 public class SysCall extends Op {
   public enum Call {
+    MESSAGE,
     PRINT
   }
 
@@ -25,11 +26,14 @@ public class SysCall extends Op {
 
   @Override
   public String toString() {
-    if (call == Call.PRINT) {
-      // TODO: need type of "arg", because it may be an int variable or a string constant.
-      return String.format("printf(\"%%s\", %s);", arg);
+    switch(call) {
+      case PRINT:
+        return String.format("printf(\"%%s\", %s);", arg);
+      case MESSAGE:
+        return String.format("printf(\"ERROR: %%s\", %s);", arg);
+      default:
+        return String.format("call(%s, %s);", call.name(), arg);
     }
-    return String.format("call(%s, %s);", call.name(), arg);
   }
 
   @Override

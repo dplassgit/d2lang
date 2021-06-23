@@ -65,7 +65,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (!ipStack.isEmpty()) {
       System.err.println("Stack not empty");
     }
-    return envs.peek();
+    return rootEnv;
   }
 
   @Override
@@ -275,12 +275,21 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(SysCall op) {
     Object val = resolve(op.arg());
-    // TODO: don't assume all system calls are prints.
-    rootEnv.addOutput(String.valueOf(val));
+    switch(op.call()) {
+      case PRINT:
+        rootEnv.addOutput(String.valueOf(val));
+        break;
+      case MESSAGE:
+        rootEnv.addOutput("SYSTEM ERROR: " + val);
+        break;
+      default:
+        break;
+    }
   }
 
   @Override
   public void visit(Stop op) {
+    ipStack.clear();
     running = false;
   }
 
