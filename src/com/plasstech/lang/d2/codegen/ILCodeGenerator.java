@@ -259,15 +259,15 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(WhileNode node) {
-    // beforeWhile:
+    // loop:
     // ..test
     // ..if done, goto afterWhile
     // ..(loop code)
     // increment: ("continue" target)
     // ..(increment code)
-    // ..goto before
+    // ..goto loop
     // afterWhile: ("break" target)
-    String before = generateLabel("beforeWhile");
+    String before = generateLabel("loop");
     String increment = generateLabel("increment");
     String after = generateLabel("afterWhile");
     whileContinues.push(increment);
