@@ -104,6 +104,14 @@ class ArithmeticOptimizer extends LineOptimizer {
         optimizeModulo(op, left, right);
         return;
 
+      case SHIFT_LEFT:
+        optimizeShiftLeft(op, left, right);
+        return;
+
+      case SHIFT_RIGHT:
+        optimizeShiftRight(op, left, right);
+        return;
+
       case AND:
         optimizeAnd(op, left, right);
         return;
@@ -176,6 +184,22 @@ class ArithmeticOptimizer extends LineOptimizer {
     } catch (ArithmeticException e) {
       logger.atWarning().log("Cannot optimize dividing by zero!");
     }
+  }
+
+  private void optimizeShiftLeft(BinOp op, Operand left, Operand right) {
+    if (right.equals(ConstantOperand.ZERO)) {
+      replaceCurrent(new Transfer(op.destination(), op.left()));
+      return;
+    }
+    optimizeArith(op.destination(), left, right, (t, u) -> t << u);
+  }
+
+  private void optimizeShiftRight(BinOp op, Operand left, Operand right) {
+    if (right.equals(ConstantOperand.ZERO)) {
+      replaceCurrent(new Transfer(op.destination(), op.left()));
+      return;
+    }
+    optimizeArith(op.destination(), left, right, (t, u) -> t >> u);
   }
 
   private void optimizeSubtract(BinOp op, Operand left, Operand right) {

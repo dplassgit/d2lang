@@ -101,9 +101,33 @@ public class ILOptimizerTest {
 
   @Test
   public void timesConstants() {
-    TestUtils.optimizeAssertSameVariables("a = 2 * 3 f:proc(){} f()");
+    TestUtils.optimizeAssertSameVariables("f:proc():int {a = 2 * 3 return a} f()");
     TestUtils.optimizeAssertSameVariables("a = 1 * 3");
     TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
+  }
+
+  @Test
+  public void timesPowerOfTwo() {
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a*4} print p(3)");
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return 16*a} print p(3)");
+  }
+
+  @Test
+  public void divPowerOfTwo() {
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a/4} print p(256)");
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a/16} print p(1024)");
+  }
+
+  @Test
+  public void shift() {
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a<<4} print p(256)");
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a>>2} print p(1024)");
+  }
+
+  @Test
+  public void shiftZero() {
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a<<0} print p(256)");
+    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a>>0} print p(256)");
   }
 
   @Test
