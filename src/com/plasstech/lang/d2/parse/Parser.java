@@ -24,6 +24,7 @@ import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
+import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -174,6 +175,10 @@ public class Parser {
           advance();
           return returnStmt(token.start());
 
+        case EXIT:
+          advance();
+          return exitStmt(token.start());
+
         default:
           break;
       }
@@ -192,6 +197,15 @@ public class Parser {
     }
     // ...else it returns void.
     return new ReturnNode(start);
+  }
+
+  private ExitNode exitStmt(Position start) {
+    // If it's the start of an expression, read the whole expression...
+    if (EXPRESSION_STARTS.contains(token.type())) {
+      return new ExitNode(start, expr());
+    }
+    // ...else it returns void.
+    return new ExitNode(start);
   }
 
   private StatementNode assignmentDeclarationProcCall() {

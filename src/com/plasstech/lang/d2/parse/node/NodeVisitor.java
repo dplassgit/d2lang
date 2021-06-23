@@ -12,9 +12,9 @@ public interface NodeVisitor {
 
   void visit(VariableNode node);
 
-  void visit(UnaryNode unaryNode);
+  void visit(UnaryNode node);
 
-  void visit(IfNode ifNode);
+  void visit(IfNode node);
 
   void visit(ProcedureNode node);
 
@@ -28,9 +28,11 @@ public interface NodeVisitor {
 
   void visit(DeclarationNode node);
 
-  void visit(CallNode callNode);
+  void visit(CallNode node);
 
-  void visit(ReturnNode returnNode);
+  void visit(ReturnNode node);
+
+  void visit(ExitNode node);
 
   void visit(ArrayDeclarationNode node);
 }

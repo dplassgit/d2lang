@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
+import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -1066,6 +1067,20 @@ public class ParserTest {
     assertParseError("a=[1,'hi']", "Inconsistent types");
   }
 
+  @Test
+  public void exit() {
+    BlockNode root = parseStatements("exit");
+    ExitNode node = (ExitNode) root.statements().get(0);
+    assertThat(node.exitMessage().isPresent()).isFalse();
+  }
+
+  @Test
+  public void exit_withMessage() {
+    BlockNode root = parseStatements("exit 'sorry/not sorry'");
+    ExitNode node = (ExitNode) root.statements().get(0);
+    ConstNode<String> message = (ConstNode<String>)node.exitMessage().get();
+    assertThat(message.value()).isEqualTo("sorry/not sorry");
+  }
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();

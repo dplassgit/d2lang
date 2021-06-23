@@ -42,10 +42,13 @@ public class DefaultVisitor implements NodeVisitor {
   public void visit(DeclarationNode node) {}
 
   @Override
-  public void visit(CallNode callNode) {}
+  public void visit(CallNode node) {}
 
   @Override
-  public void visit(ReturnNode returnNode) {}
+  public void visit(ReturnNode node) {}
+
+  @Override
+  public void visit(ExitNode node) {}
 
   @Override
   public void visit(ArrayDeclarationNode node) {}
