@@ -679,7 +679,7 @@ public class ParserTest {
   public void mainError() {
     assertParseError("main", "expected '{'");
     assertParseError("main {", "Unexpected start of statement 'EOF'");
-    assertParseError("main {} print ", "expected EOF");
+    assertParseError("main {} print ", "expected 'EOF'");
     assertParseError("main { print ", "expected literal");
   }
 
@@ -760,13 +760,13 @@ public class ParserTest {
 
   @Test
   public void procErrors() {
-    assertParseError("fib:proc(a:int b) {}", "expected ',' or ')'");
+    assertParseError("fib:proc(a:int b) {}", "expected ')'");
     assertParseError("fib:proc(a:bad, b) {}", "expected INT");
     assertParseError("fib:proc(a:, b) {}", "expected INT");
     assertParseError("fib:proc(a: b) {}", "expected INT");
     assertParseError("fib:proc(a:) {}", "expected INT");
-    assertParseError("fib:proc(a {}", "expected ',' or ')'");
-    assertParseError("fib:proc(a:int, ) {}", "expected variable");
+    assertParseError("fib:proc(a {}", "expected ')'");
+    assertParseError("fib:proc(a:int, ) {}", "expected 'VARIABLE");
     assertParseError("fib:proc(a:int) print a", "expected '{'");
     assertParseError("fib:proc  print a", "expected '{'");
     assertParseError("fib:proc() {return", "Unexpected start of statement 'EOF'");
@@ -964,8 +964,8 @@ public class ParserTest {
 
   @Test
   public void arrayDeclError() {
-    assertParseError("a:int[3", "expected '['");
-    assertParseError("a:int[3 4]", "expected '['");
+    assertParseError("a:int[3", "expected ']'");
+    assertParseError("a:int[3 4]", "expected ']'");
     assertParseError("a:hello[3]", "expected INT, BOOL, STRING");
   }
 

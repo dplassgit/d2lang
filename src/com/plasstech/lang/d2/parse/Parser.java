@@ -89,6 +89,13 @@ public class Parser {
     }
   }
 
+  private void expect(Token.Type expected) {
+    if (token.type() != expected) {
+      throw new ParseException(
+          String.format("Unexpected '%s'; expected '%s'", token, expected), token.start());
+    }
+  }
+
   private ProgramNode program() {
     // Read statements until EOF or "main"
     BlockNode statements = statements(matchesEofOrMain());
@@ -103,12 +110,9 @@ public class Parser {
         advance(); // eat the main
         // TODO: parse arguments
         BlockNode mainBlock = block();
-        if (token.type() == Token.Type.EOF) {
-          MainNode mainProc = new MainNode(mainBlock, start.start());
-          return new ProgramNode(statements, mainProc);
-        }
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected EOF", token.text()), token.start());
+        expect(Token.Type.EOF);
+        MainNode mainProc = new MainNode(mainBlock, start.start());
+        return new ProgramNode(statements, mainProc);
       }
     }
     throw new ParseException(
@@ -125,15 +129,22 @@ public class Parser {
     return new BlockNode(children, start);
   }
 
+  private static Function<Token, Boolean> matchesEofOrMain() {
+    return token -> {
+      if (token.type() == Token.Type.EOF) {
+        return true;
+      }
+      return token.type() == Token.Type.MAIN;
+    };
+  }
+
   // This is a statements node surrounded by braces.
   private BlockNode block() {
-    if (token.type() != Token.Type.LBRACE) {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected '{'", token.text()), token.start());
-    }
+    expect(Token.Type.LBRACE);
     advance();
 
     BlockNode statements = statements(token -> token.type() == Token.Type.RBRACE);
+    expect(Token.Type.RBRACE);
     advance();
     return statements;
   }
@@ -208,7 +219,7 @@ public class Parser {
   }
 
   private StatementNode assignmentDeclarationProcCall() {
-    assert (token.type() == Token.Type.VARIABLE);
+    expect(Token.Type.VARIABLE);
 
     Token varToken = token;
     advance();
@@ -248,17 +259,16 @@ public class Parser {
         String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
   }
 
+  /** declaration -> '[' expr ']' */
   private DeclarationNode arrayDeclaration(Token varToken, VarType baseVarType) {
-    assert (token.type() == Token.Type.LBRACKET);
+    expect(Token.Type.LBRACKET);
     advance();
     // The size can be variable.
     ExprNode arraySize = expr();
     ArrayType arrayType = new ArrayType(baseVarType);
-    if (token.type() != Token.Type.RBRACKET) {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected '['", token.text()), token.start());
-    }
+    expect(Token.Type.RBRACKET);
     advance();
+
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
   }
 
@@ -299,25 +309,19 @@ public class Parser {
     }
 
     params = commaSeparated(() -> formalParam());
-    if (token.type() == Token.Type.RPAREN) {
-      advance();
-    } else {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected ',' or ')'", token.text()), token.start());
-    }
+    expect(Token.Type.RPAREN);
+    advance(); // eat the right paren.
     return params;
   }
 
   private Parameter formalParam() {
-    if (token.type() != Token.Type.VARIABLE) {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected variable", token.text()), token.start());
-    }
+    expect(Token.Type.VARIABLE);
 
     Token paramName = token;
     advance();
     if (token.type() == Token.Type.COLON) {
       advance();
+      // TODO: Relax this for records.
       if (!token.type().isKeyword()) {
         throw new ParseException(
             String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
@@ -325,6 +329,7 @@ public class Parser {
       }
       Token.Type declaredType = token.type();
       VarType paramType = BUILTINS.get(declaredType);
+      // TODO: Relax this for records.
       if (paramType == null) {
         throw new ParseException(
             String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
@@ -348,7 +353,7 @@ public class Parser {
   }
 
   private IfNode ifStmt(Token kt) {
-    assert (kt.type() == Token.Type.IF);
+    expect(Token.Type.IF);
     advance();
 
     List<IfNode.Case> cases = new ArrayList<>();
@@ -385,7 +390,7 @@ public class Parser {
   }
 
   private WhileNode whileStmt(Token kt) {
-    assert (kt.type() == Token.Type.WHILE);
+    expect(Token.Type.WHILE);
     advance();
     ExprNode condition = expr();
     Optional<StatementNode> doStatement = Optional.empty();
@@ -398,7 +403,7 @@ public class Parser {
   }
 
   private CallNode procedureCall(Token varToken, boolean isStatement) {
-    assert (token.type() == Token.Type.LPAREN);
+    expect(Token.Type.LPAREN);
     advance(); // eat the lparen
 
     List<ExprNode> actuals;
@@ -408,12 +413,9 @@ public class Parser {
       actuals = commaSeparatedExpressions();
     }
 
-    if (token.type() == Token.Type.RPAREN) {
-      advance(); // eat the rparen
-    } else {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected ')'", token.text()), token.start());
-    }
+    expect(Token.Type.RPAREN);
+    advance(); // eat the rparen
+
     return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
   }
 
@@ -538,18 +540,14 @@ public class Parser {
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
     } else if (isUnaryKeyword(token)) {
       Token keywordToken = unaryToken;
+
       advance();
-      if (token.type() != Token.Type.LPAREN) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected '('", token), token.start());
-      }
+      expect(Token.Type.LPAREN);
       advance();
       ExprNode expr = expr();
-      if (token.type() != Token.Type.RPAREN) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected ')'", token), token.start());
-      }
+      expect(Token.Type.RPAREN);
       advance();
+
       return new UnaryNode(keywordToken.type(), expr, unaryToken.start());
     }
     return arrayGet();
@@ -559,6 +557,7 @@ public class Parser {
     return UNARY_KEYWORDS.contains(token.type());
   }
 
+  /** arrayGet -> atom ('[' expr ']') */
   private ExprNode arrayGet() {
     ExprNode left = atom();
 
@@ -566,18 +565,16 @@ public class Parser {
     if (token.type() == Token.Type.LBRACKET) {
       advance();
       ExprNode index = expr();
-      if (token.type() == Token.Type.RBRACKET) {
-        advance();
-        left = new BinOpNode(left, Token.Type.LBRACKET, index);
-      } else {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected ']'", token), token.start());
-      }
+      expect(Token.Type.RBRACKET);
+      advance();
+
+      left = new BinOpNode(left, Token.Type.LBRACKET, index);
     }
 
     return left;
   }
 
+  /** atom -> int | true | false | string | variable | procedureCall | '(' expr ')' | '[' arrayLiteral ']' */
   private ExprNode atom() {
     if (token.type() == Token.Type.INT) {
       IntToken it = (IntToken) token;
@@ -621,7 +618,7 @@ public class Parser {
   }
 
   private ExprNode arrayLiteral() {
-    assert (token.type() == Token.Type.LBRACKET);
+    expect(Token.Type.LBRACKET);
 
     Token openBracket = token;
     // Array constant/literal.
@@ -647,10 +644,7 @@ public class Parser {
                     token.start());
               });
 
-      if (token.type() != Token.Type.RBRACKET) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected ']'", token.text()), token.start());
-      }
+      expect(Token.Type.RBRACKET);
       advance(); // eat rbracket
 
       VarType baseType = values.get(0).varType();
@@ -688,12 +682,4 @@ public class Parser {
     }
   }
 
-  private static Function<Token, Boolean> matchesEofOrMain() {
-    return token -> {
-      if (token.type() == Token.Type.EOF) {
-        return true;
-      }
-      return token.type() == Token.Type.MAIN;
-    };
-  }
 }
