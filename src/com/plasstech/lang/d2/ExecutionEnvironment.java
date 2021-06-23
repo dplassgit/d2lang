@@ -56,13 +56,15 @@ public class ExecutionEnvironment {
 
     CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
     ilCode = codegen.generate();
+    System.out.println("\nUNOPTIMIZED:");
+    System.out.println("------------------------------");
+    System.out.println(Joiner.on("\n").join(ilCode));
     if (optimize) {
       ILOptimizer optimizer = new ILOptimizer();
       List<Op> optimized = optimizer.optimize(ilCode);
       if (!optimized.equals(ilCode)) {
-        System.out.println("UNOPTIMIZED");
-        System.out.println(Joiner.on("\n").join(ilCode));
-        System.out.println("\nOPTIMIZED");
+        System.out.println("\nOPTIMIZED:");
+        System.out.println("------------------------------");
         System.out.println(Joiner.on("\n").join(optimized));
         ilCode = optimized;
       }

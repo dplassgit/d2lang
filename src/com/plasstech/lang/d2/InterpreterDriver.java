@@ -22,14 +22,17 @@ public class InterpreterDriver {
     ExecutionEnvironment ee = new ExecutionEnvironment(text, true);
     Environment env = ee.execute();
     System.out.println("\nPARSED PROGRAM:");
+    System.out.println("------------------------------");
     System.out.println(ee.programNode());
 
     System.out.println("\nSYMBOL TABLE:");
+    System.out.println("------------------------------");
     System.out.println(ee.symbolTable());
 
-    System.out.println("\nINTERMEDIATE CODE:");
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
+    System.out.println("\nFINAL INTERMEDIATE CODE:");
     System.out.println("------------------------------");
+    System.out.println(Joiner.on("\n").join(ee.ilCode()));
+    System.out.println("\n------------------------------");
     System.out.println("SYSTEM.OUT:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(env.output()));
