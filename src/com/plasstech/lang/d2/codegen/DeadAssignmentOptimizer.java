@@ -20,7 +20,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class DeadAssignmentOptimizer extends LineOptimizer {
-  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from object to line number
   private final Map<Location, Integer> assignments = new HashMap<>();
@@ -63,7 +63,7 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(ProcExit op) {
     // End of scope. Kill all assigned-unused.
     for (int theIp : assignments.values()) {
-      logger.atInfo().log("Killing all unused variables at end of proc: " + assignments);
+      logger.atInfo().log("Killing all unused variables at end of proc: %s", assignments);
       deleteAt(theIp);
     }
     assignments.clear();

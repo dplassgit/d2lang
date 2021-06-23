@@ -18,14 +18,14 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 
 class ConstantPropagationOptimizer extends LineOptimizer {
-  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from temp name to constant value
   private final Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
   // Map from stack to constant
   private final Map<String, ConstantOperand<?>> stackConstants = new HashMap<>();
-  // Map from global to constant
-  private final Map<String, ConstantOperand<?>> globalConstants = new HashMap<>();
+  // TODO: Map from global to constant
+  // private final Map<String, ConstantOperand<?>> globalConstants = new HashMap<>();
 
   @Override
   public void visit(ProcEntry op) {
@@ -63,12 +63,12 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (dest instanceof TempLocation && source.isConstant()) {
       // easy case: temps are never overwritten.
-      logger.atInfo().log("Replacing temp %s with %s", dest.name(), source);
+      logger.atInfo().log("Replacing temp variable %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
       deleteCurrent();
     } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
-      logger.atInfo().log("Potentially replacing stack %s with %s", dest.name(), source);
+      logger.atInfo().log("Replacing stack variable %s with %s", dest.name(), source);
       stackConstants.put(dest.name(), (ConstantOperand<?>) source);
     } else if (!source.isConstant()) {
       ConstantOperand<?> replacement = findReplacementConstant(source);
@@ -94,7 +94,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (replacement != null) {
       replaceCurrent(new IfOp(replacement, op.destination()));
     }
-    // Going into an if, we can't rely on the value of the constant anymore, maye.
+    // Going into an if, we can't rely on the value of the constant anymore, maybe.
     stackConstants.clear();
   }
 

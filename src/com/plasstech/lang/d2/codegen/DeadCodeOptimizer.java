@@ -12,7 +12,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class DeadCodeOptimizer extends LineOptimizer {
-  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
   public void visit(IfOp op) {

@@ -2,7 +2,8 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.Assert.fail;
+
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -14,7 +15,6 @@ import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
-import org.junit.Test;
 
 public class StaticCheckerTest {
 

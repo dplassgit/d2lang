@@ -80,7 +80,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private String generateLabel(String prefix) {
     labelId++;
-    return String.format("__%s%d", prefix, labelId);
+    return String.format("__%s_%d", prefix, labelId);
   }
 
   private TempLocation generateTemp(VarType varType) {
@@ -347,7 +347,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       node.setLocation(returnValueDestination);
     }
     // Guard to prevent just falling into this method
-    String afterLabel = generateLabel("afterProc");
+    String afterLabel = generateLabel("after_user_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 
@@ -390,7 +390,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   }
 
   private void emit(Op op) {
-    logger.atInfo().log(op.toString());
+    logger.atFine().log(op.toString());
     operations.add(op);
   }
 }

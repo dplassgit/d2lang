@@ -19,7 +19,7 @@ public class ILOptimizer implements Optimizer {
     ConstantPropagationOptimizer cpo = new ConstantPropagationOptimizer();
     DeadCodeOptimizer dco = new DeadCodeOptimizer();
     DeadLabelOptimizer dlo = new DeadLabelOptimizer();
-    DeadAssignmentOptimizer dao = new DeadAssignmentOptimizer(); // heh.
+    DeadAssignmentOptimizer dao = new DeadAssignmentOptimizer();
     do {
       changed = false;
 

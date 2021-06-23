@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.lex.Token;
 
 class ArithmeticOptimizer extends LineOptimizer {
-  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
   public void visit(UnaryOp opcode) {

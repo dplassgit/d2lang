@@ -1,5 +1,12 @@
 package com.plasstech.lang.d2.parse;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -32,12 +39,6 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class Parser {
 
@@ -185,11 +186,11 @@ public class Parser {
   }
 
   private ReturnNode returnStmt(Position start) {
-    // either it's the start of an expression, or else it's void.
+    // If it's the start of an expression, read the whole expression...
     if (EXPRESSION_STARTS.contains(token.type())) {
       return new ReturnNode(start, expr());
     }
-    // return void, probably.
+    // ...else it returns void.
     return new ReturnNode(start);
   }
 
@@ -532,10 +533,6 @@ public class Parser {
         }
       }
 
-      // TODO: Optimize this further, before the code generator is called.
-      // For example, --(expr) == +(expr) == (expr) if expr is ultimately integer.
-      // However, at this point we don't have types in the expr tree yet so we can't
-      // do that exact optimization yet.
       return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
     } else if (isUnaryKeyword(token)) {
       Token keywordToken = unaryToken;
@@ -545,13 +542,13 @@ public class Parser {
             String.format("Unexpected '%s'; expected '('", token), token.start());
       }
       advance();
-      ExprNode hopefullyAString = expr();
+      ExprNode expr = expr();
       if (token.type() != Token.Type.RPAREN) {
         throw new ParseException(
             String.format("Unexpected '%s'; expected ')'", token), token.start());
       }
       advance();
-      return new UnaryNode(keywordToken.type(), hopefullyAString, unaryToken.start());
+      return new UnaryNode(keywordToken.type(), expr, unaryToken.start());
     }
     return arrayGet();
   }
