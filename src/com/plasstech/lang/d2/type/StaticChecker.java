@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -643,6 +644,24 @@ public class StaticChecker extends DefaultVisitor {
               "PROC '%s' declared to return %s but returned %s",
               proc.name(), declaredReturnType, actualReturnType),
           node.position());
+    }
+  }
+
+  @Override
+  public void visit(ExitNode node) {
+    if (node.exitMessage().isPresent()) {
+      ExprNode message = node.exitMessage().get();
+      message.accept(this);
+      VarType actualMessageType = message.varType();
+      if (actualMessageType.isUnknown()) {
+        throw new TypeException(
+            String.format("Indeterminable type for EXIT message %s", node), node.position());
+      }
+      if (message.varType() != VarType.STRING) {
+        throw new TypeException(
+            String.format("EXIT message must be STRING; was %s", message.varType()),
+            message.position());
+      }
     }
   }
 }

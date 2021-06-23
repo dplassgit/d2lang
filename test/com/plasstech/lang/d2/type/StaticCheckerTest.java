@@ -694,6 +694,18 @@ public class StaticCheckerTest {
             + "}\n");
   }
 
+  @Test
+  public void exit() {
+    checkProgram("exit");
+    checkProgram("exit 'sorry'");
+  }
+
+  @Test
+  public void bad_exit() {
+    assertExecuteError("exit -1", "must be STRING");
+    assertExecuteError("exit length('sorry')", "must be STRING");
+  }
+
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
