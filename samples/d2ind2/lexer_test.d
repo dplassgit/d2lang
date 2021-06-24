@@ -375,6 +375,6 @@ nextToken_stringOpen_error:proc() {
 
 assertThat: proc(expectedTrue: bool) {
   if !expectedTrue {
-    error "Expected false to be true"
+    exit "Expected false to be true"
   }
 }

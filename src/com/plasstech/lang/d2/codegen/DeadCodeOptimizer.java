@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class DeadCodeOptimizer extends LineOptimizer {
@@ -61,7 +62,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
         Label label = (Label) testop;
         if (label.label().equals(op.label())) {
           // Found the label!
-          logger.atInfo().log("Found the label for 'goto %s' with nothing in between", op.label());
+          logger.atInfo().log("Found the label for GOTO '%s' with nothing in between", op.label());
           break;
         }
       } else {
@@ -74,23 +75,23 @@ public class DeadCodeOptimizer extends LineOptimizer {
       return;
     }
     // 2. any code between a goto and a label is dead.
-    for (int testip = ip + 1; testip < code.size(); ++testip) {
-      Op testop = code.get(testip);
-      if (testop instanceof Nop) {
-        continue;
-      }
-      if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
-        break;
-      } else {
-        logger.atInfo().log("Nopping statement between goto and next label");
-        replaceAt(testip, new Nop(testop));
-      }
-    }
+    killUntilLabel("GOTO");
   }
 
   @Override
   public void visit(Return op) {
-    // 2. any code between a return and a label is dead.
+    // any code between a return and a label is dead.
+    killUntilLabel("RETURN");
+  }
+
+  @Override
+  public void visit(Stop op) {
+    // any code between a stop and a label is dead.
+    killUntilLabel("STOP");
+  }
+
+  /** Nop lines between current IP and the next label, proc entry or proc exit. */
+  private void killUntilLabel(String source) {
     for (int testip = ip + 1; testip < code.size(); ++testip) {
       Op testop = code.get(testip);
       if (testop instanceof Nop) {
@@ -99,7 +100,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
       if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
         break;
       } else {
-        logger.atInfo().log("Nopping statement after return");
+        logger.atInfo().log("Nopping statement after %s", source);
         replaceAt(testip, new Nop(testop));
       }
     }

@@ -2,6 +2,11 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
@@ -11,8 +16,8 @@ import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
-import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
+import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -26,10 +31,6 @@ import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
 
 public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> COMPARISION_OPERATORS =
@@ -43,7 +44,7 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.GEQ,
           Token.Type.NEQ);
 
-  private static final Set<Token.Type> INT_OPERATORS = //
+  private static final Set<Token.Type> INT_OPERATORS =
       ImmutableSet.of(
           Token.Type.EQEQ,
           Token.Type.LT,
@@ -59,7 +60,7 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.SHIFT_LEFT,
           Token.Type.SHIFT_RIGHT);
 
-  private static final Set<Token.Type> STRING_OPERATORS = //
+  private static final Set<Token.Type> STRING_OPERATORS =
       ImmutableSet.of(
           Token.Type.EQEQ,
           Token.Type.LT,
@@ -287,8 +288,7 @@ public class StaticChecker extends DefaultVisitor {
     if (left.varType() == VarType.STRING && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-            String.format("STRING index must be INT; was %s", right.varType()),
-            right.position());
+            String.format("STRING index must be INT; was %s", right.varType()), right.position());
       }
       node.setVarType(VarType.STRING);
       // NOTE RETURN
@@ -297,8 +297,7 @@ public class StaticChecker extends DefaultVisitor {
     } else if (left.varType().isArray() && node.operator() == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
-            String.format("ARRAY index must be INT; was %s", right.varType()),
-            right.position());
+            String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
       }
       // I hate this.
       ArrayType arrayType = (ArrayType) left.varType();
@@ -333,8 +332,7 @@ public class StaticChecker extends DefaultVisitor {
     // Check that they're not trying to negate a boolean or "not" an int.
     if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
       throw new TypeException(
-          String.format(
-              "Cannot apply %s operator to BOOL expression", unaryNode.operator().name()),
+          String.format("Cannot apply %s operator to BOOL expression", unaryNode.operator().name()),
           expr.position());
     }
 
@@ -343,22 +341,19 @@ public class StaticChecker extends DefaultVisitor {
       case MINUS:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
-              String.format("MINUS must take INT; was %s", expr.varType()),
-              expr.position());
+              String.format("MINUS must take INT; was %s", expr.varType()), expr.position());
         }
         break;
       case NOT:
         if (expr.varType() != VarType.BOOL) {
           throw new TypeException(
-              String.format("NOT must take BOOL; was %s", expr.varType()),
-              expr.position());
+              String.format("NOT must take BOOL; was %s", expr.varType()), expr.position());
         }
         break;
       case LENGTH:
         if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
           throw new TypeException(
-              String.format(
-                  "LENGTH must take STRING or ARRAY; was %s", expr.varType()),
+              String.format("LENGTH must take STRING or ARRAY; was %s", expr.varType()),
               expr.position());
         }
         unaryNode.setVarType(VarType.INT);
@@ -367,8 +362,7 @@ public class StaticChecker extends DefaultVisitor {
       case ASC:
         if (expr.varType() != VarType.STRING) {
           throw new TypeException(
-              String.format("ASC must take STRING; was %s", expr.varType()),
-              expr.position());
+              String.format("ASC must take STRING; was %s", expr.varType()), expr.position());
         }
         unaryNode.setVarType(VarType.INT);
         // NOTE RETURN
@@ -376,8 +370,7 @@ public class StaticChecker extends DefaultVisitor {
       case CHR:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
-              String.format("CHR must take INT; was %s", expr.varType()),
-              expr.position());
+              String.format("CHR must take INT; was %s", expr.varType()), expr.position());
         }
         unaryNode.setVarType(VarType.STRING);
         // NOTE RETURN
@@ -396,8 +389,7 @@ public class StaticChecker extends DefaultVisitor {
       condition.accept(this);
       if (condition.varType() != VarType.BOOL) {
         throw new TypeException(
-            String.format(
-                "Condition for IF or ELIF must be BOOL; was %s", condition.varType()),
+            String.format("Condition for IF or ELIF must be BOOL; was %s", condition.varType()),
             condition.position());
       }
       ifCase
@@ -498,7 +490,8 @@ public class StaticChecker extends DefaultVisitor {
     if (!duplicates.isEmpty()) {
       throw new TypeException(
           String.format(
-              "Duplicate formal parameter '%s' declared in PROC '%s'", duplicates.toString(), node.name()),
+              "Duplicate formal parameter '%s' declared in PROC '%s'",
+              duplicates.toString(), node.name()),
           node.position());
     }
 
@@ -513,8 +506,7 @@ public class StaticChecker extends DefaultVisitor {
       procSymbol.setSymTab(child);
     } else if (sym.type() != VarType.PROC) {
       throw new TypeException(
-          String.format(
-              "Cannot define PROC '%s' with the same name as a global", node.name()),
+          String.format("Cannot define PROC '%s' with the same name as a global", node.name()),
           node.position());
     } else {
       procSymbol = (ProcSymbol) sym;
@@ -585,7 +577,7 @@ public class StaticChecker extends DefaultVisitor {
      * </pre>
      */
     for (StatementNode stmt : node.statements()) {
-      if (stmt instanceof ReturnNode) {
+      if (stmt instanceof ReturnNode || stmt instanceof ExitNode) {
         return true;
       }
     }
@@ -661,6 +653,12 @@ public class StaticChecker extends DefaultVisitor {
         throw new TypeException(
             String.format("EXIT message must be STRING; was %s", message.varType()),
             message.position());
+      }
+    }
+    if (!procedures.isEmpty()) {
+      ProcSymbol proc = procedures.peek();
+      if (proc != null) {
+        needsReturn.remove(proc);
       }
     }
   }

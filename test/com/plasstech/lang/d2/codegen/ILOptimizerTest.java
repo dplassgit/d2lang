@@ -276,7 +276,17 @@ public class ILOptimizerTest {
     TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4} print p()");
     TestUtils.optimizeAssertSameVariables(
         "p:proc(a:bool): int {"
-            + " if a {return 4} a=false return 5"
+            + " if a {return 4 a=false} return 5"
+            + "} "
+            + "print p(true) print p(false)");
+  }
+
+  @Test
+  public void deadAfterExit() {
+    TestUtils.optimizeAssertSameVariables("p:proc(): int {exit 'no' a=4} print p()");
+    TestUtils.optimizeAssertSameVariables(
+        "p:proc(a:bool): int {"
+            + " if a {exit 'no2'} a=false return 5"
             + "} "
             + "print p(true) print p(false)");
   }

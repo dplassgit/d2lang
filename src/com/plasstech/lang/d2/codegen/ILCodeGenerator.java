@@ -321,12 +321,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(ExitNode node) {
+    int code = 0;
     if (node.exitMessage().isPresent()) {
+      code = -1;
       node.exitMessage().get().accept(this);
       Location messageLocation = node.exitMessage().get().location();
       emit(new SysCall(SysCall.Call.MESSAGE, messageLocation));
     }
-    emit(new Stop());
+    emit(new Stop(code));
   }
 
   @Override

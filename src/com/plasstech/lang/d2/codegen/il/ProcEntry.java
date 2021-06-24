@@ -10,7 +10,8 @@ public class ProcEntry extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s() {", name());
+    // TODO: add formals
+    return String.format("\n%s() {", name());
   }
 
   public String name() {

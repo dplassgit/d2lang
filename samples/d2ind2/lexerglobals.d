@@ -1,3 +1,4 @@
+Type_EOF=0
 Type_INT=1
 Type_BOOL=2
 Type_STRING=3
@@ -24,11 +25,13 @@ Type_RBRACE=23
 Type_COLON=24
 Type_COMMA=25
 Type_KEYWORD=26
-Type_EOF=0
 Type_TRUE=27
 Type_FALSE=28
 Type_LBRACKET=29
 Type_RBRACKET=30
+Type_DOT=31
+Type_SHIFT_LEFT=32
+Type_SHIFT_RIGHT=33
 
 KEYWORDS=[
 'print',
@@ -47,20 +50,30 @@ KEYWORDS=[
 'continue',
 'int',
 'bool',
-'string'
-// 'record'
-// 'error'
+'string',
+'record',
+'new',
+'null',
+'delete',
+'input',
+'length',
+'chr',
+'asc',
+'exit',
+'and',
+'or',
+'not'
 ]
 
-// Global for token:
+// Global for token: 
 token_type: int
 token_int: int
 token_string: string
 
-// Global for lexer:
+// Global for lexer: 
 lexer_text: string // full text
 lexer_line: int
-lexer_col:int 
+lexer_col: int 
 lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
@@ -76,15 +89,15 @@ IntToken: proc(type: int, ti: int, value: string): string {
   return 'IntToken: ' + value
 }
 
-isLetter: proc(c:string):bool {
+isLetter: proc(c: string): bool {
   return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
 }
 
-isDigit: proc(c:string):bool {
+isDigit: proc(c: string): bool {
   return c>='0' & c <= '9'
 }
 
-isLetterOrDigit: proc(c:string):bool {
+isLetterOrDigit: proc(c: string): bool {
   return isLetter(c) | isDigit(c)
 }
 
@@ -108,7 +121,7 @@ new_lexer: proc(text: string) {
   advance()
 }
 
-makeText: proc():String {
+makeText: proc(): String {
   value=''
   if (isLetter(lexer_cc)) {
     value=value + lexer_cc
@@ -134,7 +147,7 @@ makeText: proc():String {
   return Token(Type_VARIABLE, value)
 }
 
-makeInt: proc():string {
+makeInt: proc(): string {
   value=0
   value_as_string = ''
 
@@ -145,7 +158,7 @@ makeInt: proc():string {
   return IntToken(Type_INT, value, value_as_string)
 }
 
-startsWithSlash: proc():String {
+startsWithSlash: proc(): String {
   advance() // eat the first slash
   if (lexer_cc == '/') {
     advance() // eat the second slash
@@ -162,7 +175,7 @@ startsWithSlash: proc():String {
   return Token(Type_DIV, '/')
 }
 
-startsWithNot: proc():String{
+startsWithNot: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -172,7 +185,7 @@ startsWithNot: proc():String{
   return Token(Type_NOT, oc)
 }
 
-startsWithGt: proc():String{
+startsWithGt: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -182,7 +195,7 @@ startsWithGt: proc():String{
   return Token(Type_GT, oc)
 }
 
-startsWithLt: proc():String{
+startsWithLt: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -192,7 +205,7 @@ startsWithLt: proc():String{
   return Token(Type_LT, oc)
 }
 
-startsWithEq: proc():String{
+startsWithEq: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -267,7 +280,7 @@ makeSymbol: proc(): string {
   } elif oc == ']' {
     advance()
     return Token(Type_RBRACKET, oc)
-  } elif oc == ':' {
+  } elif oc == ': ' {
     advance()
     return Token(Type_COLON, oc)
   } elif oc == '"'  | oc == "'" { // d FTW
@@ -275,6 +288,9 @@ makeSymbol: proc(): string {
   } elif oc == ',' {
     advance()
     return Token(Type_COMMA, oc)
+  } elif oc == '.' {
+    advance()
+    return Token(Type_DOT, oc)
   } else {
     advance()
     return Token(Type_EOF, 'Unknown character' + lexer_cc)
@@ -356,15 +372,15 @@ KEYWORDS=[
 // 'error'
 ]
 
-// Global for token:
+// Global for token: 
 token_type: int
 token_int: int
 token_string: string
 
-// Global for lexer:
+// Global for lexer: 
 lexer_text: string // full text
 lexer_line: int
-lexer_col:int 
+lexer_col: int 
 lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
@@ -380,15 +396,15 @@ IntToken: proc(type: int, ti: int, value: string): string {
   return 'IntToken: ' + value
 }
 
-isLetter: proc(c:string):bool {
+isLetter: proc(c: string): bool {
   return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
 }
 
-isDigit: proc(c:string):bool {
+isDigit: proc(c: string): bool {
   return c>='0' & c <= '9'
 }
 
-isLetterOrDigit: proc(c:string):bool {
+isLetterOrDigit: proc(c: string): bool {
   return isLetter(c) | isDigit(c)
 }
 
@@ -413,7 +429,7 @@ new_lexer: proc(text: string) {
   advance()
 }
 
-makeText: proc():String {
+makeText: proc(): String {
   value=''
   if (isLetter(lexer_cc)) {
     value=value + lexer_cc
@@ -439,7 +455,7 @@ makeText: proc():String {
   return Token(Type_VARIABLE, value)
 }
 
-makeInt: proc():string {
+makeInt: proc(): string {
   value=0
   value_as_string = ''
 
@@ -450,7 +466,7 @@ makeInt: proc():string {
   return IntToken(Type_INT, value, value_as_string)
 }
 
-startsWithSlash: proc():String {
+startsWithSlash: proc(): String {
   advance() // eat the first slash
   if (lexer_cc == '/') {
     advance() // eat the second slash
@@ -467,7 +483,7 @@ startsWithSlash: proc():String {
   return Token(Type_DIV, '/')
 }
 
-startsWithNot: proc():String{
+startsWithNot: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -477,7 +493,7 @@ startsWithNot: proc():String{
   return Token(Type_NOT, oc)
 }
 
-startsWithGt: proc():String{
+startsWithGt: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -487,7 +503,7 @@ startsWithGt: proc():String{
   return Token(Type_GT, oc)
 }
 
-startsWithLt: proc():String{
+startsWithLt: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -497,7 +513,7 @@ startsWithLt: proc():String{
   return Token(Type_LT, oc)
 }
 
-startsWithEq: proc():String{
+startsWithEq: proc(): String{
   oc=lexer_cc
   advance()
   if (lexer_cc == '=') {
@@ -566,7 +582,7 @@ makeSymbol: proc(): string {
   } elif oc == '}' {
     advance()
     return Token(Type_RBRACE, oc)
-  } elif oc == ':' {
+  } elif oc == ': ' {
     advance()
     return Token(Type_COLON, oc)
   } elif oc == '\"'  | oc == \"'\" { // d FTW
