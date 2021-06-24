@@ -33,6 +33,7 @@ Type_DOT=31
 Type_SHIFT_LEFT=32
 Type_SHIFT_RIGHT=33
 
+// TODO: Fix the and/or/not issue.
 KEYWORDS=[
 'print',
 'println',
@@ -65,11 +66,6 @@ KEYWORDS=[
 'not'
 ]
 
-// Global for token: 
-token_type: int
-token_int: int
-token_string: string
-
 // Global for lexer: 
 lexer_text: string // full text
 lexer_line: int
@@ -77,45 +73,34 @@ lexer_col: int
 lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
+new_lexer: proc(text: string) {
+  lexer_text = text
+  lexer_line = 1
+  lexer_col = 0
+  lexer_loc = 0
+  lexer_cc = ''
+  advance()
+}
 
-toString: proc(i: int): string {
-  if i == 0 {
-    return '0'
+nextToken: proc(): String {
+  // skip unwanted whitespace
+  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(8) | lexer_cc == chr(13)) {
+    if (lexer_cc == chr(10)) {
+      lexer_line=lexer_line + 1
+      lexer_col=0
+    }
+    advance()
   }
-  val = ''
-  while i > 0 do i = i / 10 {
-    val = chr((i % 10) +asc('0')) + val
+
+  if (isDigit(lexer_cc)) {
+    return makeInt()
+  } elif (isLetter(lexer_cc)) {
+    return makeText()
+  } elif (lexer_cc != '') {
+    return makeSymbol()
   }
-  return val
-}
 
-// Bundle the data about the token in a single string of the format
-// 'token type value'
-Token: proc(type: int, value: string): string {
-  token_type = type
-  token_string = value
-  return 'token ' + toString(type) + ' ' + value
-}
-
-// Bundle the data about the token in a single string of the format
-// 'inttoken value'
-IntToken: proc(type: int, ti: int, value: string): string {
-  token_type = type
-  token_string = value
-  token_int = ti
-  return 'itoken ' + value
-}
-
-isLetter: proc(c: string): bool {
-  return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
-}
-
-isDigit: proc(c: string): bool {
-  return c>='0' & c <= '9'
-}
-
-isLetterOrDigit: proc(c: string): bool {
-  return isLetter(c) | isDigit(c)
+  return Token(Type_EOF, '')
 }
 
 advance: proc() {
@@ -129,13 +114,39 @@ advance: proc() {
   lexer_loc=lexer_loc + 1
 }
 
-new_lexer: proc(text: string) {
-  lexer_text = text
-  lexer_line = 1
-  lexer_col = 0
-  lexer_loc = 0
-  lexer_cc = ''
-  advance()
+// Bundle the data about the token in a single string of the format
+// 'token <type> <value>'
+Token: proc(type: int, value: string): string {
+  return 'token ' + toString(type) + ' ' + value
+}
+
+// Bundle the data about the token in a single string of the format
+// 'inttoken <value>'
+IntToken: proc(type: int, ti: int, value: string): string {
+  return 'itoken ' + value
+}
+
+toString: proc(i: int): string {
+  if i == 0 {
+    return '0'
+  }
+  val = ''
+  while i > 0 do i = i / 10 {
+    val = chr((i % 10) +asc('0')) + val
+  }
+  return val
+}
+
+isLetter: proc(c: string): bool {
+  return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
+}
+
+isDigit: proc(c: string): bool {
+  return c>='0' & c <= '9'
+}
+
+isLetterOrDigit: proc(c: string): bool {
+  return isLetter(c) | isDigit(c)
 }
 
 makeText: proc(): String {
@@ -209,6 +220,7 @@ startsWithGt: proc(): String{
     advance()
     return Token(Type_GEQ, '>=')
   }
+  // TODO: shift right
   return Token(Type_GT, oc)
 }
 
@@ -219,6 +231,7 @@ startsWithLt: proc(): String{
     advance()
     return Token(Type_LEQ, '<=')
   }
+  // TODO: shift left
   return Token(Type_LT, oc)
 }
 
@@ -310,27 +323,6 @@ makeSymbol: proc(): string {
   } else {
     exit 'Unknown character' + lexer_cc
   }
-}
-
-nextToken: proc(): String {
-  // skip unwanted whitespace
-  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(8) | lexer_cc == chr(13)) {
-    if (lexer_cc == chr(10)) {
-      lexer_line=lexer_line + 1
-      lexer_col=0
-    }
-    advance()
-  }
-
-  if (isDigit(lexer_cc)) {
-    return makeInt()
-  } elif (isLetter(lexer_cc)) {
-    return makeText()
-  } elif (lexer_cc != '') {
-    return makeSymbol()
-  }
-
-  return Token(Type_EOF, '')
 }
 
 tokenType:proc(token:string): int  {
@@ -446,9 +438,9 @@ KEYWORDS=[
 ]
 
 // Global for token: 
-token_type: int
-token_int: int
-token_string: string
+//token_type: int
+//token_int: int
+//token_string: string
 
 // Global for lexer: 
 lexer_text: string // full text
@@ -472,17 +464,17 @@ toString: proc(i: int): string {
 // Bundle the data about the token in a single string of the format
 // token type value
 Token: proc(type: int, value: string): string {
-  token_type = type
-  token_string = value
+  //token_type = type
+  //token_string = value
   return 'token ' + toString(type) + ' ' + value
 }
 
 // Bundle the data about the token in a single string of the format
 // inttoken value
 IntToken: proc(type: int, ti: int, value: string): string {
-  token_type = type
-  token_string = value
-  token_int = ti
+  //token_type = type
+  //token_string = value
+  //token_int = ti
   return 'itoken ' + value
 }
 
@@ -761,11 +753,14 @@ main {
 
   new_lexer(text)
 
-  print nextToken() print ' ' println token_type
+  token = nextToken()
+  printToken(token)
 
-  while token_type != Type_EOF {
-    print nextToken() print ' ' println token_type
+  while tokenType(token) != Type_EOF do count = count + 1 {
+    token = nextToken()
+    printToken(token)
   }
+  print 'Total number of tokens: ' println count
 }
 
 "
@@ -775,7 +770,7 @@ main {
   token = nextToken()
   printToken(token)
 
-  while token_type != Type_EOF do count = count + 1 {
+  while tokenType(token) != Type_EOF do count = count + 1 {
     token = nextToken()
     printToken(token)
   }
