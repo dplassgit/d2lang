@@ -38,9 +38,9 @@ public class ExitNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (message.isPresent()) {
-      return String.format("{ExitNode: return %s}", message.get().toString());
+      return String.format("ExitNode: exit %s", message.get().toString());
     } else {
-      return "{ExitNode: return}";
+      return "ExitNode: exit";
     }
   }
 

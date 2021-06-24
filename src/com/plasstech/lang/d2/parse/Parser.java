@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -634,6 +635,10 @@ public class Parser {
     } else if (token.type() == Token.Type.LBRACKET) {
       // array literal
       return arrayLiteral();
+    } else if (token.type() == Token.Type.INPUT) {
+      Token it = token;
+      advance();
+      return new InputNode(it.start());
     } else {
       throw new ParseException(
           String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),

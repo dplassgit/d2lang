@@ -55,7 +55,7 @@ public class IfNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (elseBlock != null) {
-      return String.format("IfNode: (%s) else\n{%s}", cases(), elseBlock());
+      return String.format("IfNode: (%s) else {%s}", cases(), elseBlock());
     } else {
       // this isn't ideal, but shrug.
       return String.format("IfNode: (%s)", cases());

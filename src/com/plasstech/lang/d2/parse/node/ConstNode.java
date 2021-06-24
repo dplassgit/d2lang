@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.parse.node;
 
-import com.google.common.base.MoreObjects;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -32,9 +31,9 @@ public class ConstNode<T> extends AbstractNode implements SimpleNode {
   @Override
   public String toString() {
     if (value instanceof String) {
-      return String.format("{ConstNode(%s): '%s'}", varType().name().toLowerCase(), value);
-    } else {
-      return MoreObjects.toStringHelper(this).addValue(value).toString();
+      return String.format("ConstNode: '%s'", value);
+    } else  {
+      return String.format("ConstNode: %s", value);
     }
   }
 

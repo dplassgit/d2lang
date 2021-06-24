@@ -23,6 +23,6 @@ public class ErrorNode extends AbstractNode {
 
   @Override
   public String toString() {
-    return String.format("Error at %s: %s ", position(), message);
+    return String.format("Error at %s: %s", position(), message);
   }
 }

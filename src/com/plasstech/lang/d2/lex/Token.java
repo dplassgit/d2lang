@@ -29,8 +29,8 @@ public class Token {
     NULL(true), // for future expansion
     DELETE(true), // for future expansion
     MAP(true), // for future expansion
-    INPUT(true), // for future expansion
-    EXIT(true), // for future expansion
+    INPUT(true),
+    EXIT(true),
     // Unary operators (& keywords)
     LENGTH(true),
     CHR(true),

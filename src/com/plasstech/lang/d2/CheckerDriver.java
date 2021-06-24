@@ -29,8 +29,11 @@ public class CheckerDriver {
       System.err.println(((ErrorNode) node).message());
       return;
     }
+    System.out.println("BEFORE:");
+    System.out.println(node);
     StaticChecker checker = new StaticChecker((ProgramNode) node);
     TypeCheckResult result = checker.execute();
+    System.out.println("\nAFTER:");
     System.out.println(node);
     if (result.isError()) {
       System.err.println(result.message());
