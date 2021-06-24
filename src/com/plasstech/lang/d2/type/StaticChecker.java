@@ -321,8 +321,8 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
-  public void visit(UnaryNode unaryNode) {
-    Node expr = unaryNode.expr();
+  public void visit(UnaryNode node) {
+    Node expr = node.expr();
     expr.accept(this);
 
     if (expr.varType().isUnknown()) {
@@ -330,14 +330,14 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Check that they're not trying to negate a boolean or "not" an int.
-    if (expr.varType() == VarType.BOOL && unaryNode.operator() != Token.Type.NOT) {
+    if (expr.varType() == VarType.BOOL && node.operator() != Token.Type.NOT) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to BOOL expression", unaryNode.operator().name()),
+          String.format("Cannot apply %s operator to BOOL expression", node.operator().name()),
           expr.position());
     }
 
     // General checks for each operator:
-    switch (unaryNode.operator()) {
+    switch (node.operator()) {
       case MINUS:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
@@ -356,7 +356,7 @@ public class StaticChecker extends DefaultVisitor {
               String.format("LENGTH must take STRING or ARRAY; was %s", expr.varType()),
               expr.position());
         }
-        unaryNode.setVarType(VarType.INT);
+        node.setVarType(VarType.INT);
         // NOTE RETURN
         return;
       case ASC:
@@ -364,7 +364,7 @@ public class StaticChecker extends DefaultVisitor {
           throw new TypeException(
               String.format("ASC must take STRING; was %s", expr.varType()), expr.position());
         }
-        unaryNode.setVarType(VarType.INT);
+        node.setVarType(VarType.INT);
         // NOTE RETURN
         return;
       case CHR:
@@ -372,14 +372,14 @@ public class StaticChecker extends DefaultVisitor {
           throw new TypeException(
               String.format("CHR must take INT; was %s", expr.varType()), expr.position());
         }
-        unaryNode.setVarType(VarType.STRING);
+        node.setVarType(VarType.STRING);
         // NOTE RETURN
         return;
       default:
         break;
     }
     // Output type is the same as input type, unless overridden in a "case", above.
-    unaryNode.setVarType(expr.varType());
+    node.setVarType(expr.varType());
   }
 
   @Override
@@ -411,18 +411,18 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
-  public void visit(WhileNode boolNode) {
-    Node condition = boolNode.condition();
+  public void visit(WhileNode node) {
+    Node condition = node.condition();
     condition.accept(this);
     if (condition.varType() != VarType.BOOL) {
       throw new TypeException(
           String.format("Condition for WHILE must be BOOL; was %s", condition.varType()),
           condition.position());
     }
-    if (boolNode.doStatement().isPresent()) {
-      boolNode.doStatement().get().accept(this);
+    if (node.doStatement().isPresent()) {
+      node.doStatement().get().accept(this);
     }
-    boolNode.block().accept(this);
+    node.block().accept(this);
   }
 
   @Override

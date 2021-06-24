@@ -706,6 +706,18 @@ public class StaticCheckerTest {
     assertExecuteError("exit length('sorry')", "must be STRING");
   }
 
+  @Test
+  public void input() {
+    checkProgram("f=input");
+    checkProgram("f=input a=f+' should work'");
+  }
+
+  @Test
+  public void bad_input() {
+    assertExecuteError("f:int f=input", "declared as INT");
+    assertExecuteError("f=5 f=input", "declared as INT");
+  }
+
   private void assertExecuteError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
