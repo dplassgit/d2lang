@@ -218,45 +218,59 @@ public class Parser {
     return new ExitNode(start);
   }
 
+  /**
+   * Parse a statement starting with a variable name: either an assignment, variable declaration or
+   * procedure call statement.
+   */
   private StatementNode assignmentDeclarationProcCall() {
     expect(Token.Type.VARIABLE);
 
     Token varToken = token;
-    advance();
-    if (token.type() == Token.Type.EQ) {
-      advance();
-      VariableNode var = new VariableNode(varToken.text(), varToken.start());
-      ExprNode expr = expr();
-      return new AssignmentNode(var, expr);
-    } else if (token.type() == Token.Type.COLON) {
-      advance();
-      if (token.type().isKeyword()) {
-        Token.Type declaredType = token.type();
+    advance(); // eat the variable name
+    switch (token.type()) {
+        // Assignment
+      case EQ:
+        advance(); // eat the =
+        VariableNode var = new VariableNode(varToken.text(), varToken.start());
+        ExprNode expr = expr();
+        return new AssignmentNode(var, expr);
 
-        // TODO: this may have to be relaxed when we have records
-        VarType varType = BUILTINS.get(declaredType);
-        if (varType != null) {
-          advance();
-          if (varType == VarType.PROC) {
-            return procedure(varToken);
-          } else {
-            // See if it's an array declaration and build a "compound type" from the
-            // declaration, e.g., "array of int"
-            if (token.type() == Token.Type.LBRACKET) {
-              return arrayDeclaration(varToken, varType);
+        // Declaration
+      case COLON:
+        // TODO: split this into its own method.
+        advance(); // eat the colon
+        if (token.type().isKeyword()) {
+          Token.Type declaredType = token.type();
+
+          // TODO: this will have to be relaxed when we have records
+          VarType varType = BUILTINS.get(declaredType);
+          if (varType != null) {
+            advance();
+            if (varType == VarType.PROC) {
+              return procedure(varToken);
+            } else {
+              // See if it's an array declaration and build a "compound type" from the
+              // declaration, e.g., "array of int"
+              if (token.type() == Token.Type.LBRACKET) {
+                return arrayDeclaration(varToken, varType);
+              }
+              return new DeclarationNode(varToken.text(), varType, varToken.start());
             }
-            return new DeclarationNode(varToken.text(), varType, varToken.start());
           }
         }
-      }
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected INT, BOOL, STRING or PROC", token.text()),
-          token.start());
-    } else if (token.type() == Token.Type.LPAREN) {
-      return procedureCall(varToken, true);
+        throw new ParseException(
+            String.format(
+                "Unexpected '%s' in declaration; expected INT, BOOL, STRING or PROC", token.text()),
+            token.start());
+
+        // Procedure call statement
+      case LPAREN:
+        return procedureCall(varToken, true);
+
+      default:
+        throw new ParseException(
+            String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
     }
-    throw new ParseException(
-        String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
   }
 
   /** declaration -> '[' expr ']' */
@@ -456,10 +470,11 @@ public class Parser {
   }
 
   private ExprNode boolAnd() {
-    return binOpFn(Token.Type.AND, () -> compareTerm());
+    return binOpFn(Token.Type.AND, () -> compare());
   }
 
-  private ExprNode compareTerm() {
+  private ExprNode compare() {
+    // Fun fact, in Java, == and != have higher precedence than <, >, <=, >=
     return binOpFn(
         ImmutableSet.of(
             Token.Type.EQEQ,
@@ -468,24 +483,20 @@ public class Parser {
             Token.Type.LT,
             Token.Type.GEQ,
             Token.Type.LEQ),
-        () -> shiftTerm());
+        () -> shift());
   }
 
-  private ExprNode shiftTerm() {
+  private ExprNode shift() {
     return binOpFn(
-        ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSubTerm());
+        ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSub());
   }
 
-  private ExprNode addSubTerm() {
-    return binOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS), () -> mulDivTerm());
+  private ExprNode addSub() {
+    return binOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS), () -> mulDiv());
   }
 
-  private ExprNode mulDivTerm() {
+  private ExprNode mulDiv() {
     return binOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD), () -> unary());
-  }
-
-  private ExprNode binOpFn(Token.Type tokenType, Supplier<ExprNode> nextRule) {
-    return binOpFn(ImmutableSet.of(tokenType), nextRule);
   }
 
   /**
@@ -499,6 +510,10 @@ public class Parser {
    *
    * <p>expr -> term (+- term)*
    */
+  private ExprNode binOpFn(Token.Type tokenType, Supplier<ExprNode> nextRule) {
+    return binOpFn(ImmutableSet.of(tokenType), nextRule);
+  }
+
   private ExprNode binOpFn(Set<Token.Type> tokenTypes, Supplier<ExprNode> nextRule) {
     ExprNode left = nextRule.get();
 
@@ -557,7 +572,13 @@ public class Parser {
     return UNARY_KEYWORDS.contains(token.type());
   }
 
-  /** arrayGet -> atom ('[' expr ']') */
+  /** 
+   * Parse an (optional) array reference. 
+   *
+   * <pre>
+   * arrayGet -> atom ('[' expr ']')
+   * </pre>
+   */
   private ExprNode arrayGet() {
     ExprNode left = atom();
 
@@ -574,7 +595,14 @@ public class Parser {
     return left;
   }
 
-  /** atom -> int | true | false | string | variable | procedureCall | '(' expr ')' | '[' arrayLiteral ']' */
+  /**
+   * Parse an atom: a literal, variable or parenthesized expression.
+   *
+   * <pre>
+   * atom -> int | true | false | string | variable | procedureCall | '(' expr ')' |
+   *    '[' arrayLiteral ']'
+   * </pre>
+   */
   private ExprNode atom() {
     if (token.type() == Token.Type.INT) {
       IntToken it = (IntToken) token;
@@ -600,13 +628,9 @@ public class Parser {
     } else if (token.type() == Token.Type.LPAREN) {
       advance();
       ExprNode expr = expr();
-      if (token.type() == Token.Type.RPAREN) {
-        advance();
-        return expr;
-      } else {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected ')'", token.text()), token.start());
-      }
+      expect(Token.Type.RPAREN);
+      advance();
+      return expr;
     } else if (token.type() == Token.Type.LBRACKET) {
       // array literal
       return arrayLiteral();
@@ -617,11 +641,11 @@ public class Parser {
     }
   }
 
+  /** Parse an array constant/literal. */
   private ExprNode arrayLiteral() {
     expect(Token.Type.LBRACKET);
 
     Token openBracket = token;
-    // Array constant/literal.
     advance(); // eat left bracket
 
     // Future version:
@@ -650,7 +674,8 @@ public class Parser {
       VarType baseType = values.get(0).varType();
       ArrayType arrayType = new ArrayType(baseType);
 
-      // TODO: check all values to make sure they're the same type
+      // TODO: when the values are expressions, check all values to make sure they're the same type
+      // in the static checker.
       for (int i = 1; i < values.size(); ++i) {
         if (!values.get(i).varType().equals(baseType)) {
           throw new ParseException(
@@ -681,5 +706,4 @@ public class Parser {
       throw new ParseException("Empty array constants are not allowed yet", token.start());
     }
   }
-
 }
