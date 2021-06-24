@@ -5,7 +5,8 @@ import com.plasstech.lang.d2.codegen.Operand;
 public class SysCall extends Op {
   public enum Call {
     MESSAGE,
-    PRINT
+    PRINT,
+    INPUT
   }
 
   private final Call call;
@@ -31,6 +32,8 @@ public class SysCall extends Op {
         return String.format("printf(\"%%s\", %s);", arg);
       case MESSAGE:
         return String.format("printf(\"ERROR: %%s\", %s);", arg);
+      case INPUT:
+        return String.format("%s=scanf();", arg);
       default:
         return String.format("call(%s, %s);", call.name(), arg);
     }

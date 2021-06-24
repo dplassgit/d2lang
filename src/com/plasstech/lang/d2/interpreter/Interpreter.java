@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.interpreter;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Stack;
 
@@ -274,13 +277,28 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(SysCall op) {
-    Object val = resolve(op.arg());
     switch(op.call()) {
       case PRINT:
-        rootEnv.addOutput(String.valueOf(val));
+        rootEnv.addOutput(String.valueOf(resolve(op.arg())));
         break;
       case MESSAGE:
-        rootEnv.addOutput("SYSTEM ERROR: " + val);
+        rootEnv.addOutput("SYSTEM ERROR: " + resolve(op.arg()));
+        break;
+      case INPUT:
+        assert (op.arg() instanceof Location);
+        String input = "";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+          String line = reader.readLine();
+          while (line != null) {
+            input += line + "\n";
+            line = reader.readLine();
+          }
+        } catch (IOException e) {
+          throw new InterpreterException("Could not read standard in", e.getMessage());
+        }
+
+        setValue((Location) op.arg(), input);
         break;
       default:
         break;

@@ -35,4 +35,6 @@ public interface NodeVisitor {
   void visit(ExitNode node);
 
   void visit(ArrayDeclarationNode node);
+
+  void visit(InputNode node);
 }

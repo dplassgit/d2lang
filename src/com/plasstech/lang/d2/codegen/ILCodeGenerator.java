@@ -32,6 +32,7 @@ import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -106,7 +107,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     expr.accept(this);
     emit(new SysCall(SysCall.Call.PRINT, expr.location()));
     if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand("\n")));
+      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand<String>("\n")));
     }
   }
 
@@ -160,6 +161,13 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     // Retrieve location of variable and provide it in a temp
     emit(new Transfer(destination, source));
+  }
+
+  @Override
+  public void visit(InputNode node) {
+    TempLocation destination = generateTemp(VarType.STRING);
+    node.setLocation(destination);
+    emit(new SysCall(SysCall.Call.INPUT, destination));
   }
 
   @Override

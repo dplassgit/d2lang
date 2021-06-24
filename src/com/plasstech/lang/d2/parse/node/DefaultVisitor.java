@@ -52,4 +52,7 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(ArrayDeclarationNode node) {}
+
+  @Override
+  public void visit(InputNode node) {}
 }
