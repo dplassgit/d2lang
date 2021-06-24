@@ -57,7 +57,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         throw re;
       }
       iterations++;
-      if (iterations > 1000000) {
+      if (iterations > 10000000) {
         System.err.println("ERROR: Terminated after too many iterations");
         break;
       }
