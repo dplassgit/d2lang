@@ -19,6 +19,7 @@ import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -1081,6 +1082,25 @@ public class ParserTest {
     ConstNode<String> message = (ConstNode<String>)node.exitMessage().get();
     assertThat(message.value()).isEqualTo("sorry/not sorry");
   }
+
+  @Test
+  public void input() {
+    BlockNode root = parseStatements("f=input");
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableNode var = node.variable();
+    assertThat(var.name()).isEqualTo("f");
+
+    ExprNode expr = node.expr();
+    assertThat(expr).isInstanceOf(InputNode.class);
+  }
+
+  @Test
+  public void input_fail() {
+    assertParseError("input(f)", "Unexpected start of statement 'INPUT'");
+    assertParseError("f=input()", "Unexpected start of statement '('");
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();
