@@ -77,16 +77,33 @@ lexer_col: int
 lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
+
+toString: proc(i: int): string {
+  if i == 0 {
+    return '0'
+  }
+  val = ''
+  while i > 0 do i = i / 10 {
+    val = chr((i % 10) +asc('0')) + val
+  }
+  return val
+}
+
+// Bundle the data about the token in a single string of the format
+// "token type value"
 Token: proc(type: int, value: string): string {
   token_type = type
   token_string = value
-  return 'Token: ' + value
+  return 'token ' + toString(type) + " " + value
 }
 
+// Bundle the data about the token in a single string of the format
+// "inttoken value"
 IntToken: proc(type: int, ti: int, value: string): string {
-  Token(type, value)
+  token_type = type
+  token_string = value
   token_int = ti
-  return 'IntToken: ' + value
+  return 'itoken ' + value
 }
 
 isLetter: proc(c: string): bool {
@@ -280,7 +297,7 @@ makeSymbol: proc(): string {
   } elif oc == ']' {
     advance()
     return Token(Type_RBRACKET, oc)
-  } elif oc == ': ' {
+  } elif oc == ':' {
     advance()
     return Token(Type_COLON, oc)
   } elif oc == '"'  | oc == "'" { // d FTW
@@ -292,8 +309,7 @@ makeSymbol: proc(): string {
     advance()
     return Token(Type_DOT, oc)
   } else {
-    advance()
-    return Token(Type_EOF, 'Unknown character' + lexer_cc)
+    exit "Unknown character" + lexer_cc
   }
 }
 
@@ -316,6 +332,49 @@ nextToken: proc(): String {
   }
 
   return Token(Type_EOF, '')
+}
+
+tokenType:proc(token:string): int  {
+  if token[0] == 'i' {
+    // int token
+    return Type_INT
+  } else {
+    // regular token
+    val = 0
+    i = 6 while token[i] != ' ' do i = i + 1 {
+      val = val * 10 + asc(token[i])-asc('0')
+    }
+    return val
+  }
+}
+
+intTokenVal:proc(token:string): int  {
+  val = 0
+  i = 7 while i < length(token) do i = i + 1 {
+    val = val * 10 + asc(token[i])-asc('0')
+  }
+  return val
+}
+
+tokenVal:proc(token:string): string  {
+  i = 6 while token[i] != ' ' do i = i + 1 {
+  }
+
+  val = ''
+  i = i + 1 while i < length(token) do i = i + 1 {
+    val = val + token[i]
+  }
+  return val
+}
+
+printToken: proc(token:string) {
+  if tokenType(token) == Type_INT {
+    print "Int token: " println intTokenVal(token)
+  } elif tokenType(token) == Type_STRING {
+    println "String token: '"  + tokenVal(token) + "'"
+  } else {
+    print "Token: " + tokenVal(token) + " (type: " print tokenType(token) println ")"
+  }
 }
 
 main {
@@ -635,10 +694,12 @@ main {
   new_lexer(text)
 
   count = 1
-  print nextToken() print " (type: " print token_type println ")"
+  token = nextToken()
+  printToken(token)
 
   while token_type != Type_EOF do count = count + 1 {
-    print nextToken() print " (type: " print token_type println ")"
+    token = nextToken()
+    printToken(token)
   }
   print "Total number of tokens: " println count
 
