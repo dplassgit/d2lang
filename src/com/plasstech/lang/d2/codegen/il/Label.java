@@ -13,7 +13,7 @@ public class Label extends Op {
 
   @Override
   public String toString() {
-    return String.format("\n%s:", label);
+    return String.format("%s:", label);
   }
 
   @Override
