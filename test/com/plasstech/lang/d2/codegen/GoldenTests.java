@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,10 +14,13 @@ import org.junit.Test;
 public class GoldenTests {
 
   @Test
-  public void lexerInD() {
+  public void lexerInD() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       String path = Paths.get("samples/d2ind2/lexerglobals.d").toString();
-      testFromFile(path);
+      String text = new String(Files.readAllBytes(Paths.get(path)));
+      // replace "input" with the string itself.
+      String quine = text.replace("text = input", String.format("text = \"%s\"", text));
+      TestUtils.optimizeAssertSameVariables(quine);
     } else {
       // running in blaze
       System.err.println("Sorry, cannot run from blaze");
@@ -44,17 +45,9 @@ public class GoldenTests {
     }
   }
 
-  private void testFromFile(String path) {
-    try {
-      System.out.println("path = " + path);
-      String text = new String(Files.readAllBytes(Paths.get(path)));
-      TestUtils.optimizeAssertSameVariables(text);
-    } catch (IOException e) {
-      e.printStackTrace();
-      fail("Could not read " + path);
-    } catch (RuntimeException e) {
-      e.printStackTrace();
-      fail("Could not compile " + path + " " + e.getMessage());
-    }
+  private void testFromFile(String path) throws IOException {
+    System.out.println("path = " + path);
+    String text = new String(Files.readAllBytes(Paths.get(path)));
+    TestUtils.optimizeAssertSameVariables(text);
   }
 }
