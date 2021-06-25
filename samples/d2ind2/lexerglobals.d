@@ -33,7 +33,6 @@ Type_DOT=31
 Type_SHIFT_LEFT=32
 Type_SHIFT_RIGHT=33
 
-// TODO: Fix the and/or/not issue.
 KEYWORDS=[
 'print',
 'println',
@@ -84,7 +83,7 @@ new_lexer: proc(text: string) {
 
 nextToken: proc(): String {
   // skip unwanted whitespace
-  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(8) | lexer_cc == chr(13)) {
+  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(9) | lexer_cc == chr(13)) {
     if (lexer_cc == chr(10)) {
       lexer_line=lexer_line + 1
       lexer_col=0
@@ -117,13 +116,13 @@ advance: proc() {
 // Bundle the data about the token in a single string of the format
 // 'token <type> <value>'
 Token: proc(type: int, value: string): string {
-  return 'token ' + toString(type) + ' ' + value
+  return 't ' + toString(type) + ' ' + value
 }
 
 // Bundle the data about the token in a single string of the format
 // 'inttoken <value>'
 IntToken: proc(type: int, ti: int, value: string): string {
-  return 'itoken ' + value
+  return 'i ' + value
 }
 
 toString: proc(i: int): string {
@@ -161,9 +160,9 @@ makeText: proc(): String {
   }
 
   if value == 'true' {
-    return Token(Type_TRUE, 'true')
+    return Token(Type_TRUE, value)
   } elif value == 'false' {
-    return Token(Type_FALSE, 'false')
+    return Token(Type_FALSE, value)
   }
 
   i=0 while i < length(KEYWORDS) do i = i + 1 {
@@ -321,7 +320,8 @@ makeSymbol: proc(): string {
     advance()
     return Token(Type_DOT, oc)
   } else {
-    exit 'Unknown character' + lexer_cc
+    error = 'Unknown character:' + lexer_cc + ' ASCII code: ' + toString(asc(lexer_cc))
+    exit error
   }
 }
 
@@ -332,7 +332,7 @@ tokenType:proc(token:string): int  {
   } else {
     // regular token
     val = 0
-    i = 6 while token[i] != ' ' do i = i + 1 {
+    i = 2 while token[i] != ' ' do i = i + 1 {
       val = val * 10 + asc(token[i])-asc('0')
     }
     return val
@@ -341,15 +341,14 @@ tokenType:proc(token:string): int  {
 
 intTokenVal:proc(token:string): int  {
   val = 0
-  i = 7 while i < length(token) do i = i + 1 {
+  i = 2 while i < length(token) do i = i + 1 {
     val = val * 10 + asc(token[i])-asc('0')
   }
   return val
 }
 
 tokenVal:proc(token:string): string  {
-  i = 6 while token[i] != ' ' do i = i + 1 {
-  }
+  i = 2 while token[i] != ' ' do i = i + 1 {}
 
   val = ''
   i = i + 1 while i < length(token) do i = i + 1 {
@@ -359,12 +358,16 @@ tokenVal:proc(token:string): string  {
 }
 
 printToken: proc(token:string) {
-  if tokenType(token) == Type_INT {
-    print 'Int token: ' println intTokenVal(token)
+  if tokenType(token) == Type_EOF {
+    println 'Token: EOF'
+  } elif tokenType(token) == Type_INT {
+    println 'Int token: ' + toString(intTokenVal(token))
   } elif tokenType(token) == Type_STRING {
     println 'String token: ' + chr(39) + tokenVal(token) + chr(39)
+  } elif tokenType(token) == Type_KEYWORD {
+    println 'Keyword token: ' + tokenVal(token)
   } else {
-    print 'Token: ' + tokenVal(token) + ' (type: ' print tokenType(token) println ')'
+    println 'Token: ' + tokenVal(token) + ' (type: ' + toString(tokenType(token)) + ')'
   }
 }
 
@@ -380,6 +383,5 @@ main {
     token = nextToken()
     printToken(token)
   }
-  print 'Total number of tokens: ' println count
-
+  println "Total number of tokens: " + toString(count)
 }

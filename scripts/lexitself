@@ -1,1 +1,1 @@
-cat samples/d2ind2/lexerglobals.d | bazel run src/com/plasstech/lang/d2:InterpreterDriver -- $PWD/samples/d2ind2/lexerglobals.d
+dlex samples/d2ind2/lexerglobals.d
