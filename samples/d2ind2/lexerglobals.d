@@ -187,13 +187,13 @@ makeInt: proc(): string {
 
 startsWithSlash: proc(): String {
   advance() // eat the first slash
-  if (lexer_cc == '/') {
+  if lexer_cc == '/' {
+    // Comment.
     advance() // eat the second slash
-    while (lexer_cc != chr(10) & lexer_cc != '') {
-      advance()
-    }
-    if (lexer_cc != '') {
-      advance()
+    // Eat characters until newline
+    while lexer_cc != '\n' & lexer_cc != '' do advance() {}
+    if lexer_cc != '' {
+      advance() // eat the newline
     }
     lexer_line=lexer_line + 1
     lexer_col=0
