@@ -1,5 +1,12 @@
 package com.plasstech.lang.d2.parse;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -34,12 +41,6 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class Parser {
 

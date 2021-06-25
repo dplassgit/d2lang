@@ -383,5 +383,5 @@ main {
     token = nextToken()
     printToken(token)
   }
-  println "Total number of tokens: " + toString(count)
+  println 'Total number of tokens: ' + toString(count)
 }

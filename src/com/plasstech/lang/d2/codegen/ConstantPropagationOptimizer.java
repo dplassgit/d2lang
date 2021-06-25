@@ -27,6 +27,10 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   // TODO: Map from global to constant
   // private final Map<String, ConstantOperand<?>> globalConstants = new HashMap<>();
 
+  ConstantPropagationOptimizer(int debugLevel) {
+    super(debugLevel);
+  }
+
   @Override
   public void visit(ProcEntry op) {
     // start of scope.
@@ -63,12 +67,12 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (dest instanceof TempLocation && source.isConstant()) {
       // easy case: temps are never overwritten.
-      logger.atInfo().log("Replacing temp variable %s with %s", dest.name(), source);
+      logger.at(loggingLevel).log("Replacing temp variable %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
       deleteCurrent();
     } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
-      logger.atInfo().log("Replacing stack variable %s with %s", dest.name(), source);
+      logger.at(loggingLevel).log("Replacing stack variable %s with %s", dest.name(), source);
       stackConstants.put(dest.name(), (ConstantOperand<?>) source);
     } else if (!source.isConstant()) {
       ConstantOperand<?> replacement = findReplacementConstant(source);

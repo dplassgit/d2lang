@@ -25,6 +25,10 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   // Map from object to line number
   private final Map<Location, Integer> assignments = new HashMap<>();
 
+  DeadAssignmentOptimizer(int debugLevel) {
+    super(debugLevel);
+  }
+
   private void recordAssignment(Location destination) {
     if (destination.storage() != SymbolStorage.GLOBAL) {
       assignments.put(destination, ip);
@@ -63,7 +67,7 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(ProcExit op) {
     // End of scope. Kill all assigned-unused.
     for (int theIp : assignments.values()) {
-      logger.atInfo().log("Killing all unused variables at end of proc: %s", assignments);
+      logger.at(loggingLevel).log("Killing all unused variables at end of proc: %s", assignments);
       deleteAt(theIp);
     }
     assignments.clear();

@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
-/** NOTE: THESE TESTS CANNOT RUN FROM BLAZE */
+/** NOTE: THESE TESTS CANNOT RUN FROM BAZEL */
 public class GoldenTests {
 
   @Test

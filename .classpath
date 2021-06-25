@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="C:/Users/dplas/lib/flogger-0.6.jar"/>
 	<classpathentry kind="lib" path="C:/Users/dplas/lib/flogger-system-backend-0.6.jar"/>
 	<classpathentry kind="lib" path="C:/Users/dplas/lib/diffutils-1.3.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/dplas/lib/header_google-options-1.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

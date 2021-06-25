@@ -15,6 +15,10 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 public class DeadCodeOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  DeadCodeOptimizer(int debugLevel) {
+    super(debugLevel);
+  }
+
   @Override
   public void visit(IfOp op) {
     if (op.condition().equals(ConstantOperand.TRUE) || op.condition().equals(ConstantOperand.ONE)) {
@@ -29,7 +33,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
       if (next instanceof Goto) {
         Goto nextGoto = (Goto) next;
         if (op.destination().equals(nextGoto.label())) {
-          logger.atInfo().log("Nopping 'if' followed by 'goto' to same place");
+          logger.at(loggingLevel).log("Nopping 'if' followed by 'goto' to same place");
           // both the "if" and the "goto" goto the same place, so one is redundant.
           deleteCurrent();
         }
@@ -58,7 +62,8 @@ public class DeadCodeOptimizer extends LineOptimizer {
         Label label = (Label) testop;
         if (label.label().equals(op.label())) {
           // Found the label!
-          logger.atInfo().log("Found the label for GOTO '%s' with nothing in between", op.label());
+          logger.at(loggingLevel).log(
+              "Found the label for GOTO '%s' with nothing in between", op.label());
           deleteCurrent();
           return;
         }
@@ -85,7 +90,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
               continue;
             } else if (testop2 instanceof Goto) {
               Goto otherGoto = (Goto) testop2;
-              logger.atInfo().log("Replacing double hop from %s to %s", op.label(), otherGoto.label());
+              logger.at(loggingLevel).log("Replacing double hop from %s to %s", op.label(), otherGoto.label());
               replaceCurrent(new Goto(otherGoto.label()));
               break;
             } else {
@@ -122,7 +127,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
       if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
         break;
       } else {
-        logger.atInfo().log("Nopping dead statement after %s", source);
+        logger.at(loggingLevel).log("Nopping dead statement after %s", source);
         replaceAt(testip, new Nop(testop));
       }
     }

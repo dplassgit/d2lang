@@ -12,6 +12,10 @@ import com.plasstech.lang.d2.lex.Token;
 class ArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  ArithmeticOptimizer(int debugLevel) {
+    super(debugLevel);
+  }
+
   @Override
   public void visit(UnaryOp opcode) {
     Operand operand = opcode.operand();

@@ -26,6 +26,12 @@ public class ExecutionEnvironment {
   private SymTab symbolTable;
   private List<Op> ilCode;
   private Environment env;
+  private int debuglex;
+  private int debugOpt;
+  private int debugCodeGen;
+  private int debugType;
+  private int debugParse;
+  private int debugInt;
 
   public ExecutionEnvironment(String program) {
     this(program, false);
@@ -34,6 +40,36 @@ public class ExecutionEnvironment {
   public ExecutionEnvironment(String program, boolean optimize) {
     this.program = program;
     this.optimize = optimize;
+  }
+
+  public ExecutionEnvironment setLexDebugLevel(int level) {
+    this.debuglex = level;
+    return this;
+  }
+
+  public ExecutionEnvironment setParseDebugLevel(int level) {
+    this.debugParse = level;
+    return this;
+  }
+
+  public ExecutionEnvironment setTypeDebugLevel(int level) {
+    this.debugType = level;
+    return this;
+  }
+
+  public ExecutionEnvironment setCodeGenDebugLevel(int level) {
+    this.debugCodeGen = level;
+    return this;
+  }
+
+  public ExecutionEnvironment setOptDebugLevel(int level) {
+    this.debugOpt = level;
+    return this;
+  }
+
+  public ExecutionEnvironment setIntDebugLevel(int level) {
+    this.debugInt = level;
+    return this;
   }
 
   public Environment execute() {
@@ -56,16 +92,16 @@ public class ExecutionEnvironment {
 
     CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
     ilCode = codegen.generate();
-    System.out.println("\nUNOPTIMIZED:");
-    System.out.println("------------------------------");
-    System.out.println(Joiner.on("\n").join(ilCode));
+    if (debugCodeGen > 0) {
+      System.out.println("\nUNOPTIMIZED:");
+      System.out.println("------------------------------");
+      System.out.println(Joiner.on("\n").join(ilCode));
+    }
     if (optimize) {
       ILOptimizer optimizer = new ILOptimizer();
+      optimizer.setDebugLevel(debugOpt);
       List<Op> optimized = optimizer.optimize(ilCode);
       if (!optimized.equals(ilCode)) {
-        System.out.println("\nOPTIMIZED:");
-        System.out.println("------------------------------");
-        System.out.println(Joiner.on("\n").join(optimized));
         ilCode = optimized;
       }
     }

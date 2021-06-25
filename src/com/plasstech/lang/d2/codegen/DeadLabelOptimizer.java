@@ -18,6 +18,10 @@ public class DeadLabelOptimizer extends LineOptimizer {
   // These are all the labels *referenced* in the code by ifs, gotos and calls.
   private final Set<String> referencedLabels = new HashSet<>();
 
+  DeadLabelOptimizer(int debugLevel) {
+    super(debugLevel);
+  }
+
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     labels.clear();
