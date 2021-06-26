@@ -218,8 +218,11 @@ startsWithGt: proc(): String{
   if (lexer_cc == '=') {
     advance()
     return Token(Type_GEQ, '>=')
+  } elif lexer_cc == '>' {
+    // shift right
+    advance()
+    return Token(Type_SHIFT_RIGHT, '>>')
   }
-  // TODO: shift right
   return Token(Type_GT, oc)
 }
 
@@ -229,8 +232,11 @@ startsWithLt: proc(): String{
   if (lexer_cc == '=') {
     advance()
     return Token(Type_LEQ, '<=')
+  } elif lexer_cc == '<' {
+    // shift right
+    advance()
+    return Token(Type_SHIFT_LEFT, '<<')
   }
-  // TODO: shift left
   return Token(Type_LT, oc)
 }
 
