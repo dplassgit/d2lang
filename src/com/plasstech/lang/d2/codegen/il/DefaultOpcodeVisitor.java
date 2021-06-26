@@ -48,4 +48,10 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(ProcEntry op) {}
+
+  @Override
+  public void visit(Dec op) {}
+
+  @Override
+  public void visit(Inc op) {}
 }

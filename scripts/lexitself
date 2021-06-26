@@ -1,1 +1,1 @@
-samples/dlex samples/d2ind2/lexerglobals.d $@
+scripts/dlex samples/d2ind2/lexerglobals.d $@

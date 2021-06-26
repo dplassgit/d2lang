@@ -26,6 +26,7 @@ public class ILOptimizer implements Optimizer {
     DeadCodeOptimizer dco = new DeadCodeOptimizer(debugLevel);
     DeadLabelOptimizer dlo = new DeadLabelOptimizer(debugLevel);
     DeadAssignmentOptimizer dao = new DeadAssignmentOptimizer(debugLevel);
+    IncDecOptimizer ido = new IncDecOptimizer(debugLevel);
     do {
       changed = false;
 
@@ -74,6 +75,16 @@ public class ILOptimizer implements Optimizer {
         iterations++;
         if (debugLevel > 1) {
           System.out.println("\nDEAD ASSIGNMENT OPTIMIZED:");
+          System.out.println(Joiner.on("\n").join(program));
+        }
+        changed = true;
+      }
+
+      program = ido.optimize(program);
+      if (ido.isChanged()) {
+        iterations++;
+        if (debugLevel > 1) {
+          System.out.println("\nINC DEC OPTIMIZED:");
           System.out.println(Joiner.on("\n").join(program));
         }
         changed = true;

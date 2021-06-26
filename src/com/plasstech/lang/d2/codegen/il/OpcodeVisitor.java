@@ -25,5 +25,9 @@ public interface OpcodeVisitor {
   void visit(ProcExit op);
 
   void visit(ProcEntry op);
+
+  void visit(Dec op);
+
+  void visit(Inc op);
 }
 

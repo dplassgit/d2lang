@@ -13,9 +13,11 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
@@ -128,6 +130,26 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
 
     setValue(op.destination(), result);
+  }
+
+  @Override
+  public void visit(Inc op) {
+    Object target = resolve(op.target());
+    int previous = 0;
+    if (target != null) {
+      previous = (Integer) target;
+    }
+    setValue(op.target(), previous + 1);
+  }
+
+  @Override
+  public void visit(Dec op) {
+    Object target = resolve(op.target());
+    int previous = 0;
+    if (target != null) {
+      previous = (Integer) target;
+    }
+    setValue(op.target(), previous - 1);
   }
 
   private Object visitBinOp(BinOp op, Object[] left, int right) {
@@ -277,7 +299,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(SysCall op) {
-    switch(op.call()) {
+    switch (op.call()) {
       case PRINT:
         rootEnv.addOutput(String.valueOf(resolve(op.arg())));
         break;
