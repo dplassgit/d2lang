@@ -68,9 +68,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   }
 
   @Override
-  public List<Op> generate() {
+  public ImmutableList<Op> generate() {
     root.accept(this);
-    return operations;
+    return ImmutableList.copyOf(operations);
   }
 
   private SymTab symbolTable() {

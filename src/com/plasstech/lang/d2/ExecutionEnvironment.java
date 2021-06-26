@@ -3,6 +3,7 @@ package com.plasstech.lang.d2;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.ILOptimizer;
@@ -24,7 +25,7 @@ public class ExecutionEnvironment {
   private ProgramNode programNode;
   private TypeCheckResult typeCheckResult;
   private SymTab symbolTable;
-  private List<Op> ilCode;
+  private ImmutableList<Op> ilCode;
   private Environment env;
   private int debuglex;
   private int debugOpt;
@@ -100,7 +101,7 @@ public class ExecutionEnvironment {
     if (optimize) {
       ILOptimizer optimizer = new ILOptimizer();
       optimizer.setDebugLevel(debugOpt);
-      List<Op> optimized = optimizer.optimize(ilCode);
+      ImmutableList<Op> optimized = optimizer.optimize(ilCode);
       if (!optimized.equals(ilCode)) {
         ilCode = optimized;
       }
@@ -127,7 +128,7 @@ public class ExecutionEnvironment {
     return symbolTable;
   }
 
-  public List<Op> ilCode() {
+  public ImmutableList<Op> ilCode() {
     return ilCode;
   }
 

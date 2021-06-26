@@ -1,8 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
 
 public interface CodeGenerator<T> {
 
-  List<T> generate();
+  ImmutableList<T> generate();
 }

@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -16,7 +14,7 @@ public class ILOptimizer implements Optimizer {
   }
 
   @Override
-  public List<Op> optimize(List<Op> input) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     ImmutableList<Op> program = ImmutableList.copyOf(input);
     int iterations = 0;
 

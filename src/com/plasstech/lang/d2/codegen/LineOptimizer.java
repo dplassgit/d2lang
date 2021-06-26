@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 
-abstract class LineOptimizer extends DefaultOpcodeVisitor {
+abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   protected final Level loggingLevel;
@@ -34,6 +34,7 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor {
     }
   }
 
+  @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     this.code = new ArrayList<>(input);
     setChanged(false);
