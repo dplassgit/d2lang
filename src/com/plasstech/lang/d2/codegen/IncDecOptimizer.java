@@ -22,7 +22,7 @@ public class IncDecOptimizer extends LineOptimizer {
      * temp2=temp1+1 // secondOp
      * i=temp2 // thirdOp
      */
-    Op secondOp = code.get(ip + 1);
+    Op secondOp = getOpAt(ip + 1);
     if (!(secondOp instanceof BinOp)) {
       return;
     }
@@ -36,7 +36,7 @@ public class IncDecOptimizer extends LineOptimizer {
     if (!(plus || minus)) {
       return;
     }
-    Op thirdOp = code.get(ip + 2);
+    Op thirdOp = getOpAt(ip + 2);
     if (!(thirdOp instanceof Transfer)) {
       return;
     }

@@ -27,16 +27,15 @@ public class DeadCodeOptimizer extends LineOptimizer {
     if (op.condition().equals(ConstantOperand.FALSE)
         || op.condition().equals(ConstantOperand.ZERO)) {
       deleteCurrent();
+      return;
     }
-    if (ip < code.size()) {
-      Op next = code.get(ip + 1);
-      if (next instanceof Goto) {
-        Goto nextGoto = (Goto) next;
-        if (op.destination().equals(nextGoto.label())) {
-          logger.at(loggingLevel).log("Nopping 'if' followed by 'goto' to same place");
-          // both the "if" and the "goto" goto the same place, so one is redundant.
-          deleteCurrent();
-        }
+    Op next = getOpAt(ip + 1);
+    if (next instanceof Goto) {
+      Goto nextGoto = (Goto) next;
+      if (op.destination().equals(nextGoto.label())) {
+        logger.at(loggingLevel).log("Nopping 'if' followed by 'goto' to same place");
+        // both the "if" and the "goto" goto the same place, so one is redundant.
+        deleteCurrent();
       }
     }
   }
@@ -56,10 +55,10 @@ public class DeadCodeOptimizer extends LineOptimizer {
   @Override
   public void visit(Goto op) {
     // 1. if there only nops or labels between here and dest, we don't have to goto.
-    for (int testip = ip + 1; testip < code.size(); ++testip) {
-      Op testop = code.get(testip);
-      if (testop instanceof Label) {
-        Label label = (Label) testop;
+    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+      Op testOp = code.get(testIp);
+      if (testOp instanceof Label) {
+        Label label = (Label) testOp;
         if (label.label().equals(op.label())) {
           // Found the label!
           logger.at(loggingLevel).log(
@@ -67,7 +66,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
           deleteCurrent();
           return;
         }
-      } else if (testop instanceof Nop) {
+      } else if (testOp instanceof Nop) {
         continue;
       } else {
         break;
@@ -77,20 +76,22 @@ public class DeadCodeOptimizer extends LineOptimizer {
     // 2. any code between a goto and a label is dead.
     killUntilLabel("GOTO");
 
-    // 3. Optimize double-jumps: find the label. if the next active statement is a goto, just go there.
-    for (int testip = ip + 1; testip < code.size(); ++testip) {
-      Op testop = code.get(testip);
-      if (testop instanceof Label) {
-        Label label = (Label) testop;
+    // 3. Optimize double-jumps: find the label. if the next active statement is a goto, just go
+    // there.
+    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+      Op testOp = code.get(testIp);
+      if (testOp instanceof Label) {
+        Label label = (Label) testOp;
         if (label.label().equals(op.label())) {
           // Found the label! Now see if it's just a goto somewhere else.
-          for (int ip2 = testip + 1; ip2 < code.size(); ++ip2) {
-            Op testop2 = code.get(ip2);
-            if (testop2 instanceof Nop || testop2 instanceof Label) {
+          for (int testIp2 = testIp + 1; testIp2 < code.size(); ++testIp2) {
+            Op testOp2 = code.get(testIp2);
+            if (testOp2 instanceof Nop || testOp2 instanceof Label) {
               continue;
-            } else if (testop2 instanceof Goto) {
-              Goto otherGoto = (Goto) testop2;
-              logger.at(loggingLevel).log("Replacing double hop from %s to %s", op.label(), otherGoto.label());
+            } else if (testOp2 instanceof Goto) {
+              Goto otherGoto = (Goto) testOp2;
+              logger.at(loggingLevel).log(
+                  "Replacing double hop from %s to %s", op.label(), otherGoto.label());
               replaceCurrent(new Goto(otherGoto.label()));
               break;
             } else {
@@ -119,16 +120,16 @@ public class DeadCodeOptimizer extends LineOptimizer {
 
   /** Nop lines between current IP and the next label, proc entry or proc exit. */
   private void killUntilLabel(String source) {
-    for (int testip = ip + 1; testip < code.size(); ++testip) {
-      Op testop = code.get(testip);
-      if (testop instanceof Nop) {
+    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+      Op testOp = code.get(testIp);
+      if (testOp instanceof Nop) {
         continue;
       }
-      if (testop instanceof Label || testop instanceof ProcEntry || testop instanceof ProcExit) {
+      if (testOp instanceof Label || testOp instanceof ProcEntry || testOp instanceof ProcExit) {
         break;
       } else {
         logger.at(loggingLevel).log("Nopping dead statement after %s", source);
-        replaceAt(testip, new Nop(testop));
+        replaceAt(testIp, new Nop(testOp));
       }
     }
   }

@@ -53,6 +53,14 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
     this.changed = changed;
   }
 
+  /** Return the opcode at the given IP, if it's in range. Otherwise, return null. */
+  protected Op getOpAt(int theIp) {
+    if (theIp < code.size()) {
+      return code.get(theIp);
+    }
+    return null;
+  }
+
   /** Replace the given op with the given nop. */
   protected void replaceAt(int theIp, Op newOp) {
     setChanged(true);
