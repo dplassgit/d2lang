@@ -766,9 +766,8 @@ public class ParserTest {
   @Test
   public void procErrors() {
     assertParseError("fib:proc(a:int b) {}", "expected )");
-    assertParseError("fib:proc(a:bad, b) {}", "expected INT");
+    assertParseError("fib:proc(a:proc, b) {}", "expected INT");
     assertParseError("fib:proc(a:, b) {}", "expected INT");
-    assertParseError("fib:proc(a: b) {}", "expected INT");
     assertParseError("fib:proc(a:) {}", "expected INT");
     assertParseError("fib:proc(a {}", "expected )");
     assertParseError("fib:proc(a:int, ) {}", "expected VARIABLE");

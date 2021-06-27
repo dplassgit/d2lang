@@ -27,6 +27,11 @@ Type_KEYWORD=26
 Type_EOF=0
 Type_TRUE=27
 Type_FALSE=28
+Type_LBRACKET=29
+Type_RBRACKET=30
+Type_DOT=31
+Type_SHIFT_LEFT=32
+Type_SHIFT_RIGHT=33
 
 KEYWORDS=[
 'print',
@@ -47,7 +52,17 @@ KEYWORDS=[
 'bool',
 'string',
 'record',
-'error'
+'new',
+'null',
+'delete',
+'input',
+'length',
+'chr',
+'asc',
+'exit',
+'and',
+'or',
+'not'
 ]
 
 Position: record {
@@ -57,8 +72,8 @@ Position: record {
   
 Token: record {
   type: int
-  start: record Position
-  end: record Position
+  start: Position
+  end: Position
   value: String
   int_value: int
 }
@@ -66,35 +81,31 @@ Token: record {
 Lexer: record {
   text: string // full text
   line: int
-  col:int 
+  col: int 
   loc: int  // location inside text
   cc: string // current character
 }
 
-new_lexer: proc(text: string): record Lexer {
-  this=new Lexer(
-    text, // text
-    1,  // line
-    0,  // col
-    0,  //loc
-    ''  // cc
-  )
+new_lexer: proc(text: string): Lexer {
+  this = new Lexer
+  this.text = text
+  this.line = 1
   advance(this)
   return this
 }
 
-advance: proc(this: record Lexer) {
-  if (this.loc < this.text.length) {
+advance: proc(this: Lexer) {
+  if this.loc < length(this.text) {
     this.cc=this.text[this.loc]
     this.col=this.col + 1
   } else {
     // Indicates no more characters
-    this.cc=0
+    this.cc=''
   }
   this.loc=this.loc + 1
 }
 
-nextToken: proc(this: record Lexer): record Token {
+nextToken: proc(this: Lexer): Token {
   // skip unwanted whitespace
   while (this.cc == ' ' | this.cc == '\n' | this.cc == '\t' | this.cc == '\r') {
     if (this.cc == '\n') {
@@ -104,7 +115,7 @@ nextToken: proc(this: record Lexer): record Token {
     advance(this)
   }
 
-  start=new Position(this.line, this.col)
+  start=makePosition(this)
   if (isDigit(this.cc)) {
     return makeInt(this, start)
   } else if (isLetter(this.cc)) {
@@ -113,23 +124,23 @@ nextToken: proc(this: record Lexer): record Token {
     return makeSymbol(this, start)
   }
 
-  return new Token(Type_EOF, this.start)
+  return makeToken(Type_EOF, start, start, '')
 }
 
-isLetter: proc(c:string):bool {
+isLetter: proc(c: string): bool {
   return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
 }
 
-isDigit: proc(c:string):bool {
+isDigit: proc(c: string): bool {
   return c>='0' & c <= '9'
 }
 
-isLetterOrDigit: proc(c:string):bool {
+isLetterOrDigit: proc(c: string): bool {
   return isLetter(c) | isDigit(c)
 }
 
-makeText: proc(this:record Lexer, start:record Position):record Token {
-  value=""
+makeText: proc(this: Lexer, start: Position): Token {
+  value=''
   if (isLetter(this.cc)) {
     value=value + this.cc
     advance(this)
@@ -138,33 +149,42 @@ makeText: proc(this:record Lexer, start:record Position):record Token {
     value=value + this.cc
     advance(this)
   }
-  end=new Position(this.line, this.col)
+  end=makePosition(this)
+  // TODOgdon't allow leading __
 
   if value == 'true' {
-    return new Token(Type_TRUE, start, end, value)
+    return makeToken(Type_TRUE, start, end, value)
   } elif value == 'false' {
-    return new Token(Type_FALSE, start, end, value)
+    return makeToken(Type_FALSE, start, end, value)
   }
 
   i=0 while i < KEYWORDS.length do i = i + 1 {
     if value == KEYWORDS[i] {
-      return new Token(Type_KEYWORD, start, end, value, i)
+      return makeToken(Type_KEYWORD, start, end, value)
     }
   }
 
-  return new Token(Type_VARIABLE, start, end, value)
+  return makeToken(Type_VARIABLE, start, end, value)
 }
 
-makeInt: proc(this:record Lexer, start:record Position):record Token {
+makeInt: proc(this: Lexer, start: Position): Token {
   value=0
+  value_as_string = ''
   while this.cc >= '0' & this.cc <= '9' do advance(this) {
     value=value * 10 + (asc(this.cc) - asc('0'))
+    value_as_string = value_as_string + this.cc
   }
-  end=new Position(this.line, this.col)
-  return new Token(TYPE_int, start, end, new String(value), value)
+  end=makePosition(this)
+  token = new Token
+  token.type = Type_INT
+  token.start = start
+  token.end = end
+  token.value = text
+  token.int_value = value
+  return token
 }
 
-makeSymbol: proc(this:record Lexer, start:record Position):record Token {
+makeSymbol: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   if oc == '=' {
     return startsWithEq(this, start)
@@ -174,52 +194,62 @@ makeSymbol: proc(this:record Lexer, start:record Position):record Token {
     return startsWithGt(this, start)
   } elif oc == '+' {
     advance(this)
-    return new Token(Type_PLUS, start, oc)
+    return makeToken(Type_PLUS, start, start, oc)
   } elif oc == '-' {
     advance(this)
-    return new Token(Type_MINUS, start, oc)
+    return makeToken(Type_MINUS, start, start, oc)
   } elif oc == '(' {
     advance(this)
-    return new Token(Type_LPAREN, start, oc)
+    return makeToken(Type_LPAREN, start, start, oc)
   } elif oc == ')' {
     advance(this)
-    return new Token(Type_RPAREN, start, oc)
+    return makeToken(Type_RPAREN, start, start, oc)
   } elif oc == '*' {
     advance(this)
-    return new Token(Type_MULT, start, oc)
+    return makeToken(Type_MULT, start, start, oc)
   } elif oc == '/' {
     return startsWithSlash(this, start)
   } elif oc == '%' {
     advance(this)
-    return new Token(Type_MOD, start, oc)
+    return makeToken(Type_MOD, start, start, oc)
   } elif oc == '&' {
     advance(this)
-    return new Token(Type_AND, start, oc)
+    return makeToken(Type_AND, start, start, oc)
   } elif oc == '|' {
     advance(this)
-    return new Token(Type_OR, start, oc)
+    return makeToken(Type_OR, start, start, oc)
   } elif oc == '!' {
     return startsWithNot(this, start)
   } elif oc == '{' {
     advance(this)
-    return new Token(Type_LBRACE, start, oc)
+    return makeToken(Type_LBRACE, start, start, oc)
   } elif oc == '}' {
     advance(this)
-    return new Token(Type_RBRACE, start, oc)
+    return makeToken(Type_RBRACE, start, start, oc)
+  } elif oc == '[' {
+    advance()
+    return Token(Type_LBRACKET, oc)
+  } elif oc == ']' {
+    advance()
+    return Token(Type_RBRACKET, oc)
   } elif oc == ':' {
     advance(this)
-    return new Token(Type_COLON, start, oc)
-  } elif oc == '"'  | oc == '\'' {
+    return makeToken(Type_COLON, start, start, oc)
+  } elif oc == chr(34) | oc == chr(39) {
     return makeStringToken(start, oc)
   } elif oc == ',' {
     advance(this)
-    return new Token(Type_COMMA, start, oc)
+    return makeToken(Type_COMMA, start, start, oc)
+  } elif oc == '.' {
+    advance(this)
+    return makeToken(Type_DOT, start, start, oc)
   } else {
-    error "Unknown character %c" % this.cc
+    error = 'Unknown character:' + this.cc + ' ASCII code: ' + toString(asc(this.cc))
+    exit error
   }
 }
 
-startsWithSlash: proc(this: record Lexer, start: record Position): record Token {
+startsWithSlash: proc(this: Lexer, start: Position): Token {
   advance(this) // eat the first slash
   if (this.cc == '/') {
     advance(this) // eat the second slash
@@ -231,72 +261,97 @@ startsWithSlash: proc(this: record Lexer, start: record Position): record Token 
     }
     this.line=this.line + 1
     this.col=0
-    return nextrecord Token(this)
+    return nextToken(this)
   }
-  return new record Token(Type_DIV, start, '/')
+  return makeToken(Type_DIV, start, start, '/')
 }
 
-startsWithNot: proc(this: record Lexer, start: record Position): record Token {
+startsWithNot: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+    end=makePosition(this)
     advance(this)
-    return new record Token(Type_NEQ, start, end, "!=")
+    return makeToken(Type_NEQ, start, end, '!=')
   }
-  return new record Token(Type_NOT, start, oc)
+  return makeToken(Type_NOT, start, start, oc)
 }
 
-startsWithGt: proc(this: record Lexer, start: record Position): record Token {
+startsWithGt: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+    end=makePosition(this)
     advance(this)
-    return new record Token(Type_GEQ, start, end, ">=")
+    return makeToken(Type_GEQ, start, end, '>=')
   }
-  return new record Token(Type_GT, start, oc)
+  return new Token(Type_GT, start, oc)
 }
 
-startsWithLt: proc(this: record Lexer, start: record Position): record Token {
+startsWithLt: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+    end=makePosition(this)
     advance(this)
-    return new record Token(Type_LEQ, start, end, "<=")
+    return makeToken(Type_LEQ, start, end, '<=')
   }
-  return new record Token(Type_LT, start, oc)
+  return makeToken(Type_LT, start, end, oc)
 }
 
-startsWithEq: proc(this: record Lexer, start: record Position): record Token {
+startsWithEq: proc(this: Lexer, start: Position): Token {
   oc=this.cc
   advance(this)
   if (this.cc == '=') {
-    end=new record Position(this.line, this.col)
+    end=makePosition(this)
     advance(this)
-    return new record Token(Type_EQEQ, start, end, "==")
+    return makeToken(Type_EQEQ, start, end, '==')
   }
-  return new record Token(Type_EQ, start, oc)
+  return makeToken(Type_EQ, start, start, oc)
 }
 
-makeStringToken: proc(this: record Lexer, start: record Position, first: String): record Token {
+toString: proc(i: int): string {
+  if i == 0 {
+    return '0'
+  }
+  val = ''
+  while i > 0 do i = i / 10 {
+    val = chr((i % 10) +asc('0')) + val
+  }
+  return val
+}
+
+makeStringToken: proc(this: Lexer, start: Position, first: String): Token {
   advance(this) // eat the tick/quote
-  sb=""
-  escape=false
+  sb=''
   // TODO: fix backslash-escaping
-  while this.cc !=first & this.cc !=0 {
-    if (!escape) {
-      sb=sb + this.cc
-    }
+  while this.cc != first & this.cc !='' {
+    sb = sb + this.cc
     advance(this)
   }
 
-  if (this.cc == 0) {
-    error "Unclosed string literal at %d,%d" % start.line, start.col
+  if (this.cc == '') {
+    exit 'Unclosed string literal at ' + toString(lexer_line)
   }
 
   advance(this) // eat the closing tick/quote
-  end=new record Position(this.line, this.col)
-  return new record Token(Type_STRING, this.start, this.end, sb)
+  end=makePosition(this)
+  return makeToken(Type_STRING, start, end, sb)
 }
+
+makePosition: proc(this: Lexer)gPosition {
+  pos = new Position
+  pos.line = this.line
+  pos.col = this.col
+  return pos
+}
+
+makeToken: proc(type: int, start: Position, end: Position, text: String): Token {
+  token = new Token
+  token.type = type
+  token.start = start
+  token.end = end
+  token.value = text
+  return token
+}
+
