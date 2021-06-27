@@ -6,16 +6,17 @@ import com.plasstech.lang.d2.type.VarType;
 /** Declare a variable, e.g., "foo:int" */
 public class DeclarationNode extends AbstractNode implements StatementNode {
 
-  private final String varName;
+  private final String variableName;
 
-  public DeclarationNode(String varName, VarType type, Position position) {
+  public DeclarationNode(String variableName, VarType type, Position position) {
     super(position);
-    this.varName = varName;
+    this.variableName = variableName;
     setVarType(type);
   }
 
+  /** Variable name */
   public String name() {
-    return varName;
+    return variableName;
   }
 
   @Override
@@ -25,6 +26,6 @@ public class DeclarationNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("DeclNode: %s: %s", varName, varType().name().toLowerCase());
+    return String.format("DeclNode: %s: %s", variableName, varType().name().toLowerCase());
   }
 }

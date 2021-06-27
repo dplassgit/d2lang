@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.type;
 
+/** Simple (primitive) type: int, bool, string, void. */
 public class SimpleType implements VarType {
   private final String name;
 

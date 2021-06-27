@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 /** The type of an expression or variable. */
 public interface VarType {
+  // TODO: Map name to type
   VarType INT = new SimpleType("INT");
   VarType STRING = new SimpleType("STRING");
   VarType BOOL = new SimpleType("BOOL");
@@ -32,5 +33,9 @@ public interface VarType {
 
   default boolean isArray() {
     return this instanceof ArrayType;
+  }
+
+  default boolean isRecord() {
+    return this instanceof RecordType;
   }
 }

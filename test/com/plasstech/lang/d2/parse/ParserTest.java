@@ -4,6 +4,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
+import java.util.List;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
@@ -31,10 +36,9 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.RecordType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.List;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class ParserTest {
   @Test
@@ -967,7 +971,8 @@ public class ParserTest {
   public void arrayDeclError() {
     assertParseError("a:int[3", "expected ]");
     assertParseError("a:int[3 4]", "expected ]");
-    assertParseError("a:hello[3]", "expected INT, BOOL, STRING");
+    // This is now a record reference declaration so the bracket is an error.
+    assertParseError("a:hello[3]", "expected start of statement");
   }
 
   @Test
@@ -1099,6 +1104,41 @@ public class ParserTest {
   public void input_fail() {
     assertParseError("input(f)", "Unexpected start of statement 'INPUT'");
     assertParseError("f=input()", "Unexpected start of statement '('");
+  }
+
+  @Test
+  public void defineEmptyRecord() {
+    BlockNode root = parseStatements("r: record{}");
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    assertThat(node.name()).isEqualTo("r");
+    RecordType type = (RecordType) node.varType();
+    assertThat(type.fields()).isEmpty();
+  }
+
+  @Test
+  public void defineRecord() {
+    BlockNode root = parseStatements("R: record{i: int s: string}");
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    assertThat(node.name()).isEqualTo("R");
+    RecordType type = (RecordType) node.varType();
+    assertThat(type.fields()).hasSize(2);
+    assertThat(type.fields().get(0).type()).isEqualTo(VarType.INT);
+    assertThat(type.fields().get(0).name()).isEqualTo("i");
+    assertThat(type.fields().get(1).type()).isEqualTo(VarType.STRING);
+    assertThat(type.fields().get(1).name()).isEqualTo("s");
+  }
+
+  @Test
+  public void defineRecordRecursive() {
+    BlockNode root = parseStatements("R: record {r: R}");
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    assertThat(node.name()).isEqualTo("R");
+    RecordType type = (RecordType) node.varType();
+    assertThat(type.fields()).hasSize(1);
+    assertThat(type.fields().get(0).name()).isEqualTo("r");
+    assertThat(type.fields().get(0).type()).isInstanceOf(RecordReferenceType.class);
+    RecordReferenceType fieldType = (RecordReferenceType) type.fields().get(0).type();
+    assertThat(fieldType.name()).isEqualTo("R");
   }
 
   private BlockNode parseStatements(String expression) {

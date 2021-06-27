@@ -1,6 +1,15 @@
 package com.plasstech.lang.d2.parse;
 
 import com.google.common.base.Joiner;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -35,6 +44,9 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.RecordType;
+import com.plasstech.lang.d2.type.RecordType.Field;
 import com.plasstech.lang.d2.type.VarType;
 import java.util.ArrayList;
 import java.util.List;
@@ -202,7 +214,7 @@ public class Parser {
         return exitStmt(token.start());
 
       case VARIABLE:
-        return assignmentDeclarationProcCall();
+        return startsWithVariableStmt();
 
       default:
         throw new ParseException(
@@ -232,49 +244,29 @@ public class Parser {
    * Parse a statement starting with a variable name: either an assignment, variable declaration or
    * procedure call statement.
    */
-  private StatementNode assignmentDeclarationProcCall() {
+  private StatementNode startsWithVariableStmt() {
     expect(Token.Type.VARIABLE);
 
-    Token varToken = token;
+    Token variable = token;
     advance(); // eat the variable name
     switch (token.type()) {
         // Assignment
       case EQ:
         advance(); // eat the =
-        VariableNode var = new VariableNode(varToken.text(), varToken.start());
+        VariableNode var = new VariableNode(variable.text(), variable.start());
         ExprNode expr = expr();
         return new AssignmentNode(var, expr);
 
         // Declaration
       case COLON:
-        // TODO: split this into its own method.
-        advance(); // eat the colon
-        if (token.type().isKeyword()) {
-          Token.Type declaredType = token.type();
-
-          // TODO: this will have to be relaxed when we have records
-          VarType varType = BUILTINS.get(declaredType);
-          if (varType != null) {
-            advance();
-            if (varType == VarType.PROC) {
-              return procedure(varToken);
-            } else {
-              // See if it's an array declaration and build a "compound type" from the
-              // declaration, e.g., "array of int"
-              if (token.type() == Token.Type.LBRACKET) {
-                return arrayDeclaration(varToken, varType);
-              }
-              return new DeclarationNode(varToken.text(), varType, varToken.start());
-            }
-          }
-        }
-        expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING, Token.Type.PROC);
-        break;
+        return declaration(variable);
 
         // Procedure call statement
       case LPAREN:
-        return procedureCall(varToken, true);
+        return procedureCall(variable, true);
 
+        // TODO: dot for record field set
+        // TODO: bracket for string or array slot assignment
       default:
         break;
     }
@@ -282,8 +274,66 @@ public class Parser {
         String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
   }
 
+  private DeclarationNode declaration(Token varToken) {
+    expect(Token.Type.COLON);
+    advance(); // eat the colon
+    if (token.type().isKeyword()) {
+      Token.Type declaredType = token.type();
+
+      VarType varType = BUILTINS.get(declaredType);
+      if (varType != null) {
+        advance(); // int, string, bool, proc
+        if (varType == VarType.PROC) {
+          return procedureDecl(varToken);
+        } else {
+          // See if it's an array declaration and build a "compound type" from the
+          // declaration, e.g., "array of int"
+          if (token.type() == Token.Type.LBRACKET) {
+            return arrayDecl(varToken, varType);
+          }
+          return new DeclarationNode(varToken.text(), varType, varToken.start());
+        }
+      } else if (declaredType == Token.Type.RECORD) {
+        advance(); // eat "record"
+        expect(Token.Type.LBRACE);
+        advance();
+
+        // read field declarations
+        List<DeclarationNode> fieldNodes = new ArrayList<>();
+        while (token.type() != Token.Type.RBRACE) {
+          expect(Token.Type.VARIABLE);
+          Token fieldVar = token;
+          advance(); // eat the variable.
+          DeclarationNode decl = declaration(fieldVar);
+          fieldNodes.add(decl);
+        }
+
+        expect(Token.Type.RBRACE);
+        advance();
+        List<Field> fields =
+            fieldNodes
+                .stream()
+                .map(node -> new Field(node.name(), node.varType()))
+                .collect(toImmutableList());
+        RecordType recordType = new RecordType(varToken.text(), fields);
+
+        return new DeclarationNode(varToken.text(), recordType, varToken.start());
+      }
+    } else if (token.type() == Token.Type.VARIABLE) {
+      Token typeToken = token;
+      advance(); // eat the variable type record reference (hopefully)
+      return new DeclarationNode(
+          varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
+    }
+    throw new ParseException(
+        String.format(
+            "Unexpected '%s' in declaration; expected INT, BOOL, STRING, PROC or RECORD",
+            token.text()),
+        token.start());
+  }
+
   /** declaration -> '[' expr ']' */
-  private DeclarationNode arrayDeclaration(Token varToken, VarType baseVarType) {
+  private DeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
     expect(Token.Type.LBRACKET);
     advance();
     // The size can be variable.
@@ -295,7 +345,7 @@ public class Parser {
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
   }
 
-  private ProcedureNode procedure(Token varToken) {
+  private ProcedureNode procedureDecl(Token varToken) {
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
