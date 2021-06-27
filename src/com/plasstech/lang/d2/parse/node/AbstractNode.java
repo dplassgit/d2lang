@@ -11,6 +11,7 @@ abstract class AbstractNode implements Node {
   private VarType varType = VarType.UNKNOWN;
   private Location location;
 
+  // TODO: take start and end instead of just position.
   AbstractNode(Position position) {
     this.position = position;
   }
