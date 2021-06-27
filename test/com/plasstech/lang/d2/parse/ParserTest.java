@@ -766,9 +766,8 @@ public class ParserTest {
   @Test
   public void procErrors() {
     assertParseError("fib:proc(a:int b) {}", "expected )");
-    assertParseError("fib:proc(a:bad, b) {}", "expected INT");
+    assertParseError("fib:proc(a:proc, b) {}", "expected INT");
     assertParseError("fib:proc(a:, b) {}", "expected INT");
-    assertParseError("fib:proc(a: b) {}", "expected INT");
     assertParseError("fib:proc(a:) {}", "expected INT");
     assertParseError("fib:proc(a {}", "expected )");
     assertParseError("fib:proc(a:int, ) {}", "expected VARIABLE");
@@ -1139,6 +1138,33 @@ public class ParserTest {
     assertThat(type.fields().get(0).type()).isInstanceOf(RecordReferenceType.class);
     RecordReferenceType fieldType = (RecordReferenceType) type.fields().get(0).type();
     assertThat(fieldType.name()).isEqualTo("R");
+  }
+
+  @Test
+  public void declareAsRecord() {
+    BlockNode root = parseStatements("Rec: record {i: int} a: Rec");
+    DeclarationNode node = (DeclarationNode) root.statements().get(1);
+    assertThat(node.name()).isEqualTo("a");
+    RecordReferenceType type = (RecordReferenceType) node.varType();
+    assertThat(type.name()).isEqualTo("Rec");
+  }
+
+  @Test
+  public void recordAsFormalParam() {
+    BlockNode root = parseStatements("Rec: record {i: int} p:proc(a: Rec) {}");
+    ProcedureNode proc = (ProcedureNode) root.statements().get(1);
+    ProcedureNode.Parameter param = proc.parameters().get(0);
+    assertThat(param.name()).isEqualTo("a");
+    RecordReferenceType type = (RecordReferenceType) param.type();
+    assertThat(type.name()).isEqualTo("Rec");
+  }
+
+  @Test
+  public void recordAsReturnType() {
+    BlockNode root = parseStatements("Rec: record {i: int} p:proc():Rec {}");
+    ProcedureNode proc = (ProcedureNode) root.statements().get(1);
+    RecordReferenceType type = (RecordReferenceType) proc.returnType();
+    assertThat(type.name()).isEqualTo("Rec");
   }
 
   private BlockNode parseStatements(String expression) {

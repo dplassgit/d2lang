@@ -281,6 +281,10 @@ public class Parser {
     if (token.type().isKeyword()) {
       Token.Type declaredType = token.type();
 
+      if (declaredType == Token.Type.RECORD) {
+        return parseRecordDefinition(varToken);
+      }
+
       VarType varType = BUILTINS.get(declaredType);
       if (varType != null) {
         advance(); // int, string, bool, proc
@@ -294,35 +298,10 @@ public class Parser {
           }
           return new DeclarationNode(varToken.text(), varType, varToken.start());
         }
-      } else if (declaredType == Token.Type.RECORD) {
-        advance(); // eat "record"
-        expect(Token.Type.LBRACE);
-        advance();
-
-        // read field declarations
-        List<DeclarationNode> fieldNodes = new ArrayList<>();
-        while (token.type() != Token.Type.RBRACE) {
-          expect(Token.Type.VARIABLE);
-          Token fieldVar = token;
-          advance(); // eat the variable.
-          DeclarationNode decl = declaration(fieldVar);
-          fieldNodes.add(decl);
-        }
-
-        expect(Token.Type.RBRACE);
-        advance();
-        List<Field> fields =
-            fieldNodes
-                .stream()
-                .map(node -> new Field(node.name(), node.varType()))
-                .collect(toImmutableList());
-        RecordType recordType = new RecordType(varToken.text(), fields);
-
-        return new DeclarationNode(varToken.text(), recordType, varToken.start());
       }
     } else if (token.type() == Token.Type.VARIABLE) {
       Token typeToken = token;
-      advance(); // eat the variable type record reference (hopefully)
+      advance(); // eat the variable type record reference
       return new DeclarationNode(
           varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
     }
@@ -331,6 +310,34 @@ public class Parser {
             "Unexpected '%s' in declaration; expected INT, BOOL, STRING, PROC or RECORD",
             token.text()),
         token.start());
+  }
+
+  private DeclarationNode parseRecordDefinition(Token varToken) {
+    expect(Token.Type.RECORD);
+    advance(); // eat "record"
+    expect(Token.Type.LBRACE);
+    advance();
+
+    // read field declarations
+    List<DeclarationNode> fieldNodes = new ArrayList<>();
+    while (token.type() != Token.Type.RBRACE) {
+      expect(Token.Type.VARIABLE);
+      Token fieldVar = token;
+      advance(); // eat the variable.
+      DeclarationNode decl = declaration(fieldVar);
+      fieldNodes.add(decl);
+    }
+
+    expect(Token.Type.RBRACE);
+    advance();
+    List<Field> fields =
+        fieldNodes
+            .stream()
+            .map(node -> new Field(node.name(), node.varType()))
+            .collect(toImmutableList());
+    RecordType recordType = new RecordType(varToken.text(), fields);
+
+    return new DeclarationNode(varToken.text(), recordType, varToken.start());
   }
 
   /** declaration -> '[' expr ']' */
@@ -351,11 +358,7 @@ public class Parser {
 
     VarType returnType = VarType.VOID;
     if (token.type() == Token.Type.COLON) {
-      advance();
-      expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING);
-      Token.Type declaredType = token.type();
-      returnType = BUILTINS.get(declaredType);
-      advance(); // eat the return type
+      returnType = parseVarType();
     }
     BlockNode statements = block();
     return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
@@ -379,20 +382,56 @@ public class Parser {
     return params;
   }
 
+  /**
+   * Parses colon followed by var type. Works for INT, BOOL, STRING, record. Does NOT work for
+   * arrays or procs yet.
+   */
+  private VarType parseVarType() {
+    expect(Token.Type.COLON);
+    advance();
+    if (token.type() == Token.Type.VARIABLE) {
+      Token typeToken = token;
+      advance(); // eat the record type
+      return new RecordReferenceType(typeToken.text());
+    }
+
+    Token.Type declaredType = token.type();
+    VarType paramType = BUILTINS.get(declaredType);
+    if (paramType != null && paramType != VarType.PROC) {
+      // We have a param type
+      advance(); // eat the param type
+      return paramType;
+    }
+    throw new ParseException(
+        String.format("Unexpected '%s'; expected INT, BOOL, STRING or record type", token.text()),
+        token.start());
+  }
+
   private Parameter formalParam() {
     expect(Token.Type.VARIABLE);
 
     Token paramName = token;
     advance();
     if (token.type() == Token.Type.COLON) {
-      advance();
-      // TODO: Relax this for records.
-      expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING);
-      Token.Type declaredType = token.type();
-      VarType paramType = BUILTINS.get(declaredType);
-      // We have a param type
-      advance(); // eat the param type
+      VarType paramType = parseVarType();
+      //      advance();
+      //      if (!token.type().isKeyword()) {
+      //        throw new ParseException(
+      //            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
+      //            token.start());
+      //      }
+      //      Token.Type declaredType = token.type();
+      //      VarType paramType = BUILTINS.get(declaredType);
+      //      // TODO: Relax this for records.
+      //      if (paramType == null) {
+      //        throw new ParseException(
+      //            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
+      //            token.start());
+      //      } else {
+      //        // We have a param type
+      //        advance(); // eat the param type
       return new Parameter(paramName.text(), paramType);
+      //      }
     } else {
       // no colon, just an unknown param type
       return new Parameter(paramName.text());
