@@ -63,7 +63,8 @@ public class Parser {
           Token.Type.INT, VarType.INT,
           Token.Type.BOOL, VarType.BOOL,
           Token.Type.STRING, VarType.STRING,
-          Token.Type.PROC, VarType.PROC);
+          Token.Type.PROC, VarType.PROC,
+          Token.Type.NULL, VarType.NULL);
 
   private static final Set<Token.Type> EXPRESSION_STARTS =
       ImmutableSet.of(
@@ -80,7 +81,8 @@ public class Parser {
           Token.Type.FALSE,
           Token.Type.LENGTH,
           Token.Type.ASC,
-          Token.Type.CHR);
+          Token.Type.CHR,
+          Token.Type.NULL);
 
   private static Set<Type> UNARY_KEYWORDS =
       ImmutableSet.of(Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
@@ -642,7 +644,7 @@ public class Parser {
       return new NewNode(shouldBeVar.text(), start);
     }
 
-    return arrayGet();
+    return compositeDereference();
   }
 
   private static boolean isUnaryKeyword(Token token) {
@@ -656,7 +658,7 @@ public class Parser {
    * composite dereference -> atom ('[' expr ']') | atom ('.' variable)
    * </pre>
    */
-  private ExprNode arrayGet() {
+  private ExprNode compositeDereference() {
     ExprNode left = atom();
 
     // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
@@ -683,7 +685,7 @@ public class Parser {
    * Parse an atom: a literal, variable or parenthesized expression.
    *
    * <pre>
-   * atom -> int | true | false | string | variable | procedureCall | '(' expr ')' |
+   * atom -> int | true | false | string | null | variable | procedureCall | '(' expr ')' |
    *    '[' arrayLiteral ']'
    * </pre>
    */
@@ -698,6 +700,9 @@ public class Parser {
     } else if (token.type() == Token.Type.STRING) {
       Token st = advance();
       return new ConstNode<String>(st.text(), VarType.STRING, st.start());
+    } else if (token.type() == Token.Type.NULL) {
+      Token st = advance();
+      return new ConstNode<Void>(null, VarType.NULL, st.start());
     } else if (token.type() == Token.Type.VARIABLE) {
       Token varToken = advance();
       String name = varToken.text();

@@ -8,6 +8,7 @@ public interface VarType {
   VarType BOOL = new SimpleType("BOOL");
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC"); // ???
+  VarType NULL = new SimpleType("NULL");
   VarType UNKNOWN =
       new VarType() {
         @Override
@@ -29,6 +30,10 @@ public interface VarType {
 
   default boolean isUnknown() {
     return this == UNKNOWN;
+  }
+
+  default boolean isNull() {
+    return this == NULL;
   }
 
   default boolean isArray() {
