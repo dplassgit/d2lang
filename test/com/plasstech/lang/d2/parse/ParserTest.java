@@ -1203,7 +1203,7 @@ public class ParserTest {
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
     assertThat(node.operator()).isEqualTo(Token.Type.DOT);
-    assertThat(node.left()).isInstanceOf(VariableNode.class);
+    assertThat(node.right()).isInstanceOf(VariableNode.class);
   }
 
   @Test
@@ -1213,6 +1213,21 @@ public class ParserTest {
             + " rec = new R\n"
             + " i = rec.3\n",
         "expected VARIABLE");
+  }
+
+  @Test
+  public void unsetRecordCompareToNull() {
+    BlockNode root =
+        parseStatements(
+            "R: record{i: int s: string}\n" //
+                + " rec: R\n"
+                + " isNull = rec == null");
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
+    BinOpNode node = (BinOpNode) assignment.expr();
+    assertThat(node.left()).isInstanceOf(VariableNode.class);
+    assertThat(node.operator()).isEqualTo(Token.Type.EQEQ);
+    ConstNode<Void> right = (ConstNode<Void>) node.right();
+    assertThat(right.value()).isNull();
   }
 
   private BlockNode parseStatements(String expression) {
