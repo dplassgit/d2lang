@@ -355,3 +355,17 @@ makeToken: proc(type: int, start: Position, end: Position, text: String): Token 
   return token
 }
 
+printToken: proc(token:Token) {
+  if token.type == Type_EOF {
+    println 'Token: EOF'
+  } elif token.type == Type_INT {
+    println 'Int token: ' + toString(token.int_value)
+  } elif token.type == Type_STRING {
+    println 'String token: ' + chr(39) + token.value + chr(39)
+  } elif token.type == Type_KEYWORD {
+    println 'Keyword token: ' + token.value
+  } else {
+    println 'Token: ' + token.value + ' (type: ' + toString(token.type) + ')'
+  }
+}
+

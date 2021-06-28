@@ -13,4 +13,18 @@ public class RecordReferenceType implements VarType {
   public String name() {
     return recordTypeName;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof RecordReferenceType)) {
+      return false;
+    }
+    RecordReferenceType that = (RecordReferenceType) obj;
+    return this.recordTypeName.equals(that.recordTypeName);
+  }
+
+  @Override
+  public int hashCode() {
+    return 17 + 37 * recordTypeName.hashCode();
+  }
 }
