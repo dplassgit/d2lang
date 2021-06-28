@@ -1192,6 +1192,29 @@ public class ParserTest {
     assertParseError("R: record{i: int s: string} rec = new new", "expected VARIABLE");
   }
 
+  @Test
+  public void recordGet() {
+    BlockNode root =
+        parseStatements(
+            "R: record{i: int s: string}" //
+                + " rec = new R"
+                + " i = rec.i");
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
+    BinOpNode node = (BinOpNode) assignment.expr();
+    assertThat(node.left()).isInstanceOf(VariableNode.class);
+    assertThat(node.operator()).isEqualTo(Token.Type.DOT);
+    assertThat(node.left()).isInstanceOf(VariableNode.class);
+  }
+
+  @Test
+  public void recordGetError() {
+    assertParseError(
+        "R: record{i: int s: string}\n" //
+            + " rec = new R\n"
+            + " i = rec.3\n",
+        "expected VARIABLE");
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();

@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.parse.node;
 
+import java.util.Set;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.Set;
 
 /** Binary operation: leftexpr <operation> rightexpr */
 public class BinOpNode extends AbstractNode implements ExprNode {
@@ -29,7 +30,8 @@ public class BinOpNode extends AbstractNode implements ExprNode {
           Token.Type.NEQ,
           Token.Type.LBRACKET,
           Token.Type.SHIFT_LEFT,
-          Token.Type.SHIFT_RIGHT);
+          Token.Type.SHIFT_RIGHT,
+          Token.Type.DOT);
 
   private final Token.Type operator;
   private final ExprNode left;

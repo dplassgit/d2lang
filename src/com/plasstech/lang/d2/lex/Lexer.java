@@ -173,6 +173,9 @@ public class Lexer {
       case '^':
         advance();
         return new Token(Type.BIT_XOR, start, oc);
+      case '.':
+        advance();
+        return new Token(Type.DOT, start, oc);
       default:
         throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
     }
