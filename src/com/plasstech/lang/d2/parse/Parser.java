@@ -33,6 +33,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -93,8 +94,10 @@ public class Parser {
     this.advance();
   }
 
-  private void advance() {
+  private Token advance() {
+    Token prev = token;
     token = lexer.nextToken();
+    return prev;
   }
 
   public Node parse() {
@@ -247,8 +250,7 @@ public class Parser {
   private StatementNode startsWithVariableStmt() {
     expect(Token.Type.VARIABLE);
 
-    Token variable = token;
-    advance(); // eat the variable name
+    Token variable = advance(); // eat the variable name
     switch (token.type()) {
         // Assignment
       case EQ:
@@ -299,8 +301,7 @@ public class Parser {
         }
       }
     } else if (token.type() == Token.Type.VARIABLE) {
-      Token typeToken = token;
-      advance(); // eat the variable type record reference
+      Token typeToken = advance(); // eat the variable type record reference
       return new DeclarationNode(
           varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
     }
@@ -321,8 +322,7 @@ public class Parser {
     List<DeclarationNode> fieldNodes = new ArrayList<>();
     while (token.type() != Token.Type.RBRACE) {
       expect(Token.Type.VARIABLE);
-      Token fieldVar = token;
-      advance(); // eat the variable.
+      Token fieldVar = advance(); // eat the variable.
       DeclarationNode decl = declaration(fieldVar);
       fieldNodes.add(decl);
     }
@@ -389,8 +389,7 @@ public class Parser {
     expect(Token.Type.COLON);
     advance();
     if (token.type() == Token.Type.VARIABLE) {
-      Token typeToken = token;
-      advance(); // eat the record type
+      Token typeToken = advance(); // eat the record type
       return new RecordReferenceType(typeToken.text());
     }
 
@@ -409,28 +408,10 @@ public class Parser {
   private Parameter formalParam() {
     expect(Token.Type.VARIABLE);
 
-    Token paramName = token;
-    advance();
+    Token paramName = advance();
     if (token.type() == Token.Type.COLON) {
       VarType paramType = parseVarType();
-      //      advance();
-      //      if (!token.type().isKeyword()) {
-      //        throw new ParseException(
-      //            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-      //            token.start());
-      //      }
-      //      Token.Type declaredType = token.type();
-      //      VarType paramType = BUILTINS.get(declaredType);
-      //      // TODO: Relax this for records.
-      //      if (paramType == null) {
-      //        throw new ParseException(
-      //            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-      //            token.start());
-      //      } else {
-      //        // We have a param type
-      //        advance(); // eat the param type
       return new Parameter(paramName.text(), paramType);
-      //      }
     } else {
       // no colon, just an unknown param type
       return new Parameter(paramName.text());
@@ -612,6 +593,7 @@ public class Parser {
 
   private ExprNode unary() {
     Token unaryToken = token;
+    // TODO: NEW
     if (token.type() == Token.Type.MINUS
         || token.type() == Token.Type.PLUS
         || token.type() == Token.Type.BIT_NOT
@@ -652,7 +634,14 @@ public class Parser {
       advance();
 
       return new UnaryNode(keywordToken.type(), expr, unaryToken.start());
+    } else if (token.type() == Token.Type.NEW) {
+      Position start = token.start();
+      advance();
+      expect(Token.Type.VARIABLE);
+      Token shouldBeVar = advance();
+      return new NewNode(shouldBeVar.text(), start);
     }
+
     return arrayGet();
   }
 
@@ -697,17 +686,14 @@ public class Parser {
       advance();
       return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
     } else if (token.type() == Token.Type.TRUE || token.type() == Token.Type.FALSE) {
-      Token bt = token;
-      advance();
+      Token bt = advance();
       return new ConstNode<Boolean>(bt.type() == Token.Type.TRUE, VarType.BOOL, bt.start());
     } else if (token.type() == Token.Type.STRING) {
-      Token st = token;
-      advance();
+      Token st = advance();
       return new ConstNode<String>(st.text(), VarType.STRING, st.start());
     } else if (token.type() == Token.Type.VARIABLE) {
-      Token varToken = token;
-      String name = token.text();
-      advance();
+      Token varToken = advance();
+      String name = varToken.text();
       if (token.type() == Token.Type.LPAREN) {
         return procedureCall(varToken, false);
       } else {
@@ -723,8 +709,7 @@ public class Parser {
       // array literal
       return arrayLiteral();
     } else if (token.type() == Token.Type.INPUT) {
-      Token it = token;
-      advance();
+      Token it = advance();
       return new InputNode(it.start());
     } else {
       throw new ParseException(
@@ -737,8 +722,7 @@ public class Parser {
   private ExprNode arrayLiteral() {
     expect(Token.Type.LBRACKET);
 
-    Token openBracket = token;
-    advance(); // eat left bracket
+    Token openBracket = advance(); // eat left bracket
 
     // Future version:
     // List<ExprNode> values = commaSeparatedExpressions();

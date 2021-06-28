@@ -26,6 +26,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -1115,6 +1116,15 @@ public class ParserTest {
   }
 
   @Test
+  public void defineRecordBadField() {
+    assertParseError("r: record{p:int int}", "expected VARIABLE");
+    assertParseError("r: record{int}", "expected VARIABLE");
+    assertParseError("r: record{proc}", "expected VARIABLE");
+    // the error here is actually that i'ts trying to parse a procedure, but meh
+    assertParseError("r: record{p:proc}", "expected");
+  }
+
+  @Test
   public void defineRecord() {
     BlockNode root = parseStatements("R: record{i: int s: string}");
     DeclarationNode node = (DeclarationNode) root.statements().get(0);
@@ -1165,6 +1175,21 @@ public class ParserTest {
     ProcedureNode proc = (ProcedureNode) root.statements().get(1);
     RecordReferenceType type = (RecordReferenceType) proc.returnType();
     assertThat(type.name()).isEqualTo("Rec");
+  }
+
+  @Test
+  public void newRecord() {
+    BlockNode root = parseStatements("R: record{i: int s: string} rec = new R");
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
+    NewNode node = (NewNode) assignment.expr();
+    assertThat(node.recordName()).isEqualTo("R");
+    RecordReferenceType type = (RecordReferenceType) node.varType();
+    assertThat(type.name()).isEqualTo("R");
+  }
+
+  @Test
+  public void newRecordError() {
+    assertParseError("R: record{i: int s: string} rec = new new", "expected VARIABLE");
   }
 
   private BlockNode parseStatements(String expression) {

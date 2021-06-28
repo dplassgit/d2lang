@@ -29,6 +29,7 @@ abstract class AbstractNode implements Node {
 
   @Override
   public void setVarType(VarType varType) {
+    // TODO: relax this, so we can overwrite RecordReference with RecordType
     Preconditions.checkArgument(
         this.varType.isUnknown(),
         "Cannot overwrite already-set vartype. Was: " + this.varType.name());
