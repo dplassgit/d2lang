@@ -24,9 +24,9 @@ public class Token {
     DO(true),
     BREAK(true),
     CONTINUE(true),
-    RECORD(true), // for future expansion
-    NEW(true), // for future expansion
-    NULL(true), // for future expansion
+    RECORD(true),
+    NEW(true),
+    NULL(true),
     DELETE(true), // for future expansion
     MAP(true), // for future expansion
     INPUT(true),

@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.lex.Token.Type;
 public class LexerTest {
   @Test
   public void singleSymbols() {
-    Lexer lexer = new Lexer("+-*/%()! =<>|&{}:[]");
+    Lexer lexer = new Lexer("+-*/%()! =<>|&{}:[].");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.PLUS);
     token = lexer.nextToken();
@@ -47,6 +47,8 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(Type.LBRACKET);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.RBRACKET);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Type.DOT);
   }
 
   @Test

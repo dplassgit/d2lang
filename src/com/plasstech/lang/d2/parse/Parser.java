@@ -650,10 +650,10 @@ public class Parser {
   }
 
   /**
-   * Parse an (optional) array reference.
+   * Parse an (optional) composite dereference.
    *
    * <pre>
-   * arrayGet -> atom ('[' expr ']')
+   * composite dereference -> atom ('[' expr ']') | atom ('.' variable)
    * </pre>
    */
   private ExprNode arrayGet() {
@@ -667,6 +667,13 @@ public class Parser {
       advance();
 
       left = new BinOpNode(left, Token.Type.LBRACKET, index);
+    } else if (token.type() == Token.Type.DOT) {
+      advance();
+      expect(Token.Type.VARIABLE);
+      Token varToken = advance();
+      ExprNode right = new VariableNode(varToken.text(), varToken.start());
+
+      left = new BinOpNode(left, Token.Type.DOT, right);
     }
 
     return left;
