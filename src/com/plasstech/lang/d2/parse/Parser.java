@@ -58,6 +58,7 @@ public class Parser {
           Token.Type.MINUS,
           Token.Type.PLUS,
           Token.Type.NOT,
+          Token.Type.BIT_NOT,
           Token.Type.INT,
           Token.Type.STRING,
           Token.Type.BOOL,
@@ -468,11 +469,15 @@ public class Parser {
   }
 
   private ExprNode boolOr() {
-    return binOpFn(Token.Type.OR, () -> boolAnd());
+    return binOpFn(ImmutableSet.of(Token.Type.OR, Token.Type.BIT_OR), () -> boolXor());
+  }
+
+  private ExprNode boolXor() {
+    return binOpFn(ImmutableSet.of(Token.Type.XOR, Token.Type.BIT_XOR), () -> boolAnd());
   }
 
   private ExprNode boolAnd() {
-    return binOpFn(Token.Type.AND, () -> compare());
+    return binOpFn(ImmutableSet.of(Token.Type.AND, Token.Type.BIT_AND), () -> compare());
   }
 
   private ExprNode compare() {
@@ -533,6 +538,7 @@ public class Parser {
     Token unaryToken = token;
     if (token.type() == Token.Type.MINUS
         || token.type() == Token.Type.PLUS
+        || token.type() == Token.Type.BIT_NOT
         || token.type() == Token.Type.NOT) {
       advance();
       ExprNode expr = unary(); // should this be expr? unary? atom?
@@ -545,6 +551,10 @@ public class Parser {
           @SuppressWarnings("unchecked")
           ConstNode<Integer> in = (ConstNode<Integer>) expr;
           return new ConstNode<Integer>(-in.value(), VarType.INT, unaryToken.start());
+        } else if (unaryToken.type() == Token.Type.BIT_NOT) {
+          @SuppressWarnings("unchecked")
+          ConstNode<Integer> in = (ConstNode<Integer>) expr;
+          return new ConstNode<Integer>(~in.value(), VarType.INT, unaryToken.start());
         }
       } else if (expr.varType() == VarType.BOOL) {
         if (unaryToken.type() == Token.Type.NOT) {

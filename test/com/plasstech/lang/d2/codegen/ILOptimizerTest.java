@@ -131,21 +131,21 @@ public class ILOptimizerTest {
 
   @Test
   public void andConstant() {
-    TestUtils.optimizeAssertSameVariables("a = true b = a & true");
+    TestUtils.optimizeAssertSameVariables("a = true b = a and  true");
     TestUtils.optimizeAssertSameVariables("a = true b = true and a");
     TestUtils.optimizeAssertSameVariables("a = true and true");
-    TestUtils.optimizeAssertSameVariables("a = true & false");
+    TestUtils.optimizeAssertSameVariables("a = true and false");
     TestUtils.optimizeAssertSameVariables("a = false and true");
     TestUtils.optimizeAssertSameVariables("a = false and false");
   }
 
   @Test
   public void orConstant() {
-    TestUtils.optimizeAssertSameVariables("a = true b = a | true");
+    TestUtils.optimizeAssertSameVariables("a = true b = a or  true");
     TestUtils.optimizeAssertSameVariables("a = true b = true or a");
     TestUtils.optimizeAssertSameVariables("a = true or true");
     TestUtils.optimizeAssertSameVariables("a = true or false");
-    TestUtils.optimizeAssertSameVariables("a = false | true");
+    TestUtils.optimizeAssertSameVariables("a = false or  true");
     TestUtils.optimizeAssertSameVariables("a = false or false");
   }
 

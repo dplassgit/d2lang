@@ -26,7 +26,7 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.RPAREN);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.NOT);
+    assertThat(token.type()).isEqualTo(Type.BIT_NOT);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.EQ);
     token = lexer.nextToken();
@@ -34,9 +34,9 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.GT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.OR);
+    assertThat(token.type()).isEqualTo(Type.BIT_OR);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.AND);
+    assertThat(token.type()).isEqualTo(Type.BIT_AND);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Type.LBRACE);
     token = lexer.nextToken();
@@ -142,7 +142,7 @@ public class LexerTest {
     Lexer lexer =
         new Lexer(
             "print PrintLN IF Else elif do while break continue int bool proc return length asc"
-                + " chr exit");
+                + " chr exit and or not xor");
 
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Token.Type.PRINT);
@@ -194,6 +194,18 @@ public class LexerTest {
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(Token.Type.EXIT);
+    assertThat(token.type().isKeyword()).isTrue();
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Token.Type.AND);
+    assertThat(token.type().isKeyword()).isTrue();
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Token.Type.OR);
+    assertThat(token.type().isKeyword()).isTrue();
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Token.Type.NOT);
+    assertThat(token.type().isKeyword()).isTrue();
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(Token.Type.XOR);
     assertThat(token.type().isKeyword()).isTrue();
   }
 

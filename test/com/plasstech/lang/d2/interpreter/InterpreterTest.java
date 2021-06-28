@@ -95,7 +95,7 @@ public class InterpreterTest {
 
   @Test
   public void bools() {
-    Environment env = execute("a=true b = !a");
+    Environment env = execute("a=true b = not a");
 
     assertThat(env.getValue("a")).isEqualTo(1);
     assertThat(env.getValue("b")).isEqualTo(0);
@@ -177,7 +177,7 @@ public class InterpreterTest {
   public void compareString() {
     Environment env =
         execute(
-            "      isDigit: proc(c: string): bool { return c >= '0' & c <= '9' }"
+            "      isDigit: proc(c: string): bool { return c >= '0' and c <= '9' }"
                 + "a = isDigit(' ')"
                 + "b = isDigit('0')"
                 + "c = isDigit('1')"

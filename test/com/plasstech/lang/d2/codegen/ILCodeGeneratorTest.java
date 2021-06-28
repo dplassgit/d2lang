@@ -26,7 +26,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void assignments() {
-    generateProgram("a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=!e g=a==b h=(a>b)|(c!=d)&e");
+    generateProgram("a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e");
   }
 
   @Test
@@ -48,9 +48,9 @@ public class ILCodeGeneratorTest {
   public void hugeAssignment() {
     generateProgram(
         "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
+            + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
             + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
-            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
+            + "b=1+2*3-4/5==6!=true or 2-3*4-5/-6<7==not a and 3+4*5+6/-7>=8%2");
   }
 
   @Test
