@@ -12,7 +12,8 @@ statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'C
 main -> 'MAIN' mainarg? '{' statements '}'
 mainarg -> '(' variable ')' // not implemented yet
 
-assignment -> variable '=' expr
+assignment -> lvalue '=' expr
+lvalue -> variable | variable '[' expr ']' | variable '.' variable // not fully built yet, and may become more complex
 
 print -> 'PRINT' expr | 'PRINTLN' expr
 
@@ -21,10 +22,10 @@ elif -> 'ELIF' expr '{' statements '}'
 else -> 'ELSE' '{' statements '}'
 
 while -> 'WHILE' expr do? '{' statements '}'
-do -> 'DO' assignment
+do -> 'DO' statement
 
 declaration -> variable ':' type | variable ':' 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' // RECORD not fully implemented yet
+type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' // RECORD not fully built yet
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
@@ -33,55 +34,10 @@ returns -> ':' type
 
 return_stmt -> 'RETURN' expr?
 
-exit -> 'exit' expr?
+exit -> 'EXIT' expr?
 
 procedure_call -> variable '(' comma-separated-expressions ')'
 ```
-
-## Comments
-
-`//` to end of line is considered a comment.
-
-## Node types
-
-Node classes are:
-
-`interface Node`
-
-`abstract class AbstractNode implements Node`
-
-`BlockNode extends AbstractNode`
-
-`interface StatementNode extends Node`
-
-`PrintNode extends AbstractNode implements StatementNode`
-
-`AssignmentNode extends AbstractNode implements  StatementNode`
-
-`IfNode extends AbstractNode implements StatementNode` (also includes a repeated `Case`, which is like a node)
-
-`DeclarationNode extends AbstractNode implements StatementNode`
-
-`WhileNode extends AbstractNode implements StatementNode`
-
-`ProcNode extends AbstractNode implements StatementNode`
-
-`MainNode extends ProcNode`
-
-`interface ExprNode extends Node` 
-
-`BinOpNode extends AbstractNode implements ExprNode`
-
-`UnaryNode extends AbstractNode implements ExprNode`
-
-`ConstNode<T> extends AbstractNode implements ExprNode`
-
-`VariableNode extends AbstractNode implements ExprNode`
-
-This allows function/procedure calls to be both expressions (that return something) and stand-alone (either return void or throwaway the value.)
-
-`CallNode extends AbstractNode implements ExprNode, StatementNode`
-
 
 ## Expression grammar implemented so far
 
@@ -93,7 +49,6 @@ boolor -> booland ('|' booland)*
 booland -> compare ('&' compare)*
 
 compare -> shift (relop shift)*
-
 relop -> '==' '!=' '>' '<' '>=' '<='
 
 shift -> addsub ('<<' | '>>' unary)*
@@ -103,7 +58,7 @@ addsub -> muldiv (+- muldiv)*
 muldiv -> unary (*/% unary)*
 
 unary -> composite | !-+ unary | 'new' variable_name | unary_fn '(' expr ')'
-unary_fn -> ASC | CHR | LENGTH
+unary_fn -> 'ASC' | 'CHR' | 'LENGTH'
 
 composite -> atom ('[' expr ']')? | atom ('.' variable_name)?
 
