@@ -7,31 +7,33 @@
 program -> statements main?
 
 statements -> statement* 
-statement -> assignment | print | if | while | proc | declaration | 'break' | 'continue' | return_stmt | procedure_call
+statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'CONTINUE' | return_stmt | procedure_call | exit
 
-main -> 'main' mainarg? '{' statements '}'
+main -> 'MAIN' mainarg? '{' statements '}'
 mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> variable '=' expr
 
-print -> 'print' expr | 'println' expr
+print -> 'PRINT' expr | 'PRINTLN' expr
 
-if -> 'if' expr '{' statements '}' elif* else?
-elif -> 'elif' expr '{' statements '}'
-else -> 'else' '{' statements '}'
+if -> 'IF' expr '{' statements '}' elif* else?
+elif -> 'ELIF' expr '{' statements '}'
+else -> 'ELSE' '{' statements '}'
 
-while -> 'while' expr do? '{' statements '}'
-do -> 'do' assignment
+while -> 'WHILE' expr do? '{' statements '}'
+do -> 'DO' assignment
 
-declaration -> variable ':' type | variable ':' 'proc' procdef
-type -> 'int' | 'bool' | 'string' | type '[' expr ']'
+declaration -> variable ':' type | variable ':' 'PROC' procdef
+type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' // RECORD not fully implemented yet
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
 param -> variable (':' type)? // currently, must specify type
 returns -> ':' type
 
-return_stmt -> 'return' expr?
+return_stmt -> 'RETURN' expr?
+
+exit -> 'exit' expr?
 
 procedure_call -> variable '(' comma-separated-expressions ')'
 ```
@@ -90,27 +92,32 @@ boolor -> booland ('|' booland)*
 
 booland -> compare ('&' compare)*
 
-compare -> addsub (relop addsub)*
+compare -> shift (relop shift)*
 
 relop -> '==' '!=' '>' '<' '>=' '<='
+
+shift -> addsub ('<<' | '>>' unary)*
 
 addsub -> muldiv (+- muldiv)*
 
 muldiv -> unary (*/% unary)*
 
-unary ->  array | !-+ unary
+unary -> composite | !-+ unary | 'new' variable_name | unary_fn '(' expr ')'
+unary_fn -> ASC | CHR | LENGTH
 
-array -> atom ('[' expr ']')
+composite -> atom ('[' expr ']')? | atom ('.' variable_name)?
 
-atom -> int_constant
+atom ->   int_constant
 	| boolean_constant
 	| string_constant
 	| variable_name
-  | variable_name '(' comma-separated-expressions ')'
+        | variable_name '(' comma-separated-expressions ')'
 	| '(' expr ')'
+	| '[' comma-separated-expressions ']'
+	| 'INPUT'
 ```
 
-Not implemented yet: shift, power, xor
+Not implemented yet: power, xor
 
 See [Java operators](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html)
 for reference
