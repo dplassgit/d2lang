@@ -32,6 +32,10 @@ if a < 3 {
 }
 ```
 
+## Comments
+
+`//` to end of line is considered a comment.
+
 ## `for` loop explorations
 
 ```
