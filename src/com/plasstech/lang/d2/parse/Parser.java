@@ -1,15 +1,10 @@
 package com.plasstech.lang.d2.parse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -41,6 +36,12 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Parser {
 
@@ -91,10 +92,21 @@ public class Parser {
     }
   }
 
-  private void expect(Token.Type expected) {
-    if (token.type() != expected) {
+  private void expect(Token.Type first, Token.Type... rest) {
+    ImmutableList<Token.Type> expected = ImmutableList.copyOf(Lists.asList(first, rest));
+    if (!expected.contains(token.type())) {
+      String expectedStr;
+      if (expected.size() == 1) {
+        expectedStr = expected.get(0).toString();
+      } else {
+        expectedStr =
+            String.format(
+                "%s or %s",
+                Joiner.on(", ").join(expected.subList(0, expected.size() - 1)),
+                expected.get(expected.size() - 1));
+      }
       throw new ParseException(
-          String.format("Unexpected '%s'; expected '%s'", token, expected), token.start());
+          String.format("Unexpected '%s'; expected %s", token.text(), expectedStr), token.start());
     }
   }
 
@@ -105,20 +117,18 @@ public class Parser {
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
     if (token.type() == Token.Type.EOF) {
       return new ProgramNode(statements);
-    } else if (token.type().isKeyword()) {
+    } else if (token.type() == Token.Type.MAIN) {
       // if main, process main
-      if (token.type() == Token.Type.MAIN) {
-        Token start = token;
-        advance(); // eat the main
-        // TODO: parse arguments
-        BlockNode mainBlock = block();
-        expect(Token.Type.EOF);
-        MainNode mainProc = new MainNode(mainBlock, start.start());
-        return new ProgramNode(statements, mainProc);
-      }
+      Token start = token;
+      advance(); // eat the main
+      // TODO: parse arguments
+      BlockNode mainBlock = block();
+      expect(Token.Type.EOF);
+      MainNode mainProc = new MainNode(mainBlock, start.start());
+      return new ProgramNode(statements, mainProc);
     }
-    throw new ParseException(
-        String.format("Unexpected '%s'; expected 'main' or EOF", token.text()), token.start());
+    expect(Token.Type.MAIN, Token.Type.EOF);
+    return null;
   }
 
   private BlockNode statements(Function<Token, Boolean> matcher) {
@@ -152,54 +162,51 @@ public class Parser {
   }
 
   private StatementNode statement() {
-    if (token.type().isKeyword()) {
-      switch (token.type()) {
-        case PRINT:
-        case PRINTLN:
-          return print(token);
+    switch (token.type()) {
+      case PRINT:
+      case PRINTLN:
+        return print(token);
 
-        case IF:
-          return ifStmt(token);
+      case IF:
+        return ifStmt(token);
 
-        case WHILE:
-          {
-            inWhile++;
-            WhileNode whileStmt = whileStmt(token);
-            inWhile--;
-            return whileStmt;
-          }
+      case WHILE:
+        {
+          inWhile++;
+          WhileNode whileStmt = whileStmt(token);
+          inWhile--;
+          return whileStmt;
+        }
 
-        case BREAK:
-          if (inWhile == 0) {
-            throw new ParseException("BREAK not found in WHILE block", token.start());
-          }
-          advance();
-          return new BreakNode(token.start());
+      case BREAK:
+        if (inWhile == 0) {
+          throw new ParseException("BREAK not found in WHILE block", token.start());
+        }
+        advance();
+        return new BreakNode(token.start());
 
-        case CONTINUE:
-          if (inWhile == 0) {
-            throw new ParseException("CONTINUE not found in WHILE block", token.start());
-          }
-          advance();
-          return new ContinueNode(token.start());
+      case CONTINUE:
+        if (inWhile == 0) {
+          throw new ParseException("CONTINUE not found in WHILE block", token.start());
+        }
+        advance();
+        return new ContinueNode(token.start());
 
-        case RETURN:
-          advance();
-          return returnStmt(token.start());
+      case RETURN:
+        advance();
+        return returnStmt(token.start());
 
-        case EXIT:
-          advance();
-          return exitStmt(token.start());
+      case EXIT:
+        advance();
+        return exitStmt(token.start());
 
-        default:
-          break;
-      }
-    } else if (token.type() == Token.Type.VARIABLE) {
-      return assignmentDeclarationProcCall();
+      case VARIABLE:
+        return assignmentDeclarationProcCall();
+
+      default:
+        throw new ParseException(
+            String.format("Unexpected start of statement '%s'", token.text()), token.start());
     }
-
-    throw new ParseException(
-        String.format("Unexpected start of statement '%s'", token.text()), token.start());
   }
 
   private ReturnNode returnStmt(Position start) {
@@ -260,19 +267,18 @@ public class Parser {
             }
           }
         }
-        throw new ParseException(
-            String.format(
-                "Unexpected '%s' in declaration; expected INT, BOOL, STRING or PROC", token.text()),
-            token.start());
+        expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING, Token.Type.PROC);
+        break;
 
         // Procedure call statement
       case LPAREN:
         return procedureCall(varToken, true);
 
       default:
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
+        break;
     }
+    throw new ParseException(
+        String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
   }
 
   /** declaration -> '[' expr ']' */
@@ -294,18 +300,9 @@ public class Parser {
     VarType returnType = VarType.VOID;
     if (token.type() == Token.Type.COLON) {
       advance();
-      if (!token.type().isKeyword()) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-            token.start());
-      }
+      expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING);
       Token.Type declaredType = token.type();
       returnType = BUILTINS.get(declaredType);
-      if (returnType == null || returnType == VarType.PROC) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-            token.start());
-      }
       advance(); // eat the return type
     }
     BlockNode statements = block();
@@ -338,23 +335,12 @@ public class Parser {
     if (token.type() == Token.Type.COLON) {
       advance();
       // TODO: Relax this for records.
-      if (!token.type().isKeyword()) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-            token.start());
-      }
+      expect(Token.Type.INT, Token.Type.BOOL, Token.Type.STRING);
       Token.Type declaredType = token.type();
       VarType paramType = BUILTINS.get(declaredType);
-      // TODO: Relax this for records.
-      if (paramType == null) {
-        throw new ParseException(
-            String.format("Unexpected '%s'; expected INT, BOOL or STRING", token.text()),
-            token.start());
-      } else {
-        // We have a param type
-        advance(); // eat the param type
-        return new Parameter(paramName.text(), paramType);
-      }
+      // We have a param type
+      advance(); // eat the param type
+      return new Parameter(paramName.text(), paramType);
     } else {
       // no colon, just an unknown param type
       return new Parameter(paramName.text());
@@ -374,11 +360,12 @@ public class Parser {
 
     List<IfNode.Case> cases = new ArrayList<>();
 
-    Node condition = expr();
-    Node statements = block();
-    cases.add(new IfNode.Case(condition, (BlockNode) statements));
+    ExprNode condition = expr();
+    BlockNode statements = block();
+    cases.add(new IfNode.Case(condition, statements));
 
-    Node elseStatements = null;
+    BlockNode elseStatements = null;
+    // TODO: This is weird, why do we care if it's a keyword?!
     if (token.type().isKeyword()) {
       Token elseOrElif = token;
       // while elif: get condition, get statements, add to case list.
@@ -389,6 +376,7 @@ public class Parser {
         Node elifStatements = block();
         cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
 
+        // TODO: What?!
         if (token.type().isKeyword()) {
           elseOrElif = token;
         } else {
@@ -402,7 +390,7 @@ public class Parser {
       }
     }
 
-    return new IfNode(cases, (BlockNode) elseStatements, kt.start());
+    return new IfNode(cases, elseStatements, kt.start());
   }
 
   private WhileNode whileStmt(Token kt) {
@@ -489,8 +477,7 @@ public class Parser {
   }
 
   private ExprNode shift() {
-    return binOpFn(
-        ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSub());
+    return binOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSub());
   }
 
   private ExprNode addSub() {
@@ -574,8 +561,8 @@ public class Parser {
     return UNARY_KEYWORDS.contains(token.type());
   }
 
-  /** 
-   * Parse an (optional) array reference. 
+  /**
+   * Parse an (optional) array reference.
    *
    * <pre>
    * arrayGet -> atom ('[' expr ']')
