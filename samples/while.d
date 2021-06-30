@@ -9,7 +9,7 @@ makeInt:proc(this:string):int  {
   value=0
   cc = 1
   x = advance(this)
-  while cc >=0 & cc <=9 do x=advance(this) {
+  while cc >=0 and cc <=9 do x=advance(this) {
     value=value * 10 + asc(x)
   }
   return value

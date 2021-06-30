@@ -83,7 +83,7 @@ new_lexer: proc(text: string) {
 
 nextToken: proc(): String {
   // skip unwanted whitespace
-  while (lexer_cc == ' ' | lexer_cc == chr(10) | lexer_cc == chr(9) | lexer_cc == chr(13)) {
+  while (lexer_cc == ' ' or lexer_cc == chr(10) or lexer_cc == chr(9) or lexer_cc == chr(13)) {
     if (lexer_cc == chr(10)) {
       lexer_line=lexer_line + 1
       lexer_col=0
@@ -137,15 +137,15 @@ toString: proc(i: int): string {
 }
 
 isLetter: proc(c: string): bool {
-  return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
+  return (c>='a' and c <= 'z') or (c>='A' and c <= 'Z') or c=='_'
 }
 
 isDigit: proc(c: string): bool {
-  return c>='0' & c <= '9'
+  return c>='0' and c <= '9'
 }
 
 isLetterOrDigit: proc(c: string): bool {
-  return isLetter(c) | isDigit(c)
+  return isLetter(c) or isDigit(c)
 }
 
 makeText: proc(): String {
@@ -191,7 +191,7 @@ startsWithSlash: proc(): String {
     // Comment.
     advance() // eat the second slash
     // Eat characters until newline
-    while lexer_cc != '\n' & lexer_cc != '' do advance() {}
+    while lexer_cc != '\n' and lexer_cc != '' do advance() {}
     if lexer_cc != '' {
       advance() // eat the newline
     }
@@ -247,7 +247,7 @@ startsWithEq: proc(): String{
 makeString: proc(first: String): string {
   advance() // eat the tick/quote
   sb=''
-  while lexer_cc != first & lexer_cc != '' {
+  while lexer_cc != first and lexer_cc != '' {
     sb=sb + lexer_cc
     advance()
   }
@@ -311,7 +311,7 @@ makeSymbol: proc(): string {
   } elif oc == ':' {
     advance()
     return Token(Type_COLON, oc)
-  } elif oc == chr(34) | oc == chr(39) {
+  } elif oc == chr(34) or oc == chr(39) {
     return makeString(oc)
   } elif oc == ',' {
     advance()

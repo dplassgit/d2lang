@@ -19,7 +19,7 @@ p:proc() {
   e=a<3
   e=a<=3
   e=a>=3
-  e=(a>=3)|!(b<3)
+  e=(a>=3) or not (b<3)
 
   // Print
   println a
@@ -44,11 +44,11 @@ p:proc() {
 
 // Boolean constants
 c=true
-c=!true
-c=!!true
+c=not true
+c=not not true
 d=c
-d=!c | false
-d=!!c & c
+d=not c or false
+d=not not c and c
 
 x:string
 x="hi"
