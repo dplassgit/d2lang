@@ -143,10 +143,10 @@ public class Lexer {
         return new Token(Type.MOD, start, oc);
       case '&':
         advance();
-        return new Token(Type.AND, start, oc);
+        return new Token(Type.BIT_AND, start, oc);
       case '|':
         advance();
-        return new Token(Type.OR, start, oc);
+        return new Token(Type.BIT_OR, start, oc);
       case '!':
         return startsWithNot(start);
       case '{':
@@ -170,6 +170,9 @@ public class Lexer {
       case ']':
         advance();
         return new Token(Type.RBRACKET, start, oc);
+      case '^':
+        advance();
+        return new Token(Type.BIT_XOR, start, oc);
       default:
         throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
     }
@@ -201,7 +204,7 @@ public class Lexer {
       advance(); // eat the =
       return new Token(Type.NEQ, start, end, "!=");
     }
-    return new Token(Type.NOT, start, oc);
+    return new Token(Type.BIT_NOT, start, oc);
   }
 
   private Token startsWithGt(Position start) {

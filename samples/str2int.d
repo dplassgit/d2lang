@@ -1,5 +1,5 @@
 isDigit: proc(c: string): bool {
-  return c >= '0' & c <= '9'
+  return c >= '0' and c <= '9'
 }
 
 str2int: proc(s: string): int {

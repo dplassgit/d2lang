@@ -242,7 +242,7 @@ public class ParserTest {
 
   @Test
   public void unaryNotConstant() {
-    BlockNode root = parseStatements("a=!true");
+    BlockNode root = parseStatements("a=NOT true");
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -265,7 +265,7 @@ public class ParserTest {
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
-    assertThat(((UnaryNode) expr).operator()).isEqualTo(Token.Type.NOT);
+    assertThat(((UnaryNode) expr).operator()).isEqualTo(Token.Type.BIT_NOT);
   }
 
   @Test

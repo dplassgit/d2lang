@@ -133,7 +133,7 @@ public class StaticCheckerTest {
 
   @Test
   public void manyBinOps() {
-    SymTab types = checkProgram("a=4 b=5  e=(a>=3)|!(b<3)");
+    SymTab types = checkProgram("a=4 b=5  e=(a>=3)or not (b<3)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -151,8 +151,10 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void assignIntUnaryFailure() {
-    assertExecuteError("a=3 b=!a", "NOT");
+  public void assignIntUnaryOK() {
+    SymTab types = checkProgram("a=3 b=!a");
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -205,14 +207,14 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBoolConstantUnary() {
-    SymTab types = checkProgram("a=!true");
+    SymTab types = checkProgram("a=not true");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void assignBoolUnary() {
-    SymTab types = checkProgram("a=true b=!a");
+    SymTab types = checkProgram("a=true b=not a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
   }
@@ -315,7 +317,7 @@ public class StaticCheckerTest {
 
   @Test
   public void goodBooleanBinOp() {
-    for (String op : ImmutableList.of("==", "|", "&", "<", ">")) {
+    for (String op : ImmutableList.of("==", "or", "and", "<", ">")) {
       checkProgram(String.format("a=true %s false", op));
     }
   }
@@ -330,11 +332,8 @@ public class StaticCheckerTest {
 
   @Test
   public void badBooleanSingleCharMismatch() {
-    for (char c : "+-".toCharArray()) {
+    for (char c : "+-|&".toCharArray()) {
       assertExecuteError(String.format("a=true %c 3", c), "Cannot apply");
-    }
-    for (char c : "|&".toCharArray()) {
-      assertExecuteError(String.format("a=true %c 3", c), "Type mismatch");
     }
   }
 

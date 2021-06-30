@@ -43,10 +43,11 @@ public class Token {
     LEQ("<="),
     GEQ(">="),
     NEQ("!="),
-    // Booleans operators (& keywords)
-    NOT(true),
+    // Boolean operators (& keywords)
+    NOT(true), // it won't accept ! as not boolean anymore.
     AND(true),
     OR(true),
+    XOR(true),
     // Binary operators
     PLUS("+"),
     MINUS("-"),
@@ -55,6 +56,10 @@ public class Token {
     MOD("%"),
     SHIFT_LEFT("<<"),
     SHIFT_RIGHT(">>"),
+    BIT_AND("&"),
+    BIT_XOR("^"),
+    BIT_OR("|"),
+    BIT_NOT("!"),
     // Separators
     LPAREN("("),
     RPAREN(")"),

@@ -58,7 +58,11 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.MULT,
           Token.Type.PLUS,
           Token.Type.SHIFT_LEFT,
-          Token.Type.SHIFT_RIGHT);
+          Token.Type.SHIFT_RIGHT,
+          Token.Type.BIT_OR,
+          Token.Type.BIT_XOR,
+          Token.Type.BIT_AND);
+
 
   private static final Set<Token.Type> STRING_OPERATORS =
       ImmutableSet.of(
@@ -80,7 +84,8 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.GT,
           Token.Type.NEQ,
           Token.Type.AND,
-          Token.Type.OR);
+          Token.Type.OR,
+          Token.Type.XOR);
 
   // TODO(#14): implement EQEQ and NEQ for arrays
   private static final Set<Token.Type> ARRAY_OPERATORS =
@@ -348,6 +353,12 @@ public class StaticChecker extends DefaultVisitor {
         if (expr.varType() != VarType.BOOL) {
           throw new TypeException(
               String.format("NOT must take BOOL; was %s", expr.varType()), expr.position());
+        }
+        break;
+      case BIT_NOT:
+        if (expr.varType() != VarType.INT) {
+          throw new TypeException(
+              String.format("! (binary not) must take INT; was %s", expr.varType()), expr.position());
         }
         break;
       case LENGTH:
