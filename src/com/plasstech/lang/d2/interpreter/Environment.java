@@ -69,6 +69,10 @@ public class Environment {
 
   @Override
   public String toString() {
-    return values.toString();
+    if (parent != null) {
+      return values.toString() + " Parent: " + parent.toString();
+    } else {
+      return values.toString();
+    }
   }
 }

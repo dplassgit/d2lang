@@ -218,6 +218,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     node.setLocation(destination);
 
     switch (node.operator()) {
+      case BIT_NOT:
       case NOT:
       case MINUS:
       case LENGTH:

@@ -24,4 +24,7 @@ public class D2Options extends OptionsBase {
 
   @Option(name = "debugint", help = "Sets debug level for interpreter.", defaultValue = "0")
   public int debugint;
+
+  @Option(name = "optimize", help = "Turns on the optimizer.", defaultValue = "true")
+  public boolean optimize;
 }

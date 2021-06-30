@@ -112,6 +112,7 @@ public class ExecutionEnvironment {
 
   public Environment execute(List<Op> operators) {
     Interpreter interpreter = new Interpreter(operators, symbolTable);
+    interpreter.setDebugLevel(debugInt);
     env = interpreter.execute();
     return env;
   }

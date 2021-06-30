@@ -247,6 +247,15 @@ public class InterpreterTest {
     assertThat(env.getValue("b")).isEqualTo(0);
   }
 
+  @Test
+  public void bitOperations() {
+    Environment env = execute("a=123 b=a&64 c=a|31 d=!a");
+    assertThat(env.getValue("a")).isEqualTo(123);
+    assertThat(env.getValue("b")).isEqualTo(123 & 64);
+    assertThat(env.getValue("c")).isEqualTo(123 | 31);
+    assertThat(env.getValue("d")).isEqualTo(~123);
+  }
+
   private Environment execute(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program, false);
     Environment env = ee.execute();

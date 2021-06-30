@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Level;
 
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -44,15 +45,33 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private final Stack<Integer> ipStack = new Stack<>();
   private final Stack<Environment> envs = new Stack<>();
 
+  private Level loggingLevel;
+
   public Interpreter(List<Op> code, SymTab table) {
     this.code = code;
     this.table = table;
     envs.push(rootEnv);
   }
 
+  public void setDebugLevel(int debugInt) {
+    switch (debugInt) {
+      case 1:
+        loggingLevel = Level.CONFIG;
+        break;
+      case 2:
+        loggingLevel = Level.INFO;
+        break;
+      default:
+      case 0:
+        loggingLevel = Level.FINE;
+        break;
+    }
+  }
+
   public Environment execute() {
     while (running) {
       Op op = code.get(ip);
+      logger.at(loggingLevel).log("Current op: %s. Env: %s", op, envs.peek().toString());
       ip++;
       try {
         op.accept(this);
@@ -194,6 +213,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return ((left != 0) && (right != 0)) ? 1 : 0;
       case OR:
         return ((left != 0) || (right != 0)) ? 1 : 0;
+      case XOR:
+        return ((left != 0) ^ (right != 0)) ? 1 : 0;
       case DIV:
         return left / right;
       case EQEQ:
@@ -220,6 +241,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return left << right;
       case SHIFT_RIGHT:
         return left >> right;
+      case BIT_AND:
+        return left & right;
+      case BIT_OR:
+        return left | right;
+      case BIT_XOR:
+        return left ^ right;
       default:
         throw new IllegalStateException("Unknown int binop " + op.operator());
     }
@@ -275,6 +302,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return 0 - r1;
       case NOT:
         return (r1 == 0) ? 1 : 0;
+      case BIT_NOT:
+        return ~r1;
       case CHR:
         return "" + (char) r1;
       default:

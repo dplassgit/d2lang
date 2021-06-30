@@ -44,12 +44,13 @@ public class InterpreterDriver {
       e.printStackTrace();
       return;
     }
-    ExecutionEnvironment ee = new ExecutionEnvironment(text, true);
+    ExecutionEnvironment ee = new ExecutionEnvironment(text, options.optimize);
     ee.setLexDebugLevel(options.debuglex);
     ee.setParseDebugLevel(options.debugparse);
     ee.setTypeDebugLevel(options.debugtype);
     ee.setCodeGenDebugLevel(options.debugcodegen);
     ee.setOptDebugLevel(options.debugopt);
+    ee.setIntDebugLevel(options.debugint);
 
     Environment env = ee.execute();
     if (options.debugparse > 0) {
