@@ -50,6 +50,7 @@ import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
@@ -258,7 +259,7 @@ public class Parser {
         // Assignment
       case EQ:
         advance(); // eat the =
-        VariableNode var = new VariableNode(variable.text(), variable.start());
+        VariableSetNode var = new VariableSetNode(variable.text(), variable.start());
         ExprNode expr = expr();
         return new AssignmentNode(var, expr);
 
@@ -667,6 +668,7 @@ public class Parser {
 
       left = new BinOpNode(left, Token.Type.LBRACKET, index);
     } else if (token.type() == Token.Type.DOT) {
+      // Record field reference
       advance();
       expect(Token.Type.VARIABLE);
       Token varToken = advance();

@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.VariableSetNode;
 
 public class StaticCheckerTest {
 
@@ -41,7 +42,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -61,7 +62,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -82,7 +83,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
@@ -103,7 +104,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
@@ -123,7 +124,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.BOOL);
 
@@ -231,7 +232,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -267,7 +268,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
 
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -479,7 +480,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
 
     AssignmentNode node = (AssignmentNode) root.main().get().block().statements().get(1);
-    VariableNode var = node.variable();
+    VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -552,11 +553,11 @@ public class StaticCheckerTest {
 
   @Test
   public void proc() {
-    checkProgram("fib:proc(n1:int, n2) : int { n1=3 n2=n1 return n1}");
+    checkProgram("fib:proc(n1:int, n2:int) : int { n1=3 n2=n1 return n1}");
     checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram("fib:proc() {a=3} a=true");
     checkProgram("a=true fib:proc() {a:int a=3} ");
-    checkProgram("fib:proc(n) : int { n=3 return n}");
+    checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram(
         "level1:proc() : bool { "
             + " level2:proc() : int  {n=3 return n}"
@@ -604,8 +605,10 @@ public class StaticCheckerTest {
   @Test
   public void procMismatch() {
     assertExecuteError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
-    assertExecuteError("fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
-    assertExecuteError("fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
+    assertExecuteError(
+        "fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
+    assertExecuteError(
+        "fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
 
     assertExecuteError("fib:proc() {return 3}", "declared to return VOID but returned INT");
     assertExecuteError("fib:proc():int {return}", "declared to return INT but returned VOID");
@@ -615,12 +618,7 @@ public class StaticCheckerTest {
   public void procReturn() {
     assertExecuteError("fib:proc():int {}", "No RETURN statement");
     assertExecuteError(
-        "fib:proc():bool {"
-            + "if false {"
-            + " return false"
-            + "}"
-            + "}",
-        "Not all codepaths");
+        "fib:proc():bool {" + "if false {" + " return false" + "}" + "}", "Not all codepaths");
     assertExecuteError(
         "fib:proc():bool {"
             + "if false {"
@@ -737,9 +735,7 @@ public class StaticCheckerTest {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     Node node = parser.parse();
-    assertWithMessage("Should have passed parse for:\n " + program)
-        .that(node.isError())
-        .isFalse();
+    assertWithMessage("Should have passed parse for:\n " + program).that(node.isError()).isFalse();
     ProgramNode programRoot = (ProgramNode) node;
     StaticChecker checker = new StaticChecker(programRoot);
     SymTab symTab = execute(checker);

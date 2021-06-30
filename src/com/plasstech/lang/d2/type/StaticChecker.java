@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
+import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -143,7 +144,7 @@ public class StaticChecker extends DefaultVisitor {
   @Override
   public void visit(AssignmentNode node) {
     // Make sure that the left = right
-    VariableNode variable = node.variable();
+    LValueNode variable = node.variable();
 
     Node right = node.expr();
     right.accept(this);
@@ -155,6 +156,7 @@ public class StaticChecker extends DefaultVisitor {
           String.format("Cannot assign value of void expression %s", right), right.position());
     }
 
+    // TODO: Need to fix this if lvalue is for recordfieldsetnode
     Symbol sym = symbolTable().getRecursive(variable.name());
     if (sym == null) {
       // Brand new symbol in all scopes. Assign in current scope.
