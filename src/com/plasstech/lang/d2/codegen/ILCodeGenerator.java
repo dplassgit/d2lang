@@ -113,7 +113,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(AssignmentNode node) {
-    String name = node.variable().name();
+    String name = node.variable().name(); // ugh this is weird and broken for RecordFieldSetNode
 
     // Look up storage in current symbol table
     // this may be a global or a local/parameter (stack)
