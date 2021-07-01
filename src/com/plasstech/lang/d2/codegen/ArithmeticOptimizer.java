@@ -47,6 +47,17 @@ class ArithmeticOptimizer extends LineOptimizer {
           }
         }
         return;
+      case BIT_NOT:
+        if (operand.isConstant()) {
+          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+          Object value = constant.value();
+          if (value instanceof Integer) {
+            Integer valueInt = (Integer) value;
+            replaceCurrent(
+                new Transfer(opcode.destination(), new ConstantOperand<Integer>(~valueInt)));
+          }
+        }
+        return;
       case MINUS:
         if (operand.isConstant()) {
           ConstantOperand<?> constant = (ConstantOperand<?>) operand;
@@ -116,12 +127,27 @@ class ArithmeticOptimizer extends LineOptimizer {
         optimizeShiftRight(op, left, right);
         return;
 
+      case BIT_AND:
+        optimizeBitAnd(op, left, right);
+        return;
+
+      case BIT_OR:
+        optimizeBitOr(op, left, right);
+        return;
+
+      case BIT_XOR:
+        optimizeArith(op.destination(), left, right, (t, u) -> t ^ u);
+        return;
+
       case AND:
         optimizeAnd(op, left, right);
         return;
 
       case OR:
         optimizeOr(op, left, right);
+        return;
+
+      case XOR:
         return;
 
       case EQEQ:
@@ -150,6 +176,40 @@ class ArithmeticOptimizer extends LineOptimizer {
 
       default:
         return;
+    }
+  }
+
+  /** Bit or (for ints) */
+  private void optimizeBitOr(BinOp op, Operand left, Operand right) {
+    if (optimizeArith(op.destination(), left, right, (t, u) -> t | u)) {
+      // Two constants.
+      return;
+    }
+    // Anything | 0 = the thing
+    if (left.equals(ConstantOperand.ZERO)) {
+      // replace with destination = right
+      replaceCurrent(new Transfer(op.destination(), op.right()));
+      return;
+    } else if (right.equals(ConstantOperand.ZERO)) {
+      // replace with destination = left
+      replaceCurrent(new Transfer(op.destination(), op.left()));
+      return;
+    }
+  }
+
+  private void optimizeBitAnd(BinOp op, Operand left, Operand right) {
+    // Anything & 0 = 0
+    if (optimizeArith(op.destination(), left, right, (t, u) -> t & u)) {
+      return;
+    }
+    if (left.equals(ConstantOperand.ZERO)) {
+      // replace with destination = 0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      return;
+    } else if (right.equals(ConstantOperand.ZERO)) {
+      // replace with destination = 0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      return;
     }
   }
 
@@ -230,8 +290,9 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       } else {
         // Strings
-        ConstantOperand leftConstant = (ConstantOperand) left;
+        ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
         if (leftConstant.value() instanceof String) {
+          @SuppressWarnings("unchecked")
           ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
           replaceCurrent(
               new Transfer(
@@ -325,6 +386,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
   }
 
+  // this is for BOOLEAN or.
   private void optimizeOr(BinOp op, Operand left, Operand right) {
     if (optimizeBoolArith(op.destination(), left, right, (t, u) -> t || u)) {
       return;
@@ -346,12 +408,11 @@ class ArithmeticOptimizer extends LineOptimizer {
   /**
    * If both operands are constant integers, apply the given function to the constants and replace
    * the opcode with result. E.g., op=3<4 becomes op=true
+   *
+   * @return true if both operands are constants.
    */
   private boolean optimizeCompare(
-      Location destination,
-      Operand left,
-      Operand right,
-      BiPredicate<Integer, Integer> fun) {
+      Location destination, Operand left, Operand right, BiPredicate<Integer, Integer> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -370,6 +431,8 @@ class ArithmeticOptimizer extends LineOptimizer {
   /**
    * If both operands are constants, apply the given function to the constants and replace the
    * opcode with result. E.g., t='a'=='b' becomes t=false
+   *
+   * @return true if both operands are constants.
    */
   private boolean optimizeEq(
       Location destination, Operand left, Operand right, BiPredicate<Object, Object> fun) {
@@ -390,12 +453,11 @@ class ArithmeticOptimizer extends LineOptimizer {
   /**
    * If both operands are constant integers, apply the given function to those ints and replace the
    * opcode with the new constant. E.g., t=3+4 becomes t=7
+   *
+   * @return true if both operands are int constants.
    */
   private boolean optimizeArith(
-      Location destination,
-      Operand left,
-      Operand right,
-      BinaryOperator<Integer> fun) {
+      Location destination, Operand left, Operand right, BinaryOperator<Integer> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
@@ -414,12 +476,11 @@ class ArithmeticOptimizer extends LineOptimizer {
   /**
    * If both operands are constant booleans, apply the given function to those booleans and replace
    * the opcode with the new constant. E.g., t=true or false becomes t=true
+   *
+   * @return true if both operands are boolean constants.
    */
   private boolean optimizeBoolArith(
-      Location destination,
-      Operand left,
-      Operand right,
-      BinaryOperator<Boolean> fun) {
+      Location destination, Operand left, Operand right, BinaryOperator<Boolean> fun) {
 
     if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
       ConstantOperand leftConstant = (ConstantOperand) left;
