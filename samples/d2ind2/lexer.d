@@ -32,6 +32,7 @@ Type_RBRACKET=30
 Type_DOT=31
 Type_SHIFT_LEFT=32
 Type_SHIFT_RIGHT=33
+Type_XOR=34
 
 KEYWORDS=[
 'print',
@@ -62,7 +63,8 @@ KEYWORDS=[
 'exit',
 'and',
 'or',
-'not'
+'not',
+'xor',
 ]
 
 Position: record {
@@ -107,7 +109,7 @@ advance: proc(this: Lexer) {
 
 nextToken: proc(this: Lexer): Token {
   // skip unwanted whitespace
-  while (this.cc == ' ' | this.cc == '\n' | this.cc == '\t' | this.cc == '\r') {
+  while (this.cc == ' ' or this.cc == '\n' or this.cc == '\t' or this.cc == '\r') {
     if (this.cc == '\n') {
       this.line=this.line + 1
       this.col=0
@@ -128,15 +130,15 @@ nextToken: proc(this: Lexer): Token {
 }
 
 isLetter: proc(c: string): bool {
-  return (c>='a' & c <= 'z') | (c>='A' & c <= 'Z') | c=='_'
+  return (c>='a' and c <= 'z') or (c>='A' and c <= 'Z') or c=='_'
 }
 
 isDigit: proc(c: string): bool {
-  return c>='0' & c <= '9'
+  return c>='0' and c <= '9'
 }
 
 isLetterOrDigit: proc(c: string): bool {
-  return isLetter(c) | isDigit(c)
+  return isLetter(c) or isDigit(c)
 }
 
 makeText: proc(this: Lexer, start: Position): Token {
@@ -170,7 +172,7 @@ makeText: proc(this: Lexer, start: Position): Token {
 makeInt: proc(this: Lexer, start: Position): Token {
   value=0
   value_as_string = ''
-  while this.cc >= '0' & this.cc <= '9' do advance(this) {
+  while this.cc >= '0' and this.cc <= '9' do advance(this) {
     value=value * 10 + (asc(this.cc) - asc('0'))
     value_as_string = value_as_string + this.cc
   }
@@ -220,6 +222,9 @@ makeSymbol: proc(this: Lexer, start: Position): Token {
     return makeToken(Type_OR, start, start, oc)
   } elif oc == '!' {
     return startsWithNot(this, start)
+  } elif oc == '^' {
+    advance(this)
+    return makeToken(Type_XOR, start, start, oc)
   } elif oc == '{' {
     advance(this)
     return makeToken(Type_LBRACE, start, start, oc)
@@ -235,7 +240,7 @@ makeSymbol: proc(this: Lexer, start: Position): Token {
   } elif oc == ':' {
     advance(this)
     return makeToken(Type_COLON, start, start, oc)
-  } elif oc == chr(34) | oc == chr(39) {
+  } elif oc == chr(34) or oc == chr(39) {
     return makeStringToken(start, oc)
   } elif oc == ',' {
     advance(this)
@@ -253,7 +258,7 @@ startsWithSlash: proc(this: Lexer, start: Position): Token {
   advance(this) // eat the first slash
   if (this.cc == '/') {
     advance(this) // eat the second slash
-    while (this.cc !='\n' & this.cc !=0) {
+    while (this.cc !='\n' and this.cc !=0) {
       advance(this)
     }
     if (this.cc !=0) {
@@ -325,7 +330,7 @@ makeStringToken: proc(this: Lexer, start: Position, first: String): Token {
   advance(this) // eat the tick/quote
   sb=''
   // TODO: fix backslash-escaping
-  while this.cc != first & this.cc !='' {
+  while this.cc != first and this.cc !='' {
     sb = sb + this.cc
     advance(this)
   }

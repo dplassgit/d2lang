@@ -17,7 +17,11 @@ public class NewNode extends AbstractNode implements ExprNode {
     return recordName;
   }
 
-  // TODO: visit
+  @Override
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
   // TODO: tostring
 
 }
