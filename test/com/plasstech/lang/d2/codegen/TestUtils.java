@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.util.List;
@@ -35,12 +34,16 @@ public class TestUtils {
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));
 
-    System.out.println("\nOTPTIMIZED SYSTEM.OUT:");
+    System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
-    System.out.println(Joiner.on("").join(unoptimizedEnv.output()));
+    System.out.println(Joiner.on("").join(optimizedEnv.output()));
 
-    assertThat(optimizedEnv.variables()).isEqualTo(unoptimizedEnv.variables());
-    assertThat(optimizedEnv.output()).isEqualTo(unoptimizedEnv.output());
+    assertWithMessage("Environment should be the same")
+        .that(optimizedEnv.variables())
+        .isEqualTo(unoptimizedEnv.variables());
+    assertWithMessage("Output should be the same")
+        .that(optimizedEnv.output())
+        .isEqualTo(unoptimizedEnv.output());
     assertWithMessage("Should have made at least one optimization")
         .that(originalCode)
         .isNotEqualTo(optimized);

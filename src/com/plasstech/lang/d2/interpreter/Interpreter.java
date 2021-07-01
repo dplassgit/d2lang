@@ -34,6 +34,8 @@ import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class Interpreter extends DefaultOpcodeVisitor {
+  private static final int MAX_ITERATIONS = 10000000;
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<Op> code;
@@ -71,24 +73,24 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public Environment execute() {
     while (running) {
       Op op = code.get(ip);
-      logger.at(loggingLevel).log("Current op: %s. Env: %s", op, envs.peek().toString());
+      logger.at(loggingLevel).log("Current op: %s. Env: %s", op, envs.peek());
       ip++;
       try {
         op.accept(this);
       } catch (RuntimeException re) {
-        System.err.println("Exception at " + op);
-        System.err.println(envs.peek());
+        logger.atSevere().withCause(re).log("Exception at %s; env: %s", op, envs);
         throw re;
       }
       iterations++;
-      if (iterations > 100000) {
-        System.err.println("ERROR: Terminated after too many iterations");
+      if (iterations > MAX_ITERATIONS) {
+        logger.atSevere().log("Terminated after too many iterations (%d)", MAX_ITERATIONS);
         break;
       }
     }
     if (!ipStack.isEmpty()) {
-      System.err.println("Stack not empty");
+      logger.atSevere().log("Stack not empty");
     }
+    logger.atInfo().log("Interpreter ran for %d iterations", iterations);
     return rootEnv;
   }
 
