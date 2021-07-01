@@ -48,13 +48,13 @@ public class IncDecOptimizer extends LineOptimizer {
         && first.source().equals(third.destination())) {
       // WE HAVE ONE!
       logger.at(loggingLevel).log("Found Inc/Dec pattern at ip %d", ip);
-      if (plus) {
-        replaceCurrent(new Inc(third.destination()));
-      } else {
-        replaceCurrent(new Dec(third.destination()));
-      }
+      deleteCurrent();
       deleteAt(ip + 1);
-      deleteAt(ip + 2);
+      if (plus) {
+        replaceAt(ip+2, new Inc(third.destination()));
+      } else {
+        replaceAt(ip+2, new Dec(third.destination()));
+      }
     }
   }
 }

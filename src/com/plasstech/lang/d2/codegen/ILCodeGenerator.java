@@ -238,7 +238,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(IfNode node) {
-    String after = generateLabel("afterIf");
+    String after = generateLabel("after_if");
 
     for (IfNode.Case ifCase : node.cases()) {
       String nextLabel = generateLabel("elif");
@@ -268,17 +268,17 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(WhileNode node) {
-    // loop:
+    // loop_begin:
     // ..test
-    // ..if done, goto afterWhile
+    // ..if done, goto loop_end
     // ..(loop code)
-    // increment: ("continue" target)
+    // loop_increment: ("continue" target)
     // ..(increment code)
-    // ..goto loop
-    // afterWhile: ("break" target)
-    String before = generateLabel("loop");
-    String increment = generateLabel("increment");
-    String after = generateLabel("afterWhile");
+    // ..goto loop_begin
+    // loop_end: ("break" target)
+    String before = generateLabel("loop_begin");
+    String increment = generateLabel("loop_increment");
+    String after = generateLabel("loop_end");
     whileContinues.push(increment);
     whileBreaks.push(after);
 

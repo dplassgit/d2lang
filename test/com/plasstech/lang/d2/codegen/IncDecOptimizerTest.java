@@ -41,9 +41,9 @@ public class IncDecOptimizerTest {
             new BinOp(temp2, temp1, Token.Type.PLUS, ConstantOperand.ONE),
             new Transfer(stack, temp2));
     ImmutableList<Op> optimized = optimizer.optimize(program);
-    assertThat(optimized.get(0)).isInstanceOf(Inc.class);
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Inc.class);
     assertThat(optimizer.isChanged()).isTrue();
   }
 
@@ -58,9 +58,9 @@ public class IncDecOptimizerTest {
             new BinOp(temp2, temp1, Token.Type.MINUS, ConstantOperand.ONE),
             new Transfer(stack, temp2));
     ImmutableList<Op> optimized = optimizer.optimize(program);
-    assertThat(optimized.get(0)).isInstanceOf(Dec.class);
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Dec.class);
     assertThat(optimizer.isChanged()).isTrue();
   }
 }
