@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2;
 
+import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -14,16 +15,10 @@ import java.nio.file.Paths;
 
 public class CodeGenDriver {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     String filename = args[0];
     // 1. read file
-    String text;
-    try {
-      text = new String(Files.readAllBytes(Paths.get(filename)));
-    } catch (IOException e) {
-      e.printStackTrace();
-      return;
-    }
+    String text = new String(Files.readAllBytes(Paths.get(filename)));
     // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
@@ -37,8 +32,8 @@ public class CodeGenDriver {
     if (checkResult.isError()) {
       throw new RuntimeException(checkResult.message());
     }
-    //    System.out.println(root);
+    System.out.println(root);
     ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
-    cg.generate();
+    System.out.println(Joiner.on("\n").join(cg.generate()));
   }
 }

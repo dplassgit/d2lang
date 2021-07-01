@@ -8,4 +8,8 @@ f:proc(n:int):int {
    return sum
 }
 
-print f(10)
+val = f(10)
+println val
+if val != 45 {
+  exit "Should have been 45"
+}

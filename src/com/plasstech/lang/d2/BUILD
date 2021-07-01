@@ -34,6 +34,7 @@ java_binary(name="CodeGenDriver",
               "//src/com/plasstech/lang/d2/parse",
               "//src/com/plasstech/lang/d2/parse/node",
               "//src/com/plasstech/lang/d2/type",
+              "@maven//:com_google_guava_guava",
             ],
             runtime_deps=[
               "@maven//:com_google_flogger_flogger_system_backend",
