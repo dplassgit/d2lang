@@ -148,6 +148,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case XOR:
+        optimizeBoolArith(op.destination(), left, right, (t, u) -> t ^ u);
         return;
 
       case EQEQ:
@@ -198,10 +199,11 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeBitAnd(BinOp op, Operand left, Operand right) {
-    // Anything & 0 = 0
     if (optimizeArith(op.destination(), left, right, (t, u) -> t & u)) {
+      // Two constants.
       return;
     }
+    // Anything & 0 = 0
     if (left.equals(ConstantOperand.ZERO)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
