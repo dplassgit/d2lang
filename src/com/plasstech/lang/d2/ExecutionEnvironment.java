@@ -99,12 +99,9 @@ public class ExecutionEnvironment {
       System.out.println(Joiner.on("\n").join(ilCode));
     }
     if (optimize) {
-      ILOptimizer optimizer = new ILOptimizer();
-      optimizer.setDebugLevel(debugOpt);
-      ImmutableList<Op> optimized = optimizer.optimize(ilCode);
-      if (!optimized.equals(ilCode)) {
-        ilCode = optimized;
-      }
+      // Runs all the optimizers.
+      ILOptimizer optimizer = new ILOptimizer(debugOpt);
+      ilCode = optimizer.optimize(ilCode);
     }
 
     return execute(ilCode);

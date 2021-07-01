@@ -1,23 +1,23 @@
 package com.plasstech.lang.d2.codegen;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.LogSites;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.Nop;
+import com.plasstech.lang.d2.codegen.il.Op;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.FluentLogger;
-import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
-import com.plasstech.lang.d2.codegen.il.Nop;
-import com.plasstech.lang.d2.codegen.il.Op;
-
 abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  protected final Level loggingLevel;
   private boolean changed;
+
+  protected final Level loggingLevel;
   protected List<Op> code;
   protected int ip;
-  protected Op currentOp;
 
   LineOptimizer(int debugLevel) {
     switch (debugLevel) {
@@ -39,12 +39,13 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
     this.code = new ArrayList<>(input);
     setChanged(false);
     for (ip = 0; ip < code.size(); ++ip) {
-      currentOp = code.get(ip);
+      Op currentOp = code.get(ip);
       currentOp.accept(this);
     }
     return ImmutableList.copyOf(this.code);
   }
 
+  @Override
   public boolean isChanged() {
     return changed;
   }
@@ -61,19 +62,22 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
     return null;
   }
 
-  /** Replace the given op with the given nop. */
+  /** Replace the op at the given ip with the given op. */
   protected void replaceAt(int theIp, Op newOp) {
     setChanged(true);
-    logger.at(loggingLevel).log("Replacing ip %d: %s with %s", theIp, code.get(theIp), newOp);
+    logger
+        .at(loggingLevel)
+        .withInjectedLogSite(LogSites.callerOf(LineOptimizer.class))
+        .log("Replacing ip %d: %s with %s", theIp, code.get(theIp), newOp);
     code.set(theIp, newOp);
   }
 
-  /** Replace the current op with the given nop. */
+  /** Replace the current op with the given op. */
   protected void replaceCurrent(Op newOp) {
     replaceAt(ip, newOp);
   }
 
-  /** Replace the given op with a nop. */
+  /** Replace the op at the given ip with a nop. */
   protected void deleteAt(int theIp) {
     Op theOp = code.get(theIp);
     Op newOp = new Nop(theOp);

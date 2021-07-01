@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -10,6 +7,7 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -18,6 +16,8 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DeadAssignmentOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -27,6 +27,12 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
 
   DeadAssignmentOptimizer(int debugLevel) {
     super(debugLevel);
+  }
+
+  @Override
+  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+    assignments.clear();
+    return super.optimize(input);
   }
 
   private void recordAssignment(Location destination) {
