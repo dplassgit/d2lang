@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.lex.Token;
 
 public class IncDecOptimizerTest {
 
-  private IncDecOptimizer optimizer = new IncDecOptimizer(2);
+  private IncDecOptimizer optimizer = new IncDecOptimizer(0);
 
   @Test
   public void noOptimization() {

@@ -5,7 +5,7 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 
 public class ArithmeticOptimizerTest {
-  private ArithmeticOptimizer optimizer = new ArithmeticOptimizer(2);
+  private ArithmeticOptimizer optimizer = new ArithmeticOptimizer(0);
 
   @Test
   public void bitOperations() {

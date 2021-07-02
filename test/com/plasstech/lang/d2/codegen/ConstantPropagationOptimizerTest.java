@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class ConstantPropagationOptimizerTest {
-  private ConstantPropagationOptimizer optimizer = new ConstantPropagationOptimizer(2);
+  private ConstantPropagationOptimizer optimizer = new ConstantPropagationOptimizer(0);
 
   @Test
   public void doubleCopy() {
