@@ -39,6 +39,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<Op> code;
+  private final boolean interactive;
   private int ip;
   private int iterations;
   private boolean running = true;
@@ -49,9 +50,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private Level loggingLevel;
 
-  public Interpreter(List<Op> code, SymTab table) {
+  public Interpreter(List<Op> code, SymTab table, boolean interactive) {
     this.code = code;
     this.table = table;
+    this.interactive = interactive;
     envs.push(rootEnv);
   }
 
@@ -90,7 +92,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (!ipStack.isEmpty()) {
       logger.atSevere().log("Stack not empty");
     }
-    logger.atInfo().log("Interpreter ran for %d iterations", iterations);
+    logger.at(loggingLevel).log("Interpreter ran for %d iterations", iterations);
     return rootEnv;
   }
 
@@ -332,9 +334,15 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(SysCall op) {
     switch (op.call()) {
       case PRINT:
+        if (interactive) {
+          System.out.print(String.valueOf(resolve(op.arg())));
+        }
         rootEnv.addOutput(String.valueOf(resolve(op.arg())));
         break;
       case MESSAGE:
+        if (interactive) {
+          System.err.println("SYSTEM ERROR: " + resolve(op.arg()));
+        }
         rootEnv.addOutput("SYSTEM ERROR: " + resolve(op.arg()));
         break;
       case INPUT:

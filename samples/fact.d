@@ -7,4 +7,4 @@ fact: proc(n: int):int {
   }
 }
 
-print fact(10)
+println fact(10)

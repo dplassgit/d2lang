@@ -256,7 +256,7 @@ public class InterpreterTest {
   }
 
   private Environment execute(String program) {
-    ExecutionEnvironment ee = new ExecutionEnvironment(program, false);
+    ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment env = ee.execute();
     //    System.out.println(ee.programNode());
     //

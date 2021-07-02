@@ -9,5 +9,9 @@ p:proc(n:int):int {
   return n
 }
 
-print p(a)
+pa = p(a)
+println pa
+if pa != 5 {
+  exit "Unexpected result"
+}
 

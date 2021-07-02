@@ -21,26 +21,33 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 public class ExecutionEnvironment {
 
   private final String program;
-  private final boolean optimize;
-  private ProgramNode programNode;
-  private TypeCheckResult typeCheckResult;
-  private SymTab symbolTable;
-  private ImmutableList<Op> ilCode;
-  private Environment env;
+  private boolean optimize;
+  private boolean interactive;
   private int debuglex;
   private int debugOpt;
   private int debugCodeGen;
   private int debugType;
   private int debugParse;
   private int debugInt;
+  private ProgramNode programNode;
+  private TypeCheckResult typeCheckResult;
+  private SymTab symbolTable;
+  private ImmutableList<Op> ilCode;
+  private Environment env;
 
+  /** TODO: Make this a builder */
   public ExecutionEnvironment(String program) {
-    this(program, false);
+    this.program = program;
   }
 
-  public ExecutionEnvironment(String program, boolean optimize) {
-    this.program = program;
+  public ExecutionEnvironment setOptimize(boolean optimize) {
     this.optimize = optimize;
+    return this;
+  }
+
+  public ExecutionEnvironment setInteractive(boolean interactive) {
+    this.interactive = interactive;
+    return this;
   }
 
   public ExecutionEnvironment setLexDebugLevel(int level) {
@@ -102,16 +109,19 @@ public class ExecutionEnvironment {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
       ilCode = optimizer.optimize(ilCode);
-      System.out.println("\nOPTIMIZED:");
-      System.out.println("------------------------------");
-      System.out.println(Joiner.on("\n").join(ilCode));
+      if (debugOpt > 0) {
+        System.out.println("\nOPTIMIZED:");
+        System.out.println("------------------------------");
+        System.out.println(Joiner.on("\n").join(ilCode));
+        System.out.println();
+      }
     }
 
     return execute(ilCode);
   }
 
   public Environment execute(List<Op> operators) {
-    Interpreter interpreter = new Interpreter(operators, symbolTable);
+    Interpreter interpreter = new Interpreter(operators, symbolTable, interactive);
     interpreter.setDebugLevel(debugInt);
     env = interpreter.execute();
     return env;

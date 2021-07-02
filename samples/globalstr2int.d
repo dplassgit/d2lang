@@ -7,7 +7,7 @@ lexer_loc: int  // location inside text
 lexer_cc: string // current character
 
 advance: proc() {
-  if lexer_loc < length(lexer_text) { //[lexer_loc] != '$' {
+  if lexer_loc < length(lexer_text) {
     lexer_cc=lexer_text[lexer_loc]
   } else {
     // Indicates no more characters
@@ -35,6 +35,6 @@ new_lexer: proc(text: string) {
 
 main {
   new_lexer("314" + "159 $")
-  print "Should be 314159:"
-  print makeInt()
+  println "Should be 314159:"
+  println makeInt()
 }

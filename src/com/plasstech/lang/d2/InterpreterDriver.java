@@ -44,13 +44,17 @@ public class InterpreterDriver {
       e.printStackTrace();
       return;
     }
-    ExecutionEnvironment ee = new ExecutionEnvironment(text, options.optimize);
-    ee.setLexDebugLevel(options.debuglex);
-    ee.setParseDebugLevel(options.debugparse);
-    ee.setTypeDebugLevel(options.debugtype);
-    ee.setCodeGenDebugLevel(options.debugcodegen);
-    ee.setOptDebugLevel(options.debugopt);
-    ee.setIntDebugLevel(options.debugint);
+
+    ExecutionEnvironment ee = 
+        new ExecutionEnvironment(text)
+            .setInteractive(true)
+            .setLexDebugLevel(options.debuglex)
+            .setParseDebugLevel(options.debugparse)
+            .setTypeDebugLevel(options.debugtype)
+            .setCodeGenDebugLevel(options.debugcodegen)
+            .setOptDebugLevel(options.debugopt)
+            .setIntDebugLevel(options.debugint)
+            .setOptimize(options.optimize);
 
     Environment env = ee.execute();
     if (options.debugparse > 0) {
@@ -70,11 +74,13 @@ public class InterpreterDriver {
       System.out.println("------------------------------");
       System.out.println(Joiner.on("\n").join(ee.ilCode()));
     }
-    if (options.debugint > 0) {
+
+    if (options.debugint > 2) {
+      // Since we're running in interactive mode, there's no need for this.
       System.out.println("\n------------------------------");
       System.out.println("SYSTEM.OUT:");
       System.out.println("------------------------------");
+      System.out.println(Joiner.on("").join(env.output()));
     }
-    System.out.println(Joiner.on("").join(env.output()));
   }
 }
