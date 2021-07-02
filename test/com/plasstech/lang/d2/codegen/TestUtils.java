@@ -13,26 +13,26 @@ import com.plasstech.lang.d2.interpreter.Environment;
 public class TestUtils {
 
   static void optimizeAssertSameVariables(String program) {
-    optimizeAssertSameVariables(program, new ILOptimizer());
+    optimizeAssertSameVariables(program, new ILOptimizer(2));
   }
 
   static void optimizeAssertSameVariables(String program, Optimizer optimizer) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment unoptimizedEnv = ee.execute();
-    //    System.out.printf("\nUNOPTIMIZED:\n");
-    //    System.out.println(Joiner.on("\n").join(ee.ilCode()));
-    //
-    //    System.out.println("\nUNOPTIMIZED SYSTEM.OUT:");
-    //    System.out.println("------------------------------");
-    //    System.out.println(Joiner.on("").join(unoptimizedEnv.output()));
+    System.out.printf("\nUNOPTIMIZED:\n");
+    System.out.println(Joiner.on("\n").join(ee.ilCode()));
+
+    System.out.println("\nUNOPTIMIZED SYSTEM.OUT:");
+    System.out.println("------------------------------");
+    System.out.println(Joiner.on("").join(unoptimizedEnv.output()));
 
     List<Op> originalCode = ImmutableList.copyOf(ee.ilCode());
 
     List<Op> optimized = optimizer.optimize(ee.ilCode());
-    Environment optimizedEnv = ee.execute(optimized);
-
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));
+
+    Environment optimizedEnv = ee.execute(optimized);
 
     System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");

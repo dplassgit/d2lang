@@ -18,7 +18,7 @@
   //a = a / 0
 //}
 
-p:proc() {
+nestedif:proc() {
   a=3
   if (a==3) {
     if a==2 {
@@ -39,4 +39,4 @@ p:proc() {
   }
 }
 
-p()
+nestedif()

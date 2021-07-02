@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -15,15 +18,13 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.type.SymbolStorage;
-import java.util.HashMap;
-import java.util.Map;
 
 public class DeadAssignmentOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from object to line number
   private final Map<Location, Integer> assignments = new HashMap<>();
+  private final Map<Location, Integer> tempAssignments = new HashMap<>();
 
   DeadAssignmentOptimizer(int debugLevel) {
     super(debugLevel);
@@ -32,16 +33,27 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     assignments.clear();
+    tempAssignments.clear();
     return super.optimize(input);
   }
 
   private void recordAssignment(Location destination) {
-    if (destination.storage() != SymbolStorage.GLOBAL) {
-      assignments.put(destination, ip);
+    switch (destination.storage()) {
+      case GLOBAL:
+        break;
+      case TEMP:
+        tempAssignments.put(destination, ip);
+        break;
+      case LOCAL:
+      case PARAM:
+      case REGISTER:
+        assignments.put(destination, ip);
+        break;
     }
   }
 
-  private boolean deleteRecentlyAssigned(Location destination) {
+  // This can never be called with a temp, because temps aren't reassigned.
+  private boolean killIfReassigned(Location destination) {
     Integer loc = assignments.get(destination);
     if (loc != null) {
       assignments.remove(destination);
@@ -51,43 +63,55 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
     return false;
   }
 
-  private void markAsUsed(Operand source) {
+  private void markRead(Operand source) {
     if (!source.isConstant()) {
       Location sourceLocation = (Location) source;
       assignments.remove(sourceLocation);
+      tempAssignments.remove(sourceLocation);
     }
   }
 
   @Override
   public void visit(Stop op) {
     assignments.clear();
+    tempAssignments.clear();
   }
 
   @Override
   public void visit(ProcEntry op) {
     // start of scope.
     assignments.clear();
+    tempAssignments.clear();
   }
 
   @Override
   public void visit(ProcExit op) {
     // End of scope. Kill all assigned-unused.
-    for (int theIp : assignments.values()) {
+    if (!assignments.isEmpty()) {
       logger.at(loggingLevel).log("Killing all unused variables at end of proc: %s", assignments);
-      deleteAt(theIp);
+      for (int theIp : assignments.values()) {
+        deleteAt(theIp);
+      }
+      assignments.clear();
     }
-    assignments.clear();
+    if (!tempAssignments.isEmpty()) {
+      logger.at(loggingLevel).log("Killing all unused temps at end of proc: %s", tempAssignments);
+      for (int theIp : tempAssignments.values()) {
+        deleteAt(theIp);
+      }
+      tempAssignments.clear();
+    }
   }
 
   @Override
   public void visit(Label op) {
-    // a label means potentially a loop and we can't rely on unused settings
+    // a label means potentially a loop and we can't rely on unused non-temps
     assignments.clear();
   }
 
   @Override
   public void visit(Goto op) {
-    // a goto means potentially a loop and we can't rely on unused settings
+    // a goto means potentially a loop and we can't rely on unused non-temps
     assignments.clear();
   }
 
@@ -103,33 +127,39 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public void visit(Transfer op) {
     Location dest = op.destination();
-    markAsUsed(op.source());
-    deleteRecentlyAssigned(dest);
+    markRead(op.source());
+    killIfReassigned(dest);
     recordAssignment(dest);
   }
 
   @Override
   public void visit(UnaryOp op) {
+    markRead(op.operand());
+    killIfReassigned(op.destination());
     recordAssignment(op.destination());
-    markAsUsed(op.operand());
   }
 
   @Override
   public void visit(IfOp op) {
     assignments.clear();
+    markRead(op.condition());
   }
 
   @Override
   public void visit(SysCall op) {
-    Operand operand = op.arg();
-    markAsUsed(operand);
+    markRead(op.arg());
   }
 
   @Override
   public void visit(Call op) {
     ImmutableList<Operand> actualParams = op.actualLocations();
     for (Operand actual : actualParams) {
-      markAsUsed(actual);
+      markRead(actual);
+    }
+    if (op.destination().isPresent()) {
+      Location dest = op.destination().get();
+      killIfReassigned(dest);
+      recordAssignment(dest);
     }
   }
 
@@ -137,14 +167,15 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Return op) {
     if (op.returnValueLocation().isPresent()) {
       Operand returnValue = op.returnValueLocation().get();
-      markAsUsed(returnValue);
+      markRead(returnValue);
     }
   }
 
   @Override
   public void visit(BinOp op) {
-    markAsUsed(op.left());
-    markAsUsed(op.right());
-    deleteRecentlyAssigned(op.destination());
+    markRead(op.left());
+    markRead(op.right());
+    killIfReassigned(op.destination());
+    recordAssignment(op.destination());
   }
 }

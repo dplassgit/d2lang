@@ -36,17 +36,18 @@ public class ILOptimizerTest {
 
   @Test
   public void minusItself() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a = 2 b=a-a println b} p()");
+    TestUtils.optimizeAssertSameVariables(
+        "minusItself:proc() {a = 2 b=a-a println b} minusItself()");
   }
 
   @Test
   public void zeroMinus() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a = 0 b=a--3 println b} p()");
+    TestUtils.optimizeAssertSameVariables("zeroMinus:proc() {a = 0 b=a--3 println b} zeroMinus()");
   }
 
   @Test
   public void unaryMinus() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a = 3 b=-a println b} p()");
+    TestUtils.optimizeAssertSameVariables("unaryMinus:proc() {a = 3 b=-a println b} unaryMinus()");
   }
 
   @Test
@@ -100,33 +101,40 @@ public class ILOptimizerTest {
 
   @Test
   public void timesConstants() {
-    TestUtils.optimizeAssertSameVariables("f:proc():int {a = 2 * 3 return a} f()");
+    TestUtils.optimizeAssertSameVariables(
+        "timesConstants:proc():int {a = 2 * 3 return a} timesConstants()");
     TestUtils.optimizeAssertSameVariables("a = 1 * 3");
     TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
   }
 
   @Test
   public void timesPowerOfTwo() {
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a*4} print p(3)");
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return 16*a} print p(3)");
+    TestUtils.optimizeAssertSameVariables(
+        "timesPowerOfTwo:proc(a:int):int {return a*4} print timesPowerOfTwo(3)");
+    TestUtils.optimizeAssertSameVariables(
+        "timesPowerOfTwo:proc(a:int):int {return 16*a} print timesPowerOfTwo(3)");
   }
 
   @Test
   public void divPowerOfTwo() {
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a/4} print p(256)");
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a/16} print p(1024)");
+    TestUtils.optimizeAssertSameVariables(
+        "divPowerOfTwo:proc(a:int):int {return a/4} print divPowerOfTwo(256)");
+    TestUtils.optimizeAssertSameVariables(
+        "divPowerOfTwo:proc(a:int):int {return a/16} print divPowerOfTwo(1024)");
   }
 
   @Test
   public void shift() {
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a<<4} print p(256)");
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a>>2} print p(1024)");
+    TestUtils.optimizeAssertSameVariables("shift:proc(a:int):int {return a<<4} print shift(256)");
+    TestUtils.optimizeAssertSameVariables("shift:proc(a:int):int {return a>>2} print shift(1024)");
   }
 
   @Test
   public void shiftZero() {
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a<<0} print p(256)");
-    TestUtils.optimizeAssertSameVariables("p:proc(a:int):int {return a>>0} print p(256)");
+    TestUtils.optimizeAssertSameVariables(
+        "shiftZero:proc(a:int):int {return a<<0} print shiftZero(256)");
+    TestUtils.optimizeAssertSameVariables(
+        "shiftZero:proc(a:int):int {return a>>0} print shiftZero(256)");
   }
 
   @Test
@@ -192,11 +200,11 @@ public class ILOptimizerTest {
   public void constantPropagationBooleans() {
     TestUtils.optimizeAssertSameVariables("a = true b = a and true c = b and false d=a and b");
     TestUtils.optimizeAssertSameVariables(
-        "f:proc() {"
+        "constantPropagationBooleans:proc() {"
             + "  a = true b = a and true c = b and false d=a and b "
             + "  print a print b print c print d"
             + "} "
-            + "f()");
+            + "constantPropagationBooleans()");
   }
 
   @Test
@@ -223,88 +231,111 @@ public class ILOptimizerTest {
 
   @Test
   public void constantPropIf() {
-    TestUtils.optimizeAssertSameVariables("b:proc() {a = 4 if a == (2+2) {print a}} b()");
+    TestUtils.optimizeAssertSameVariables(
+        "constantPropIf:proc() {" //
+            + "a = 4 " //
+            + "if a == (2+2) {" //
+            + "  print a}" //
+            + "} " //
+            + "constantPropIf()");
   }
 
   @Test
   public void constantPropReturn() {
-    TestUtils.optimizeAssertSameVariables("a:proc():int { return 3} print a()");
+    TestUtils.optimizeAssertSameVariables(
+        "constantPropReturn:proc():int { return 3}" //
+            + " print constantPropReturn()");
   }
 
   @Test
   public void constantPropCall() {
     TestUtils.optimizeAssertSameVariables(
-        "a:proc(n:int, m:int):int { return n+1} " + "b=4 print a(4, b) print a(b+2, 4+6)");
+        "constantPropCall:proc(n:int, m:int):int { return n+1} "
+            + "b=4 " //
+            + "print constantPropCall(4, b) " //
+            + "print constantPropCall(b+2, 4+6)");
   }
 
   @Test
   public void multipleReturns() {
     TestUtils.optimizeAssertSameVariables(
-        "toString: proc(i: int): string {\r\n"
+        "multipleReturns: proc(i: int): string {\r\n"
             + "  if i == 0 {\r\n"
             + "    return '0'\r\n"
             + "  }\r\n"
             + "  val = ''\r\n"
             + "  return val\r\n"
             + "}"
-            + "println toString(314159)\r\n");
+            + "println multipleReturns(314159)\r\n");
   }
 
   @Test
   public void deadIf() {
-    TestUtils.optimizeAssertSameVariables("a=4 if true {a=3} print a");
+    TestUtils.optimizeAssertSameVariables("deadIf=false a=4 if true {a=3} print a");
   }
 
   @Test
   public void deadWhileFalse() {
-    TestUtils.optimizeAssertSameVariables("a=4 while false {a=3} print a");
+    TestUtils.optimizeAssertSameVariables("deadWhileFalse=false a=4 while false {a=3} print a");
   }
 
   @Test
   public void deadWhile() {
-    TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>4 {a=3} print a} p()");
+    // It's not smart enough yet to detect this
+    TestUtils.optimizeAssertSameVariables(
+        "deadWhile:proc() { a=4 while a>4 {a=3} print a} " //
+            + "deadWhile()");
   }
 
   @Test
   public void deadWhileImmediateBreak() {
-    TestUtils.optimizeAssertSameVariables("p:proc() { a=4 while a>0 {break} print a} p()");
+    TestUtils.optimizeAssertSameVariables(
+        "deadWhileImmediateBreak:proc() { a=4 while a>0 {break} print a} " //
+            + "deadWhileImmediateBreak()");
   }
 
   @Test
   public void deadAfterReturn() {
-    TestUtils.optimizeAssertSameVariables("p:proc(): int {return 4 a=4} print p()");
     TestUtils.optimizeAssertSameVariables(
-        "p:proc(a:bool): int {"
+        "deadAfterReturn:proc(): int {return 4 a=4} print deadAfterReturn()");
+    TestUtils.optimizeAssertSameVariables(
+        "deadAfterReturn2:proc(a:bool): int {"
             + " if a {return 4 a=false} return 5"
             + "} "
-            + "print p(true) print p(false)");
+            + "print deadAfterReturn2(true) //"
+            + "print deadAfterReturn2(false)");
   }
 
   @Test
   public void deadAfterExit() {
-    TestUtils.optimizeAssertSameVariables("p:proc(): int {exit 'no' a=4} print p()");
     TestUtils.optimizeAssertSameVariables(
-        "p:proc(a:bool): int {"
+        "deadAfterExit:proc(): int {exit 'no' a=4} print deadAfterExit()");
+    TestUtils.optimizeAssertSameVariables(
+        "deadAfterExit2:proc(a:bool): int {"
             + " if a {exit 'no2'} a=false return 5"
             + "} "
-            + "print p(true) print p(false)");
+            + "print deadAfterExit2(true) print deadAfterExit2(false)");
   }
 
   @Test
   public void deadAssignment() {
-    TestUtils.optimizeAssertSameVariables("p:proc() {a=4 a=a print a} p()");
+    TestUtils.optimizeAssertSameVariables(
+        "deadAssignment:proc() {a=4 a=a print a} " //
+            + "deadAssignment()");
   }
 
   @Test
   public void deadAssignments() {
-    TestUtils.optimizeAssertSameVariables("p:proc(b:int):int {a=b c=b return a+1} print p(3)");
+    TestUtils.optimizeAssertSameVariables(
+        "deadAssignments:proc(b:int):int {a=b c=b return a+1} " //
+            + "print deadAssignments(3)");
     TestUtils.optimizeAssertSameVariables("b=3 a=b c=b print a+1");
   }
 
   @Test
   public void incDec() {
     TestUtils.optimizeAssertSameVariables(
-        "p:proc(b:int):int {b=b+1 a=b*2 a=a-1 return a+b} print p(3)");
+        "incDec:proc(b:int):int {b=b+1 a=b*2 a=a-1 return a+b} print incDec(3)");
     TestUtils.optimizeAssertSameVariables("b=3 b=b+1 a=b*2 a=a-1 print a+1");
   }
 }

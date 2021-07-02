@@ -102,6 +102,9 @@ public class ExecutionEnvironment {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
       ilCode = optimizer.optimize(ilCode);
+      System.out.println("\nOPTIMIZED:");
+      System.out.println("------------------------------");
+      System.out.println(Joiner.on("\n").join(ilCode));
     }
 
     return execute(ilCode);

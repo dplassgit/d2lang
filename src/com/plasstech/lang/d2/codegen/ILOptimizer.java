@@ -29,8 +29,9 @@ public class ILOptimizer implements Optimizer {
     this.children = children;
   }
 
-  public void setDebugLevel(int debugLevel) {
+  public ILOptimizer setDebugLevel(int debugLevel) {
     this.debugLevel = debugLevel;
+    return this;
   }
 
   @Override
