@@ -1,10 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -18,7 +16,6 @@ import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
-import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
@@ -40,7 +37,7 @@ import com.plasstech.lang.d2.type.SymbolStorage;
  * </pre>
  */
 class LoopInvariantOptimizer implements Optimizer {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Level loggingLevel;
   private boolean changed;
@@ -56,26 +53,37 @@ class LoopInvariantOptimizer implements Optimizer {
     changed = false;
 
     // Find loop starts & ends
-    LoopFinder finder = new LoopFinder();
-    List<Block> loops = finder.findLoops(code);
+    List<Block> loops = new LoopFinder(code).findLoops();
+
+    int iterations = 0;
+    // Optimize each loop. This works for all loops throughout the codebase.
     for (Block loop : loops) {
       while (optimizeLoop(loop)) {
         // OH NO the starts and ends may have moved...do we just give up? or re-start?
+        iterations++;
+        changed = true;
       }
     }
+
+    logger.at(loggingLevel).log("LoopInvariant loops (heh): %d", iterations);
 
     return ImmutableList.copyOf(code);
   }
 
+  @Override
+  public boolean isChanged() {
+    return changed;
+  }
+
   private boolean optimizeLoop(Block loop) {
-    logger.at(loggingLevel).log("Optimizing %s", loop);
+    logger.atFine().log("Optimizing %s", loop);
 
     SetterGetterFinder finder = new SetterGetterFinder();
     for (int ip = loop.start(); ip < loop.end(); ++ip) {
       code.get(ip).accept(finder);
     }
-    logger.at(loggingLevel).log("Setters = %s", finder.setters);
-    logger.at(loggingLevel).log("Getters = %s", finder.getters);
+    logger.atFine().log("Setters = %s", finder.setters);
+    logger.atFine().log("Getters = %s", finder.getters);
 
     TransferMover mover = new TransferMover(finder);
     boolean optimizedLoop = false;
@@ -91,7 +99,6 @@ class LoopInvariantOptimizer implements Optimizer {
       }
     }
 
-    changed |= optimizedLoop;
     return optimizedLoop;
   }
 
@@ -235,58 +242,6 @@ class LoopInvariantOptimizer implements Optimizer {
       setters.add(op.destination());
     }
   }
-
-  // 1. find all the _loop starts
-  // 2. find all the ifs after the _loop starts
-  // 3. find the location of the __loop_ends
-  // 4. match them up
-  // TODO: Move this out of here so it can be used in other loop optimizers
-  private static class LoopFinder extends DefaultOpcodeVisitor {
-    private int ip;
-
-    private int mostRecentBegin = -1;
-    // Map from loop end label to start ip
-    private Map<String, Integer> loopStarts = new HashMap<>();
-    private List<Block> loops = new ArrayList<>();
-
-    public List<Block> findLoops(List<Op> code) {
-      for (ip = 0; ip < code.size(); ++ip) {
-        code.get(ip).accept(this);
-      }
-      return loops;
-    }
-
-    @Override
-    public void visit(Label op) {
-      if (op.label().startsWith("__" + Label.LOOP_BEGIN_PREFIX)) {
-        mostRecentBegin = ip;
-      } else if (op.label().startsWith("__" + Label.LOOP_END_PREFIX)) {
-        Integer start = loopStarts.get(op.label());
-        if (start != null) {
-          loops.add(new Block(start, ip));
-        } else {
-          logger.atWarning().log("Could not find start to loop %s", op.label());
-        }
-      }
-    }
-
-    @Override
-    public void visit(IfOp op) {
-      if (op.destination().startsWith("__" + Label.LOOP_END_PREFIX)) {
-        if (mostRecentBegin != -1) {
-          loopStarts.put(op.destination(), mostRecentBegin);
-        } else {
-          logger.atWarning().log("Found 'if' at %d without preceding begin", ip);
-        }
-        mostRecentBegin = -1;
-      }
-    }
-  }
-
-  @Override
-  public boolean isChanged() {
-    return changed;
-  }
 }
 
 /*
@@ -312,6 +267,7 @@ while i < n do i = i + 1 {
 println sum
 
 
+<<<<<<< HEAD
 0   __temp1 = 0;
 1   sum = __temp1;
 2   __temp2 = 10;

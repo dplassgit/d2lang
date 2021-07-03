@@ -26,6 +26,23 @@ public class LoopInvariantOptimizerTest {
   }
 
   @Test
+  public void oneLoopBreak() {
+    TestUtils.optimizeAssertSameVariables(
+        "      oneLoopBreak:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 "
+            + "  while i < 10 do i = i + 1 {"
+            + "    x = n + 1\n"
+            + "    sum = sum + 1\n"
+            + "    break"
+            + "  }"
+            + "  return sum"
+            + "}"
+            + "println oneLoopBreak(10)",
+        new ILOptimizer(2));
+  }
+
+  @Test
   public void oneLoopConstant() {
     TestUtils.optimizeAssertSameVariables(
         "      oneLoop:proc(n:int):int {\n"

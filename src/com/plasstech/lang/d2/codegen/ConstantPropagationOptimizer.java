@@ -7,8 +7,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
@@ -37,6 +39,26 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     tempConstants.clear();
     stackConstants.clear();
     return super.optimize(input);
+  }
+
+  @Override
+  public void visit(Inc op) {
+    ConstantOperand<?> replacement = findReplacementConstant(op.target());
+    if (replacement != null) {
+      int value = (int) replacement.value();
+      stackConstants.put(op.target().name(), new ConstantOperand<Integer>(value + 1));
+      logger.at(loggingLevel).log("Incremented stackConstant %s to %d", op.target(), value + 1);
+    }
+  }
+
+  @Override
+  public void visit(Dec op) {
+    ConstantOperand<?> replacement = findReplacementConstant(op.target());
+    if (replacement != null) {
+      int value = (int) replacement.value();
+      stackConstants.put(op.target().name(), new ConstantOperand<Integer>(value - 1));
+      logger.at(loggingLevel).log("Decremented stackConstant %s to %d", op.target(), value - 1);
+    }
   }
 
   @Override

@@ -10,7 +10,9 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class ConstantPropagationOptimizerTest {
-  private ConstantPropagationOptimizer optimizer = new ConstantPropagationOptimizer(0);
+  private Optimizer optimizer =
+      new ILOptimizer(ImmutableList.of(new ConstantPropagationOptimizer(2), new IncDecOptimizer(2)))
+          .setDebugLevel(2);
 
   @Test
   public void doubleCopy() {
@@ -31,5 +33,29 @@ public class ConstantPropagationOptimizerTest {
     assertThat(program.get(1)).isInstanceOf(Nop.class);
     Transfer last = (Transfer)program.get(2);
     assertThat(last.source()).isEqualTo(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void inc() {
+    TestUtils.optimizeAssertSameVariables(
+        "      inc:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  sum = sum + 1\n"
+            + "  return sum"
+            + "}"
+            + "println inc(10)",
+        optimizer);
+  }
+
+  @Test
+  public void dec() {
+    TestUtils.optimizeAssertSameVariables(
+        "      inc:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  sum = sum - 1\n"
+            + "  return sum"
+            + "}"
+            + "println inc(10)",
+        optimizer);
   }
 }

@@ -46,6 +46,8 @@ public class ILOptimizer implements Optimizer {
 
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+    setChanged(false);
+
     ImmutableList<Op> program = ImmutableList.copyOf(input);
     int iterations = 0;
 
