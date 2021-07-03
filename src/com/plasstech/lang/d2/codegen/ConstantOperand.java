@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.google.common.base.Joiner;
+import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
@@ -52,5 +53,10 @@ public class ConstantOperand<T> implements Operand {
   @Override
   public int hashCode() {
     return value.hashCode();
+  }
+
+  @Override
+  public SymbolStorage storage() {
+    return SymbolStorage.IMMEDIATE;
   }
 }

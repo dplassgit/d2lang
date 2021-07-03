@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -14,8 +17,6 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import java.util.HashMap;
-import java.util.Map;
 
 class ConstantPropagationOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -74,12 +75,13 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (dest instanceof TempLocation && source.isConstant()) {
       // easy case: temps are never overwritten.
-      logger.at(loggingLevel).log("Replacing temp variable %s with %s", dest.name(), source);
+      logger.at(loggingLevel).log("Potentially replacing temp %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
       deleteCurrent();
     } else if (dest instanceof StackLocation && source.isConstant()) {
       // save it, for now.
-      logger.at(loggingLevel).log("Replacing stack variable %s with %s", dest.name(), source);
+      logger.at(loggingLevel).log(
+          "Potentially replacing local/param %s with %s", dest.name(), source);
       stackConstants.put(dest.name(), (ConstantOperand<?>) source);
     } else if (!source.isConstant()) {
       ConstantOperand<?> replacement = findReplacementConstant(source);

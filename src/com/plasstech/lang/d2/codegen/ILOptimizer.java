@@ -16,13 +16,13 @@ public class ILOptimizer implements Optimizer {
   public ILOptimizer(int debugLevel) {
     this(
         ImmutableList.of(
-            new LoopInvariantOptimizer(debugLevel),
             new ArithmeticOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
-            new IncDecOptimizer(debugLevel)));
+            new IncDecOptimizer(debugLevel),
+            new LoopInvariantOptimizer(debugLevel)));
     setDebugLevel(debugLevel);
   }
 

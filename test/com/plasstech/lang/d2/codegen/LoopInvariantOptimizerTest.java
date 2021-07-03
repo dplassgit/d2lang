@@ -2,8 +2,12 @@ package com.plasstech.lang.d2.codegen;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
+
 public class LoopInvariantOptimizerTest {
-  private LoopInvariantOptimizer optimizer = new LoopInvariantOptimizer(2);
+  private Optimizer optimizer =
+      new ILOptimizer(
+          ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)));
 
   @Test
   public void oneLoop() {
@@ -16,6 +20,22 @@ public class LoopInvariantOptimizerTest {
             + "    sum = sum + 1\n"
             + "  }"
             + "  return sum"
+            + "}"
+            + "println oneLoop(10)",
+        optimizer);
+  }
+
+  @Test
+  public void oneLoopConstant() {
+    TestUtils.optimizeAssertSameVariables(
+        "      oneLoop:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 "
+            + "  while i < 10 do i = i + 1 {"
+            + "    x = 1\n"
+            + "    sum = sum + x\n"
+            + "  }"
+            + "  return x"
             + "}"
             + "println oneLoop(10)",
         optimizer);
@@ -96,7 +116,7 @@ public class LoopInvariantOptimizerTest {
   }
 
   @Test
-  public void nestedLoops() {
+  public void nestedLoopsGlobals() {
     TestUtils.optimizeAssertSameVariables(
         "      sum = 0\n"
             + "n = 10\n"
@@ -113,6 +133,33 @@ public class LoopInvariantOptimizerTest {
             + "  sum = sum + i\n"
             + "}\n"
             + "println sum",
+        optimizer);
+  }
+
+  @Test
+  public void nestedLoopsLocals() {
+    Optimizer optimizer =
+        new ILOptimizer(
+            ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)));
+
+    TestUtils.optimizeAssertSameVariables(
+        "      nestedLoopsLocals:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 while i < n do i = i + 1 {\n"
+            + "    y = (n*4)/(n-1)\n"
+            + "    j = 0 while j < n do j = j + 1 {\n"
+            + "      x = n + 5\n"
+            + "      k = 0 while k < n do k = k + 1 {\n"
+            + "        z = 3\n"
+            + "        sum = sum + y\n"
+            + "      }\n"
+            + "      sum = sum + i\n"
+            + "    }\n"
+            + "    sum = sum + i\n"
+            + "  }"
+            + "  return sum * z"
+            + "}"
+            + "println nestedLoopsLocals(10)",
         optimizer);
   }
 }

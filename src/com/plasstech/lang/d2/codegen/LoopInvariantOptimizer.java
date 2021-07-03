@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multiset;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
@@ -24,25 +26,19 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymbolStorage;
 
-/*
-* If a variable is set in the loop but none of its **non-temp** dependencies are modified
-* in the loop -> it's an invariant
-
-* Can push it above the loop, including all its dependencies.
-*
-* General idea:
-*  1. find the next loop start & end. OK
-*     Start = "__loop_begin".
-*     end = the __loop_end in the next if.
-*     This should work for nested loops.
-*  2. Find all vars that are set in the loop (transfers, inc/dec, binop, unary) OK
-*  3. Find all vars that are read in the loop (transfers, inc/dec, calls, if, return, syscall, binop, unary) OK
-*  4. for each transfer to a **temp**, if source is not set in the loop, the statement can be moved outside the loop
-*  5. move "above" the __loop_begin
-*
-* Similarly, for temps:
-*  if a temp is set to a value that is not itself set in the loop, it's invariant <<< EASY CASE.
-*/
+/**
+ * If a variable is set in the loop but none of its dependencies are modified in the loop -> it's an
+ * invariant.
+ *
+ * <pre>
+ *  1. Find the next loop start & end. This is in the LoopFinder class.
+ *  2. Find all vars that are set in the loop
+ *  3. Find all vars that are read in the loop
+ *  4. For each local var that is set, if all its dependencies are only set from temps or locals
+ *    that are not set in the loop, it is invariant.
+ *  5. For temps: if a temp is set to a value that is not itself set in the loop, it's invariant.
+ * </pre>
+ */
 class LoopInvariantOptimizer implements Optimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -54,21 +50,6 @@ class LoopInvariantOptimizer implements Optimizer {
     loggingLevel = toLoggingLevel(debugLevel);
   }
 
-  private static class Loop {
-    int start;
-    int end;
-
-    Loop(int start, int end) {
-      this.start = start;
-      this.end = end;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("Loop %d to %d", start, end);
-    }
-  }
-
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> program) {
     code = new ArrayList<>(program);
@@ -76,20 +57,21 @@ class LoopInvariantOptimizer implements Optimizer {
 
     // Find loop starts & ends
     LoopFinder finder = new LoopFinder();
-    List<Loop> loops = finder.findLoops();
-    for (Loop loop : loops) {
-      while (optimizeLoop(loop)) {}
-      // OH NO the starts and ends may have moved...do we just give up? or re-start?
+    List<Block> loops = finder.findLoops(code);
+    for (Block loop : loops) {
+      while (optimizeLoop(loop)) {
+        // OH NO the starts and ends may have moved...do we just give up? or re-start?
+      }
     }
 
     return ImmutableList.copyOf(code);
   }
 
-  private boolean optimizeLoop(Loop loop) {
+  private boolean optimizeLoop(Block loop) {
     logger.at(loggingLevel).log("Optimizing %s", loop);
 
     SetterGetterFinder finder = new SetterGetterFinder();
-    for (int ip = loop.start; ip < loop.end; ++ip) {
+    for (int ip = loop.start(); ip < loop.end(); ++ip) {
       code.get(ip).accept(finder);
     }
     logger.at(loggingLevel).log("Setters = %s", finder.setters);
@@ -97,15 +79,15 @@ class LoopInvariantOptimizer implements Optimizer {
 
     TransferMover mover = new TransferMover(finder);
     boolean optimizedLoop = false;
-    for (int ip = loop.start; ip < loop.end; ++ip) {
+    for (int ip = loop.start(); ip < loop.end(); ++ip) {
       mover.reset();
       Op op = code.get(ip);
       op.accept(mover);
       if (mover.liftedLast()) {
         optimizedLoop = true;
         code.remove(ip);
-        code.add(loop.start, op);
-        loop.start++;
+        code.add(loop.start(), op);
+        loop.setStart(loop.start() + 1);
       }
     }
 
@@ -117,43 +99,60 @@ class LoopInvariantOptimizer implements Optimizer {
     private SetterGetterFinder finder;
     private boolean lifted;
 
-    private TransferMover(SetterGetterFinder finder) {
+    TransferMover(SetterGetterFinder finder) {
       this.finder = finder;
     }
 
-    public boolean liftedLast() {
+    boolean liftedLast() {
       return lifted;
     }
 
-    public void reset() {
+    void reset() {
       lifted = false;
     }
 
     @Override
     public void visit(Transfer op) {
-      if (op.destination() instanceof TempLocation) {
-        // Transferring to a temp
-        if (op.source().isConstant()) {
-          // can lift
-          logger.at(loggingLevel).log("Lifting to temp of const: %s", op);
-          lifted = true;
-        } else if (!finder.setters.contains(op.source())) {
-          Location source = (Location) op.source();
-          if (source.storage() != SymbolStorage.GLOBAL) {
-            // can lift, maybe. but if it's being copied from a *global* it's impossible to know
-            // if the global was modified in the loop
-            logger.at(loggingLevel).log(
-                "Lifting assignment to temp of non-global invariant: %s", op);
+      switch (op.destination().storage()) {
+        case TEMP:
+          // Transferring to a temp
+          if (op.source().isConstant()) {
+            // can lift
+            logger.at(loggingLevel).log("Lifting to temp of const: %s", op);
             lifted = true;
+          } else if (!finder.setters.contains(op.source())) {
+            if (op.source().storage() != SymbolStorage.GLOBAL) {
+              // can lift, maybe. but if it's being copied from a *global* it's impossible to know
+              // if the global was modified in the loop
+              logger.at(loggingLevel).log(
+                  "Lifting assignment to temp of non-global invariant: %s", op);
+              lifted = true;
+            }
           }
-        }
+          break;
+
+        case LOCAL:
+        case PARAM:
+          // Transferring to a local or param that is only set once
+          if (op.source().isConstant()) {
+            if (finder.setters.count(op.destination()) == 1
+                && !finder.getters.contains(op.destination())) {
+              // It's only set this one time and isn't read anywhere else.
+              logger.at(loggingLevel).log("Lifting to local or param of const: %s", op);
+              lifted = true;
+            }
+          }
+          break;
+
+        default:
+          break;
       }
     }
   }
 
   // Finds all the uses of an operand.
   private class SetterGetterFinder extends DefaultOpcodeVisitor {
-    private Set<Operand> setters = new HashSet<>();
+    private Multiset<Operand> setters = HashMultiset.create();
     // These aren't really used:
     private Set<Operand> getters = new HashSet<>();
 
@@ -241,13 +240,21 @@ class LoopInvariantOptimizer implements Optimizer {
   // 2. find all the ifs after the _loop starts
   // 3. find the location of the __loop_ends
   // 4. match them up
-  private class LoopFinder extends DefaultOpcodeVisitor {
+  // TODO: Move this out of here so it can be used in other loop optimizers
+  private static class LoopFinder extends DefaultOpcodeVisitor {
     private int ip;
 
     private int mostRecentBegin = -1;
     // Map from loop end label to start ip
     private Map<String, Integer> loopStarts = new HashMap<>();
-    private List<Loop> loops = new ArrayList<>();
+    private List<Block> loops = new ArrayList<>();
+
+    public List<Block> findLoops(List<Op> code) {
+      for (ip = 0; ip < code.size(); ++ip) {
+        code.get(ip).accept(this);
+      }
+      return loops;
+    }
 
     @Override
     public void visit(Label op) {
@@ -256,7 +263,7 @@ class LoopInvariantOptimizer implements Optimizer {
       } else if (op.label().startsWith("__" + Label.LOOP_END_PREFIX)) {
         Integer start = loopStarts.get(op.label());
         if (start != null) {
-          loops.add(new Loop(start, ip));
+          loops.add(new Block(start, ip));
         } else {
           logger.atWarning().log("Could not find start to loop %s", op.label());
         }
@@ -273,13 +280,6 @@ class LoopInvariantOptimizer implements Optimizer {
         }
         mostRecentBegin = -1;
       }
-    }
-
-    public List<Loop> findLoops() {
-      for (ip = 0; ip < code.size(); ++ip) {
-        code.get(ip).accept(this);
-      }
-      return loops;
     }
   }
 
@@ -318,6 +318,7 @@ println sum
 3   n = __temp2;
 4   __temp3 = 0;
 5   i = __temp3;
+
 6   __loop_begin_1:
 7   __temp4 = i;
 8   __temp5 = n; // can be lifted
@@ -332,6 +333,7 @@ println sum
 17  y = __temp12;
 18  __temp13 = 0; // can be lifted
 19  j = __temp13;
+
 20  __loop_begin_4:
 21  __temp14 = j;
 22  __temp15 = n; // can be lifted
@@ -362,8 +364,8 @@ println sum
 46  __temp31 = __temp30 + 1;
 47  k = __temp31;
 48  goto __loop_begin_7;
-49  __loop_end_9:
 
+49  __loop_end_9:
 50  __temp32 = sum;
 51  __temp33 = i;
 52  __temp34 = __temp32 + __temp33;
@@ -383,6 +385,7 @@ println sum
 66  __temp41 = __temp40 + 1;
 67  i = __temp41;
 68  goto __loop_begin_1;
+
 69  __loop_end_3:
 70  __temp42 = sum;
 71  printf("%s", __temp42);
