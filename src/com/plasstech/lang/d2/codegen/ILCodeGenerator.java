@@ -276,9 +276,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // ..(increment code)
     // ..goto loop_begin
     // loop_end: ("break" target)
-    String before = generateLabel("loop_begin");
-    String increment = generateLabel("loop_increment");
-    String after = generateLabel("loop_end");
+    String before = generateLabel(Label.LOOP_BEGIN_PREFIX);
+    String increment = generateLabel(Label.LOOP_INCREMENT_PREFIX);
+    String after = generateLabel(Label.LOOP_END_PREFIX);
     whileContinues.push(increment);
     whileBreaks.push(after);
 

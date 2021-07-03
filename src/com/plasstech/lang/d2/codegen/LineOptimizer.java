@@ -1,14 +1,15 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.LogSites;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
 
 abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -20,18 +21,7 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   protected int ip;
 
   LineOptimizer(int debugLevel) {
-    switch (debugLevel) {
-      case 1:
-        loggingLevel = Level.CONFIG;
-        break;
-      case 2:
-        loggingLevel = Level.INFO;
-        break;
-      default:
-      case 0:
-        loggingLevel = Level.FINE;
-        break;
-    }
+    this.loggingLevel = toLoggingLevel(debugLevel);
   }
 
   @Override

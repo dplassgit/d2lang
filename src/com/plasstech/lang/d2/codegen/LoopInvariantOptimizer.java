@@ -1,3 +1,18 @@
+package com.plasstech.lang.d2.codegen;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Op;
+
 /*
 * If a variable is set in the loop but none of its **non-temp** dependencies are modified
 * in the loop -> it's an invariant
@@ -5,17 +20,118 @@
 * Can push it above the loop, including all its dependencies.
 *
 * General idea:
-*  1. find the next loop start & end. Start = "__loop_begin". end = the __loop_end in the next if. This should work for nested loops.
-*  2. find all **non-temps** that are set in the loop (transfers, inc/dec)
-*  3. find all **non-temps** that are read in the loop (transfers, inc/dec, calls, if, return, syscall, unary?)
+*  1. find the next loop start & end.
+*     Start = "__loop_begin".
+*     end = the __loop_end in the next if.
+*     This should work for nested loops.
+*  2. Find all **non-temps** that are set in the loop (transfers, inc/dec)
+*  3. Find all **non-temps** that are read in the loop (transfers, inc/dec, calls, if, return, syscall, unary?)
 *  4. remove vars set from vars read - remaining ones are never read.
 *  5. for the remaining vars that are set but not read:
 *    a. find all dependencies (go *up* from its set)
 *  6. move "above" the __loop_begin
 *
 * Similarly, for temps:
-*  if a temp is set to a value that is not set in the loop, it's invariant <<< is that true?!
+*  if a temp is set to a value that is not itself set in the loop, it's invariant <<< EASY CASE.
 */
+class LoopInvariantOptimizer implements Optimizer {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private final Level loggingLevel;
+  private boolean changed;
+  private ArrayList<Op> code;
+
+  LoopInvariantOptimizer(int debugLevel) {
+    loggingLevel = toLoggingLevel(debugLevel);
+  }
+
+  private static class Loop {
+    int start;
+    int end;
+
+    Loop(int start, int end) {
+      this.start = start;
+      this.end = end;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("Loop %d to %d", start, end);
+    }
+  }
+
+  @Override
+  public ImmutableList<Op> optimize(ImmutableList<Op> program) {
+    code = new ArrayList<>(program);
+    changed = false;
+
+    // find loop starts & ends
+    List<Loop> loops = findLoops();
+    System.out.println(loops);
+    for (Loop loop : loops) {
+      optimizeLoop(loop);
+    }
+
+    return ImmutableList.copyOf(code);
+  }
+
+  private void optimizeLoop(Loop loop) {
+    changed = false;
+  }
+
+  private class LoopFinder extends DefaultOpcodeVisitor {
+    private int ip;
+
+    private int mostRecentBegin;
+    // Map from loop end label to start ip
+    private Map<String, Integer> loopStarts = new HashMap<>();
+    private List<Loop> loops = new ArrayList<>();
+
+    @Override
+    public void visit(Label op) {
+      if (op.label().startsWith("__" + Label.LOOP_BEGIN_PREFIX)) {
+        logger.atInfo().log("Found start label %s at %d", op.label(), ip);
+        mostRecentBegin = ip;
+      } else if (op.label().startsWith("__" + Label.LOOP_END_PREFIX)) {
+        int start = loopStarts.get(op.label());
+        logger.atInfo().log(
+            "Found end label %s at %d matched up with start ip %d", op.label(), ip, start);
+        loops.add(new Loop(start, ip));
+      }
+    }
+
+    @Override
+    public void visit(IfOp op) {
+      if (op.destination().startsWith("__" + Label.LOOP_END_PREFIX)) {
+        logger.atInfo().log(
+            "Found next if at %d going to %s, after most recent begin at %d",
+            ip, op.destination(), mostRecentBegin);
+        loopStarts.put(op.destination(), mostRecentBegin);
+      }
+    }
+
+    public List<Loop> findLoops() {
+      for (ip = 0; ip < code.size(); ++ip) {
+        code.get(ip).accept(this);
+      }
+      return loops;
+    }
+  }
+
+  private List<Loop> findLoops() {
+    LoopFinder finder = new LoopFinder();
+    // 1. find all the _loop locations
+    // 2. find all the ifs after the _loop locations
+    // 3. find the location of the __loop_ends
+    // 4. match them up
+    return finder.findLoops();
+  }
+
+  @Override
+  public boolean isChanged() {
+    return changed;
+  }
+}
 
 /*
  * loopinvariant.d, with nested loops, each one has an invariant (y, x)
