@@ -9,7 +9,7 @@ public class DefaultVisitor implements NodeVisitor {
   public void visit(AssignmentNode node) {}
 
   @Override
-  public void visit(IfNode ifNode) {}
+  public void visit(IfNode node) {}
 
   @Override
   public void visit(BinOpNode node) {}
@@ -21,7 +21,7 @@ public class DefaultVisitor implements NodeVisitor {
   public <T> void visit(ConstNode<T> node) {}
 
   @Override
-  public void visit(UnaryNode unaryNode) {}
+  public void visit(UnaryNode node) {}
 
   @Override
   public void visit(ProcedureNode node) {}
@@ -55,4 +55,7 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(InputNode node) {}
+
+  @Override
+  public void visit(NewNode node) {}
 }

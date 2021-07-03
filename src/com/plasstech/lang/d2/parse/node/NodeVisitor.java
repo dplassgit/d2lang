@@ -37,4 +37,6 @@ public interface NodeVisitor {
   void visit(ArrayDeclarationNode node);
 
   void visit(InputNode node);
+
+  void visit(NewNode node);
 }

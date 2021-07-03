@@ -26,6 +26,6 @@ public class RecordFieldSetNode extends AbstractNode implements LValueNode {
     return variableName + "." + fieldName;
   }
 
-  // TODO: visit
+  // TODO: visit?
   // TODO: toString
 }

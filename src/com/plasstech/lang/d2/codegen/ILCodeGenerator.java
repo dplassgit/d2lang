@@ -34,6 +34,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -43,6 +44,7 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
+import com.plasstech.lang.d2.type.RecordType;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -113,7 +115,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(AssignmentNode node) {
-    String name = node.variable().name(); // ugh this is weird and broken for RecordFieldSetNode
+    // LValueNode variable = node.variable();
+    // this is weird and possibly broken for RecordFieldSetNode
+    String name = node.variable().name();
 
     // Look up storage in current symbol table
     // this may be a global or a local/parameter (stack)
@@ -125,6 +129,14 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Location source = expr.location();
 
     emit(new Transfer(dest, source));
+  }
+
+  @Override
+  public void visit(NewNode node) {
+    Symbol symbol = symbolTable().get(node.recordName());
+    assert symbol instanceof RecordType;
+    //    RecordType rt = ;
+    super.visit(node);
   }
 
   private Location lookupLocation(String name) {
