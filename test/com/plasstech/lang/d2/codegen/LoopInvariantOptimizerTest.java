@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -7,7 +8,8 @@ import com.google.common.collect.ImmutableList;
 public class LoopInvariantOptimizerTest {
   private Optimizer optimizer =
       new ILOptimizer(
-          ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)));
+              ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
+          .setDebugLevel(2);
 
   @Test
   public void oneLoop() {
@@ -22,6 +24,58 @@ public class LoopInvariantOptimizerTest {
             + "  return sum"
             + "}"
             + "println oneLoop(10)",
+        optimizer);
+  }
+
+  @Test
+  public void oneLoopContinue() {
+    TestUtils.optimizeAssertSameVariables(
+        "      oneLoopContinue:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 "
+            + "  while true do i = i + 1 {"
+            + "    x = n + 1\n"
+            + "    sum = sum + x\n"
+            + "    if i == 5 {\n"
+            + "      continue\n"
+            + "    } elif i == 10 { break }\n"
+            + "  }\n"
+            + "  return sum"
+            + "}"
+            + "println oneLoopContinue(10)",
+        optimizer);
+  }
+
+  @Test
+  @Ignore("Test fails")
+  public void loopNeverRun() {
+    TestUtils.optimizeAssertSameVariables(
+        "      loopNeverRun:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 x = 0"
+            + "  while false do i = i + 1 {"
+            + "    x = n + 1\n"
+            + "    sum = sum + x\n"
+            + "  }\n"
+            + "  return sum + x"
+            + "}"
+            + "println loopNeverRun(10)",
+        optimizer);
+  }
+
+  @Test
+  public void oneLoopUnary() {
+    TestUtils.optimizeAssertSameVariables(
+        "      oneLoopUnary:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 "
+            + "  while i < 10 do i = i + 1 {"
+            + "    x = -n\n"
+            + "    sum = sum + 1\n"
+            + "  }"
+            + "  return sum"
+            + "}"
+            + "println oneLoopUnary(10)",
         optimizer);
   }
 
@@ -165,7 +219,7 @@ public class LoopInvariantOptimizerTest {
             + "  i = 0 while i < n do i = i + 1 {\n"
             + "    y = (n*4)/(n-1)\n"
             + "    j = 0 while j < n do j = j + 1 {\n"
-            + "      x = n + 5\n"
+            + "      x = n + y\n"
             + "      k = 0 while k < n do k = k + 1 {\n"
             + "        z = 3\n"
             + "        sum = sum + y\n"
@@ -174,7 +228,7 @@ public class LoopInvariantOptimizerTest {
             + "    }\n"
             + "    sum = sum + i\n"
             + "  }"
-            + "  return sum * z"
+            + "  return sum * z + x - y"
             + "}"
             + "println nestedLoopsLocals(10)",
         optimizer);

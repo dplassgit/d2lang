@@ -52,7 +52,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
         // matched up this end, with the start.
         loops.add(new Block(start, ip));
       } else {
-        logger.atWarning().log("Could not find start to loop %s", op.label());
+        logger.atFine().log("Could not find start to loop %s", op.label());
       }
     }
   }
@@ -63,7 +63,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
       if (mostRecentBegin != -1) {
         loopStarts.put(op.destination(), mostRecentBegin);
       } else {
-        logger.atWarning().log("Found 'if' at %d without preceding begin loop", ip);
+        logger.atFine().log("Found 'if' at %d without preceding begin loop", ip);
       }
       mostRecentBegin = -1;
     }

@@ -76,7 +76,7 @@ class LoopInvariantOptimizer implements Optimizer {
   }
 
   private boolean optimizeLoop(Block loop) {
-    logger.atFine().log("Optimizing %s", loop);
+    logger.at(loggingLevel).log("Optimizing %s", loop);
 
     SetterGetterFinder finder = new SetterGetterFinder();
     for (int ip = loop.start(); ip < loop.end(); ++ip) {
@@ -119,6 +119,41 @@ class LoopInvariantOptimizer implements Optimizer {
     }
 
     @Override
+    public void visit(UnaryOp op) {
+      if (op.destination().storage() == SymbolStorage.TEMP) {
+        if (!finder.setters.contains(op.operand())) {
+          if (op.operand().storage() != SymbolStorage.GLOBAL) {
+            // can lift, maybe. but if it's being copied from a *global* it's impossible to know
+            // if the global was modified in the loop
+            logger.at(loggingLevel).log(
+                "Lifting unary assignment to temp of non-global invariant: %s", op);
+            lifted = true;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void visit(BinOp op) {
+      if (op.destination().storage() == SymbolStorage.TEMP) {
+        // If left is not a global and its value is not set in this loop,
+        // and right is not a global and its value is not set in this loop,
+        // we can lift this one.
+        Operand leftOp = op.left();
+        boolean leftOk =
+            leftOp.storage() != SymbolStorage.GLOBAL & !finder.setters.contains(leftOp);
+        Operand rightOp = op.right();
+        boolean rightOk =
+            rightOp.storage() != SymbolStorage.GLOBAL & !finder.setters.contains(rightOp);
+        if (leftOk && rightOk) {
+          logger.at(loggingLevel).log(
+              "Lifting binary assignment to temp of non-global invariant: %s", op);
+          lifted = true;
+        }
+      }
+    }
+
+    @Override
     public void visit(Transfer op) {
       switch (op.destination().storage()) {
         case TEMP:
@@ -145,7 +180,17 @@ class LoopInvariantOptimizer implements Optimizer {
             if (finder.setters.count(op.destination()) == 1
                 && !finder.getters.contains(op.destination())) {
               // It's only set this one time and isn't read anywhere else.
-              logger.at(loggingLevel).log("Lifting to local or param of const: %s", op);
+              // It might be a dead assignment, but that's not our problem.
+              logger.at(loggingLevel).log("Lifting assignment to local or param of const: %s", op);
+              lifted = true;
+            }
+          } else if (op.source().storage() != SymbolStorage.GLOBAL) {
+            // not reading from a global; the only time we are set is here, and our source
+            // is not set within the loop.
+            if (finder.setters.count(op.destination()) == 1
+                && finder.setters.count(op.source()) == 0) {
+              logger.at(loggingLevel).log(
+                  "Lifting assignment to local or param of invariant val: %s", op);
               lifted = true;
             }
           }
@@ -160,7 +205,6 @@ class LoopInvariantOptimizer implements Optimizer {
   // Finds all the uses of an operand.
   private class SetterGetterFinder extends DefaultOpcodeVisitor {
     private Multiset<Operand> setters = HashMultiset.create();
-    // These aren't really used:
     private Set<Operand> getters = new HashSet<>();
 
     @Override
