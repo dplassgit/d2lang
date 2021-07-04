@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -14,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.lex.Token;
 
 public class IncDecOptimizerTest {
+  private static final ConstantOperand<Integer> TWO = new ConstantOperand<Integer>(2);
 
   private IncDecOptimizer optimizer = new IncDecOptimizer(0);
 
@@ -48,6 +50,26 @@ public class IncDecOptimizerTest {
   }
 
   @Test
+  public void optimizePlus2() {
+    TempLocation temp1 = new TempLocation("temp1");
+    TempLocation temp2 = new TempLocation("temp2");
+    StackLocation stack = new StackLocation("stack");
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(temp1, stack),
+            new BinOp(temp2, temp1, Token.Type.PLUS, TWO),
+            new Transfer(stack, temp2));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+
+    System.out.println(Joiner.on('\n').join(optimized));
+
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isInstanceOf(Inc.class);
+    assertThat(optimized.get(2)).isInstanceOf(Inc.class);
+    assertThat(optimizer.isChanged()).isTrue();
+  }
+
+  @Test
   public void optimizeDec() {
     TempLocation temp1 = new TempLocation("temp1");
     TempLocation temp2 = new TempLocation("temp2");
@@ -60,6 +82,26 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> optimized = optimizer.optimize(program);
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Dec.class);
+    assertThat(optimizer.isChanged()).isTrue();
+  }
+
+  @Test
+  public void optimizeMinus2() {
+    TempLocation temp1 = new TempLocation("temp1");
+    TempLocation temp2 = new TempLocation("temp2");
+    StackLocation stack = new StackLocation("stack");
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(temp1, stack),
+            new BinOp(temp2, temp1, Token.Type.MINUS, TWO),
+            new Transfer(stack, temp2));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+
+    System.out.println(Joiner.on('\n').join(optimized));
+
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isInstanceOf(Dec.class);
     assertThat(optimized.get(2)).isInstanceOf(Dec.class);
     assertThat(optimizer.isChanged()).isTrue();
   }
