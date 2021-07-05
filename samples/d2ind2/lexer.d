@@ -98,7 +98,7 @@ new_lexer: proc(text: string): Lexer {
 
 advance: proc(this: Lexer) {
   if this.loc < length(this.text) {
-    this.cc=this.text[this.loc]
+    this.cc=this.text[(this.loc)]
     this.col=this.col + 1
   } else {
     // Indicates no more characters
@@ -120,9 +120,9 @@ nextToken: proc(this: Lexer): Token {
   start=makePosition(this)
   if (isDigit(this.cc)) {
     return makeInt(this, start)
-  } else if (isLetter(this.cc)) {
+  } elif (isLetter(this.cc)) {
     return makeText(this, start)
-  } else if (this.cc !=0) {
+  } elif (this.cc !=0) {
     return makeSymbol(this, start)
   }
 
@@ -160,7 +160,7 @@ makeText: proc(this: Lexer, start: Position): Token {
     return makeToken(Type_FALSE, start, end, value)
   }
 
-  i=0 while i < KEYWORDS.length do i = i + 1 {
+  i=0 while i < length(KEYWORDS) do i = i + 1 {
     if value == KEYWORDS[i] {
       return makeToken(Type_KEYWORD, start, end, value)
     }
@@ -290,7 +290,11 @@ startsWithGt: proc(this: Lexer, start: Position): Token {
     advance(this)
     return makeToken(Type_GEQ, start, end, '>=')
   }
-  return new Token(Type_GT, start, oc)
+  t = new Token
+  t.type = Type_GT
+  t.start = start
+  t.value = oc
+  return t
 }
 
 startsWithLt: proc(this: Lexer, start: Position): Token {
@@ -344,7 +348,7 @@ makeStringToken: proc(this: Lexer, start: Position, first: String): Token {
   return makeToken(Type_STRING, start, end, sb)
 }
 
-makePosition: proc(this: Lexer)gPosition {
+makePosition: proc(this: Lexer): Position {
   pos = new Position
   pos.line = this.line
   pos.col = this.col

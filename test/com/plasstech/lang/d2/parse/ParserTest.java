@@ -23,6 +23,7 @@ import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -533,9 +534,7 @@ public class ParserTest {
   @Test
   public void ifError() {
     assertParseError("if a==3 { print a } else print 4}", "expected {");
-    assertParseError(
-        "if a==3 { print a } else {print 4",
-        "Unexpected start of statement 'EOF'");
+    assertParseError("if a==3 { print a } else {print 4", "Unexpected start of statement 'EOF'");
     assertParseError("if a==3 print a } else {print 4", "expected {");
     assertParseError("if print a else {print 4", "expected literal");
     assertParseError(
@@ -1085,7 +1084,7 @@ public class ParserTest {
   public void exit_withMessage() {
     BlockNode root = parseStatements("exit 'sorry/not sorry'");
     ExitNode node = (ExitNode) root.statements().get(0);
-    ConstNode<String> message = (ConstNode<String>)node.exitMessage().get();
+    ConstNode<String> message = (ConstNode<String>) node.exitMessage().get();
     assertThat(message.value()).isEqualTo("sorry/not sorry");
   }
 
@@ -1150,8 +1149,8 @@ public class ParserTest {
 
   @Test
   public void declVar_asRecord() {
-    BlockNode root = parseStatements("R: record {i: int} a: R");
-    DeclarationNode node = (DeclarationNode) root.statements().get(1);
+    BlockNode root = parseStatements("a: R");
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("a");
     RecordReferenceType type = (RecordReferenceType) node.varType();
     assertThat(type.name()).isEqualTo("R");
@@ -1159,8 +1158,8 @@ public class ParserTest {
 
   @Test
   public void recordAsFormalParam() {
-    BlockNode root = parseStatements("R: record {i: int} p:proc(a: R) {}");
-    ProcedureNode proc = (ProcedureNode) root.statements().get(1);
+    BlockNode root = parseStatements("p:proc(a: R) {}");
+    ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     ProcedureNode.Parameter param = proc.parameters().get(0);
     assertThat(param.name()).isEqualTo("a");
     RecordReferenceType type = (RecordReferenceType) param.type();
@@ -1169,8 +1168,8 @@ public class ParserTest {
 
   @Test
   public void recordAsReturnType() {
-    BlockNode root = parseStatements("R: record {i: int} p:proc():R {}");
-    ProcedureNode proc = (ProcedureNode) root.statements().get(1);
+    BlockNode root = parseStatements("p:proc():R {}");
+    ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     RecordReferenceType type = (RecordReferenceType) proc.returnType();
     assertThat(type.name()).isEqualTo("R");
   }
@@ -1192,12 +1191,8 @@ public class ParserTest {
 
   @Test
   public void recordGet() {
-    BlockNode root =
-        parseStatements(
-            "       R: record{i: int s: string}" //
-                + " rec = new R"
-                + " i = rec.i");
-    AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
+    BlockNode root = parseStatements("i=rec.i");
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
     assertThat(node.operator()).isEqualTo(Token.Type.DOT);
@@ -1205,12 +1200,46 @@ public class ParserTest {
   }
 
   @Test
+  public void ifRecordGet() {
+    parseStatements("if rec.i ==0 {print rec.i}");
+  }
+
+  @Test
+  public void recordGetRecursive() {
+    BlockNode root = parseStatements("s=rec.s[(a+b)] s=rec.f1.f2[3] ");
+    System.err.println(root);
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
+    BinOpNode node = (BinOpNode) assignment.expr();
+    assertThat(node.left()).isInstanceOf(BinOpNode.class);
+    assertThat(node.operator()).isEqualTo(Token.Type.LBRACKET);
+    assertThat(node.right()).isInstanceOf(BinOpNode.class);
+  }
+
+  @Test
   public void recordGetError() {
-    assertParseError(
-        "R: record{i: int s: string}\n" //
-            + " rec = new R\n"
-            + " i = rec.3\n",
-        "expected VARIABLE");
+    assertParseError("i = rec.[\n", "expected literal");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void recordSet() {
+    BlockNode root = parseStatements("rec.i = 3 rec.s = 'hi'");
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
+    FieldSetNode lvalue = (FieldSetNode) assignment.variable();
+    assertThat(lvalue.variableName()).isEqualTo("rec");
+    assertThat(lvalue.fieldName()).isEqualTo("i");
+    assertThat(((ConstNode<Integer>) assignment.expr()).value()).isEqualTo(3);
+
+    assignment = (AssignmentNode) root.statements().get(1);
+    lvalue = (FieldSetNode) assignment.variable();
+    assertThat(lvalue.variableName()).isEqualTo("rec");
+    assertThat(lvalue.fieldName()).isEqualTo("s");
+    assertThat(((ConstNode<String>) assignment.expr()).value()).isEqualTo("hi");
+  }
+
+  @Test
+  public void recordSetError() {
+    assertParseError("rec.3 = i\n", "expected VARIABLE");
   }
 
   @Test
