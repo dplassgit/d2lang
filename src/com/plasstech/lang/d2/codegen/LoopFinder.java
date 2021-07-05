@@ -13,19 +13,26 @@ import com.plasstech.lang.d2.codegen.il.Op;
 
 /** Finds loops in a codebase. */
 
+// the (new) order is:
+//   if (!condition) goto loop_end
+//   ...
+//   loop_begin
+//   ...
+//   if condition goto loop_begin // we can ignore this one.
+//   loop_end
+
 // Algorithm:
-// 1. find all the __loop_begin s
-// 2. find the if after the __loop_begin, this goes to the _loop_end of the most recent begin
-// 3. find the __loop_ends
-// 4. match up the starts & the ends
+// 1. find if goto __loop_end, store name as "most recent end"
+// 2. find the next __loop_begin, store in map from "most recent end" to current (start) IP
+// 3. find the __loop_ends - look up in map, loop is from map IP to current (end) IP
 class LoopFinder extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<Op> code;
   private int ip;
-  private int mostRecentBegin = -1;
+  private String mostRecentEnd;
   // Map from loop end label to start ip
-  private Map<String, Integer> loopStarts = new HashMap<>();
+  private Map<String, Integer> endLabelToStartIp = new HashMap<>();
   private List<Block> loops = new ArrayList<>();
 
   public LoopFinder(List<Op> code) {
@@ -33,8 +40,8 @@ class LoopFinder extends DefaultOpcodeVisitor {
   }
 
   List<Block> findLoops() {
-    mostRecentBegin = -1;
-    loopStarts.clear();
+    mostRecentEnd = null;
+    endLabelToStartIp.clear();
     loops.clear();
     for (ip = 0; ip < code.size(); ++ip) {
       code.get(ip).accept(this);
@@ -45,9 +52,13 @@ class LoopFinder extends DefaultOpcodeVisitor {
   @Override
   public void visit(Label op) {
     if (op.label().startsWith("__" + Label.LOOP_BEGIN_PREFIX)) {
-      mostRecentBegin = ip;
+      if (mostRecentEnd == null) {
+        logger.atFine().log("Found loop start %s without loop end", op.label());
+      } else {
+        endLabelToStartIp.put(mostRecentEnd, ip);
+      }
     } else if (op.label().startsWith("__" + Label.LOOP_END_PREFIX)) {
-      Integer start = loopStarts.get(op.label());
+      Integer start = endLabelToStartIp.get(op.label());
       if (start != null) {
         // matched up this end, with the start.
         loops.add(new Block(start, ip));
@@ -60,12 +71,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
   @Override
   public void visit(IfOp op) {
     if (op.destination().startsWith("__" + Label.LOOP_END_PREFIX)) {
-      if (mostRecentBegin != -1) {
-        loopStarts.put(op.destination(), mostRecentBegin);
-      } else {
-        logger.atFine().log("Found 'if' at %d without preceding begin loop", ip);
-      }
-      mostRecentBegin = -1;
+      mostRecentEnd = op.destination();
     }
   }
 }

@@ -1,11 +1,11 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
 public class LoopInvariantOptimizerTest {
+  private Optimizer ilOptimizer = new ILOptimizer(2);
   private Optimizer optimizer =
       new ILOptimizer(
               ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
@@ -35,7 +35,7 @@ public class LoopInvariantOptimizerTest {
             + "  i = 0 "
             + "  while true do i = i + 1 {"
             + "    x = n + 1\n"
-            + "    sum = sum + x\n"
+            + "    sum = sum + i\n"
             + "    if i == 5 {\n"
             + "      continue\n"
             + "    } elif i == 10 { break }\n"
@@ -47,19 +47,35 @@ public class LoopInvariantOptimizerTest {
   }
 
   @Test
-  @Ignore("Test fails")
-  public void loopNeverRun() {
+  public void loopNeverRunStatic() {
     TestUtils.optimizeAssertSameVariables(
         "      loopNeverRun:proc(n:int):int {\n"
             + "  sum = 0\n"
             + "  i = 0 x = 0"
-            + "  while false do i = i + 1 {"
+            + "  while false do i = i + 1 {\n"
             + "    x = n + 1\n"
             + "    sum = sum + x\n"
+            + "    println x"
             + "  }\n"
             + "  return sum + x"
             + "}"
             + "println loopNeverRun(10)",
+        optimizer);
+  }
+
+  @Test
+  public void loopNeverRunDynamic() {
+    TestUtils.optimizeAssertSameVariables(
+        "      loopNeverRun:proc(n:int, m:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 x = 0"
+            + "  while n > 100 do i = i + 1 {"
+            + "    x = m + 1\n"
+            + "    sum = sum + x\n"
+            + "  }\n"
+            + "  return sum + x"
+            + "}"
+            + "println loopNeverRun(10, 20)",
         optimizer);
   }
 
@@ -84,16 +100,34 @@ public class LoopInvariantOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "      oneLoopBreak:proc(n:int):int {\n"
             + "  sum = 0\n"
-            + "  i = 0 "
+            + "  i = 0 x = 0"
             + "  while i < 10 do i = i + 1 {"
             + "    x = n + 1\n"
             + "    sum = sum + 1\n"
             + "    break"
             + "  }"
-            + "  return sum"
+            + "  return sum + x"
             + "}"
             + "println oneLoopBreak(10)",
-        new ILOptimizer(2));
+        optimizer);
+  }
+
+  @Test
+  public void oneLoopBreakInvariantAfterBreak() {
+    // this passes if the dead code optimizer runs first because it had already killed the loop
+    TestUtils.optimizeAssertSameVariables(
+        "      oneLoopBreak:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 x = 0"
+            + "  while i < 10 do i = i + 1 {"
+            + "    break"
+            + "    sum = sum + 1\n"
+            + "    x = n + 1\n"
+            + "  }"
+            + "  return sum + x"
+            + "}"
+            + "println oneLoopBreak(10)",
+        ilOptimizer);
   }
 
   @Test
@@ -209,10 +243,6 @@ public class LoopInvariantOptimizerTest {
 
   @Test
   public void nestedLoopsLocals() {
-    Optimizer optimizer =
-        new ILOptimizer(
-            ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)));
-
     TestUtils.optimizeAssertSameVariables(
         "      nestedLoopsLocals:proc(n:int):int {\n"
             + "  sum = 0\n"
@@ -232,5 +262,41 @@ public class LoopInvariantOptimizerTest {
             + "}"
             + "println nestedLoopsLocals(10)",
         optimizer);
+  }
+
+  @Test
+  public void twoNestedLoopsWithInvariants() {
+    TestUtils.optimizeAssertSameVariables(
+        "      twoNestedLoopsWithInvariants:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 while i < n do i = i + 1 {\n"
+            + "    y = (n*4)/(n-1)\n"
+            + "    j = 0 while j < n do j = j + 1 {\n"
+            + "      x = n + y\n"
+            + "      sum = sum + i\n"
+            + "    }\n"
+            + "    sum = sum + i\n"
+            + "  }"
+            + "  return sum + x - y"
+            + "}"
+            + "println twoNestedLoopsWithInvariants(10)",
+        optimizer);
+  }
+
+  @Test
+  public void twoNestedLoops() {
+    TestUtils.optimizeAssertSameVariables(
+        "      twoNestedLoops:proc(n:int):int {\n"
+            + "  sum = 0\n"
+            + "  i = 0 while i < n do i = i + 1 {\n"
+            + "    j = 0 while j < n do j = j + 1 {\n"
+            + "      sum = sum + i\n"
+            + "    }\n"
+            + "    sum = sum + i\n"
+            + "  }"
+            + "  return sum"
+            + "}"
+            + "println twoNestedLoops(10)",
+        new LoopInvariantOptimizer(2));
   }
 }

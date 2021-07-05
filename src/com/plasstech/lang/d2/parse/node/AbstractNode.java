@@ -58,7 +58,6 @@ abstract class AbstractNode implements Node {
 
   @Override
   public void setLocation(Location location) {
-    Preconditions.checkState(this.location == null, "Location cannot be set again");
     this.location = location;
   }
 

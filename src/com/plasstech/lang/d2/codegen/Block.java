@@ -28,6 +28,6 @@ class Block {
 
   @Override
   public String toString() {
-    return String.format("IPs from %d to %d", start, end);
+    return String.format("ip %d to %d", start, end);
   }
 }

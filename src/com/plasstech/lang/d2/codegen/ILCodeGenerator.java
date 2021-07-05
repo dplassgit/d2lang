@@ -268,27 +268,32 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(WhileNode node) {
+    // pattern is: if (condition) { do loop while condition}
+
+    // emit test
+    // if while condition is false goto loop_end
     // loop_begin:
-    // ..test
-    // ..if done, goto loop_end
-    // ..(loop code)
+    // ..emit loop code
     // loop_increment: ("continue" target)
-    // ..(increment code)
-    // ..goto loop_begin
+    // ..emit increment code
+    // ..emit test
+    // ..if while condition is true, goto loop_begin
     // loop_end: ("break" target)
+
     String before = generateLabel(Label.LOOP_BEGIN_PREFIX);
     String increment = generateLabel(Label.LOOP_INCREMENT_PREFIX);
     String after = generateLabel(Label.LOOP_END_PREFIX);
     whileContinues.push(increment);
     whileBreaks.push(after);
 
-    emit(new Label(before));
+    // Pre-check
     Node condition = node.condition();
     condition.accept(this);
-
     TempLocation notCondition = generateTemp(condition.varType());
     emit(new UnaryOp(notCondition, Type.NOT, condition.location()));
     emit(new IfOp(notCondition, after));
+
+    emit(new Label(before));
 
     node.block().accept(this);
 
@@ -296,7 +301,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     if (node.doStatement().isPresent()) {
       node.doStatement().get().accept(this);
     }
-    emit(new Goto(before));
+
+    // post-increment test
+    condition.setLocation(null);
+    condition.accept(this);
+    emit(new IfOp(condition.location(), before));
 
     emit(new Label(after));
     whileBreaks.pop();
