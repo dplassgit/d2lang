@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.plasstech.lang.d2.type.SymbolStorage;
-
 public abstract class Location implements Operand {
   private final String name;
 
@@ -17,6 +15,4 @@ public abstract class Location implements Operand {
   public String toString() {
     return name;
   }
-
-  public abstract SymbolStorage storage();
 }

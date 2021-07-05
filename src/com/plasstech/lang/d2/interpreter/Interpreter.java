@@ -75,12 +75,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public Environment execute() {
     while (running) {
       Op op = code.get(ip);
-      logger.at(loggingLevel).log("Current op: %s. Env: %s", op, envs.peek());
+      logger.at(loggingLevel).log("Current op: ip: %d: %s. Env: %s", ip, op, envs.peek());
       ip++;
       try {
         op.accept(this);
-      } catch (RuntimeException re) {
-        logger.atSevere().withCause(re).log("Exception at %s; env: %s", op, envs);
+      } catch (NullPointerException re) {
+        logger.atSevere().withCause(re).log("Exception at ip %d: %s; env: %s", ip, op, envs);
         throw re;
       }
       iterations++;
@@ -264,10 +264,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitUnaryInt(op, rhs);
     } else if (rhs instanceof String) {
       result = visitUnaryString(op, (String) rhs);
-    } else if (rhs.getClass().isArray()) {
+    } else if (rhs != null && rhs.getClass().isArray()) {
       result = visitUnaryArray(op, (Object[]) rhs);
     } else {
-      throw new IllegalStateException("Unknown unary op operand " + rhs);
+      throw new IllegalStateException(
+          "Unknown unary op operand " + rhs + " for op " + op.toString());
     }
     setValue(op.destination(), result);
   }

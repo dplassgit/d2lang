@@ -36,5 +36,9 @@ new_lexer: proc(text: string) {
 main {
   new_lexer("314" + "159 $")
   println "Should be 314159:"
-  println makeInt()
+  pi = makeInt()
+  println pi
+  if pi != 314159 {
+    exit "Bad result!"
+  }
 }

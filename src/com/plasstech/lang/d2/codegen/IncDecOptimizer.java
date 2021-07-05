@@ -15,11 +15,24 @@ public class IncDecOptimizer extends LineOptimizer {
     super(debugLevel);
   }
 
+  /*
+   * i=i+1: (also, i=i-1, i=i+2, i=i+2)
+   *
+   * temp1=i // first
+   * temp2=temp1+1 // secondOp
+   * i=temp2 // thirdOp
+   *
+   * i = i - i
+   * temp1=i
+   * temp2=i
+   * temp3 = temp1 - temp2
+   * i = temp3
+   */
   @Override
   public void visit(Transfer first) {
     /*
      * temp1=i // first
-     * temp2=temp1+1 // secondOp
+     * temp2=temp1+1 // secondOp (also for minus, or 2)
      * i=temp2 // thirdOp
      */
     Op secondOp = getOpAt(ip + 1);
@@ -42,19 +55,26 @@ public class IncDecOptimizer extends LineOptimizer {
     }
     Transfer third = (Transfer) thirdOp;
     ConstantOperand<?> right = (ConstantOperand<?>) second.right();
-    if (right.value().equals(1)
+    Object value = right.value();
+    if ((value.equals(1) || value.equals(2))
         && first.destination().equals(second.left())
         && second.destination().equals(third.source())
         && first.source().equals(third.destination())) {
+
       // WE HAVE ONE!
       logger.at(loggingLevel).log("Found Inc/Dec pattern at ip %d", ip);
-      if (plus) {
-        replaceCurrent(new Inc(third.destination()));
+
+      deleteCurrent();
+
+      Inc increment = new Inc(third.destination());
+      Dec decrement = new Dec(third.destination());
+      if (value.equals(1)) {
+        deleteAt(ip + 1);
       } else {
-        replaceCurrent(new Dec(third.destination()));
+        // +/- 2
+        replaceAt(ip + 1, plus ? increment : decrement);
       }
-      deleteAt(ip + 1);
-      deleteAt(ip + 2);
+      replaceAt(ip + 2, plus ? increment : decrement);
     }
   }
 }

@@ -21,7 +21,8 @@ public class ILOptimizer implements Optimizer {
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
-            new IncDecOptimizer(debugLevel)));
+            new IncDecOptimizer(debugLevel),
+            new LoopInvariantOptimizer(debugLevel)));
     setDebugLevel(debugLevel);
   }
 
@@ -45,6 +46,8 @@ public class ILOptimizer implements Optimizer {
 
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+    setChanged(false);
+
     ImmutableList<Op> program = ImmutableList.copyOf(input);
     int iterations = 0;
 
