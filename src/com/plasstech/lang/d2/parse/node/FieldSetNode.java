@@ -2,12 +2,12 @@ package com.plasstech.lang.d2.parse.node;
 
 import com.plasstech.lang.d2.common.Position;
 
-public class RecordFieldSetNode extends AbstractNode implements LValueNode {
+public class FieldSetNode extends AbstractNode implements LValueNode {
 
   private final String variableName;
   private final String fieldName;
 
-  RecordFieldSetNode(String variableName, String fieldName, Position position) {
+  public FieldSetNode(String variableName, String fieldName, Position position) {
     super(position);
     this.variableName = variableName;
     this.fieldName = fieldName;
@@ -26,6 +26,10 @@ public class RecordFieldSetNode extends AbstractNode implements LValueNode {
     return variableName + "." + fieldName;
   }
 
-  // TODO: visit?
-  // TODO: toString
+  // TODO: visit
+
+  @Override
+  public String toString() {
+    return name();
+  }
 }

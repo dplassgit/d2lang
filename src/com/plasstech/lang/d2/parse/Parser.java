@@ -28,6 +28,7 @@ import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -261,13 +262,30 @@ public class Parser {
       case LPAREN:
         return procedureCall(variable, true);
 
-        // TODO: dot for record field set
+        // for record field set
+      case DOT:
+        return fieldAssignment(variable);
+
         // TODO: bracket for string or array slot assignment
       default:
         break;
     }
     throw new ParseException(
         String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
+  }
+
+  private StatementNode fieldAssignment(Token variable) {
+    expect(Token.Type.DOT);
+    advance(); // eat the .
+
+    expect(Token.Type.VARIABLE);
+    Token field = advance();
+    FieldSetNode fsn = new FieldSetNode(variable.text(), field.text(), variable.start());
+    expect(Token.Type.EQ);
+    advance();
+    ExprNode rhs = expr();
+
+    return new AssignmentNode(fsn, rhs);
   }
 
   private DeclarationNode declaration(Token varToken) {
@@ -640,7 +658,8 @@ public class Parser {
    * Parse an (optional) composite dereference.
    *
    * <pre>
-   * composite dereference -> atom ('[' expr ']') | atom ('.' variable)
+   * composite dereference -> atom ('[' expr ']') | atom ('.' expr)
+   * <p>here -> nextRule (tokentype nextRule)*
    * </pre>
    */
   private ExprNode compositeDereference() {
@@ -655,13 +674,18 @@ public class Parser {
 
       left = new BinOpNode(left, Token.Type.LBRACKET, index);
     } else if (token.type() == Token.Type.DOT) {
-      // Record field reference
-      advance();
-      expect(Token.Type.VARIABLE);
-      Token varToken = advance();
-      ExprNode right = new VariableNode(varToken.text(), varToken.start());
 
-      left = new BinOpNode(left, Token.Type.DOT, right);
+      while (token.type() == Token.Type.DOT || token.type() == Token.Type.LBRACKET) {
+        Token.Type operator = token.type();
+        advance();
+        // this is restrictive but I'm too dumb to figure out how to make it left-associative
+        ExprNode right = atom();
+        if (operator == Token.Type.LBRACKET) {
+          expect(Token.Type.RBRACKET);
+          advance();
+        }
+        left = new BinOpNode(left, operator, right);
+      }
     }
 
     return left;
