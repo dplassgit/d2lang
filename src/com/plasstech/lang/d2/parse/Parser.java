@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.parse;
 
-import com.google.common.base.Joiner;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +7,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -39,6 +37,7 @@ import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
@@ -47,15 +46,7 @@ import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
-import com.plasstech.lang.d2.type.RecordType;
-import com.plasstech.lang.d2.type.RecordType.Field;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class Parser {
 
@@ -286,7 +277,7 @@ public class Parser {
       Token.Type declaredType = token.type();
 
       if (declaredType == Token.Type.RECORD) {
-        return parseRecordDefinition(varToken);
+        return parseRecordDeclaration(varToken);
       }
 
       VarType varType = BUILTINS.get(declaredType);
@@ -315,7 +306,7 @@ public class Parser {
         token.start());
   }
 
-  private DeclarationNode parseRecordDefinition(Token varToken) {
+  private DeclarationNode parseRecordDeclaration(Token varToken) {
     expect(Token.Type.RECORD);
     advance(); // eat "record"
     expect(Token.Type.LBRACE);
@@ -332,14 +323,7 @@ public class Parser {
 
     expect(Token.Type.RBRACE);
     advance();
-    List<Field> fields =
-        fieldNodes
-            .stream()
-            .map(node -> new Field(node.name(), node.varType()))
-            .collect(toImmutableList());
-    RecordType recordType = new RecordType(varToken.text(), fields);
-
-    return new DeclarationNode(varToken.text(), recordType, varToken.start());
+    return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start());
   }
 
   /** declaration -> '[' expr ']' */

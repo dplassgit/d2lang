@@ -31,6 +31,7 @@ import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
@@ -39,7 +40,6 @@ import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
-import com.plasstech.lang.d2.type.RecordType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ParserTest {
@@ -1108,74 +1108,71 @@ public class ParserTest {
   }
 
   @Test
-  public void defineEmptyRecord() {
+  public void declRecord_empty() {
     BlockNode root = parseStatements("r: record{}");
-    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("r");
-    RecordType type = (RecordType) node.varType();
-    assertThat(type.fields()).isEmpty();
+    assertThat(node.fields()).isEmpty();
   }
 
   @Test
-  public void defineRecordBadField() {
-    assertParseError("r: record{p:int int}", "expected VARIABLE");
-    assertParseError("r: record{int}", "expected VARIABLE");
-    assertParseError("r: record{proc}", "expected VARIABLE");
-    // the error here is actually that i'ts trying to parse a procedure, but meh
-    assertParseError("r: record{p:proc}", "expected");
-  }
-
-  @Test
-  public void defineRecord() {
+  public void declRecord() {
     BlockNode root = parseStatements("R: record{i: int s: string}");
-    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("R");
-    RecordType type = (RecordType) node.varType();
-    assertThat(type.fields()).hasSize(2);
-    assertThat(type.fields().get(0).type()).isEqualTo(VarType.INT);
-    assertThat(type.fields().get(0).name()).isEqualTo("i");
-    assertThat(type.fields().get(1).type()).isEqualTo(VarType.STRING);
-    assertThat(type.fields().get(1).name()).isEqualTo("s");
+    assertThat(node.fields()).hasSize(2);
+    assertThat(node.fields().get(0).varType()).isEqualTo(VarType.INT);
+    assertThat(node.fields().get(0).name()).isEqualTo("i");
+    assertThat(node.fields().get(1).varType()).isEqualTo(VarType.STRING);
+    assertThat(node.fields().get(1).name()).isEqualTo("s");
   }
 
   @Test
-  public void defineRecordRecursive() {
+  public void declRecordRecursive() {
     BlockNode root = parseStatements("R: record {r: R}");
-    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("R");
-    RecordType type = (RecordType) node.varType();
-    assertThat(type.fields()).hasSize(1);
-    assertThat(type.fields().get(0).name()).isEqualTo("r");
-    assertThat(type.fields().get(0).type()).isInstanceOf(RecordReferenceType.class);
-    RecordReferenceType fieldType = (RecordReferenceType) type.fields().get(0).type();
+    assertThat(node.fields()).hasSize(1);
+    assertThat(node.fields().get(0).name()).isEqualTo("r");
+    assertThat(node.fields().get(0).varType()).isInstanceOf(RecordReferenceType.class);
+    RecordReferenceType fieldType = (RecordReferenceType) node.fields().get(0).varType();
     assertThat(fieldType.name()).isEqualTo("R");
   }
 
   @Test
-  public void declareAsRecord() {
-    BlockNode root = parseStatements("Rec: record {i: int} a: Rec");
+  public void declRecord_badField() {
+    assertParseError("r: record{p:int int}", "expected VARIABLE");
+    assertParseError("r: record{int}", "expected VARIABLE");
+    assertParseError("r: record{proc}", "expected VARIABLE");
+    // the error here is actually that it's trying to parse a procedure, but meh
+    assertParseError("r: record{p:proc}", "expected");
+  }
+
+  @Test
+  public void declVar_asRecord() {
+    BlockNode root = parseStatements("R: record {i: int} a: R");
     DeclarationNode node = (DeclarationNode) root.statements().get(1);
     assertThat(node.name()).isEqualTo("a");
     RecordReferenceType type = (RecordReferenceType) node.varType();
-    assertThat(type.name()).isEqualTo("Rec");
+    assertThat(type.name()).isEqualTo("R");
   }
 
   @Test
   public void recordAsFormalParam() {
-    BlockNode root = parseStatements("Rec: record {i: int} p:proc(a: Rec) {}");
+    BlockNode root = parseStatements("R: record {i: int} p:proc(a: R) {}");
     ProcedureNode proc = (ProcedureNode) root.statements().get(1);
     ProcedureNode.Parameter param = proc.parameters().get(0);
     assertThat(param.name()).isEqualTo("a");
     RecordReferenceType type = (RecordReferenceType) param.type();
-    assertThat(type.name()).isEqualTo("Rec");
+    assertThat(type.name()).isEqualTo("R");
   }
 
   @Test
   public void recordAsReturnType() {
-    BlockNode root = parseStatements("Rec: record {i: int} p:proc():Rec {}");
+    BlockNode root = parseStatements("R: record {i: int} p:proc():R {}");
     ProcedureNode proc = (ProcedureNode) root.statements().get(1);
     RecordReferenceType type = (RecordReferenceType) proc.returnType();
-    assertThat(type.name()).isEqualTo("Rec");
+    assertThat(type.name()).isEqualTo("R");
   }
 
   @Test
@@ -1197,7 +1194,7 @@ public class ParserTest {
   public void recordGet() {
     BlockNode root =
         parseStatements(
-            "R: record{i: int s: string}" //
+            "       R: record{i: int s: string}" //
                 + " rec = new R"
                 + " i = rec.i");
     AssignmentNode assignment = (AssignmentNode) root.statements().get(2);

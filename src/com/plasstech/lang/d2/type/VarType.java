@@ -7,7 +7,7 @@ public interface VarType {
   VarType STRING = new SimpleType("STRING");
   VarType BOOL = new SimpleType("BOOL");
   VarType VOID = new SimpleType("VOID");
-  VarType PROC = new SimpleType("PROC"); // ???
+  VarType PROC = new SimpleType("PROC");
   VarType NULL = new SimpleType("NULL");
   VarType UNKNOWN =
       new VarType() {
@@ -38,9 +38,5 @@ public interface VarType {
 
   default boolean isArray() {
     return this instanceof ArrayType;
-  }
-
-  default boolean isRecord() {
-    return this instanceof RecordType;
   }
 }
