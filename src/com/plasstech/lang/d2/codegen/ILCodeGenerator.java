@@ -44,7 +44,6 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
-import com.plasstech.lang.d2.type.RecordType;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -134,9 +133,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   @Override
   public void visit(NewNode node) {
     Symbol symbol = symbolTable().get(node.recordName());
-    assert symbol instanceof RecordType;
+    logger.atInfo().log("Cannot generate for NewNode yet");
+    //    assert symbol instanceof RecordType;
     //    RecordType rt = ;
-    super.visit(node);
   }
 
   private Location lookupLocation(String name) {

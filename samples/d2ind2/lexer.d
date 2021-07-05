@@ -64,7 +64,7 @@ KEYWORDS=[
 'and',
 'or',
 'not',
-'xor',
+'xor'
 ]
 
 Position: record {

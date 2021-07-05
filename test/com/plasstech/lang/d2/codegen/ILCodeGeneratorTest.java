@@ -4,6 +4,7 @@ import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -125,6 +126,7 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  @Ignore
   public void recordFieldSet() {
     generateProgram(
         "rec: record {f:string i:int}\n" //
