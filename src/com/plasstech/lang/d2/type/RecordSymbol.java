@@ -9,6 +9,7 @@ public class RecordSymbol extends AbstractSymbol {
 
   public RecordSymbol(RecordDeclarationNode node) {
     super(node.name());
+    // This isn't *quite* true. It's more of a RecordDefinitionType
     this.setType(new RecordReferenceType(node.name()));
     this.node = node;
   }

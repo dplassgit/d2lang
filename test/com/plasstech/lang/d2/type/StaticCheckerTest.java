@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -347,27 +348,27 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void binOpStringInvalidOperator() {
+  public void stringOperators_errors() {
     for (char c : "|&-%*/".toCharArray()) {
       assertError(String.format("a='hi' %c 'not'", c), "Cannot apply");
     }
   }
 
   @Test
-  public void binOpStringValidOperator() {
+  public void stringOperators() {
     for (String op : ImmutableList.of("+", "<", ">", "==", "!=", "<=", ">=")) {
       checkProgram(String.format("a='hi' %s 'bye'", op));
     }
   }
 
   @Test
-  public void binOpStringComparatorBoolean() {
+  public void stringComparator() {
     SymTab symTab = checkProgram("b:bool b='hi' == 'bye'");
     assertThat(symTab.get("b").type()).isEqualTo(VarType.BOOL);
   }
 
   @Test
-  public void binStringAdd() {
+  public void stringAdd() {
     SymTab symTab = checkProgram("b='hi' a='bye' c=a+b");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("b").type()).isEqualTo(VarType.STRING);
@@ -381,13 +382,13 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void stringIndexConstant() {
+  public void stringLiteral_index() {
     SymTab symTab = checkProgram("a='hi'[1]");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
   }
 
   @Test
-  public void badArrayIndex() {
+  public void arrayIndex_error() {
     assertError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
@@ -400,19 +401,19 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayStringIndex() {
+  public void arrayString() {
     SymTab symTab = checkProgram("arr=['a', 'b', 'c'] a=arr[1 + 1]");
     assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
   }
 
   @Test
-  public void arrayIndexConstant() {
+  public void arrayLiteral_index() {
     SymTab symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
     assertThat(symTab.get("a").type()).isEqualTo(VarType.INT);
   }
 
   @Test
-  public void badArrayOperators() {
+  public void arrayOperators_errors() {
     for (char c : "+-/%".toCharArray()) {
       assertError(
           String.format("a1 = [1,2,3] %c [2,3,4]", c), "operator to ARRAY expression");
@@ -420,7 +421,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void badStringIndex() {
+  public void stringIndex_error() {
     assertError("b='hi' a=b['bye']", "STRING index must be INT");
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
@@ -433,33 +434,33 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void ifBool() {
+  public void ifStmt() {
     checkProgram("a=true if a { print a }");
   }
 
   @Test
-  public void ifNotBoolCond_error() {
+  public void if_notBool_error() {
     assertError("if 1 { print 2 }", "must be BOOL; was INT");
     assertError("a=1 if a { print a }", "must be BOOL; was INT");
   }
 
   @Test
-  public void ifNotBoolCondNested_error() {
+  public void if_notBoolNested_error() {
     assertError("a=1 if a==1 { if (a==1) { if b {print a } } }", "UNKNOWN");
   }
 
   @Test
-  public void errorInIf() {
+  public void if_error() {
     assertError("a=1 if a==1 { a=b }", "Indeterminable");
   }
 
   @Test
-  public void errorInElse() {
+  public void else_error() {
     assertError("a=1 if a==1 {} else {a=b }", "Indeterminable");
   }
 
   @Test
-  public void mainError() {
+  public void main_error() {
     assertError("a=1 main { if a==1 {} else {a=b}}", "Indeterminable");
   }
 
@@ -503,7 +504,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void whileError() {
+  public void while_errors() {
     assertError("while a { print a }", "UNKNOWN");
     assertError("while 1 { print 1 }", "INT");
     assertError("while true do i = false + 1 {}", "Cannot apply");
@@ -511,7 +512,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declError() {
+  public void decl_errors() {
     assertError("b=3 a=b a:int", "already declared as INT");
     assertError("a=3 a:bool", "already declared as INT");
     assertError("a:bool a:int", "already declared as BOOL");
@@ -525,7 +526,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void globalDeclsAreNeverUndefined() {
+  public void globalDecls_neverUndefined() {
     // Tests bug#39
     checkProgram(
         "      a:string "
@@ -594,7 +595,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void procParams() {
+  public void procParams_errors() {
     assertError("fib:proc(a, b, a) {}", "Duplicate parameter");
     assertError("fib:proc() {a=3 a=true}", "declared as INT");
     assertError("a=true fib:proc() {a=3}", "declared as BOOL");
@@ -603,7 +604,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void procMismatch() {
+  public void return_mismatch() {
     assertError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
     assertError(
         "fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
@@ -615,7 +616,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void procReturn() {
+  public void return_required() {
     assertError("fib:proc():int {}", "No RETURN statement");
     assertError(
         "fib:proc():bool {" + "if false {" + " return false" + "}" + "}", "Not all codepaths");
@@ -655,7 +656,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void nakedReturn() {
+  public void return_outsideProc() {
     assertError("return 3", "outside a PROC");
   }
 
@@ -698,7 +699,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void bad_exit() {
+  public void exit_errors() {
     assertError("exit -1", "must be STRING");
     assertError("exit length('sorry')", "must be STRING");
   }
@@ -710,31 +711,31 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void bad_input() {
+  public void input_errors() {
     assertError("f:int f=input", "declared as INT");
     assertError("f=5 f=input", "declared as INT");
   }
 
   @Test
-  public void emptyRecord() {
+  public void recordDefinition_empty() {
     SymTab symTab = checkProgram("r: record{}");
     assertThat(symTab.get("r")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
-  public void simpleRecord() {
+  public void recordDefinition_simple() {
     SymTab symTab = checkProgram("r2: record{s:string i:int b:bool}");
     assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
-  public void recursiveRecord() {
+  public void recordDefinition_recursive() {
     SymTab symTab = checkProgram("rec: record{r:rec}");
     assertThat(symTab.get("rec")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
-  public void badRecord() {
+  public void recordDefinition_errors() {
     assertError("r: record{f:record{f2:int}}", "nested RECORD 'f' in RECORD 'r'");
     assertError("r: record{p:proc() {} }", "nested PROC 'p' in RECORD 'r'");
     assertError(
@@ -743,13 +744,93 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void duplicateRecord() {
+  public void recordDefinition_duplicate() {
     assertError("r: record{f:int} r:record{b:bool}", "'r' already declared as r: RECORD");
   }
 
   @Test
-  public void redeclaredRecord() {
+  public void recordDefinition_redeclared() {
     assertError("r: int r:record{b:bool}", "already declared as INT");
+  }
+
+  @Test
+  public void variableDecl_recordType() {
+    SymTab symTab = checkProgram("r2: record{s:string} instance: r2");
+    assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
+    
+    Symbol rec = symTab.get("instance");
+    assertThat(rec.isAssigned()).isFalse();
+    RecordReferenceType refType = (RecordReferenceType) rec.type();
+    assertThat(refType.name()).isEqualTo("r2");
+  }
+
+  @Test
+  public void variableDecl_errorRecordType() {
+    assertError("instance: r1", "Cannot declare 'instance' as unknown RECORD 'r1'");
+  }
+
+  @Test
+  public void variableDecl_recordLikeTypeButNotQuiteRecordType() {
+    assertError("p:proc(){} instance: p", "Cannot declare 'instance' as unknown RECORD 'p'");
+  }
+
+  @Test
+  public void paramDecl_recordType() {
+    SymTab symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
+    ProcSymbol proc = (ProcSymbol) symTab.get("p");
+    Parameter instance = proc.node().parameters().get(0);
+    RecordReferenceType r1 = (RecordReferenceType) instance.type();
+    assertThat(r1.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void paramDecl_errorRecordType() {
+    assertError("p:proc(instance:r1){}", "Cannot declare 'instance' as unknown RECORD 'r1'");
+  }
+
+  @Test
+  public void returnType_recordType() {
+    SymTab symTab = checkProgram("r1: record{s:string} p:proc:r1{return null}");
+    ProcSymbol proc = (ProcSymbol) symTab.get("p");
+    RecordReferenceType r1 = (RecordReferenceType) proc.returnType();
+    assertThat(r1.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void returnType_errorRecordType() {
+    assertError("p:proc:r1 {return null}", "Cannot declare 'return type' as unknown RECORD 'r1'");
+  }
+
+  @Test
+  public void assignRecordType() {
+    SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2:r1 var2=var1");
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    assertThat(refType.name()).isEqualTo("r1");
+
+    Symbol var2 = symTab.get("var2");
+    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    assertThat(refType2.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void assignRecordType_inferred() {
+    SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    assertThat(refType.name()).isEqualTo("r1");
+
+    Symbol var2 = symTab.get("var2");
+    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    assertThat(refType2.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void assignRecordType_mismatch() {
+    assertError("r1:record{} var1:r1 var1=null var2:int var2=var1", "is r1: RECORD");
+    assertError("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1", "is r1: RECORD");
+    assertError(
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "is r2: RECORD");
   }
 
   private void assertError(String program, String messageShouldContain) {

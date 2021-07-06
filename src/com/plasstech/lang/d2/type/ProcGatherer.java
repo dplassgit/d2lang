@@ -2,12 +2,13 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import com.plasstech.lang.d2.parse.node.DefaultVisitor;
-import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 
 /**
  * "Gathers" all procedure definitions in the (global) symbol table, so you can make
@@ -51,6 +52,7 @@ class ProcGatherer extends DefaultVisitor {
 
     // 4. add all formals to proc's symbol table
     for (Parameter formal : node.parameters()) {
+      // whoopsie, skip if
       child.declareParam(formal.name(), formal.type());
     }
   }

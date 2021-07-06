@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
@@ -167,7 +168,7 @@ public class StaticChecker extends DefaultVisitor {
       // Already known in some scope. Update.
       if (sym.type().isUnknown()) {
         sym.setType(right.varType());
-      } else if (!sym.type().equals(right.varType())) {
+      } else if (!sym.type().compatibleWith(right.varType())) {
         // It was already in the symbol table. Possible that it's wrong
         throw new TypeException(
             String.format(
@@ -242,7 +243,7 @@ public class StaticChecker extends DefaultVisitor {
         }
       }
       // 5. make sure expr types == param types
-      if (!formal.type().equals(actual.varType())) {
+      if (!formal.type().compatibleWith(actual.varType())) {
         throw new TypeException(
             String.format(
                 "Type mismatch for parameter '%s' to PROC '%s': found %s, expected %s",
@@ -314,7 +315,7 @@ public class StaticChecker extends DefaultVisitor {
       // NOTE RETURN
       return;
 
-    } else if (!left.varType().equals(right.varType())) {
+    } else if (!left.varType().compatibleWith(right.varType())) {
       throw new TypeException(
           String.format(
               "Type mismatch: %s is %s; %s is %s", left, left.varType(), right, right.varType()),
@@ -457,8 +458,22 @@ public class StaticChecker extends DefaultVisitor {
               node.name(), existingType.name(), node.varType()),
           node.position());
     }
+    // gotta make sure it exists
+    validatePossibleRecordType(node.name(), node.varType(), node.position());
 
     symbolTable().declare(node.name(), node.varType());
+  }
+
+  private void validatePossibleRecordType(String name, VarType type, Position position) {
+    if (type.isRecord()) {
+      String recordName = ((RecordReferenceType) type).name();
+      Symbol symbol = symbolTable().getRecursive(recordName);
+      if (symbol == null || !symbol.type().isRecord()) {
+        throw new TypeException(
+            String.format("Cannot declare '%s' as unknown RECORD '%s'", name, recordName),
+            position);
+      }
+    }
   }
 
   @Override
@@ -589,6 +604,7 @@ public class StaticChecker extends DefaultVisitor {
     // 6. make sure args all have a type
     for (Parameter param : node.parameters()) {
       VarType type = symbolTable().get(param.name()).type();
+      validatePossibleRecordType(param.name(), type, node.position());
       if (type.isUnknown()) {
         throw new TypeException(
             String.format(
@@ -610,6 +626,7 @@ public class StaticChecker extends DefaultVisitor {
             String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
             node.position());
       }
+      validatePossibleRecordType("return type", node.returnType(), node.position());
     }
     procedures.pop();
   }
@@ -688,7 +705,7 @@ public class StaticChecker extends DefaultVisitor {
           String.format("Indeterminable type for RETURN statement %s", node), node.position());
     }
 
-    if (!proc.node().varType().equals(actualReturnType)) {
+    if (!proc.node().varType().compatibleWith(actualReturnType)) {
       throw new TypeException(
           String.format(
               "PROC '%s' declared to return %s but returned %s",
