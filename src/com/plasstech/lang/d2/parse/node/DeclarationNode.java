@@ -26,6 +26,6 @@ public class DeclarationNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format("DeclNode: %s: %s", variableName, varType().name().toLowerCase());
+    return String.format("DeclNode: %s: %s", variableName, varType());
   }
 }

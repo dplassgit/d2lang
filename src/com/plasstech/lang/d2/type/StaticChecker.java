@@ -68,7 +68,6 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.BIT_XOR,
           Token.Type.BIT_AND);
 
-
   private static final Set<Token.Type> STRING_OPERATORS =
       ImmutableSet.of(
           Token.Type.EQEQ,
@@ -124,6 +123,7 @@ public class StaticChecker extends DefaultVisitor {
       }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
+      e.printStackTrace();
       //      throw e;
       return new TypeCheckResult(e.toString());
     }
@@ -173,8 +173,8 @@ public class StaticChecker extends DefaultVisitor {
         // It was already in the symbol table. Possible that it's wrong
         throw new TypeException(
             String.format(
-                "'%s' declared as %s but RHS (%s) is %s",
-                variable, sym.type(), right, right.varType()),
+                "variable '%s' declared as %s but RHS (%s) is %s",
+                variable.name(), sym.type(), right, right.varType()),
             variable.position());
       }
 
@@ -268,8 +268,46 @@ public class StaticChecker extends DefaultVisitor {
     if (left.varType().isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", left), left.position());
     }
-    if (right.varType().isUnknown()) {
+
+    // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
+    if (node.operator() != Token.Type.DOT && right.varType().isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
+    }
+
+    if (node.operator() == Token.Type.DOT) {
+      if (!left.varType().isRecord()) {
+        // this is probably already handled, above...
+        throw new TypeException(
+            String.format("Cannot apply DOT operator to %s expression", left.varType()),
+            left.position());
+      }
+      if (!(right instanceof VariableNode)) {
+        // we're very restrictive.
+        throw new TypeException(
+            String.format("Invalid field reference %s (must be just field name)", right.toString()),
+            right.position());
+      }
+      // Now get the record
+      String recordName = left.varType().name();
+      Symbol symbol = symbolTable().getRecursive(recordName);
+      if (symbol == null || !symbol.type().isRecord()) {
+        throw new TypeException(
+            String.format("Unknown RECORD type '%s'", recordName), left.position());
+      }
+
+      RecordSymbol record = (RecordSymbol) symbol;
+      // make sure RHS is a field in record
+      String fieldName = ((VariableNode) right).name();
+      VarType fieldType = record.fieldType(fieldName);
+      if (fieldType == VarType.UNKNOWN) {
+        throw new TypeException(
+            String.format(
+                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordName),
+            right.position());
+      }
+      node.setVarType(fieldType);
+      // NOTE: RETURN
+      return;
     }
 
     // Check that they're not trying to, for example, multiply booleans
@@ -369,7 +407,8 @@ public class StaticChecker extends DefaultVisitor {
       case BIT_NOT:
         if (expr.varType() != VarType.INT) {
           throw new TypeException(
-              String.format("! (binary not) must take INT; was %s", expr.varType()), expr.position());
+              String.format("! (binary not) must take INT; was %s", expr.varType()),
+              expr.position());
         }
         break;
       case LENGTH:
@@ -470,7 +509,7 @@ public class StaticChecker extends DefaultVisitor {
     symbolTable().declare(node.name(), node.varType());
   }
 
-  private void validatePossibleRecordType(String name, VarType type, Position position) {
+  private Symbol validatePossibleRecordType(String name, VarType type, Position position) {
     if (type.isRecord()) {
       String recordName = ((RecordReferenceType) type).name();
       Symbol symbol = symbolTable().getRecursive(recordName);
@@ -479,7 +518,9 @@ public class StaticChecker extends DefaultVisitor {
             String.format("Cannot declare '%s' as unknown RECORD '%s'", name, recordName),
             position);
       }
+      return symbol;
     }
+    return null;
   }
 
   @Override

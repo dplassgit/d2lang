@@ -75,7 +75,8 @@ public class Parser {
           Token.Type.LENGTH,
           Token.Type.ASC,
           Token.Type.CHR,
-          Token.Type.NULL);
+          Token.Type.NULL,
+          Token.Type.NEW);
 
   private static Set<Type> UNARY_KEYWORDS =
       ImmutableSet.of(Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
@@ -598,7 +599,6 @@ public class Parser {
 
   private ExprNode unary() {
     Token unaryToken = token;
-    // TODO: NEW
     if (token.type() == Token.Type.MINUS
         || token.type() == Token.Type.PLUS
         || token.type() == Token.Type.BIT_NOT
