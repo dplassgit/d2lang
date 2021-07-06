@@ -642,8 +642,8 @@ public class Parser {
       Position start = token.start();
       advance();
       expect(Token.Type.VARIABLE);
-      Token shouldBeVar = advance();
-      return new NewNode(shouldBeVar.text(), start);
+      Token recordTypeName = advance();
+      return new NewNode(recordTypeName.text(), start);
     }
 
     return compositeDereference();
@@ -714,10 +714,10 @@ public class Parser {
       return new ConstNode<Void>(null, VarType.NULL, st.start());
     } else if (token.type() == Token.Type.VARIABLE) {
       Token varToken = advance();
-      String name = varToken.text();
       if (token.type() == Token.Type.LPAREN) {
         return procedureCall(varToken, false);
       } else {
+        String name = varToken.text();
         return new VariableNode(name, varToken.start());
       }
     } else if (token.type() == Token.Type.LPAREN) {

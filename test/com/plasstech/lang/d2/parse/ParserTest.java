@@ -1179,12 +1179,17 @@ public class ParserTest {
 
   @Test
   public void newRecord() {
-    BlockNode root = parseStatements("R: record{i: int s: string} rec = new R");
+    BlockNode root = parseStatements("R: record{i: int} rec = new R");
     AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
     NewNode node = (NewNode) assignment.expr();
     assertThat(node.recordName()).isEqualTo("R");
     RecordReferenceType type = (RecordReferenceType) node.varType();
     assertThat(type.name()).isEqualTo("R");
+  }
+
+  @Test
+  public void new_asOperand() {
+    assertParseError("R: record{i: int} rec = new R.i", "Unexpected start of statement '.'");
   }
 
   @Test
