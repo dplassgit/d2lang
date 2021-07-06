@@ -29,6 +29,11 @@ public class RecordReferenceType implements VarType {
   }
 
   @Override
+  public boolean compatibleWith(VarType that) {
+    return that.equals(this) || that.isNull();
+  }
+
+  @Override
   public int hashCode() {
     return 17 + 37 * name.hashCode();
   }

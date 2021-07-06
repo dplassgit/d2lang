@@ -8,7 +8,8 @@ public interface VarType {
   VarType BOOL = new SimpleType("BOOL");
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");
-  VarType NULL = new SimpleType("NULL");
+  VarType NULL = new NullType();
+
   VarType UNKNOWN =
       new VarType() {
         @Override
@@ -38,5 +39,13 @@ public interface VarType {
 
   default boolean isArray() {
     return this instanceof ArrayType;
+  }
+  
+  default boolean isRecord() {
+    return this instanceof RecordReferenceType;
+  }
+
+  default boolean compatibleWith(VarType that) {
+    return that == this;
   }
 }
