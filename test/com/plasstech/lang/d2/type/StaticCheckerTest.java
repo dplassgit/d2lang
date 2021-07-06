@@ -26,8 +26,8 @@ public class StaticCheckerTest {
 
   @Test
   public void printUnassigned() {
-    assertExecuteError("print a", "Indeterminable");
-    assertExecuteError("print (1-3)*a", "Indeterminable");
+    assertError("print a", "Indeterminable");
+    assertError("print (1-3)*a", "Indeterminable");
   }
 
   @Test
@@ -143,12 +143,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBoolConstantUnaryError() {
-    assertExecuteError("a=-true", "MINUS");
+    assertError("a=-true", "MINUS");
   }
 
   @Test
   public void assignBoolUnaryError() {
-    assertExecuteError("a=true b=-a", "MINUS");
+    assertError("a=true b=-a", "MINUS");
   }
 
   @Test
@@ -160,8 +160,8 @@ public class StaticCheckerTest {
 
   @Test
   public void lengthNotStringFailure() {
-    assertExecuteError("a=length(false)", "Cannot apply LENGTH");
-    assertExecuteError("a=length(3)", "must take STRING");
+    assertError("a=length(false)", "Cannot apply LENGTH");
+    assertError("a=length(3)", "must take STRING");
   }
 
   @Test
@@ -180,8 +180,8 @@ public class StaticCheckerTest {
 
   @Test
   public void ascError() {
-    assertExecuteError("a=asc(false)", "Cannot apply ASC");
-    assertExecuteError("a=asc(3)", "must take STRING");
+    assertError("a=asc(false)", "Cannot apply ASC");
+    assertError("a=asc(3)", "must take STRING");
   }
 
   @Test
@@ -194,8 +194,8 @@ public class StaticCheckerTest {
 
   @Test
   public void chrError() {
-    assertExecuteError("a=chr(false)", "Cannot apply CHR");
-    assertExecuteError("a=chr('hi')", "must take INT");
+    assertError("a=chr(false)", "Cannot apply CHR");
+    assertError("a=chr('hi')", "must take INT");
   }
 
   @Test
@@ -243,12 +243,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignExprIndeterminable() {
-    assertExecuteError("a=3+(4-b)", "Indeterminable type");
+    assertError("a=3+(4-b)", "Indeterminable type");
   }
 
   @Test
   public void assignExprIndeterminableMultiple() {
-    assertExecuteError("a=3 b=a+3 c=d", "Indeterminable type");
+    assertError("a=3 b=a+3 c=d", "Indeterminable type");
   }
 
   @Test
@@ -279,15 +279,15 @@ public class StaticCheckerTest {
 
   @Test
   public void assignMismatch() {
-    assertExecuteError("a=true b=3 b=a", "declared as INT");
-    assertExecuteError("a=3 b=true b=a", "declared as BOOL");
+    assertError("a=true b=3 b=a", "declared as INT");
+    assertError("a=3 b=true b=a", "declared as BOOL");
   }
 
   @Test
   public void declAssignMismatch() {
-    assertExecuteError("a:int b=true a=b", "declared as INT");
-    assertExecuteError("a:bool b=a b=3", "used before assignment");
-    assertExecuteError("a=3 a:bool", "already declared as INT");
+    assertError("a:int b=true a=b", "declared as INT");
+    assertError("a:bool b=a b=3", "used before assignment");
+    assertError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
@@ -299,11 +299,11 @@ public class StaticCheckerTest {
 
   @Test
   public void declArrayMismatch() {
-    assertExecuteError("a:int[b]", "Indeterminable type for array size; must be INT");
-    assertExecuteError("a:int[false]", "Array size must be INT; was BOOL");
-    assertExecuteError("a:int['hi']", "Array size must be INT; was STRING");
-    assertExecuteError("a:string['hi']", "Array size must be INT; was STRING");
-    assertExecuteError("b:proc() {} a:string[b()]", "Array size must be INT; was VOID");
+    assertError("a:int[b]", "Indeterminable type for array size; must be INT");
+    assertError("a:int[false]", "Array size must be INT; was BOOL");
+    assertError("a:int['hi']", "Array size must be INT; was STRING");
+    assertError("a:string['hi']", "Array size must be INT; was STRING");
+    assertError("b:proc() {} a:string[b()]", "Array size must be INT; was VOID");
     // this fails in an unexpected way ("used before assignment")
     // assertExecuteError("b:proc() {} a:string[b]", "Array size must be INT; was PROC");
   }
@@ -311,8 +311,8 @@ public class StaticCheckerTest {
   @Test
   public void binOpMismatch() {
     for (String op : ImmutableList.of("==", "!=")) {
-      assertExecuteError(String.format("a=true %s 3", op), "Type mismatch");
-      assertExecuteError(String.format("a='hi' %s 3", op), "Type mismatch");
+      assertError(String.format("a=true %s 3", op), "Type mismatch");
+      assertError(String.format("a='hi' %s 3", op), "Type mismatch");
     }
   }
 
@@ -326,30 +326,30 @@ public class StaticCheckerTest {
   @Test
   public void badBooleanBinOp() {
     for (String op : ImmutableList.of(">=", "<=")) {
-      assertExecuteError(String.format("a=true %s false", op), "Cannot apply");
-      assertExecuteError(String.format("a=true %s 3", op), "Cannot apply");
+      assertError(String.format("a=true %s false", op), "Cannot apply");
+      assertError(String.format("a=true %s 3", op), "Cannot apply");
     }
   }
 
   @Test
   public void badBooleanSingleCharMismatch() {
     for (char c : "+-|&".toCharArray()) {
-      assertExecuteError(String.format("a=true %c 3", c), "Cannot apply");
+      assertError(String.format("a=true %c 3", c), "Cannot apply");
     }
   }
 
   @Test
   public void badStringSingleCharMismatch() {
     for (char c : "-|&".toCharArray()) {
-      assertExecuteError(String.format("a='hi' %c 3", c), "Cannot apply");
+      assertError(String.format("a='hi' %c 3", c), "Cannot apply");
     }
-    assertExecuteError("a='hi' + 3", "Type mismatch");
+    assertError("a='hi' + 3", "Type mismatch");
   }
 
   @Test
   public void binOpStringInvalidOperator() {
     for (char c : "|&-%*/".toCharArray()) {
-      assertExecuteError(String.format("a='hi' %c 'not'", c), "Cannot apply");
+      assertError(String.format("a='hi' %c 'not'", c), "Cannot apply");
     }
   }
 
@@ -388,9 +388,9 @@ public class StaticCheckerTest {
 
   @Test
   public void badArrayIndex() {
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
-    assertExecuteError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
+    assertError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
+    assertError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
+    assertError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
   }
 
   @Test
@@ -414,17 +414,17 @@ public class StaticCheckerTest {
   @Test
   public void badArrayOperators() {
     for (char c : "+-/%".toCharArray()) {
-      assertExecuteError(
+      assertError(
           String.format("a1 = [1,2,3] %c [2,3,4]", c), "operator to ARRAY expression");
     }
   }
 
   @Test
   public void badStringIndex() {
-    assertExecuteError("b='hi' a=b['bye']", "STRING index must be INT");
-    assertExecuteError("b='hi' a=b[false]", "STRING index must be INT");
-    assertExecuteError("b='hi' a='hi'[b]", "STRING index must be INT");
-    assertExecuteError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
+    assertError("b='hi' a=b['bye']", "STRING index must be INT");
+    assertError("b='hi' a=b[false]", "STRING index must be INT");
+    assertError("b='hi' a='hi'[b]", "STRING index must be INT");
+    assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
   }
 
   @Test
@@ -439,28 +439,28 @@ public class StaticCheckerTest {
 
   @Test
   public void ifNotBoolCond_error() {
-    assertExecuteError("if 1 { print 2 }", "must be BOOL; was INT");
-    assertExecuteError("a=1 if a { print a }", "must be BOOL; was INT");
+    assertError("if 1 { print 2 }", "must be BOOL; was INT");
+    assertError("a=1 if a { print a }", "must be BOOL; was INT");
   }
 
   @Test
   public void ifNotBoolCondNested_error() {
-    assertExecuteError("a=1 if a==1 { if (a==1) { if b {print a } } }", "UNKNOWN");
+    assertError("a=1 if a==1 { if (a==1) { if b {print a } } }", "UNKNOWN");
   }
 
   @Test
   public void errorInIf() {
-    assertExecuteError("a=1 if a==1 { a=b }", "Indeterminable");
+    assertError("a=1 if a==1 { a=b }", "Indeterminable");
   }
 
   @Test
   public void errorInElse() {
-    assertExecuteError("a=1 if a==1 {} else {a=b }", "Indeterminable");
+    assertError("a=1 if a==1 {} else {a=b }", "Indeterminable");
   }
 
   @Test
   public void mainError() {
-    assertExecuteError("a=1 main { if a==1 {} else {a=b}}", "Indeterminable");
+    assertError("a=1 main { if a==1 {} else {a=b}}", "Indeterminable");
   }
 
   @Test
@@ -504,24 +504,24 @@ public class StaticCheckerTest {
 
   @Test
   public void whileError() {
-    assertExecuteError("while a { print a }", "UNKNOWN");
-    assertExecuteError("while 1 { print 1 }", "INT");
-    assertExecuteError("while true do i = false + 1 {}", "Cannot apply");
-    assertExecuteError("while true {i = false + 1}", "Cannot apply");
+    assertError("while a { print a }", "UNKNOWN");
+    assertError("while 1 { print 1 }", "INT");
+    assertError("while true do i = false + 1 {}", "Cannot apply");
+    assertError("while true {i = false + 1}", "Cannot apply");
   }
 
   @Test
   public void declError() {
-    assertExecuteError("b=3 a=b a:int", "already declared as INT");
-    assertExecuteError("a=3 a:bool", "already declared as INT");
-    assertExecuteError("a:bool a:int", "already declared as BOOL");
-    assertExecuteError("a:bool a:bool", "already declared as BOOL");
+    assertError("b=3 a=b a:int", "already declared as INT");
+    assertError("a=3 a:bool", "already declared as INT");
+    assertError("a:bool a:int", "already declared as BOOL");
+    assertError("a:bool a:bool", "already declared as BOOL");
     // This may or may not be an error later
-    assertExecuteError("a:bool main {a:int}", "already declared as BOOL");
-    assertExecuteError("a:int b=a", "'a' used before assign");
-    assertExecuteError("a:int a=true", "declared as INT");
-    assertExecuteError("a:string a=true", "declared as STRING");
-    assertExecuteError("a:int a=''", "declared as INT");
+    assertError("a:bool main {a:int}", "already declared as BOOL");
+    assertError("a:int b=a", "'a' used before assign");
+    assertError("a:int a=true", "declared as INT");
+    assertError("a:string a=true", "declared as STRING");
+    assertError("a:int a=''", "declared as INT");
   }
 
   @Test
@@ -595,31 +595,31 @@ public class StaticCheckerTest {
 
   @Test
   public void procParams() {
-    assertExecuteError("fib:proc(a, b, a) {}", "Duplicate parameter");
-    assertExecuteError("fib:proc() {a=3 a=true}", "declared as INT");
-    assertExecuteError("a=true fib:proc() {a=3}", "declared as BOOL");
-    assertExecuteError("fib:proc(n1) { }", "determine type of formal parameter");
-    assertExecuteError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
+    assertError("fib:proc(a, b, a) {}", "Duplicate parameter");
+    assertError("fib:proc() {a=3 a=true}", "declared as INT");
+    assertError("a=true fib:proc() {a=3}", "declared as BOOL");
+    assertError("fib:proc(n1) { }", "determine type of formal parameter");
+    assertError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
   }
 
   @Test
   public void procMismatch() {
-    assertExecuteError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
-    assertExecuteError(
+    assertError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
+    assertError(
         "fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
-    assertExecuteError(
+    assertError(
         "fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
 
-    assertExecuteError("fib:proc() {return 3}", "declared to return VOID but returned INT");
-    assertExecuteError("fib:proc():int {return}", "declared to return INT but returned VOID");
+    assertError("fib:proc() {return 3}", "declared to return VOID but returned INT");
+    assertError("fib:proc():int {return}", "declared to return INT but returned VOID");
   }
 
   @Test
   public void procReturn() {
-    assertExecuteError("fib:proc():int {}", "No RETURN statement");
-    assertExecuteError(
+    assertError("fib:proc():int {}", "No RETURN statement");
+    assertError(
         "fib:proc():bool {" + "if false {" + " return false" + "}" + "}", "Not all codepaths");
-    assertExecuteError(
+    assertError(
         "fib:proc():bool {"
             + "if false {"
             + "  if true {"
@@ -632,9 +632,9 @@ public class StaticCheckerTest {
             + "}"
             + "}",
         "Not all codepaths");
-    assertExecuteError(
+    assertError(
         "fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
-    assertExecuteError(
+    assertError(
         "fob:proc():int {"
             + "if (false) {"
             + "  if (true) {"
@@ -656,29 +656,29 @@ public class StaticCheckerTest {
 
   @Test
   public void nakedReturn() {
-    assertExecuteError("return 3", "outside a PROC");
+    assertError("return 3", "outside a PROC");
   }
 
   @Test
   public void callErrors() {
-    assertExecuteError("foo(3)", "PROC 'foo' is unknown");
-    assertExecuteError("a:int a(3)", "PROC 'a' is unknown");
-    assertExecuteError("fib:proc(){inner:proc(){}} inner(3)", "PROC 'inner' is unknown");
+    assertError("foo(3)", "PROC 'foo' is unknown");
+    assertError("a:int a(3)", "PROC 'a' is unknown");
+    assertError("fib:proc(){inner:proc(){}} inner(3)", "PROC 'inner' is unknown");
     // wrong number of params
-    assertExecuteError(
+    assertError(
         "fib:proc(){} fib(3)", "Wrong number of arguments to PROC 'fib': found 1, expected 0");
-    assertExecuteError(
+    assertError(
         "fib:proc(n:int){} fib(3, 4)",
         "Wrong number of arguments to PROC 'fib': found 2, expected 1");
     // indeterminable arg type
-    assertExecuteError(
+    assertError(
         "fib:proc(n) {fib(n)}", "Indeterminable type for parameter 'n' of PROC 'fib'");
     // wrong arg type
-    assertExecuteError(
+    assertError(
         "fib:proc(n:int) {} fib(false)",
         "Type mismatch for parameter 'n' to PROC 'fib': found BOOL, expected INT");
     // can't assign to void
-    assertExecuteError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
+    assertError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
   }
 
   @Test
@@ -699,8 +699,8 @@ public class StaticCheckerTest {
 
   @Test
   public void bad_exit() {
-    assertExecuteError("exit -1", "must be STRING");
-    assertExecuteError("exit length('sorry')", "must be STRING");
+    assertError("exit -1", "must be STRING");
+    assertError("exit length('sorry')", "must be STRING");
   }
 
   @Test
@@ -711,11 +711,48 @@ public class StaticCheckerTest {
 
   @Test
   public void bad_input() {
-    assertExecuteError("f:int f=input", "declared as INT");
-    assertExecuteError("f=5 f=input", "declared as INT");
+    assertError("f:int f=input", "declared as INT");
+    assertError("f=5 f=input", "declared as INT");
   }
 
-  private void assertExecuteError(String program, String messageShouldContain) {
+  @Test
+  public void emptyRecord() {
+    SymTab symTab = checkProgram("r: record{}");
+    assertThat(symTab.get("r")).isInstanceOf(RecordSymbol.class);
+  }
+
+  @Test
+  public void simpleRecord() {
+    SymTab symTab = checkProgram("r2: record{s:string i:int b:bool}");
+    assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
+  }
+
+  @Test
+  public void recursiveRecord() {
+    SymTab symTab = checkProgram("rec: record{r:rec}");
+    assertThat(symTab.get("rec")).isInstanceOf(RecordSymbol.class);
+  }
+
+  @Test
+  public void badRecord() {
+    assertError("r: record{f:record{f2:int}}", "nested RECORD 'f' in RECORD 'r'");
+    assertError("r: record{p:proc() {} }", "nested PROC 'p' in RECORD 'r'");
+    assertError(
+        "r: record{i:int f:int f:bool i:int b:bool}",
+        "Duplicate field(s) '[f, i]' declared in RECORD 'r'");
+  }
+
+  @Test
+  public void duplicateRecord() {
+    assertError("r: record{f:int} r:record{b:bool}", "'r' already declared as r: RECORD");
+  }
+
+  @Test
+  public void redeclaredRecord() {
+    assertError("r: int r:record{b:bool}", "already declared as INT");
+  }
+
+  private void assertError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     Node rootNode = parser.parse();

@@ -1145,6 +1145,9 @@ public class ParserTest {
     assertParseError("r: record{proc}", "expected VARIABLE");
     // the error here is actually that it's trying to parse a procedure, but meh
     assertParseError("r: record{p:proc}", "expected");
+    // not parse errors, but are type errors
+    // assertParseError("r: record{p:proc{}}", "expected");-
+    // assertParseError("r: record{r2:record{}}", "expected VARIABLE");
   }
 
   @Test

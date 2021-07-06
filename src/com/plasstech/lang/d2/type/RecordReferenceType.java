@@ -3,15 +3,20 @@ package com.plasstech.lang.d2.type;
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType implements VarType {
 
-  private final String recordTypeName;
+  private final String name;
 
   public RecordReferenceType(String recordTypeName) {
-    this.recordTypeName = recordTypeName;
+    this.name = recordTypeName;
   }
 
   @Override
   public String name() {
-    return recordTypeName;
+    return name;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s: RECORD", name);
   }
 
   @Override
@@ -20,11 +25,11 @@ public class RecordReferenceType implements VarType {
       return false;
     }
     RecordReferenceType that = (RecordReferenceType) obj;
-    return this.recordTypeName.equals(that.recordTypeName);
+    return this.name.equals(that.name);
   }
 
   @Override
   public int hashCode() {
-    return 17 + 37 * recordTypeName.hashCode();
+    return 17 + 37 * name.hashCode();
   }
 }

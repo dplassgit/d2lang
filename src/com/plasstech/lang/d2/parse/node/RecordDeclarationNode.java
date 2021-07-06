@@ -19,6 +19,11 @@ public class RecordDeclarationNode extends DeclarationNode {
   }
 
   @Override
+  public void accept(NodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
   public String toString() {
     return String.format("%s: record {%s}", name(), fields());
   }

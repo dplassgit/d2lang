@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
@@ -486,6 +488,49 @@ public class StaticChecker extends DefaultVisitor {
   }
 
   @Override
+  public void visit(RecordDeclarationNode node) {
+    // 1. make sure no nested proc or records
+    for (DeclarationNode field : node.fields()) {
+      if (field instanceof RecordDeclarationNode) {
+        RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
+        throw new TypeException(
+            String.format(
+                "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name()),
+            field.position());
+      } else if (field instanceof ProcedureNode) {
+        ProcedureNode proc = (ProcedureNode) field;
+        throw new TypeException(
+            String.format(
+                "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name()),
+            field.position());
+      }
+    }
+
+    // Note, NOT immutable list
+    List<String> fieldNames = node.fields().stream().map(DeclarationNode::name).collect(toList());
+    Set<String> duplicates = new HashSet<>();
+    Set<String> uniques = new HashSet<>();
+    for (String fieldName : fieldNames) {
+      if (uniques.contains(fieldName)) {
+        uniques.remove(fieldName);
+        duplicates.add(fieldName);
+      } else {
+        uniques.add(fieldName);
+      }
+    }
+    if (!duplicates.isEmpty()) {
+      throw new TypeException(
+          String.format(
+              "Duplicate field(s) '%s' declared in RECORD '%s'",
+              duplicates.toString(), node.name()),
+          node.position());
+    }
+
+    // Add this procedure to the symbol table
+    symbolTable().declareRecord(node);
+  }
+
+  @Override
   public void visit(ProcedureNode node) {
     // 1. make sure no duplicate arg names
     List<String> paramNames =
@@ -503,7 +548,7 @@ public class StaticChecker extends DefaultVisitor {
     if (!duplicates.isEmpty()) {
       throw new TypeException(
           String.format(
-              "Duplicate formal parameter '%s' declared in PROC '%s'",
+              "Duplicate formal parameter(s) '%s' declared in PROC '%s'",
               duplicates.toString(), node.name()),
           node.position());
     }
