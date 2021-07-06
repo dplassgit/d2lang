@@ -831,6 +831,52 @@ public class StaticCheckerTest {
     assertError("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1", "is r1: RECORD");
     assertError(
         "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "is r2: RECORD");
+    assertError(
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "is r2: RECORD");
+    assertError(
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var2=var1", "is r1: RECORD");
+  }
+
+  @Test
+  public void newRecord() {
+    SymTab symTab = checkProgram("r1:record{s:string} var1=new r1");
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    assertThat(refType.name()).isEqualTo("r1");
+    assertThat(var1.isAssigned()).isTrue();
+  }
+
+  @Test
+  public void newRecord_assign() {
+    SymTab symTab = checkProgram("r1:record{s:string} var1=new r1 var2=var1");
+
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType1 = (RecordReferenceType) var1.type();
+    assertThat(refType1.name()).isEqualTo("r1");
+    assertThat(var1.isAssigned()).isTrue();
+
+    Symbol var2 = symTab.get("var2");
+    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    assertThat(refType2.name()).isEqualTo("r1");
+    assertThat(var2.isAssigned()).isTrue();
+  }
+
+  @Test
+  public void newRecord_unknown() {
+    assertError("var1=new r2", "unknown RECORD 'r2");
+    assertError("r1:record{s:string} var1=new r2", "unknown RECORD 'r2");
+  }
+
+  @Test
+  public void newRecord_mismatch() {
+    assertError(
+        "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1",
+        "is r1: RECORD");
+    assertError(
+        "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2",
+        "is r2: RECORD");
+    assertError("r1:record{s:string} var1=new r1 var2=1 var1=var2", "is INT");
+    assertError("r1:record{s:string} var1=new r1 var2=1 var2=var1", "is r1: RECORD");
   }
 
   private void assertError(String program, String messageShouldContain) {

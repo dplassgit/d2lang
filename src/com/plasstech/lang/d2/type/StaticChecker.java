@@ -24,6 +24,7 @@ import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
 import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
+import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -328,6 +329,11 @@ public class StaticChecker extends DefaultVisitor {
     } else {
       node.setVarType(left.varType());
     }
+  }
+
+  @Override
+  public void visit(NewNode node) {
+    validatePossibleRecordType(node.recordName(), node.varType(), node.position());
   }
 
   @Override

@@ -14,6 +14,7 @@ public class Token {
     PRINTLN(true),
     TRUE(true),
     FALSE(true),
+    NULL(true),
     IF(true),
     ELSE(true),
     ELIF(true),
@@ -25,13 +26,12 @@ public class Token {
     BREAK(true),
     CONTINUE(true),
     RECORD(true),
-    NEW(true),
-    NULL(true),
     DELETE(true), // for future expansion
     MAP(true), // for future expansion
     INPUT(true),
     EXIT(true),
     // Unary operators (& keywords)
+    NEW(true),
     LENGTH(true),
     CHR(true),
     ASC(true),

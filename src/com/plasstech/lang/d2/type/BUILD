@@ -1,6 +1,7 @@
 VAR_TYPE_FILES = [
     "ArrayType.java",
     "RecordReferenceType.java",
+    "NullType.java",
     "SimpleType.java",
     "VarType.java",
 ]
