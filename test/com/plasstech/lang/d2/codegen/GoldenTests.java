@@ -24,7 +24,7 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 public class GoldenTests {
 
   @Test
-  public void lexerInD() throws IOException {
+  public void lexerInDLexerInD() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       String path = Paths.get("samples/d2ind2/lexerglobals.d").toString();
       String text = new String(Files.readAllBytes(Paths.get(path)));
@@ -40,19 +40,7 @@ public class GoldenTests {
   @Test
   public void typeCheckLexerInDWithRecord() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      String path = Paths.get("samples/d2ind2/lexer.d").toString();
-      String text = new String(Files.readAllBytes(Paths.get(path)));
-      Lexer lex = new Lexer(text);
-      Parser parser = new Parser(lex);
-      Node node = parser.parse();
-      assertThat(node.isError()).isFalse();
-
-      StaticChecker checker = new StaticChecker((ProgramNode) node);
-      TypeCheckResult typeCheckResult = checker.execute();
-      if (typeCheckResult.isError()) {
-        fail(typeCheckResult.message());
-      }
-      System.out.println(typeCheckResult.symbolTable());
+      typeCheckFile(Paths.get("samples/d2ind2/lexer.d").toString());
     } else {
       // running in blaze
       System.err.println("Sorry, cannot run from blaze");
@@ -60,7 +48,25 @@ public class GoldenTests {
   }
 
   @Test
-  public void testAllSamples() throws Exception {
+  public void typeCheckAllNonGoldenSamples() throws IOException {
+    if (System.getenv("TEST_SRCDIR") == null) {
+      List<File> files =
+          Files.list(Paths.get("samples/non-golden"))
+              .filter(Files::isRegularFile)
+              .filter(path -> path.toString().endsWith(".d"))
+              .map(Path::toFile)
+              .collect(Collectors.toList());
+      for (File file : files) {
+        typeCheckFile(file.getAbsolutePath());
+      }
+    } else {
+      // running in blaze
+      System.err.println("Sorry, cannot run from blaze");
+    }
+  }
+
+  @Test
+  public void runAllSamples() throws Exception {
     if (System.getenv("TEST_SRCDIR") == null) {
       List<File> files =
           Files.list(Paths.get("samples"))
@@ -75,6 +81,23 @@ public class GoldenTests {
       // running in blaze
       System.err.println("Sorry, cannot run from blaze");
     }
+  }
+
+  private void typeCheckFile(String path) throws IOException {
+    System.out.println("path = " + path);
+    String text = new String(Files.readAllBytes(Paths.get(path)));
+    Lexer lex = new Lexer(text);
+    Parser parser = new Parser(lex);
+    Node node = parser.parse();
+    assertThat(node.isError()).isFalse();
+    System.out.println(node);
+
+    StaticChecker checker = new StaticChecker((ProgramNode) node);
+    TypeCheckResult typeCheckResult = checker.execute();
+    if (typeCheckResult.isError()) {
+      fail(typeCheckResult.message());
+    }
+    System.out.println(typeCheckResult.symbolTable());
   }
 
   private void testFromFile(String path) throws IOException {
