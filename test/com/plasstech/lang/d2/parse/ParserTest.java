@@ -1188,12 +1188,17 @@ public class ParserTest {
   }
 
   @Test
+  public void newRecord_returnValue() {
+    parseStatements("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
+  }
+
+  @Test
   public void new_asOperand() {
     assertParseError("R: record{i: int} rec = new R.i", "Unexpected start of statement '.'");
   }
 
   @Test
-  public void newRecordError() {
+  public void newRecord_Error() {
     assertParseError("R: record{i: int s: string} rec = new new", "expected VARIABLE");
   }
 

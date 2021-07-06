@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,9 +16,9 @@ import org.junit.Test;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.Node;
-// import com.plasstech.lang.d2.parse.node.ProgramNode;
-// import com.plasstech.lang.d2.type.StaticChecker;
-// import com.plasstech.lang.d2.type.TypeCheckResult;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.type.StaticChecker;
+import com.plasstech.lang.d2.type.TypeCheckResult;
 
 /** NOTE: THESE TESTS CANNOT RUN FROM BAZEL */
 public class GoldenTests {
@@ -46,13 +47,12 @@ public class GoldenTests {
       Node node = parser.parse();
       assertThat(node.isError()).isFalse();
 
-//      StaticChecker checker = new StaticChecker((ProgramNode) node);
-//      TypeCheckResult typeCheckResult = checker.execute();
-//      if (typeCheckResult.isError()) {
-//        throw new RuntimeException(typeCheckResult.message());
-//      }
-
-      System.out.println(node);
+      StaticChecker checker = new StaticChecker((ProgramNode) node);
+      TypeCheckResult typeCheckResult = checker.execute();
+      if (typeCheckResult.isError()) {
+        fail(typeCheckResult.message());
+      }
+      System.out.println(typeCheckResult.symbolTable());
     } else {
       // running in blaze
       System.err.println("Sorry, cannot run from blaze");

@@ -838,6 +838,15 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void assignRecordType_procReturnMismatch() {
+    assertError(
+        "r1:record{i:int} r2:record{} p:proc():r1{return new r2}", "but returned r2: RECORD");
+    assertError(
+        "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()",
+        "is r2: RECORD");
+  }
+
+  @Test
   public void newRecord() {
     SymTab symTab = checkProgram("r1:record{s:string} var1=new r1");
     Symbol var1 = symTab.get("var1");
@@ -862,6 +871,16 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void newRecord_procReturnsRecord() {
+    SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
+
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType1 = (RecordReferenceType) var1.type();
+    assertThat(refType1.name()).isEqualTo("r1");
+    assertThat(var1.isAssigned()).isTrue();
+  }
+
+  @Test
   public void newRecord_unknown() {
     assertError("var1=new r2", "unknown RECORD 'r2");
     assertError("r1:record{s:string} var1=new r2", "unknown RECORD 'r2");
@@ -877,6 +896,53 @@ public class StaticCheckerTest {
         "is r2: RECORD");
     assertError("r1:record{s:string} var1=new r1 var2=1 var1=var2", "is INT");
     assertError("r1:record{s:string} var1=new r1 var2=1 var2=var1", "is r1: RECORD");
+  }
+
+  @Test
+  public void fieldGet() {
+    SymTab symTab = checkProgram("r1:record{s:string i:int} var1=new r1 ii=var1.i");
+    Symbol symbol = symTab.get("ii");
+    assertThat(symbol.isAssigned()).isTrue();
+    assertThat(symbol.type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void fieldGet_nested() {
+    SymTab symTab = checkProgram("r1:record{i:int} r2:record{rone:r1} var2=new r2 ii=var2.rone.i");
+    Symbol symbol = symTab.get("ii");
+    assertThat(symbol.isAssigned()).isTrue();
+    assertThat(symbol.type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void fieldGet_recursive() {
+    SymTab symTab = checkProgram("r1:record{i:int next:r1} var1=new r1 var2=var1.next");
+
+    Symbol var2 = symTab.get("var2");
+    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    assertThat(refType2.name()).isEqualTo("r1");
+    assertThat(var2.isAssigned()).isTrue();
+  }
+
+  @Test
+  public void fieldGet_procReturn() {
+    SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p().i");
+
+    Symbol var1 = symTab.get("var1");
+    assertThat(var1.type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void fieldGet_mismatch() {
+    assertError("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i", "is INT");
+    assertError("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i", "is INT");
+    assertError("ss='string' ss2=ss.i", "Cannot apply DOT operator");
+  }
+
+  @Test
+  public void record_badOp() {
+    assertError("r1:record{s:string i:int} var1=new r1 var2=var1+1", "Type mismatch");
+    assertError("r1:record{s:string i:int} var1=new r1 var2=1+var1", "Type mismatch");
   }
 
   private void assertError(String program, String messageShouldContain) {

@@ -122,7 +122,7 @@ nextToken: proc(this: Lexer): Token {
     return makeInt(this, start)
   } elif (isLetter(this.cc)) {
     return makeText(this, start)
-  } elif (this.cc !=0) {
+  } elif (this.cc != '') {
     return makeSymbol(this, start)
   }
 
@@ -181,7 +181,7 @@ makeInt: proc(this: Lexer, start: Position): Token {
   token.type = Type_INT
   token.start = start
   token.end = end
-  token.value = text
+  token.value = value_as_string
   token.int_value = value
   return token
 }
@@ -232,16 +232,16 @@ makeSymbol: proc(this: Lexer, start: Position): Token {
     advance(this)
     return makeToken(Type_RBRACE, start, start, oc)
   } elif oc == '[' {
-    advance()
-    return Token(Type_LBRACKET, oc)
+    advance(this)
+    return makeToken(Type_LBRACKET, start, start, oc)
   } elif oc == ']' {
-    advance()
-    return Token(Type_RBRACKET, oc)
+    advance(this)
+    return makeToken(Type_RBRACKET, start, start, oc)
   } elif oc == ':' {
     advance(this)
     return makeToken(Type_COLON, start, start, oc)
   } elif oc == chr(34) or oc == chr(39) {
-    return makeStringToken(start, oc)
+    return makeStringToken(this, start, oc)
   } elif oc == ',' {
     advance(this)
     return makeToken(Type_COMMA, start, start, oc)
@@ -258,10 +258,10 @@ startsWithSlash: proc(this: Lexer, start: Position): Token {
   advance(this) // eat the first slash
   if (this.cc == '/') {
     advance(this) // eat the second slash
-    while (this.cc !='\n' and this.cc !=0) {
+    while (this.cc !='\n' and this.cc != '') {
       advance(this)
     }
-    if (this.cc !=0) {
+    if (this.cc != '') {
       advance(this)
     }
     this.line=this.line + 1
@@ -340,7 +340,7 @@ makeStringToken: proc(this: Lexer, start: Position, first: String): Token {
   }
 
   if (this.cc == '') {
-    exit 'Unclosed string literal at ' + toString(lexer_line)
+    exit 'Unclosed string literal at ' + toString(this.line)
   }
 
   advance(this) // eat the closing tick/quote
