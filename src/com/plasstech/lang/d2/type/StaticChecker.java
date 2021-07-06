@@ -11,6 +11,7 @@ import java.util.Stack;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -80,6 +81,9 @@ public class StaticChecker extends DefaultVisitor {
           Token.Type.LBRACKET
           // , Token.Type.MOD // eventually
           );
+
+  private static final Set<Token.Type> RECORD_COMPARATORS =
+      ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ);
 
   private static final Set<Token.Type> BOOLEAN_OPERATORS =
       ImmutableSet.of(
@@ -270,24 +274,25 @@ public class StaticChecker extends DefaultVisitor {
     }
 
     // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
-    if (node.operator() != Token.Type.DOT && right.varType().isUnknown()) {
+    Type operator = node.operator();
+    if (operator != Token.Type.DOT && right.varType().isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    if (node.operator() == Token.Type.DOT) {
+    if (operator == Token.Type.DOT) {
       if (!left.varType().isRecord()) {
-        // this is probably already handled, above...
+        // this is probably already handled, /shrug.
         throw new TypeException(
             String.format("Cannot apply DOT operator to %s expression", left.varType()),
             left.position());
       }
       if (!(right instanceof VariableNode)) {
-        // we're very restrictive.
         throw new TypeException(
             String.format("Invalid field reference %s (must be just field name)", right.toString()),
             right.position());
       }
-      // Now get the record
+
+      // Now get the record from the symbol table.
       String recordName = left.varType().name();
       Symbol symbol = symbolTable().getRecursive(recordName);
       if (symbol == null || !symbol.type().isRecord()) {
@@ -312,29 +317,29 @@ public class StaticChecker extends DefaultVisitor {
 
     // Check that they're not trying to, for example, multiply booleans
     // TODO: CLEAN THIS UP
-    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(node.operator())) {
+    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to BOOL expression", node.operator().name()),
+          String.format("Cannot apply %s operator to BOOL expression", operator.name()),
           left.position());
     }
-    if (left.varType() == VarType.INT && !INT_OPERATORS.contains(node.operator())) {
+    if (left.varType() == VarType.INT && !INT_OPERATORS.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to INT expression", node.operator().name()),
+          String.format("Cannot apply %s operator to INT expression", operator.name()),
           left.position());
     }
-    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(node.operator())) {
+    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to STRING expression", node.operator().name()),
+          String.format("Cannot apply %s operator to STRING expression", operator.name()),
           left.position());
     }
-    if (left.varType().isArray() && !ARRAY_OPERATORS.contains(node.operator())) {
+    if (left.varType().isArray() && !ARRAY_OPERATORS.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to ARRAY expression", node.operator().name()),
+          String.format("Cannot apply %s operator to ARRAY expression", operator.name()),
           left.position());
     }
 
-    // string[int] and array[int] testing.
-    if (left.varType() == VarType.STRING && node.operator() == Token.Type.LBRACKET) {
+    // string[int] and array[int]
+    if (left.varType() == VarType.STRING && operator == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
             String.format("STRING index must be INT; was %s", right.varType()), right.position());
@@ -343,7 +348,7 @@ public class StaticChecker extends DefaultVisitor {
       // NOTE RETURN
       return;
 
-    } else if (left.varType().isArray() && node.operator() == Token.Type.LBRACKET) {
+    } else if (left.varType().isArray() && operator == Token.Type.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
             String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
@@ -361,8 +366,10 @@ public class StaticChecker extends DefaultVisitor {
           left.position());
     }
 
-    if ((left.varType() == VarType.INT || left.varType() == VarType.STRING)
-        && COMPARISION_OPERATORS.contains(node.operator())) {
+    if (((left.varType() == VarType.INT || left.varType() == VarType.STRING)
+            && COMPARISION_OPERATORS.contains(operator))
+        || ((left.varType().isRecord() || left.varType().isNull())
+            && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
     } else {
       node.setVarType(left.varType());
