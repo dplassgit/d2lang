@@ -1,10 +1,12 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import java.util.HashMap;
-import java.util.Map;
+import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
 /** Symbol Table. */
 public class SymTab {
@@ -87,6 +89,20 @@ public class SymTab {
     ProcSymbol procSymbol = new ProcSymbol(node);
     values.put(node.name(), procSymbol);
     return procSymbol;
+  }
+
+  public RecordSymbol declareRecord(RecordDeclarationNode node) {
+    Symbol sym = getRecursive(node.name());
+    if (sym != null) {
+      throw new TypeException(
+          String.format(
+              "'%s' already declared as %s. Cannot be redeclared as RECORD.",
+              node.name(), sym.type()),
+          node.position());
+    }
+    RecordSymbol recordSymbol = new RecordSymbol(node);
+    values.put(node.name(), recordSymbol);
+    return recordSymbol;
   }
 
   // It's only declared. TODO: distinguish between locals & globals

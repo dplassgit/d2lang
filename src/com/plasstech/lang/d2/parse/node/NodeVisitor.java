@@ -28,6 +28,8 @@ public interface NodeVisitor {
 
   void visit(DeclarationNode node);
 
+  void visit(RecordDeclarationNode node);
+
   void visit(CallNode node);
 
   void visit(ReturnNode node);
