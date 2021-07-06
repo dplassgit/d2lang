@@ -814,6 +814,34 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void recordType_compare() {
+    SymTab symTab =
+        checkProgram("r1:record{s:string} var1=new r1 var2 = new r1 if var1==var2 { print 'same'}");
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    assertThat(refType.name()).isEqualTo("r1");
+
+    Symbol var2 = symTab.get("var2");
+    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    assertThat(refType2.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void recordType_compareToNull() {
+    SymTab symTab =
+        checkProgram("r1:record{s:string} var1=new r1 if var1!=null { print 'not null'}");
+    Symbol var1 = symTab.get("var1");
+    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    assertThat(refType.name()).isEqualTo("r1");
+  }
+
+  @Test
+  public void compareToNull_allowed() {
+    checkProgram("if null != null { print 'not null'}");
+    checkProgram("if null == null { print 'not null'}");
+  }
+
+  @Test
   public void assignRecordType_inferred() {
     SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
     Symbol var1 = symTab.get("var1");
