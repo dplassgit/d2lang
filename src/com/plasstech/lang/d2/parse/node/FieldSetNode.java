@@ -26,10 +26,14 @@ public class FieldSetNode extends AbstractNode implements LValueNode {
     return variableName + "." + fieldName;
   }
 
-  // TODO: visit
+  /** Accept the LValueNode visitor. */
+  @Override
+  public void accept(Visitor visitor) {
+    visitor.visit(this);
+  }
 
   @Override
   public String toString() {
-    return name();
+    return String.format("FieldSetNode: %s . %s", variableName, fieldName);
   }
 }

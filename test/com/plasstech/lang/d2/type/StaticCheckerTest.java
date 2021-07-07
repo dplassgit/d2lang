@@ -973,6 +973,21 @@ public class StaticCheckerTest {
     assertError("r1:record{s:string i:int} var1=new r1 var2=1+var1", "Type mismatch");
   }
 
+  @Test
+  public void fieldSet() {
+    SymTab symTab = checkProgram("r1:record{i:int} var1=new r1 var1.i=3 var2=var1.i");
+    Symbol symbol = symTab.get("var2");
+    assertThat(symbol.isAssigned()).isTrue();
+    assertThat(symbol.type()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void fieldSet_error() {
+    assertError("r1:record{i:int} var1=new r1 var1.i=true", "is BOOL");
+    assertError("r1:record{i:int s:string} var1=new r1 var1.i=var1.s", "is STRING");
+    assertError("r1:record{s:string} var1=new r1 var1.s=0", "is INT");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
