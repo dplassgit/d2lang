@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
+import com.google.common.base.Objects;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -152,11 +153,11 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case EQEQ:
-        optimizeEq(op.destination(), left, right, (a, b) -> a.equals(b));
+        optimizeEq(op.destination(), left, right, (a, b) -> Objects.equal(a, b));
         return;
 
       case NEQ:
-        optimizeEq(op.destination(), left, right, (a, b) -> !a.equals(b));
+        optimizeEq(op.destination(), left, right, (a, b) -> !Objects.equal(a, b));
         return;
 
       case LEQ:
