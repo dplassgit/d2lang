@@ -21,6 +21,7 @@ import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
 import com.plasstech.lang.d2.parse.node.LValueNode;
@@ -36,6 +37,7 @@ import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 
 public class StaticChecker extends DefaultVisitor {
@@ -164,30 +166,73 @@ public class StaticChecker extends DefaultVisitor {
           String.format("Cannot assign value of void expression %s", right), right.position());
     }
 
-    // TODO: Need to fix this if lvalue is for recordfieldsetnode
-    Symbol sym = symbolTable().getRecursive(variable.name());
-    if (sym == null) {
-      // Brand new symbol in all scopes. Assign in current scope.
-      symbolTable().assign(variable.name(), right.varType());
-    } else {
-      // Already known in some scope. Update.
-      if (sym.type().isUnknown()) {
-        sym.setType(right.varType());
-      } else if (!sym.type().compatibleWith(right.varType())) {
-        // It was already in the symbol table. Possible that it's wrong
-        throw new TypeException(
-            String.format(
-                "variable '%s' declared as %s but RHS (%s) is %s",
-                variable.name(), sym.type(), right, right.varType()),
-            variable.position());
-      }
+    variable.accept(
+        new LValueNode.Visitor() {
+          @Override
+          public void visit(FieldSetNode fsn) {
+            //
+            // Now get the record from the symbol table.
+            Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
+            if (variableSymbol == null || !variableSymbol.type().isRecord()) {
+              throw new TypeException(
+                  String.format("Variable '%s' not a known RECORD", variable.name()),
+                  variable.position());
+            }
 
-      sym.setAssigned();
-    }
+            Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.type().name());
+            if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
+              throw new TypeException(
+                  String.format("Cannot apply DOT operator to %s expression", fsn.varType()),
+                  fsn.position());
+            }
 
-    // All is good.
+            RecordSymbol record = (RecordSymbol) recordSymbol;
+            // make sure string after the dot is a field in record
+            String fieldName = fsn.fieldName();
+            VarType fieldType = record.fieldType(fieldName);
+            if (fieldType == VarType.UNKNOWN) {
+              throw new TypeException(
+                  String.format(
+                      "Unknown field '%s' referenced in RECORD type '%s'",
+                      fieldName, record.name()),
+                  fsn.position());
+            } else if (!fieldType.compatibleWith(right.varType())) {
+              throw new TypeException(
+                  String.format(
+                      "field '%s' of RECORD '%s' declared as %s but RHS (%s) is %s",
+                      fieldName, record.name(), fieldType, right, right.varType()),
+                  variable.position());
+            }
+            variable.setVarType(fieldType);
+          }
+
+          @Override
+          public void visit(VariableSetNode node) {
+            Symbol symbol = symbolTable().getRecursive(variable.name());
+            if (symbol == null) {
+              // Brand new symbol in all scopes. Assign in current scope.
+              symbolTable().assign(variable.name(), right.varType());
+            } else {
+              // Already known in some scope. Update.
+              if (symbol.type().isUnknown()) {
+                symbol.setType(right.varType());
+              } else if (!symbol.type().compatibleWith(right.varType())) {
+                // It was already in the symbol table. Possible that it's wrong
+                throw new TypeException(
+                    String.format(
+                        "variable '%s' declared as %s but RHS (%s) is %s",
+                        variable.name(), symbol.type(), right, right.varType()),
+                    variable.position());
+              }
+
+              symbol.setAssigned();
+            }
+
+            variable.setVarType(right.varType());
+          }
+        });
+
     // TODO: why do we need variable.vartype, node.vartype and symbol.type?
-    variable.setVarType(right.varType());
     node.setVarType(right.varType());
   }
 

@@ -283,8 +283,8 @@ public class Parser {
     advance(); // eat the .
 
     expect(Token.Type.VARIABLE);
-    Token field = advance();
-    FieldSetNode fsn = new FieldSetNode(variable.text(), field.text(), variable.start());
+    Token fieldName = advance();
+    FieldSetNode fsn = new FieldSetNode(variable.text(), fieldName.text(), variable.start());
     expect(Token.Type.EQ);
     advance();
     ExprNode rhs = expr();

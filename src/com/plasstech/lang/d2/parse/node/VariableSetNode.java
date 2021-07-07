@@ -7,4 +7,10 @@ public class VariableSetNode extends VariableNode implements LValueNode {
   public VariableSetNode(String name, Position position) {
     super(name, position);
   }
+
+  /** Accept the LValueNode visitor. */
+  @Override
+  public void accept(Visitor visitor) {
+    visitor.visit(this);
+  }
 }
