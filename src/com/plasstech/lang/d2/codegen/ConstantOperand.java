@@ -26,7 +26,9 @@ public class ConstantOperand<T> implements Operand {
 
   @Override
   public String toString() {
-    if (value instanceof String) {
+    if (value == null) {
+      return "null (not the string null, actually null)";
+    } else if (value instanceof String) {
       String valueString = value.toString();
       if (valueString.length() > 40) {
         valueString = valueString.substring(0, 40) + "...";
