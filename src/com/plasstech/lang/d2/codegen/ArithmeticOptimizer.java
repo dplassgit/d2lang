@@ -272,6 +272,17 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeArith(op.destination(), left, right, (t, u) -> t - u)) {
       return;
     }
+    // Replace foo - -32 with foo + 32
+    if (right instanceof ConstantOperand) {
+      ConstantOperand rightConstant = (ConstantOperand) right;
+      if (rightConstant.value() instanceof Integer) {
+        int rightval = (int) rightConstant.value();
+        if (rightval < 0) {
+          replaceCurrent(new BinOp(op.destination(), left, Token.Type.PLUS, 
+                new ConstantOperand<Integer>(-rightval)));
+        }
+      }
+    }
     if (left.equals(ConstantOperand.ZERO)) {
       // Replace with destination = -right
       // This may not be any better than 0-right...
@@ -301,6 +312,17 @@ class ArithmeticOptimizer extends LineOptimizer {
                   op.destination(),
                   new ConstantOperand<String>(leftConstant.value() + rightConstant.value())));
           return;
+        }
+      }
+    }
+    // Replace foo + -32 with foo - 32
+    if (right instanceof ConstantOperand) {
+      ConstantOperand rightConstant = (ConstantOperand) right;
+      if (rightConstant.value() instanceof Integer) {
+        int rightval = (int) rightConstant.value();
+        if (rightval < 0) {
+          replaceCurrent(new BinOp(op.destination(), left, Token.Type.MINUS,
+                new ConstantOperand<Integer>(-rightval)));
         }
       }
     }
