@@ -7,7 +7,7 @@ import com.plasstech.lang.d2.type.VarType;
 /** Interface type for nodes in the parse tree. */
 public interface Node {
 
-  // Indicates it's a simple type - constant or variable.
+  /** Indicates it's a simple type - constant or variable. */
   boolean isSimpleType();
 
   /** Variable type */
@@ -17,6 +17,7 @@ public interface Node {
 
   boolean isError();
 
+  /** Message in case of error */
   String message();
 
   /** Position of this node in the input text. */

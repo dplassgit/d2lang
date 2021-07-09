@@ -255,6 +255,24 @@ public class InterpreterTest {
     assertThat(env.getValue("d")).isEqualTo(~123);
   }
 
+  @Test
+  public void records() {
+    Environment env =
+        execute(
+            "      r: record { i: int s: string}\n"
+                + "an_r = new r \n"
+                + "an_r.i = 3 \n"
+                + "an_r.s = 'hi' \n"
+                + "b = an_r.i "
+                + "c = an_r.s \n"
+                + "println an_r.i \n"
+                + "println an_r.s \n"
+                + "println b \n"
+                + "println c \n");
+    assertThat(env.getValue("b")).isEqualTo(3);
+    assertThat(env.getValue("c")).isEqualTo("hi");
+  }
+
   private Environment execute(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     Environment env = ee.execute();

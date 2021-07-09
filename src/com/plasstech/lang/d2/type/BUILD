@@ -1,19 +1,12 @@
-VAR_TYPE_FILES = [
-    "ArrayType.java",
-    "RecordReferenceType.java",
-    "NullType.java",
-    "SimpleType.java",
-    "VarType.java",
-]
-
-STORAGE_FILES = [
-    "SymbolStorage.java",
-]
-
 java_library(name="type",
-             srcs=glob(["*.java"], exclude=VAR_TYPE_FILES + STORAGE_FILES),
+             srcs=["ProcGatherer.java",
+                   "StaticChecker.java",
+                   "TypeCheckResult.java",
+             ],
              deps=[
+                 ":exception",
                  ":storage",
+                 ":symbols",
                  ":var_types",
                  "//src/com/plasstech/lang/d2/common",
                  "//src/com/plasstech/lang/d2/lex",
@@ -23,12 +16,38 @@ java_library(name="type",
              visibility=["//visibility:public"],
              )
 
+java_library(name="symbols",
+             srcs=glob(["*Symbol.java", "SymTab.java"]),
+             deps = [
+                 ":exception",
+                 ":storage",
+                 ":var_types",
+                 "//src/com/plasstech/lang/d2/parse/node",
+                 "@maven//:com_google_guava_guava",
+             ],
+             visibility=["//visibility:public"],
+             )
+
 java_library(name="var_types",
-             srcs=VAR_TYPE_FILES,
+             srcs=[
+                 "ArrayType.java",
+                 "RecordReferenceType.java",
+                 "NullType.java",
+                 "SimpleType.java",
+                 "VarType.java",
+             ],
              visibility=["//visibility:public"],
              )
 
 java_library(name="storage",
-             srcs=STORAGE_FILES,
+             srcs=["SymbolStorage.java"],
+             visibility=["//visibility:public"],
+             )
+
+java_library(name="exception",
+             srcs=["TypeException.java"],
+             deps=[
+                 "//src/com/plasstech/lang/d2/common",
+             ],
              visibility=["//visibility:public"],
              )

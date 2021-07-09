@@ -23,6 +23,8 @@ public class NewNode extends AbstractNode implements ExprNode {
     visitor.visit(this);
   }
 
-  // TODO: tostring
-
+  @Override
+  public String toString() {
+    return String.format("NewNode: %s", recordName);
+  }
 }

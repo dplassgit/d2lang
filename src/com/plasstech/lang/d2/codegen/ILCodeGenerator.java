@@ -8,6 +8,7 @@ import java.util.Stack;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -21,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -31,8 +33,10 @@ import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
+import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
@@ -42,8 +46,10 @@ import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
+import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
+import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -59,8 +65,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private final Stack<String> whileBreaks = new Stack<>();
   private final Stack<String> whileContinues = new Stack<>();
 
-  private int tempId;
-  private int labelId;
+  private int id;
   private Stack<ProcSymbol> procedures = new Stack<>();
 
   public ILCodeGenerator(ProgramNode root, SymTab symbolTable) {
@@ -81,25 +86,29 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     return procedures.peek().symTab();
   }
 
-  private String generateLabel(String prefix) {
-    labelId++;
-    return String.format("__%s_%d", prefix, labelId);
+  private String newLabel(String prefix) {
+    return String.format("__%s_%d", prefix, ++id);
   }
 
-  private TempLocation generateTemp(VarType varType) {
-    tempId++;
-    String name = String.format("__temp%d", tempId);
+  private TempLocation allocateTemp(VarType varType) {
+    String name = String.format("__temp%d", ++id);
     symbolTable().declare(name, varType);
     // TODO: keep the vartype with the location
     return new TempLocation(name);
   }
 
-  private StackLocation generateStack(VarType varType) {
-    tempId++;
-    String name = String.format("__stack%d", tempId);
+  private StackLocation allocateStack(VarType varType) {
+    String name = String.format("__stack%d", ++id);
     symbolTable().declare(name, varType);
     // TODO: keep the vartype with the location
     return new StackLocation(name);
+  }
+
+  private MemoryAddress allocateMemory(VarType varType) {
+    String name = String.format("__memory%d", ++id);
+    symbolTable().declare(name, varType);
+    // TODO: keep the vartype with the location
+    return new MemoryAddress(name);
   }
 
   @Override
@@ -114,32 +123,65 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(AssignmentNode node) {
-    // LValueNode variable = node.variable();
-    // this is weird and possibly broken for RecordFieldSetNode
-    String name = node.variable().name();
+    LValueNode variable = node.variable();
+    variable.accept(
+        new LValueNode.Visitor() {
 
-    // Look up storage in current symbol table
-    // this may be a global or a local/parameter (stack)
-    Location dest = lookupLocation(name);
-    node.variable().setLocation(dest);
+          @Override
+          public void visit(VariableSetNode variableNode) {
+            String name = variableNode.name();
 
-    Node expr = node.expr();
-    expr.accept(this);
-    Location source = expr.location();
+            // Look up storage in current symbol table
+            // this may be a global or a local/parameter (stack)
+            Location dest = lookupLocation(name);
+            variableNode.setLocation(dest);
 
-    emit(new Transfer(dest, source));
+            Node expr = node.expr();
+            expr.accept(ILCodeGenerator.this);
+            Location source = expr.location();
+            if (dest == null || source == null) {
+              System.err.printf("dest = %s, source=%s at %s\n", dest, source, expr.position());
+            }
+            emit(new Transfer(dest, source));
+          }
+
+          @Override
+          public void visit(FieldSetNode fieldSetNode) {
+            // 1. generate
+            FieldSetAddress dest =
+                new FieldSetAddress(fieldSetNode.variableName(), fieldSetNode.fieldName());
+
+            // Look up storage in current symbol table
+            // this may be a global or a local/parameter (stack)
+            fieldSetNode.setLocation(dest);
+
+            Node expr = node.expr();
+            expr.accept(ILCodeGenerator.this);
+            Location source = expr.location();
+
+            emit(new Transfer(dest, source));
+          }
+        });
   }
 
   @Override
   public void visit(NewNode node) {
     Symbol symbol = symbolTable().get(node.recordName());
-    logger.atInfo().log("Cannot generate for NewNode yet");
-    //    assert symbol instanceof RecordType;
-    //    RecordType rt = ;
+    if (!(symbol instanceof RecordSymbol)) {
+      logger.atWarning().log("Cannot call NEW on non-record type %s", symbol);
+      return;
+    }
+    MemoryAddress location = allocateMemory(symbol.varType());
+    node.setLocation(location);
+    emit(new AllocateOp(location, (RecordSymbol) symbol));
   }
 
   private Location lookupLocation(String name) {
     Symbol variable = symbolTable().getRecursive(name);
+    //    if (variable == null) {
+    //      throw new NullPointerException(
+    //          String.format("Could not find variable %s in symbol table", name));
+    //    }
     switch (variable.storage()) {
       case GLOBAL:
         return new MemoryAddress(name);
@@ -150,7 +192,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public <T> void visit(ConstNode<T> node) {
-    TempLocation destination = generateTemp(node.varType());
+    TempLocation destination = allocateTemp(node.varType());
 
     // TODO: Should this be a thing? should we just set the "location" of the node to a constant
     // "location"?
@@ -164,10 +206,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(VariableNode node) {
+
     // this may be a global or a local/parameter (stack)
     Location source = lookupLocation(node.name());
 
-    TempLocation destination = generateTemp(node.varType());
+    TempLocation destination = allocateTemp(node.varType());
     node.setLocation(destination);
 
     // Retrieve location of variable and provide it in a temp
@@ -176,7 +219,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(InputNode node) {
-    TempLocation destination = generateTemp(VarType.STRING);
+    TempLocation destination = allocateTemp(VarType.STRING);
     node.setLocation(destination);
     emit(new SysCall(SysCall.Call.INPUT, destination));
   }
@@ -198,22 +241,30 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       leftSrc = left.location();
     }
 
-    // Calculate the value and put it somewhere
-    Node right = node.right();
     // Source for the value of right - either a register or memory location or a
     // value or a constant.
     Operand rightSrc;
-    // if left and right are "simple", just get it.
-    if (right.isSimpleType()) {
-      ConstNode<?> simpleRight = (ConstNode<?>) right;
-      rightSrc = new ConstantOperand(simpleRight.value());
+    // Calculate the value and put it somewhere
+    Node right = node.right();
+
+    if (node.operator() == Token.Type.DOT) {
+      // the RHS is a field reference
+      // maybe this should be different? maybe there should be a "Fieldget operand?"
+      VariableNode rightVarNode = (VariableNode) right;
+      rightSrc = new ConstantOperand<String>(rightVarNode.name());
     } else {
-      right.accept(this);
-      // should we copy to a new temp?!
-      rightSrc = right.location();
+      // if left and right are "simple", just get it.
+      if (right.isSimpleType()) {
+        ConstNode<?> simpleRight = (ConstNode<?>) right;
+        rightSrc = new ConstantOperand(simpleRight.value());
+      } else {
+        right.accept(this);
+        // should we copy to a new temp?!
+        rightSrc = right.location();
+      }
     }
 
-    TempLocation location = generateTemp(node.varType());
+    TempLocation location = allocateTemp(node.varType());
     node.setLocation(location);
     // location = leftSrc (operator) rightSrc
     emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
@@ -225,7 +276,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     Node expr = node.expr();
     expr.accept(this);
 
-    TempLocation destination = generateTemp(node.varType());
+    TempLocation destination = allocateTemp(node.varType());
     node.setLocation(destination);
 
     switch (node.operator()) {
@@ -249,15 +300,15 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(IfNode node) {
-    String after = generateLabel("after_if");
+    String after = newLabel("after_if");
 
     for (IfNode.Case ifCase : node.cases()) {
-      String nextLabel = generateLabel("elif");
+      String nextLabel = newLabel("elif");
 
       Node cond = ifCase.condition();
       cond.accept(this);
 
-      TempLocation temp = generateTemp(cond.varType());
+      TempLocation temp = allocateTemp(cond.varType());
       // if it's not true, jump to the next block
       // temp = !cond
       // if temp skip to next block.
@@ -291,16 +342,16 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     // ..if while condition is true, goto loop_begin
     // loop_end: ("break" target)
 
-    String before = generateLabel(Label.LOOP_BEGIN_PREFIX);
-    String increment = generateLabel(Label.LOOP_INCREMENT_PREFIX);
-    String after = generateLabel(Label.LOOP_END_PREFIX);
+    String before = newLabel(Label.LOOP_BEGIN_PREFIX);
+    String increment = newLabel(Label.LOOP_INCREMENT_PREFIX);
+    String after = newLabel(Label.LOOP_END_PREFIX);
     whileContinues.push(increment);
     whileBreaks.push(after);
 
     // Pre-check
     Node condition = node.condition();
     condition.accept(this);
-    TempLocation notCondition = generateTemp(condition.varType());
+    TempLocation notCondition = allocateTemp(condition.varType());
     emit(new UnaryOp(notCondition, Type.NOT, condition.location()));
     emit(new IfOp(notCondition, after));
 
@@ -385,11 +436,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     if (node.returnType() != VarType.VOID) {
       // generate a destination
-      StackLocation returnValueDestination = generateStack(node.returnType());
+      StackLocation returnValueDestination = allocateStack(node.returnType());
       node.setLocation(returnValueDestination);
     }
     // Guard to prevent just falling into this method
-    String afterLabel = generateLabel("after_user_proc_" + node.name());
+    String afterLabel = newLabel("after_user_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 
@@ -424,7 +475,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       call = new Call(node.functionToCall(), actualLocations);
     } else {
       // 3. put result location into node.location
-      Location location = generateTemp(node.varType());
+      Location location = allocateTemp(node.varType());
       node.setLocation(location);
       call = new Call(location, node.functionToCall(), actualLocations);
     }

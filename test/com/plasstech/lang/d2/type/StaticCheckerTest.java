@@ -364,27 +364,27 @@ public class StaticCheckerTest {
   @Test
   public void stringComparator() {
     SymTab symTab = checkProgram("b:bool b='hi' == 'bye'");
-    assertThat(symTab.get("b").type()).isEqualTo(VarType.BOOL);
+    assertThat(symTab.get("b").varType()).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void stringAdd() {
     SymTab symTab = checkProgram("b='hi' a='bye' c=a+b");
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
-    assertThat(symTab.get("b").type()).isEqualTo(VarType.STRING);
-    assertThat(symTab.get("c").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("b").varType()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("c").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void stringIndex() {
     SymTab symTab = checkProgram("b='hi' a=b[1]");
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void stringLiteral_index() {
     SymTab symTab = checkProgram("a='hi'[1]");
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
@@ -397,19 +397,19 @@ public class StaticCheckerTest {
   @Test
   public void arrayIndex() {
     SymTab symTab = checkProgram("arr=[1,2,3] a=arr[1]");
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.INT);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.INT);
   }
 
   @Test
   public void arrayString() {
     SymTab symTab = checkProgram("arr=['a', 'b', 'c'] a=arr[1 + 1]");
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.STRING);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void arrayLiteral_index() {
     SymTab symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
-    assertThat(symTab.get("a").type()).isEqualTo(VarType.INT);
+    assertThat(symTab.get("a").varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -760,7 +760,7 @@ public class StaticCheckerTest {
     
     Symbol rec = symTab.get("instance");
     assertThat(rec.isAssigned()).isFalse();
-    RecordReferenceType refType = (RecordReferenceType) rec.type();
+    RecordReferenceType refType = (RecordReferenceType) rec.varType();
     assertThat(refType.name()).isEqualTo("r2");
   }
 
@@ -805,11 +805,11 @@ public class StaticCheckerTest {
   public void assignRecordType() {
     SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2:r1 var2=var1");
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
 
     Symbol var2 = symTab.get("var2");
-    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
     assertThat(refType2.name()).isEqualTo("r1");
   }
 
@@ -818,11 +818,11 @@ public class StaticCheckerTest {
     SymTab symTab =
         checkProgram("r1:record{s:string} var1=new r1 var2 = new r1 if var1==var2 { print 'same'}");
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
 
     Symbol var2 = symTab.get("var2");
-    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
     assertThat(refType2.name()).isEqualTo("r1");
   }
 
@@ -831,7 +831,7 @@ public class StaticCheckerTest {
     SymTab symTab =
         checkProgram("r1:record{s:string} var1=new r1 if var1!=null { print 'not null'}");
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
   }
 
@@ -845,11 +845,11 @@ public class StaticCheckerTest {
   public void assignRecordType_inferred() {
     SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
 
     Symbol var2 = symTab.get("var2");
-    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
     assertThat(refType2.name()).isEqualTo("r1");
   }
 
@@ -878,7 +878,7 @@ public class StaticCheckerTest {
   public void newRecord() {
     SymTab symTab = checkProgram("r1:record{s:string} var1=new r1");
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType = (RecordReferenceType) var1.type();
+    RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
     assertThat(var1.isAssigned()).isTrue();
   }
@@ -888,12 +888,12 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{s:string} var1=new r1 var2=var1");
 
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType1 = (RecordReferenceType) var1.type();
+    RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
     assertThat(refType1.name()).isEqualTo("r1");
     assertThat(var1.isAssigned()).isTrue();
 
     Symbol var2 = symTab.get("var2");
-    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
     assertThat(refType2.name()).isEqualTo("r1");
     assertThat(var2.isAssigned()).isTrue();
   }
@@ -903,7 +903,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
 
     Symbol var1 = symTab.get("var1");
-    RecordReferenceType refType1 = (RecordReferenceType) var1.type();
+    RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
     assertThat(refType1.name()).isEqualTo("r1");
     assertThat(var1.isAssigned()).isTrue();
   }
@@ -931,7 +931,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{s:string i:int} var1=new r1 ii=var1.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
-    assertThat(symbol.type()).isEqualTo(VarType.INT);
+    assertThat(symbol.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -939,7 +939,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{i:int} r2:record{rone:r1} var2=new r2 ii=var2.rone.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
-    assertThat(symbol.type()).isEqualTo(VarType.INT);
+    assertThat(symbol.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -947,7 +947,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{i:int next:r1} var1=new r1 var2=var1.next");
 
     Symbol var2 = symTab.get("var2");
-    RecordReferenceType refType2 = (RecordReferenceType) var2.type();
+    RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
     assertThat(refType2.name()).isEqualTo("r1");
     assertThat(var2.isAssigned()).isTrue();
   }
@@ -957,7 +957,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p().i");
 
     Symbol var1 = symTab.get("var1");
-    assertThat(var1.type()).isEqualTo(VarType.INT);
+    assertThat(var1.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -978,7 +978,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1:record{i:int} var1=new r1 var1.i=3 var2=var1.i");
     Symbol symbol = symTab.get("var2");
     assertThat(symbol.isAssigned()).isTrue();
-    assertThat(symbol.type()).isEqualTo(VarType.INT);
+    assertThat(symbol.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
