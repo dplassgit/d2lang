@@ -54,4 +54,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(Inc op) {}
+
+  @Override
+  public void visit(AllocateOp op) {}
 }

@@ -84,7 +84,9 @@ public class InterpreterDriver {
       System.out.printf("Branches not taken: %d\n", result.branchesNotTaken());
       System.out.printf("Gotos: %d\n", result.gotos());
       System.out.printf("Calls: %d\n", result.calls());
-      System.out.println("\n------------------------------");
+      System.out.println("Env:");
+      System.out.println(result.environment());
+      System.out.println("------------------------------");
       System.out.println("SYSTEM.OUT:");
       System.out.println("------------------------------");
       System.out.println(Joiner.on("").join(result.environment().output()));

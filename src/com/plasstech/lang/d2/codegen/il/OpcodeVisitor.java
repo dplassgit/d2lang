@@ -29,5 +29,7 @@ public interface OpcodeVisitor {
   void visit(Dec op);
 
   void visit(Inc op);
+
+  void visit(AllocateOp op);
 }
 

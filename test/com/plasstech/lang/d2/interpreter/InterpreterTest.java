@@ -262,13 +262,13 @@ public class InterpreterTest {
             "      r: record { i: int s: string}\n"
                 + "an_r = new r \n"
                 + "an_r.i = 3 \n"
-                + "an_r.s = 'hi' \n"
+                + " an_r.s = 'hi' \n"
                 + "b = an_r.i "
-                + "c = an_r.s \n"
-                + "println an_r.i \n"
-                + "println an_r.s \n"
-                + "println b \n"
-                + "println c \n");
+                + " c = an_r.s \n"
+                + " println an_r.i \n"
+                + " println an_r.s \n"
+                + " println b \n"
+                + " println c \n");
     assertThat(env.getValue("b")).isEqualTo(3);
     assertThat(env.getValue("c")).isEqualTo("hi");
   }

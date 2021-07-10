@@ -21,6 +21,11 @@ public class AllocateOp extends Op {
   }
 
   @Override
+  public void accept(OpcodeVisitor visitor) {
+    visitor.visit(this);
+  }
+
+  @Override
   public String toString() {
     return String.format("%s = NEW RECORD %s;", destination, record.name());
   }

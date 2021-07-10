@@ -1,5 +1,9 @@
 package com.plasstech.lang.d2.type;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
+import java.util.Set;
+
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
@@ -27,6 +31,10 @@ public class RecordSymbol extends AbstractSymbol {
   @Override
   public String toString() {
     return String.format("Record %s: %s", node.name(), node.fields());
+  }
+
+  public Set<String> fieldNames() {
+    return node.fields().stream().map(DeclarationNode::name).collect(toImmutableSet());
   }
 
   public VarType fieldType(String fieldName) {

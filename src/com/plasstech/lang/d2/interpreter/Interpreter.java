@@ -3,15 +3,20 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -33,6 +38,7 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final int MAX_ITERATIONS = 10000000;
@@ -82,12 +88,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
       if (!(op instanceof Nop) && !(op instanceof Label)) {
         result.incInstructionCycle();
       }
-        logger.atFinest().log(
-            "Current op: ip: %d: %s. cycle %d", ip, op, result.instructionCycles());
+      logger.atFinest().log("Current op: ip: %d: %s. cycle %d", ip, op, result.instructionCycles());
       ip++;
       try {
         op.accept(this);
-      } catch (NullPointerException re) {
+      } catch (RuntimeException re) {
         logger.atSevere().withCause(re).log("Exception at ip %d: %s; env: %s", ip, op, envs);
         break;
       }
@@ -108,7 +113,19 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(Transfer op) {
     Object rhsVal = resolve(op.source());
     if (rhsVal != null) {
-      setValue(op.destination(), rhsVal);
+      Location destination = op.destination();
+      if (destination instanceof FieldSetAddress) {
+        // destination may be a "field set address"
+        // which is a combination of a memory variable and a field
+
+        FieldSetAddress lvalue = (FieldSetAddress) destination;
+        // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
+        MemoryAddress recordAddress = lvalue.recordAddress();
+        Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
+        recordObject.put(lvalue.field(), rhsVal);
+      } else {
+        setValue(op.destination(), rhsVal);
+      }
     } else {
       throw new IllegalStateException(String.format("RHS has no value in %s", op));
     }
@@ -160,11 +177,23 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitBinOp(op, (String) left, (Integer) right);
     } else if (left.getClass().isArray() && right instanceof Integer) {
       result = visitBinOp(op, (Object[]) left, (Integer) right);
+    } else if (op.operator() == Token.Type.DOT) {
+      result = visitDotOp(left, (String) right);
     } else {
+      logger.atWarning().log("Not sure what to do with %s; left %s right %s", op, left, right);
       result = -42;
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitDotOp(Object left, String right) {
+    if (!(left instanceof Map)) {
+      logger.atSevere().log("Not sure what to do with %s, should be record type", left);
+    }
+    @SuppressWarnings("unchecked")
+    Map<String, Object> leftAsMap = (Map<String, Object>) left;
+    return leftAsMap.get(right);
   }
 
   @Override
@@ -443,9 +472,29 @@ public class Interpreter extends DefaultOpcodeVisitor {
     ip = oldIp + 1;
   }
 
+  @Override
+  public void visit(AllocateOp op) {
+    // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
+    Map<String, Object> recordAsMap = new HashMap<>();
+    recordAsMap.put("__recordType", op.record());
+    // Is this even needed?
+    for (String fieldName : op.record().fieldNames()) {
+      VarType type = op.record().fieldType(fieldName);
+      if (type == VarType.INT) {
+        recordAsMap.put(fieldName, 0);
+      } else if (type == VarType.STRING) {
+        recordAsMap.put(fieldName, null);
+      } else if (type == VarType.BOOL) {
+        recordAsMap.put(fieldName, false);
+      }
+      // ???
+    }
+    setValue(op.destination(), recordAsMap);
+  }
+
   private void setValue(Location location, Object value) {
     // If it's a global symbol, write into root environment.
-    if (location.storage() == SymbolStorage.GLOBAL) {
+    if (location.storage() == SymbolStorage.GLOBAL || location.storage() == SymbolStorage.HEAP) {
       rootEnv.setValue(location, value);
       return;
     }
