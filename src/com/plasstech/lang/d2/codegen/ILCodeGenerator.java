@@ -176,14 +176,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     emit(new AllocateOp(location, (RecordSymbol) symbol));
   }
 
-  @Override
-  public void visit(NewNode node) {
-    Symbol symbol = symbolTable().get(node.recordName());
-    logger.atInfo().log("Cannot generate for NewNode yet");
-    //    assert symbol instanceof RecordType;
-    //    RecordType rt = ;
-  }
-
   private Location lookupLocation(String name) {
     Symbol variable = symbolTable().getRecursive(name);
     //    if (variable == null) {

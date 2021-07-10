@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
-import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.ExecutionEnvironment;
 
 public class InterpreterTest {
@@ -276,20 +275,16 @@ public class InterpreterTest {
 
   private Environment execute(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
-    try {
-      ExecutionResult result = ee.execute();
-      return result.environment();
-    } finally {
-      //    System.out.println(ee.programNode());
-      //
-      //    System.out.println("Environment:");
-      //    System.out.println("------------");
-      //    System.out.println(env.toString());
-      //    System.out.println("------------");
-      //    System.out.println("Sysout:");
-      //    System.out.println("-------");
-      //    System.out.println(Joiner.on('\n').join(env.output()));
-      System.out.println(Joiner.on('\n').join(ee.ilCode()));
-    }
+    ExecutionResult result = ee.execute();
+    return result.environment();
+    //    System.out.println(ee.programNode());
+    //
+    //    System.out.println("Environment:");
+    //    System.out.println("------------");
+    //    System.out.println(env.toString());
+    //    System.out.println("------------");
+    //    System.out.println("Sysout:");
+    //    System.out.println("-------");
+    //    System.out.println(Joiner.on('\n').join(env.output()));
   }
 }

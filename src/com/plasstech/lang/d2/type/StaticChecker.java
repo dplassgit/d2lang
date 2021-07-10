@@ -214,9 +214,9 @@ public class StaticChecker extends DefaultVisitor {
               symbolTable().assign(variable.name(), right.varType());
             } else {
               // Already known in some scope. Update.
-              if (symbol.type().isUnknown()) {
-                symbol.setType(right.varType());
-              } else if (!symbol.type().compatibleWith(right.varType())) {
+              if (symbol.varType().isUnknown()) {
+                symbol.setVarType(right.varType());
+              } else if (!symbol.varType().compatibleWith(right.varType())) {
                 // It was already in the symbol table. Possible that it's wrong
                 throw new TypeException(
                     String.format(
