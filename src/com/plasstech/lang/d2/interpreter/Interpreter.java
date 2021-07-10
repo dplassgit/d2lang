@@ -112,23 +112,30 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Transfer op) {
     Object rhsVal = resolve(op.source());
-    if (rhsVal != null) {
-      Location destination = op.destination();
-      if (destination instanceof FieldSetAddress) {
-        // destination may be a "field set address"
-        // which is a combination of a memory variable and a field
+    Location destination = op.destination();
+    if (destination instanceof FieldSetAddress) {
+      // destination may be a "field set address"
+      // which is a combination of a memory variable and a field
 
-        FieldSetAddress lvalue = (FieldSetAddress) destination;
-        // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
-        MemoryAddress recordAddress = lvalue.recordAddress();
-        Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
-        recordObject.put(lvalue.field(), rhsVal);
-      } else {
-        setValue(op.destination(), rhsVal);
-      }
+      FieldSetAddress lvalue = (FieldSetAddress) destination;
+      // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
+      MemoryAddress recordAddress = lvalue.recordAddress();
+      Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
+      recordObject.put(lvalue.field(), rhsVal);
+      return;
     } else {
-      throw new IllegalStateException(String.format("RHS has no value in %s", op));
+      // eh.
+
+      setValue(op.destination(), rhsVal);
     }
+    //    if (rhsVal != null) {
+    //      return;
+    //
+    //    } else if (op.source() instanceof ConstantOperand) {
+    //      // maybe really null
+    //      ConstantOperand<?> rhs = (ConstantOperand<?>) op.source();
+    //    }
+    //    throw new IllegalStateException(String.format("RHS has no value in %s", op));
   }
 
   @Override
@@ -169,22 +176,38 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object right = resolve(op.right());
 
     Object result;
-    if (left instanceof Integer && right instanceof Integer) {
+    if (op.operator() == Token.Type.DOT) {
+      result = visitDotOp(left, (String) right);
+    } else if (left instanceof Integer && right instanceof Integer) {
       result = visitBinOp(op, (Integer) left, (Integer) right);
     } else if (left instanceof String && right instanceof String) {
       result = visitBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
+    } else if (left == null || right == null) {
+      result = visitBinOpNulls(op, left, right);
     } else if (left.getClass().isArray() && right instanceof Integer) {
       result = visitBinOp(op, (Object[]) left, (Integer) right);
-    } else if (op.operator() == Token.Type.DOT) {
-      result = visitDotOp(left, (String) right);
     } else {
       logger.atWarning().log("Not sure what to do with %s; left %s right %s", op, left, right);
       result = -42;
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitBinOpNulls(BinOp op, Object left, Object right) {
+    boolean leftNull = left == null;
+    boolean rightNull = right == null;
+    switch (op.operator()) {
+      case EQEQ:
+        return leftNull == rightNull;
+      case NEQ:
+        return leftNull != rightNull;
+
+      default:
+        throw new IllegalStateException("Unknown null binop " + op.operator());
+    }
   }
 
   private Object visitDotOp(Object left, String right) {
@@ -194,26 +217,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
     @SuppressWarnings("unchecked")
     Map<String, Object> leftAsMap = (Map<String, Object>) left;
     return leftAsMap.get(right);
-  }
-
-  @Override
-  public void visit(Inc op) {
-    Object target = resolve(op.target());
-    int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
-    }
-    setValue(op.target(), previous + 1);
-  }
-
-  @Override
-  public void visit(Dec op) {
-    Object target = resolve(op.target());
-    int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
-    }
-    setValue(op.target(), previous - 1);
   }
 
   private Object visitBinOp(BinOp op, Object[] left, int right) {
@@ -295,6 +298,26 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown int binop " + op.operator());
     }
+  }
+
+  @Override
+  public void visit(Inc op) {
+    Object target = resolve(op.target());
+    int previous = 0;
+    if (target != null) {
+      previous = (Integer) target;
+    }
+    setValue(op.target(), previous + 1);
+  }
+
+  @Override
+  public void visit(Dec op) {
+    Object target = resolve(op.target());
+    int previous = 0;
+    if (target != null) {
+      previous = (Integer) target;
+    }
+    setValue(op.target(), previous - 1);
   }
 
   @Override

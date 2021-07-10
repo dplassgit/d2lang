@@ -166,9 +166,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(NewNode node) {
-    Symbol symbol = symbolTable().get(node.recordName());
+    Symbol symbol = symbolTable().getRecursive(node.recordName());
     if (!(symbol instanceof RecordSymbol)) {
-      logger.atWarning().log("Cannot call NEW on non-record type %s", symbol);
+      logger.atWarning().log(
+          "Cannot call NEW on non-record type %s at %s on line %s", symbol, node, node.position());
       return;
     }
     MemoryAddress location = allocateMemory(symbol.varType());
