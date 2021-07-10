@@ -48,7 +48,7 @@ public class SymTab {
     if (sym == null) {
       return VarType.UNKNOWN;
     }
-    return sym.type();
+    return sym.varType();
   }
 
   public Symbol getRecursive(String name) {
@@ -83,7 +83,7 @@ public class SymTab {
       throw new TypeException(
           String.format(
               "%s already declared as %s. Cannot be redeclared as procedure.",
-              node.name(), sym.type()),
+              node.name(), sym.varType()),
           node.position());
     }
     ProcSymbol procSymbol = new ProcSymbol(node);
@@ -97,7 +97,7 @@ public class SymTab {
       throw new TypeException(
           String.format(
               "'%s' already declared as %s. Cannot be redeclared as RECORD.",
-              node.name(), sym.type()),
+              node.name(), sym.varType()),
           node.position());
     }
     RecordSymbol recordSymbol = new RecordSymbol(node);
@@ -119,7 +119,7 @@ public class SymTab {
         varType);
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
-    Symbol sym = new VariableSymbol(name, this.storage).setType(varType);
+    Symbol sym = new VariableSymbol(name, this.storage).setVarType(varType);
     values.put(name, sym);
     return sym;
   }
@@ -127,15 +127,15 @@ public class SymTab {
   public Symbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
-    if (sym != null && !sym.type().isUnknown()) {
+    if (sym != null && !sym.varType().isUnknown()) {
       Preconditions.checkState(
-          sym.type() == varType,
+          sym.varType() == varType,
           "Type error: %s already declared as %s. Cannot be assigned as %s.",
           name,
-          sym.type(),
+          sym.varType(),
           varType);
     } else {
-      sym = new VariableSymbol(name, this.storage).setType(varType);
+      sym = new VariableSymbol(name, this.storage).setVarType(varType);
     }
     sym.setAssigned();
     values.put(name, sym);

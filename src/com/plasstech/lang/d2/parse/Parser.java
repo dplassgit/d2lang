@@ -1,14 +1,13 @@
 package com.plasstech.lang.d2.parse;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import com.google.common.base.Joiner;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

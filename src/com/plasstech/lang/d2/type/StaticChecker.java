@@ -173,13 +173,13 @@ public class StaticChecker extends DefaultVisitor {
             //
             // Now get the record from the symbol table.
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
-            if (variableSymbol == null || !variableSymbol.type().isRecord()) {
+            if (variableSymbol == null || !variableSymbol.varType().isRecord()) {
               throw new TypeException(
                   String.format("Variable '%s' not a known RECORD", variable.name()),
                   variable.position());
             }
 
-            Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.type().name());
+            Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.varType().name());
             if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
               throw new TypeException(
                   String.format("Cannot apply DOT operator to %s expression", fsn.varType()),
@@ -221,7 +221,7 @@ public class StaticChecker extends DefaultVisitor {
                 throw new TypeException(
                     String.format(
                         "variable '%s' declared as %s but RHS (%s) is %s",
-                        variable.name(), symbol.type(), right, right.varType()),
+                        variable.name(), symbol.varType(), right, right.varType()),
                     variable.position());
               }
 
@@ -260,7 +260,7 @@ public class StaticChecker extends DefaultVisitor {
   public void visit(CallNode node) {
     // 1. make sure the function is really a function
     Symbol maybeProc = symbolTable().getRecursive(node.functionToCall());
-    if (maybeProc == null || maybeProc.type() != VarType.PROC) {
+    if (maybeProc == null || maybeProc.varType() != VarType.PROC) {
       throw new TypeException(
           String.format("PROC '%s' is unknown", node.functionToCall()), node.position());
     }
@@ -340,7 +340,7 @@ public class StaticChecker extends DefaultVisitor {
       // Now get the record from the symbol table.
       String recordName = left.varType().name();
       Symbol symbol = symbolTable().getRecursive(recordName);
-      if (symbol == null || !symbol.type().isRecord()) {
+      if (symbol == null || !symbol.varType().isRecord()) {
         throw new TypeException(
             String.format("Unknown RECORD type '%s'", recordName), left.position());
       }
@@ -565,7 +565,7 @@ public class StaticChecker extends DefaultVisitor {
     if (type.isRecord()) {
       String recordName = ((RecordReferenceType) type).name();
       Symbol symbol = symbolTable().getRecursive(recordName);
-      if (symbol == null || !symbol.type().isRecord()) {
+      if (symbol == null || !symbol.varType().isRecord()) {
         throw new TypeException(
             String.format("Cannot declare '%s' as unknown RECORD '%s'", name, recordName),
             position);
@@ -676,7 +676,7 @@ public class StaticChecker extends DefaultVisitor {
       procSymbol = symbolTable().declareProc(node);
       SymTab child = symbolTable().spawn();
       procSymbol.setSymTab(child);
-    } else if (sym.type() != VarType.PROC) {
+    } else if (sym.varType() != VarType.PROC) {
       throw new TypeException(
           String.format("Cannot define PROC '%s' with the same name as a global", node.name()),
           node.position());
@@ -702,7 +702,7 @@ public class StaticChecker extends DefaultVisitor {
 
     // 6. make sure args all have a type
     for (Parameter param : node.parameters()) {
-      VarType type = symbolTable().get(param.name()).type();
+      VarType type = symbolTable().get(param.name()).varType();
       validatePossibleRecordType(param.name(), type, node.position());
       if (type.isUnknown()) {
         throw new TypeException(

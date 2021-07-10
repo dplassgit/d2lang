@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.ExecutionEnvironment;
 
 public class InterpreterTest {
@@ -255,18 +256,40 @@ public class InterpreterTest {
     assertThat(env.getValue("d")).isEqualTo(~123);
   }
 
+  @Test
+  public void records() {
+    Environment env =
+        execute(
+            "      r: record { i: int s: string}\n"
+                + "an_r = new r \n"
+                + "an_r.i = 3 \n"
+                + "an_r.s = 'hi' \n"
+                + "b = an_r.i "
+                + "c = an_r.s \n"
+                + "println an_r.i \n"
+                + "println an_r.s \n"
+                + "println b \n"
+                + "println c \n");
+    assertThat(env.getValue("b")).isEqualTo(3);
+    assertThat(env.getValue("c")).isEqualTo("hi");
+  }
+
   private Environment execute(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
-    ExecutionResult result = ee.execute();
-    //    System.out.println(ee.programNode());
-    //
-    //    System.out.println("Environment:");
-    //    System.out.println("------------");
-    //    System.out.println(env.toString());
-    //    System.out.println("------------");
-    //    System.out.println("Sysout:");
-    //    System.out.println("-------");
-    //    System.out.println(Joiner.on('\n').join(env.output()));
-    return result.environment();
+    try {
+      ExecutionResult result = ee.execute();
+      return result.environment();
+    } finally {
+      //    System.out.println(ee.programNode());
+      //
+      //    System.out.println("Environment:");
+      //    System.out.println("------------");
+      //    System.out.println(env.toString());
+      //    System.out.println("------------");
+      //    System.out.println("Sysout:");
+      //    System.out.println("-------");
+      //    System.out.println(Joiner.on('\n').join(env.output()));
+      System.out.println(Joiner.on('\n').join(ee.ilCode()));
+    }
   }
 }

@@ -9,7 +9,6 @@ abstract class AbstractSymbol implements Symbol {
     this.name = name;
   }
 
-  @Override
   public String name() {
     return name;
   }
@@ -26,12 +25,12 @@ abstract class AbstractSymbol implements Symbol {
   }
 
   @Override
-  public VarType type() {
+  public VarType varType() {
     return type;
   }
 
   @Override
-  public Symbol setType(VarType type) {
+  public Symbol setVarType(VarType type) {
     this.type = type;
     return this;
   }
