@@ -140,7 +140,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
             expr.accept(ILCodeGenerator.this);
             Location source = expr.location();
             if (dest == null || source == null) {
-              System.err.printf("dest = %s, source=%s at %s\n", dest, source, expr.position());
+              logger.atSevere().log(
+                  "lvalue source or dest is null: dest = %s, source=%s at %s",
+                  dest, source, expr.position());
+              return;
             }
             emit(new Transfer(dest, source));
           }
@@ -168,7 +171,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(NewNode node) {
     Symbol symbol = symbolTable().getRecursive(node.recordName());
     if (!(symbol instanceof RecordSymbol)) {
-      logger.atWarning().log(
+      logger.atSevere().log(
           "Cannot call NEW on non-record type %s at %s on line %s", symbol, node, node.position());
       return;
     }
@@ -179,11 +182,8 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private Location lookupLocation(String name) {
     Symbol variable = symbolTable().getRecursive(name);
-    //    if (variable == null) {
-    //      throw new NullPointerException(
-    //          String.format("Could not find variable %s in symbol table", name));
-    //    }
     switch (variable.storage()) {
+      case HEAP:
       case GLOBAL:
         return new MemoryAddress(name);
       default:
@@ -250,7 +250,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     if (node.operator() == Token.Type.DOT) {
       // the RHS is a field reference
-      // maybe this should be different? maybe there should be a "Fieldget operand?"
       VariableNode rightVarNode = (VariableNode) right;
       rightSrc = new ConstantOperand<String>(rightVarNode.name());
     } else {
@@ -294,7 +293,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         emit(new Transfer(destination, expr.location()));
         break;
       default:
-        logger.atWarning().log("No code generated for operator %s", node.operator());
+        logger.atSevere().log("No code generated for node %s", node);
         break;
     }
   }

@@ -1,6 +1,6 @@
 intlist: record {
-    value: int
-    next: intlist
+  value: int
+  next: intlist
 }
 
 new_list: proc(): intlist {
@@ -13,9 +13,8 @@ append: proc(this:intlist, newvalue:int) {
   }
 
   node = new intlist
-  head.next = node
-
   node.value = newvalue
+  head.next = node
 }
 
 print_list: proc(this: intlist) {
