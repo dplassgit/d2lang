@@ -102,7 +102,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (rhsVal != null) {
       setValue(op.destination(), rhsVal);
     } else {
-      throw new IllegalStateException(String.format("RHS %s has no value", op.source()));
+      throw new IllegalStateException(String.format("RHS has no value in %s", op));
     }
   }
 
