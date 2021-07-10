@@ -129,11 +129,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
       setValue(op.destination(), rhsVal);
     }
     //    if (rhsVal != null) {
-    //      return;
-    //
-    //    } else if (op.source() instanceof ConstantOperand) {
-    //      // maybe really null
-    //      ConstantOperand<?> rhs = (ConstantOperand<?>) op.source();
     //    }
     //    throw new IllegalStateException(String.format("RHS has no value in %s", op));
   }

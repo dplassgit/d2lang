@@ -8,6 +8,19 @@ import java.util.Map;
 import com.plasstech.lang.d2.codegen.Location;
 
 public class Environment {
+  // this is a unique sentinel object
+  private static final Object NULL =
+      new Object() {
+        @Override
+        public String toString() {
+          return "__nullenv__";
+        }
+
+        @Override
+        public int hashCode() {
+          return toString().hashCode();
+        }
+      };
   private final List<String> output = new ArrayList<>();
   private final Map<String, Object> values = new HashMap<>();
   private final Environment parent;
@@ -29,7 +42,12 @@ public class Environment {
   }
 
   public void setValue(Location location, Object value) {
-    values.put(location.name(), value);
+    if (value == null) {
+      // Sentinel
+      values.put(location.name(), NULL);
+    } else {
+      values.put(location.name(), value);
+    }
   }
 
   public void setValue(Location location, boolean value) {
@@ -42,7 +60,10 @@ public class Environment {
 
   public Object getValue(String name) {
     Object value = values.get(name);
-    if (value == null && parent() != null) {
+    if (value == NULL) {
+      // Sentinel
+      return null;
+    } else if (value == null && parent() != null) {
       return parent().getValue(name);
     }
     return value;
@@ -50,10 +71,14 @@ public class Environment {
 
   public Map<String, Object> variables() {
     Map<String, Object> variablesOnly = new HashMap<>();
-    for (Map.Entry<String, Object> value : values.entrySet()) {
-      if (!value.getKey().startsWith("__")) {
+    for (Map.Entry<String, Object> entry : values.entrySet()) {
+      if (!entry.getKey().startsWith("__")) {
         // not a temp
-        variablesOnly.put(value.getKey(), value.getValue());
+        Object value = entry.getValue();
+        if (value == NULL) {
+          value = null;
+        }
+        variablesOnly.put(entry.getKey(), entry.getValue());
       }
     }
     return variablesOnly;
