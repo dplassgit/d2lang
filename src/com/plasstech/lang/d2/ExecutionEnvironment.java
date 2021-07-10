@@ -1,14 +1,12 @@
 package com.plasstech.lang.d2;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.ILOptimizer;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.interpreter.Environment;
+import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -33,7 +31,7 @@ public class ExecutionEnvironment {
   private TypeCheckResult typeCheckResult;
   private SymTab symbolTable;
   private ImmutableList<Op> ilCode;
-  private Environment env;
+  private ExecutionResult result;
 
   /** TODO: Make this a builder */
   public ExecutionEnvironment(String program) {
@@ -80,7 +78,7 @@ public class ExecutionEnvironment {
     return this;
   }
 
-  public Environment execute() {
+  public ExecutionResult execute() {
     Lexer lexer = new Lexer(program);
     Parser parser = new Parser(lexer);
     Node parseNode = parser.parse();
@@ -120,11 +118,11 @@ public class ExecutionEnvironment {
     return execute(ilCode);
   }
 
-  public Environment execute(List<Op> operators) {
-    Interpreter interpreter = new Interpreter(operators, symbolTable, interactive);
+  public ExecutionResult execute(ImmutableList<Op> code) {
+    Interpreter interpreter = new Interpreter(code, symbolTable, interactive);
     interpreter.setDebugLevel(debugInt);
-    env = interpreter.execute();
-    return env;
+    result = interpreter.execute();
+    return result;
   }
 
   public ProgramNode programNode() {
@@ -135,15 +133,11 @@ public class ExecutionEnvironment {
     return typeCheckResult;
   }
 
-  public SymTab symbolTable() {
-    return symbolTable;
+  public ExecutionResult result() {
+    return result;
   }
 
-  public ImmutableList<Op> ilCode() {
+  public ImmutableList<Op> code() {
     return ilCode;
-  }
-
-  public Environment environment() {
-    return env;
   }
 }

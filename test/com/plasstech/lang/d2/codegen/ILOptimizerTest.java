@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import org.junit.Test;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.ExecutionEnvironment;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -67,11 +66,8 @@ public class ILOptimizerTest {
       ee.execute();
     } catch (Exception e) {
     }
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
 
-    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.ilCode());
-    System.out.println("\nOPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimized));
+    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.code());
     try {
       ee.execute(optimized);
     } catch (Exception e) {

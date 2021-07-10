@@ -257,7 +257,7 @@ public class InterpreterTest {
 
   private Environment execute(String program) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
-    Environment env = ee.execute();
+    ExecutionResult result = ee.execute();
     //    System.out.println(ee.programNode());
     //
     //    System.out.println("Environment:");
@@ -267,6 +267,6 @@ public class InterpreterTest {
     //    System.out.println("Sysout:");
     //    System.out.println("-------");
     //    System.out.println(Joiner.on('\n').join(env.output()));
-    return env;
+    return result.environment();
   }
 }

@@ -116,7 +116,7 @@ public class LoopInvariantOptimizerTest {
   public void oneLoopBreakInvariantAfterBreak() {
     // this passes if the dead code optimizer runs first because it had already killed the loop
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoopBreak:proc(n:int):int {\n"
+        "      oneLoopBreakInvariantAfterBreak:proc (n:int):int {\n"
             + "  sum = 0\n"
             + "  i = 0 x = 0"
             + "  while i < 10 do i = i + 1 {"
@@ -126,7 +126,7 @@ public class LoopInvariantOptimizerTest {
             + "  }"
             + "  return sum + x"
             + "}"
-            + "println oneLoopBreak(10)",
+            + "println oneLoopBreakInvariantAfterBreak(10)",
         ilOptimizer);
   }
 

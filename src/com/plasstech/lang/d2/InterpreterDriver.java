@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import com.google.common.base.Joiner;
 import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.common.D2Options;
-import com.plasstech.lang.d2.interpreter.Environment;
+import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class InterpreterDriver {
 
@@ -17,7 +17,7 @@ public class InterpreterDriver {
     D2Options options = parser.getOptions(D2Options.class);
 
     if (options.debuglex > 0) {
-      System.out.printf("Debugging lex %d\n", options.debuglex);
+      System.out.printf("debugginglex %d\n", options.debuglex);
     }
     if (options.debugparse > 0) {
       System.out.printf("debugparse %d\n", options.debugparse);
@@ -56,7 +56,7 @@ public class InterpreterDriver {
             .setIntDebugLevel(options.debugint)
             .setOptimize(options.optimize);
 
-    Environment env = ee.execute();
+    ExecutionResult result = ee.execute();
     if (options.debugparse > 0) {
       System.out.println("\nPARSED PROGRAM:");
       System.out.println("------------------------------");
@@ -66,21 +66,28 @@ public class InterpreterDriver {
     if (options.debugint > 0) {
       System.out.println("\nSYMBOL TABLE:");
       System.out.println("------------------------------");
-      System.out.println(ee.symbolTable());
+      System.out.println(result.symbolTable());
     }
 
     if (options.debugcodegen > 0) {
       System.out.println("\nFINAL INTERMEDIATE CODE:");
       System.out.println("------------------------------");
-      System.out.println(Joiner.on("\n").join(ee.ilCode()));
+      System.out.println(Joiner.on("\n").join(result.code()));
     }
 
-    if (options.debugint > 2) {
+    if (options.debugint > 0) {
       // Since we're running in interactive mode, there's no need for this.
+      System.out.println("\n------------------------------");
+      System.out.printf("Cycles: %d\n", result.instructionCycles());
+      System.out.printf("LOC: %d\n", result.linesOfCode());
+      System.out.printf("Branches taken: %d\n", result.branchesTaken());
+      System.out.printf("Branches not taken: %d\n", result.branchesNotTaken());
+      System.out.printf("Gotos: %d\n", result.gotos());
+      System.out.printf("Calls: %d\n", result.calls());
       System.out.println("\n------------------------------");
       System.out.println("SYSTEM.OUT:");
       System.out.println("------------------------------");
-      System.out.println(Joiner.on("").join(env.output()));
+      System.out.println(Joiner.on("").join(result.environment().output()));
     }
   }
 }

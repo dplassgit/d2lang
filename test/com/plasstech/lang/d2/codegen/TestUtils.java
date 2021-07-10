@@ -2,13 +2,11 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.ExecutionEnvironment;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.interpreter.Environment;
+import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class TestUtils {
 
@@ -18,34 +16,40 @@ public class TestUtils {
 
   static void optimizeAssertSameVariables(String program, Optimizer optimizer) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
-    Environment unoptimizedEnv = ee.execute();
+    ExecutionResult unoptimizedResult = ee.execute();
     System.out.printf("\nUNOPTIMIZED:\n");
-    System.out.println(Joiner.on("\n").join(ee.ilCode()));
+    System.out.println(Joiner.on("\n").join(unoptimizedResult.code()));
 
     System.out.println("\nUNOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
-    System.out.println(Joiner.on("").join(unoptimizedEnv.output()));
+    System.out.println(Joiner.on("").join(unoptimizedResult.environment().output()));
 
-    List<Op> originalCode = ImmutableList.copyOf(ee.ilCode());
+    ImmutableList<Op> originalCode = ImmutableList.copyOf(unoptimizedResult.code());
 
-    List<Op> optimized = optimizer.optimize(ee.ilCode());
+    ImmutableList<Op> optimized = optimizer.optimize(originalCode);
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));
 
-    Environment optimizedEnv = ee.execute(optimized);
+    ExecutionResult optimizedResult = ee.execute(optimized);
 
     System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
-    System.out.println(Joiner.on("").join(optimizedEnv.output()));
+    System.out.println(Joiner.on("").join(optimizedResult.environment().output()));
 
     assertWithMessage("Environment should be the same")
-        .that(optimizedEnv.variables())
-        .isEqualTo(unoptimizedEnv.variables());
+        .that(optimizedResult.environment().variables())
+        .isEqualTo(unoptimizedResult.environment().variables());
     assertWithMessage("Output should be the same")
-        .that(optimizedEnv.output())
-        .isEqualTo(unoptimizedEnv.output());
+        .that(optimizedResult.environment().output())
+        .isEqualTo(unoptimizedResult.environment().output());
     assertWithMessage("Should have made at least one optimization")
         .that(originalCode)
         .isNotEqualTo(optimized);
+    assertWithMessage("New code should have been smaller")
+        .that(unoptimizedResult.linesOfCode())
+        .isAtLeast(optimizedResult.linesOfCode());
+    assertWithMessage("New code should run in fewer cycles")
+        .that(unoptimizedResult.instructionCycles())
+        .isAtLeast(optimizedResult.instructionCycles());
   }
 }

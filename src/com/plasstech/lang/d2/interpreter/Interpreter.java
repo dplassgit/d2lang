@@ -3,10 +3,10 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -38,7 +39,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final List<Op> code;
+  private final ImmutableList<Op> code;
   private final boolean interactive;
   private int ip;
   private int iterations;
@@ -50,7 +51,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private Level loggingLevel;
 
-  public Interpreter(List<Op> code, SymTab table, boolean interactive) {
+  private ExecutionResult result;
+
+  public Interpreter(ImmutableList<Op> code, SymTab table, boolean interactive) {
     this.code = code;
     this.table = table;
     this.interactive = interactive;
@@ -72,16 +75,21 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  public Environment execute() {
+  public ExecutionResult execute() {
+    result = new ExecutionResult(code, rootEnv, table);
     while (running) {
       Op op = code.get(ip);
-      logger.at(loggingLevel).log("Current op: ip: %d: %s. Env: %s", ip, op, envs.peek());
+      if (!(op instanceof Nop) && !(op instanceof Label)) {
+        result.incInstructionCycle();
+      }
+        logger.atFinest().log(
+            "Current op: ip: %d: %s. cycle %d", ip, op, result.instructionCycles());
       ip++;
       try {
         op.accept(this);
       } catch (NullPointerException re) {
         logger.atSevere().withCause(re).log("Exception at ip %d: %s; env: %s", ip, op, envs);
-        throw re;
+        break;
       }
       iterations++;
       if (iterations > MAX_ITERATIONS) {
@@ -93,7 +101,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       logger.atSevere().log("Stack not empty");
     }
     logger.at(loggingLevel).log("Interpreter ran for %d iterations", iterations);
-    return rootEnv;
+    return result;
   }
 
   @Override
@@ -112,12 +120,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (cond.equals(1)) {
       String dest = ifOp.destination();
       gotoLabel(dest);
+      result.incBranchesTaken();
+    } else {
+      result.incBranchesNotTaken();
     }
   }
 
   @Override
   public void visit(Goto op) {
     gotoLabel(op.label());
+    result.incGotos();
   }
 
   private void gotoLabel(String dest) {
@@ -375,6 +387,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Call op) {
+    result.incCalls();
+
     // 1. push return location onto stack (NOTE, not ip, which is the next op already)
     ipStack.push(ip - 1);
 
