@@ -1,1 +1,1 @@
-cat $1 | bazel run src/com/plasstech/lang/d2:InterpreterDriver -- $PWD/samples/d2ind2/lexerglobals.d 2>&1 $@
+cat $1 | bazel run src/com/plasstech/lang/d2:InterpreterDriver -- $PWD/samples/d2ind2/lexer.d 2>&1 $@ --optimize=false
