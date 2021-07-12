@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////
+//                                     LEXER                                 //
+///////////////////////////////////////////////////////////////////////////////
+
 Type_INT=1
 Type_BOOL=2
 Type_STRING=3
@@ -110,7 +114,7 @@ advance: proc(this: Lexer) {
 nextToken: proc(this: Lexer): Token {
   // skip unwanted whitespace
   while (this.cc == ' ' or this.cc == '\n' or this.cc == '\t' or this.cc == '\r') {
-    if (this.cc == '\r') {
+    if (this.cc == '\n') {
       this.line=this.line + 1
       this.col=0
     }
@@ -378,17 +382,80 @@ printToken: proc(token:Token) {
   }
 }
 
-main {
-  text = input
-  lexer = new_lexer(text)
 
-  count = 1
-  token = nextToken(lexer)
-  printToken(token)
 
-  while token.type != Type_EOF do count = count + 1 {
-    token = nextToken(lexer)
-    printToken(token)
-  }
-  println 'Total number of tokens: ' + toString(count)
+///////////////////////////////////////////////////////////////////////////////
+//                                  I HAVE NODES                             //
+///////////////////////////////////////////////////////////////////////////////
+
+EOF_NODE = 0
+PRINT_NODE = 1
+
+NODE_TYPES = [
+'EOF',
+'PRINT'
+]
+
+Node: record {
+  type: int
+  // TODO: node list
+  child: Node
 }
+
+print_node: proc(node: Node) {
+  println "Node type: " + NODE_TYPES[node.type]
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                                    PARSER                                 //
+///////////////////////////////////////////////////////////////////////////////
+
+Parser: record {
+  lexer: Lexer
+  token: Token
+}
+
+new_parser: proc(lexer: Lexer): Parser {
+  parser = new Parser
+  parser.lexer = lexer
+  advance_parser(parser)
+  return parser
+}
+
+advance_parser: proc(this: Parser): Token {
+  prev = this.token
+  this.token = nextToken(this.lexer)
+  return prev
+}
+
+
+// RULES:
+
+parse_program: proc(this: Parser): Node {
+  if this.token.value == 'print' {
+    return parse_print(this)
+  } else {
+    node = new Node
+    node.type = EOF_NODE
+    return node
+  }
+}
+
+parse_print: proc(this: Parser): Node { 
+  advance_parser(this)
+  node = new Node
+  node.type = PRINT_NODE
+  return node
+}
+
+
+main {
+  program = "print"
+
+  lexer = new_lexer(program)
+  parser = new_parser(lexer)
+  node = parse_program(parser)
+  print_node(node)
+}
+  
