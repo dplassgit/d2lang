@@ -8,9 +8,7 @@ loopinvariant:proc(n:int):int {
        k = 0 while k < n do k = k + 1 {
          z = x^n      // can be lifted
          sum = sum + z
-         println z
        }
-       println x
      }
      println y
      sum = sum + i
@@ -20,6 +18,3 @@ loopinvariant:proc(n:int):int {
 
 val = loopinvariant(10)
 println val
-//if val != 8220 {
-//  exit "Should have been 8220"
-//}

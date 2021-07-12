@@ -207,15 +207,9 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   @Override
   public void visit(VariableNode node) {
-
     // this may be a global or a local/parameter (stack)
     Location source = lookupLocation(node.name());
-
-    TempLocation destination = allocateTemp(node.varType());
-    node.setLocation(destination);
-
-    // Retrieve location of variable and provide it in a temp
-    emit(new Transfer(destination, source));
+    node.setLocation(source);
   }
 
   @Override
@@ -237,8 +231,6 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
       leftSrc = new ConstantOperand(simpleLeft.value());
     } else {
       left.accept(this);
-
-      // should we copy to a new temp?!
       leftSrc = left.location();
     }
 
@@ -259,14 +251,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
         rightSrc = new ConstantOperand(simpleRight.value());
       } else {
         right.accept(this);
-        // should we copy to a new temp?!
         rightSrc = right.location();
       }
     }
 
     TempLocation location = allocateTemp(node.varType());
     node.setLocation(location);
-    // location = leftSrc (operator) rightSrc
     emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
   }
 

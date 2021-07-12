@@ -125,6 +125,7 @@ class LoopInvariantOptimizer implements Optimizer {
       // Assigning to a temp, a non-global that was not changed in the loop.
       if (op.destination().storage() == SymbolStorage.TEMP
           && op.operand().storage() != SymbolStorage.GLOBAL
+          && op.operand().storage() != SymbolStorage.HEAP
           && !finder.setters.contains(op.operand())) {
 
         logger.at(loggingLevel).log(
@@ -141,10 +142,14 @@ class LoopInvariantOptimizer implements Optimizer {
         // we can lift this one.
         Operand leftOp = op.left();
         boolean leftOk =
-            leftOp.storage() != SymbolStorage.GLOBAL & !finder.setters.contains(leftOp);
+            leftOp.storage() != SymbolStorage.GLOBAL
+                && leftOp.storage() != SymbolStorage.HEAP
+                && !finder.setters.contains(leftOp);
         Operand rightOp = op.right();
         boolean rightOk =
-            rightOp.storage() != SymbolStorage.GLOBAL & !finder.setters.contains(rightOp);
+            rightOp.storage() != SymbolStorage.GLOBAL
+                && rightOp.storage() != SymbolStorage.HEAP
+                && !finder.setters.contains(rightOp);
         if (leftOk && rightOk) {
           logger.at(loggingLevel).log(
               "Lifting binary assignment to temp of non-global invariant: %s", op);
@@ -163,6 +168,7 @@ class LoopInvariantOptimizer implements Optimizer {
             logger.at(loggingLevel).log("Lifting to temp of const: %s", op);
             lifted = true;
           } else if (op.source().storage() != SymbolStorage.GLOBAL
+              && op.source().storage() != SymbolStorage.HEAP
               && !finder.setters.contains(op.source())) {
             logger.at(loggingLevel).log(
                 "Lifting assignment to temp of non-global invariant: %s", op);
@@ -181,6 +187,7 @@ class LoopInvariantOptimizer implements Optimizer {
             logger.at(loggingLevel).log("Lifting assignment to local or param of const: %s", op);
             lifted = true;
           } else if (op.source().storage() != SymbolStorage.GLOBAL
+              && op.source().storage() != SymbolStorage.HEAP
               && finder.setters.count(op.destination()) == 1
               && !finder.setters.contains(op.source())) {
             // Not reading from a global; the only time we are set is here, and our source
@@ -210,6 +217,8 @@ class LoopInvariantOptimizer implements Optimizer {
       for (Operand actual : op.actualLocations()) {
         if (!actual.isConstant()) {
           getters.add(actual);
+          // Globals may be set in a call. This is conservative, shrug.
+          setters.add(actual);
         }
       }
     }
@@ -237,7 +246,9 @@ class LoopInvariantOptimizer implements Optimizer {
     public void visit(Return op) {
       if (op.returnValueLocation().isPresent()) {
         if (!op.returnValueLocation().get().isConstant()) {
-          setters.add(op.returnValueLocation().get());
+          // oh this is tricky, if we're returning
+          // foo.bar, then we have to ugh....
+          getters.add(op.returnValueLocation().get());
         }
       }
     }
@@ -255,13 +266,18 @@ class LoopInvariantOptimizer implements Optimizer {
           break;
       }
     }
-
+    
     @Override
     public void visit(Transfer op) {
       if (!op.source().isConstant()) {
         getters.add(op.source());
       }
-      setters.add(op.destination());
+      if (op.destination() instanceof FieldSetAddress) {
+        FieldSetAddress fsa = (FieldSetAddress) op.destination();
+        setters.add(fsa.recordAddress());
+      } else {
+        setters.add(op.destination());
+      }
     }
 
     @Override

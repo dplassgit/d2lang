@@ -22,7 +22,8 @@ public class ILOptimizer implements Optimizer {
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
-            new LoopInvariantOptimizer(debugLevel)));
+            new LoopInvariantOptimizer(debugLevel) // , //
+            ));
     setDebugLevel(debugLevel);
   }
 

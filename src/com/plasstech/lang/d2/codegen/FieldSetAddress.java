@@ -50,6 +50,6 @@ public class FieldSetAddress extends Location {
 
   @Override
   public SymbolStorage storage() {
-    return SymbolStorage.HEAP;
+    return SymbolStorage.GLOBAL;
   }
 }
