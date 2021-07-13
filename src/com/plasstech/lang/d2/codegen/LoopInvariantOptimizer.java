@@ -83,8 +83,8 @@ class LoopInvariantOptimizer implements Optimizer {
     for (int ip = loop.start(); ip < loop.end(); ++ip) {
       code.get(ip).accept(finder);
     }
-    logger.atFine().log("Setters = %s", finder.setters);
-    logger.atFine().log("Getters = %s", finder.getters);
+    logger.atInfo().log("Setters = %s", finder.setters);
+    logger.atInfo().log("Getters = %s", finder.getters);
 
     TransferMover mover = new TransferMover(finder);
     boolean optimizedLoop = false;
@@ -274,7 +274,7 @@ class LoopInvariantOptimizer implements Optimizer {
       }
       if (op.destination() instanceof FieldSetAddress) {
         FieldSetAddress fsa = (FieldSetAddress) op.destination();
-        setters.add(fsa.recordAddress());
+        setters.add(fsa.recordLocation());
       } else {
         setters.add(op.destination());
       }

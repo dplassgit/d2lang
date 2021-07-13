@@ -52,6 +52,7 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
+import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
@@ -151,12 +152,24 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
           @Override
           public void visit(FieldSetNode fieldSetNode) {
             // 1. generate
-            FieldSetAddress dest =
-                new FieldSetAddress(fieldSetNode.variableName(), fieldSetNode.fieldName());
-
             // Look up storage in current symbol table
-            // this may be a global or a local/parameter (stack)
-            fieldSetNode.setLocation(dest);
+            Symbol sym = symbolTable().getRecursive(fieldSetNode.variableName());
+            FieldSetAddress dest;
+            if (sym != null) {
+              dest =
+                  new FieldSetAddress(
+                      fieldSetNode.variableName(), fieldSetNode.fieldName(), sym.storage());
+              // this may be a global or a local/parameter (stack)
+              fieldSetNode.setLocation(dest);
+            } else {
+              // ???
+              logger.atWarning().log(
+                  "Could not find record symbol %s in symtab", fieldSetNode.variableName());
+              dest =
+                  new FieldSetAddress(
+                      fieldSetNode.variableName(), fieldSetNode.fieldName(), SymbolStorage.HEAP);
+              fieldSetNode.setLocation(dest);
+            }
 
             Node expr = node.expr();
             expr.accept(ILCodeGenerator.this);

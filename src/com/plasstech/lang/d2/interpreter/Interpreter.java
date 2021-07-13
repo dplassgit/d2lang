@@ -13,7 +13,6 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
@@ -119,7 +118,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
       FieldSetAddress lvalue = (FieldSetAddress) destination;
       // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
-      MemoryAddress recordAddress = lvalue.recordAddress();
+      Location recordAddress = lvalue.recordLocation();
       Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
       recordObject.put(lvalue.field(), rhsVal);
       return;
@@ -127,10 +126,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
       // eh.
 
       setValue(op.destination(), rhsVal);
+      //    if (rhsVal != null) {
+      //    }
+      //    throw new IllegalStateException(String.format("RHS has no value in %s", op));
     }
-    //    if (rhsVal != null) {
-    //    }
-    //    throw new IllegalStateException(String.format("RHS has no value in %s", op));
   }
 
   @Override

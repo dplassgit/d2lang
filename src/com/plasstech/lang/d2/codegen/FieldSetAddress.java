@@ -4,11 +4,11 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class FieldSetAddress extends Location {
   private final String field;
-  private final MemoryAddress recordAddress;
+  private final Location recordLocation;
 
-  public FieldSetAddress(String record, String field) {
-    super(record);
-    this.recordAddress = new MemoryAddress(record);
+  public FieldSetAddress(String variable, String field, SymbolStorage storage) {
+    super(variable);
+    this.recordLocation = Location.allocate(storage, variable);
     this.field = field;
   }
 
@@ -16,8 +16,8 @@ public class FieldSetAddress extends Location {
     return super.name();
   }
 
-  public MemoryAddress recordAddress() {
-    return recordAddress;
+  public Location recordLocation() {
+    return recordLocation;
   }
 
   public String field() {

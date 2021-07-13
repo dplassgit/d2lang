@@ -402,6 +402,11 @@ Node: record {
   child: Node
 }
 
+PrintNode: record {
+  expr: Node
+  is_println: bool
+}
+
 print_node: proc(node: Node) {
   println "Node type: " + NODE_TYPES[node.type]
 }
@@ -435,6 +440,8 @@ advance_parser: proc(this: Parser): Token {
 parse_program: proc(this: Parser): Node {
   if this.token.value == 'print' {
     return parse_print(this)
+  } elif this.token.type != Type_EOF {
+    exit "Unknown token " + this.token.value
   } else {
     node = new Node
     node.type = EOF_NODE
@@ -451,7 +458,7 @@ parse_print: proc(this: Parser): Node {
 
 
 main {
-  program = "print"
+  program = input
 
   lexer = new_lexer(program)
   parser = new_parser(lexer)

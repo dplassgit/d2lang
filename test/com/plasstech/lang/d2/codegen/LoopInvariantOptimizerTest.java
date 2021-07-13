@@ -14,12 +14,12 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoop() {
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoop:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoop:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 "
             + "  while i < 10 do i = i + 1 {"
-            + "    x = n + 1\n"
-            + "    sum = sum + 1\n"
+            + "    x = n + 1 "
+            + "    sum = sum + 1 "
             + "  }"
             + "  return sum"
             + "}"
@@ -30,16 +30,16 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoopContinue() {
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoopContinue:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoopContinue:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 "
             + "  while true do i = i + 1 {"
-            + "    x = n + 1\n"
-            + "    sum = sum + i\n"
-            + "    if i == 5 {\n"
-            + "      continue\n"
-            + "    } elif i == 10 { break }\n"
-            + "  }\n"
+            + "    x = n + 1 "
+            + "    sum = sum + i "
+            + "    if i == 5 { "
+            + "      continue "
+            + "    } elif i == 10 { break } "
+            + "  } "
             + "  return sum"
             + "}"
             + "println oneLoopContinue(10)",
@@ -49,14 +49,14 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void loopNeverRunStatic() {
     TestUtils.optimizeAssertSameVariables(
-        "      loopNeverRun:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      loopNeverRun:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 x = 0"
-            + "  while false do i = i + 1 {\n"
-            + "    x = n + 1\n"
-            + "    sum = sum + x\n"
+            + "  while false do i = i + 1 { "
+            + "    x = n + 1 "
+            + "    sum = sum + x "
             + "    println x"
-            + "  }\n"
+            + "  } "
             + "  return sum + x"
             + "}"
             + "println loopNeverRun(10)",
@@ -66,13 +66,13 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void loopNeverRunDynamic() {
     TestUtils.optimizeAssertSameVariables(
-        "      loopNeverRun:proc(n:int, m:int):int {\n"
-            + "  sum = 0\n"
+        "      loopNeverRun:proc(n:int, m:int):int { "
+            + "  sum = 0 "
             + "  i = 0 x = 0"
             + "  while n > 100 do i = i + 1 {"
-            + "    x = m + 1\n"
-            + "    sum = sum + x\n"
-            + "  }\n"
+            + "    x = m + 1 "
+            + "    sum = sum + x "
+            + "  } "
             + "  return sum + x"
             + "}"
             + "println loopNeverRun(10, 20)",
@@ -82,12 +82,12 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoopUnary() {
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoopUnary:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoopUnary:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 "
             + "  while i < 10 do i = i + 1 {"
-            + "    x = -n\n"
-            + "    sum = sum + 1\n"
+            + "    x = -n "
+            + "    sum = sum + 1 "
             + "  }"
             + "  return sum"
             + "}"
@@ -98,12 +98,12 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoopBreak() {
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoopBreak:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoopBreak:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 x = 0"
             + "  while i < 10 do i = i + 1 {"
-            + "    x = n + 1\n"
-            + "    sum = sum + 1\n"
+            + "    x = n + 1 "
+            + "    sum = sum + 1 "
             + "    break"
             + "  }"
             + "  return sum + x"
@@ -116,13 +116,13 @@ public class LoopInvariantOptimizerTest {
   public void oneLoopBreakInvariantAfterBreak() {
     // this passes if the dead code optimizer runs first because it had already killed the loop
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoopBreakInvariantAfterBreak:proc (n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoopBreakInvariantAfterBreak:proc (n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 x = 0"
             + "  while i < 10 do i = i + 1 {"
             + "    break"
-            + "    sum = sum + 1\n"
-            + "    x = n + 1\n"
+            + "    sum = sum + 1 "
+            + "    x = n + 1 "
             + "  }"
             + "  return sum + x"
             + "}"
@@ -133,12 +133,12 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoopConstant() {
     TestUtils.optimizeAssertSameVariables(
-        "      oneLoop:proc(n:int):int {\n"
-            + "  sum = 0\n"
+        "      oneLoop:proc(n:int):int { "
+            + "  sum = 0 "
             + "  i = 0 "
             + "  while i < 10 do i = i + 1 {"
-            + "    x = 1\n"
-            + "    sum = sum + x\n"
+            + "    x = 1 "
+            + "    sum = sum + x "
             + "  }"
             + "  return x"
             + "}"
@@ -149,71 +149,65 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void oneLoopGlobal() {
     TestUtils.optimizeAssertSameVariables(
-        "      lexer_text: string // full text\n"
-            + "lexer_loc=0  // location inside text\n"
-            + "lexer_cc='' // current character\n"
-            + "isDigit: proc(c: string): bool {\n"
-            + "  return c >= '0' and c <= '9'\n"
-            + "}\n"
-            + "\n"
-            + "advance: proc() {\n"
-            + "  if lexer_loc < length(lexer_text) {\n"
-            + "    lexer_cc=lexer_text[lexer_loc]\n"
-            + "  } else {\n"
-            + "    // Indicates no more characters\n"
-            + "    lexer_cc=''\n"
-            + "  }\n"
-            + "  lexer_loc=lexer_loc + 1\n"
-            + "}\n"
-            + "\n"
-            + "makeInt: proc(): int {\n"
-            + "  value=0\n"
-            + "  while isDigit(lexer_cc) do advance() {\n"
-            + "    value = value * 10\n"
-            + "    c = asc(lexer_cc) - asc('0')\n"
-            + "    value = value + c\n"
-            + "  }\n"
-            + "  return value\n"
-            + "}\n"
-            + "lexer_text='314159'\n"
+        "      lexer_text: string "
+            + "lexer_loc=0 "
+            + "lexer_cc='' "
+            + "isDigit: proc(c: string): bool {"
+            + "  return c >= '0' and c <= '9'"
+            + "}"
+            + "advance: proc() {"
+            + "  if lexer_loc < length(lexer_text) {"
+            + "    lexer_cc=lexer_text[lexer_loc]"
+            + "  } else { "
+            + "    lexer_cc=''"
+            + "  }"
+            + "  lexer_loc=lexer_loc + 1"
+            + "}"
+            + "makeInt: proc(): int {"
+            + "  value=0"
+            + "  while isDigit(lexer_cc) do advance() {"
+            + "    value = value * 10"
+            + "    c = asc(lexer_cc) - asc('0')"
+            + "    value = value + c"
+            + "  }"
+            + "  return value"
+            + "}"
+            + "lexer_text='314159' "
             + "advance()"
-            + "println 'Should be 314159:'\n"
-            + "pi = makeInt()\n"
-            + "println pi\n"
-            + "if pi != 314159 {"
-            + "   exit 'Bad result'"
-            + "}",
+            + "println 'Should be 314159:' "
+            + "pi = makeInt() "
+            + "println pi ",
         optimizer);
   }
 
   @Test
   public void oneLoopGlobalSmaller() {
     TestUtils.optimizeAssertSameVariables(
-        "      lexer_text='314159 ' // full text\n"
-            + "lexer_loc=0  // location inside text\n"
-            + "lexer_cc='' // current character\n"
-            + "\n"
-            + "advance: proc() {\n"
-            + "  if lexer_loc < length(lexer_text) {\n"
-            + "    lexer_cc=lexer_text[lexer_loc]\n"
-            + "  } else {\n"
-            + "    // Indicates no more characters\n"
-            + "    lexer_cc=''\n"
-            + "  }\n"
-            + "  lexer_loc=lexer_loc + 1\n"
-            + "}\n"
-            + "\n"
-            + "makeInt: proc(): int {\n"
-            + "  value=0\n"
-            + "  while lexer_cc!='' and lexer_cc != ' ' do advance() {\n"
-            + "    value = value * 10\n"
-            + "    c = asc(lexer_cc) - asc('0')\n"
-            + "    value = value + c\n"
-            + "  }\n"
-            + "  return value\n"
-            + "}\n"
+        "      lexer_text='314159 ' // full text "
+            + "lexer_loc=0  // location inside text "
+            + "lexer_cc='' // current character "
+            + " "
+            + "advance: proc() { "
+            + "  if lexer_loc < length(lexer_text) { "
+            + "    lexer_cc=lexer_text[lexer_loc] "
+            + "  } else { "
+            + "    // Indicates no more characters "
+            + "    lexer_cc='' "
+            + "  } "
+            + "  lexer_loc=lexer_loc + 1 "
+            + "} "
+            + " "
+            + "makeInt: proc(): int { "
+            + "  value=0 "
+            + "  while lexer_cc!='' and lexer_cc != ' ' do advance() { "
+            + "    value = value * 10 "
+            + "    c = asc(lexer_cc) - asc('0') "
+            + "    value = value + c "
+            + "  } "
+            + "  return value "
+            + "} "
             + "advance()"
-            + "pi = makeInt()\n"
+            + "pi = makeInt() "
             + "if pi != 314159 {"
             + "   exit 'Bad result'"
             + "}",
@@ -223,20 +217,20 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void nestedLoopsGlobals() {
     TestUtils.optimizeAssertSameVariables(
-        "      sum = 0\n"
-            + "n = 10\n"
-            + "i = 0 while i < n do i = i + 1 {\n"
-            + "  y = (n*4)/(n-1)\n"
-            + "  j = 0 while j < n do j = j + 1 {\n"
-            + "    x = n + 5\n"
-            + "    k = 0 while k < n do k = k + 1 {\n"
-            + "      z = n * 3\n"
-            + "      sum = sum + i\n"
-            + "    }\n"
-            + "    sum = sum + i\n"
-            + "  }\n"
-            + "  sum = sum + i\n"
-            + "}\n"
+        "      sum = 0 "
+            + "n = 10 "
+            + "i = 0 while i < n do i = i + 1 { "
+            + "  y = (n*4)/(n-1) "
+            + "  j = 0 while j < n do j = j + 1 { "
+            + "    x = n + 5 "
+            + "    k = 0 while k < n do k = k + 1 { "
+            + "      z = n * 3 "
+            + "      sum = sum + i "
+            + "    } "
+            + "    sum = sum + i "
+            + "  } "
+            + "  sum = sum + i "
+            + "} "
             + "println sum",
         optimizer);
   }
@@ -244,19 +238,19 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void nestedLoopsLocals() {
     TestUtils.optimizeAssertSameVariables(
-        "      nestedLoopsLocals:proc(n:int):int {\n"
-            + "  sum = 0\n"
-            + "  i = 0 while i < n do i = i + 1 {\n"
-            + "    y = (n*4)/(n-1)\n"
-            + "    j = 0 while j < n do j = j + 1 {\n"
-            + "      x = n + y\n"
-            + "      k = 0 while k < n do k = k + 1 {\n"
-            + "        z = 3\n"
-            + "        sum = sum + y\n"
-            + "      }\n"
-            + "      sum = sum + i\n"
-            + "    }\n"
-            + "    sum = sum + i\n"
+        "      nestedLoopsLocals:proc(n:int):int { "
+            + "  sum = 0 "
+            + "  i = 0 while i < n do i = i + 1 { "
+            + "    y = (n*4)/(n-1) "
+            + "    j = 0 while j < n do j = j + 1 { "
+            + "      x = n + y "
+            + "      k = 0 while k < n do k = k + 1 { "
+            + "        z = 3 "
+            + "        sum = sum + y "
+            + "      } "
+            + "      sum = sum + i "
+            + "    } "
+            + "    sum = sum + i "
             + "  }"
             + "  return sum * z + x - y"
             + "}"
@@ -267,15 +261,15 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void twoNestedLoopsWithInvariants() {
     TestUtils.optimizeAssertSameVariables(
-        "      twoNestedLoopsWithInvariants:proc(n:int):int {\n"
-            + "  sum = 0\n"
-            + "  i = 0 while i < n do i = i + 1 {\n"
-            + "    y = (n*4)/(n-1)\n"
-            + "    j = 0 while j < n do j = j + 1 {\n"
-            + "      x = n + y\n"
-            + "      sum = sum + i\n"
-            + "    }\n"
-            + "    sum = sum + i\n"
+        "      twoNestedLoopsWithInvariants:proc(n:int):int { "
+            + "  sum = 0 "
+            + "  i = 0 while i < n do i = i + 1 { "
+            + "    y = (n*4)/(n-1) "
+            + "    j = 0 while j < n do j = j + 1 { "
+            + "      x = n + y "
+            + "      sum = sum + i "
+            + "    } "
+            + "    sum = sum + i println sum"
             + "  }"
             + "  return sum + x - y"
             + "}"
@@ -286,17 +280,63 @@ public class LoopInvariantOptimizerTest {
   @Test
   public void twoNestedLoops() {
     TestUtils.optimizeAssertSameVariables(
-        "      twoNestedLoops:proc(n:int):int {\n"
-            + "  sum = 0\n"
-            + "  i = 0 while i < n do i = i + 1 {\n"
-            + "    j = 0 while j < n do j = j + 1 {\n"
-            + "      sum = sum + i\n"
-            + "    }\n"
-            + "    sum = sum + i\n"
+        "      twoNestedLoops:proc(n:int):int { "
+            + "  sum = 0 "
+            + "  i = 0 while i < n do i = i + 1 { "
+            + "    j = 0 while j < n do j = j + 1 { "
+            + "      sum = sum + i "
+            + "    } "
+            + "    sum = sum + i "
             + "  }"
             + "  return sum"
             + "}"
             + "println twoNestedLoops(10)",
+        new LoopInvariantOptimizer(2));
+  }
+
+  @Test
+  public void recordModifiedInCall() {
+    TestUtils.optimizeAssertSameVariables(
+        "      r: record{i:int}"
+            + "updaterec: proc(rec:r) { rec.i = rec.i + 1 }"
+            + "recordloopinvariant: proc(rec:r): int {"
+            + "  while rec.i < 10 { updaterec(rec) }"
+            + "  return rec.i"
+            + "}"
+            + "print recordloopinvariant(new r)",
+        new LoopInvariantOptimizer(2));
+  }
+
+  @Test
+  public void recordModified() {
+    TestUtils.optimizeAssertSameVariables(
+        "      r: record{i:int}"
+            + "recordloopinvariant: proc(rec:r): int {"
+            + "  while rec.i < 10 { rec.i = rec.i + 1 }"
+            + "  return rec.i"
+            + "}"
+            + "print recordloopinvariant(new r)",
+        new LoopInvariantOptimizer(2));
+  }
+
+  @Test
+  public void recordModifiedInCallGlobal() {
+    TestUtils.optimizeAssertSameVariables(
+        "      r: record{i:int}"
+            + "updaterec: proc(rec:r) { rec.i = rec.i * 2 }"
+            + "rec = new r rec.i = 1"
+            + "while rec.i < 100 { updaterec(rec) }"
+            + "print rec.i",
+        new LoopInvariantOptimizer(2));
+  }
+
+  @Test
+  public void recordModifiedGlobal() {
+    TestUtils.optimizeAssertSameVariables(
+        "      r: record{i:int}"
+            + "rec = new r rec.i = 1 "
+            + "while rec.i < 100 { rec.i = rec.i * 2 }"
+            + "print rec.i",
         new LoopInvariantOptimizer(2));
   }
 }
