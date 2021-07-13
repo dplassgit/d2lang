@@ -42,7 +42,6 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -59,7 +58,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final ProgramNode root;
+  private final Node root;
   private final SymTab symbolTable;
 
   private final List<Op> operations = new ArrayList<>();
@@ -69,7 +68,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private int id;
   private Stack<ProcSymbol> procedures = new Stack<>();
 
-  public ILCodeGenerator(ProgramNode root, SymTab symbolTable) {
+  public ILCodeGenerator(Node root, SymTab symbolTable) {
     this.root = root;
     this.symbolTable = symbolTable;
   }

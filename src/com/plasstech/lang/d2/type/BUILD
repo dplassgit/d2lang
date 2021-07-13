@@ -1,5 +1,7 @@
 java_library(name="type",
-             srcs=["ProcGatherer.java",
+             srcs=[
+                   "ProcGatherer.java",
+                   "RecordGatherer.java",
                    "StaticChecker.java",
                    "TypeCheckResult.java",
              ],

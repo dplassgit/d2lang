@@ -735,12 +735,27 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void recordDefinition_forward() {
+    SymTab symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
+    assertThat(symTab.get("rec1")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.get("rec2")).isInstanceOf(RecordSymbol.class);
+  }
+
+  @Test
+  public void recordDefinition_corecursive() {
+    SymTab symTab = checkProgram("rec1: record{r:rec2} rec2: record{r:rec1}");
+    assertThat(symTab.get("rec1")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.get("rec2")).isInstanceOf(RecordSymbol.class);
+  }
+
+  @Test
   public void recordDefinition_errors() {
     assertError("r: record{f:record{f2:int}}", "nested RECORD 'f' in RECORD 'r'");
     assertError("r: record{p:proc() {} }", "nested PROC 'p' in RECORD 'r'");
     assertError(
         "r: record{i:int f:int f:bool i:int b:bool}",
         "Duplicate field(s) '[f, i]' declared in RECORD 'r'");
+    assertError("r: record{f:dne}", "Unknown RECORD type 'dne'");
   }
 
   @Test
@@ -750,7 +765,7 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_redeclared() {
-    assertError("r: int r:record{b:bool}", "already declared as INT");
+    assertError("r: int r:record{b:bool}", "redeclared as INT");
   }
 
   @Test

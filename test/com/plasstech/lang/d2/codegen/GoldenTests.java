@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -13,18 +12,21 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
+import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
 /** NOTE: THESE TESTS CANNOT RUN FROM BAZEL */
 public class GoldenTests {
 
   @Test
-  public void lexerInDLexerInD() throws IOException {
+  public void lexerInDLexerInDGlobals() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       String path = Paths.get("samples/d2ind2/lexerglobals.d").toString();
       String text = new String(Files.readAllBytes(Paths.get(path)));
@@ -38,9 +40,13 @@ public class GoldenTests {
   }
 
   @Test
-  public void typeCheckLexerInDWithRecord() throws IOException {
+  public void lexerInDLexerInD() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      typeCheckFile(Paths.get("samples/d2ind2/lexer.d").toString());
+      String path = Paths.get("samples/d2ind2/lexer.d").toString();
+      String text = new String(Files.readAllBytes(Paths.get(path)));
+      // replace "input" with the string itself.
+      String quine = text.replace("text = input", String.format("text = \"%s\"", text));
+      TestUtils.optimizeAssertSameVariables(quine);
     } else {
       // running in blaze
       System.err.println("Sorry, cannot run from blaze");
@@ -48,7 +54,17 @@ public class GoldenTests {
   }
 
   @Test
-  public void typeCheckAllNonGoldenSamples() throws IOException {
+  public void compileParserInD() throws IOException {
+    if (System.getenv("TEST_SRCDIR") == null) {
+      compileFile(Paths.get("samples/d2ind2/parser.d").toString());
+    } else {
+      // running in blaze
+      System.err.println("Sorry, cannot run from blaze");
+    }
+  }
+
+  @Test
+  public void compileAllNonGoldenSamples() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       List<File> files =
           Files.list(Paths.get("samples/non-golden"))
@@ -57,7 +73,7 @@ public class GoldenTests {
               .map(Path::toFile)
               .collect(Collectors.toList());
       for (File file : files) {
-        typeCheckFile(file.getAbsolutePath());
+        compileFile(file.getAbsolutePath());
       }
     } else {
       // running in blaze
@@ -83,21 +99,32 @@ public class GoldenTests {
     }
   }
 
-  private void typeCheckFile(String path) throws IOException {
+  private void compileFile(String path) throws IOException {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
     Node node = parser.parse();
-    assertThat(node.isError()).isFalse();
-    System.out.println(node);
+    if (node.isError()) {
+      fail(node.message());
+    }
 
-    StaticChecker checker = new StaticChecker((ProgramNode) node);
+    StaticChecker checker = new StaticChecker(node);
     TypeCheckResult typeCheckResult = checker.execute();
     if (typeCheckResult.isError()) {
       fail(typeCheckResult.message());
     }
-    System.out.println(typeCheckResult.symbolTable());
+    SymTab symbolTable = typeCheckResult.symbolTable();
+
+    CodeGenerator<Op> codegen = new ILCodeGenerator(node, symbolTable);
+    ImmutableList<Op> ilCode = codegen.generate();
+    // Runs all the optimizers.
+    ILOptimizer optimizer = new ILOptimizer(2);
+    ilCode = optimizer.optimize(ilCode);
+    System.out.println("\nOPTIMIZED:");
+    System.out.println("------------------------------");
+    System.out.println(Joiner.on("\n").join(ilCode));
+    System.out.println();
   }
 
   private void testFromFile(String path) throws IOException {

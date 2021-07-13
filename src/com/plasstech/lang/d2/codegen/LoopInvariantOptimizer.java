@@ -83,8 +83,8 @@ class LoopInvariantOptimizer implements Optimizer {
     for (int ip = loop.start(); ip < loop.end(); ++ip) {
       code.get(ip).accept(finder);
     }
-    logger.atInfo().log("Setters = %s", finder.setters);
-    logger.atInfo().log("Getters = %s", finder.getters);
+    logger.at(loggingLevel).log("Setters = %s", finder.setters);
+    logger.at(loggingLevel).log("Getters = %s", finder.getters);
 
     TransferMover mover = new TransferMover(finder);
     boolean optimizedLoop = false;

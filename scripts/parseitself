@@ -1,0 +1,1 @@
+scripts/dparse samples/d2ind2/parser.d $@

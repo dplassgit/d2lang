@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static java.util.stream.Collectors.toList;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,10 +27,10 @@ import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.parse.node.NodeVisitor;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
@@ -101,20 +100,27 @@ public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> ARRAY_OPERATORS =
       ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.LBRACKET);
 
-  private final ProgramNode root;
+  private final Node root;
   private final SymTab symbolTable = new SymTab();
 
   private Stack<ProcSymbol> procedures = new Stack<>();
   private Set<ProcSymbol> needsReturn = new HashSet<>();
 
-  public StaticChecker(ProgramNode root) {
+  public StaticChecker(Node root) {
     this.root = root;
   }
 
   public TypeCheckResult execute() {
-    ProcGatherer gatherer = new ProcGatherer(symbolTable);
+    NodeVisitor procGatherer = new ProcGatherer(symbolTable);
     try {
-      root.accept(gatherer);
+      root.accept(procGatherer);
+    } catch (TypeException e) {
+      return new TypeCheckResult(e.toString());
+    }
+
+    NodeVisitor recordGatherer = new RecordGatherer(symbolTable);
+    try {
+      root.accept(recordGatherer);
     } catch (TypeException e) {
       return new TypeCheckResult(e.toString());
     }
@@ -603,45 +609,30 @@ public class StaticChecker extends DefaultVisitor {
 
   @Override
   public void visit(RecordDeclarationNode node) {
-    // 1. make sure no nested proc or records
+    Symbol sym = symbolTable().get(node.name());
+    if (sym == null) {
+      // Updates the symbol table with this symbol. It might be null because
+      // it's defining a local record (in a procedure). Which, shrug, I'm not even sure
+      // the rest of the codebase supports...
+      new RecordGatherer(symbolTable()).visit(node);
+      sym = symbolTable().get(node.name());
+    }
+    
+    // If we got this far, we know that the record doesn't have duplicate fields, or
+    // invalid field types. Now we have to make sure any record fields are valid.
     for (DeclarationNode field : node.fields()) {
-      if (field instanceof RecordDeclarationNode) {
-        RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
-        throw new TypeException(
-            String.format(
-                "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name()),
-            field.position());
-      } else if (field instanceof ProcedureNode) {
-        ProcedureNode proc = (ProcedureNode) field;
-        throw new TypeException(
-            String.format(
-                "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name()),
-            field.position());
+      VarType fieldType = field.varType();
+      if (fieldType.isRecord()) {
+        // Make sure it exists.
+        RecordReferenceType rrt = (RecordReferenceType) fieldType;
+        String recordTypeName = rrt.name();
+        Symbol putativeRecordSymbol = symbolTable().getRecursive(recordTypeName);
+        if (putativeRecordSymbol == null) {
+          throw new TypeException(
+              String.format("Unknown RECORD type '%s'", recordTypeName), field.position());
+        }
       }
     }
-
-    // Note, NOT immutable list
-    List<String> fieldNames = node.fields().stream().map(DeclarationNode::name).collect(toList());
-    Set<String> duplicates = new HashSet<>();
-    Set<String> uniques = new HashSet<>();
-    for (String fieldName : fieldNames) {
-      if (uniques.contains(fieldName)) {
-        uniques.remove(fieldName);
-        duplicates.add(fieldName);
-      } else {
-        uniques.add(fieldName);
-      }
-    }
-    if (!duplicates.isEmpty()) {
-      throw new TypeException(
-          String.format(
-              "Duplicate field(s) '%s' declared in RECORD '%s'",
-              duplicates.toString(), node.name()),
-          node.position());
-    }
-
-    // Add this procedure to the symbol table
-    symbolTable().declareRecord(node);
   }
 
   @Override
