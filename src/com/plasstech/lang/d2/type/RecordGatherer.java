@@ -11,7 +11,11 @@ import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
-public class RecordGatherer extends DefaultVisitor {
+/** 
+ * Finds record definitions in the parse tree and adds them to the given symbol table. 
+ * This is useful for forward referneces to record types.
+ */
+class RecordGatherer extends DefaultVisitor {
   private final SymTab symbolTable;
 
   public RecordGatherer(SymTab symbolTable) {
@@ -20,7 +24,7 @@ public class RecordGatherer extends DefaultVisitor {
 
   @Override
   public void visit(RecordDeclarationNode node) {
-    // 1. make sure no nested proc or records
+    // 1. Make sure no nested records or procs
     for (DeclarationNode field : node.fields()) {
       if (field instanceof RecordDeclarationNode) {
         RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
@@ -37,6 +41,7 @@ public class RecordGatherer extends DefaultVisitor {
       }
     }
 
+    // 2. Make sure no duplicated field names
     // Note, NOT immutable list
     List<String> fieldNames = node.fields().stream().map(DeclarationNode::name).collect(toList());
     Set<String> duplicates = new HashSet<>();
@@ -57,7 +62,7 @@ public class RecordGatherer extends DefaultVisitor {
           node.position());
     }
 
-    // Add this procedure to the symbol table
+    // Add this record to the symbol table
     symbolTable.declareRecord(node);
   }
 }
