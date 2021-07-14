@@ -10,11 +10,11 @@ import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class TestUtils {
 
-  static void optimizeAssertSameVariables(String program) {
-    optimizeAssertSameVariables(program, new ILOptimizer(2));
+  static ExecutionResult optimizeAssertSameVariables(String program) {
+    return optimizeAssertSameVariables(program, new ILOptimizer(2));
   }
 
-  static void optimizeAssertSameVariables(String program, Optimizer optimizer) {
+  static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     ExecutionResult unoptimizedResult = ee.execute();
     System.out.printf("\nUNOPTIMIZED:\n");
@@ -48,5 +48,6 @@ public class TestUtils {
     assertWithMessage("New code should run in fewer cycles")
         .that(unoptimizedResult.instructionCycles())
         .isAtLeast(optimizedResult.instructionCycles());
+    return optimizedResult;
   }
 }

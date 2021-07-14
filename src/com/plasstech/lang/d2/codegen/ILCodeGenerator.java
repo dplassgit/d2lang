@@ -42,6 +42,7 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -221,7 +222,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(VariableNode node) {
     // this may be a global or a local/parameter (stack)
     Location source = lookupLocation(node.name());
-    node.setLocation(source);
+    TempLocation destination = allocateTemp(node.varType());
+    node.setLocation(destination);
+
+    // Retrieve location of variable and provide it in a temp
+    emit(new Transfer(destination, source));
   }
 
   @Override
@@ -446,9 +451,12 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
     emit(new Goto(afterLabel));
 
-    emit(new ProcEntry(node.name()));
     // This is the real entry point.
     emit(new Label(node.name()));
+    emit(
+        new ProcEntry(
+            node.name(),
+            node.parameters().stream().map(Parameter::name).collect(toImmutableList())));
 
     // Also TODO: how to reference arguments???
     node.block().accept(this);

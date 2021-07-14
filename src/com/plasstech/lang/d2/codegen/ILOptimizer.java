@@ -60,7 +60,7 @@ public class ILOptimizer implements Optimizer {
         program = child.optimize(program);
         if (child.isChanged()) {
           iterations++;
-          if (debugLevel > 1) {
+          if (debugLevel == 2) {
             System.out.printf("\n%s OPTIMIZED:\n", child.getClass().getSimpleName());
             System.out.println(Joiner.on("\n").join(program));
           }

@@ -150,7 +150,7 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Call op) {
-    ImmutableList<Operand> actualParams = op.actualLocations();
+    ImmutableList<Operand> actualParams = op.actuals();
     for (Operand actual : actualParams) {
       markRead(actual);
     }

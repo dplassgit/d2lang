@@ -142,7 +142,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Call op) {
-    ImmutableList<Operand> actualParams = op.actualLocations();
+    ImmutableList<Operand> actualParams = op.actuals();
     ImmutableList.Builder<Operand> replacementParams = ImmutableList.builder();
     boolean changed = false;
     for (Operand actual : actualParams) {

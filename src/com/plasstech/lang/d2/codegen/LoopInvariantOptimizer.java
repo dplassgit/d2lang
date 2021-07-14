@@ -37,7 +37,7 @@ import com.plasstech.lang.d2.type.SymbolStorage;
  * </pre>
  */
 class LoopInvariantOptimizer implements Optimizer {
-  static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Level loggingLevel;
   private boolean changed;
@@ -214,7 +214,7 @@ class LoopInvariantOptimizer implements Optimizer {
       if (op.destination().isPresent()) {
         setters.add(op.destination().get());
       }
-      for (Operand actual : op.actualLocations()) {
+      for (Operand actual : op.actuals()) {
         if (!actual.isConstant()) {
           getters.add(actual);
           // Globals may be set in a call. This is conservative, shrug.

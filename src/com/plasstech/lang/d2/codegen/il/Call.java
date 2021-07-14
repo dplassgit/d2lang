@@ -32,7 +32,7 @@ public class Call extends Op {
     return functionToCall;
   }
 
-  public ImmutableList<Operand> actualLocations() {
+  public ImmutableList<Operand> actuals() {
     return actualLocations;
   }
 

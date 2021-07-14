@@ -12,14 +12,14 @@ public class DeadAssignmentOptimizerTest {
   @Test
   public void deadTemps() {
     TestUtils.optimizeAssertSameVariables(
-        "p:proc(n:int):int {"
-            + "sum = 0 i=0 while i < n do i = i + 1 {"
-            + " y = n * (2-1)"
-            + " y = n * (n-1) + n"
-            + " sum = sum + i"
+        "      p:proc(n:int):int {"
+            + "  sum = 0 i=0 while i < n do i = i + 1 {"
+            + "    y = n * (2-1)"
+            + "    y = n * (n-1) + n"
+            + "    sum = sum + i"
+            + "  }"
+            + "  return sum"
             + "}"
-            + "return sum }"
-            + ""
             + "println p(10)",
         optimizer);
   }
