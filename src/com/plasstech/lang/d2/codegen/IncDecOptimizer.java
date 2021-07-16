@@ -31,7 +31,10 @@ public class IncDecOptimizer extends LineOptimizer {
     }
     // See if it matches the pattern
     BinOp second = (BinOp) secondOp;
-    if (!second.right().isConstant()) {
+    Operand left = second.left();
+    Operand right = second.right();
+    if (!((left.isConstant() && !right.isConstant())
+        || (!left.isConstant() && right.isConstant()))) {
       return;
     }
     boolean plus = second.operator() == Token.Type.PLUS;
@@ -44,10 +47,19 @@ public class IncDecOptimizer extends LineOptimizer {
       return;
     }
     Transfer third = (Transfer) thirdOp;
-    ConstantOperand<?> right = (ConstantOperand<?>) second.right();
-    Object value = right.value();
+    if (plus && left.isConstant()) {
+      // swap them
+      left = second.right();
+      right = second.left();
+    }
+    // Make sure it matches the pattern
+    if (!right.isConstant()) {
+      return;
+    }
+    ConstantOperand<?> delta = (ConstantOperand<?>) right;
+    Object value = delta.value();
     if ((value.equals(1) || value.equals(2))
-        && first.destination().equals(second.left())
+        && first.destination().equals(left)
         && second.destination().equals(third.source())
         && first.source().equals(third.destination())) {
 
