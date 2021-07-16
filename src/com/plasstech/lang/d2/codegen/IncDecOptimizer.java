@@ -8,6 +8,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.lex.Token;
 
+/** Optimizes i=i+1 or i=i-1 into i++ or i-- */
 public class IncDecOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -21,18 +22,9 @@ public class IncDecOptimizer extends LineOptimizer {
    * temp1=i // first
    * temp2=temp1+1 // secondOp
    * i=temp2 // thirdOp
-   *
-   * OR:
-   * __temp1 = i + 1;
-   * i = __temp1;
    */
   @Override
   public void visit(Transfer first) {
-    /*
-     * temp1=i // first
-     * temp2=temp1+1 // secondOp (also for minus, or 2)
-     * i=temp2 // thirdOp
-     */
     Op secondOp = getOpAt(ip + 1);
     if (!(secondOp instanceof BinOp)) {
       return;
@@ -73,6 +65,50 @@ public class IncDecOptimizer extends LineOptimizer {
         replaceAt(ip + 1, plus ? increment : decrement);
       }
       replaceAt(ip + 2, plus ? increment : decrement);
+    }
+  }
+
+  /*
+   * temp1=i+1 // (also for minus, or 2)
+   * i=temp1 // secondOp
+   */
+  @Override
+  public void visit(BinOp first) {
+    boolean plus = first.operator() == Token.Type.PLUS;
+    boolean minus = first.operator() == Token.Type.MINUS;
+    if (!(plus || minus)) {
+      return;
+    }
+    if (!first.right().isConstant()) {
+      return;
+    }
+    Op secondOp = getOpAt(ip + 1);
+    if (!(secondOp instanceof Transfer)) {
+      return;
+    }
+    Transfer second = (Transfer) secondOp;
+
+    // Make sure it matches the pattern
+    ConstantOperand<?> delta = (ConstantOperand<?>) first.right();
+    Object value = delta.value();
+    if ((value.equals(1) || value.equals(2))
+        && first.destination().equals(second.source())
+        && first.left().equals(second.destination())) {
+
+      // WE HAVE ONE!
+      logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip);
+
+      deleteCurrent();
+
+      Inc increment = new Inc(second.destination());
+      Dec decrement = new Dec(second.destination());
+      if (value.equals(1)) {
+        deleteAt(ip);
+      } else {
+        // +/- 2
+        replaceAt(ip, plus ? increment : decrement);
+      }
+      replaceAt(ip + 1, plus ? increment : decrement);
     }
   }
 }

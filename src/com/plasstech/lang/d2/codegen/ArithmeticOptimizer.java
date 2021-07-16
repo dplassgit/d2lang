@@ -198,6 +198,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     } else if (left.equals(right)) {
       replaceCurrent(new Transfer(op.destination(), left));
+      return;
     }
   }
 
@@ -217,6 +218,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     } else if (left.equals(right)) {
       replaceCurrent(new Transfer(op.destination(), left));
+      return;
     }
   }
 
@@ -252,7 +254,9 @@ class ArithmeticOptimizer extends LineOptimizer {
           return;
         }
       } else if (left.equals(right)) {
+        // a/a = 1
         replaceCurrent(new Transfer(op.destination(), ConstantOperand.ONE));
+        return;
       }
     } catch (ArithmeticException e) {
       logger.atWarning().log("Cannot optimize dividing by zero!");
@@ -300,7 +304,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     } else if (left.equals(right)) {
+      // a - a = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      return;
     }
   }
 
