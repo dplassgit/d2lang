@@ -79,7 +79,10 @@ public class IncDecOptimizer extends LineOptimizer {
     if (!(plus || minus)) {
       return;
     }
-    if (!first.right().isConstant()) {
+    Operand left = first.left();
+    Operand right = first.right();
+    if (!((left.isConstant() && !right.isConstant())
+        || (!left.isConstant() && right.isConstant()))) {
       return;
     }
     Op secondOp = getOpAt(ip + 1);
@@ -88,12 +91,20 @@ public class IncDecOptimizer extends LineOptimizer {
     }
     Transfer second = (Transfer) secondOp;
 
+    if (plus && left.isConstant()) {
+      // swap them
+      left = first.right();
+      right = first.left();
+    }
     // Make sure it matches the pattern
-    ConstantOperand<?> delta = (ConstantOperand<?>) first.right();
+    if (!right.isConstant()) {
+      return;
+    }
+    ConstantOperand<?> delta = (ConstantOperand<?>) right;
     Object value = delta.value();
     if ((value.equals(1) || value.equals(2))
         && first.destination().equals(second.source())
-        && first.left().equals(second.destination())) {
+        && left.equals(second.destination())) {
 
       // WE HAVE ONE!
       logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip);
