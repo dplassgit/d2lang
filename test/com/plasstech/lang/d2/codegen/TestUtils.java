@@ -42,9 +42,9 @@ public class TestUtils {
     assertWithMessage("Output should be the same")
         .that(optimizedResult.environment().output())
         .isEqualTo(unoptimizedResult.environment().output());
-    assertWithMessage("New code should be smaller")
-        .that(unoptimizedResult.linesOfCode())
-        .isAtLeast(optimizedResult.linesOfCode());
+    //    assertWithMessage("New code should be smaller")
+    //        .that(unoptimizedResult.linesOfCode())
+    //        .isAtLeast(optimizedResult.linesOfCode());
     assertWithMessage("New code should run in fewer cycles")
         .that(unoptimizedResult.instructionCycles())
         .isAtLeast(optimizedResult.instructionCycles());

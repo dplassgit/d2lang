@@ -34,15 +34,16 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input) {
     code = new ArrayList<>(input);
-    for (ip = 0; ip < code.size(); ++ip) {
+    for (ip = 0; ip < input.size(); ++ip) {
       changed = false;
-      code.get(ip).accept(this);
+      input.get(ip).accept(this);
       if (changed) {
-        // if old and new get out of sync, should we start over?
+        // We changed. Things can get out of sync, so stop.
         break;
       }
     }
-    //    System.err.println(inlineableCode);
+    // TODO: NOP out the whole proc
+
     return ImmutableList.copyOf(code);
   }
 
@@ -53,7 +54,7 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
   @Override
   public void visit(ProcEntry op) {
-    if (op.formalNames().size() < 2) {
+    if (op.formalNames().size() < 3) {
       logger.at(loggingLevel).log("%s has few formals", op.name());
       // Find the length of the procedure.
       ArrayList<Op> opcodes = new ArrayList<>();
@@ -69,9 +70,9 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         }
         opcodes.add(otherOp);
       }
-      // Only consider procedures with size < 10 and that
-      // TODO: don't allow certain opcodes, like calls, gotos/ifs that go outside the block
-      // or labels referenced outside the block. Also don't allow any local variables (?)
+      // Only consider procedures with size < 10 and that don't allow certain opcodes, like calls,
+      // gotos/ifs that go outside the block or labels referenced outside the block. Also don't
+      // allow any local variables (?)
       boolean candidate = foundEnd && opcodes.size() < 10;
       logger.at(loggingLevel).log("%s is %sa candidate", op.name(), candidate ? "" : "not ");
       if (candidate) {
@@ -85,21 +86,36 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   public void visit(Call op) {
     List<Op> replacement = inlineableCode.get(op.functionToCall());
     if (replacement != null) {
+      ProcEntry entry = procsByName.get(op.functionToCall());
       // woo!
       // now, for each actual/formal pair, substitute it
       // in the inlineable code
       // also, replace each temp with a new temp name
 
       logger.at(loggingLevel).log("Inlining!\nfrom %s", replacement);
-      ProcEntry entry = procsByName.get(op.functionToCall());
       List<Op> remapped = new InlineRemapper(replacement, entry.formalNames()).remap();
       logger.at(loggingLevel).log("Inlining!\nto   %s", remapped);
-      
+
       if (op.destination().isPresent()) {
         // if op is assigned to a return value, copy that
         // from the "return" statement
       } else {
-        // void proc, cool.
+        // Void proc
+        if (entry.formalNames().size() == 0) {
+          // No parameters!
+          // NOP the current op, and insert the remapped code.
+          code.set(ip, new Nop(op));
+          code.addAll(ip, remapped);
+          changed = true;
+        } else {
+          // copy actual to formal, then insert the rempaped code
+          // code.set(ip, new Nop(op));
+          // code.addAll(ip, remapped);
+          // This is wrong/bad. the formal name needs to be remapped too.
+          // code.add(ip, new Transfer(new StackLocation(entry.formalNames().get(0)),
+          //    op.actuals().get(0)));
+          // changed = true;
+        }
       }
     }
   }

@@ -218,15 +218,39 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     emit(transfer);
   }
 
+  /**
+   * This winds up generating code that may be difficult to translate to assembly/bytecode, e.g.,
+   *
+   * <pre>
+   * __temp32 = a + b
+   * </pre>
+   *
+   * where both a and b are stack or globals.
+   *
+   * <p>The only reason I did this was to get the loop invariant optimizer to work with records,
+   * because this is the code it used to generate:
+   *
+   * <pre>
+   * __temp1 = rec
+   * __temp2 = __temp1.fieldname
+   * </pre>
+   *
+   * This was causing the loop optimizer to move BOTH ops out of the loop, because it thought
+   * __temp1, and therefore __temp2 was invariant.
+   *
+   * <p>So now this version generates:
+   *
+   * <pre>
+   * __temp2 = rec.fieldname
+   * </pre>
+   *
+   * which makes the optimizer work.
+   */
   @Override
   public void visit(VariableNode node) {
-    // this may be a global or a local/parameter (stack)
+    // This may be a global or a local/parameter (stack)
     Location source = lookupLocation(node.name());
-    TempLocation destination = allocateTemp(node.varType());
-    node.setLocation(destination);
-
-    // Retrieve location of variable and provide it in a temp
-    emit(new Transfer(destination, source));
+    node.setLocation(source);
   }
 
   @Override

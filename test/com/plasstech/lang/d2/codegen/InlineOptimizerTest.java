@@ -14,6 +14,29 @@ public class InlineOptimizerTest {
   private Optimizer optimizer = new InlineOptimizer(2);
 
   @Test
+  public void shortVoidNoArgProc() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      g = 0 "
+                + "shortVoidNoArgProc:proc() { g = 3 } " //
+                + "shortVoidNoArgProc() "
+                + "println g",
+            new ILOptimizer(2));
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    for (Op op : code) {
+      op.accept(
+          new DefaultOpcodeVisitor() {
+            @Override
+            public void visit(Call op) {
+              assertThat(op.functionToCall()).isNotEqualTo("shortVoidNoArgProc");
+            }
+          });
+    }
+  }
+
+  @Test
   public void shortVoidProcGlobal() {
     ExecutionResult result =
         TestUtils.optimizeAssertSameVariables(
@@ -31,29 +54,6 @@ public class InlineOptimizerTest {
             @Override
             public void visit(Call op) {
               assertThat(op.functionToCall()).isNotEqualTo("shortVoidProcGlobal");
-            }
-          });
-    }
-  }
-
-  @Test
-  public void shortVoidProc() {
-    ExecutionResult result =
-        TestUtils.optimizeAssertSameVariables(
-            "      g = 0"
-                + "    shortVoidProc:proc(n:int) { f=n g = g + n } " //
-                + "shortVoidProc(10) "
-                + "println g",
-            optimizer);
-
-    ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              assertThat(op.functionToCall()).isNotEqualTo("shortVoidProc");
             }
           });
     }

@@ -13,7 +13,9 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -123,12 +125,22 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   public void visit(Call op) {
     throw new IllegalStateException("Cannot handle calls");
   }
-  
+
+  @Override
+  public void visit(Return op) {
+    if (!op.returnValueLocation().isPresent()) {
+      // no return value, at least at this location. nuke it.
+      code.set(ip, new Nop(op));
+    }
+  }
+
   private Operand remap(Operand operand) {
     if (operand.isConstant()) {
       return operand;
     }
     Location location = (Location) operand;
+    // This fails for records, because records are stored globally (global or heap) but
+    // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
     if (formals.contains(location.name())) {
       return operand;
     }
