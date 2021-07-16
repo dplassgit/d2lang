@@ -5,6 +5,8 @@ b = b - 1
 c = b + 1
 
 p:proc(n:int):int {
+  m = n + 1 + 6
+  print m
   n = n + 1
   return n
 }

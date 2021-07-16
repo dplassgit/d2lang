@@ -22,11 +22,9 @@ public class IncDecOptimizer extends LineOptimizer {
    * temp2=temp1+1 // secondOp
    * i=temp2 // thirdOp
    *
-   * i = i - i
-   * temp1=i
-   * temp2=i
-   * temp3 = temp1 - temp2
-   * i = temp3
+   * OR:
+   * __temp1 = i + 1;
+   * i = __temp1;
    */
   @Override
   public void visit(Transfer first) {

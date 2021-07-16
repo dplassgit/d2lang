@@ -13,6 +13,13 @@ println pa
 println pb
 println pc
 println pd
+
+pb=pa&pa 
+pc=pa|pa
+pd=pa+pa
+pe=pa-pa
+pf=pa/pa
+
 return pa
 }
 
