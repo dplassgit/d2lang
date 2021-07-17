@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.interpreter.ExecutionResult;
 public class TestUtils {
 
   static ExecutionResult optimizeAssertSameVariables(String program) {
-    return optimizeAssertSameVariables(program, new ILOptimizer(2));
+    return optimizeAssertSameVariables(program, new ILOptimizer(1));
   }
 
   static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
@@ -36,12 +36,12 @@ public class TestUtils {
     System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(optimizedResult.environment().output()));
 
-    assertWithMessage("Environment should be the same")
-        .that(optimizedResult.environment().variables())
-        .isEqualTo(unoptimizedResult.environment().variables());
     assertWithMessage("Output should be the same")
         .that(optimizedResult.environment().output())
         .isEqualTo(unoptimizedResult.environment().output());
+    assertWithMessage("Environment should be the same")
+        .that(optimizedResult.environment().variables())
+        .isEqualTo(unoptimizedResult.environment().variables());
     //    assertWithMessage("New code should be smaller")
     //        .that(unoptimizedResult.linesOfCode())
     //        .isAtLeast(optimizedResult.linesOfCode());

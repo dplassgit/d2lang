@@ -3,8 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -24,16 +22,18 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 class InlineRemapper extends DefaultOpcodeVisitor {
   private static int global_counter = 0;
 
-  private final ImmutableSet<String> formals;
   private final List<Op> code;
   private final String suffix;
 
   private int ip;
 
-  InlineRemapper(List<Op> code, ImmutableList<String> formals) {
+  InlineRemapper(List<Op> code) {
     this.suffix = "__inline__" + (global_counter++);
-    this.formals = ImmutableSet.copyOf(formals);
     this.code = new ArrayList<>(code);
+  }
+
+  Location remapFormal(String formal) {
+    return new StackLocation("__" + formal + suffix);
   }
 
   List<Op> remap() {
@@ -131,6 +131,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (!op.returnValueLocation().isPresent()) {
       // no return value, at least at this location. nuke it.
       code.set(ip, new Nop(op));
+    } else {
+      code.set(ip, new Return(remap(op.returnValueLocation().get())));
     }
   }
 
@@ -141,15 +143,12 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     Location location = (Location) operand;
     // This fails for records, because records are stored globally (global or heap) but
     // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
-    if (formals.contains(location.name())) {
-      return operand;
-    }
     switch (location.storage()) {
       case TEMP:
         return new TempLocation(location.name() + suffix);
       case LOCAL:
       case PARAM:
-        return new StackLocation(location.name() + suffix);
+        return new StackLocation("__" + location.name() + suffix);
       default:
         return operand;
     }

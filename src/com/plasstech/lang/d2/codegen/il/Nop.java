@@ -3,22 +3,22 @@ package com.plasstech.lang.d2.codegen.il;
 public class Nop extends Op {
 
   public static final Op INSTANCE = new Nop();
-  private final Op original;
+  private String message;
 
   public Nop() {
-    this.original = null;
+    this("");
   }
 
   public Nop(Op original) {
-    this.original = original;
+    this.message = String.format("was: %s", original.toString());
+  }
+
+  public Nop(String message) {
+    this.message = message;
   }
 
   @Override
   public String toString() {
-    if (original == null) {
-      return "// nop";
-    } else {
-      return String.format("// nop was: %s", original.toString());
-    }
+    return String.format("// nop %s", message).trim();
   }
 }

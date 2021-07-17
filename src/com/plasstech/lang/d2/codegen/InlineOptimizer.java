@@ -7,13 +7,18 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
+import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 
 public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -59,6 +64,7 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       // Find the length of the procedure.
       ArrayList<Op> opcodes = new ArrayList<>();
       boolean foundEnd = false;
+      int returnCount = 0;
       for (int otherIp = ip + 1; otherIp < code.size() && !foundEnd; otherIp++) {
         Op otherOp = code.get(otherIp);
         if (otherOp instanceof Nop) {
@@ -68,12 +74,24 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
           foundEnd = true;
           break;
         }
+        if (otherOp instanceof Call || otherOp instanceof IfOp || otherOp instanceof Goto) {
+          logger.at(loggingLevel).log(
+              "NOT inlining %s because it has %s", op.name(), otherOp.getClass().getSimpleName());
+          return;
+        }
+        if (otherOp instanceof Return) {
+          returnCount++;
+        }
         opcodes.add(otherOp);
       }
       // Only consider procedures with size < 10 and that don't allow certain opcodes, like calls,
       // gotos/ifs that go outside the block or labels referenced outside the block. Also don't
       // allow any local variables (?)
-      boolean candidate = foundEnd && opcodes.size() < 10;
+      boolean candidate =
+          foundEnd
+              && opcodes.size() < 10
+              && returnCount < 2
+              && (Iterables.getLast(opcodes) instanceof Return);
       logger.at(loggingLevel).log("%s is %sa candidate", op.name(), candidate ? "" : "not ");
       if (candidate) {
         inlineableCode.put(op.name(), opcodes);
@@ -92,31 +110,32 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       // in the inlineable code
       // also, replace each temp with a new temp name
 
-      logger.at(loggingLevel).log("Inlining!\nfrom %s", replacement);
-      List<Op> remapped = new InlineRemapper(replacement, entry.formalNames()).remap();
-      logger.at(loggingLevel).log("Inlining!\nto   %s", remapped);
+      logger.at(loggingLevel).log("Can inline! from %s", replacement);
+      InlineRemapper inlineRemapper = new InlineRemapper(replacement);
+      List<Op> remapped = inlineRemapper.remap();
+      logger.at(loggingLevel).log("Can inline! to   %s", remapped);
 
+      // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
+      // get pushed up, so we start from the bottom up.
+      code.set(ip, new Nop(op));
+      code.add(ip, new Nop("(inline end)"));
       if (op.destination().isPresent()) {
+        logger.at(loggingLevel).log("Inlining nonvoid proc");
         // if op is assigned to a return value, copy that
         // from the "return" statement
-      } else {
-        // Void proc
-        if (entry.formalNames().size() == 0) {
-          // No parameters!
-          // NOP the current op, and insert the remapped code.
-          code.set(ip, new Nop(op));
-          code.addAll(ip, remapped);
-          changed = true;
-        } else {
-          // copy actual to formal, then insert the rempaped code
-          // code.set(ip, new Nop(op));
-          // code.addAll(ip, remapped);
-          // This is wrong/bad. the formal name needs to be remapped too.
-          // code.add(ip, new Transfer(new StackLocation(entry.formalNames().get(0)),
-          //    op.actuals().get(0)));
-          // changed = true;
-        }
+        Return returnOp = (Return) remapped.remove(remapped.size() - 1);
+        code.add(ip, new Transfer(op.destination().get(), returnOp.returnValueLocation().get()));
       }
+      // Insert the inlined code, then copy formals to actuals.
+      code.addAll(ip, remapped);
+      for (int i = 0; i < op.actuals().size(); ++i) {
+        code.add(
+            ip,
+            new Transfer(
+                inlineRemapper.remapFormal(entry.formalNames().get(i)), op.actuals().get(i)));
+      }
+      code.add(ip, new Nop("(inline start)"));
+      changed = true;
     }
   }
 }

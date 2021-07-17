@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -11,38 +12,15 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class InlineOptimizerTest {
-  private Optimizer optimizer = new InlineOptimizer(2);
+  private Optimizer optimizer = new ILOptimizer(ImmutableList.of(new InlineOptimizer(2)));
 
   @Test
-  public void shortVoidNoArgProc() {
+  public void shortVoidNoArg() {
     ExecutionResult result =
         TestUtils.optimizeAssertSameVariables(
             "      g = 0 "
-                + "shortVoidNoArgProc:proc() { g = 3 } " //
-                + "shortVoidNoArgProc() "
-                + "println g",
-            new ILOptimizer(2));
-
-    ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              assertThat(op.functionToCall()).isNotEqualTo("shortVoidNoArgProc");
-            }
-          });
-    }
-  }
-
-  @Test
-  public void shortVoidProcGlobal() {
-    ExecutionResult result =
-        TestUtils.optimizeAssertSameVariables(
-            "      g = 0"
-                + "    shortVoidProcGlobal:proc(n:int) { g = g + n } " //
-                + "shortVoidProcGlobal(10) "
+                + "shortVoidNoArg:proc() { g = 3 } " //
+                + "shortVoidNoArg() "
                 + "println g",
             optimizer);
 
@@ -53,7 +31,51 @@ public class InlineOptimizerTest {
           new DefaultOpcodeVisitor() {
             @Override
             public void visit(Call op) {
-              assertThat(op.functionToCall()).isNotEqualTo("shortVoidProcGlobal");
+              fail("Should not call any procs");
+            }
+          });
+    }
+  }
+
+  @Test
+  public void shortVoidLocal() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      shortVoidLocal:proc(n:int) { m = n + 1 print m } " //
+                + "shortVoidLocal(3) ",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    for (Op op : code) {
+      op.accept(
+          new DefaultOpcodeVisitor() {
+            @Override
+            public void visit(Call op) {
+              fail("Should not call any procs");
+            }
+          });
+    }
+  }
+
+  @Test
+  public void shortVoidGlobal() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      g = 0"
+                + "shortVoidGlobal:proc(n:int) { g = g + n } " //
+                + "shortVoidGlobal(10) "
+                + "println g",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    for (Op op : code) {
+      op.accept(
+          new DefaultOpcodeVisitor() {
+            @Override
+            public void visit(Call op) {
+              fail("Should not call any procs");
             }
           });
     }
@@ -74,18 +96,18 @@ public class InlineOptimizerTest {
           new DefaultOpcodeVisitor() {
             @Override
             public void visit(Call op) {
-              assertThat(op.functionToCall()).isNotEqualTo("shortProc");
+              fail("Should not call any procs");
             }
           });
     }
   }
 
   @Test
-  public void mediumProc() {
+  public void medium() {
     ExecutionResult result =
         TestUtils.optimizeAssertSameVariables(
-            "      mediumProc:proc(c:string):bool { return c >= '0' and c <= '9' } " //
-                + "println mediumProc('hi') println mediumProc('12')",
+            "      medium:proc(c:string):bool { return c >= '0' and c <= '9' } " //
+                + "println medium('12')",
             optimizer);
 
     ImmutableList<Op> code = result.code();
@@ -95,7 +117,53 @@ public class InlineOptimizerTest {
           new DefaultOpcodeVisitor() {
             @Override
             public void visit(Call op) {
-              assertThat(op.functionToCall()).isNotEqualTo("mediumProc");
+              fail("Should not call any procs");
+            }
+          });
+    }
+  }
+
+  @Test
+  public void multipleCalls() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      multipleCalls:proc(c:string):bool { return c >= '0' and c <= '9' } " //
+                + "println multipleCalls('12') " //
+                + "println multipleCalls('3') " //
+                + "println multipleCalls('no') ",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    for (Op op : code) {
+      op.accept(
+          new DefaultOpcodeVisitor() {
+            @Override
+            public void visit(Call op) {
+              fail("Should not call any procs");
+            }
+          });
+    }
+  }
+
+  @Test
+  public void shortProcWithCall() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      p:proc(n:int):int { return n+1 }"
+                + "shortProcWithCall:proc(n:int):int { return p(n) } " //
+                + "println shortProcWithCall(10)",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    for (Op op : code) {
+      op.accept(
+          new DefaultOpcodeVisitor() {
+            @Override
+            public void visit(Call op) {
+              // should inline "p"
+              fail("Should not call any procs");
             }
           });
     }
