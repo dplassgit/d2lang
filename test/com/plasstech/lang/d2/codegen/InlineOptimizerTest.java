@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class InlineOptimizerTest {
@@ -25,16 +26,7 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
   }
 
   @Test
@@ -46,16 +38,7 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
   }
 
   @Test
@@ -69,16 +52,7 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
   }
 
   @Test
@@ -90,16 +64,57 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void shortProcRecord() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      rt:record{i:int} "
+                + "shortProcRecord:proc():rt { "
+                + "  x = new rt "
+                + "  x.i=3 "
+                + "  return x"
+                + "} " //
+                + "r = shortProcRecord() "
+                + "println r.i",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
     // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void shortProcGlobalRecord() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      rt:record{i:int} r:rt "
+                + "shortProcGlobalRecord:proc() { "
+                + "  r = new rt "
+                + "  r.i=3 "
+                + "} " //
+                + "shortProcGlobalRecord() "
+                + "println r.i",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    // show that there are no calls to the procedure
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void shortProcWithCall() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      p:proc(n:int):int { return n+1 }"
+                + "shortProcWithCall:proc(n:int):int { return p(n) } " //
+                + "println shortProcWithCall(10)",
+            optimizer);
+
+    ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
   }
 
   @Test
@@ -111,16 +126,7 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
   }
 
   @Test
@@ -134,39 +140,7 @@ public class InlineOptimizerTest {
             optimizer);
 
     ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              fail("Should not call any procs");
-            }
-          });
-    }
-  }
-
-  @Test
-  public void shortProcWithCall() {
-    ExecutionResult result =
-        TestUtils.optimizeAssertSameVariables(
-            "      p:proc(n:int):int { return n+1 }"
-                + "shortProcWithCall:proc(n:int):int { return p(n) } " //
-                + "println shortProcWithCall(10)",
-            optimizer);
-
-    ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              // should inline "p"
-              fail("Should not call any procs");
-            }
-          });
-    }
+    assertNoCalls(code);
   }
 
   @Test
@@ -182,15 +156,31 @@ public class InlineOptimizerTest {
                 + "println longProc(10)",
             optimizer);
     ImmutableList<Op> code = result.code();
-    // show that there are still calls to the procedure
+
+    // Show that there are still calls to the procedure
+    OpcodeVisitor visitor =
+        new DefaultOpcodeVisitor() {
+          @Override
+          public void visit(Call op) {
+            assertThat(op.functionToCall()).isEqualTo("longProc");
+          }
+        };
     for (Op op : code) {
-      op.accept(
-          new DefaultOpcodeVisitor() {
-            @Override
-            public void visit(Call op) {
-              assertThat(op.functionToCall()).isEqualTo("longProc");
-            }
-          });
+      op.accept(visitor);
+    }
+  }
+
+  private static final OpcodeVisitor NO_CALLS =
+      new DefaultOpcodeVisitor() {
+        @Override
+        public void visit(Call op) {
+          fail("Should not call any procs");
+        }
+      };
+
+  private static void assertNoCalls(ImmutableList<Op> code) {
+    for (Op op : code) {
+      op.accept(NO_CALLS);
     }
   }
 }

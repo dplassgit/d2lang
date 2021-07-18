@@ -103,13 +103,9 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   @Override
   public void visit(Call op) {
     List<Op> replacement = inlineableCode.get(op.functionToCall());
+
     if (replacement != null) {
       ProcEntry entry = procsByName.get(op.functionToCall());
-      // woo!
-      // now, for each actual/formal pair, substitute it
-      // in the inlineable code
-      // also, replace each temp with a new temp name
-
       logger.at(loggingLevel).log("Can inline! from %s", replacement);
       InlineRemapper inlineRemapper = new InlineRemapper(replacement);
       List<Op> remapped = inlineRemapper.remap();
@@ -126,7 +122,7 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         Return returnOp = (Return) remapped.remove(remapped.size() - 1);
         code.add(ip, new Transfer(op.destination().get(), returnOp.returnValueLocation().get()));
       }
-      // Insert the inlined code, then copy formals to actuals.
+      // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);
       for (int i = 0; i < op.actuals().size(); ++i) {
         code.add(
