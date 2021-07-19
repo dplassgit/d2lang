@@ -151,26 +151,24 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
 
           @Override
           public void visit(FieldSetNode fieldSetNode) {
-            // 1. generate
             // Look up storage in current symbol table
             Symbol sym = symbolTable().getRecursive(fieldSetNode.variableName());
             FieldSetAddress dest;
             if (sym != null) {
+              // this is wrong, probably
               dest =
                   new FieldSetAddress(
                       fieldSetNode.variableName(), fieldSetNode.fieldName(), sym.storage());
-              // this may be a global or a local/parameter (stack)
-              fieldSetNode.setLocation(dest);
             } else {
               // ???
-              logger.atWarning().log(
+              logger.atSevere().log(
                   "Could not find record symbol %s in symtab", fieldSetNode.variableName());
               dest =
                   new FieldSetAddress(
                       fieldSetNode.variableName(), fieldSetNode.fieldName(), SymbolStorage.HEAP);
-              fieldSetNode.setLocation(dest);
             }
 
+            fieldSetNode.setLocation(dest);
             Node expr = node.expr();
             expr.accept(ILCodeGenerator.this);
             Location source = expr.location();

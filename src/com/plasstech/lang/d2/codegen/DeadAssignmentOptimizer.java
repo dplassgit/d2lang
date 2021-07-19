@@ -47,6 +47,8 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
         break;
       default:
         break;
+      default:
+        break;
     }
   }
 

@@ -87,7 +87,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       if (!(op instanceof Nop) && !(op instanceof Label)) {
         result.incInstructionCycle();
       }
-      logger.atFinest().log("Current op: ip: %d: %s. cycle %d", ip, op, result.instructionCycles());
+      logger.atFine().log(
+          "Current op: ip: %d: %s. cycle %d st %s", ip, op, result.instructionCycles(), envs);
       ip++;
       try {
         op.accept(this);
@@ -114,7 +115,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Location destination = op.destination();
     if (destination instanceof FieldSetAddress) {
       // destination may be a "field set address"
-      // which is a combination of a memory variable and a field
+      // which is a combination of a variable and a field
 
       FieldSetAddress lvalue = (FieldSetAddress) destination;
       // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
@@ -124,11 +125,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
       return;
     } else {
       // eh.
-
-      setValue(op.destination(), rhsVal);
-      //    if (rhsVal != null) {
-      //    }
-      //    throw new IllegalStateException(String.format("RHS has no value in %s", op));
+      if (rhsVal != null) {
+        setValue(op.destination(), rhsVal);
+      } else {
+        throw new IllegalStateException(String.format("RHS has no value in %s", op));
+      }
     }
   }
 

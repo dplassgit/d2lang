@@ -148,6 +148,11 @@ class InlineRemapper extends DefaultOpcodeVisitor {
         return new TempLocation(location.name() + suffix);
       case LOCAL:
       case PARAM:
+        if (location instanceof FieldSetAddress) {
+          // hack it
+          FieldSetAddress fsa = (FieldSetAddress) location;
+          return new FieldSetAddress("__" + fsa.record() + suffix, fsa.field(), fsa.storage());
+        }
         return new StackLocation("__" + location.name() + suffix);
       default:
         return operand;

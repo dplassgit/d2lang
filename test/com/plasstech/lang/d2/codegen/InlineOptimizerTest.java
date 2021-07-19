@@ -13,7 +13,7 @@ import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 
 public class InlineOptimizerTest {
-  private Optimizer optimizer = new ILOptimizer(ImmutableList.of(new InlineOptimizer(2)));
+  private Optimizer optimizer = new ILOptimizer(new InlineOptimizer(2)).setDebugLevel(2);
 
   @Test
   public void shortVoidNoArg() {
@@ -127,6 +127,12 @@ public class InlineOptimizerTest {
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
+  }
+
+  @Test
+  public void linkedList() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, new InlineOptimizer(2));
   }
 
   @Test

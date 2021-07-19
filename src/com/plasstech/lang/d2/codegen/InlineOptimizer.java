@@ -60,7 +60,6 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   @Override
   public void visit(ProcEntry op) {
     if (op.formalNames().size() < 3) {
-      logger.at(loggingLevel).log("%s has few formals", op.name());
       // Find the length of the procedure.
       ArrayList<Op> opcodes = new ArrayList<>();
       boolean foundEnd = false;
@@ -106,17 +105,16 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
     if (replacement != null) {
       ProcEntry entry = procsByName.get(op.functionToCall());
-      logger.at(loggingLevel).log("Can inline! from %s", replacement);
       InlineRemapper inlineRemapper = new InlineRemapper(replacement);
       List<Op> remapped = inlineRemapper.remap();
-      logger.at(loggingLevel).log("Can inline! to   %s", remapped);
+      logger.at(loggingLevel).log(
+          "Can inline %s from %s to %s", op.functionToCall(), replacement, remapped);
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.
       code.set(ip, new Nop(op));
       code.add(ip, new Nop("(inline end)"));
       if (op.destination().isPresent()) {
-        logger.at(loggingLevel).log("Inlining nonvoid proc");
         // if op is assigned to a return value, copy that
         // from the "return" statement
         Return returnOp = (Return) remapped.remove(remapped.size() - 1);

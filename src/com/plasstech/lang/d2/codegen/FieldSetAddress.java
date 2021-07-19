@@ -5,9 +5,11 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 public class FieldSetAddress extends Location {
   private final String field;
   private final Location recordLocation;
+  private final SymbolStorage storage;
 
   public FieldSetAddress(String variable, String field, SymbolStorage storage) {
     super(variable);
+    this.storage = storage;
     this.recordLocation = Location.allocate(storage, variable);
     this.field = field;
   }
@@ -50,6 +52,6 @@ public class FieldSetAddress extends Location {
 
   @Override
   public SymbolStorage storage() {
-    return SymbolStorage.GLOBAL;
+    return storage;
   }
 }

@@ -13,7 +13,7 @@ public class SymTab {
 
   private final Map<String, Symbol> values = new HashMap<>();
   private final SymTab parent;
-  private SymbolStorage storage;
+  private final SymbolStorage storage;
 
   public SymTab() {
     this.parent = null;
@@ -145,5 +145,9 @@ public class SymTab {
   @Override
   public String toString() {
     return values.values().toString();
+  }
+
+  public SymbolStorage storage() {
+    return storage;
   }
 }

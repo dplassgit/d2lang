@@ -20,7 +20,7 @@ public class ILOptimizer implements Optimizer {
             new ConstantPropagationOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
-            new DeadAssignmentOptimizer(debugLevel),
+            //            new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
             new InlineOptimizer(debugLevel),
             new LoopInvariantOptimizer(debugLevel) // , //
@@ -30,6 +30,10 @@ public class ILOptimizer implements Optimizer {
 
   public ILOptimizer(ImmutableList<Optimizer> children) {
     this.children = children;
+  }
+
+  public ILOptimizer(Optimizer child) {
+    this(ImmutableList.of(child));
   }
 
   public ILOptimizer setDebugLevel(int debugLevel) {
