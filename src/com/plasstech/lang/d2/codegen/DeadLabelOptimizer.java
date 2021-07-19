@@ -5,12 +5,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Op;
 
 public class DeadLabelOptimizer extends LineOptimizer {
   // These are the labels found in the code, and their IP.
@@ -23,15 +21,13 @@ public class DeadLabelOptimizer extends LineOptimizer {
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+  protected void preProcess() {
     labels.clear();
     referencedLabels.clear();
+  }
 
-    // This is a little gross; super.optimize builds the new "code" object
-    // and runs our visitors. We then call other methods in super, to further
-    // modify the code array.
-    super.optimize(input);
-
+  @Override
+  protected void postProcess() {
     // Post-process: all referenced labels are removed from the "labels" map.
     for (String referenced : referencedLabels) {
       labels.remove(referenced);
@@ -40,7 +36,6 @@ public class DeadLabelOptimizer extends LineOptimizer {
     for (int labelIp : labels.values()) {
       deleteAt(labelIp);
     }
-    return ImmutableList.copyOf(code);
   }
 
   @Override
@@ -49,7 +44,7 @@ public class DeadLabelOptimizer extends LineOptimizer {
     if (op.label().equals("__main")) {
       return;
     }
-    labels.put(op.label(), ip);
+    labels.put(op.label(), ip());
   }
 
   @Override

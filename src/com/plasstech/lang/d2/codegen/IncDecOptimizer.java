@@ -25,7 +25,7 @@ public class IncDecOptimizer extends LineOptimizer {
    */
   @Override
   public void visit(Transfer first) {
-    Op secondOp = getOpAt(ip + 1);
+    Op secondOp = getOpAt(ip() + 1);
     if (!(secondOp instanceof BinOp)) {
       return;
     }
@@ -42,7 +42,7 @@ public class IncDecOptimizer extends LineOptimizer {
     if (!(plus || minus)) {
       return;
     }
-    Op thirdOp = getOpAt(ip + 2);
+    Op thirdOp = getOpAt(ip() + 2);
     if (!(thirdOp instanceof Transfer)) {
       return;
     }
@@ -64,19 +64,19 @@ public class IncDecOptimizer extends LineOptimizer {
         && first.source().equals(third.destination())) {
 
       // WE HAVE ONE!
-      logger.at(loggingLevel).log("Found Inc/Dec pattern at ip %d", ip);
+      logger.at(loggingLevel).log("Found Inc/Dec pattern at ip %d", ip());
 
       deleteCurrent();
 
       Inc increment = new Inc(third.destination());
       Dec decrement = new Dec(third.destination());
       if (value.equals(1)) {
-        deleteAt(ip + 1);
+        deleteAt(ip() + 1);
       } else {
         // +/- 2
-        replaceAt(ip + 1, plus ? increment : decrement);
+        replaceAt(ip() + 1, plus ? increment : decrement);
       }
-      replaceAt(ip + 2, plus ? increment : decrement);
+      replaceAt(ip() + 2, plus ? increment : decrement);
     }
   }
 
@@ -97,7 +97,7 @@ public class IncDecOptimizer extends LineOptimizer {
         || (!left.isConstant() && right.isConstant()))) {
       return;
     }
-    Op secondOp = getOpAt(ip + 1);
+    Op secondOp = getOpAt(ip() + 1);
     if (!(secondOp instanceof Transfer)) {
       return;
     }
@@ -119,19 +119,19 @@ public class IncDecOptimizer extends LineOptimizer {
         && left.equals(second.destination())) {
 
       // WE HAVE ONE!
-      logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip);
+      logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip());
 
       deleteCurrent();
 
       Inc increment = new Inc(second.destination());
       Dec decrement = new Dec(second.destination());
       if (value.equals(1)) {
-        deleteAt(ip);
+        deleteAt(ip());
       } else {
         // +/- 2
-        replaceAt(ip, plus ? increment : decrement);
+        replaceAt(ip(), plus ? increment : decrement);
       }
-      replaceAt(ip + 1, plus ? increment : decrement);
+      replaceAt(ip() + 1, plus ? increment : decrement);
     }
   }
 }

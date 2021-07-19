@@ -12,7 +12,6 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -35,10 +34,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+  protected void preProcess() {
     tempConstants.clear();
     stackConstants.clear();
-    return super.optimize(input);
   }
 
   @Override

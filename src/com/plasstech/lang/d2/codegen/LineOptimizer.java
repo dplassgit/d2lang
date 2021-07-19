@@ -15,25 +15,30 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private boolean changed;
+  private int ip;
 
   protected final Level loggingLevel;
   protected List<Op> code;
-  protected int ip;
 
   LineOptimizer(int debugLevel) {
     this.loggingLevel = toLoggingLevel(debugLevel);
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
-    this.code = new ArrayList<>(input);
+  public final ImmutableList<Op> optimize(ImmutableList<Op> input) {
+    code = new ArrayList<>(input);
+    preProcess();
     setChanged(false);
     for (ip = 0; ip < code.size(); ++ip) {
-      Op currentOp = code.get(ip);
-      currentOp.accept(this);
+      code.get(ip).accept(this);
     }
-    return ImmutableList.copyOf(this.code);
+    postProcess();
+    return ImmutableList.copyOf(code);
   }
+
+  protected void postProcess() {}
+
+  protected void preProcess() {}
 
   @Override
   public boolean isChanged() {
@@ -77,5 +82,9 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   /** Replace the current op with a nop. */
   protected void deleteCurrent() {
     deleteAt(ip);
+  }
+
+  protected int ip() {
+    return ip;
   }
 }

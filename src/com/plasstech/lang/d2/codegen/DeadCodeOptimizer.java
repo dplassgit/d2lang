@@ -29,7 +29,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
       deleteCurrent();
       return;
     }
-    Op next = getOpAt(ip + 1);
+    Op next = getOpAt(ip() + 1);
     if (next instanceof Goto) {
       Goto nextGoto = (Goto) next;
       if (op.destination().equals(nextGoto.label())) {
@@ -55,7 +55,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
   @Override
   public void visit(Goto op) {
     // 1. if there only nops or labels between here and dest, we don't have to goto.
-    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+    for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
       if (testOp instanceof Label) {
         Label label = (Label) testOp;
@@ -78,7 +78,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
 
     // 3. Optimize double-jumps: find the label. if the next active statement is a goto, just go
     // there.
-    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+    for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
       if (testOp instanceof Label) {
         Label label = (Label) testOp;
@@ -120,7 +120,7 @@ public class DeadCodeOptimizer extends LineOptimizer {
 
   /** Nop lines between current IP and the next label, proc entry or proc exit. */
   private void killUntilLabel(String source) {
-    for (int testIp = ip + 1; testIp < code.size(); ++testIp) {
+    for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
       if (testOp instanceof Nop) {
         continue;

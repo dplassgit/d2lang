@@ -10,7 +10,6 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -31,23 +30,22 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+  protected void preProcess() {
     assignments.clear();
     tempAssignments.clear();
-    return super.optimize(input);
   }
 
   private void recordAssignment(Location destination) {
     switch (destination.storage()) {
-      case GLOBAL:
-        break;
       case TEMP:
-        tempAssignments.put(destination, ip);
+        tempAssignments.put(destination, ip());
         break;
       case LOCAL:
       case PARAM:
       case REGISTER:
-        assignments.put(destination, ip);
+        assignments.put(destination, ip());
+        break;
+      default:
         break;
     }
   }
