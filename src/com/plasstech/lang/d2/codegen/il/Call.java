@@ -45,7 +45,7 @@ public class Call extends Op {
     if (destination().isPresent()) {
       return String.format(
           "%s = %s(%s);",
-          destination().get().name(), functionToCall, Joiner.on(", ").join(actualLocations));
+          destination().get(), functionToCall, Joiner.on(", ").join(actualLocations));
     } else {
       return String.format("%s(%s);", functionToCall, Joiner.on(", ").join(actualLocations));
     }

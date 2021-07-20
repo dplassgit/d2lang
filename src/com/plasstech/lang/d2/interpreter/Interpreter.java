@@ -119,7 +119,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
       FieldSetAddress lvalue = (FieldSetAddress) destination;
       // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
-      Location recordAddress = lvalue.recordLocation();
+      Location recordAddress = lvalue.baseLocation();
       Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
       recordObject.put(lvalue.field(), rhsVal);
       return;

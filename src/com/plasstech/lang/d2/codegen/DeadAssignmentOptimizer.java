@@ -38,26 +38,30 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   private void recordAssignment(Location destination) {
     switch (destination.storage()) {
       case TEMP:
-        tempAssignments.put(destination, ip());
+        tempAssignments.put(destination.baseLocation(), ip());
         break;
       case LOCAL:
       case PARAM:
       case REGISTER:
-        assignments.put(destination, ip());
-        break;
-      default:
+        assignments.put(destination.baseLocation(), ip());
         break;
       default:
         break;
     }
+    System.err.printf(
+        "record assignment %s (%s): temp %s all %s\n",
+        destination, destination.baseLocation(), tempAssignments, assignments);
   }
 
   // This can never be called with a temp, because temps aren't reassigned.
   private boolean killIfReassigned(Location destination) {
-    Integer loc = assignments.get(destination);
+    Integer loc = assignments.get(destination.baseLocation());
     if (loc != null) {
-      assignments.remove(destination);
+      assignments.remove(destination.baseLocation());
       deleteAt(loc);
+      System.err.printf(
+          "kill if assigned %s (%s): temp %s all %s at %d\n",
+          destination, destination.baseLocation(), tempAssignments, assignments, loc);
       return true;
     }
     return false;
@@ -66,8 +70,11 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   private void markRead(Operand source) {
     if (!source.isConstant()) {
       Location sourceLocation = (Location) source;
-      assignments.remove(sourceLocation);
-      tempAssignments.remove(sourceLocation);
+      assignments.remove(sourceLocation.baseLocation());
+      tempAssignments.remove(sourceLocation.baseLocation());
+      System.err.printf(
+          "mark if read %s (%s): temp %s all %s\n",
+          sourceLocation, sourceLocation.baseLocation(), tempAssignments, assignments);
     }
   }
 

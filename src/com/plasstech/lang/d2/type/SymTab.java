@@ -68,11 +68,11 @@ public class SymTab {
   }
 
   public Symbol declareTemp(String name, VarType varType) {
-    return declareInternal(name, varType);
+    return declareInternal(name, varType, this.storage);
   }
 
   public Symbol declareParam(String name, VarType varType) {
-    Symbol param = declareInternal(name, varType);
+    Symbol param = declareInternal(name, varType, SymbolStorage.PARAM);
     param.setAssigned(); // parameters are always assigned, by definition.
     return param;
   }
@@ -107,10 +107,10 @@ public class SymTab {
 
   // It's only declared. TODO: distinguish between locals & globals
   public Symbol declare(String name, VarType varType) {
-    return declareInternal(name, varType);
+    return declareInternal(name, varType, this.storage);
   }
 
-  private Symbol declareInternal(String name, VarType varType) {
+  private Symbol declareInternal(String name, VarType varType, SymbolStorage storage) {
     Preconditions.checkState(
         !values.containsKey(name),
         "%s already declared as %s. Cannot be redeclared as %s.",
@@ -119,7 +119,7 @@ public class SymTab {
         varType);
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
-    Symbol sym = new VariableSymbol(name, this.storage).setVarType(varType);
+    Symbol sym = new VariableSymbol(name, storage).setVarType(varType);
     values.put(name, sym);
     return sym;
   }
@@ -135,6 +135,7 @@ public class SymTab {
           sym.varType(),
           varType);
     } else {
+      // this is wrong - we need to know if it's a local or a param - wth
       sym = new VariableSymbol(name, this.storage).setVarType(varType);
     }
     sym.setAssigned();

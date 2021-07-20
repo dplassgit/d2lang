@@ -10,6 +10,7 @@ public class FieldSetAddress extends Location {
   public FieldSetAddress(String variable, String field, SymbolStorage storage) {
     super(variable);
     this.storage = storage;
+    // we should already know the location, because the variable shoudl already exist
     this.recordLocation = Location.allocate(storage, variable);
     this.field = field;
   }
@@ -18,7 +19,8 @@ public class FieldSetAddress extends Location {
     return super.name();
   }
 
-  public Location recordLocation() {
+  @Override
+  public Location baseLocation() {
     return recordLocation;
   }
 

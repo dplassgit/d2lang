@@ -272,12 +272,12 @@ class LoopInvariantOptimizer implements Optimizer {
       if (!op.source().isConstant()) {
         getters.add(op.source());
       }
-      if (op.destination() instanceof FieldSetAddress) {
-        FieldSetAddress fsa = (FieldSetAddress) op.destination();
-        setters.add(fsa.recordLocation());
-      } else {
-        setters.add(op.destination());
-      }
+      //      if (op.destination() instanceof FieldSetAddress) {
+      //        FieldSetAddress fsa = (FieldSetAddress) op.destination();
+      //        setters.add(fsa.baseLocation());
+      //      } else {
+      setters.add(op.destination().baseLocation());
+      //      }
     }
 
     @Override

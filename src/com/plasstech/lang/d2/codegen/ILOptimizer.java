@@ -20,10 +20,10 @@ public class ILOptimizer implements Optimizer {
             new ConstantPropagationOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
-            //            new DeadAssignmentOptimizer(debugLevel),
+            new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
             new InlineOptimizer(debugLevel),
-            new LoopInvariantOptimizer(debugLevel) // , //
+            new LoopInvariantOptimizer(debugLevel) // ,
             ));
     setDebugLevel(debugLevel);
   }

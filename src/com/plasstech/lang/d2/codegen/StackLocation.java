@@ -4,15 +4,21 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 
 public class StackLocation extends Location {
 
-  // TODO: capture "offset" into stack frame
+  private final SymbolStorage storage;
+
   public StackLocation(String name) {
+    this(name, SymbolStorage.LOCAL);
+  }
+
+  // TODO: capture "offset" into stack frame
+  public StackLocation(String name, SymbolStorage storage) {
     super(name);
+    this.storage = storage;
   }
 
   @Override
   public SymbolStorage storage() {
-    // TODO: might be a parameter (but still on the stack, shrug)
-    return SymbolStorage.LOCAL;
+    return storage;
   }
 
   @Override
