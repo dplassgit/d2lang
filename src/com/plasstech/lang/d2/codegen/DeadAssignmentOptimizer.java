@@ -135,8 +135,13 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Transfer op) {
     Location dest = op.destination();
     markRead(op.source());
-    killIfReassigned(dest);
-    recordAssignment(dest);
+    if (dest instanceof FieldSetAddress) {
+      // records are always globally allocated so we have to be *really* conservative
+      // and never record their assignments
+    } else {
+      killIfReassigned(dest);
+      recordAssignment(dest);
+    }
   }
 
   @Override
