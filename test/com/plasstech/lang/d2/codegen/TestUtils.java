@@ -79,4 +79,19 @@ public class TestUtils {
           + "  append(list, 2)  "
           + "  print_list(list) "
           + "}";
+
+  public static final String RECORD_LOOP_INVARIANT =
+      "      rt: record{i:int} "
+          + "updaterec: proc(re:rt) { "
+          + "  re.i = re.i + 1 "
+          + "} "
+          + "recordloopinvariant: proc(rec:rt): int { "
+          + "  rec.i = 0"
+          + "  while rec.i < 10 { "
+          + "    updaterec(rec) "
+          + "  } "
+          + "  return rec.i "
+          + "} "
+          + "val = recordloopinvariant(new rt) "
+          + "println val";
 }

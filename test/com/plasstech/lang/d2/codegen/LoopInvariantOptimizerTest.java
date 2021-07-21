@@ -5,8 +5,21 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 
 public class LoopInvariantOptimizerTest {
-  private Optimizer ilOptimizer = new ILOptimizer(2);
-  private Optimizer optimizer =
+  private static Optimizer loopOptimizer = new LoopInvariantOptimizer(2);
+  private static Optimizer ilOptimizer =
+      new ILOptimizer(
+              ImmutableList.of(
+                  new ArithmeticOptimizer(2),
+                  new ConstantPropagationOptimizer(2),
+                  new DeadCodeOptimizer(2),
+                  new DeadLabelOptimizer(2),
+                  new DeadAssignmentOptimizer(2),
+                  new IncDecOptimizer(2),
+                  //                                    new InlineOptimizer(2),
+                  new LoopInvariantOptimizer(2) // ,
+                  ))
+          .setDebugLevel(2);
+  private static Optimizer loopAndConstantOptimizer =
       new ILOptimizer(
               ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
           .setDebugLevel(2);
@@ -24,7 +37,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum"
             + "}"
             + "println oneLoop(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -43,7 +56,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum"
             + "}"
             + "println oneLoopContinue(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -60,7 +73,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum + x"
             + "}"
             + "println loopNeverRun(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -76,7 +89,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum + x"
             + "}"
             + "println loopNeverRun(10, 20)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -92,7 +105,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum"
             + "}"
             + "println oneLoopUnary(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -109,7 +122,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum + x"
             + "}"
             + "println oneLoopBreak(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -143,7 +156,7 @@ public class LoopInvariantOptimizerTest {
             + "  return x"
             + "}"
             + "println oneLoop(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -177,7 +190,7 @@ public class LoopInvariantOptimizerTest {
             + "println 'Should be 314159:' "
             + "pi = makeInt() "
             + "println pi ",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -211,7 +224,7 @@ public class LoopInvariantOptimizerTest {
             + "if pi != 314159 {"
             + "   exit 'Bad result'"
             + "}",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -232,7 +245,7 @@ public class LoopInvariantOptimizerTest {
             + "  sum = sum + i "
             + "} "
             + "println sum",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -255,7 +268,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum * z + x - y"
             + "}"
             + "println nestedLoopsLocals(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -274,7 +287,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum + x - y"
             + "}"
             + "println twoNestedLoopsWithInvariants(10)",
-        optimizer);
+        loopAndConstantOptimizer);
   }
 
   @Test
@@ -291,7 +304,7 @@ public class LoopInvariantOptimizerTest {
             + "  return sum"
             + "}"
             + "println twoNestedLoops(10)",
-        new LoopInvariantOptimizer(2));
+        loopOptimizer);
   }
 
   @Test
@@ -304,7 +317,7 @@ public class LoopInvariantOptimizerTest {
             + "  return rec.i"
             + "}"
             + "print recordloopinvariant(new r)",
-        new LoopInvariantOptimizer(2));
+        loopOptimizer);
   }
 
   @Test
@@ -316,7 +329,7 @@ public class LoopInvariantOptimizerTest {
             + "  return rec.i"
             + "}"
             + "print recordloopinvariant(new r)",
-        new LoopInvariantOptimizer(2));
+        loopOptimizer);
   }
 
   @Test
@@ -327,7 +340,7 @@ public class LoopInvariantOptimizerTest {
             + "rec = new r rec.i = 1"
             + "while rec.i < 100 { updaterec(rec) }"
             + "print rec.i",
-        new LoopInvariantOptimizer(2));
+        loopOptimizer);
   }
 
   @Test
@@ -337,6 +350,22 @@ public class LoopInvariantOptimizerTest {
             + "rec = new r rec.i = 1 "
             + "while rec.i < 100 { rec.i = rec.i * 2 }"
             + "print rec.i",
-        new LoopInvariantOptimizer(2));
+        loopOptimizer);
+  }
+
+  @Test
+  public void recordLoopInvariant_loopInvariantOptimizer() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, loopOptimizer);
+  }
+
+  @Test
+  public void recordLoopInvariant_loopAndConstantOptimizeres() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, loopAndConstantOptimizer);
+  }
+
+  @Test
+  public void recordLoopInvariant_allOptimizers() {
+    // This fails with inline optimizer
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, ilOptimizer);
   }
 }

@@ -29,12 +29,14 @@ public class DeadAssignmentOptimizerTest {
             + "  re.i = re.i + 1 "
             + "} "
             + "recordloopinvariant: proc(rec:rt): int { "
+            + "  rec.i = 0"
             + "  while rec.i < 10 { "
             + "    updaterec(rec) "
             + "  } "
             + "  return rec.i "
             + "} "
-            + "print recordloopinvariant(new rt) ",
+            + "val = recordloopinvariant(new rt) "
+            + "println val",
         optimizer);
   }
 

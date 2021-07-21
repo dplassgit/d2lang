@@ -131,8 +131,27 @@ public class InlineOptimizerTest {
 
   @Test
   public void linkedList() {
-    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
     TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, new InlineOptimizer(2));
+  }
+
+  @Test
+  public void linkedList_multipleInline() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
+  }
+
+  @Test
+  public void linkedList_allOptimizers() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, new ILOptimizer(2));
+  }
+
+  @Test
+  public void recordLoopInvariant() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, new InlineOptimizer(2));
+  }
+
+  @Test
+  public void recordLoopInvariant_allOptimizers() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, new ILOptimizer(2));
   }
 
   @Test
