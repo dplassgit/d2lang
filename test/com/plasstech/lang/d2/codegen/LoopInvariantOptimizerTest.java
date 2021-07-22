@@ -15,7 +15,7 @@ public class LoopInvariantOptimizerTest {
                   new DeadLabelOptimizer(2),
                   new DeadAssignmentOptimizer(2),
                   new IncDecOptimizer(2),
-                  //                                    new InlineOptimizer(2),
+                  new InlineOptimizer(2),
                   new LoopInvariantOptimizer(2) // ,
                   ))
           .setDebugLevel(2);
@@ -354,18 +354,13 @@ public class LoopInvariantOptimizerTest {
   }
 
   @Test
-  public void recordLoopInvariant_loopInvariantOptimizer() {
+  public void recordLoopInvariant() {
     TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, loopOptimizer);
   }
 
   @Test
-  public void recordLoopInvariant_loopAndConstantOptimizeres() {
-    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, loopAndConstantOptimizer);
-  }
-
-  @Test
-  public void recordLoopInvariant_allOptimizers() {
-    // This fails with inline optimizer
-    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, ilOptimizer);
+  public void recordLoopInvariant_loopAndConstantOptimizers() {
+    TestUtils.optimizeAssertSameVariables(
+        TestUtils.RECORD_LOOP_INVARIANT, loopAndConstantOptimizer);
   }
 }

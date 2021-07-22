@@ -48,9 +48,6 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
       default:
         break;
     }
-    System.err.printf(
-        "record assignment %s (%s): temp %s all %s\n",
-        destination, destination.baseLocation(), tempAssignments, assignments);
   }
 
   // This can never be called with a temp, because temps aren't reassigned.
@@ -59,9 +56,6 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
     if (loc != null) {
       assignments.remove(destination.baseLocation());
       deleteAt(loc);
-      System.err.printf(
-          "kill if assigned %s (%s): temp %s all %s at %d\n",
-          destination, destination.baseLocation(), tempAssignments, assignments, loc);
       return true;
     }
     return false;
@@ -72,9 +66,6 @@ public class DeadAssignmentOptimizer extends LineOptimizer {
       Location sourceLocation = (Location) source;
       assignments.remove(sourceLocation.baseLocation());
       tempAssignments.remove(sourceLocation.baseLocation());
-      System.err.printf(
-          "mark if read %s (%s): temp %s all %s\n",
-          sourceLocation, sourceLocation.baseLocation(), tempAssignments, assignments);
     }
   }
 

@@ -7,7 +7,6 @@ import com.plasstech.lang.d2.ExecutionEnvironment;
 import com.plasstech.lang.d2.codegen.il.Op;
 
 public class ILOptimizerTest {
-
   @Test
   public void plusZero() {
     TestUtils.optimizeAssertSameVariables("a = 0 + 1 b = a + 0 c = 2 + 0");
@@ -228,10 +227,11 @@ public class ILOptimizerTest {
   @Test
   public void constantPropIf() {
     TestUtils.optimizeAssertSameVariables(
-        "constantPropIf:proc() {" //
-            + "a = 4 " //
-            + "if a == (2+2) {" //
-            + "  print a}" //
+        "      constantPropIf:proc() {" //
+            + "  a = 4 " //
+            + "  if a == (2+2) {" //
+            + "    print a"
+            + "  }" //
             + "} " //
             + "constantPropIf()");
   }
@@ -239,14 +239,14 @@ public class ILOptimizerTest {
   @Test
   public void constantPropReturn() {
     TestUtils.optimizeAssertSameVariables(
-        "constantPropReturn:proc():int { return 3}" //
-            + " print constantPropReturn()");
+        "      constantPropReturn:proc():int { return 3} " //
+            + "print constantPropReturn()");
   }
 
   @Test
   public void constantPropCall() {
     TestUtils.optimizeAssertSameVariables(
-        "constantPropCall:proc(n:int, m:int):int { return n+1} "
+        "      constantPropCall:proc(n:int, m:int):int { return n+1} "
             + "b=4 " //
             + "print constantPropCall(4, b) " //
             + "print constantPropCall(b+2, 4+6)");
@@ -255,7 +255,7 @@ public class ILOptimizerTest {
   @Test
   public void multipleReturns() {
     TestUtils.optimizeAssertSameVariables(
-        "multipleReturns: proc(i: int): string {\r\n"
+        "      multipleReturns: proc(i: int): string {\r\n"
             + "  if i == 0 {\r\n"
             + "    return '0'\r\n"
             + "  }\r\n"
@@ -279,14 +279,14 @@ public class ILOptimizerTest {
   public void deadWhile() {
     // It's not smart enough yet to detect this
     TestUtils.optimizeAssertSameVariables(
-        "deadWhile:proc() { a=4 while a>4 {a=3} print a} " //
+        "      deadWhile:proc() { a=4 while a>4 {a=3} print a} " //
             + "deadWhile()");
   }
 
   @Test
   public void deadWhileImmediateBreak() {
     TestUtils.optimizeAssertSameVariables(
-        "deadWhileImmediateBreak:proc() { a=4 while a>0 {break} print a} " //
+        "      deadWhileImmediateBreak:proc() { a=4 while a>0 {break} print a} " //
             + "deadWhileImmediateBreak()");
   }
 
@@ -295,8 +295,8 @@ public class ILOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "deadAfterReturn:proc(): int {return 4 a=4} print deadAfterReturn()");
     TestUtils.optimizeAssertSameVariables(
-        "deadAfterReturn2:proc(a:bool): int {"
-            + " if a {return 4 a=false} return 5"
+        "      deadAfterReturn2:proc(a:bool): int {"
+            + "  if a {return 4 a=false} return 5"
             + "} "
             + "print deadAfterReturn2(true) //"
             + "print deadAfterReturn2(false)");
@@ -316,7 +316,7 @@ public class ILOptimizerTest {
   @Test
   public void deadAssignment() {
     TestUtils.optimizeAssertSameVariables(
-        "deadAssignment:proc() {a=4 a=a print a} " //
+        "      deadAssignment:proc() {a=4 a=a print a} " //
             + "deadAssignment()");
   }
 
@@ -333,5 +333,15 @@ public class ILOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "incDec:proc(b:int):int {b=b+1 a=b*2 a=a-1 return a+b} print incDec(3)");
     TestUtils.optimizeAssertSameVariables("b=3 b=b+1 a=b*2 a=a-1 print a+1");
+  }
+
+  @Test
+  public void recordLoopInvariant() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT);
+  }
+
+  @Test
+  public void linkedList() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST);
   }
 }
