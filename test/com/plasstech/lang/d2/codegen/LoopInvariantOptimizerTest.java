@@ -359,6 +359,11 @@ public class LoopInvariantOptimizerTest {
   }
 
   @Test
+  public void recordLoopNonInvariant() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_NOT_INVARIANT, loopOptimizer);
+  }
+
+  @Test
   public void recordLoopInvariant_loopAndConstantOptimizers() {
     TestUtils.optimizeAssertSameVariables(
         TestUtils.RECORD_LOOP_INVARIANT, loopAndConstantOptimizer);

@@ -341,6 +341,11 @@ public class ILOptimizerTest {
   }
 
   @Test
+  public void recordLoopNotInvariant() {
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_NOT_INVARIANT);
+  }
+
+  @Test
   public void linkedList() {
     TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST);
   }

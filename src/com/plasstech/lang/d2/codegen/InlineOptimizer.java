@@ -75,7 +75,8 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         }
         if (otherOp instanceof Call || otherOp instanceof IfOp || otherOp instanceof Goto) {
           logger.at(loggingLevel).log(
-              "NOT inlining %s because it has %s", op.name(), otherOp.getClass().getSimpleName());
+              "NOT inlining '%s' because it has '%s'",
+              op.name(), otherOp.getClass().getSimpleName());
           return;
         }
         if (otherOp instanceof Return) {
@@ -91,7 +92,7 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
               && opcodes.size() < 10
               && returnCount < 2
               && (Iterables.getLast(opcodes) instanceof Return);
-      logger.at(loggingLevel).log("%s is %sa candidate", op.name(), candidate ? "" : "not ");
+      logger.at(loggingLevel).log("'%s' is %sa candidate", op.name(), candidate ? "" : "not ");
       if (candidate) {
         inlineableCode.put(op.name(), opcodes);
         procsByName.put(op.name(), op);
@@ -108,7 +109,7 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       InlineRemapper inlineRemapper = new InlineRemapper(replacement);
       List<Op> remapped = inlineRemapper.remap();
       logger.at(loggingLevel).log(
-          "Can inline %s from %s to %s", op.functionToCall(), replacement, remapped);
+          "Can inline '%s' from %s to %s", op.functionToCall(), replacement, remapped);
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.

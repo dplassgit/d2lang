@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.interpreter.ExecutionResult;
 public class TestUtils {
 
   static ExecutionResult optimizeAssertSameVariables(String program) {
-    return optimizeAssertSameVariables(program, new ILOptimizer(1));
+    return optimizeAssertSameVariables(program, new ILOptimizer(2));
   }
 
   static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
@@ -93,5 +93,18 @@ public class TestUtils {
           + "  return rec.i "
           + "} "
           + "val = recordloopinvariant(new rt) "
+          + "println val";
+
+  public static final String RECORD_LOOP_NOT_INVARIANT =
+      "      rt: record{i:int} "
+          + "recordloopnoninvariant: proc(rec:rt): int { "
+          + "  rec.i = 0"
+          + "  while rec.i < 10 { "
+          + "     re= rec"
+          + "     re.i = re.i + 1 "
+          + "  } "
+          + "  return rec.i "
+          + "} "
+          + "val = recordloopnoninvariant(new rt) "
           + "println val";
 }
