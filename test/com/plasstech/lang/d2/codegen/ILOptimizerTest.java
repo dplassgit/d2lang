@@ -97,7 +97,11 @@ public class ILOptimizerTest {
   @Test
   public void timesConstants() {
     TestUtils.optimizeAssertSameVariables(
-        "timesConstants:proc():int {a = 2 * 3 return a} timesConstants()");
+        "      timesConstants:proc():int {"
+            + "  a = 2 * 3 "
+            + "  return a "
+            + "} " //
+            + "timesConstants()");
     TestUtils.optimizeAssertSameVariables("a = 1 * 3");
     TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
   }

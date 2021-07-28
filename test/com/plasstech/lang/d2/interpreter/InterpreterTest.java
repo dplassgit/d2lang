@@ -273,10 +273,52 @@ public class InterpreterTest {
     assertThat(env.getValue("c")).isEqualTo("hi");
   }
 
-  private Environment execute(String program) {
+  @Test
+  public void recordNullField() {
+    Environment env =
+        execute(
+            "      r: record { i: int s: string}\n"
+                + "an_r = new r \n"
+                + "s = an_r.s \n"
+                + "println s \n",
+            true);
+    assertThat(env.getValue("s")).isNull();
+  }
+
+  @Test
+  public void recordInProc() {
+    Environment env =
+        execute(
+            " Parser: record {token:string}"
+                + "new_parser: proc(): Parser {\r\n"
+                + "  parser = new Parser\r\n"
+                + "  advance_parser(parser)\r\n"
+                + "  return parser\r\n"
+                + "}\r\n"
+                + "\r\n"
+                + "advance_parser: proc(this: Parser): String {\r\n"
+                + "  prev = this.token\r\n"
+                + "  this.token = 'hi'\r\n"
+                + "  return prev\r\n"
+                + "}\r\n"
+                + "p=new_parser()"
+                + "print p.token",
+            true);
+    assertThat(env.getValue("p")).isNotNull();
+  }
+
+  @Test
+  public void nullTest() {
+    Environment env = execute("a = null println a==null");
+    assertThat(env.getValue("a")).isNull();
+    env = execute("a = null println a==null", true);
+    assertThat(env.getValue("a")).isNull();
+  }
+
+  private Environment execute(String program, boolean optimize) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
+    ee.setOptimize(optimize);
     ExecutionResult result = ee.execute();
-    return result.environment();
     //    System.out.println(ee.programNode());
     //
     //    System.out.println("Environment:");
@@ -286,5 +328,10 @@ public class InterpreterTest {
     //    System.out.println("Sysout:");
     //    System.out.println("-------");
     //    System.out.println(Joiner.on('\n').join(env.output()));
+    return result.environment();
+  }
+
+  private Environment execute(String program) {
+    return execute(program, false);
   }
 }

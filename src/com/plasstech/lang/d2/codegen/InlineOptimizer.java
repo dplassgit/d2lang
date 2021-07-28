@@ -120,6 +120,9 @@ public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         // from the "return" statement
         Return returnOp = (Return) remapped.remove(remapped.size() - 1);
         code.add(ip, new Transfer(op.destination().get(), returnOp.returnValueLocation().get()));
+      } else if (Iterables.getLast(remapped) instanceof Return) {
+        // there IS a return but we are ignoring the return value, so remove it.
+        remapped.remove(remapped.size() - 1);
       }
       // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);

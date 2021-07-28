@@ -396,10 +396,14 @@ NODE_TYPES = [
 'PRINT'
 ]
 
+NodeList: record {
+  node: Node
+  next: NodeList
+}
+
 Node: record {
   type: int
-  // TODO: node list
-  child: Node
+  children: NodeList
 }
 
 PrintNode: record {

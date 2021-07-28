@@ -140,6 +140,46 @@ public class InlineOptimizerTest {
   }
 
   @Test
+  public void ignoreReturnValue() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      ignoredReturnValue:proc():int {" //
+                + "  return 6 "
+                + "} "
+                + "ignoredReturnValue()",
+            optimizer);
+    ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void ignoreReturnValueSometimes() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      ignoredReturnValueSometimes:proc():int {" //
+                + "  return 6 "
+                + "} "
+                + "ignoredReturnValueSometimes() "
+                + "println ignoredReturnValueSometimes()",
+            optimizer);
+    ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void ignoreReturnValueSometimesAllOpts() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      ignoredReturnValueSometimesAllOpts:proc():int {" //
+                + "  return 6 "
+                + "} "
+                + "ignoredReturnValueSometimesAllOpts() "
+                + "println ignoredReturnValueSometimesAllOpts()");
+    ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
+  }
+
+  @Test
   public void multipleCalls() {
     ExecutionResult result =
         TestUtils.optimizeAssertSameVariables(

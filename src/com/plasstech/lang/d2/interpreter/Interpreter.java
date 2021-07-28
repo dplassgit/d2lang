@@ -91,10 +91,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
           "Current op: ip: %d: %s. cycle %d st %s", ip, op, result.instructionCycles(), envs);
       ip++;
       try {
-        op.accept(this);
+      op.accept(this);
       } catch (RuntimeException re) {
         logger.atSevere().withCause(re).log("Exception at ip %d: %s; env: %s", ip, op, envs);
-        break;
+        // Yeah yeah I know.
+        throw re;
       }
       iterations++;
       if (iterations > MAX_ITERATIONS) {
@@ -124,12 +125,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
       recordObject.put(lvalue.field(), rhsVal);
       return;
     } else {
-      // eh.
-      if (rhsVal != null) {
-        setValue(op.destination(), rhsVal);
-      } else {
-        throw new IllegalStateException(String.format("RHS has no value in %s", op));
-      }
+      // Previously it would fail if rhsValue was null, but that needed to be relaxed to support
+      // you know, nulls.
+      setValue(op.destination(), rhsVal);
     }
   }
 
@@ -377,7 +375,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private Object resolve(Operand operand) {
     Object value;
-    if (operand instanceof ConstantOperand) {
+    if (operand.isConstant()) {
       value = ((ConstantOperand) operand).value();
     } else {
       // symbol
