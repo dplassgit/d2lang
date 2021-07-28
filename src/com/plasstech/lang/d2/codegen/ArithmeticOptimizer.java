@@ -284,8 +284,8 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     // Replace foo - -32 with foo + 32
-    if (right instanceof ConstantOperand) {
-      ConstantOperand rightConstant = (ConstantOperand) right;
+    if (right.isConstant()) {
+      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
       if (rightConstant.value() instanceof Integer) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
@@ -311,7 +311,7 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeAdd(BinOp op, Operand left, Operand right) {
-    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
+    if (left.isConstant() && right.isConstant()) {
       // May be ints strings or arrays (?)
       if (optimizeArith(op.destination(), left, right, (t, u) -> t + u)) {
         // Ints.
@@ -331,8 +331,8 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
     }
     // Replace foo + -32 with foo - 32
-    if (right instanceof ConstantOperand) {
-      ConstantOperand rightConstant = (ConstantOperand) right;
+    if (right.isConstant()) {
+      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
       if (rightConstant.value() instanceof Integer) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
@@ -453,10 +453,10 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeCompare(
       Location destination, Operand left, Operand right, BiPredicate<Integer, Integer> fun) {
 
-    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
-      ConstantOperand leftConstant = (ConstantOperand) left;
+    if (left.isConstant() && right.isConstant()) {
+      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
       if (leftConstant.value() instanceof Integer) {
-        ConstantOperand rightConstant = (ConstantOperand) right;
+        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
         Integer leftval = (Integer) leftConstant.value();
         Integer rightval = (Integer) rightConstant.value();
         replaceCurrent(
@@ -476,9 +476,9 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeEq(
       Location destination, Operand left, Operand right, BiPredicate<Object, Object> fun) {
 
-    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
-      ConstantOperand leftConstant = (ConstantOperand) left;
-      ConstantOperand rightConstant = (ConstantOperand) right;
+    if (left.isConstant() && right.isConstant()) {
+      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
+      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
       replaceCurrent(
           new Transfer(
               destination,
@@ -498,10 +498,10 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeArith(
       Location destination, Operand left, Operand right, BinaryOperator<Integer> fun) {
 
-    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
-      ConstantOperand leftConstant = (ConstantOperand) left;
+    if (left.isConstant() && right.isConstant()) {
+      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
       if (leftConstant.value() instanceof Integer) {
-        ConstantOperand rightConstant = (ConstantOperand) right;
+        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
         int leftval = (int) leftConstant.value();
         int rightval = (int) rightConstant.value();
         replaceCurrent(
@@ -521,10 +521,10 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeBoolArith(
       Location destination, Operand left, Operand right, BinaryOperator<Boolean> fun) {
 
-    if (left instanceof ConstantOperand && right instanceof ConstantOperand) {
-      ConstantOperand leftConstant = (ConstantOperand) left;
+    if (left.isConstant() && right.isConstant()) {
+      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
       if (leftConstant.value() instanceof Boolean) {
-        ConstantOperand rightConstant = (ConstantOperand) right;
+        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
         boolean leftval = (boolean) leftConstant.value();
         boolean rightval = (boolean) rightConstant.value();
         replaceCurrent(

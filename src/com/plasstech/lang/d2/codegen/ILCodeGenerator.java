@@ -211,7 +211,7 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
     node.setLocation(destination);
 
     // TODO: figure out storage for strings
-    ConstantOperand constOperand = new ConstantOperand(node.value());
+    ConstantOperand<T> constOperand = new ConstantOperand<T>(node.value());
     Transfer transfer = new Transfer(destination, constOperand);
     emit(transfer);
   }

@@ -47,8 +47,8 @@ public class ConstantOperand<T> implements Operand {
     if (obj == null || !(obj instanceof ConstantOperand)) {
       return false;
     }
-    
-    ConstantOperand<?> that = (ConstantOperand) obj;
+
+    ConstantOperand<?> that = (ConstantOperand<?>) obj;
     return this.value().equals(that.value());
   }
 

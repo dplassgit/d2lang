@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.parse;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;

@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -9,9 +12,6 @@ import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.TypeCheckResult;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class CodeGenDriver {
 

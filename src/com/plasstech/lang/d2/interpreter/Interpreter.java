@@ -91,7 +91,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
           "Current op: ip: %d: %s. cycle %d st %s", ip, op, result.instructionCycles(), envs);
       ip++;
       try {
-      op.accept(this);
+        op.accept(this);
       } catch (RuntimeException re) {
         logger.atSevere().withCause(re).log("Exception at ip %d: %s; env: %s", ip, op, envs);
         // Yeah yeah I know.
@@ -376,7 +376,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private Object resolve(Operand operand) {
     Object value;
     if (operand.isConstant()) {
-      value = ((ConstantOperand) operand).value();
+      value = ((ConstantOperand<?>) operand).value();
     } else {
       // symbol
       String name = ((Location) operand).name();
