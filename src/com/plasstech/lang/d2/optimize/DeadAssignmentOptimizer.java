@@ -1,10 +1,13 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.FieldSetAddress;
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;

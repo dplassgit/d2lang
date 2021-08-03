@@ -1,8 +1,13 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.plasstech.lang.d2.codegen.FieldSetAddress;
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.StackLocation;
+import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;

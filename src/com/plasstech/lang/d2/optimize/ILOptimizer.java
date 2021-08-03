@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

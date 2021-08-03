@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.testing.TestUtils;
 
 public class InlineOptimizerTest {
   private Optimizer optimizer = new ILOptimizer(new InlineOptimizer(2)).setDebugLevel(2);

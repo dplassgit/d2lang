@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.List;

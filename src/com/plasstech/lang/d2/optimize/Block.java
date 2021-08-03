@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 /** Represents the start and end IP of a block. It is MUTABLE. */
 class Block {

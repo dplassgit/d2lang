@@ -4,11 +4,11 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.ILOptimizer;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
+@SuppressWarnings("unused")
 public class ExecutionEnvironment {
 
   private final String program;
@@ -127,14 +128,6 @@ public class ExecutionEnvironment {
 
   public ProgramNode programNode() {
     return programNode;
-  }
-
-  public TypeCheckResult typeCheckResult() {
-    return typeCheckResult;
-  }
-
-  public ExecutionResult result() {
-    return result;
   }
 
   public ImmutableList<Op> code() {

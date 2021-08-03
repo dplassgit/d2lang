@@ -1,20 +1,30 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.testing;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.ExecutionEnvironment;
+import com.plasstech.lang.d2.codegen.CodeGenerator;
+import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.optimize.ILOptimizer;
+import com.plasstech.lang.d2.optimize.Optimizer;
+import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.type.StaticChecker;
+import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class TestUtils {
 
-  static ExecutionResult optimizeAssertSameVariables(String program) {
+  public static ExecutionResult optimizeAssertSameVariables(String program) {
     return optimizeAssertSameVariables(program, new ILOptimizer(2));
   }
 
-  static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
+  public static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
     ExecutionEnvironment ee = new ExecutionEnvironment(program);
     ExecutionResult unoptimizedResult = ee.execute();
     System.out.printf("\nUNOPTIMIZED:\n");
@@ -51,7 +61,7 @@ public class TestUtils {
     return optimizedResult;
   }
 
-  static final String LINKED_LIST =
+  public static final String LINKED_LIST =
       "      intlist: record { "
           + "  value: int "
           + "  next: intlist "
@@ -107,4 +117,23 @@ public class TestUtils {
           + "} "
           + "val = recordloopnoninvariant(new rt) "
           + "println val";
+
+  // Hm, maybe move this to ExecutionEnvironment?
+  public static ImmutableList<Op> compile(String text) {
+    Lexer lex = new Lexer(text);
+    Parser parser = new Parser(lex);
+    Node node = parser.parse();
+    assertWithMessage(node.message()).that(node.isError()).isFalse();
+
+    StaticChecker checker = new StaticChecker(node);
+    TypeCheckResult typeCheckResult = checker.execute();
+    assertWithMessage(typeCheckResult.message()).that(typeCheckResult.isError()).isFalse();
+    SymTab symbolTable = typeCheckResult.symbolTable();
+
+    CodeGenerator<Op> codegen = new ILCodeGenerator(node, symbolTable);
+    ImmutableList<Op> ilCode = codegen.generate();
+    // Runs all the optimizers.
+    ILOptimizer optimizer = new ILOptimizer(2);
+    return optimizer.optimize(ilCode);
+  }
 }

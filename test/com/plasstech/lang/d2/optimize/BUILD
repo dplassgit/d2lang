@@ -1,7 +1,7 @@
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
 gen_java_tests(name="SmallTests",
-    srcs=glob(["*.java"],exclude=["GoldensTest.java",]),
+    srcs=glob(["*.java"]),
     prefix_path="test/",
     deps=[
         "//src/com/plasstech/lang/d2:execution_environment",
@@ -10,6 +10,7 @@ gen_java_tests(name="SmallTests",
         "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/interpreter",
         "//src/com/plasstech/lang/d2/lex",
+        "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/type",

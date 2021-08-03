@@ -1,8 +1,9 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.testing.TestUtils;
 
 public class ArithmeticOptimizerTest {
   private ArithmeticOptimizer optimizer = new ArithmeticOptimizer(0);

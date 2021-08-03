@@ -1,10 +1,13 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
 import com.google.common.base.Objects;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;

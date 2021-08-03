@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -7,6 +7,10 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.MemoryAddress;
+import com.plasstech.lang.d2.codegen.StackLocation;
+import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
