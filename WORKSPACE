@@ -16,11 +16,14 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 maven_install(
     artifacts = [
         "junit:junit:4.13.2",
+        "com.github.pcj:google-options:jar:1.0.0",
+        "com.google.auto.value:auto-value-annotations:1.8.1",
+        "com.google.auto.value:auto-value:1.8.1",
+        "com.google.code.findbugs:jsr305:3.0.2",
         "com.google.guava:guava:30.1.1-jre",
         "com.google.flogger:flogger:0.6",
         "com.google.flogger:flogger-system-backend:0.6",
         "com.google.truth:truth:1.1.3",
-        "com.github.pcj:google-options:jar:1.0.0",
         "com.google.truth.extensions:truth-java8-extension:1.1.3",
     ],
     repositories = [
