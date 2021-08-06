@@ -9,9 +9,7 @@ import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
-import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 
@@ -28,20 +26,21 @@ public class ILOptimizerDriver {
     if (state.error()) {
       throw state.exception();
     }
-    ProgramNode root = state.programNode();
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     if (state.error()) {
       throw state.exception();
     }
-    ILCodeGenerator cg = new ILCodeGenerator(root, state.symbolTable());
-    ImmutableList<Op> unoptimizedCode = cg.generate();
+    ILCodeGenerator cg = new ILCodeGenerator();
+    state = cg.execute(state);
+    ImmutableList<Op> unoptimizedCode = state.ilCode();
     System.out.println("UNOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(unoptimizedCode));
     System.out.println();
-    Optimizer optimizer = new ILOptimizer(2);
-    ImmutableList<Op> optimizedCode = optimizer.optimize(unoptimizedCode);
+    
+    ILOptimizer optimizer = new ILOptimizer(2);
+    state = optimizer.execute(state);
     System.out.println("OPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimizedCode));
+    System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
   }
 }

@@ -20,7 +20,7 @@ import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
-public class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
+class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Level loggingLevel;

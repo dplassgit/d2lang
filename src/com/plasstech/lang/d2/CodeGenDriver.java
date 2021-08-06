@@ -4,10 +4,11 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 
@@ -24,14 +25,14 @@ public class CodeGenDriver {
     if (state.error()) {
       throw state.exception();
     }
-    ProgramNode root = state.programNode();
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     if (state.error()) {
       throw state.exception();
     }
-    System.out.println(root);
-    ILCodeGenerator cg = new ILCodeGenerator(root, state.typeCheckResult().symbolTable());
-    System.out.println(Joiner.on("\n").join(cg.generate()));
+    ILCodeGenerator cg = new ILCodeGenerator();
+    state = cg.execute(state);
+    ImmutableList<Op> code = state.ilCode();
+    System.out.println(Joiner.on("\n").join(code));
   }
 }

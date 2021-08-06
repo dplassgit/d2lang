@@ -2,7 +2,6 @@ package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
@@ -92,28 +91,26 @@ public class ExecutionEnvironment {
 
     SymTab symbolTable = state.symbolTable();
 
-    CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
-    ImmutableList<Op> ilCode = codegen.generate();
-    state = state.addIlCode(ilCode);
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
     if (debugCodeGen > 0) {
       System.out.println("\nUNOPTIMIZED:");
       System.out.println("------------------------------");
-      System.out.println(Joiner.on("\n").join(ilCode));
+      System.out.println(Joiner.on("\n").join(state.ilCode()));
     }
     if (optimize) {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
-      ilCode = optimizer.optimize(ilCode);
-      state = state.addOptimizedCode(ilCode);
+      state = optimizer.execute(state);
       if (debugOpt > 0) {
         System.out.println("\nOPTIMIZED:");
         System.out.println("------------------------------");
-        System.out.println(Joiner.on("\n").join(ilCode));
+        System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
         System.out.println();
       }
     }
 
-    return execute(ilCode);
+    return execute(state.lastIlCode());
   }
 
   public ExecutionResult execute(ImmutableList<Op> code) {

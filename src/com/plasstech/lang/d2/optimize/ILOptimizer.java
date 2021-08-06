@@ -3,8 +3,10 @@ package com.plasstech.lang.d2.optimize;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.phase.Phase;
+import com.plasstech.lang.d2.phase.State;
 
-public class ILOptimizer implements Optimizer {
+public class ILOptimizer implements Optimizer, Phase {
   private int debugLevel;
   private final ImmutableList<Optimizer> children;
   private boolean changed;
@@ -48,6 +50,12 @@ public class ILOptimizer implements Optimizer {
 
   public void setChanged(boolean changed) {
     this.changed = changed;
+  }
+
+  @Override
+  public State execute(State input) {
+    ImmutableList<Op> optimized = optimize(input.ilCode());
+    return input.addOptimizedCode(optimized);
   }
 
   @Override

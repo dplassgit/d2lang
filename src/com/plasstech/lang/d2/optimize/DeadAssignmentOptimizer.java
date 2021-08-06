@@ -21,7 +21,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 
-public class DeadAssignmentOptimizer extends LineOptimizer {
+class DeadAssignmentOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from object to line number

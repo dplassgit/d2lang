@@ -9,10 +9,8 @@ import org.junit.Test;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymTab;
 
 public class ILCodeGeneratorTest {
 
@@ -140,15 +138,12 @@ public class ILCodeGeneratorTest {
     if (state.error()) {
       fail(state.errorMessage());
     }
-    ProgramNode root = state.programNode();
-
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     if (state.error()) {
       fail(state.errorMessage());
     }
-    SymTab table = state.symbolTable();
-    CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
-    return codegen.generate();
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    return codegen.execute(state).ilCode();
   }
 }

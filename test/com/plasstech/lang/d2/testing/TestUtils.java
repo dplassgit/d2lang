@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.ExecutionEnvironment;
-import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
@@ -17,7 +16,6 @@ import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymTab;
 
 public class TestUtils {
 
@@ -132,12 +130,11 @@ public class TestUtils {
     if (state.error()) {
       fail(state.errorMessage());
     }
-    SymTab symbolTable = state.symbolTable();
 
-    CodeGenerator<Op> codegen = new ILCodeGenerator(state.programNode(), symbolTable);
-    ImmutableList<Op> ilCode = codegen.generate();
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
     // Runs all the optimizers.
     ILOptimizer optimizer = new ILOptimizer(2);
-    return optimizer.optimize(ilCode);
+    return optimizer.optimize(state.ilCode());
   }
 }

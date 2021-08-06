@@ -997,7 +997,6 @@ public class StaticCheckerTest {
     State state = State.create(program).build();
     state = parser.execute(state);
     assertWithMessage("Should have passed parse for:\n " + program).that(state.error()).isFalse();
-    ProgramNode programRoot = state.programNode();
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     return state;
