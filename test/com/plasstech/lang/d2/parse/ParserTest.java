@@ -39,6 +39,7 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
@@ -1278,18 +1279,18 @@ public class ParserTest {
   private ProgramNode parseProgram(String expression) {
     Lexer lexer = new Lexer(expression);
     Parser parser = new Parser(lexer);
-    Node node = parser.parse();
-    if (node.isError()) {
-      fail(node.message());
+    State output = parser.execute(State.create());
+    if (output.error()) {
+      fail(output.errorMessage());
     }
-    return (ProgramNode) node;
+    return output.programNode();
   }
 
   private void assertParseError(String expressionToParse, String errorMsgContains) {
     Lexer lexer = new Lexer(expressionToParse);
     Parser parser = new Parser(lexer);
-    Node node = parser.parse();
-    assertWithMessage("Should be an error node").that(node.isError()).isTrue();
-    assertThat(node.message()).contains(errorMsgContains);
+    State output = parser.execute(State.create());
+    assertWithMessage("Should be an error node").that(output.error()).isTrue();
+    assertThat(output.errorMessage()).contains(errorMsgContains);
   }
 }

@@ -45,11 +45,13 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.Phase;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
 
-public class Parser {
+public class Parser implements Phase {
 
   private static final ImmutableMap<Token.Type, VarType> BUILTINS =
       ImmutableMap.of(
@@ -96,12 +98,18 @@ public class Parser {
     return prev;
   }
 
-  public Node parse() {
+  @Override
+  public State execute(State input) {
     try {
-      return program();
-    } catch (ParseException te) {
-      return te.errorNode();
+      ProgramNode node = parse();
+      return input.addProgramNode(node);
+    } catch (ParseException pe) {
+      return input.addException(pe);
     }
+  }
+
+  private ProgramNode parse() {
+    return program();
   }
 
   private void expect(Token.Type first, Token.Type... rest) {

@@ -1,17 +1,19 @@
 package com.plasstech.lang.d2.type;
 
+import com.plasstech.lang.d2.common.D2RuntimeException;
+
 public class TypeCheckResult {
   private final SymTab symTab;
-  private final String message;
+  private final D2RuntimeException exception;
 
   public TypeCheckResult(SymTab symTab) {
     this.symTab = symTab;
-    this.message = null;
+    this.exception = null;
   }
 
-  public TypeCheckResult(String errorMessage) {
+  public TypeCheckResult(D2RuntimeException exception) {
     this.symTab = null;
-    this.message = errorMessage;
+    this.exception = exception;
   }
 
   public SymTab symbolTable() {
@@ -22,10 +24,10 @@ public class TypeCheckResult {
   }
 
   public boolean isError() {
-    return message != null;
+    return exception != null;
   }
 
-  public String message() {
-    return message;
+  public D2RuntimeException exception() {
+    return exception;
   }
 }

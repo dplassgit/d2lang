@@ -1,11 +1,13 @@
 package com.plasstech.lang.d2;
 
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.Node;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.phase.State;
 
 public class ParserDriver {
 
@@ -22,7 +24,11 @@ public class ParserDriver {
     // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
-    Node node = parser.parse();
+    State state = parser.execute(State.create(text).build());
+    if (state.error()) {
+      throw state.exception();
+    }
+    Node node = state.programNode();
     System.out.println(node);
   }
 }

@@ -10,13 +10,13 @@ import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
+/** TODO: Rename this "Executor" */
 @SuppressWarnings("unused")
 public class ExecutionEnvironment {
 
@@ -79,19 +79,17 @@ public class ExecutionEnvironment {
   public ExecutionResult execute() {
     Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
-    Node parseNode = parser.parse();
-    if (parseNode.isError()) {
-      // TODO: Throw the ParseException instead.
-      throw new RuntimeException(parseNode.message());
+    state = parser.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
-    ProgramNode programNode = (ProgramNode) parseNode;
+    ProgramNode programNode = state.programNode();
     state = state.addProgramNode(programNode);
     StaticChecker checker = new StaticChecker(programNode);
     TypeCheckResult typeCheckResult = checker.execute();
     state = state.addTypecheckResult(typeCheckResult);
     if (typeCheckResult.isError()) {
-      // TODO: Throw the TypeException instead.
-      throw new RuntimeException(typeCheckResult.message());
+      throw new RuntimeException(typeCheckResult.exception());
     }
 
     SymTab symbolTable = typeCheckResult.symbolTable();

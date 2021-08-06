@@ -115,14 +115,14 @@ public class StaticChecker extends DefaultVisitor {
     try {
       root.accept(procGatherer);
     } catch (TypeException e) {
-      return new TypeCheckResult(e.toString());
+      return new TypeCheckResult(e);
     }
 
     NodeVisitor recordGatherer = new RecordGatherer(symbolTable);
     try {
       root.accept(recordGatherer);
     } catch (TypeException e) {
-      return new TypeCheckResult(e.toString());
+      return new TypeCheckResult(e);
     }
 
     try {
@@ -137,7 +137,7 @@ public class StaticChecker extends DefaultVisitor {
     } catch (TypeException e) {
       e.printStackTrace();
       //      throw e;
-      return new TypeCheckResult(e.toString());
+      return new TypeCheckResult(e);
     }
   }
 

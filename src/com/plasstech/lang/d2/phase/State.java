@@ -13,6 +13,10 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 @AutoValue
 public abstract class State {
 
+  public static State create() {
+    return new AutoValue_State.Builder().build();
+  }
+
   public static Builder create(String sourceCode) {
     return new AutoValue_State.Builder().setSourceCode(sourceCode);
   }
@@ -22,6 +26,11 @@ public abstract class State {
 
   public boolean error() {
     return exception() != null;
+  }
+
+  public String errorMessage() {
+    assert error();
+    return exception().getMessage();
   }
 
   @Nullable

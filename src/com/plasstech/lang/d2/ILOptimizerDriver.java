@@ -11,9 +11,8 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ErrorNode;
-import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
@@ -26,15 +25,15 @@ public class ILOptimizerDriver {
     // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
-    Node node = parser.parse();
-    if (node.isError()) {
-      throw new RuntimeException(((ErrorNode) node).message());
+    State state = parser.execute(State.create(text).build());
+    if (state.error()) {
+      throw state.exception();
     }
-    ProgramNode root = (ProgramNode) node;
+    ProgramNode root = state.programNode();
     StaticChecker checker = new StaticChecker(root);
     TypeCheckResult checkResult = checker.execute();
     if (checkResult.isError()) {
-      throw new RuntimeException(checkResult.message());
+      throw checkResult.exception();
     }
     ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
     ImmutableList<Op> unoptimizedCode = cg.generate();

@@ -1,6 +1,8 @@
 package com.plasstech.lang.d2.testing;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -13,7 +15,7 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.Node;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
@@ -121,16 +123,19 @@ public class TestUtils {
   // Hm, maybe move this to ExecutionEnvironment?
   public static ImmutableList<Op> compile(String text) {
     Lexer lex = new Lexer(text);
+    State state = State.create(text).build();
     Parser parser = new Parser(lex);
-    Node node = parser.parse();
-    assertWithMessage(node.message()).that(node.isError()).isFalse();
+    state = parser.execute(state);
+    assertThat(state.error()).isFalse();
 
-    StaticChecker checker = new StaticChecker(node);
+    StaticChecker checker = new StaticChecker(state.programNode());
     TypeCheckResult typeCheckResult = checker.execute();
-    assertWithMessage(typeCheckResult.message()).that(typeCheckResult.isError()).isFalse();
+    if (typeCheckResult.isError()) {
+      fail(typeCheckResult.exception().getMessage());
+    }
     SymTab symbolTable = typeCheckResult.symbolTable();
 
-    CodeGenerator<Op> codegen = new ILCodeGenerator(node, symbolTable);
+    CodeGenerator<Op> codegen = new ILCodeGenerator(state.programNode(), symbolTable);
     ImmutableList<Op> ilCode = codegen.generate();
     // Runs all the optimizers.
     ILOptimizer optimizer = new ILOptimizer(2);
