@@ -18,7 +18,7 @@ java_library(
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
-        "//src/com/plasstech/lang/d2/type",
+        "//src/com/plasstech/lang/d2/type:result",
         "//src/com/plasstech/lang/d2/type:symbols",
         "@maven//:com_google_code_findbugs_jsr305",
         "@maven//:com_google_guava_guava",
