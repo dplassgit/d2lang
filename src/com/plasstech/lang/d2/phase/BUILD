@@ -25,4 +25,14 @@ java_library(
         "@maven//:com_google_auto_value_auto_value",
         "@maven//:com_google_auto_value_auto_value_annotations",
     ],
+    visibility=["//visibility:public"],
+)
+
+java_library(
+    name = "phase",
+    srcs = ["Phase.java"],
+    deps = [
+        ":state", 
+    ],
+    visibility=["//visibility:public"],
 )

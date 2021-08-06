@@ -90,6 +90,7 @@ java_library(
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse",
         "//src/com/plasstech/lang/d2/parse/node",
+        "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type",
         "//src/com/plasstech/lang/d2/type:symbols",
         "@maven//:com_github_pcj_google_options",

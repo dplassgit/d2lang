@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
@@ -19,7 +20,6 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 @SuppressWarnings("unused")
 public class ExecutionEnvironment {
 
-  private final String program;
   private boolean optimize;
   private boolean interactive;
   private int debuglex;
@@ -28,15 +28,12 @@ public class ExecutionEnvironment {
   private int debugType;
   private int debugParse;
   private int debugInt;
-  private ProgramNode programNode;
-  private TypeCheckResult typeCheckResult;
-  private SymTab symbolTable;
-  private ImmutableList<Op> ilCode;
+  private State state;
   private ExecutionResult result;
 
   /** TODO: Make this a builder */
-  public ExecutionEnvironment(String program) {
-    this.program = program;
+  public ExecutionEnvironment(String sourceCode) {
+    this.state = State.create(sourceCode).build();
   }
 
   public ExecutionEnvironment setOptimize(boolean optimize) {
@@ -80,25 +77,29 @@ public class ExecutionEnvironment {
   }
 
   public ExecutionResult execute() {
-    Lexer lexer = new Lexer(program);
+    Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
     Node parseNode = parser.parse();
     if (parseNode.isError()) {
       // TODO: Throw the ParseException instead.
       throw new RuntimeException(parseNode.message());
     }
-    programNode = (ProgramNode) parseNode;
+    ProgramNode programNode = (ProgramNode) parseNode;
+    state = state.addProgramNode(programNode);
     StaticChecker checker = new StaticChecker(programNode);
-    typeCheckResult = checker.execute();
+    TypeCheckResult typeCheckResult = checker.execute();
+    state = state.addTypecheckResult(typeCheckResult);
     if (typeCheckResult.isError()) {
       // TODO: Throw the TypeException instead.
       throw new RuntimeException(typeCheckResult.message());
     }
 
-    symbolTable = typeCheckResult.symbolTable();
+    SymTab symbolTable = typeCheckResult.symbolTable();
+    state = state.addSymbolTable(symbolTable);
 
     CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
-    ilCode = codegen.generate();
+    ImmutableList<Op> ilCode = codegen.generate();
+    state = state.addIlCode(ilCode);
     if (debugCodeGen > 0) {
       System.out.println("\nUNOPTIMIZED:");
       System.out.println("------------------------------");
@@ -108,6 +109,7 @@ public class ExecutionEnvironment {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
       ilCode = optimizer.optimize(ilCode);
+      state = state.addOptimizedCode(ilCode);
       if (debugOpt > 0) {
         System.out.println("\nOPTIMIZED:");
         System.out.println("------------------------------");
@@ -120,17 +122,17 @@ public class ExecutionEnvironment {
   }
 
   public ExecutionResult execute(ImmutableList<Op> code) {
-    Interpreter interpreter = new Interpreter(code, symbolTable, interactive);
+    Interpreter interpreter = new Interpreter(code, state.symbolTable(), interactive);
     interpreter.setDebugLevel(debugInt);
     result = interpreter.execute();
     return result;
   }
 
   public ProgramNode programNode() {
-    return programNode;
+    return state.programNode();
   }
 
   public ImmutableList<Op> code() {
-    return ilCode;
+    return state.lastIlCode();
   }
 }
