@@ -43,7 +43,14 @@ public abstract class State {
   public abstract ProgramNode programNode();
 
   @Nullable
-  public abstract SymTab symbolTable();
+  public SymTab symbolTable() {
+    TypeCheckResult result = typeCheckResult();
+    if (result != null && !result.isError()) {
+      return result.symbolTable();
+    } else {
+      return null;
+    }
+  }
 
   @Nullable
   public abstract TypeCheckResult typeCheckResult();
@@ -75,8 +82,6 @@ public abstract class State {
 
     public abstract Builder setProgramNode(ProgramNode node);
 
-    public abstract Builder setSymbolTable(SymTab symbolTable);
-
     public abstract Builder setTypeCheckResult(TypeCheckResult result);
 
     public abstract Builder setIlCode(ImmutableList<Op> code);
@@ -104,11 +109,10 @@ public abstract class State {
     return toBuilder().setProgramNode(node).build();
   }
 
-  public State addSymbolTable(SymTab table) {
-    return toBuilder().setSymbolTable(table).build();
-  }
-
   public State addTypecheckResult(TypeCheckResult result) {
+    if (result.isError()) {
+      return toBuilder().setException(result.exception()).build();
+    }
     return toBuilder().setTypeCheckResult(result).build();
   }
 

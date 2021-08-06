@@ -9,7 +9,6 @@ import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class CheckerDriver {
 
@@ -32,12 +31,12 @@ public class CheckerDriver {
     ProgramNode node = state.programNode();
     System.out.println("BEFORE:");
     System.out.println(node);
-    StaticChecker checker = new StaticChecker(node);
-    TypeCheckResult result = checker.execute();
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
     System.out.println("\nAFTER:");
     System.out.println(node);
-    if (result.isError()) {
-      System.err.println(result.exception().getMessage());
+    if (state.error()) {
+      System.err.println(state.exception().getMessage());
     }
   }
 }

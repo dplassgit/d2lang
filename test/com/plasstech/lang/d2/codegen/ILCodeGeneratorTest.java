@@ -13,7 +13,6 @@ import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class ILCodeGeneratorTest {
 
@@ -143,12 +142,12 @@ public class ILCodeGeneratorTest {
     }
     ProgramNode root = state.programNode();
 
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    if (result.isError()) {
-      fail(result.exception().getMessage());
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      fail(state.errorMessage());
     }
-    SymTab table = result.symbolTable();
+    SymTab table = state.symbolTable();
     CodeGenerator<Op> codegen = new ILCodeGenerator(root, table);
     return codegen.generate();
   }

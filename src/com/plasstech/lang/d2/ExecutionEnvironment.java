@@ -14,7 +14,6 @@ import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 /** TODO: Rename this "Executor" */
 @SuppressWarnings("unused")
@@ -85,15 +84,13 @@ public class ExecutionEnvironment {
     }
     ProgramNode programNode = state.programNode();
     state = state.addProgramNode(programNode);
-    StaticChecker checker = new StaticChecker(programNode);
-    TypeCheckResult typeCheckResult = checker.execute();
-    state = state.addTypecheckResult(typeCheckResult);
-    if (typeCheckResult.isError()) {
-      throw new RuntimeException(typeCheckResult.exception());
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
 
-    SymTab symbolTable = typeCheckResult.symbolTable();
-    state = state.addSymbolTable(symbolTable);
+    SymTab symbolTable = state.symbolTable();
 
     CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
     ImmutableList<Op> ilCode = codegen.generate();

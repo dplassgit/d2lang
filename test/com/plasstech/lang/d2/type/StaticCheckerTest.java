@@ -998,13 +998,8 @@ public class StaticCheckerTest {
     state = parser.execute(state);
     assertWithMessage("Should have passed parse for:\n " + program).that(state.error()).isFalse();
     ProgramNode programRoot = state.programNode();
-    StaticChecker checker = new StaticChecker(programRoot);
-    TypeCheckResult result = checker.execute();
-    if (!result.isError()) {
-      state = state.addSymbolTable(result.symbolTable());
-    } else {
-      state = state.addException(result.exception());
-    }
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
     return state;
   }
 }

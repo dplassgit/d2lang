@@ -18,7 +18,6 @@ import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class TestUtils {
 
@@ -128,12 +127,12 @@ public class TestUtils {
     state = parser.execute(state);
     assertThat(state.error()).isFalse();
 
-    StaticChecker checker = new StaticChecker(state.programNode());
-    TypeCheckResult typeCheckResult = checker.execute();
-    if (typeCheckResult.isError()) {
-      fail(typeCheckResult.exception().getMessage());
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      fail(state.errorMessage());
     }
-    SymTab symbolTable = typeCheckResult.symbolTable();
+    SymTab symbolTable = state.symbolTable();
 
     CodeGenerator<Op> codegen = new ILCodeGenerator(state.programNode(), symbolTable);
     ImmutableList<Op> ilCode = codegen.generate();

@@ -38,8 +38,10 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.Phase;
+import com.plasstech.lang.d2.phase.State;
 
-public class StaticChecker extends DefaultVisitor {
+public class StaticChecker extends DefaultVisitor implements Phase {
   private static final Set<Token.Type> COMPARISION_OPERATORS =
       ImmutableSet.of(
           Token.Type.AND,
@@ -100,7 +102,7 @@ public class StaticChecker extends DefaultVisitor {
   private static final Set<Token.Type> ARRAY_OPERATORS =
       ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.LBRACKET);
 
-  private final Node root;
+  private Node root;
   private final SymTab symbolTable = new SymTab();
 
   private Stack<ProcSymbol> procedures = new Stack<>();
@@ -110,7 +112,19 @@ public class StaticChecker extends DefaultVisitor {
     this.root = root;
   }
 
-  public TypeCheckResult execute() {
+  public StaticChecker() {
+    this.root = null;
+  }
+
+  @Override
+  public State execute(State input) {
+    assert input.programNode() != null;
+    root = input.programNode();
+    TypeCheckResult result = execute();
+    return input.addTypecheckResult(result);
+  }
+
+  private TypeCheckResult execute() {
     NodeVisitor procGatherer = new ProcGatherer(symbolTable);
     try {
       root.accept(procGatherer);

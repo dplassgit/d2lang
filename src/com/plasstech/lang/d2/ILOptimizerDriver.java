@@ -14,7 +14,6 @@ import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class ILOptimizerDriver {
 
@@ -30,12 +29,12 @@ public class ILOptimizerDriver {
       throw state.exception();
     }
     ProgramNode root = state.programNode();
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult checkResult = checker.execute();
-    if (checkResult.isError()) {
-      throw checkResult.exception();
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
-    ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
+    ILCodeGenerator cg = new ILCodeGenerator(root, state.symbolTable());
     ImmutableList<Op> unoptimizedCode = cg.generate();
     System.out.println("UNOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(unoptimizedCode));
