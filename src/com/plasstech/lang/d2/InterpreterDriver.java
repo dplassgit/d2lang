@@ -45,8 +45,8 @@ public class InterpreterDriver {
       return;
     }
 
-    ExecutionEnvironment ee = 
-        new ExecutionEnvironment(text)
+    Executor ee = 
+        new Executor(text)
             .setInteractive(true)
             .setLexDebugLevel(options.debuglex)
             .setParseDebugLevel(options.debugparse)

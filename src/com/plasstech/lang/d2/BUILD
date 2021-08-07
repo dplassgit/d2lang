@@ -65,7 +65,7 @@ java_binary(name="ILOptimizerDriver",
 java_binary(name="InterpreterDriver",
             srcs=["InterpreterDriver.java"],
             deps=[
-              ":execution_environment",
+              ":executor",
               "//src/com/plasstech/lang/d2/codegen",
               "//src/com/plasstech/lang/d2/codegen/il",
               "//src/com/plasstech/lang/d2/common",
@@ -84,8 +84,8 @@ java_binary(name="InterpreterDriver",
             )
 
 java_library(
-    name="execution_environment",
-    srcs=["ExecutionEnvironment.java"],
+    name="executor",
+    srcs=["Executor.java"],
     deps=[
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/common",

@@ -5,7 +5,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.ExecutionEnvironment;
+import com.plasstech.lang.d2.Executor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.testing.TestUtils;
 
@@ -63,7 +63,7 @@ public class ILOptimizerTest {
 
   @Test
   public void divByZero() {
-    ExecutionEnvironment ee = new ExecutionEnvironment("a = 1 / 0");
+    Executor ee = new Executor("a = 1 / 0");
     try {
       ee.execute();
       fail("Should fail with division by 0");

@@ -4,7 +4,7 @@ gen_java_tests(name="SmallTests",
     srcs=glob(["*.java"]),
     prefix_path="test/",
     deps=[
-        "//src/com/plasstech/lang/d2:execution_environment",
+        "//src/com/plasstech/lang/d2:executor",
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/codegen:location",

@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.ExecutionEnvironment;
+import com.plasstech.lang.d2.Executor;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
@@ -24,7 +24,7 @@ public class TestUtils {
   }
 
   public static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
-    ExecutionEnvironment ee = new ExecutionEnvironment(program);
+    Executor ee = new Executor(program);
     ExecutionResult unoptimizedResult = ee.execute();
     System.out.printf("\nUNOPTIMIZED:\n");
     System.out.println(Joiner.on("\n").join(unoptimizedResult.code()));

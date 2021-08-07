@@ -2,7 +2,7 @@ java_library(
     name="test_utils",
     srcs=["TestUtils.java"],
     deps=[
-        "//src/com/plasstech/lang/d2:execution_environment",
+        "//src/com/plasstech/lang/d2:executor",
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/interpreter",

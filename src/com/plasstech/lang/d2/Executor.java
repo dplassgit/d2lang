@@ -12,9 +12,8 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 
-/** TODO: Rename this "Executor" */
 @SuppressWarnings("unused")
-public class ExecutionEnvironment {
+public class Executor {
 
   private boolean optimize;
   private boolean interactive;
@@ -28,46 +27,46 @@ public class ExecutionEnvironment {
   private ExecutionResult result;
 
   /** TODO: Make this a builder */
-  public ExecutionEnvironment(String sourceCode) {
+  public Executor(String sourceCode) {
     this.state = State.create(sourceCode).build();
   }
 
-  public ExecutionEnvironment setOptimize(boolean optimize) {
+  public Executor setOptimize(boolean optimize) {
     this.optimize = optimize;
     return this;
   }
 
-  public ExecutionEnvironment setInteractive(boolean interactive) {
+  public Executor setInteractive(boolean interactive) {
     this.interactive = interactive;
     return this;
   }
 
-  public ExecutionEnvironment setLexDebugLevel(int level) {
+  public Executor setLexDebugLevel(int level) {
     this.debuglex = level;
     return this;
   }
 
-  public ExecutionEnvironment setParseDebugLevel(int level) {
+  public Executor setParseDebugLevel(int level) {
     this.debugParse = level;
     return this;
   }
 
-  public ExecutionEnvironment setTypeDebugLevel(int level) {
+  public Executor setTypeDebugLevel(int level) {
     this.debugType = level;
     return this;
   }
 
-  public ExecutionEnvironment setCodeGenDebugLevel(int level) {
+  public Executor setCodeGenDebugLevel(int level) {
     this.debugCodeGen = level;
     return this;
   }
 
-  public ExecutionEnvironment setOptDebugLevel(int level) {
+  public Executor setOptDebugLevel(int level) {
     this.debugOpt = level;
     return this;
   }
 
-  public ExecutionEnvironment setIntDebugLevel(int level) {
+  public Executor setIntDebugLevel(int level) {
     this.debugInt = level;
     return this;
   }
