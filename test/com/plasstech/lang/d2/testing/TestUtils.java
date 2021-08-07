@@ -39,7 +39,7 @@ public class TestUtils {
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));
 
-    ExecutionResult optimizedResult = ee.execute(optimized);
+    ExecutionResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
 
     System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");

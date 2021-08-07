@@ -88,7 +88,6 @@ java_library(
     srcs=["ExecutionEnvironment.java"],
     deps=[
         "//src/com/plasstech/lang/d2/codegen",
-        "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",
         "//src/com/plasstech/lang/d2/lex",

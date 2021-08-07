@@ -1,9 +1,7 @@
 package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -110,21 +108,17 @@ public class ExecutionEnvironment {
       }
     }
 
-    return execute(state.lastIlCode());
+    return execute(state);
   }
 
-  public ExecutionResult execute(ImmutableList<Op> code) {
-    Interpreter interpreter = new Interpreter(code, state.symbolTable(), interactive);
+  public ExecutionResult execute(State state) {
+    Interpreter interpreter = new Interpreter(state, interactive);
     interpreter.setDebugLevel(debugInt);
     result = interpreter.execute();
     return result;
   }
 
-  public ProgramNode programNode() {
-    return state.programNode();
-  }
-
-  public ImmutableList<Op> code() {
-    return state.lastIlCode();
+  public State state() {
+    return state;
   }
 }

@@ -60,7 +60,7 @@ public class InterpreterDriver {
     if (options.debugparse > 0) {
       System.out.println("\nPARSED PROGRAM:");
       System.out.println("------------------------------");
-      System.out.println(ee.programNode());
+      System.out.println(ee.state().programNode());
     }
 
     if (options.debugint > 0) {
