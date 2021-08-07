@@ -33,3 +33,4 @@ bazel-bin
 bazel-d2lang
 bazel-out
 bazel-testlogs
+.apt-generated
