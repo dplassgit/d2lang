@@ -34,6 +34,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -44,23 +45,25 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  private final State state;
   private final ImmutableList<Op> code;
-  private final boolean interactive;
-  private int ip;
-  private int iterations;
-  private boolean running = true;
   private final SymTab table;
+  private final boolean interactive;
+
   private final Environment rootEnv = new Environment();
   private final Stack<Integer> ipStack = new Stack<>();
   private final Stack<Environment> envs = new Stack<>();
+  private int ip;
+  private int iterations;
+  private boolean running = true;
 
   private Level loggingLevel;
-
   private ExecutionResult result;
 
-  public Interpreter(ImmutableList<Op> code, SymTab table, boolean interactive) {
-    this.code = code;
-    this.table = table;
+  public Interpreter(State state, boolean interactive) {
+    this.state = state;
+    this.code = state.lastIlCode();
+    this.table = state.symbolTable();
     this.interactive = interactive;
     envs.push(rootEnv);
   }
@@ -81,7 +84,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   public ExecutionResult execute() {
-    result = new ExecutionResult(code, rootEnv, table);
+    result = new ExecutionResult(state, rootEnv);
     while (running) {
       Op op = code.get(ip);
       if (!(op instanceof Nop) && !(op instanceof Label)) {

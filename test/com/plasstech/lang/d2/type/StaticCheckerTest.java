@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -17,6 +18,7 @@ import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
+import com.plasstech.lang.d2.phase.State;
 
 public class StaticCheckerTest {
 
@@ -33,15 +35,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignInt() {
-    Lexer lexer = new Lexer("a=3");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=3");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
@@ -53,15 +52,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignUnaryIntConst() {
-    Lexer lexer = new Lexer("a=-3");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=-3");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
@@ -73,16 +69,13 @@ public class StaticCheckerTest {
 
   @Test
   public void assignUnaryVar() {
-    Lexer lexer = new Lexer("a=3 b=-a");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=3 b=-a");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.varType()).isEqualTo(VarType.INT);
@@ -94,16 +87,13 @@ public class StaticCheckerTest {
 
   @Test
   public void assignUnaryExpr() {
-    Lexer lexer = new Lexer("a=3 b=-(a+3)");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=3 b=-(a+3)");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.varType()).isEqualTo(VarType.INT);
@@ -115,15 +105,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBool() {
-    Lexer lexer = new Lexer("a=true");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=true");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
@@ -223,15 +210,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignExpr() {
-    Lexer lexer = new Lexer("a=3+4-9");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=3+4-9");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("a");
@@ -254,12 +238,8 @@ public class StaticCheckerTest {
 
   @Test
   public void assignMulti() {
-    Lexer lexer = new Lexer("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -268,6 +248,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("b");
@@ -466,12 +447,8 @@ public class StaticCheckerTest {
 
   @Test
   public void main() {
-    Lexer lexer = new Lexer("main {a=3 b=a c=b+4 d=b==c e=3<4 f=d==true}");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    State state = safeTypeCheck("main {a=3 b=a c=b+4 d=b==c e=3<4 f=d==true}");
+    SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -480,6 +457,7 @@ public class StaticCheckerTest {
     assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
 
+    ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.main().get().block().statements().get(1);
     VariableSetNode var = (VariableSetNode) node.variable();
     assertThat(var.name()).isEqualTo("b");
@@ -492,12 +470,7 @@ public class StaticCheckerTest {
 
   @Test
   public void whileLoop() {
-    Lexer lexer = new Lexer("i=0 while i < 30 do b = i == 1 { print i }");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
+    SymTab types = checkProgram("i=0 while i < 30 do b = i == 1 { print i }");
 
     assertWithMessage("type of i").that(types.lookup("i")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
@@ -542,13 +515,7 @@ public class StaticCheckerTest {
 
   @Test
   public void decl() {
-    Lexer lexer = new Lexer("a:int a=3 b=a");
-    Parser parser = new Parser(lexer);
-
-    ProgramNode root = (ProgramNode) parser.parse();
-    StaticChecker checker = new StaticChecker(root);
-    SymTab types = execute(checker);
-
+    SymTab types = checkProgram("a:int a=3 b=a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
@@ -1004,35 +971,34 @@ public class StaticCheckerTest {
   }
 
   private void assertError(String program, String messageShouldContain) {
-    Lexer lexer = new Lexer(program);
-    Parser parser = new Parser(lexer);
-    Node rootNode = parser.parse();
-    assertWithMessage("Should have passed parse for:\n " + program)
-        .that(rootNode.isError())
-        .isFalse();
-    ProgramNode root = (ProgramNode) rootNode;
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult result = checker.execute();
-    assertWithMessage("Should have result error for:\n " + program).that(result.isError()).isTrue();
+    State state = unsafeTypeCheck(program);
+    assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
     assertWithMessage("Should have correct error for:\n " + program)
-        .that(result.message())
+        .that(state.errorMessage())
         .contains(messageShouldContain);
   }
 
   private SymTab checkProgram(String program) {
-    Lexer lexer = new Lexer(program);
-    Parser parser = new Parser(lexer);
-    Node node = parser.parse();
-    assertWithMessage("Should have passed parse for:\n " + program).that(node.isError()).isFalse();
-    ProgramNode programRoot = (ProgramNode) node;
-    StaticChecker checker = new StaticChecker(programRoot);
-    SymTab symTab = execute(checker);
-    return symTab;
+    State state = safeTypeCheck(program);
+    return state.symbolTable();
   }
 
-  private SymTab execute(StaticChecker checker) {
-    TypeCheckResult result = checker.execute();
-    assertWithMessage("Unexpected error: " + result.message()).that(result.isError()).isFalse();
-    return result.symbolTable();
+  private State safeTypeCheck(String program) {
+    State state = unsafeTypeCheck(program);
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
+    return state;
+  }
+
+  private State unsafeTypeCheck(String program) {
+    Lexer lexer = new Lexer(program);
+    Parser parser = new Parser(lexer);
+    State state = State.create(program).build();
+    state = parser.execute(state);
+    assertWithMessage("Should have passed parse for:\n " + program).that(state.error()).isFalse();
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    return state;
   }
 }

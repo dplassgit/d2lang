@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.interpreter;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 
 public class ExecutionResult {
@@ -17,10 +18,10 @@ public class ExecutionResult {
   private int branchesNotTaken;
   private int calls;
 
-  public ExecutionResult(ImmutableList<Op> code, Environment environment, SymTab symbolTable) {
-    this.code = code;
+  public ExecutionResult(State state, Environment environment) {
+    this.code = state.lastIlCode();
     this.environment = environment;
-    this.symbolTable = symbolTable;
+    this.symbolTable = state.symbolTable();
     this.linesOfCode = (int) code.stream().filter(op -> !(op instanceof Nop)).count();
   }
 

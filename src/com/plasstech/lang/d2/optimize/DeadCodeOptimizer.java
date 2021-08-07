@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
-public class DeadCodeOptimizer extends LineOptimizer {
+class DeadCodeOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   DeadCodeOptimizer(int debugLevel) {

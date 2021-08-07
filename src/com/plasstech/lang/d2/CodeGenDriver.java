@@ -4,14 +4,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ErrorNode;
-import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class CodeGenDriver {
 
@@ -22,18 +21,18 @@ public class CodeGenDriver {
     // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
-    Node node = parser.parse();
-    if (node.isError()) {
-      throw new RuntimeException(((ErrorNode) node).message());
+    State state = parser.execute(State.create(text).build());
+    if (state.error()) {
+      throw state.exception();
     }
-    ProgramNode root = (ProgramNode) node;
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult checkResult = checker.execute();
-    if (checkResult.isError()) {
-      throw new RuntimeException(checkResult.message());
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
-    System.out.println(root);
-    ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
-    System.out.println(Joiner.on("\n").join(cg.generate()));
+    ILCodeGenerator cg = new ILCodeGenerator();
+    state = cg.execute(state);
+    ImmutableList<Op> code = state.ilCode();
+    System.out.println(Joiner.on("\n").join(code));
   }
 }

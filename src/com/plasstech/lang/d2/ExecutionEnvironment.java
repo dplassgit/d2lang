@@ -1,25 +1,21 @@
 package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.codegen.CodeGenerator;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
+/** TODO: Rename this "Executor" */
 @SuppressWarnings("unused")
 public class ExecutionEnvironment {
 
-  private final String program;
   private boolean optimize;
   private boolean interactive;
   private int debuglex;
@@ -28,15 +24,12 @@ public class ExecutionEnvironment {
   private int debugType;
   private int debugParse;
   private int debugInt;
-  private ProgramNode programNode;
-  private TypeCheckResult typeCheckResult;
-  private SymTab symbolTable;
-  private ImmutableList<Op> ilCode;
+  private State state;
   private ExecutionResult result;
 
   /** TODO: Make this a builder */
-  public ExecutionEnvironment(String program) {
-    this.program = program;
+  public ExecutionEnvironment(String sourceCode) {
+    this.state = State.create(sourceCode).build();
   }
 
   public ExecutionEnvironment setOptimize(boolean optimize) {
@@ -80,57 +73,52 @@ public class ExecutionEnvironment {
   }
 
   public ExecutionResult execute() {
-    Lexer lexer = new Lexer(program);
+    Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
-    Node parseNode = parser.parse();
-    if (parseNode.isError()) {
-      // TODO: Throw the ParseException instead.
-      throw new RuntimeException(parseNode.message());
+    state = parser.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
-    programNode = (ProgramNode) parseNode;
-    StaticChecker checker = new StaticChecker(programNode);
-    typeCheckResult = checker.execute();
-    if (typeCheckResult.isError()) {
-      // TODO: Throw the TypeException instead.
-      throw new RuntimeException(typeCheckResult.message());
+    ProgramNode programNode = state.programNode();
+    state = state.addProgramNode(programNode);
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
 
-    symbolTable = typeCheckResult.symbolTable();
+    SymTab symbolTable = state.symbolTable();
 
-    CodeGenerator<Op> codegen = new ILCodeGenerator(programNode, symbolTable);
-    ilCode = codegen.generate();
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
     if (debugCodeGen > 0) {
       System.out.println("\nUNOPTIMIZED:");
       System.out.println("------------------------------");
-      System.out.println(Joiner.on("\n").join(ilCode));
+      System.out.println(Joiner.on("\n").join(state.ilCode()));
     }
     if (optimize) {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
-      ilCode = optimizer.optimize(ilCode);
+      state = optimizer.execute(state);
       if (debugOpt > 0) {
         System.out.println("\nOPTIMIZED:");
         System.out.println("------------------------------");
-        System.out.println(Joiner.on("\n").join(ilCode));
+        System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
         System.out.println();
       }
     }
 
-    return execute(ilCode);
+    return execute(state);
   }
 
-  public ExecutionResult execute(ImmutableList<Op> code) {
-    Interpreter interpreter = new Interpreter(code, symbolTable, interactive);
+  public ExecutionResult execute(State state) {
+    Interpreter interpreter = new Interpreter(state, interactive);
     interpreter.setDebugLevel(debugInt);
     result = interpreter.execute();
     return result;
   }
 
-  public ProgramNode programNode() {
-    return programNode;
-  }
-
-  public ImmutableList<Op> code() {
-    return ilCode;
+  public State state() {
+    return state;
   }
 }

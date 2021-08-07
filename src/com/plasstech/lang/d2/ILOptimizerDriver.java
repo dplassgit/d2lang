@@ -9,13 +9,9 @@ import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
-import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.parse.Parser;
-import com.plasstech.lang.d2.parse.node.ErrorNode;
-import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.TypeCheckResult;
 
 public class ILOptimizerDriver {
 
@@ -26,24 +22,25 @@ public class ILOptimizerDriver {
     // 2. lex
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
-    Node node = parser.parse();
-    if (node.isError()) {
-      throw new RuntimeException(((ErrorNode) node).message());
+    State state = parser.execute(State.create(text).build());
+    if (state.error()) {
+      throw state.exception();
     }
-    ProgramNode root = (ProgramNode) node;
-    StaticChecker checker = new StaticChecker(root);
-    TypeCheckResult checkResult = checker.execute();
-    if (checkResult.isError()) {
-      throw new RuntimeException(checkResult.message());
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
     }
-    ILCodeGenerator cg = new ILCodeGenerator(root, checkResult.symbolTable());
-    ImmutableList<Op> unoptimizedCode = cg.generate();
+    ILCodeGenerator cg = new ILCodeGenerator();
+    state = cg.execute(state);
+    ImmutableList<Op> unoptimizedCode = state.ilCode();
     System.out.println("UNOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(unoptimizedCode));
     System.out.println();
-    Optimizer optimizer = new ILOptimizer(2);
-    ImmutableList<Op> optimizedCode = optimizer.optimize(unoptimizedCode);
+    
+    ILOptimizer optimizer = new ILOptimizer(2);
+    state = optimizer.execute(state);
     System.out.println("OPTIMIZED:");
-    System.out.println(Joiner.on("\n").join(optimizedCode));
+    System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
   }
 }

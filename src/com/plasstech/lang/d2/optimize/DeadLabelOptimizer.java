@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 
-public class DeadLabelOptimizer extends LineOptimizer {
+class DeadLabelOptimizer extends LineOptimizer {
   // These are the labels found in the code, and their IP.
   private final Map<String, Integer> labels = new HashMap<>();
   // These are all the labels *referenced* in the code by ifs, gotos and calls.

@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.lex.Token;
 
 /** Optimizes i=i+1 or i=i-1 into i++ or i-- */
-public class IncDecOptimizer extends LineOptimizer {
+class IncDecOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   IncDecOptimizer(int debugLevel) {

@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -64,13 +66,15 @@ public class ILOptimizerTest {
     ExecutionEnvironment ee = new ExecutionEnvironment("a = 1 / 0");
     try {
       ee.execute();
-    } catch (Exception e) {
+      fail("Should fail with division by 0");
+    } catch (ArithmeticException expected) {
     }
 
-    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.code());
+    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.state().ilCode());
     try {
-      ee.execute(optimized);
-    } catch (Exception e) {
+      ee.execute(ee.state().addOptimizedCode(optimized));
+      fail("Should fail with division by 0");
+    } catch (ArithmeticException expected) {
     }
   }
 

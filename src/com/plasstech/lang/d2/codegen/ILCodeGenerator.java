@@ -22,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
@@ -48,6 +49,8 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.Phase;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
@@ -55,12 +58,12 @@ import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
-public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op> {
+public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final Node root;
-  private final SymTab symbolTable;
+  private Node root;
+  private SymTab symbolTable;
 
   private final List<Op> operations = new ArrayList<>();
   private final Stack<String> whileBreaks = new Stack<>();
@@ -69,13 +72,19 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   private int id;
   private Stack<ProcSymbol> procedures = new Stack<>();
 
-  public ILCodeGenerator(Node root, SymTab symbolTable) {
-    this.root = root;
-    this.symbolTable = symbolTable;
+  @Override
+  public State execute(State input) {
+    root = input.programNode();
+    symbolTable = input.symbolTable();
+    try {
+      ImmutableList<Op> code = generate();
+      return input.addIlCode(code);
+    } catch (D2RuntimeException re) {
+      return input.addException(re);
+    }
   }
 
-  @Override
-  public ImmutableList<Op> generate() {
+  private ImmutableList<Op> generate() {
     root.accept(this);
     return ImmutableList.copyOf(operations);
   }
@@ -141,10 +150,11 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
             expr.accept(ILCodeGenerator.this);
             Location source = expr.location();
             if (dest == null || source == null) {
-              logger.atSevere().log(
-                  "lvalue source or dest is null: dest = %s, source=%s at %s",
-                  dest, source, expr.position());
-              return;
+              throw new D2RuntimeException(
+                  String.format(
+                      "lvalue source or dest is null: dest = %s, source=%s", dest, source),
+                  expr.position(),
+                  "ILCodeGenerator");
             }
             emit(new Transfer(dest, source));
           }
@@ -182,9 +192,10 @@ public class ILCodeGenerator extends DefaultVisitor implements CodeGenerator<Op>
   public void visit(NewNode node) {
     Symbol symbol = symbolTable().getRecursive(node.recordName());
     if (!(symbol instanceof RecordSymbol)) {
-      logger.atSevere().log(
-          "Cannot call NEW on non-record type %s at %s on line %s", symbol, node, node.position());
-      return;
+      throw new D2RuntimeException(
+          String.format("Cannot call NEW on non-record type %s at %s", symbol, node),
+          node.position(),
+          "ILCodeGenerator");
     }
     MemoryAddress location = allocateMemory(symbol.varType());
     node.setLocation(location);
