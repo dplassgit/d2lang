@@ -117,8 +117,8 @@ public class TestUtils {
           + "val = recordloopnoninvariant(new rt) "
           + "println val";
 
-  // Hm, maybe move this to ExecutionEnvironment?
-  public static ImmutableList<Op> compile(String text) {
+  // Hm, maybe move this to Executor?
+  public static State compile(String text) {
     Lexer lex = new Lexer(text);
     State state = State.create(text).build();
     Parser parser = new Parser(lex);
@@ -135,6 +135,6 @@ public class TestUtils {
     state = codegen.execute(state);
     // Runs all the optimizers.
     ILOptimizer optimizer = new ILOptimizer(2);
-    return optimizer.optimize(state.ilCode());
+    return optimizer.execute(state);
   }
 }

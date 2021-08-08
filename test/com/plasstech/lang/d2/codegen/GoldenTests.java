@@ -122,7 +122,7 @@ public class GoldenTests {
   private void compileFile(String path) throws IOException {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
-    ImmutableList<Op> ilCode = TestUtils.compile(text);
+    ImmutableList<Op> ilCode = TestUtils.compile(text).optimizedIlCode();
     System.out.println("\nOPTIMIZED:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("\n").join(ilCode));
