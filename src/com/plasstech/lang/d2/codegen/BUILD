@@ -16,7 +16,6 @@ java_library(
         ":location",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
-        "//src/com/plasstech/lang/d2/lex",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/phase",
         "//src/com/plasstech/lang/d2/phase:state",

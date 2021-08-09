@@ -4,6 +4,7 @@ gen_java_tests(name="SmallTests",
     srcs=glob(["*.java"],),
     prefix_path="test/",
 	  deps=[
+        "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/lex",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",

@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 
 /** Optimizes i=i+1 or i=i-1 into i++ or i-- */
 class IncDecOptimizer extends LineOptimizer {
@@ -39,8 +39,8 @@ class IncDecOptimizer extends LineOptimizer {
         || (!left.isConstant() && right.isConstant()))) {
       return;
     }
-    boolean plus = second.operator() == Token.Type.PLUS;
-    boolean minus = second.operator() == Token.Type.MINUS;
+    boolean plus = second.operator() == TokenType.PLUS;
+    boolean minus = second.operator() == TokenType.MINUS;
     if (!(plus || minus)) {
       return;
     }
@@ -88,8 +88,8 @@ class IncDecOptimizer extends LineOptimizer {
    */
   @Override
   public void visit(BinOp first) {
-    boolean plus = first.operator() == Token.Type.PLUS;
-    boolean minus = first.operator() == Token.Type.MINUS;
+    boolean plus = first.operator() == TokenType.PLUS;
+    boolean minus = first.operator() == TokenType.MINUS;
     if (!(plus || minus)) {
       return;
     }

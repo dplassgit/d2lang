@@ -23,8 +23,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.lex.Token;
-import com.plasstech.lang.d2.lex.Token.Type;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BreakNode;
@@ -290,7 +289,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // Calculate the value and put it somewhere
     Node right = node.right();
 
-    if (node.operator() == Token.Type.DOT) {
+    if (node.operator() == TokenType.DOT) {
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
       rightSrc = new ConstantOperand<String>(rightVarNode.name());
@@ -352,7 +351,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // if it's not true, jump to the next block
       // temp = !cond
       // if temp skip to next block.
-      emit(new UnaryOp(temp, Type.NOT, cond.location()));
+      emit(new UnaryOp(temp, TokenType.NOT, cond.location()));
       emit(new IfOp(temp, nextLabel));
 
       ifCase.block().accept(this);
@@ -392,7 +391,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Node condition = node.condition();
     condition.accept(this);
     TempLocation notCondition = allocateTemp(condition.varType());
-    emit(new UnaryOp(notCondition, Type.NOT, condition.location()));
+    emit(new UnaryOp(notCondition, TokenType.NOT, condition.location()));
     emit(new IfOp(notCondition, after));
 
     emit(new Label(before));

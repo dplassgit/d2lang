@@ -22,7 +22,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 
 /**
@@ -140,7 +140,7 @@ class LoopInvariantOptimizer implements Optimizer {
     public void visit(BinOp op) {
       // why only storing in temp?!
 
-      if (op.destination().storage() == SymbolStorage.TEMP && op.operator() != Token.Type.DOT) {
+      if (op.destination().storage() == SymbolStorage.TEMP && op.operator() != TokenType.DOT) {
         // If left is not a global and its value is not set in this loop,
         // and right is not a global and its value is not set in this loop,
         // we can lift this one.

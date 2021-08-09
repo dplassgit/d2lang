@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 
 public class InlineRemapperTest {
   private static final TempLocation TEMP_DEST = new TempLocation("__dest");
@@ -77,12 +77,12 @@ public class InlineRemapperTest {
   public void binOpTempDest() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(TEMP_DEST, STACK, Token.Type.PLUS, MEMORY)))
+                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY)))
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__dest__inline__");
     assertThat(op.left().toString()).startsWith("__stack__inline__");
-    assertThat(op.operator()).isEqualTo(Token.Type.PLUS);
+    assertThat(op.operator()).isEqualTo(TokenType.PLUS);
     assertThat(op.right()).isEqualTo(MEMORY);
   }
 
@@ -90,12 +90,12 @@ public class InlineRemapperTest {
   public void binOpTempSource() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, Token.Type.AND, TEMP_RIGHT)))
+                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT)))
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
     assertThat(op.left().toString()).startsWith("__left__inline__");
-    assertThat(op.operator()).isEqualTo(Token.Type.AND);
+    assertThat(op.operator()).isEqualTo(TokenType.AND);
     assertThat(op.right().toString()).startsWith("__right__inline__");
   }
 
@@ -103,11 +103,11 @@ public class InlineRemapperTest {
   public void unaryOpTempSource_formal() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new UnaryOp(STACK, Token.Type.MINUS, TEMP_SOURCE)))
+                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE)))
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
-    assertThat(op.operator()).isEqualTo(Token.Type.MINUS);
+    assertThat(op.operator()).isEqualTo(TokenType.MINUS);
     assertThat(op.operand().toString()).startsWith("__source__inline__");
   }
 }

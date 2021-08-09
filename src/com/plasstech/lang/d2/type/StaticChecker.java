@@ -9,8 +9,7 @@ import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.Token;
-import com.plasstech.lang.d2.lex.Token.Type;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -42,65 +41,65 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultVisitor implements Phase {
-  private static final Set<Token.Type> COMPARISION_OPERATORS =
+  private static final Set<TokenType> COMPARISION_OPERATORS =
       ImmutableSet.of(
-          Token.Type.AND,
-          Token.Type.OR,
-          Token.Type.EQEQ,
-          Token.Type.LT,
-          Token.Type.GT,
-          Token.Type.LEQ,
-          Token.Type.GEQ,
-          Token.Type.NEQ);
+          TokenType.AND,
+          TokenType.OR,
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.LEQ,
+          TokenType.GEQ,
+          TokenType.NEQ);
 
-  private static final Set<Token.Type> INT_OPERATORS =
+  private static final Set<TokenType> INT_OPERATORS =
       ImmutableSet.of(
-          Token.Type.EQEQ,
-          Token.Type.LT,
-          Token.Type.GT,
-          Token.Type.LEQ,
-          Token.Type.GEQ,
-          Token.Type.NEQ,
-          Token.Type.DIV,
-          Token.Type.MINUS,
-          Token.Type.MOD,
-          Token.Type.MULT,
-          Token.Type.PLUS,
-          Token.Type.SHIFT_LEFT,
-          Token.Type.SHIFT_RIGHT,
-          Token.Type.BIT_OR,
-          Token.Type.BIT_XOR,
-          Token.Type.BIT_AND);
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.LEQ,
+          TokenType.GEQ,
+          TokenType.NEQ,
+          TokenType.DIV,
+          TokenType.MINUS,
+          TokenType.MOD,
+          TokenType.MULT,
+          TokenType.PLUS,
+          TokenType.SHIFT_LEFT,
+          TokenType.SHIFT_RIGHT,
+          TokenType.BIT_OR,
+          TokenType.BIT_XOR,
+          TokenType.BIT_AND);
 
-  private static final Set<Token.Type> STRING_OPERATORS =
+  private static final Set<TokenType> STRING_OPERATORS =
       ImmutableSet.of(
-          Token.Type.EQEQ,
-          Token.Type.LT,
-          Token.Type.GT,
-          Token.Type.LEQ,
-          Token.Type.GEQ,
-          Token.Type.NEQ,
-          Token.Type.PLUS,
-          Token.Type.LBRACKET
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.LEQ,
+          TokenType.GEQ,
+          TokenType.NEQ,
+          TokenType.PLUS,
+          TokenType.LBRACKET
           // , Token.Type.MOD // eventually
           );
 
-  private static final Set<Token.Type> RECORD_COMPARATORS =
-      ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ);
+  private static final Set<TokenType> RECORD_COMPARATORS =
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
 
-  private static final Set<Token.Type> BOOLEAN_OPERATORS =
+  private static final Set<TokenType> BOOLEAN_OPERATORS =
       ImmutableSet.of(
-          Token.Type.EQEQ,
-          Token.Type.LT,
-          Token.Type.GT,
-          Token.Type.NEQ,
-          Token.Type.AND,
-          Token.Type.OR,
-          Token.Type.XOR);
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.NEQ,
+          TokenType.AND,
+          TokenType.OR,
+          TokenType.XOR);
 
   // TODO(#14): implement EQEQ and NEQ for arrays
-  private static final Set<Token.Type> ARRAY_OPERATORS =
-      ImmutableSet.of(Token.Type.EQEQ, Token.Type.NEQ, Token.Type.LBRACKET);
+  private static final Set<TokenType> ARRAY_OPERATORS =
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
 
   private Node root;
   private final SymTab symbolTable = new SymTab();
@@ -339,12 +338,12 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     }
 
     // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
-    Type operator = node.operator();
-    if (operator != Token.Type.DOT && right.varType().isUnknown()) {
+    TokenType operator = node.operator();
+    if (operator != TokenType.DOT && right.varType().isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    if (operator == Token.Type.DOT) {
+    if (operator == TokenType.DOT) {
       if (!left.varType().isRecord()) {
         // this is probably already handled, /shrug.
         throw new TypeException(
@@ -404,7 +403,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     }
 
     // string[int] and array[int]
-    if (left.varType() == VarType.STRING && operator == Token.Type.LBRACKET) {
+    if (left.varType() == VarType.STRING && operator == TokenType.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
             String.format("STRING index must be INT; was %s", right.varType()), right.position());
@@ -413,7 +412,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       // NOTE RETURN
       return;
 
-    } else if (left.varType().isArray() && operator == Token.Type.LBRACKET) {
+    } else if (left.varType().isArray() && operator == TokenType.LBRACKET) {
       if (right.varType() != VarType.INT) {
         throw new TypeException(
             String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
@@ -456,7 +455,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     }
 
     // Check that they're not trying to negate a boolean or "not" an int.
-    if (expr.varType() == VarType.BOOL && node.operator() != Token.Type.NOT) {
+    if (expr.varType() == VarType.BOOL && node.operator() != TokenType.NOT) {
       throw new TypeException(
           String.format("Cannot apply %s operator to BOOL expression", node.operator().name()),
           expr.position());

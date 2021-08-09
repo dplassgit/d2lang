@@ -4,40 +4,40 @@ import java.util.Set;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Binary operation: leftexpr <operation> rightexpr */
 public class BinOpNode extends AbstractNode implements ExprNode {
-  private static final Set<Token.Type> BINARY_OPERATORS =
+  private static final Set<TokenType> BINARY_OPERATORS =
       ImmutableSet.of(
-          Token.Type.PLUS,
-          Token.Type.MINUS,
-          Token.Type.MULT,
-          Token.Type.DIV,
-          Token.Type.MOD,
-          Token.Type.AND,
-          Token.Type.OR,
-          Token.Type.XOR,
-          Token.Type.BIT_AND,
-          Token.Type.BIT_OR,
-          Token.Type.BIT_XOR,
-          Token.Type.EQEQ,
-          Token.Type.GT,
-          Token.Type.LT,
-          Token.Type.GEQ,
-          Token.Type.LEQ,
-          Token.Type.NEQ,
-          Token.Type.LBRACKET,
-          Token.Type.SHIFT_LEFT,
-          Token.Type.SHIFT_RIGHT,
-          Token.Type.DOT);
+          TokenType.PLUS,
+          TokenType.MINUS,
+          TokenType.MULT,
+          TokenType.DIV,
+          TokenType.MOD,
+          TokenType.AND,
+          TokenType.OR,
+          TokenType.XOR,
+          TokenType.BIT_AND,
+          TokenType.BIT_OR,
+          TokenType.BIT_XOR,
+          TokenType.EQEQ,
+          TokenType.GT,
+          TokenType.LT,
+          TokenType.GEQ,
+          TokenType.LEQ,
+          TokenType.NEQ,
+          TokenType.LBRACKET,
+          TokenType.SHIFT_LEFT,
+          TokenType.SHIFT_RIGHT,
+          TokenType.DOT);
 
-  private final Token.Type operator;
+  private final TokenType operator;
   private final ExprNode left;
   private final ExprNode right;
 
-  public BinOpNode(ExprNode left, Token.Type operator, ExprNode right) {
+  public BinOpNode(ExprNode left, TokenType operator, ExprNode right) {
     super(left.position());
     Preconditions.checkArgument(
         BINARY_OPERATORS.contains(operator), "Invalid opType " + operator.name());
@@ -46,7 +46,7 @@ public class BinOpNode extends AbstractNode implements ExprNode {
     this.right = right;
   }
 
-  public Token.Type operator() {
+  public TokenType operator() {
     return operator;
   }
 

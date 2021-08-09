@@ -2,15 +2,15 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 
 public class UnaryOp extends Op {
   private final Location destination;
-  private final Token.Type operator;
+  private final TokenType operator;
   private final Operand operand;
 
   // TODO: check the token type
-  public UnaryOp(Location destination, Token.Type operator, Operand operand) {
+  public UnaryOp(Location destination, TokenType operator, Operand operand) {
     this.destination = destination;
     this.operand = operand;
     this.operator = operator;
@@ -20,7 +20,7 @@ public class UnaryOp extends Op {
     return destination;
   }
 
-  public Token.Type operator() {
+  public TokenType operator() {
     return operator;
   }
 

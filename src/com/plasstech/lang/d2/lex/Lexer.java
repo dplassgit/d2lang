@@ -4,7 +4,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.Token.Type;
+import com.plasstech.lang.d2.common.TokenType;
 
 public class Lexer {
   private final String text;
@@ -62,7 +62,7 @@ public class Lexer {
       return makeSymbol(start);
     }
 
-    return new Token(Type.EOF, start);
+    return new Token(TokenType.EOF, start);
   }
 
   /**
@@ -87,14 +87,14 @@ public class Lexer {
     Position end = new Position(line, col);
     try {
       // Figure out which keyword it is
-      Token.Type keywordType = Token.Type.valueOf(value.toUpperCase());
+      TokenType keywordType = TokenType.valueOf(value.toUpperCase());
       if (keywordType.isKeyword()) {
         return new Token(keywordType, start);
       }
     } catch (Exception e) {
     }
     // Not a keyword, must be a variable.
-    return new Token(Type.VARIABLE, start, end, value);
+    return new Token(TokenType.VARIABLE, start, end, value);
   }
 
   private IntToken makeInt(Position start) {
@@ -123,59 +123,59 @@ public class Lexer {
         return startsWithGt(start);
       case '+':
         advance();
-        return new Token(Type.PLUS, start, oc);
+        return new Token(TokenType.PLUS, start, oc);
       case '-':
         advance();
-        return new Token(Type.MINUS, start, oc);
+        return new Token(TokenType.MINUS, start, oc);
       case '(':
         advance();
-        return new Token(Type.LPAREN, start, oc);
+        return new Token(TokenType.LPAREN, start, oc);
       case ')':
         advance();
-        return new Token(Type.RPAREN, start, oc);
+        return new Token(TokenType.RPAREN, start, oc);
       case '*':
         advance();
-        return new Token(Type.MULT, start, oc);
+        return new Token(TokenType.MULT, start, oc);
       case '/':
         return startsWithSlash(start);
       case '%':
         advance();
-        return new Token(Type.MOD, start, oc);
+        return new Token(TokenType.MOD, start, oc);
       case '&':
         advance();
-        return new Token(Type.BIT_AND, start, oc);
+        return new Token(TokenType.BIT_AND, start, oc);
       case '|':
         advance();
-        return new Token(Type.BIT_OR, start, oc);
+        return new Token(TokenType.BIT_OR, start, oc);
       case '!':
         return startsWithNot(start);
       case '{':
         advance();
-        return new Token(Type.LBRACE, start, oc);
+        return new Token(TokenType.LBRACE, start, oc);
       case '}':
         advance();
-        return new Token(Type.RBRACE, start, oc);
+        return new Token(TokenType.RBRACE, start, oc);
       case ':':
         advance();
-        return new Token(Type.COLON, start, oc);
+        return new Token(TokenType.COLON, start, oc);
       case '"':
       case '\'':
         return makeStringToken(start, oc);
       case ',':
         advance();
-        return new Token(Type.COMMA, start, oc);
+        return new Token(TokenType.COMMA, start, oc);
       case '[':
         advance();
-        return new Token(Type.LBRACKET, start, oc);
+        return new Token(TokenType.LBRACKET, start, oc);
       case ']':
         advance();
-        return new Token(Type.RBRACKET, start, oc);
+        return new Token(TokenType.RBRACKET, start, oc);
       case '^':
         advance();
-        return new Token(Type.BIT_XOR, start, oc);
+        return new Token(TokenType.BIT_XOR, start, oc);
       case '.':
         advance();
-        return new Token(Type.DOT, start, oc);
+        return new Token(TokenType.DOT, start, oc);
       default:
         throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
     }
@@ -196,7 +196,7 @@ public class Lexer {
       col = 0;
       return nextToken(); // risky, but /shrug.
     }
-    return new Token(Type.DIV, start, '/');
+    return new Token(TokenType.DIV, start, '/');
   }
 
   private Token startsWithNot(Position start) {
@@ -205,9 +205,9 @@ public class Lexer {
     if (cc == '=') {
       Position end = new Position(line, col);
       advance(); // eat the =
-      return new Token(Type.NEQ, start, end, "!=");
+      return new Token(TokenType.NEQ, start, end, "!=");
     }
-    return new Token(Type.BIT_NOT, start, oc);
+    return new Token(TokenType.BIT_NOT, start, oc);
   }
 
   private Token startsWithGt(Position start) {
@@ -216,13 +216,13 @@ public class Lexer {
     if (cc == '=') {
       Position end = new Position(line, col);
       advance(); // eat the =
-      return new Token(Type.GEQ, start, end, ">=");
+      return new Token(TokenType.GEQ, start, end, ">=");
     } else if (cc == '>') {
       Position end = new Position(line, col);
       advance(); // eat the >
-      return new Token(Type.SHIFT_RIGHT, start, end, ">>");
+      return new Token(TokenType.SHIFT_RIGHT, start, end, ">>");
     }
-    return new Token(Type.GT, start, oc);
+    return new Token(TokenType.GT, start, oc);
   }
 
   private Token startsWithLt(Position start) {
@@ -231,13 +231,13 @@ public class Lexer {
     if (cc == '=') {
       Position end = new Position(line, col);
       advance(); // eat the =
-      return new Token(Type.LEQ, start, end, "<=");
+      return new Token(TokenType.LEQ, start, end, "<=");
     } else if (cc == '<') {
       Position end = new Position(line, col);
       advance(); // eat the <
-      return new Token(Type.SHIFT_LEFT, start, end, "<<");
+      return new Token(TokenType.SHIFT_LEFT, start, end, "<<");
     }
-    return new Token(Type.LT, start, oc);
+    return new Token(TokenType.LT, start, oc);
   }
 
   private Token startsWithEq(Position start) {
@@ -246,9 +246,9 @@ public class Lexer {
     if (cc == '=') {
       Position end = new Position(line, col);
       advance(); // eat the second =
-      return new Token(Type.EQEQ, start, end, "==");
+      return new Token(TokenType.EQEQ, start, end, "==");
     }
-    return new Token(Type.EQ, start, oc);
+    return new Token(TokenType.EQ, start, oc);
   }
 
   private Token makeStringToken(Position start, char openingChar) {
@@ -279,6 +279,6 @@ public class Lexer {
 
     advance(); // eat the closing tick/quote
     Position end = new Position(line, col);
-    return new Token(Type.STRING, start, end, sb.toString());
+    return new Token(TokenType.STRING, start, end, sb.toString());
   }
 }

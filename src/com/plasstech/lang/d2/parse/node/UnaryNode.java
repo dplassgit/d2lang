@@ -1,22 +1,22 @@
 package com.plasstech.lang.d2.parse.node;
 
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class UnaryNode extends AbstractNode implements ExprNode {
 
-  private final Token.Type operator;
+  private final TokenType operator;
 
   private final ExprNode expr;
 
-  public UnaryNode(Token.Type operator, ExprNode expr, Position position) {
+  public UnaryNode(TokenType operator, ExprNode expr, Position position) {
     super(position);
     this.operator = operator;
     this.expr = expr;
   }
 
-  public Token.Type operator() {
+  public TokenType operator() {
     return operator;
   }
 

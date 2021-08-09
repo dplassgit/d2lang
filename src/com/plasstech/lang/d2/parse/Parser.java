@@ -13,10 +13,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.plasstech.lang.d2.common.Position;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
-import com.plasstech.lang.d2.lex.Token.Type;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -53,35 +53,35 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class Parser implements Phase {
 
-  private static final ImmutableMap<Token.Type, VarType> BUILTINS =
+  private static final ImmutableMap<TokenType, VarType> BUILTINS =
       ImmutableMap.of(
-          Token.Type.INT, VarType.INT,
-          Token.Type.BOOL, VarType.BOOL,
-          Token.Type.STRING, VarType.STRING,
-          Token.Type.PROC, VarType.PROC,
-          Token.Type.NULL, VarType.NULL);
+          TokenType.INT, VarType.INT,
+          TokenType.BOOL, VarType.BOOL,
+          TokenType.STRING, VarType.STRING,
+          TokenType.PROC, VarType.PROC,
+          TokenType.NULL, VarType.NULL);
 
-  private static final Set<Token.Type> EXPRESSION_STARTS =
+  private static final Set<TokenType> EXPRESSION_STARTS =
       ImmutableSet.of(
-          Token.Type.VARIABLE,
-          Token.Type.LPAREN,
-          Token.Type.MINUS,
-          Token.Type.PLUS,
-          Token.Type.NOT,
-          Token.Type.BIT_NOT,
-          Token.Type.INT,
-          Token.Type.STRING,
-          Token.Type.BOOL,
-          Token.Type.TRUE,
-          Token.Type.FALSE,
-          Token.Type.LENGTH,
-          Token.Type.ASC,
-          Token.Type.CHR,
-          Token.Type.NULL,
-          Token.Type.NEW);
+          TokenType.VARIABLE,
+          TokenType.LPAREN,
+          TokenType.MINUS,
+          TokenType.PLUS,
+          TokenType.NOT,
+          TokenType.BIT_NOT,
+          TokenType.INT,
+          TokenType.STRING,
+          TokenType.BOOL,
+          TokenType.TRUE,
+          TokenType.FALSE,
+          TokenType.LENGTH,
+          TokenType.ASC,
+          TokenType.CHR,
+          TokenType.NULL,
+          TokenType.NEW);
 
-  private static Set<Type> UNARY_KEYWORDS =
-      ImmutableSet.of(Token.Type.LENGTH, Token.Type.ASC, Token.Type.CHR);
+  private static Set<TokenType> UNARY_KEYWORDS =
+      ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
 
   private final Lexer lexer;
   private Token token;
@@ -112,8 +112,8 @@ public class Parser implements Phase {
     return program();
   }
 
-  private void expect(Token.Type first, Token.Type... rest) {
-    ImmutableList<Token.Type> expected = ImmutableList.copyOf(Lists.asList(first, rest));
+  private void expect(TokenType first, TokenType... rest) {
+    ImmutableList<TokenType> expected = ImmutableList.copyOf(Lists.asList(first, rest));
     if (!expected.contains(token.type())) {
       String expectedStr;
       if (expected.size() == 1) {
@@ -135,19 +135,19 @@ public class Parser implements Phase {
     BlockNode statements = statements(matchesEofOrMain());
 
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
-    if (token.type() == Token.Type.EOF) {
+    if (token.type() == TokenType.EOF) {
       return new ProgramNode(statements);
-    } else if (token.type() == Token.Type.MAIN) {
+    } else if (token.type() == TokenType.MAIN) {
       // if main, process main
       Token start = token;
       advance(); // eat the main
       // TODO: parse arguments
       BlockNode mainBlock = block();
-      expect(Token.Type.EOF);
+      expect(TokenType.EOF);
       MainNode mainProc = new MainNode(mainBlock, start.start());
       return new ProgramNode(statements, mainProc);
     }
-    expect(Token.Type.MAIN, Token.Type.EOF);
+    expect(TokenType.MAIN, TokenType.EOF);
     return null;
   }
 
@@ -163,20 +163,20 @@ public class Parser implements Phase {
 
   private static Function<Token, Boolean> matchesEofOrMain() {
     return token -> {
-      if (token.type() == Token.Type.EOF) {
+      if (token.type() == TokenType.EOF) {
         return true;
       }
-      return token.type() == Token.Type.MAIN;
+      return token.type() == TokenType.MAIN;
     };
   }
 
   // This is a statements node surrounded by braces.
   private BlockNode block() {
-    expect(Token.Type.LBRACE);
+    expect(TokenType.LBRACE);
     advance();
 
-    BlockNode statements = statements(token -> token.type() == Token.Type.RBRACE);
-    expect(Token.Type.RBRACE);
+    BlockNode statements = statements(token -> token.type() == TokenType.RBRACE);
+    expect(TokenType.RBRACE);
     advance();
     return statements;
   }
@@ -252,7 +252,7 @@ public class Parser implements Phase {
    * procedure call statement.
    */
   private StatementNode startsWithVariableStmt() {
-    expect(Token.Type.VARIABLE);
+    expect(TokenType.VARIABLE);
 
     Token variable = advance(); // eat the variable name
     switch (token.type()) {
@@ -284,13 +284,13 @@ public class Parser implements Phase {
   }
 
   private StatementNode fieldAssignment(Token variable) {
-    expect(Token.Type.DOT);
+    expect(TokenType.DOT);
     advance(); // eat the .
 
-    expect(Token.Type.VARIABLE);
+    expect(TokenType.VARIABLE);
     Token fieldName = advance();
     FieldSetNode fsn = new FieldSetNode(variable.text(), fieldName.text(), variable.start());
-    expect(Token.Type.EQ);
+    expect(TokenType.EQ);
     advance();
     ExprNode rhs = expr();
 
@@ -298,12 +298,12 @@ public class Parser implements Phase {
   }
 
   private DeclarationNode declaration(Token varToken) {
-    expect(Token.Type.COLON);
+    expect(TokenType.COLON);
     advance(); // eat the colon
     if (token.type().isKeyword()) {
-      Token.Type declaredType = token.type();
+      TokenType declaredType = token.type();
 
-      if (declaredType == Token.Type.RECORD) {
+      if (declaredType == TokenType.RECORD) {
         return parseRecordDeclaration(varToken);
       }
 
@@ -315,13 +315,13 @@ public class Parser implements Phase {
         } else {
           // See if it's an array declaration and build a "compound type" from the
           // declaration, e.g., "array of int"
-          if (token.type() == Token.Type.LBRACKET) {
+          if (token.type() == TokenType.LBRACKET) {
             return arrayDecl(varToken, varType);
           }
           return new DeclarationNode(varToken.text(), varType, varToken.start());
         }
       }
-    } else if (token.type() == Token.Type.VARIABLE) {
+    } else if (token.type() == TokenType.VARIABLE) {
       Token typeToken = advance(); // eat the variable type record reference
       return new DeclarationNode(
           varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
@@ -334,33 +334,33 @@ public class Parser implements Phase {
   }
 
   private DeclarationNode parseRecordDeclaration(Token varToken) {
-    expect(Token.Type.RECORD);
+    expect(TokenType.RECORD);
     advance(); // eat "record"
-    expect(Token.Type.LBRACE);
+    expect(TokenType.LBRACE);
     advance();
 
     // read field declarations
     List<DeclarationNode> fieldNodes = new ArrayList<>();
-    while (token.type() != Token.Type.RBRACE) {
-      expect(Token.Type.VARIABLE);
+    while (token.type() != TokenType.RBRACE) {
+      expect(TokenType.VARIABLE);
       Token fieldVar = advance(); // eat the variable.
       DeclarationNode decl = declaration(fieldVar);
       fieldNodes.add(decl);
     }
 
-    expect(Token.Type.RBRACE);
+    expect(TokenType.RBRACE);
     advance();
     return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start());
   }
 
   /** declaration -> '[' expr ']' */
   private DeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
-    expect(Token.Type.LBRACKET);
+    expect(TokenType.LBRACKET);
     advance();
     // The size can be variable.
     ExprNode arraySize = expr();
     ArrayType arrayType = new ArrayType(baseVarType);
-    expect(Token.Type.RBRACKET);
+    expect(TokenType.RBRACKET);
     advance();
 
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
@@ -370,7 +370,7 @@ public class Parser implements Phase {
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
-    if (token.type() == Token.Type.COLON) {
+    if (token.type() == TokenType.COLON) {
       returnType = parseVarType();
     }
     BlockNode statements = block();
@@ -379,18 +379,18 @@ public class Parser implements Phase {
 
   private List<Parameter> formalParams() {
     List<Parameter> params = new ArrayList<>();
-    if (token.type() != Token.Type.LPAREN) {
+    if (token.type() != TokenType.LPAREN) {
       return params;
     }
     advance(); // eat the left paren
 
-    if (token.type() == Token.Type.RPAREN) {
+    if (token.type() == TokenType.RPAREN) {
       advance(); // eat the right paren, and done.
       return params;
     }
 
     params = commaSeparated(() -> formalParam());
-    expect(Token.Type.RPAREN);
+    expect(TokenType.RPAREN);
     advance(); // eat the right paren.
     return params;
   }
@@ -400,14 +400,14 @@ public class Parser implements Phase {
    * arrays or procs yet.
    */
   private VarType parseVarType() {
-    expect(Token.Type.COLON);
+    expect(TokenType.COLON);
     advance();
-    if (token.type() == Token.Type.VARIABLE) {
+    if (token.type() == TokenType.VARIABLE) {
       Token typeToken = advance(); // eat the record type
       return new RecordReferenceType(typeToken.text());
     }
 
-    Token.Type declaredType = token.type();
+    TokenType declaredType = token.type();
     VarType paramType = BUILTINS.get(declaredType);
     if (paramType != null && paramType != VarType.PROC) {
       // We have a param type
@@ -420,10 +420,10 @@ public class Parser implements Phase {
   }
 
   private Parameter formalParam() {
-    expect(Token.Type.VARIABLE);
+    expect(TokenType.VARIABLE);
 
     Token paramName = advance();
-    if (token.type() == Token.Type.COLON) {
+    if (token.type() == TokenType.COLON) {
       VarType paramType = parseVarType();
       return new Parameter(paramName.text(), paramType);
     } else {
@@ -433,14 +433,14 @@ public class Parser implements Phase {
   }
 
   private PrintNode print(Token printToken) {
-    assert (printToken.type() == Token.Type.PRINT || printToken.type() == Token.Type.PRINTLN);
+    assert (printToken.type() == TokenType.PRINT || printToken.type() == TokenType.PRINTLN);
     advance();
     ExprNode expr = expr();
-    return new PrintNode(expr, printToken.start(), printToken.type() == Token.Type.PRINTLN);
+    return new PrintNode(expr, printToken.start(), printToken.type() == TokenType.PRINTLN);
   }
 
   private IfNode ifStmt(Token kt) {
-    expect(Token.Type.IF);
+    expect(TokenType.IF);
     advance();
 
     List<IfNode.Case> cases = new ArrayList<>();
@@ -454,7 +454,7 @@ public class Parser implements Phase {
     if (token.type().isKeyword()) {
       Token elseOrElif = token;
       // while elif: get condition, get statements, add to case list.
-      while (elseOrElif != null && elseOrElif.type() == Token.Type.ELIF) {
+      while (elseOrElif != null && elseOrElif.type() == TokenType.ELIF) {
         advance();
 
         Node elifCondition = expr();
@@ -469,7 +469,7 @@ public class Parser implements Phase {
         }
       }
 
-      if (elseOrElif != null && elseOrElif.type() == Token.Type.ELSE) {
+      if (elseOrElif != null && elseOrElif.type() == TokenType.ELSE) {
         advance();
         elseStatements = block();
       }
@@ -479,11 +479,11 @@ public class Parser implements Phase {
   }
 
   private WhileNode whileStmt(Token kt) {
-    expect(Token.Type.WHILE);
+    expect(TokenType.WHILE);
     advance();
     ExprNode condition = expr();
     Optional<StatementNode> doStatement = Optional.empty();
-    if (token.type() == Token.Type.DO) {
+    if (token.type() == TokenType.DO) {
       advance();
       doStatement = Optional.of(statement());
     }
@@ -492,17 +492,17 @@ public class Parser implements Phase {
   }
 
   private CallNode procedureCall(Token varToken, boolean isStatement) {
-    expect(Token.Type.LPAREN);
+    expect(TokenType.LPAREN);
     advance(); // eat the lparen
 
     List<ExprNode> actuals;
-    if (token.type() == Token.Type.RPAREN) {
+    if (token.type() == TokenType.RPAREN) {
       actuals = ImmutableList.of();
     } else {
       actuals = commaSeparatedExpressions();
     }
 
-    expect(Token.Type.RPAREN);
+    expect(TokenType.RPAREN);
     advance(); // eat the rparen
 
     return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
@@ -517,15 +517,15 @@ public class Parser implements Phase {
 
     T node = nextNode.get();
     nodes.add(node);
-    if (token.type() == Token.Type.COMMA) {
+    if (token.type() == TokenType.COMMA) {
       // There's another entry in this list - let's go
       advance();
 
-      while (token.type() != Token.Type.EOF) {
+      while (token.type() != TokenType.EOF) {
         node = nextNode.get();
         nodes.add(node);
 
-        if (token.type() == Token.Type.COMMA) {
+        if (token.type() == TokenType.COMMA) {
           advance(); // eat the comma
         } else {
           break;
@@ -541,40 +541,40 @@ public class Parser implements Phase {
   }
 
   private ExprNode boolOr() {
-    return binOpFn(ImmutableSet.of(Token.Type.OR, Token.Type.BIT_OR), () -> boolXor());
+    return binOpFn(ImmutableSet.of(TokenType.OR, TokenType.BIT_OR), () -> boolXor());
   }
 
   private ExprNode boolXor() {
-    return binOpFn(ImmutableSet.of(Token.Type.XOR, Token.Type.BIT_XOR), () -> boolAnd());
+    return binOpFn(ImmutableSet.of(TokenType.XOR, TokenType.BIT_XOR), () -> boolAnd());
   }
 
   private ExprNode boolAnd() {
-    return binOpFn(ImmutableSet.of(Token.Type.AND, Token.Type.BIT_AND), () -> compare());
+    return binOpFn(ImmutableSet.of(TokenType.AND, TokenType.BIT_AND), () -> compare());
   }
 
   private ExprNode compare() {
     // Fun fact, in Java, == and != have higher precedence than <, >, <=, >=
     return binOpFn(
         ImmutableSet.of(
-            Token.Type.EQEQ,
-            Token.Type.NEQ,
-            Token.Type.GT,
-            Token.Type.LT,
-            Token.Type.GEQ,
-            Token.Type.LEQ),
+            TokenType.EQEQ,
+            TokenType.NEQ,
+            TokenType.GT,
+            TokenType.LT,
+            TokenType.GEQ,
+            TokenType.LEQ),
         () -> shift());
   }
 
   private ExprNode shift() {
-    return binOpFn(ImmutableSet.of(Token.Type.SHIFT_LEFT, Token.Type.SHIFT_RIGHT), () -> addSub());
+    return binOpFn(ImmutableSet.of(TokenType.SHIFT_LEFT, TokenType.SHIFT_RIGHT), () -> addSub());
   }
 
   private ExprNode addSub() {
-    return binOpFn(ImmutableSet.of(Token.Type.PLUS, Token.Type.MINUS), () -> mulDiv());
+    return binOpFn(ImmutableSet.of(TokenType.PLUS, TokenType.MINUS), () -> mulDiv());
   }
 
   private ExprNode mulDiv() {
-    return binOpFn(ImmutableSet.of(Token.Type.MULT, Token.Type.DIV, Token.Type.MOD), () -> unary());
+    return binOpFn(ImmutableSet.of(TokenType.MULT, TokenType.DIV, TokenType.MOD), () -> unary());
   }
 
   /**
@@ -588,11 +588,11 @@ public class Parser implements Phase {
    *
    * <p>expr -> term (+- term)*
    */
-  private ExprNode binOpFn(Set<Token.Type> tokenTypes, Supplier<ExprNode> nextRule) {
+  private ExprNode binOpFn(Set<TokenType> tokenTypes, Supplier<ExprNode> nextRule) {
     ExprNode left = nextRule.get();
 
     while (tokenTypes.contains(token.type())) {
-      Token.Type operator = token.type();
+      TokenType operator = token.type();
       advance();
       ExprNode right = nextRule.get();
       left = new BinOpNode(left, operator, right);
@@ -603,28 +603,28 @@ public class Parser implements Phase {
 
   private ExprNode unary() {
     Token unaryToken = token;
-    if (token.type() == Token.Type.MINUS
-        || token.type() == Token.Type.PLUS
-        || token.type() == Token.Type.BIT_NOT
-        || token.type() == Token.Type.NOT) {
+    if (token.type() == TokenType.MINUS
+        || token.type() == TokenType.PLUS
+        || token.type() == TokenType.BIT_NOT
+        || token.type() == TokenType.NOT) {
       advance();
       ExprNode expr = unary(); // should this be expr? unary? atom?
 
       if (expr.varType() == VarType.INT) {
         // We can simplify now
-        if (unaryToken.type() == Token.Type.PLUS) {
+        if (unaryToken.type() == TokenType.PLUS) {
           return expr;
-        } else if (unaryToken.type() == Token.Type.MINUS) {
+        } else if (unaryToken.type() == TokenType.MINUS) {
           @SuppressWarnings("unchecked")
           ConstNode<Integer> in = (ConstNode<Integer>) expr;
           return new ConstNode<Integer>(-in.value(), VarType.INT, unaryToken.start());
-        } else if (unaryToken.type() == Token.Type.BIT_NOT) {
+        } else if (unaryToken.type() == TokenType.BIT_NOT) {
           @SuppressWarnings("unchecked")
           ConstNode<Integer> in = (ConstNode<Integer>) expr;
           return new ConstNode<Integer>(~in.value(), VarType.INT, unaryToken.start());
         }
       } else if (expr.varType() == VarType.BOOL) {
-        if (unaryToken.type() == Token.Type.NOT) {
+        if (unaryToken.type() == TokenType.NOT) {
           @SuppressWarnings("unchecked")
           ConstNode<Boolean> cn = (ConstNode<Boolean>) expr;
           return new ConstNode<Boolean>(!cn.value(), VarType.BOOL, unaryToken.start());
@@ -636,17 +636,17 @@ public class Parser implements Phase {
       Token keywordToken = unaryToken;
 
       advance();
-      expect(Token.Type.LPAREN);
+      expect(TokenType.LPAREN);
       advance();
       ExprNode expr = expr();
-      expect(Token.Type.RPAREN);
+      expect(TokenType.RPAREN);
       advance();
 
       return new UnaryNode(keywordToken.type(), expr, unaryToken.start());
-    } else if (token.type() == Token.Type.NEW) {
+    } else if (token.type() == TokenType.NEW) {
       Position start = token.start();
       advance();
-      expect(Token.Type.VARIABLE);
+      expect(TokenType.VARIABLE);
       Token recordTypeName = advance();
       return new NewNode(recordTypeName.text(), start);
     }
@@ -670,22 +670,22 @@ public class Parser implements Phase {
     ExprNode left = atom();
 
     // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
-    if (token.type() == Token.Type.LBRACKET) {
+    if (token.type() == TokenType.LBRACKET) {
       advance();
       ExprNode index = expr();
-      expect(Token.Type.RBRACKET);
+      expect(TokenType.RBRACKET);
       advance();
 
-      left = new BinOpNode(left, Token.Type.LBRACKET, index);
-    } else if (token.type() == Token.Type.DOT) {
+      left = new BinOpNode(left, TokenType.LBRACKET, index);
+    } else if (token.type() == TokenType.DOT) {
 
-      while (token.type() == Token.Type.DOT || token.type() == Token.Type.LBRACKET) {
-        Token.Type operator = token.type();
+      while (token.type() == TokenType.DOT || token.type() == TokenType.LBRACKET) {
+        TokenType operator = token.type();
         advance();
         // this is restrictive but I'm too dumb to figure out how to make it left-associative
         ExprNode right = atom();
-        if (operator == Token.Type.LBRACKET) {
-          expect(Token.Type.RBRACKET);
+        if (operator == TokenType.LBRACKET) {
+          expect(TokenType.RBRACKET);
           advance();
         }
         left = new BinOpNode(left, operator, right);
@@ -704,37 +704,37 @@ public class Parser implements Phase {
    * </pre>
    */
   private ExprNode atom() {
-    if (token.type() == Token.Type.INT) {
+    if (token.type() == TokenType.INT) {
       IntToken it = (IntToken) token;
       advance();
       return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
-    } else if (token.type() == Token.Type.TRUE || token.type() == Token.Type.FALSE) {
+    } else if (token.type() == TokenType.TRUE || token.type() == TokenType.FALSE) {
       Token bt = advance();
-      return new ConstNode<Boolean>(bt.type() == Token.Type.TRUE, VarType.BOOL, bt.start());
-    } else if (token.type() == Token.Type.STRING) {
+      return new ConstNode<Boolean>(bt.type() == TokenType.TRUE, VarType.BOOL, bt.start());
+    } else if (token.type() == TokenType.STRING) {
       Token st = advance();
       return new ConstNode<String>(st.text(), VarType.STRING, st.start());
-    } else if (token.type() == Token.Type.NULL) {
+    } else if (token.type() == TokenType.NULL) {
       Token st = advance();
       return new ConstNode<Void>(null, VarType.NULL, st.start());
-    } else if (token.type() == Token.Type.VARIABLE) {
+    } else if (token.type() == TokenType.VARIABLE) {
       Token varToken = advance();
-      if (token.type() == Token.Type.LPAREN) {
+      if (token.type() == TokenType.LPAREN) {
         return procedureCall(varToken, false);
       } else {
         String name = varToken.text();
         return new VariableNode(name, varToken.start());
       }
-    } else if (token.type() == Token.Type.LPAREN) {
+    } else if (token.type() == TokenType.LPAREN) {
       advance();
       ExprNode expr = expr();
-      expect(Token.Type.RPAREN);
+      expect(TokenType.RPAREN);
       advance();
       return expr;
-    } else if (token.type() == Token.Type.LBRACKET) {
+    } else if (token.type() == TokenType.LBRACKET) {
       // array literal
       return arrayLiteral();
-    } else if (token.type() == Token.Type.INPUT) {
+    } else if (token.type() == TokenType.INPUT) {
       Token it = advance();
       return new InputNode(it.start());
     } else {
@@ -746,7 +746,7 @@ public class Parser implements Phase {
 
   /** Parse an array constant/literal. */
   private ExprNode arrayLiteral() {
-    expect(Token.Type.LBRACKET);
+    expect(TokenType.LBRACKET);
 
     Token openBracket = advance(); // eat left bracket
 
@@ -754,7 +754,7 @@ public class Parser implements Phase {
     // List<ExprNode> values = commaSeparatedExpressions();
 
     // For first iteration: only allow const int[] or const string[] or const bool[]
-    if (token.type() != Token.Type.RBRACKET) {
+    if (token.type() != TokenType.RBRACKET) {
       List<ConstNode<?>> values =
           commaSeparated(
               () -> {
@@ -770,7 +770,7 @@ public class Parser implements Phase {
                     token.start());
               });
 
-      expect(Token.Type.RBRACKET);
+      expect(TokenType.RBRACKET);
       advance(); // eat rbracket
 
       VarType baseType = values.get(0).varType();

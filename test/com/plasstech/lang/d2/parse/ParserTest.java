@@ -10,8 +10,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -114,7 +114,7 @@ public class ParserTest {
     VariableNode left = (VariableNode) binOp.left();
     assertThat(left.name()).isEqualTo("b");
 
-    assertThat(binOp.operator()).isEqualTo(Token.Type.SHIFT_LEFT);
+    assertThat(binOp.operator()).isEqualTo(TokenType.SHIFT_LEFT);
 
     ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(3);
@@ -154,7 +154,7 @@ public class ParserTest {
     ConstNode<Integer> left = (ConstNode<Integer>) binOp.left();
     assertThat(left.value()).isEqualTo(3);
 
-    assertThat(binOp.operator()).isEqualTo(Token.Type.PLUS);
+    assertThat(binOp.operator()).isEqualTo(TokenType.PLUS);
 
     ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(4);
@@ -177,7 +177,7 @@ public class ParserTest {
     ConstNode<Integer> left = (ConstNode<Integer>) binOp.left();
     assertThat(left.value()).isEqualTo(3);
 
-    assertThat(binOp.operator()).isEqualTo(Token.Type.MULT);
+    assertThat(binOp.operator()).isEqualTo(TokenType.MULT);
 
     ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(4);
@@ -215,7 +215,7 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.MINUS);
+    assertThat(unary.operator()).isEqualTo(TokenType.MINUS);
     VariableNode right = (VariableNode) unary.expr();
     assertThat(right.name()).isEqualTo("b");
   }
@@ -273,7 +273,7 @@ public class ParserTest {
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
-    assertThat(((UnaryNode) expr).operator()).isEqualTo(Token.Type.BIT_NOT);
+    assertThat(((UnaryNode) expr).operator()).isEqualTo(TokenType.BIT_NOT);
   }
 
   @Test
@@ -288,7 +288,7 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
+    assertThat(unary.operator()).isEqualTo(TokenType.PLUS);
     VariableNode right = (VariableNode) unary.expr();
     assertThat(right.name()).isEqualTo("b");
   }
@@ -305,7 +305,7 @@ public class ParserTest {
 
     Node expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.PLUS);
+    assertThat(unary.operator()).isEqualTo(TokenType.PLUS);
   }
 
   @Test
@@ -350,7 +350,7 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.LENGTH);
+    assertThat(unary.operator()).isEqualTo(TokenType.LENGTH);
     ConstNode<String> right = (ConstNode<String>) unary.expr();
     assertThat(right.value()).isEqualTo("hi");
   }
@@ -367,7 +367,7 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.ASC);
+    assertThat(unary.operator()).isEqualTo(TokenType.ASC);
     ConstNode<?> right = (ConstNode<?>) unary.expr();
     assertThat(right.value()).isEqualTo("hi");
   }
@@ -384,7 +384,7 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(Token.Type.CHR);
+    assertThat(unary.operator()).isEqualTo(TokenType.CHR);
     ConstNode<?> right = (ConstNode<?>) unary.expr();
     assertThat(right.value()).isEqualTo(65);
   }
@@ -591,7 +591,7 @@ public class ParserTest {
     BinOpNode binOp = (BinOpNode) condition;
     VariableNode left = (VariableNode) binOp.left();
     assertThat(left.name()).isEqualTo("i");
-    assertThat(binOp.operator()).isEqualTo(Token.Type.LT);
+    assertThat(binOp.operator()).isEqualTo(TokenType.LT);
     ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
     assertThat(right.value()).isEqualTo(30);
   }
@@ -927,7 +927,7 @@ public class ParserTest {
 
     BinOpNode expr = (BinOpNode) node.expr();
     assertThat(expr.left()).isInstanceOf(VariableNode.class);
-    assertThat(expr.operator()).isEqualTo(Token.Type.LBRACKET);
+    assertThat(expr.operator()).isEqualTo(TokenType.LBRACKET);
     assertThat(expr.right()).isInstanceOf(BinOpNode.class);
   }
 
@@ -1209,7 +1209,7 @@ public class ParserTest {
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
-    assertThat(node.operator()).isEqualTo(Token.Type.DOT);
+    assertThat(node.operator()).isEqualTo(TokenType.DOT);
     assertThat(node.right()).isInstanceOf(VariableNode.class);
   }
 
@@ -1225,7 +1225,7 @@ public class ParserTest {
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(BinOpNode.class);
-    assertThat(node.operator()).isEqualTo(Token.Type.LBRACKET);
+    assertThat(node.operator()).isEqualTo(TokenType.LBRACKET);
     assertThat(node.right()).isInstanceOf(BinOpNode.class);
   }
 
@@ -1266,7 +1266,7 @@ public class ParserTest {
     AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
-    assertThat(node.operator()).isEqualTo(Token.Type.EQEQ);
+    assertThat(node.operator()).isEqualTo(TokenType.EQEQ);
     ConstNode<Void> right = (ConstNode<Void>) node.right();
     assertThat(right.value()).isNull();
   }

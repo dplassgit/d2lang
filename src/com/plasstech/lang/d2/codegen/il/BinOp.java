@@ -2,16 +2,16 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 
 public class BinOp extends Op {
   private final Location destination;
-  private final Token.Type operator;
+  private final TokenType operator;
   private final Operand left;
   private final Operand right;
 
   // TODO: add types, to aid in codegen
-  public BinOp(Location destination, Operand left, Token.Type operator, Operand right) {
+  public BinOp(Location destination, Operand left, TokenType operator, Operand right) {
     this.destination = destination;
     this.left = left;
     this.operator = operator;
@@ -22,7 +22,7 @@ public class BinOp extends Op {
     return destination;
   }
 
-  public Token.Type operator() {
+  public TokenType operator() {
     return operator;
   }
 

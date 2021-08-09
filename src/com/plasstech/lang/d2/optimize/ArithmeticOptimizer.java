@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 
 class ArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -252,7 +252,7 @@ class ArithmeticOptimizer extends LineOptimizer {
               new BinOp(
                   op.destination(),
                   left,
-                  Token.Type.SHIFT_RIGHT,
+                  TokenType.SHIFT_RIGHT,
                   new ConstantOperand<Integer>(power)));
           return;
         }
@@ -292,15 +292,16 @@ class ArithmeticOptimizer extends LineOptimizer {
       if (rightConstant.value() instanceof Integer) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
-          replaceCurrent(new BinOp(op.destination(), left, Token.Type.PLUS, 
-                new ConstantOperand<Integer>(-rightval)));
+          replaceCurrent(
+              new BinOp(
+                  op.destination(), left, TokenType.PLUS, new ConstantOperand<Integer>(-rightval)));
         }
       }
     }
     if (left.equals(ConstantOperand.ZERO)) {
       // Replace with destination = -right
       // This may not be any better than 0-right...
-      replaceCurrent(new UnaryOp(op.destination(), Token.Type.MINUS, right));
+      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right));
       return;
     } else if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left
@@ -339,7 +340,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       if (rightConstant.value() instanceof Integer) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
-          replaceCurrent(new BinOp(op.destination(), left, Token.Type.MINUS,
+          replaceCurrent(new BinOp(op.destination(), left, TokenType.MINUS,
                 new ConstantOperand<Integer>(-rightval)));
         }
       }
@@ -375,7 +376,7 @@ class ArithmeticOptimizer extends LineOptimizer {
             new BinOp(
                 op.destination(),
                 right,
-                Token.Type.SHIFT_LEFT,
+                TokenType.SHIFT_LEFT,
                 new ConstantOperand<Integer>(power)));
       }
     } else if (right.isConstant()) {
@@ -385,7 +386,7 @@ class ArithmeticOptimizer extends LineOptimizer {
             new BinOp(
                 op.destination(),
                 left,
-                Token.Type.SHIFT_LEFT,
+                TokenType.SHIFT_LEFT,
                 new ConstantOperand<Integer>(power)));
       }
     }

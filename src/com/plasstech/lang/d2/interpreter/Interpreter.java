@@ -32,7 +32,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
@@ -172,7 +172,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object right = resolve(op.right());
 
     Object result;
-    if (op.operator() == Token.Type.DOT) {
+    if (op.operator() == TokenType.DOT) {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
       result = visitBinOp(op, (Integer) left, (Integer) right);
@@ -216,14 +216,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private Object visitBinOp(BinOp op, Object[] left, int right) {
-    if (op.operator() == Token.Type.LBRACKET) {
+    if (op.operator() == TokenType.LBRACKET) {
       return left[right];
     }
     throw new IllegalStateException("Unknown array/int binop " + op.operator());
   }
 
   private Object visitBinOp(BinOp op, String left, Integer right) {
-    if (op.operator() == Token.Type.LBRACKET) {
+    if (op.operator() == TokenType.LBRACKET) {
       return "" + left.charAt(right);
     }
     throw new IllegalStateException("Unknown string/int binop " + op.operator());

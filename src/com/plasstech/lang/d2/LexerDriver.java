@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 
@@ -23,7 +24,7 @@ public class LexerDriver {
     Token token = lex.nextToken();
     System.out.println(token);
     // 3. output
-    while (token.type() != Token.Type.EOF) {
+    while (token.type() != TokenType.EOF) {
       token = lex.nextToken();
       System.out.println(token);
     }

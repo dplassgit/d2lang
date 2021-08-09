@@ -5,74 +5,74 @@ import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
-import com.plasstech.lang.d2.lex.Token.Type;
+import com.plasstech.lang.d2.common.TokenType;
 
 public class LexerTest {
   @Test
   public void singleSymbols() {
     Lexer lexer = new Lexer("+-*/%()! =<>|&{}:[].");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.PLUS);
+    assertThat(token.type()).isEqualTo(TokenType.PLUS);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.MINUS);
+    assertThat(token.type()).isEqualTo(TokenType.MINUS);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.MULT);
+    assertThat(token.type()).isEqualTo(TokenType.MULT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.DIV);
+    assertThat(token.type()).isEqualTo(TokenType.DIV);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.MOD);
+    assertThat(token.type()).isEqualTo(TokenType.MOD);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.LPAREN);
+    assertThat(token.type()).isEqualTo(TokenType.LPAREN);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.RPAREN);
+    assertThat(token.type()).isEqualTo(TokenType.RPAREN);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.BIT_NOT);
+    assertThat(token.type()).isEqualTo(TokenType.BIT_NOT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.EQ);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.LT);
+    assertThat(token.type()).isEqualTo(TokenType.LT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.GT);
+    assertThat(token.type()).isEqualTo(TokenType.GT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.BIT_OR);
+    assertThat(token.type()).isEqualTo(TokenType.BIT_OR);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.BIT_AND);
+    assertThat(token.type()).isEqualTo(TokenType.BIT_AND);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.LBRACE);
+    assertThat(token.type()).isEqualTo(TokenType.LBRACE);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.RBRACE);
+    assertThat(token.type()).isEqualTo(TokenType.RBRACE);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.COLON);
+    assertThat(token.type()).isEqualTo(TokenType.COLON);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.LBRACKET);
+    assertThat(token.type()).isEqualTo(TokenType.LBRACKET);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.RBRACKET);
+    assertThat(token.type()).isEqualTo(TokenType.RBRACKET);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.DOT);
+    assertThat(token.type()).isEqualTo(TokenType.DOT);
   }
 
   @Test
   public void doubleSymbols() {
     Lexer lexer = new Lexer("== <= >= != >> <<");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EQEQ);
+    assertThat(token.type()).isEqualTo(TokenType.EQEQ);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.LEQ);
+    assertThat(token.type()).isEqualTo(TokenType.LEQ);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.GEQ);
+    assertThat(token.type()).isEqualTo(TokenType.GEQ);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.NEQ);
+    assertThat(token.type()).isEqualTo(TokenType.NEQ);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.SHIFT_RIGHT);
+    assertThat(token.type()).isEqualTo(TokenType.SHIFT_RIGHT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.SHIFT_LEFT);
+    assertThat(token.type()).isEqualTo(TokenType.SHIFT_LEFT);
   }
 
   @Test
   public void longerInt() {
     Lexer lexer = new Lexer("1234");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1234");
     IntToken itt = (IntToken) token;
     assertThat(itt.value()).isEqualTo(1234);
@@ -89,18 +89,18 @@ public class LexerTest {
     Lexer lexer = new Lexer("1");
     lexer.nextToken();
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
   public void twoNumbers() {
     Lexer lexer = new Lexer("1 2");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("2");
   }
 
@@ -108,7 +108,7 @@ public class LexerTest {
   public void whiteSpace() {
     Lexer lexer = new Lexer("1\n\t 23");
     IntToken token = (IntToken) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
     assertThat(token.value()).isEqualTo(1);
     assertThat(token.start().line()).isEqualTo(1);
@@ -117,7 +117,7 @@ public class LexerTest {
     assertThat(token.end().column()).isEqualTo(2);
 
     token = (IntToken) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("23");
     assertThat(token.value()).isEqualTo(23);
     assertThat(token.start().line()).isEqualTo(2);
@@ -130,13 +130,13 @@ public class LexerTest {
   public void trueFalse() {
     Lexer lexer = new Lexer("true false True FALSE");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.TRUE);
+    assertThat(token.type()).isEqualTo(TokenType.TRUE);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.FALSE);
+    assertThat(token.type()).isEqualTo(TokenType.FALSE);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.TRUE);
+    assertThat(token.type()).isEqualTo(TokenType.TRUE);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.FALSE);
+    assertThat(token.type()).isEqualTo(TokenType.FALSE);
   }
 
   @Test
@@ -147,67 +147,67 @@ public class LexerTest {
                 + " chr exit and or not xor");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.PRINT);
+    assertThat(token.type()).isEqualTo(TokenType.PRINT);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.PRINTLN);
+    assertThat(token.type()).isEqualTo(TokenType.PRINTLN);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.IF);
+    assertThat(token.type()).isEqualTo(TokenType.IF);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.ELSE);
+    assertThat(token.type()).isEqualTo(TokenType.ELSE);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.ELIF);
+    assertThat(token.type()).isEqualTo(TokenType.ELIF);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.DO);
+    assertThat(token.type()).isEqualTo(TokenType.DO);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.WHILE);
+    assertThat(token.type()).isEqualTo(TokenType.WHILE);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.BREAK);
+    assertThat(token.type()).isEqualTo(TokenType.BREAK);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.CONTINUE);
+    assertThat(token.type()).isEqualTo(TokenType.CONTINUE);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.BOOL);
+    assertThat(token.type()).isEqualTo(TokenType.BOOL);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.PROC);
+    assertThat(token.type()).isEqualTo(TokenType.PROC);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.RETURN);
+    assertThat(token.type()).isEqualTo(TokenType.RETURN);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.LENGTH);
+    assertThat(token.type()).isEqualTo(TokenType.LENGTH);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.ASC);
+    assertThat(token.type()).isEqualTo(TokenType.ASC);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.CHR);
+    assertThat(token.type()).isEqualTo(TokenType.CHR);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.EXIT);
+    assertThat(token.type()).isEqualTo(TokenType.EXIT);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.AND);
+    assertThat(token.type()).isEqualTo(TokenType.AND);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.OR);
+    assertThat(token.type()).isEqualTo(TokenType.OR);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.NOT);
+    assertThat(token.type()).isEqualTo(TokenType.NOT);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.XOR);
+    assertThat(token.type()).isEqualTo(TokenType.XOR);
     assertThat(token.type().isKeyword()).isTrue();
   }
 
@@ -215,15 +215,15 @@ public class LexerTest {
   public void mixed() {
     Lexer lexer = new Lexer("print 3 p");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Token.Type.PRINT);
+    assertThat(token.type()).isEqualTo(TokenType.PRINT);
     assertThat(token.type().isKeyword()).isTrue();
 
     IntToken intToken = (IntToken) lexer.nextToken();
-    assertThat(intToken.type()).isEqualTo(Type.INT);
+    assertThat(intToken.type()).isEqualTo(TokenType.INT);
     assertThat(intToken.value()).isEqualTo(3);
 
     Token varToken = lexer.nextToken();
-    assertThat(varToken.type()).isEqualTo(Type.VARIABLE);
+    assertThat(varToken.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(varToken.text()).isEqualTo("p");
   }
 
@@ -231,7 +231,7 @@ public class LexerTest {
   public void longNotKeyword() {
     Lexer lexer = new Lexer("printed");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("printed");
   }
 
@@ -239,7 +239,7 @@ public class LexerTest {
   public void variable() {
     Lexer lexer = new Lexer("prin");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("prin");
   }
 
@@ -247,7 +247,7 @@ public class LexerTest {
   public void variableAlnum() {
     Lexer lexer = new Lexer("prin2");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("prin2");
   }
 
@@ -255,19 +255,19 @@ public class LexerTest {
   public void underscore() {
     Lexer lexer = new Lexer("TYPE_token token_ token_with_lots_of_ _leading_ok _");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("TYPE_token");
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("token_");
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("token_with_lots_of_");
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("_leading_ok");
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("_");
   }
 
@@ -282,14 +282,14 @@ public class LexerTest {
     Lexer lexer = new Lexer("a = 3");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("a");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.EQ);
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("3");
   }
 
@@ -298,22 +298,22 @@ public class LexerTest {
     Lexer lexer = new Lexer("a=3+4");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("a");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.EQ);
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("3");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.PLUS);
+    assertThat(token.type()).isEqualTo(TokenType.PLUS);
     assertThat(token.text()).isEqualTo("+");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("4");
   }
 
@@ -322,15 +322,15 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\na");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("a");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
@@ -338,11 +338,11 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
@@ -350,11 +350,11 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
@@ -362,11 +362,11 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\r\n");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
@@ -374,11 +374,11 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n\r");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
@@ -386,22 +386,22 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n// so is this...\nb");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.INT);
+    assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.VARIABLE);
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("b");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.EOF);
+    assertThat(token.type()).isEqualTo(TokenType.EOF);
   }
 
   @Test
   public void stringTick() {
     Lexer lexer = new Lexer("'Hi'");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo("Hi");
   }
 
@@ -409,7 +409,7 @@ public class LexerTest {
   public void stringQuotes() {
     Lexer lexer = new Lexer("\"Hi\"");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo("Hi");
   }
 
@@ -417,7 +417,7 @@ public class LexerTest {
   public void stringEmpty() {
     Lexer lexer = new Lexer("''");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo("");
   }
 
@@ -425,7 +425,7 @@ public class LexerTest {
   public void stringSpace() {
     Lexer lexer = new Lexer("' '");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo(" ");
   }
 
@@ -441,7 +441,7 @@ public class LexerTest {
     String input = "'\\n \\\\ \\' \\\"'";
     Lexer lexer = new Lexer(input);
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo("\n \\ ' \"");
   }
 
@@ -451,7 +451,7 @@ public class LexerTest {
     String input = "\" \\n \\\\ \\' \\\" \"";
     Lexer lexer = new Lexer(input);
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(Type.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.text()).isEqualTo(" \n \\ ' \" ");
   }
 
