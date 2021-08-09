@@ -13,7 +13,8 @@ main -> 'MAIN' mainarg? '{' statements '}'
 mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> lvalue '=' expr
-lvalue -> variable | variable '[' expr ']' | variable '.' variable // not fully built yet, and may become more complex
+// lvalue -> variable | variable '[' expr ']' | variable '.' variable // not fully built yet, and may become more complex
+lvalue -> variable | variable '.' variable
 
 print -> 'PRINT' expr | 'PRINTLN' expr
 
@@ -25,7 +26,7 @@ while -> 'WHILE' expr do? '{' statements '}'
 do -> 'DO' statement
 
 declaration -> variable ':' type | variable ':' 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' // RECORD not fully built yet
+type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}'
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
@@ -44,20 +45,22 @@ procedure_call -> variable '(' comma-separated-expressions ')'
 ```
 expr -> boolor
 
-boolor -> booland ('|' booland)*
+boolor -> boolxor (('OR' | '|') boolxor)*
 
-booland -> compare ('&' compare)*
+boolxor -> booland (('XOR' | '^') booland)*
+
+booland -> compare (('AND' | '&') compare)*
 
 compare -> shift (relop shift)*
 relop -> '==' '!=' '>' '<' '>=' '<='
 
-shift -> addsub ('<<' | '>>' unary)*
+shift -> addsub (('<<' | '>>') unary)*
 
-addsub -> muldiv (+- muldiv)*
+addsub -> muldiv (('+' | '-') muldiv)*
 
-muldiv -> unary (*/% unary)*
+muldiv -> unary (('*' | '/' | '%') unary)*
 
-unary -> composite | !-+ unary | 'new' variable_name | unary_fn '(' expr ')'
+unary -> composite | ('!' | '-' | '+') unary | 'new' variable_name | unary_fn '(' expr ')'
 unary_fn -> 'ASC' | 'CHR' | 'LENGTH'
 
 composite -> atom ('[' expr ']')? | atom ('.' variable_name)?
@@ -72,7 +75,8 @@ atom ->   int_constant
 	| 'INPUT'
 ```
 
-Not implemented yet: power, xor
+Not implemented yet: power
 
 See [Java operators](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html)
-for reference
+for reference. Note that the above does not follow the Java order of operations exactly;
+the comparisons should be lower priority than equalities, and possibly boolean vs bit operations.

@@ -9,20 +9,20 @@ Eventually: (more arrays), map?, record, lambda? (but not closures)
 Current keywords (excluding built-in types)
 
 ```
-if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length
+if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length, exit, input, record, new, null
 ```
 
 Eventually:
 
 ```
-error?, exit, input, record, array(?), keys?, values?, new, delete(?), null
+array(?), keys?, values?, delete(?)
 ```
 
 ## Oddities
 
 No semicolons because why not.
 
-Do I want `*=` (& siblings)? **Yes**
+Do I want `*=` (& siblings)? **Yes, but not implemented yet.**
 
 Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
 
@@ -113,9 +113,8 @@ length("foo") // requires better built-in support but may be implementable as a 
 
 Winner: `length("foo")`
 
-## Future thoughts:
 
-### Records
+## Records
 
 Definition:
 
@@ -125,6 +124,8 @@ Token: record {
   value: int
 }
 ```
+
+### Usage explorations
 
 Usage:
 
@@ -143,6 +144,22 @@ t = record new Token("Name", 3)
 The "constructor" takes the arguments in order they were defined. Any trailing skipped arguments are set to default.
 
 What about recursive structures? It should be OK as long as we create the symbol upon entry instead of exit, and allow nulls.
+
+**Winner:**
+
+```
+t:Token
+t = new Token
+t.name = "Name"
+t.value = 3
+```
+
+The "constructor" builds an empty object. Deal with it.
+
+Also `null` is a thing.
+
+
+## Future thoughts:
 
 ### Arrays
 
