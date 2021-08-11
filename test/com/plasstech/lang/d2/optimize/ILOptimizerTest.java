@@ -334,6 +334,10 @@ public class ILOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "deadAssignments:proc(b:int):int {a=b c=b return a+1} " //
             + "print deadAssignments(3)");
+  }
+
+  @Test
+  public void deadAssignmentsGlobal() {
     TestUtils.optimizeAssertSameVariables("b=3 a=b c=b print a+1");
   }
 

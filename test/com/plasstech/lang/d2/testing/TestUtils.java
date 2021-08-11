@@ -26,20 +26,20 @@ public class TestUtils {
   public static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
     Executor ee = new Executor(program);
     ExecutionResult unoptimizedResult = ee.execute();
+    ImmutableList<Op> originalCode = unoptimizedResult.code();
+    
     System.out.printf("\nUNOPTIMIZED:\n");
-    System.out.println(Joiner.on("\n").join(unoptimizedResult.code()));
+    System.out.println(Joiner.on("\n").join(originalCode));
 
     System.out.println("\nUNOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(unoptimizedResult.environment().output()));
 
-    ImmutableList<Op> originalCode = ImmutableList.copyOf(unoptimizedResult.code());
-
     ImmutableList<Op> optimized = optimizer.optimize(originalCode);
+    ExecutionResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
+
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));
-
-    ExecutionResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
 
     System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");

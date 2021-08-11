@@ -179,6 +179,24 @@ class ArithmeticOptimizer extends LineOptimizer {
         optimizeCompare(op.destination(), left, right, (a, b) -> a > b);
         return;
 
+      case LBRACKET:
+        // Replace "abc"[0] with "a".
+        // Only works for constant strings and constant int indexes (modulo constant propagation!)
+        if (left.isConstant() && right.isConstant()) {
+          ConstantOperand<?> constant = (ConstantOperand<?>) left;
+          Object value = constant.value();
+          if (value instanceof String) {
+            ConstantOperand<Integer> indexOperand = (ConstantOperand<Integer>) right;
+            int index = indexOperand.value();
+            String valueString = (String) value;
+            replaceCurrent(
+                new Transfer(
+                    op.destination(),
+                    new ConstantOperand<String>(String.valueOf(valueString.charAt(index)))));
+          }
+        }
+        return;
+
       default:
         return;
     }
@@ -340,8 +358,12 @@ class ArithmeticOptimizer extends LineOptimizer {
       if (rightConstant.value() instanceof Integer) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
-          replaceCurrent(new BinOp(op.destination(), left, TokenType.MINUS,
-                new ConstantOperand<Integer>(-rightval)));
+          replaceCurrent(
+              new BinOp(
+                  op.destination(),
+                  left,
+                  TokenType.MINUS,
+                  new ConstantOperand<Integer>(-rightval)));
         }
       }
     }
@@ -384,10 +406,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       if (power != 0) {
         replaceCurrent(
             new BinOp(
-                op.destination(),
-                left,
-                TokenType.SHIFT_LEFT,
-                new ConstantOperand<Integer>(power)));
+                op.destination(), left, TokenType.SHIFT_LEFT, new ConstantOperand<Integer>(power)));
       }
     }
   }
@@ -486,8 +505,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(
           new Transfer(
               destination,
-              new ConstantOperand<Boolean>(
-                  fun.test(leftConstant.value(), rightConstant.value()))));
+              new ConstantOperand<Boolean>(fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
     }
     return false;
