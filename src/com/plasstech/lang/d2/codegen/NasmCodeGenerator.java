@@ -22,26 +22,32 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public State execute(State input) {
-    
     ImmutableList<Op> code = input.lastIlCode();
     if (input.filename() != null) {
       emit("; Compiled from %s", input.filename());
     }
+    emit("; To execute: nasm -fwin64 foo.asm && gcc foo.obj -o foo && ./foo");
 
+    emit("global main");
+    emit("extern puts");
+    emit("extern exit");
     // Probably what we should do is:
-    // 1. emit all globals
-    // 2. emit all string constants
+    // 1. emit all globals OK
+    // 2. emit all string constants not done - if string constants are propagated, ???
+    // maybe we shouldn't constant propagate string constants except if it's "foo"[3]
     // 3. emit all array constants (?)
-    emit("\nSECTION .data");
+    emit("\nsection .data");
     SymTab globals = input.symbolTable();
     for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
       if (entry.getValue().storage() == SymbolStorage.GLOBAL) {
-        // for now, reserve 4 bytes per entry.
-        emit("%s: dd 0", entry.getKey());
+        // temporarily reserve (& clear) 4 bytes per entry
+        emit("\t%s: dd 0", entry.getKey());
       }
     }
 
-    emit("\nSECTION .text");
+    emit("\nsection .text");
+    // TODO: convert command-line arguments to ??? and send to __main
+    emit("main:");
     for (Op opcode : code) {
       emit(opcode);
       opcode.accept(this);
@@ -54,26 +60,27 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     asm.add(statement);
   }
 
-  private void emit(String format, String value) {
+  private void emit(String format, Object value) {
     asm.add(String.format(format, value));
   }
-
+  
   @Override
   public void visit(Label op) {
     emit("%s:", op.label());
   }
 
   private void emit(Op op) {
-    emit("; %s", op.toString());
+    emit("\t; %s", op.toString());
   }
 
   @Override
   public void visit(Stop op) {
-    emit("ret");
+    emit("\tmov rcx, %d", op.exitCode());
+    emit("\tcall exit");
   }
 
   @Override
   public void visit(Goto op) {
-    emit("jmp %s", op.label());
+    emit("\tjmp %s", op.label());
   }
 }

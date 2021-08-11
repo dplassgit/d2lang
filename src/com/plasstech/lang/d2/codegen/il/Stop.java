@@ -12,6 +12,10 @@ public class Stop extends Op {
     this.exitCode = exitCode;
   }
 
+  public int exitCode() {
+    return exitCode;
+  }
+
   @Override
   public String toString() {
     return String.format("exit(%d); // a.k.a. Stop", exitCode);
@@ -21,4 +25,5 @@ public class Stop extends Op {
   public void accept(OpcodeVisitor visitor) {
     visitor.visit(this);
   }
+
 }

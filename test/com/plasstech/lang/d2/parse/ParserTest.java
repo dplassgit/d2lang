@@ -688,6 +688,7 @@ public class ParserTest {
     assertParseError("main {", "Unexpected start of statement 'EOF'");
     assertParseError("main {} print ", "expected EOF");
     assertParseError("main { print ", "expected literal");
+    assertParseError("main: proc() {}", "expected {");
   }
 
   @Test

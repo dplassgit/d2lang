@@ -20,8 +20,26 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void assign() {
-    String sourceCode = "a=3 print a";
+  public void ifPrint() {
+    String sourceCode = "a=3 while true { if a == 3 {continue} print a }";
+    State state = TestUtils.compile(sourceCode);
+    state = new NasmCodeGenerator().execute(state);
+    System.err.println(Joiner.on('\n').join(state.asmCode()));
+    assertThat(state.asmCode()).isNotEmpty();
+  }
+  //
+  //  @Test
+  //  public void assign() {
+  //    String sourceCode = "a=3 print a";
+  //    State state = TestUtils.compile(sourceCode);
+  //    state = new NasmCodeGenerator().execute(state);
+  //    System.err.println(Joiner.on('\n').join(state.asmCode()));
+  //    assertThat(state.asmCode()).isNotEmpty();
+  //  }
+
+  @Test
+  public void stop() {
+    String sourceCode = "main {print 3 exit 'hi'}";
     State state = TestUtils.compile(sourceCode);
     state = new NasmCodeGenerator().execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
