@@ -14,11 +14,12 @@ public class MemoryAddress extends Location {
   }
 
   @Override
-  public boolean equals(Object that) {
-    if (that == null || !(that instanceof MemoryAddress)) {
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof MemoryAddress)) {
       return false;
     }
-    return this.name().equals(((MemoryAddress) that).name());
+    Location that = (Location) obj;
+    return this.storage() == that.storage() && this.name().equals(that.name());
   }
 
   @Override

@@ -22,11 +22,12 @@ public class StackLocation extends Location {
   }
 
   @Override
-  public boolean equals(Object that) {
-    if (that == null || !(that instanceof StackLocation)) {
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof StackLocation)) {
       return false;
     }
-    return this.name().equals(((StackLocation) that).name());
+    Location that = (Location) obj;
+    return this.storage() == that.storage() && this.name().equals(that.name());
   }
 
   @Override

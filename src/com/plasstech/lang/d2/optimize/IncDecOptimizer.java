@@ -19,7 +19,7 @@ class IncDecOptimizer extends LineOptimizer {
   }
 
   /*
-   * i=i+1: (also, i=i-1, i=i+2, i=i+2)
+   * i=i+1: (also, i=i-1, i=i+2, i=i-2)
    *
    * temp1=i // first
    * temp2=temp1+1 // secondOp
