@@ -68,7 +68,7 @@ public class SymTab {
   }
 
   public Symbol declareTemp(String name, VarType varType) {
-    return declareInternal(name, varType, this.storage);
+    return declareInternal(name, varType, SymbolStorage.TEMP);
   }
 
   public Symbol declareParam(String name, VarType varType) {

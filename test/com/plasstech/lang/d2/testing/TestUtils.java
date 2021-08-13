@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.testing;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
@@ -123,7 +122,9 @@ public class TestUtils {
     State state = State.create(text).build();
     Parser parser = new Parser(lex);
     state = parser.execute(state);
-    assertThat(state.error()).isFalse();
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
 
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
@@ -133,8 +134,16 @@ public class TestUtils {
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
+
     // Runs all the optimizers.
-    ILOptimizer optimizer = new ILOptimizer(2);
-    return optimizer.execute(state);
+    ILOptimizer optimizer = new ILOptimizer(0);
+    state = optimizer.execute(state);
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
+    return state;
   }
 }
