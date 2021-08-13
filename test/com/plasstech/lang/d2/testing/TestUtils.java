@@ -139,7 +139,7 @@ public class TestUtils {
     }
 
     // Runs all the optimizers.
-    ILOptimizer optimizer = new ILOptimizer(0);
+    ILOptimizer optimizer = new ILOptimizer(2);
     state = optimizer.execute(state);
     if (state.error()) {
       fail(state.errorMessage());

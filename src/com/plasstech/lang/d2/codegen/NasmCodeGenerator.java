@@ -14,7 +14,6 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
-import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
@@ -85,15 +84,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   @Override
-  public void visit(UnaryOp op) {
-    // source, op, destination.
-  }
-
-  @Override
   public void visit(Transfer op) {
+    // it's possible to optimize this to just be `mov [dest], [source]`
+    // but we'd have to know all the allowed combinations of stack, global, immediate.
+
+    // Use r15 as a temp
     Operand source = op.source();
-    // if source is global:
     if (source.storage() == SymbolStorage.GLOBAL) {
+      // if source is global:
       // 1. mov r15, [source]
       emit("\tmov r15, [%s]", source);
     }
@@ -161,12 +159,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Dec op) {
-    emit("\tdec %s", op.target());
+    emit("\tdec dword [%s]", op.target());
   }
 
   @Override
   public void visit(Inc op) {
-    emit("\tinc %s", op.target());
+    emit("\tinc dword [%s]", op.target());
   }
 
   private void emit(String format, Object... values) {

@@ -127,9 +127,7 @@ class IncDecOptimizer extends LineOptimizer {
 
       Inc increment = new Inc(second.destination());
       Dec decrement = new Dec(second.destination());
-      if (value.equals(1)) {
-        deleteAt(ip());
-      } else {
+      if (value.equals(2)) {
         // +/- 2
         replaceAt(ip(), plus ? increment : decrement);
       }

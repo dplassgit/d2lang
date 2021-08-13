@@ -91,7 +91,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void incDec() {
-    String sourceCode = "a=42 a=a+1 a=a-1";
+    String sourceCode = "a=42 a=a+1 a=41 a=a-1";
     State state = TestUtils.compile(sourceCode);
     state = state.addFilename("incDec");
     state = new NasmCodeGenerator().execute(state);
