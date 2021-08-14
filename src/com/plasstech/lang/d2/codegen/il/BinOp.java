@@ -10,7 +10,6 @@ public class BinOp extends Op {
   private final Operand left;
   private final Operand right;
 
-  // TODO: add types, to aid in codegen
   public BinOp(Location destination, Operand left, TokenType operator, Operand right) {
     this.destination = destination;
     this.left = left;

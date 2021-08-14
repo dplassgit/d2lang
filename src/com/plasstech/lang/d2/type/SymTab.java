@@ -105,7 +105,7 @@ public class SymTab {
     return recordSymbol;
   }
 
-  // It's only declared. TODO: distinguish between locals & globals
+  // It's only declared.
   public Symbol declare(String name, VarType varType) {
     return declareInternal(name, varType, this.storage);
   }

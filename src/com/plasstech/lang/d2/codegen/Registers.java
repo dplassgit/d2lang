@@ -1,15 +1,16 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.common.base.Preconditions;
 
 public class Registers {
   // these are the USED registers
   private final List<Boolean> used;
 
   public Registers() {
-    this(32);
+    this(8);
   }
 
   public Registers(int size) {
@@ -17,8 +18,6 @@ public class Registers {
     for (int i = 0; i < size; ++i) {
       used.add(false);
     }
-    // r0 is always considered the result of the last calculation.
-    used.set(0, true);
   }
 
   public int allocate() {

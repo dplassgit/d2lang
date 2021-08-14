@@ -6,6 +6,8 @@ import java.util.Map;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -20,10 +22,12 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private final List<String> asm = new ArrayList<>();
+  private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Override
   public State execute(State input) {
@@ -97,14 +101,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (source.isConstant()) {
       // if source is int constant:
       // 1. mov dest, (constant)
-      ConstantOperand<?> sourceOp = (ConstantOperand<?>) source;
-      Object value = sourceOp.value();
-      if (value instanceof Integer) {
+      if (source.type() == VarType.INT) {
+        ConstantOperand<Integer> sourceOp = (ConstantOperand<Integer>) source;
+        int value = sourceOp.value();
         emit("  mov dword [%s], %s", destination, value);
         return;
       } else {
         // string constant (!) what to do?!
-        throw new UnsupportedOperationException("Cannot store string yet");
+        logger.atSevere().log("Cannot retrieve string yet: %s", source);
       }
     } else
       switch (source.storage()) {
@@ -120,15 +124,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // ???
           // if source is stack:
           // 1. mov r15, [ebp+???]
-          throw new UnsupportedOperationException(
-              String.format("Cannot retrieve from %s yet", destination.storage()));
+          logger.atSevere().log(String.format("Cannot retrieve from %s yet", source.storage()));
       }
 
     // if dest is global:
     switch (destination.storage()) {
       case GLOBAL:
         // 2. mov [dest], r15
-        // note, this may fail for strings, because they need to be quadwords
+        // note, this will fail for strings, because they need to be quadwords (i.e., addresses)
         emit("  mov dword [%s], r15d", destination);
         break;
         // if dest is temp or local:
@@ -138,8 +141,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // if dest is fieldset:
         // 2. ???
       default:
-        throw new UnsupportedOperationException(
-            String.format("Cannot store in %s yet", destination.storage()));
+        logger.atSevere().log("Cannot store in %s yet", destination.storage());
     }
   }
 
@@ -150,36 +152,44 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case INPUT:
         break;
       case MESSAGE: // exit "foo"
-        emit("  sub rsp, 28h          ; Reserve the shadow space");
+        emit("  sub rsp, 0x28          ; Reserve the shadow space");
         emit("  mov rcx, __EXIT_MSG");
         emit("  call printf           ; printf(__EXIT_MSG)");
         if (arg.isConstant()) {
-          emit("  add rsp, 28h          ; Remove shadow space");
+          emit("  add rsp, 0x28          ; Remove shadow space");
           // have to store constant in memory
+          logger.atSevere().log("Cannot exit string %s yet", arg);
         } else {
           // must be a string global
           emit("  mov rcx, %s", arg.toString());
           emit("  call puts             ; puts message with newline");
-          emit("  add rsp, 28h          ; Remove shadow space");
+          emit("  add rsp, 0x28          ; Remove shadow space");
         }
         break;
       case PRINT:
         if (arg.isConstant()) {
-          // might be string might be int... ugh
-          emit("  sub rsp, 28h          ; Reserve the shadow space");
-          emit("  mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
-          // this works for ints only
-          emit("  mov rdx, %s         ; Second argument is parameter", arg.toString());
-          emit("  call printf           ; printf(message)");
-          emit("  add rsp, 28h          ; Remove shadow space");
+          ConstantOperand<?> argOp = (ConstantOperand<?>) arg;
+          Object value = argOp.value();
+          if (value instanceof Integer) {
+            emit("  sub rsp, 0x28          ; Reserve the shadow space");
+            emit("  mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
+            // this works for ints only
+            emit("  mov rdx, %s         ; Second argument is parameter", arg.toString());
+            emit("  call printf           ; printf(message)");
+            emit("  add rsp, 0x28          ; Remove shadow space");
+          } else {
+            // string constant (!) what to do?!
+            // might be string might be int... ugh
+            logger.atSevere().log("Cannot print string yet: %s", arg);
+          }
         } else {
           // might be string might be int... ugh
-          emit("  sub rsp, 28h          ; Reserve the shadow space");
+          emit("  sub rsp, 0x28          ; Reserve the shadow space");
           emit("  mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
           // this works for ints only; might fail for non-globals
           emit("  mov rdx, [%s]         ; Second argument is parameter", arg.toString());
           emit("  call printf           ; printf(message)");
-          emit("  add rsp, 28h          ; Remove shadow space");
+          emit("  add rsp, 0x28          ; Remove shadow space");
         }
         break;
     }
@@ -200,8 +210,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("  inc dword [%s]", op.target());
   }
 
+  @Override
+  public void visit(BinOp op) {
+    logger.atSevere().log("Cannot generate %s yet", op);
+  }
+
   private void emit(String format, Object... values) {
     asm.add(String.format(format, values));
+    logger.atFine().log(String.format(format, values));
   }
 
   private void emit(Op op) {

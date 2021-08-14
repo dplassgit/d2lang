@@ -211,6 +211,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case GLOBAL:
         return new MemoryAddress(name, variable.varType());
       default:
+        // TODO: This is insufficient; need to distinguish between locals and params and temps
         return new StackLocation(name, variable.varType());
     }
   }

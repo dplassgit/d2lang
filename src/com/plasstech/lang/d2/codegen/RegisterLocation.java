@@ -5,13 +5,19 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class RegisterLocation extends Location {
 
-  // TODO: capture WHICH register?
-  public RegisterLocation(String varName, String regName, VarType varType) {
+  private final String register;
+
+  public RegisterLocation(String varName, String register, VarType varType) {
     super(varName, varType);
+    this.register = register;
   }
 
   @Override
   public SymbolStorage storage() {
     return SymbolStorage.REGISTER;
+  }
+
+  public String register() {
+    return register;
   }
 }
