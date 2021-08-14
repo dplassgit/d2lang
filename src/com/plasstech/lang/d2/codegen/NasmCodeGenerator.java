@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
@@ -27,7 +28,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public State execute(State input) {
     ImmutableList<Op> code = input.lastIlCode();
-    String f = "foo";
+    String f = "dcode";
     if (input.filename() != null) {
       f = input.filename();
     }
@@ -35,11 +36,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // -Ox = optimize
     emit("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
 
-    emit("%%use altreg"); // lets us sometimes use r01 instead of rax, etc.
+    emit("%%use altreg"); // lets us use r01 instead of rax, etc.
     emit("global main"); // required
-    emit("extern puts"); // only really needed if we call print
-    emit("extern printf"); // only really needed if we call print
-    emit("extern exit"); // always needed
+    emit("extern puts");
+    emit("extern printf");
+    emit("extern exit");
 
     // Probably what we should do is:
     // 1. emit all globals OK
@@ -50,13 +51,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     SymTab globals = input.symbolTable();
     for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
       if (entry.getValue().storage() == SymbolStorage.GLOBAL) {
-        // temporarily reserve (& clear) 4 bytes per entry
-        emit("\t%s: dd 0", entry.getKey());
+        // temporarily reserve (& clear) 4 bytes per int, 8 bytes for string
+        emit("  %s: dd 0", entry.getKey());
       }
     }
-    emit("\t__EXIT_MSG: db \"ERROR: \", 0");
+    // TODO: only emit these if we need to.
+    emit("  __PRINTF_NUMBER_FMT: db \"%%d\", 0");
+    emit("  __EXIT_MSG: db \"ERROR: \", 0");
 
     emit("\nsection .text");
+
     // TODO: convert command-line arguments to ??? and send to __main
     emit("main:");
     for (Op opcode : code) {
@@ -74,13 +78,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Stop op) {
-    emit("\tmov rcx, %d", op.exitCode());
-    emit("\tcall exit");
+    emit("  mov rcx, %d", op.exitCode());
+    emit("  call exit");
   }
 
   @Override
   public void visit(Goto op) {
-    emit("\tjmp %s", op.label());
+    emit("  jmp %s", op.label());
   }
 
   @Override
@@ -88,41 +92,55 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // it's possible to optimize this to just be `mov [dest], [source]`
     // but we'd have to know all the allowed combinations of stack, global, immediate.
 
-    // Use r15 as a temp
     Operand source = op.source();
-    if (source.storage() == SymbolStorage.GLOBAL) {
-      // if source is global:
-      // 1. mov r15, [source]
-      emit("\tmov r15, [%s]", source);
-    }
-    // if source is temp or local:
-    // ???
-    // if source is stack:
-    // 1. mov r15, [ebp+???]
-
-    // if source is int constant:
-    // 1. mov r15, (constant)
-    else if (source.isConstant()) {
+    Location destination = op.destination();
+    if (source.isConstant()) {
+      // if source is int constant:
+      // 1. mov dest, (constant)
       ConstantOperand<?> sourceOp = (ConstantOperand<?>) source;
       Object value = sourceOp.value();
       if (value instanceof Integer) {
-        // woot.
-        emit("\tmov r15, %d", value);
+        emit("  mov dword [%s], %s", destination, value);
+        return;
+      } else {
+        // string constant (!) what to do?!
+        throw new UnsupportedOperationException("Cannot store string yet");
       }
-    }
+    } else
+      switch (source.storage()) {
+        case GLOBAL:
+          // if source is global:
+          // Use r15 as a temp
+          // 1. mov r15, [source]
+          // note, this may fail for strings, because they need to be quadwords
+          emit("  mov dword r15d, [%s]", source);
+          break;
+        default:
+          // if source is temp or local:
+          // ???
+          // if source is stack:
+          // 1. mov r15, [ebp+???]
+          throw new UnsupportedOperationException(
+              String.format("Cannot retrieve from %s yet", destination.storage()));
+      }
 
-    Location destination = op.destination();
     // if dest is global:
-    if (destination.storage() == SymbolStorage.GLOBAL) {
-      // 2. mov [dest], r15
-      emit("\tmov [%s], r15", destination);
+    switch (destination.storage()) {
+      case GLOBAL:
+        // 2. mov [dest], r15
+        // note, this may fail for strings, because they need to be quadwords
+        emit("  mov dword [%s], r15d", destination);
+        break;
+        // if dest is temp or local:
+        // ???
+        // if dest is stack:
+        // 2. mov [ebp+???], r15
+        // if dest is fieldset:
+        // 2. ???
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Cannot store in %s yet", destination.storage()));
     }
-    // if dest is temp or local:
-    // ???
-    // if dest is stack:
-    // 2. mov [ebp+???], r15
-    // if dest is fieldset:
-    // 2. ???
   }
 
   @Override
@@ -132,26 +150,36 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case INPUT:
         break;
       case MESSAGE: // exit "foo"
-        emit("\tsub rsp, 28h          ; Reserve the shadow space");
-        emit("\tmov rcx, __EXIT_MSG");
-        emit("\tcall printf           ; printf(__EXIT_MSG)");
+        emit("  sub rsp, 28h          ; Reserve the shadow space");
+        emit("  mov rcx, __EXIT_MSG");
+        emit("  call printf           ; printf(__EXIT_MSG)");
         if (arg.isConstant()) {
-          emit("\tadd rsp, 28h          ; Remove shadow space");
+          emit("  add rsp, 28h          ; Remove shadow space");
           // have to store constant in memory
         } else {
           // must be a string global
-          emit("\tmov rcx, %s", arg.toString());
-          emit("\tcall puts             ; puts message with newline");
-          emit("\tadd rsp, 28h          ; Remove shadow space");
+          emit("  mov rcx, %s", arg.toString());
+          emit("  call puts             ; puts message with newline");
+          emit("  add rsp, 28h          ; Remove shadow space");
         }
         break;
       case PRINT:
         if (arg.isConstant()) {
           // might be string might be int... ugh
-          emit("\tsub rsp, 28h          ; Reserve the shadow space");
-          emit("\tmov rcx, %s           ; First argument is address of message", arg.toString());
-          emit("\tcall printf           ; printf(message)");
-          emit("\tadd rsp, 28h          ; Remove shadow space");
+          emit("  sub rsp, 28h          ; Reserve the shadow space");
+          emit("  mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
+          // this works for ints only
+          emit("  mov rdx, %s         ; Second argument is parameter", arg.toString());
+          emit("  call printf           ; printf(message)");
+          emit("  add rsp, 28h          ; Remove shadow space");
+        } else {
+          // might be string might be int... ugh
+          emit("  sub rsp, 28h          ; Reserve the shadow space");
+          emit("  mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
+          // this works for ints only; might fail for non-globals
+          emit("  mov rdx, [%s]         ; Second argument is parameter", arg.toString());
+          emit("  call printf           ; printf(message)");
+          emit("  add rsp, 28h          ; Remove shadow space");
         }
         break;
     }
@@ -159,12 +187,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Dec op) {
-    emit("\tdec dword [%s]", op.target());
+    // this will not work for non-globals
+    Preconditions.checkArgument(
+        op.target().storage() == SymbolStorage.GLOBAL, "Can only dec globals for now");
+    emit("  dec dword [%s]", op.target());
   }
 
   @Override
   public void visit(Inc op) {
-    emit("\tinc dword [%s]", op.target());
+    Preconditions.checkArgument(
+        op.target().storage() == SymbolStorage.GLOBAL, "Can only inc globals for now");
+    emit("  inc dword [%s]", op.target());
   }
 
   private void emit(String format, Object... values) {
@@ -172,6 +205,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void emit(Op op) {
-    emit("\t; %s", op.toString());
+    emit("\n  ; %s", op.toString());
   }
 }

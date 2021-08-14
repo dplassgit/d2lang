@@ -22,9 +22,19 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void print3() {
-    String sourceCode = "print 3";
+    String sourceCode = "a=3 print a";
     State state = TestUtils.compile(sourceCode);
     state = state.addFilename("print3");
+    state = new NasmCodeGenerator().execute(state);
+    System.err.println(Joiner.on('\n').join(state.asmCode()));
+    assertThat(state.asmCode()).isNotEmpty();
+  }
+
+  @Test
+  public void print3const() {
+    String sourceCode = "print 3";
+    State state = TestUtils.compile(sourceCode);
+    state = state.addFilename("print3const");
     state = new NasmCodeGenerator().execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
     assertThat(state.asmCode()).isNotEmpty();
@@ -61,7 +71,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void exitErrorGlobal() {
-    String sourceCode = "a='exitErrorGlobal' exit a";
+    String sourceCode = "exit 'exitErrorGlobal'";
     State state = TestUtils.compile(sourceCode);
     state = state.addFilename("exitErrorGlobal");
     state = new NasmCodeGenerator().execute(state);

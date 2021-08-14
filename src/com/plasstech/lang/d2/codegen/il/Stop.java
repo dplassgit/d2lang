@@ -18,7 +18,7 @@ public class Stop extends Op {
 
   @Override
   public String toString() {
-    return String.format("exit(%d); // a.k.a. Stop", exitCode);
+    return String.format("exit(%d);", exitCode);
   }
 
   @Override
