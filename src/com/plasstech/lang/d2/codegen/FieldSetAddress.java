@@ -1,17 +1,18 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class FieldSetAddress extends Location {
   private final String field;
   private final Location recordLocation;
   private final SymbolStorage storage;
 
-  public FieldSetAddress(String variable, String field, SymbolStorage storage) {
-    super(variable);
+  public FieldSetAddress(String variable, String field, SymbolStorage storage, VarType varType) {
+    super(variable, varType);
     this.storage = storage;
-    // we should already know the location, because the variable shoudl already exist
-    this.recordLocation = Location.allocate(storage, variable);
+    // we should already know the location, because the variable should already exist
+    this.recordLocation = Location.allocate(storage, variable, varType);
     this.field = field;
   }
 

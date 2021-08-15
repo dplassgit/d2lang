@@ -22,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.VarType;
 
 /** For each opcode, remap temps with a new id. Remap any stack variables too. */
 class InlineRemapper extends DefaultOpcodeVisitor {
@@ -37,8 +38,10 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     this.code = new ArrayList<>(code);
   }
 
-  Location remapFormal(String formal) {
-    return new StackLocation("__" + formal + suffix);
+  Location remapFormal(String name, VarType type) {
+    // I *really* want this to be TempLocation, but the ConstantPropagation optimizer
+    // assumes that temps are never changed, so if we call it a Temp, it fails.
+    return new StackLocation("__" + name + suffix, type);
   }
 
   List<Op> remap() {
@@ -150,15 +153,16 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
     switch (location.storage()) {
       case TEMP:
-        return new TempLocation(location.name() + suffix);
+        return new TempLocation(location.name() + suffix, location.type());
       case LOCAL:
       case PARAM:
         if (location instanceof FieldSetAddress) {
           // hack it
           FieldSetAddress fsa = (FieldSetAddress) location;
-          return new FieldSetAddress("__" + fsa.record() + suffix, fsa.field(), fsa.storage());
+          return new FieldSetAddress(
+              "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
         }
-        return new StackLocation("__" + location.name() + suffix);
+        return new StackLocation("__" + location.name() + suffix, location.type());
       default:
         return operand;
     }

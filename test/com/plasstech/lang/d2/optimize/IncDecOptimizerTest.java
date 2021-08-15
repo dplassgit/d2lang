@@ -16,38 +16,39 @@ import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.VarType;
 
 public class IncDecOptimizerTest {
   private static final ConstantOperand<Integer> TWO = new ConstantOperand<Integer>(2);
+  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
+  private static final StackLocation STACK = new StackLocation("stack", VarType.INT);
+  private static final TempLocation SOURCE = new TempLocation("source", VarType.INT);
+  private static final TempLocation DEST = new TempLocation("dest", VarType.INT);
 
   private IncDecOptimizer optimizer = new IncDecOptimizer(2);
 
   @Test
   public void noOptimization() {
-    TempLocation source = new TempLocation("source");
-    TempLocation dest = new TempLocation("dest");
     // dest = 1
     // dest = source + 0
     // source = dest
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(dest, ConstantOperand.ONE),
-            new BinOp(dest, source, TokenType.PLUS, ConstantOperand.ZERO),
-            new Transfer(source, dest));
+            new Transfer(DEST, ConstantOperand.ONE),
+            new BinOp(DEST, SOURCE, TokenType.PLUS, ConstantOperand.ZERO),
+            new Transfer(SOURCE, DEST));
     optimizer.optimize(program);
     assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
   public void optimizeInc() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, temp1, TokenType.PLUS, ConstantOperand.ONE),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE),
+            new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -60,14 +61,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeIncReversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, ConstantOperand.ONE, TokenType.PLUS, temp1),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.PLUS, TEMP1),
+            new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -80,12 +78,10 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeIncShort() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(temp1, stack, TokenType.PLUS, ConstantOperand.ONE),
-            new Transfer(stack, temp1));
+            new BinOp(TEMP1, STACK, TokenType.PLUS, ConstantOperand.ONE),
+            new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -97,12 +93,10 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeIncShortReversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(temp1, ConstantOperand.ONE, TokenType.PLUS, stack),
-            new Transfer(stack, temp1));
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.PLUS, STACK),
+            new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -114,10 +108,8 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeInc2Short() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(temp1, stack, TokenType.PLUS, TWO), new Transfer(stack, temp1));
+        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -129,10 +121,8 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeInc2ShortReversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(temp1, TWO, TokenType.PLUS, stack), new Transfer(stack, temp1));
+        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -144,12 +134,10 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeDecShort() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(temp1, stack, TokenType.MINUS, ConstantOperand.ONE),
-            new Transfer(stack, temp1));
+            new BinOp(TEMP1, STACK, TokenType.MINUS, ConstantOperand.ONE),
+            new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -161,12 +149,10 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeDecShortReversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(temp1, ConstantOperand.ONE, TokenType.MINUS, stack),
-            new Transfer(stack, temp1));
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.MINUS, STACK),
+            new Transfer(STACK, TEMP1));
 
     optimizer.optimize(program);
 
@@ -175,11 +161,9 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeMinus2Short() {
-    TempLocation temp1 = new TempLocation("temp1");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(temp1, stack, TokenType.MINUS, TWO), new Transfer(stack, temp1));
+            new BinOp(TEMP1, STACK, TokenType.MINUS, TWO), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -191,14 +175,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizePlus2() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, temp1, TokenType.PLUS, TWO),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, TEMP1, TokenType.PLUS, TWO),
+            new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -212,14 +193,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizePlus2Reversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, TWO, TokenType.PLUS, temp1),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, TWO, TokenType.PLUS, TEMP1),
+            new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -233,14 +211,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeDec() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, temp1, TokenType.MINUS, ConstantOperand.ONE),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE),
+            new Transfer(STACK, TEMP2));
     
     ImmutableList<Op> optimized = optimizer.optimize(program);
 
@@ -253,14 +228,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeDecReversed() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, ConstantOperand.ONE, TokenType.MINUS, temp1),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.MINUS, TEMP1),
+            new Transfer(STACK, TEMP2));
 
     optimizer.optimize(program);
 
@@ -269,14 +241,11 @@ public class IncDecOptimizerTest {
 
   @Test
   public void optimizeMinus2() {
-    TempLocation temp1 = new TempLocation("temp1");
-    TempLocation temp2 = new TempLocation("temp2");
-    StackLocation stack = new StackLocation("stack");
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(temp1, stack),
-            new BinOp(temp2, temp1, TokenType.MINUS, TWO),
-            new Transfer(stack, temp2));
+            new Transfer(TEMP1, STACK),
+            new BinOp(TEMP2, TEMP1, TokenType.MINUS, TWO),
+            new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program);
 

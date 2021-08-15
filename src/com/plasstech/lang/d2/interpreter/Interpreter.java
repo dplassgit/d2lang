@@ -449,7 +449,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     for (int i = 0; i < op.actuals().size(); ++i) {
       Operand actualSource = op.actuals().get(i);
       Parameter formalParam = procSymbol.node().parameters().get(i);
-      StackLocation formal = new StackLocation(formalParam.name());
+      StackLocation formal = new StackLocation(formalParam.name(), formalParam.type());
       childEnv.setValue(formal, resolve(actualSource));
     }
 

@@ -197,14 +197,16 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   }
 
   private ConstantOperand<?> findReplacementConstant(Operand operand) {
+    if (operand.isConstant()) {
+      return null;
+    }
     if (operand instanceof TempLocation) {
       // look it up
       TempLocation sourceTemp = (TempLocation) operand;
       if (tempConstants.get(sourceTemp.name()) != null) {
         return tempConstants.get(sourceTemp.name());
       }
-    }
-    if (operand instanceof StackLocation) {
+    } else if (operand instanceof StackLocation) {
       // look it up
       StackLocation sourceTemp = (StackLocation) operand;
       if (stackConstants.get(sourceTemp.name()) != null) {

@@ -1,18 +1,20 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VarType;
 
 public class StackLocation extends Location {
 
   private final SymbolStorage storage;
 
-  public StackLocation(String name) {
-    this(name, SymbolStorage.LOCAL);
+  public StackLocation(String name, VarType varType) {
+    this(name, SymbolStorage.LOCAL, varType);
   }
 
   // TODO: capture "offset" into stack frame
-  public StackLocation(String name, SymbolStorage storage) {
-    super(name);
+  public StackLocation(String name, SymbolStorage storage, VarType varType) {
+    super(name, varType);
     this.storage = storage;
   }
 

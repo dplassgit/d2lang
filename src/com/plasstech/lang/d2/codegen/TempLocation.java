@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class TempLocation extends Location {
-  public TempLocation(String name) {
-    super(name);
+  public TempLocation(String name, VarType varType) {
+    super(name, varType);
   }
 
   @Override

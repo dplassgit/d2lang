@@ -16,14 +16,15 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.VarType;
 
 public class InlineRemapperTest {
-  private static final TempLocation TEMP_DEST = new TempLocation("__dest");
-  private static final TempLocation TEMP_SOURCE = new TempLocation("__source");
-  private static final TempLocation TEMP_LEFT = new TempLocation("__left");
-  private static final TempLocation TEMP_RIGHT = new TempLocation("__right");
-  private static final StackLocation STACK = new StackLocation("stack");
-  private static final MemoryAddress MEMORY = new MemoryAddress("memory");
+  private static final TempLocation TEMP_DEST = new TempLocation("__dest", VarType.INT);
+  private static final TempLocation TEMP_SOURCE = new TempLocation("__source", VarType.INT);
+  private static final TempLocation TEMP_LEFT = new TempLocation("__left", VarType.INT);
+  private static final TempLocation TEMP_RIGHT = new TempLocation("__right", VarType.INT);
+  private static final StackLocation STACK = new StackLocation("stack", VarType.INT);
+  private static final MemoryAddress MEMORY = new MemoryAddress("memory", VarType.INT);
 
   @Test
   public void transferConstantToStack() {

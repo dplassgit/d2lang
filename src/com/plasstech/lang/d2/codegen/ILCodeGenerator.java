@@ -101,23 +101,20 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   private TempLocation allocateTemp(VarType varType) {
     String name = String.format("__temp%d", ++id);
-    symbolTable().declare(name, varType);
-    // TODO: keep the vartype with the location
-    return new TempLocation(name);
+    symbolTable().declareTemp(name, varType);
+    return new TempLocation(name, varType);
   }
 
   private StackLocation allocateStack(VarType varType) {
     String name = String.format("__stack%d", ++id);
     symbolTable().declare(name, varType);
-    // TODO: keep the vartype with the location
-    return new StackLocation(name);
+    return new StackLocation(name, varType);
   }
 
   private MemoryAddress allocateMemory(VarType varType) {
     String name = String.format("__memory%d", ++id);
     symbolTable().declare(name, varType);
-    // TODO: keep the vartype with the location
-    return new MemoryAddress(name);
+    return new MemoryAddress(name, varType);
   }
 
   @Override
@@ -167,14 +164,20 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
               // this is wrong, probably
               dest =
                   new FieldSetAddress(
-                      fieldSetNode.variableName(), fieldSetNode.fieldName(), sym.storage());
+                      fieldSetNode.variableName(),
+                      fieldSetNode.fieldName(),
+                      sym.storage(),
+                      sym.varType());
             } else {
               // ???
               logger.atSevere().log(
                   "Could not find record symbol %s in symtab", fieldSetNode.variableName());
               dest =
                   new FieldSetAddress(
-                      fieldSetNode.variableName(), fieldSetNode.fieldName(), SymbolStorage.HEAP);
+                      fieldSetNode.variableName(),
+                      fieldSetNode.fieldName(),
+                      SymbolStorage.HEAP, // ???
+                      sym.varType());
             }
 
             fieldSetNode.setLocation(dest);
@@ -206,9 +209,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     switch (variable.storage()) {
       case HEAP:
       case GLOBAL:
-        return new MemoryAddress(name);
+        return new MemoryAddress(name, variable.varType());
       default:
-        return new StackLocation(name);
+        return new StackLocation(name, variable.varType());
     }
   }
 

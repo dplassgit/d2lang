@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -129,10 +130,11 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);
       for (int i = 0; i < op.actuals().size(); ++i) {
+        Operand actual = op.actuals().get(i);
         code.add(
             ip,
             new Transfer(
-                inlineRemapper.remapFormal(entry.formalNames().get(i)), op.actuals().get(i)));
+                inlineRemapper.remapFormal(entry.formalNames().get(i), actual.type()), actual));
       }
       code.add(ip, new Nop("(inline start)"));
       changed = true;

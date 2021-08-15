@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantPropagationOptimizerTest {
   private Optimizer optimizer =
@@ -24,9 +25,9 @@ public class ConstantPropagationOptimizerTest {
 
   @Test
   public void doubleCopy() {
-    TempLocation t1 = new TempLocation("__temp1");
-    TempLocation t2 = new TempLocation("__temp2");
-    StackLocation s1 = new StackLocation("s1");
+    TempLocation t1 = new TempLocation("__temp1", VarType.INT);
+    TempLocation t2 = new TempLocation("__temp2", VarType.INT);
+    StackLocation s1 = new StackLocation("s1", VarType.INT);
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(t1, ConstantOperand.ONE), new Transfer(t2, t1), new Transfer(s1, t2));

@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0);
@@ -10,9 +11,24 @@ public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Boolean> TRUE = new ConstantOperand<Boolean>(true);
 
   private final T value;
+  private final VarType type;
 
   public ConstantOperand(T value) {
     this.value = value;
+    if (value instanceof Integer) {
+      this.type = VarType.INT;
+    } else if (value instanceof String) {
+      this.type = VarType.STRING;
+    } else if (value instanceof Boolean) {
+      this.type = VarType.BOOL;
+    } else {
+      this.type = VarType.UNKNOWN;
+    }
+  }
+
+  @Override
+  public VarType type() {
+    return type;
   }
 
   public T value() {
@@ -34,7 +50,7 @@ public class ConstantOperand<T> implements Operand {
         valueString = valueString.substring(0, 40) + "...";
       }
       return String.format("\"%s\"", valueString);
-    } else if (value.getClass().isArray()){
+    } else if (value.getClass().isArray()) {
       Object[] valArray = (Object[]) value;
       return String.format("[%s]", Joiner.on(", ").join(valArray));
     } else {

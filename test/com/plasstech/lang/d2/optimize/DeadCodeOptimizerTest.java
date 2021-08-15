@@ -11,14 +11,15 @@ import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.VarType;
 
 public class DeadCodeOptimizerTest {
   private Optimizer optimizer =
       new ILOptimizer(
               ImmutableList.of(new ConstantPropagationOptimizer(2), new DeadCodeOptimizer(2)))
           .setDebugLevel(2);
-  private static final TempLocation TEMP1 = new TempLocation("temp1");
-  private static final TempLocation TEMP2 = new TempLocation("temp2");
+  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
 
   @Test
   public void oneLoopBreak() {
