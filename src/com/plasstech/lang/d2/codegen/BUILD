@@ -34,8 +34,18 @@ java_library(
     srcs=LOCATION_SRCS,
     visibility=["//visibility:public"],
     deps=[
+        ":registers",
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:var_types",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+java_library(
+    name="registers",
+    srcs=["Registers.java", "Register.java"],
+    visibility=["//visibility:public"],
+    deps=[
         "@maven//:com_google_guava_guava",
     ],
 )

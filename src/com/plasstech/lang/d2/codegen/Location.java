@@ -16,6 +16,7 @@ public abstract class Location implements Operand {
     return name;
   }
 
+  @Override
   public VarType type() {
     return varType;
   }
@@ -25,7 +26,7 @@ public abstract class Location implements Operand {
     //    return String.format("%s /* (%s) */", name(), this.getClass().getSimpleName());
     return name();
   }
-
+  
   public Location baseLocation() {
     return this;
   }

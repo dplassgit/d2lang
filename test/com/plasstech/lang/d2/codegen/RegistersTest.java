@@ -5,21 +5,23 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 public class RegistersTest {
+  private Registers registers = new Registers();
 
   @Test
   public void allocate_all() {
-    Registers r = new Registers();
-    for (int i = 0; i < 31; ++i) {
-      assertThat(r.allocate()).isEqualTo(i + 1);
+    for (Register r : Register.values()) {
+      assertThat(registers.allocate()).isEqualTo(r);
     }
+    assertThat(registers.allocate()).isNull();
   }
 
   @Test
   public void deallocate_one() {
-    Registers registers = new Registers();
-    for (int i = 0; i < 10; ++i) {
-      assertThat(registers.allocate()).isEqualTo(1);
-      registers.deallocate(1);
+    for (int i = 0; i < Register.values().length; ++i) {
+      registers.allocate();
+    }
+    for (Register r : Register.values()) {
+      registers.deallocate(r);
     }
   }
 }

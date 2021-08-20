@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
+// can be a register or on the stack. how/where to allocate?
 public class TempLocation extends Location {
   public TempLocation(String name, VarType varType) {
     super(name, varType);

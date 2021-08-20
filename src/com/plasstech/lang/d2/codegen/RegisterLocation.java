@@ -5,9 +5,10 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class RegisterLocation extends Location {
 
-  private final String register;
+  private final Register register;
 
-  public RegisterLocation(String varName, String register, VarType varType) {
+  // variable name, register (rax->r15)
+  public RegisterLocation(String varName, Register register, VarType varType) {
     super(varName, varType);
     this.register = register;
   }
@@ -17,7 +18,7 @@ public class RegisterLocation extends Location {
     return SymbolStorage.REGISTER;
   }
 
-  public String register() {
+  public Register register() {
     return register;
   }
 }

@@ -38,6 +38,12 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void notVariable() throws Exception {
+    execute("a=3 a=!a print a", "notVariable", "3");
+  }
+
+  @Test
+  @Ignore
   public void addGlobals() throws Exception {
     //    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g", "addGlobals",
     // "4");
@@ -126,7 +132,12 @@ public class NasmCodeGeneratorTest {
     pb.directory(dir);
     process = pb.start();
     process.waitFor();
-    assertThat(process.exitValue()).isEqualTo(0);
+    if (process.exitValue() != 0) {
+      InputStream stream = process.getErrorStream();
+      String output = new String(ByteStreams.toByteArray(stream));
+      System.err.println("Error: " + output);
+      assertThat(process.exitValue()).isEqualTo(0);
+    }
 
     File obj = new File(dir, filename + ".obj");
     File exe = new File(dir, filename);

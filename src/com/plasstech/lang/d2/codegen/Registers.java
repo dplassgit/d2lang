@@ -1,39 +1,42 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.google.common.base.Preconditions;
 
 public class Registers {
+  private static final int MAX_REGISTERS = Register.values().length;
+
   // these are the USED registers
-  private final List<Boolean> used;
+  private final Set<Register> used = new HashSet<>();
 
-  public Registers() {
-    this(8);
+  public void reserve(Register r) {
+    used.add(r);
   }
 
-  public Registers(int size) {
-    used = new ArrayList<>(size);
-    for (int i = 0; i < size; ++i) {
-      used.add(false);
-    }
-  }
-
-  public int allocate() {
+  public Register allocate() {
     // find one to return
-    for (int i = 0; i < used.size(); ++i) {
-      if (!used.get(i)) {
-        used.set(i, true);
-        return i;
+    for (Register r : Register.values()) {
+      if (!used.contains(r)) {
+        used.add(r);
+        return r;
       }
     }
-    throw new IllegalStateException("Too many registers used; used array = " + used);
+    return null;
   }
 
-  public void deallocate(int id) {
+  public boolean isAllocated(Register r) {
+    return used.contains(r);
+  }
+
+  public int numLeft() {
+    return MAX_REGISTERS - used.size();
+  }
+
+  public void deallocate(Register r) {
     Preconditions.checkState(
-        used.get(id), String.format("Register %d not allocated in register bank", id));
-    used.set(id, false);
+        used.contains(r), String.format("Register %s not allocated in register bank", r.name()));
+    used.remove(r);
   }
 }
