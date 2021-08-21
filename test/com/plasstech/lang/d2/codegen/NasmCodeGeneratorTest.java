@@ -14,6 +14,8 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
+import com.plasstech.lang.d2.Executor;
+import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
 
@@ -24,24 +26,28 @@ public class NasmCodeGeneratorTest {
   @Ignore
   @Test
   public void printString() throws Exception {
-    execute("print 'printString'", "printString", "printString");
+    execute("print 'printString'", "printString");
   }
 
   @Test
   public void printConst() throws Exception {
-    execute("print 3", "printConst", "3");
+    execute("print 3", "printConst");
   }
 
   @Test
   public void printVariable() throws Exception {
-    execute("a=3 print a", "printVariable", "3");
+    execute("a=3 print a", "printVariable");
   }
 
   @Test
   public void notVariable() throws Exception {
-    execute("a=3 a=!a print a", "notVariable", "3");
+    execute("a=3 b=!a print b", "notVariable");
   }
 
+  @Test
+  public void negVariable() throws Exception {
+    execute("a=3 b=-a print b", "negVariable");
+  }
   @Test
   @Ignore
   public void addGlobals() throws Exception {
@@ -49,24 +55,22 @@ public class NasmCodeGeneratorTest {
     // "4");
     execute(
         "a=1 b=2 c=3 d=4 e=5 f=6 g=a+(a+b+(b+c+(c+d+(d+e+(e+f+(f))+d)+c)+b)+a) print g",
-        "addGlobals",
-        "52");
+        "addGlobals");
   }
 
   @Test
-  @Ignore
   public void ifPrint() throws Exception {
-    execute("a=3 if a > 2 {print a}", "ifPrint", "3");
+    execute("a=3 if a > 1+4 {print a}", "ifPrint");
   }
 
   @Test
   public void assign() throws Exception {
-    execute("assign=3 bassign=assign print bassign print assign", "assign", "33");
+    execute("a=3 b=a a=4 print b print a", "assign");
   }
 
   @Test
   public void exit() throws Exception {
-    execute("exit", "exit", "");
+    execute("exit", "exit");
   }
 
   @Test
@@ -104,10 +108,10 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void incDec() throws Exception {
-    execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec", "4340");
+    execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec");
   }
 
-  private void execute(String sourceCode, String filename, String expectedOutput) throws Exception {
+  private void execute(String sourceCode, String filename) throws Exception {
     State state = TestUtils.compile(sourceCode);
     System.err.println(Joiner.on('\n').join(state.lastIlCode()));
     state = state.addFilename(filename);
@@ -152,7 +156,15 @@ public class NasmCodeGeneratorTest {
     process = pb.start();
     process.waitFor();
     InputStream stream = process.getInputStream();
-    String output = new String(ByteStreams.toByteArray(stream));
-    assertThat(output).isEqualTo(expectedOutput);
+    assertThat(process.exitValue()).isEqualTo(0);
+
+    String compiledOutput = new String(ByteStreams.toByteArray(stream));
+
+    Executor ee = new Executor(sourceCode);
+    ee.setOptimize(true);
+    ExecutionResult result = ee.execute();
+    String interpreterOutput = Joiner.on("").join(result.environment().output());
+
+    assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }
 }

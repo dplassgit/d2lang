@@ -7,7 +7,7 @@ public class RegisterLocation extends Location {
 
   private final Register register;
 
-  // variable name, register (rax->r15)
+  // variable name, register (r1->r15)
   public RegisterLocation(String varName, Register register, VarType varType) {
     super(varName, varType);
     this.register = register;
@@ -20,5 +20,10 @@ public class RegisterLocation extends Location {
 
   public Register register() {
     return register;
+  }
+
+  @Override
+  public String name() {
+    return register.name();
   }
 }

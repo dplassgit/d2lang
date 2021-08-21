@@ -1,10 +1,10 @@
 package com.plasstech.lang.d2.codegen;
 
 public enum Register {
-  RAX,
-  RBX,
-  RCX,
-  RDX,
+  R1, // RAX,
+  R2, // RBX,
+  R3, // RCX,
+  R4, // RDX,
   // RBP
   R5, // RSI
   R6, // RDI

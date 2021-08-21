@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -25,7 +24,6 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
-import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
@@ -33,6 +31,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private final List<String> asm = new ArrayList<>();
   private final Registers registers = new Registers();
+  // map from name to register
   private final Map<String, Register> aliases = new HashMap<>();
   // it's possible that we've run out of registers. Push the name on the stack and deallocate
   // its register. (Maybe put this feature into Registers? Maybe make an "Aliases" object?)
@@ -100,90 +99,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("jmp %s", op.label());
   }
 
-  // map from temp to register, and if it's been pushed on the stack (?)
-
   @Override
   public void visit(Transfer op) {
-    // it's possible to optimize this to just be `mov [dest], [source]`
-    // but we'd have to know all the allowed combinations of stack, global, immediate.
-
     Operand source = op.source();
+    String sourceLoc = resolve(source);
     Location destination = op.destination();
+    String destLoc = resolveDest(destination);
     if (source.isConstant()) {
-      // if source is int constant:
-      // 1. mov dest, (constant)
-      if (source.type() == VarType.INT) {
-        ConstantOperand<Integer> sourceOp = (ConstantOperand<Integer>) source;
-        int value = sourceOp.value();
-        switch (destination.storage()) {
-          case GLOBAL:
-            emit("mov dword [%s], %s", destination, value);
-            break;
-
-          case TEMP:
-            // temps are never re-assigned so it must be new.
-            // TODO: deal with no-registers left
-            // TODO: deallocate when?!
-            Register reg = registers.allocate();
-            aliases.put(destination.name(), reg);
-            emit("mov %s, %s", reg.name(), value);
-            break;
-
-          default:
-            logger.atSevere().log("Cannot store constant in %s", destination.storage());
-        }
-        return;
-      } else {
-        // string constant (!) what to do?!
-        logger.atSevere().log("Cannot retrieve string yet: %s", source);
-      }
+      // TODO: fails for strings.
+      emit("mov dword %s, %s", destLoc, sourceLoc);
     } else {
-      Location sourceLoc = (Location) source;
-      switch (source.storage()) {
-        case GLOBAL:
-          // if source is global:
-          // Use r15 as a temp
-          // 1. mov r15, [source]
-          // note, this may fail for strings, because they need to be quadwords
-          emit("mov dword r15d, [%s]", source);
-          break;
-        case TEMP:
-          // look up the temp in the local symbol table
-          Register reg = aliases.get(sourceLoc.name());
-          // note, this may fail for strings, because they need to be quadwords
-          emit("mov dword r15d, %s", reg.name());
-          break;
-        default:
-          // if source is local:
-          // ???
-          // if source is stack:
-          // 1. mov r15, [ebp+???]
-          logger.atSevere().log(String.format("Cannot retrieve from %s yet", source.storage()));
-      }
-    }
-    // if dest is global:
-    switch (destination.storage()) {
-      case GLOBAL:
-        // 2. mov [dest], r15
-        // note, this will fail for strings, because they need to be quadwords (i.e., addresses)
-        emit("mov dword [%s], r15d", destination);
-        break;
-        // if dest is temp or local:
-      case TEMP:
-        // temps are never re-assigned so it must be new.
-        // TODO: deal with no-registers left
-        // TODO: deallocate when?!
-        Register reg = registers.allocate();
-        aliases.put(destination.name(), reg);
-        emit("mov %s, r15d", reg.name());
-        break;
-        // ???
-        // if dest is stack:
-        // 2. mov [ebp+???], r15
-        // if dest is fieldset:
-        // 2. ???
-      default:
-        logger.atSevere().log("Cannot store in %s yet", destination.storage());
+      // TODO: this might be wrong.
+      emit("mov r15, %s", sourceLoc);
+      // TODO: this might be wrong, if it's a memory locatoin.
+      emit("mov dword %s, r15d", destLoc);
     }
   }
 
@@ -192,6 +121,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand arg = op.arg();
     switch (op.call()) {
       case INPUT:
+        fail("Cannot generate %s yet", op);
         break;
       case MESSAGE: // exit "foo"
         emit("sub rsp, 0x28         ; Reserve the shadow space");
@@ -199,8 +129,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("call printf           ; printf(__EXIT_MSG)");
         if (arg.isConstant()) {
           emit("add rsp, 0x28         ; Remove shadow space");
-          // have to store constant in memory
-          logger.atSevere().log("Cannot exit string %s yet", arg);
+          // have to store string constant in memory
+          fail("Cannot exit string %s yet", arg);
         } else {
           // must be a string global
           emit("mov rcx, %s", arg.toString());
@@ -222,7 +152,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           } else {
             // string constant (!) what to do?!
             // might be string might be int... ugh
-            logger.atSevere().log("Cannot print string yet: %s", arg);
+            fail("Cannot print string yet: %s", arg);
           }
         } else {
           // might be string might be int... ugh
@@ -239,65 +169,94 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Dec op) {
-    // this will not work for non-globals
-    Preconditions.checkArgument(
-        op.target().storage() == SymbolStorage.GLOBAL, "Can only dec globals for now");
-    emit("dec dword [%s]", op.target());
+    emit("dec dword %s", resolve(op.target()));
   }
 
   @Override
   public void visit(Inc op) {
-    Preconditions.checkArgument(
-        op.target().storage() == SymbolStorage.GLOBAL, "Can only inc globals for now");
-    emit("inc dword [%s]", op.target());
+    emit("inc dword %s", resolve(op.target()));
   }
 
   @Override
   public void visit(BinOp op) {
-    logger.atSevere().log("Cannot generate %s yet", op);
+    // 1. get left
+    String leftName = resolve(op.left());
+    // 2. get right
+    String rightName = resolve(op.right());
+    // 3. determine dest location
+    String destName = resolveDest(op.destination());
+    // 4. mov dest, left
+    // 5. {op] dest, right
+    fail("Cannot generate %s yet", op);
+  }
+
+  private String resolveDest(Location loc) {
+    Register reg = this.aliases.get(loc.name());
+    if (reg != null) {
+      return reg.toString();
+    }
+    switch (loc.storage()) {
+      case TEMP:
+        // TODO: deal with out-of-registers situation
+        reg = registers.allocate();
+        aliases.put(loc.name(), reg);
+        return reg.name();
+      case GLOBAL:
+        return "[" + loc.name() + "]";
+      default:
+        fail("Cannot generate %s yet", loc);
+        return null;
+    }
   }
 
   @Override
   public void visit(UnaryOp op) {
-    Operand sourceOp = op.operand();
-    Register sourceReg = aliases.get(sourceOp.toString());
-    String sourceName;
-    if (sourceReg == null) {
-      sourceName = sourceOp.toString();
-    } else {
-      sourceName = sourceReg.name();
-    }
-    // resolve the source
-    Location destination = op.destination();
-    // 1. get source
+    // 1. get source location name
+    String sourceName = resolve(op.operand());
     // 2. apply op
     // 3. store in destination
-    switch (destination.storage()) {
-      case TEMP:
-        // TODO: deal with out-of-registers
-        Register reg = registers.allocate();
-        aliases.put(destination.name(), reg);
-        emit("mov %s, %s ; unary setup", reg.name(), sourceName);
-        // apply op
-        switch (op.operator()) {
-          case BIT_NOT:
-          case NOT:
-            emit("not %s; unary", reg.name());
-            break;
-          case MINUS:
-            emit("neg %s; unary", reg.name());
-            break;
-          case LENGTH:
-          case ASC:
-          case CHR:
-          default:
-            logger.atSevere().log("Cannot generate %s yet", op);
-            break;
-        }
+    Location destination = op.destination();
+    String destName = resolveDest(destination);
+    emit("mov dword %s, %s ; unary setup", destName, sourceName);
+    // apply op
+    switch (op.operator()) {
+      case BIT_NOT:
+      case NOT:
+        // NOTE: NOT TWOS COMPLEMENT NOT, just binary not.
+        emit("not %s; unary operation", destName);
         break;
+      case MINUS:
+        emit("neg %s; unary operation", destName);
+        break;
+      case LENGTH:
+      case ASC:
+      case CHR:
       default:
-        logger.atSevere().log("Cannot generate %s yet", op);
+        fail("Cannot generate %s yet", op);
         break;
+    }
+  }
+
+  private void fail(String format, Object obj) {
+    throw new UnsupportedOperationException(String.format(format, obj));
+  }
+
+  private String resolve(Operand operand) {
+    if (operand.storage() == SymbolStorage.IMMEDIATE) {
+      // TODO: fails for string constants.
+      return operand.toString();
+    }
+
+    Register sourceReg = aliases.get(operand.toString());
+    if (sourceReg != null) {
+      return sourceReg.name();
+    }
+    switch (operand.storage()) {
+      case GLOBAL:
+        return "[" + operand.toString() + "]";
+      default:
+        fail("Cannot generate %s yet", operand);
+        return operand.toString();
     }
   }
 
