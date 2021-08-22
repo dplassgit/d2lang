@@ -1,8 +1,10 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
@@ -20,8 +22,6 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class NasmCodeGeneratorTest {
-
-  private Process process;
 
   @Ignore
   @Test
@@ -48,19 +48,36 @@ public class NasmCodeGeneratorTest {
   public void negVariable() throws Exception {
     execute("a=3 b=-a print b", "negVariable");
   }
+
   @Test
-  @Ignore
   public void addGlobals() throws Exception {
     //    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g", "addGlobals",
     // "4");
-    execute(
-        "a=1 b=2 c=3 d=4 e=5 f=6 g=a+(a+b+(b+c+(c+d+(d+e+(e+f+(f))+d)+c)+b)+a) print g",
-        "addGlobals");
+    //    execute(
+    //        "a=1 b=2 c=3 d=4 e=5 f=6 g=a+(a+b+(b+c+(c+d+(d+e+(e+f+(f))+d)+c)+b)+a) print g",
+    //        "addGlobals");
+    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+(b+(c+(d+(e+(f+(f))+d)+c)+b)+a) print g", "addGlobals");
   }
 
   @Test
   public void ifPrint() throws Exception {
     execute("a=3 if a > 1+4 {print a}", "ifPrint");
+  }
+
+  @Test
+  public void fib() throws Exception {
+    execute(
+        "a=3 fib=0 while a > 0 do a = a - 1 { print a print fib fib = fib + 2} print fib", "fib");
+  }
+
+  @Test
+  public void add() throws Exception {
+    execute("a=3 b=a+3 c=a+4 d=c+b print d", "add");
+  }
+
+  @Test
+  public void mul() throws Exception {
+    execute("a=3 b=a+3 c=9*b print c", "mul");
   }
 
   @Test
@@ -134,14 +151,9 @@ public class NasmCodeGeneratorTest {
 
     ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
     pb.directory(dir);
-    process = pb.start();
+    Process process = pb.start();
     process.waitFor();
-    if (process.exitValue() != 0) {
-      InputStream stream = process.getErrorStream();
-      String output = new String(ByteStreams.toByteArray(stream));
-      System.err.println("Error: " + output);
-      assertThat(process.exitValue()).isEqualTo(0);
-    }
+    assertNoProcessError(process, "nasm");
 
     File obj = new File(dir, filename + ".obj");
     File exe = new File(dir, filename);
@@ -149,14 +161,14 @@ public class NasmCodeGeneratorTest {
     pb.directory(dir);
     process = pb.start();
     process.waitFor();
-    assertThat(process.exitValue()).isEqualTo(0);
+    assertNoProcessError(process, "Linking");
 
     pb = new ProcessBuilder(exe.getAbsolutePath());
     pb.directory(dir);
     process = pb.start();
     process.waitFor();
     InputStream stream = process.getInputStream();
-    assertThat(process.exitValue()).isEqualTo(0);
+    assertNoProcessError(process, "Executable");
 
     String compiledOutput = new String(ByteStreams.toByteArray(stream));
 
@@ -166,5 +178,14 @@ public class NasmCodeGeneratorTest {
     String interpreterOutput = Joiner.on("").join(result.environment().output());
 
     assertThat(compiledOutput).isEqualTo(interpreterOutput);
+  }
+
+  private void assertNoProcessError(Process process, String name) throws IOException {
+    if (process.exitValue() != 0) {
+      InputStream stream = process.getErrorStream();
+      String output = new String(ByteStreams.toByteArray(stream));
+      System.err.printf("%s output: %s\n", name, output);
+      assertWithMessage(name + " had wrong exit value").that(process.exitValue()).isEqualTo(0);
+    }
   }
 }

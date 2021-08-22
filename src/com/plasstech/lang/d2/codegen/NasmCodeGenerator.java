@@ -1,17 +1,19 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -24,6 +26,7 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
@@ -32,7 +35,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final List<String> asm = new ArrayList<>();
   private final Registers registers = new Registers();
   // map from name to register
-  private final Map<String, Register> aliases = new HashMap<>();
+  private final BiMap<String, Register> aliases = HashBiMap.create(16);
+  private final List<Register> lruRegs = new ArrayList<>();
   // it's possible that we've run out of registers. Push the name on the stack and deallocate
   // its register. (Maybe put this feature into Registers? Maybe make an "Aliases" object?)
   private final Stack<String> tempStack = new Stack<>();
@@ -44,6 +48,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (input.filename() != null) {
       f = input.filename();
     }
+    
     emit0("; To execute:");
     // -Ox = optimize
     emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
@@ -105,14 +110,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String sourceLoc = resolve(source);
     Location destination = op.destination();
     String destLoc = resolveDest(destination);
+    String size = dataSize(op.source().type());
     if (source.isConstant()) {
       // TODO: fails for strings.
-      emit("mov dword %s, %s", destLoc, sourceLoc);
+      emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
-      // TODO: this might be wrong.
-      emit("mov r15, %s", sourceLoc);
-      // TODO: this might be wrong, if it's a memory locatoin.
-      emit("mov dword %s, r15d", destLoc);
+      // TODO: deal with out-of-registers
+      Register tempReg = registers.allocate();
+      String suffix = registerSuffix(op.source().type());
+      String tempName = tempReg.name() + suffix;
+      emit("mov %s %s, %s", size, tempName, sourceLoc);
+      emit("mov %s %s, %s", size, destLoc, tempName);
+      registers.deallocate(tempReg);
     }
   }
 
@@ -178,7 +187,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   @Override
+  public void visit(IfOp op) {
+    String condName = resolve(op.condition());
+    emit("cmp %s, 0", condName);
+    emit("jne %s", op.destination());
+  }
+
+  @Override
   public void visit(BinOp op) {
+    VarType type = op.destination().type();
+    String size = dataSize(type);
+    String suffix = registerSuffix(type);
+
     // 1. get left
     String leftName = resolve(op.left());
     // 2. get right
@@ -186,8 +206,41 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 3. determine dest location
     String destName = resolveDest(op.destination());
     // 4. mov dest, left
+
+    emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+
     // 5. {op] dest, right
-    fail("Cannot generate %s yet", op);
+    switch (op.operator()) {
+      case PLUS:
+        emit("add %s, %s ; binary +", destName, rightName);
+        break;
+      case MINUS:
+        emit("sub %s, %s ; binary -", destName, rightName);
+        break;
+      case MULT:
+        emit("imul %s, %s ; binary *", destName, rightName);
+        break;
+      case GT:
+        emit("cmp %s, %s ; binary >", destName, rightName);
+        emit("setg %s", destName);
+        break;
+      case LT:
+        emit("cmp %s, %s ; binary >", destName, rightName);
+        emit("setl %s", destName);
+        break;
+      default:
+        fail("Cannot generate %s yet", op);
+    }
+  }
+
+  private String dataSize(VarType type) {
+    String size = "";
+    if (type == VarType.INT) {
+      size = "dword";
+    } else if (type == VarType.BOOL) {
+      size = "byte";
+    }
+    return size;
   }
 
   private String resolveDest(Location loc) {
@@ -197,16 +250,37 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     switch (loc.storage()) {
       case TEMP:
-        // TODO: deal with out-of-registers situation
         reg = registers.allocate();
+        //        if (reg == null) {
+        //          // deal with out-of-registers situation
+        //          // pick the least recently used one (say, the first one)
+        //          reg = lruRegs.remove(0);
+        //          // don't have to deallocate, since we're just re-using the register out from
+        // underneath
+        //          // the registers object.
+        //          // TODO: push the value onto the stack
+        //          // remove the alias too.
+        //          aliases.inverse().remove(reg);
+        //        }
+        //        lruRegs.add(reg); // add to the end.
         aliases.put(loc.name(), reg);
-        return reg.name();
+        return reg.name() + registerSuffix(loc.type());
       case GLOBAL:
         return "[" + loc.name() + "]";
       default:
         fail("Cannot generate %s yet", loc);
         return null;
     }
+  }
+
+  private static String registerSuffix(VarType type) {
+    String suffix = "";
+    if (type == VarType.INT) {
+      suffix = "d";
+    } else if (type == VarType.BOOL) {
+      suffix = "b";
+    }
+    return suffix;
   }
 
   @Override
@@ -217,16 +291,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 3. store in destination
     Location destination = op.destination();
     String destName = resolveDest(destination);
-    emit("mov dword %s, %s ; unary setup", destName, sourceName);
     // apply op
     switch (op.operator()) {
       case BIT_NOT:
+        // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
+        emit("mov dword %s, %s  ; unary setup", destName, sourceName);
+        emit("not %s  ; unary not", destName);
+        break;
       case NOT:
-        // NOTE: NOT TWOS COMPLEMENT NOT, just binary not.
-        emit("not %s; unary operation", destName);
+        // binary not
+        // 1. compare to 0
+        emit("test %s, %s", sourceName, sourceName);
+        emit("mov %s, 0  ; clear", destName);
+        // 2. setz %s
+        // TODO: this will fail for non-registers
+        emit("setz %s", destName);
         break;
       case MINUS:
-        emit("neg %s; unary operation", destName);
+        emit("mov dword %s, %s  ; unary setup", destName, sourceName);
+        emit("neg %s  ; unary negation", destName);
         break;
       case LENGTH:
       case ASC:
@@ -249,7 +332,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Register sourceReg = aliases.get(operand.toString());
     if (sourceReg != null) {
-      return sourceReg.name();
+      return sourceReg.name() + registerSuffix(operand.type());
     }
     switch (operand.storage()) {
       case GLOBAL:
