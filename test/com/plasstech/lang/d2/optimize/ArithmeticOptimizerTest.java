@@ -9,14 +9,15 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ArithmeticOptimizerTest {
-  private static final ILOptimizer OPTIMIZERS =
-      new ILOptimizer(
-              ImmutableList.of(new ArithmeticOptimizer(2), new ConstantPropagationOptimizer(0)))
+  private final Optimizer optimizer = new ArithmeticOptimizer(2);
+  private final ILOptimizer OPTIMIZERS =
+      new ILOptimizer(ImmutableList.of(optimizer, new ConstantPropagationOptimizer(0)))
           .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
@@ -27,7 +28,6 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusVarInts() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP2, TokenType.PLUS, TEMP2));
-    Optimizer optimizer = new ArithmeticOptimizer(2);
     ImmutableList<Op> optimized = optimizer.optimize(program);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
@@ -40,9 +40,84 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusVarStrings() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP3, TokenType.PLUS, TEMP3));
-    Optimizer optimizer = new ArithmeticOptimizer(2);
     optimizer.optimize(program);
     assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void compareIntsLeq() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.LEQ, ConstantOperand.ZERO),
+            new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.LEQ, ConstantOperand.ONE));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.FALSE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.TRUE);
+  }
+
+  @Test
+  public void compareIntsGt() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.GT, ConstantOperand.ZERO),
+            new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.GT, ConstantOperand.ONE));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.TRUE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.FALSE);
+  }
+
+  @Test
+  public void compareStringsLeq() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                TEMP1,
+                new ConstantOperand<String>("b"),
+                TokenType.LEQ,
+                new ConstantOperand<String>("a")),
+            new BinOp(
+                TEMP1,
+                new ConstantOperand<String>("a"),
+                TokenType.LEQ,
+                new ConstantOperand<String>("b")));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.FALSE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.TRUE);
+  }
+
+  @Test
+  public void compareStringsGe() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                TEMP1,
+                new ConstantOperand<String>("b"),
+                TokenType.GT,
+                new ConstantOperand<String>("a")),
+            new BinOp(
+                TEMP1,
+                new ConstantOperand<String>("a"),
+                TokenType.GT,
+                new ConstantOperand<String>("b")));
+    ImmutableList<Op> optimized = optimizer.optimize(program);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.TRUE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.FALSE);
   }
 
   @Test

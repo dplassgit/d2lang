@@ -76,6 +76,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       case ASC:
         if (operand.isConstant()) {
+          @SuppressWarnings("unchecked")
           ConstantOperand<String> constant = (ConstantOperand<String>) operand;
           String value = constant.value();
           char first = value.charAt(0);
@@ -85,6 +86,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       case CHR:
         if (operand.isConstant()) {
+          @SuppressWarnings("unchecked")
           ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
           int value = constant.value();
           replaceCurrent(
@@ -165,19 +167,19 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case LEQ:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a <= b);
+        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) <= 0);
         return;
 
       case LT:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a < b);
+        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) < 0);
         return;
 
       case GEQ:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a >= b);
+        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) >= 0);
         return;
 
       case GT:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a > b);
+        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) > 0);
         return;
 
       case LBRACKET:
@@ -475,24 +477,22 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   /**
-   * If both operands are constant integers, apply the given function to the constants and replace
-   * the opcode with result. E.g., op=3<4 becomes op=true
+   * If both operands are constants, apply the given function to the constants and replace the
+   * opcode with result. E.g., op=3<4 becomes op=true
    *
    * @return true if both operands are constants.
    */
   private boolean optimizeCompare(
-      Location destination, Operand left, Operand right, BiPredicate<Integer, Integer> fun) {
+      Location destination, Operand left, Operand right, BiPredicate<Comparable, Comparable> fun) {
 
     if (left.isConstant() && right.isConstant()) {
       ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      if (leftConstant.value() instanceof Integer) {
-        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-        Integer leftval = (Integer) leftConstant.value();
-        Integer rightval = (Integer) rightConstant.value();
-        replaceCurrent(
-            new Transfer(destination, new ConstantOperand<Boolean>(fun.test(leftval, rightval))));
-        return true;
-      }
+      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
+      Comparable leftval = (Comparable) leftConstant.value();
+      Comparable rightval = (Comparable) rightConstant.value();
+      replaceCurrent(
+          new Transfer(destination, new ConstantOperand<Boolean>(fun.test(leftval, rightval))));
+      return true;
     }
     return false;
   }
