@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -22,6 +23,13 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class NasmCodeGeneratorTest {
+  private static File dir;
+
+  @SuppressWarnings("deprecation")
+  @BeforeClass
+  public static void setUpClass() throws Exception {
+    dir = Files.createTempDir();
+  }
 
   @Ignore
   @Test
@@ -30,8 +38,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void printInt /*heh*/() throws Exception {
-    execute("print 3", "printInt");
+  public void printInt() throws Exception {
+    execute("print 3", "printInt" /*heh*/);
   }
 
   @Test
@@ -56,39 +64,79 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void addGlobals() throws Exception {
-    //    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g", "addGlobals",
-    // "4");
-    //    execute(
-    //        "a=1 b=2 c=3 d=4 e=5 f=6 g=a+(a+b+(b+c+(c+d+(d+e+(e+f+(f))+d)+c)+b)+a) print g",
-    //        "addGlobals");
-    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+(b+(c+(d+(e+(f+(f))+d)+c)+b)+a) print g", "addGlobals");
+  public void allOpsGlobals() throws Exception {
+    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g", "allOpsGlobal");
+  }
+
+  @Test
+  @Ignore
+  public void allOpsLocals() throws Exception {
+    execute(
+        "      a=1 b=2 c=3 d=4 e=5 f=6 g=3\n"
+            + "fun:proc():int { \n"
+            + "   g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f  \n"
+            + "   return g \n"
+            + "} \n"
+            + "print fun()",
+        "allOpsLocals");
   }
 
   @Test
   public void ifPrint() throws Exception {
-    execute("a=3 if a > 1+4 {print a}", "ifPrint");
+    execute("a=3 if a > 1 {print a}", "ifPrint");
   }
 
   @Test
   public void fib() throws Exception {
+    // DANG THIS WORKS!
     execute(
-        "a=3 fib=0 while a > 0 do a = a - 1 { print a print fib fib = fib + 2} print fib", "fib");
+        "      n1 = 0 "
+            + "n2 = 1 "
+            + "i=1 while i <= 10 do i = i + 1 {"
+            + "  nth = n1 + n2"
+            + "  n1 = n2"
+            + "  n2 = nth"
+            + "}"
+            + "print nth",
+        "realfib");
+  }
+
+  @Test
+  public void fact() throws Exception {
+    execute(
+        "      fact = 1 "
+            + "i=1 while i <= 10 do i = i + 1 {"
+            + "  fact = fact * i"
+            + "}"
+            + "print fact",
+        "fact");
   }
 
   @Test
   public void add() throws Exception {
-    execute("a=3 b=a+3 c=a+4 d=c+b print d", "add");
+    execute("a=3 b=a+3 c=4+a d=c+b print d", "add");
   }
 
   @Test
   public void mul() throws Exception {
-    execute("a=3 b=a+3 c=9*b print c", "mul");
+    execute("a=3 c=9*a d=a*7 print c print d", "mul");
+  }
+
+  @Test
+  public void div() throws Exception {
+    execute("a=1000 b=a/30 c=100000/a print b print c", "div");
   }
 
   @Test
   public void assign() throws Exception {
     execute("a=3 b=a a=4 print b print a", "assign");
+  }
+
+  @Test
+  @Ignore
+  public void boolAssign() throws Exception {
+    execute("a=true print a", "boolAssignTrue");
+    execute("a=false print a", "boolAssignFalse");
   }
 
   @Test
@@ -143,8 +191,6 @@ public class NasmCodeGeneratorTest {
     String asmCode = Joiner.on('\n').join(state.asmCode());
     System.err.println(asmCode);
 
-    @SuppressWarnings("deprecation")
-    File dir = Files.createTempDir();
     File file = new File(dir, filename + ".asm");
     if (file.exists()) {
       file.delete();

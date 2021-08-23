@@ -21,6 +21,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
@@ -111,7 +112,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     String sourceLoc = resolve(source);
     Location destination = op.destination();
-    String destLoc = resolveDest(destination);
+    String destLoc = resolveDestination(destination);
     String size = dataSize(op.source().type());
     if (source.isConstant()) {
       // TODO: fails for strings.
@@ -208,36 +209,89 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(BinOp op) {
     VarType type = op.destination().type();
     String size = dataSize(type);
-    String suffix = registerSuffix(type);
 
     // 1. get left
     String leftName = resolve(op.left());
     // 2. get right
     String rightName = resolve(op.right());
-    // 3. determine dest location
-    String destName = resolveDest(op.destination());
-    // 4. mov dest, left
 
+    if (op.operator() == TokenType.DIV) {
+      // 4. set up left in EDX:EAX
+      // 5. idiv by right, result in eax
+      // 6. mov destName, eax
+      boolean raxUsed = registers.isAllocated(Registers.RAX);
+      if (raxUsed) {
+        emit("push %s", Registers.RAX);
+      }
+      boolean rdxUsed = registers.isAllocated(Registers.RDX);
+      if (rdxUsed) {
+        emit("push %s", Registers.RDX);
+      }
+      emit("mov eax, %s", leftName);
+      emit("mov edx, 0");
+      if (op.right().isConstant()) {
+        registers.reserve(Registers.RAX);
+        registers.reserve(Registers.RDX);
+        Register temp = registers.allocate();
+        emit("mov %sd, %s", temp.name(), rightName);
+        emit("idiv %s", temp.name());
+        registers.deallocate(temp);
+        registers.deallocate(Registers.RDX);
+        registers.deallocate(Registers.RAX);
+      } else {
+        emit("idiv dword %s", rightName);
+      }
+      // TODO: this might not be required if it's already in eax
+      // 3. determine dest location
+      String destName = resolveDestination(op.destination());
+      emit("mov %s, eax", destName);
+      if (rdxUsed) {
+        emit("pop %s", Registers.RDX);
+      }
+      if (raxUsed) {
+        emit("pop %s", Registers.RAX);
+      }
+      return;
+    }
+    // 3. determine dest location
+    String destName = resolveDestination(op.destination());
+    // 4. mov dest, left
     emit("mov %s %s, %s ; binary setup", size, destName, leftName);
 
     // 5. {op] dest, right
     switch (op.operator()) {
       case PLUS:
-        emit("add %s, %s ; binary +", destName, rightName);
+        emit("add %s, %s ; binary %s", destName, rightName, op.operator());
         break;
       case MINUS:
-        emit("sub %s, %s ; binary -", destName, rightName);
+        emit("sub %s, %s ; binary %s", destName, rightName, op.operator());
         break;
       case MULT:
-        emit("imul %s, %s ; binary *", destName, rightName);
+        emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
+        break;
+      case EQEQ:
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
+        emit("setz %s", destName);
+        break;
+      case NEQ:
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
+        emit("setnz %s", destName);
         break;
       case GT:
-        emit("cmp %s, %s ; binary >", destName, rightName);
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setg %s", destName);
         break;
+      case GEQ:
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
+        emit("setge %s", destName);
+        break;
       case LT:
-        emit("cmp %s, %s ; binary >", destName, rightName);
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setl %s", destName);
+        break;
+      case LEQ:
+        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
+        emit("setle %s", destName);
         break;
       default:
         fail("Cannot generate %s yet", op);
@@ -254,12 +308,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     return size;
   }
 
-  private String resolveDest(Location loc) {
-    Register reg = this.aliases.get(loc.name());
+  private String resolveDestination(Location destination) {
+    Register reg = this.aliases.get(destination.name());
     if (reg != null) {
       return reg.toString();
     }
-    switch (loc.storage()) {
+    switch (destination.storage()) {
       case TEMP:
         reg = registers.allocate();
         //        if (reg == null) {
@@ -274,12 +328,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         //          aliases.inverse().remove(reg);
         //        }
         //        lruRegs.add(reg); // add to the end.
-        aliases.put(loc.name(), reg);
-        return reg.name() + registerSuffix(loc.type());
+        aliases.put(destination.name(), reg);
+        return reg.name() + registerSuffix(destination.type());
       case GLOBAL:
-        return "[" + loc.name() + "]";
+        return "[" + destination.name() + "]";
       default:
-        fail("Cannot generate %s yet", loc);
+        fail("Cannot generate %s destination %s yet", destination.storage(), destination);
         return null;
     }
   }
@@ -301,7 +355,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 2. apply op
     // 3. store in destination
     Location destination = op.destination();
-    String destName = resolveDest(destination);
+    String destName = resolveDestination(destination);
     // apply op
     switch (op.operator()) {
       case BIT_NOT:
@@ -313,7 +367,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // binary not
         // 1. compare to 0
         emit("test %s, %s", sourceName, sourceName);
-        emit("mov %s, 0  ; clear", destName);
         // 2. setz %s
         // TODO: this will fail for non-registers
         emit("setz %s", destName);
@@ -331,8 +384,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private void fail(String format, Object obj) {
-    throw new UnsupportedOperationException(String.format(format, obj));
+  private void fail(String format, Object... values) {
+    throw new UnsupportedOperationException(String.format(format, values));
   }
 
   private String resolve(Operand operand) {
@@ -349,7 +402,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case GLOBAL:
         return "[" + operand.toString() + "]";
       default:
-        fail("Cannot generate %s yet", operand);
+        fail("Cannot generate %s operand %s yet", operand.storage(), operand);
         return operand.toString();
     }
   }
