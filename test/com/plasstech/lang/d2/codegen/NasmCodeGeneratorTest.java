@@ -133,7 +133,6 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void boolAssign() throws Exception {
     execute("a=true print a", "boolAssignTrue");
     execute("a=false print a", "boolAssignFalse");

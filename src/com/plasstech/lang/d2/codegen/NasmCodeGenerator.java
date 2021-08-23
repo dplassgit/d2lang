@@ -132,60 +132,56 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(SysCall op) {
     Operand arg = op.arg();
     switch (op.call()) {
-      case INPUT:
-        fail("Cannot generate %s yet", op);
-        break;
-      case MESSAGE: // exit "foo"
-        emit("sub rsp, 0x28         ; Reserve the shadow space");
-        emit("mov rcx, __EXIT_MSG");
-        emit("call printf           ; printf(__EXIT_MSG)");
-        if (arg.isConstant()) {
-          emit("add rsp, 0x28         ; Remove shadow space");
-          // have to store string constant in memory
-          fail("Cannot exit string %s yet", arg);
-        } else {
-          // must be a string global
-          emit("mov rcx, %s", arg.toString());
-          emit("call puts             ; puts message with newline");
-          emit("add rsp, 0x28         ; Remove shadow space");
-        }
-        break;
       case PRINT:
-        if (arg.isConstant()) {
-          ConstantOperand<?> argOp = (ConstantOperand<?>) arg;
-          Object value = argOp.value();
-          if (value instanceof Integer) {
-            emit("sub rsp, 0x28         ; Reserve the shadow space");
-            emit("mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
-            // this works for ints only
-            emit("mov rdx, %s           ; Second argument is parameter", arg);
-            emit("call printf           ; printf(message)");
-            emit("add rsp, 0x28         ; Remove shadow space");
-          } else if (value instanceof Boolean) {
-            emit("sub rsp, 0x28         ; Reserve the shadow space");
-            if (value.equals(Boolean.TRUE)) {
-              emit("mov rcx, __TRUE");
-            } else {
-              emit("mov rcx, __FALSE");
-            }
-            emit("call printf           ; printf(message)");
-            emit("add rsp, 0x28         ; Remove shadow space");
-          } else {
-            // string constant (!) what to do?!
-            // might be string might be int... ugh
-            fail("Cannot print string yet: %s", arg);
-          }
-        } else {
-          // might be string might be int... ugh
-          emit("sub rsp, 0x28         ; Reserve the shadow space");
+        String argVal = resolve(arg);
+        emit("sub rsp, 0x28         ; Reserve the shadow space");
+        boolean pushedRcx = condPush(Registers.RCX);
+        boolean pushedRdx = false;
+        if (arg.type() == VarType.INT) {
+          pushedRdx = condPush(Registers.RDX);
           emit("mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
-          // this works for ints only; might fail for non-globals
-          emit("mov rdx, [%s]         ; Second argument is parameter", arg.toString());
+          emit("mov rdx, %s           ; Second argument is parameter", argVal);
           emit("call printf           ; printf(message)");
           emit("add rsp, 0x28         ; Remove shadow space");
+        } else if (arg.type() == VarType.BOOL) {
+          if (argVal.equals("1")) {
+            emit("mov rcx, __TRUE");
+          } else if (argVal.equals("0")) {
+            emit("mov rcx, __FALSE");
+          } else {
+            // translate from 0/1 to false/true
+            emit("mov rcx, __FALSE");
+            emit("cmp dword %s, 1", argVal);
+            pushedRdx = condPush(Registers.RDX);
+            emit("lea rdx, __TRUE");
+            emit("cmovz rcx, rdx");
+          }
+          emit("call printf           ; printf(message)");
+          emit("add rsp, 0x28         ; Remove shadow space");
+        } else {
+          fail("Cannot print string yet: %s", arg);
         }
+        condPop(Registers.RDX, pushedRdx);
+        condPop(Registers.RCX, pushedRcx);
+        break;
+      default:
+        fail("Cannot generate %s yet", op);
         break;
     }
+  }
+
+  private void condPop(Register reg, boolean pushed) {
+    if (pushed) {
+      emit("pop %s", reg);
+    }
+  }
+
+  private boolean condPush(Register reg) {
+    if (registers.isAllocated(reg)) {
+      emit("push %s", reg);
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -390,8 +386,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private String resolve(Operand operand) {
     if (operand.storage() == SymbolStorage.IMMEDIATE) {
+      if (operand.type() == VarType.INT) {
+        return operand.toString();
+      } else if (operand.type() == VarType.BOOL) {
+        ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;
+        if (boolConst.value() == Boolean.TRUE) {
+          return "1";
+        }
+        return "0";
+      }
       // TODO: fails for string constants.
-      return operand.toString();
     }
 
     Register sourceReg = aliases.get(operand.toString());
