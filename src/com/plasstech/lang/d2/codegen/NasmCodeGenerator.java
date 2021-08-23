@@ -68,9 +68,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("\nsection .data");
     SymTab globals = input.symbolTable();
     for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
-      if (entry.getValue().storage() == SymbolStorage.GLOBAL) {
-        // temporarily reserve (& clear) 4 bytes per int, 8 bytes for string
-        emit("%s: dd 0", entry.getKey());
+      Symbol symbol = entry.getValue();
+      if (symbol.storage() == SymbolStorage.GLOBAL) {
+        // temporarily reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
+        if (symbol.varType() == VarType.INT) {
+          emit("%s: dd 0", entry.getKey());
+        } else if (symbol.varType() == VarType.BOOL) {
+          emit("%s: db 0", entry.getKey());
+        } else if (symbol.varType() == VarType.STRING) {
+          emit("%s: dq 0", entry.getKey());
+        }
       }
     }
     // TODO: only emit these if we need to.
@@ -122,6 +129,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       Register tempReg = registers.allocate();
       String suffix = registerSuffix(op.source().type());
       String tempName = tempReg.name() + suffix;
+      // TODO: This can be optimized if source and dest are both registers.
       emit("mov %s %s, %s", size, tempName, sourceLoc);
       emit("mov %s %s, %s", size, destLoc, tempName);
       registers.deallocate(tempReg);
@@ -151,7 +159,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           } else {
             // translate from 0/1 to false/true
             emit("mov rcx, __FALSE");
-            emit("cmp dword %s, 1", argVal);
+            emit("cmp byte %s, 1", argVal);
             pushedRdx = condPush(Registers.RDX);
             emit("lea rdx, __TRUE");
             emit("cmovz rcx, rdx");
