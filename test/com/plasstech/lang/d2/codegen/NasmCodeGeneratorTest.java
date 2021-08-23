@@ -30,8 +30,14 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void printConst() throws Exception {
-    execute("print 3", "printConst");
+  public void printInt /*heh*/() throws Exception {
+    execute("print 3", "printInt");
+  }
+
+  @Test
+  public void printBool() throws Exception {
+    execute("print true", "printTrue");
+    execute("print false", "printFalse");
   }
 
   @Test

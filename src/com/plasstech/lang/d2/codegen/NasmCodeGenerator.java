@@ -48,7 +48,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (input.filename() != null) {
       f = input.filename();
     }
-    
+
     emit0("; To execute:");
     // -Ox = optimize
     emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
@@ -74,6 +74,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     // TODO: only emit these if we need to.
     emit("__PRINTF_NUMBER_FMT: db \"%%d\", 0");
+    emit("__TRUE: db \"true\", 0");
+    emit("__FALSE: db \"false\", 0");
     emit("__EXIT_MSG: db \"ERROR: \", 0");
 
     emit0("\nsection .text");
@@ -155,7 +157,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("sub rsp, 0x28         ; Reserve the shadow space");
             emit("mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
             // this works for ints only
-            emit("mov rdx, %s           ; Second argument is parameter", arg.toString());
+            emit("mov rdx, %s           ; Second argument is parameter", arg);
+            emit("call printf           ; printf(message)");
+            emit("add rsp, 0x28         ; Remove shadow space");
+          } else if (value instanceof Boolean) {
+            emit("sub rsp, 0x28         ; Reserve the shadow space");
+            if (value.equals(Boolean.TRUE)) {
+              emit("mov rcx, __TRUE");
+            } else {
+              emit("mov rcx, __FALSE");
+            }
             emit("call printf           ; printf(message)");
             emit("add rsp, 0x28         ; Remove shadow space");
           } else {
