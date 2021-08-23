@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.VarType;
 
 class ArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -371,9 +372,15 @@ class ArithmeticOptimizer extends LineOptimizer {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } else if (right.equals(ConstantOperand.ZERO)) {
+    }
+    if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
+      return;
+    }
+    // foo = a+a -> foo = a<<1
+    if (left.equals(right) && left.type() == VarType.INT) {
+      replaceCurrent(new BinOp(op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.ONE));
       return;
     }
   }
