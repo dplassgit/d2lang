@@ -137,7 +137,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(IfOp ifOp) {
     Object cond = resolve(ifOp.condition());
-    if (cond.equals(1)) {
+    if (cond.equals(Boolean.TRUE)) {
       String dest = ifOp.destination();
       gotoLabel(dest);
       result.incBranchesTaken();
@@ -175,18 +175,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (op.operator() == TokenType.DOT) {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
-      result = visitBinOp(op, (Integer) left, (Integer) right);
+      result = visitIntBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof Boolean && right instanceof Boolean) {
+      result = visitBoolBinOp(op, (Boolean) left, (Boolean) right);
     } else if (left instanceof String && right instanceof String) {
-      result = visitBinOp(op, (String) left, (String) right);
+      result = visitStringBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
     } else if (left == null || right == null) {
       result = visitBinOpNulls(op, left, right);
     } else if (left.getClass().isArray() && right instanceof Integer) {
-      result = visitBinOp(op, (Object[]) left, (Integer) right);
+      result = visitArrayBinOp(op, (Object[]) left, (Integer) right);
     } else {
-      logger.atWarning().log("Not sure what to do with %s; left %s right %s", op, left, right);
-      result = -42;
+      throw new IllegalStateException(
+          String.format("Not sure what to do with %s; left %s right %s", op, left, right));
     }
 
     setValue(op.destination(), result);
@@ -215,7 +217,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     return leftAsMap.get(right);
   }
 
-  private Object visitBinOp(BinOp op, Object[] left, int right) {
+  private Object visitArrayBinOp(BinOp op, Object[] left, int right) {
     if (op.operator() == TokenType.LBRACKET) {
       return left[right];
     }
@@ -229,20 +231,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
     throw new IllegalStateException("Unknown string/int binop " + op.operator());
   }
 
-  private Object visitBinOp(BinOp op, String left, String right) {
+  private Object visitStringBinOp(BinOp op, String left, String right) {
     switch (op.operator()) {
       case EQEQ:
-        return left.equals(right) ? 1 : 0;
+        return left.equals(right);
       case GEQ:
-        return (left.compareTo(right) >= 0) ? 1 : 0;
+        return left.compareTo(right) >= 0;
       case GT:
-        return (left.compareTo(right) > 0) ? 1 : 0;
+        return left.compareTo(right) > 0;
       case LEQ:
-        return (left.compareTo(right) <= 0) ? 1 : 0;
+        return left.compareTo(right) <= 0;
       case LT:
-        return (left.compareTo(right) < 0) ? 1 : 0;
+        return left.compareTo(right) < 0;
       case NEQ:
-        return left.equals(right) ? 0 : 1;
+        return !left.equals(right);
       case PLUS:
         return left + right;
 
@@ -251,26 +253,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  private int visitBinOp(BinOp op, int left, int right) {
+  private Object visitIntBinOp(BinOp op, int left, int right) {
     switch (op.operator()) {
-      case AND:
-        return ((left != 0) && (right != 0)) ? 1 : 0;
-      case OR:
-        return ((left != 0) || (right != 0)) ? 1 : 0;
-      case XOR:
-        return ((left != 0) ^ (right != 0)) ? 1 : 0;
       case DIV:
         return left / right;
       case EQEQ:
-        return (left == right) ? 1 : 0;
+        return left == right;
       case GEQ:
-        return (left >= right) ? 1 : 0;
+        return left >= right;
       case GT:
-        return (left > right) ? 1 : 0;
+        return left > right;
       case LEQ:
-        return (left <= right) ? 1 : 0;
+        return left <= right;
       case LT:
-        return (left < right) ? 1 : 0;
+        return left < right;
       case MINUS:
         return left - right;
       case MOD:
@@ -278,7 +274,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case MULT:
         return left * right;
       case NEQ:
-        return (left != right) ? 1 : 0;
+        return left != right;
       case PLUS:
         return left + right;
       case SHIFT_LEFT:
@@ -293,6 +289,23 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return left ^ right;
       default:
         throw new IllegalStateException("Unknown int binop " + op.operator());
+    }
+  }
+
+  private Object visitBoolBinOp(BinOp op, Boolean left, Boolean right) {
+    switch (op.operator()) {
+      case AND:
+        return left && right;
+      case OR:
+        return left || right;
+      case XOR:
+        return left ^ right;
+      case EQEQ:
+        return left == right;
+      case NEQ:
+        return left != right;
+      default:
+        throw new IllegalStateException("Unknown bool binop " + op.operator());
     }
   }
 
@@ -354,19 +367,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private Object visitUnaryInt(UnaryOp op, Object rhs) {
-    int r1;
-    if (rhs == Boolean.TRUE) {
-      r1 = 1;
-    } else if (rhs == Boolean.FALSE) {
-      r1 = 0;
-    } else {
-      r1 = (Integer) rhs;
+    if (op.operator() == TokenType.NOT) {
+      return rhs == Boolean.FALSE;
     }
+    int r1 = (Integer) rhs;
     switch (op.operator()) {
       case MINUS:
         return 0 - r1;
-      case NOT:
-        return (r1 == 0) ? 1 : 0;
       case BIT_NOT:
         return ~r1;
       case CHR:
@@ -379,14 +386,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private Object resolve(Operand operand) {
     Object value;
     if (operand.isConstant()) {
+      // int, string, bool.
       value = ((ConstantOperand<?>) operand).value();
     } else {
       // symbol
       String name = ((Location) operand).name();
       value = envs.peek().getValue(name);
-    }
-    if (value instanceof Boolean) {
-      return (value == Boolean.TRUE) ? 1 : 0;
     }
     return value;
   }
@@ -449,7 +454,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     for (int i = 0; i < op.actuals().size(); ++i) {
       Operand actualSource = op.actuals().get(i);
       Parameter formalParam = procSymbol.node().parameters().get(i);
-      StackLocation formal = new StackLocation(formalParam.name(), formalParam.type());
+      // formals are not necessarily on the stack...
+      Location formal = new StackLocation(formalParam.name(), formalParam.type());
       childEnv.setValue(formal, resolve(actualSource));
     }
 

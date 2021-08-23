@@ -50,13 +50,13 @@ public class Environment {
     }
   }
 
-  public void setValue(Location location, boolean value) {
-    if (value) {
-      setValue(location, 1);
-    } else {
-      setValue(location, 0);
-    }
-  }
+  //  public void setValue(Location location, boolean value) {
+  //    if (value) {
+  //      setValue(location, 1);
+  //    } else {
+  //      setValue(location, 0);
+  //    }
+  //  }
 
   public Object getValue(String name) {
     Object value = values.get(name);

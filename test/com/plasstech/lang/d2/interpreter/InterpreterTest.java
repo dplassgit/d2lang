@@ -15,6 +15,15 @@ public class InterpreterTest {
   }
 
   @Test
+  public void stringCompare() {
+    Environment env = execute("i='hi'=='hi' j = 'hi'!='hi' k = 'hi'!='bye' a='hi'=='bye'");
+    assertThat(env.getValue("i")).isEqualTo(true);
+    assertThat(env.getValue("j")).isEqualTo(false);
+    assertThat(env.getValue("k")).isEqualTo(true);
+    assertThat(env.getValue("a")).isEqualTo(false);
+  }
+
+  @Test
   public void whileLoop() {
     Environment env = execute("i=0 while i < 30 do i=i+1 { print i }");
     assertThat(env.getValue("i")).isEqualTo(30);
@@ -96,8 +105,8 @@ public class InterpreterTest {
   public void bools() {
     Environment env = execute("a=true b = not a");
 
-    assertThat(env.getValue("a")).isEqualTo(1);
-    assertThat(env.getValue("b")).isEqualTo(0);
+    assertThat(env.getValue("a")).isEqualTo(true);
+    assertThat(env.getValue("b")).isEqualTo(false);
   }
 
   @Test
@@ -183,11 +192,11 @@ public class InterpreterTest {
                 + "d = isDigit('9')"
                 + "e = isDigit('z')"
                 + "");
-    assertThat(env.getValue("a")).isEqualTo(0);
-    assertThat(env.getValue("b")).isEqualTo(1);
-    assertThat(env.getValue("c")).isEqualTo(1);
-    assertThat(env.getValue("d")).isEqualTo(1);
-    assertThat(env.getValue("e")).isEqualTo(0);
+    assertThat(env.getValue("a")).isEqualTo(false);
+    assertThat(env.getValue("b")).isEqualTo(true);
+    assertThat(env.getValue("c")).isEqualTo(true);
+    assertThat(env.getValue("d")).isEqualTo(true);
+    assertThat(env.getValue("e")).isEqualTo(false);
   }
 
   @Test
@@ -240,10 +249,10 @@ public class InterpreterTest {
     assertThat(env.getValue("b")).isEqualTo("B");
 
     env = execute("a:proc(): bool { return true } b=a()");
-    assertThat(env.getValue("b")).isEqualTo(1);
+    assertThat(env.getValue("b")).isEqualTo(true);
 
     env = execute("a:proc(): bool { return false } b=a()");
-    assertThat(env.getValue("b")).isEqualTo(0);
+    assertThat(env.getValue("b")).isEqualTo(false);
   }
 
   @Test
