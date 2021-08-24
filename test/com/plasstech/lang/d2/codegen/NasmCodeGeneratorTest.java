@@ -65,7 +65,10 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void allOpsGlobals() throws Exception {
-    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g", "allOpsGlobal");
+    //    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g",
+    // "allOpsGlobal");
+    execute(
+        "a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g", "allOpsGlobal");
   }
 
   @Test
@@ -118,13 +121,35 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void sub() throws Exception {
+    execute("a=10 b=a-3 c=4-b print b print c", "sub");
+  }
+
+  @Test
+  public void addToItself() throws Exception {
+    execute("a=3 a=a+10 print a", "addToItself");
+  }
+
+  @Test
   public void mul() throws Exception {
     execute("a=3 c=9*a d=a*7 print c print d", "mul");
   }
 
   @Test
   public void div() throws Exception {
-    execute("a=1000 b=a/30 c=100000/a print b print c", "div");
+    execute("a=10000 a=a/30 b=a/3 c=100000/a print b print c", "div");
+  }
+
+  @Test
+  @Ignore
+  public void divLoop() throws Exception {
+    // this fails because we can't compare to numbers > 256 yet
+    execute("a=10000 while a > 0 {print a a = a / 10 }", "divLoop");
+  }
+
+  @Test
+  public void divLoopByte() throws Exception {
+    execute("a=100 while a > 0 {print a a = a / 3 }", "divLoopByte");
   }
 
   @Test

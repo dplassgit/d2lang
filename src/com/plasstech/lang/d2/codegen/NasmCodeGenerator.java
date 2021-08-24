@@ -133,6 +133,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size, tempName, sourceLoc);
       emit("mov %s %s, %s", size, destLoc, tempName);
       registers.deallocate(tempReg);
+      deallocate(source);
     }
   }
 
@@ -178,18 +179,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private void condPop(Register reg, boolean pushed) {
-    if (pushed) {
-      emit("pop %s", reg);
-    }
-  }
-
+  /** Conditionally push the register, if it's already in use. */
   private boolean condPush(Register reg) {
     if (registers.isAllocated(reg)) {
       emit("push %s", reg);
       return true;
     }
     return false;
+  }
+
+  /** Conditionally pop the register, if it's been pushed. */
+  private void condPop(Register reg, boolean pushed) {
+    if (pushed) {
+      emit("pop %s", reg);
+    }
   }
 
   @Override
@@ -205,8 +208,24 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(IfOp op) {
     String condName = resolve(op.condition());
-    emit("cmp %s, 0", condName);
+    emit("cmp byte %s, 0", condName);
     emit("jne %s", op.destination());
+    // deallocate
+    Operand operand = op.condition();
+    deallocate(operand);
+  }
+
+  private void deallocate(Operand operand) {
+    if (operand.storage() == SymbolStorage.TEMP) {
+      // now that we used the temp, unallocate it (?)
+      String operandName = operand.toString();
+      Register reg = aliases.get(operandName);
+      if (reg != null) {
+        emit("; Deallocating %s (at %s)", operand, reg);
+        aliases.remove(operandName);
+        registers.deallocate(reg);
+      }
+    }
   }
 
   @Override
@@ -223,14 +242,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // 4. set up left in EDX:EAX
       // 5. idiv by right, result in eax
       // 6. mov destName, eax
-      boolean raxUsed = registers.isAllocated(Registers.RAX);
-      if (raxUsed) {
-        emit("push %s", Registers.RAX);
-      }
-      boolean rdxUsed = registers.isAllocated(Registers.RDX);
-      if (rdxUsed) {
-        emit("push %s", Registers.RDX);
-      }
+      boolean raxUsed = condPush(Registers.RAX);
+      boolean rdxUsed = condPush(Registers.RDX);
       emit("mov eax, %s", leftName);
       emit("mov edx, 0");
       if (op.right().isConstant()) {
@@ -240,21 +253,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov %sd, %s", temp.name(), rightName);
         emit("idiv %s", temp.name());
         registers.deallocate(temp);
-        registers.deallocate(Registers.RDX);
-        registers.deallocate(Registers.RAX);
+        if (!rdxUsed) {
+          registers.deallocate(Registers.RDX);
+        }
+        if (!raxUsed) {
+          registers.deallocate(Registers.RAX);
+        }
       } else {
+        // BUG: this doesn't work because rightName might have been in eax, which was already
+        // overwritten.
         emit("idiv dword %s", rightName);
       }
       // TODO: this might not be required if it's already in eax
       // 3. determine dest location
       String destName = resolveDestination(op.destination());
       emit("mov %s, eax", destName);
-      if (rdxUsed) {
-        emit("pop %s", Registers.RDX);
-      }
-      if (raxUsed) {
-        emit("pop %s", Registers.RAX);
-      }
+      condPop(Registers.RDX, rdxUsed);
+      condPop(Registers.RAX, raxUsed);
+      deallocate(op.left());
+      deallocate(op.right());
       return;
     }
     // 3. determine dest location
@@ -274,6 +291,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
         break;
       case EQEQ:
+        // TODO: THIS IS WRONG. it's not comparing with the right size - it's using the
+        // *destination* size instead of the *source* size.
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setz %s", destName);
         break;
@@ -297,9 +316,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setle %s", destName);
         break;
+
       default:
         fail("Cannot generate %s yet", op);
     }
+    deallocate(op.left());
+    deallocate(op.right());
   }
 
   private String dataSize(VarType type) {
