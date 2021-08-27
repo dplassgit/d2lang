@@ -65,10 +65,36 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void allOpsGlobals() throws Exception {
-    //    execute("a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f print g",
-    // "allOpsGlobal");
-    execute(
-        "a=1 b=2 c=3 d=4 e=5 f=6 g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g", "allOpsGlobal");
+    for (int a = -1; a <= 2; ++a) {
+      for (int b = -3; b <= 3; b += 2) {
+        for (int c = -3; c < 3; c += 2) {
+          execute(
+              String.format(
+                  "a=%d "
+                      + "b=%d "
+                      + "c=%d "
+                      + "d=7 "
+                      + "e=11 "
+                      + "f=13 "
+                      + "z=0"
+                      + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)+a)*b)/c)-d)) print g"
+                      + " k=z+4/(5+(4-5*f)) print k"
+                      + " k=0+d/(5+(4-5*f)) print k"
+                      + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g"
+                      + " h=0+a+(4+3*(4-(3+4/(4+(5-e*6))))) print h"
+                      + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0)))))) print j"
+                      + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
+                      + "",
+                  a, b, c),
+              String.format("allOpsGlobal%d_%d_%d", a, b, c));
+        }
+      }
+    }
+  }
+
+  @Test
+  public void rounding() throws Exception {
+    execute("f=6 " + " k=4/(5+(4-5*f)) print k" + "", "rounding");
   }
 
   @Test
@@ -137,7 +163,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void div() throws Exception {
-    execute("a=10000 a=a/30 b=a/3 c=100000/a print b print c", "div");
+    execute("a=10000 a=a/30 b=a/3 c=100000/a/b print b print c", "div");
   }
 
   @Test

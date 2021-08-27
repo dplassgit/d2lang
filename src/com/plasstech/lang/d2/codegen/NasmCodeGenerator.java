@@ -239,37 +239,43 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String rightName = resolve(op.right());
 
     if (op.operator() == TokenType.DIV) {
+      // 3. determine dest location
+      String destName = resolveDestination(op.destination());
       // 4. set up left in EDX:EAX
       // 5. idiv by right, result in eax
       // 6. mov destName, eax
       boolean raxUsed = condPush(Registers.RAX);
       boolean rdxUsed = condPush(Registers.RDX);
+      //      if (op.right().isConstant()) {
+      registers.reserve(Registers.RAX);
+      registers.reserve(Registers.RDX);
+      Register temp = registers.allocate();
+      emit("mov %sd, %s", temp.name(), rightName);
       emit("mov eax, %s", leftName);
-      emit("mov edx, 0");
-      if (op.right().isConstant()) {
-        registers.reserve(Registers.RAX);
-        registers.reserve(Registers.RDX);
-        Register temp = registers.allocate();
-        emit("mov %sd, %s", temp.name(), rightName);
-        emit("idiv %s", temp.name());
-        registers.deallocate(temp);
-        if (!rdxUsed) {
-          registers.deallocate(Registers.RDX);
-        }
-        if (!raxUsed) {
-          registers.deallocate(Registers.RAX);
-        }
-      } else {
-        // BUG: this doesn't work because rightName might have been in eax, which was already
-        // overwritten.
-        emit("idiv dword %s", rightName);
+      // sign extend eax to edx
+      emit("cdq");
+      emit("idiv %sd", temp.name());
+      registers.deallocate(temp);
+      if (!rdxUsed) {
+        registers.deallocate(Registers.RDX);
+      }
+      if (!raxUsed) {
+        registers.deallocate(Registers.RAX);
       }
       // TODO: this might not be required if it's already in eax
-      // 3. determine dest location
-      String destName = resolveDestination(op.destination());
       emit("mov %s, eax", destName);
-      condPop(Registers.RDX, rdxUsed);
-      condPop(Registers.RAX, raxUsed);
+      if (!destName.equals("R2d")) {
+        condPop(Registers.RDX, rdxUsed);
+      } else {
+        // pseudo pop
+        emit("add rsp, 8");
+      }
+      if (!destName.equals("R0d")) {
+        condPop(Registers.RAX, raxUsed);
+      } else {
+        // pseudo pop
+        emit("add rsp, 8");
+      }
       deallocate(op.left());
       deallocate(op.right());
       return;
@@ -355,6 +361,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         //        }
         //        lruRegs.add(reg); // add to the end.
         aliases.put(destination.name(), reg);
+        emit("; Allocating %s to %s", destination, reg);
         return reg.name() + registerSuffix(destination.type());
       case GLOBAL:
         return "[" + destination.name() + "]";
