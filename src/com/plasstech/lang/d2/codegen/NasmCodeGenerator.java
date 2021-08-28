@@ -54,11 +54,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // -Ox = optimize
     emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
 
-    emit0("%%use altreg"); // lets us use r01 instead of rax, etc.
     emit0("global main"); // required
-    emit0("extern puts");
-    emit0("extern printf");
-    emit0("extern exit");
+    //    emit0("extern puts"); // we'll use this for println
+    emit0("extern printf"); // optional
+    emit0("extern exit"); // required
 
     // Probably what we should do is:
     // 1. emit all globals OK
@@ -86,7 +85,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("__FALSE: db \"false\", 0");
     emit("__EXIT_MSG: db \"ERROR: \", 0");
 
-    emit0("\nsection .text");
+    emit0("\nsection .text\n");
 
     // TODO: convert command-line arguments to ??? and send to __main
     emit0("main:");
@@ -105,7 +104,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Stop op) {
-    emit("mov rcx, %d", op.exitCode());
+    emit("mov RCX, %d", op.exitCode());
     emit("call exit");
   }
 
@@ -126,13 +125,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
       // TODO: deal with out-of-registers
-      Register tempReg = registers.allocate();
-      String suffix = registerSuffix(op.source().type());
-      String tempName = tempReg.name() + suffix;
-      // TODO: This can be optimized if source and dest are both registers.
-      emit("mov %s %s, %s", size, tempName, sourceLoc);
-      emit("mov %s %s, %s", size, destLoc, tempName);
-      registers.deallocate(tempReg);
+      if (!sourceLoc.startsWith("[")) {
+        // register. Just move it.
+        emit("mov %s %s, %s", size, destLoc, sourceLoc);
+      } else {
+        Register tempReg = registers.allocate();
+        String tempName = registerNameSized(tempReg, op.source().type());
+        emit("mov %s %s, %s", size, tempName, sourceLoc);
+        emit("mov %s %s, %s", size, destLoc, tempName);
+        registers.deallocate(tempReg);
+      }
       deallocate(source);
     }
   }
@@ -144,25 +146,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case PRINT:
         String argVal = resolve(arg);
         emit("sub rsp, 0x28         ; Reserve the shadow space");
-        boolean pushedRcx = condPush(Registers.RCX);
+        boolean pushedRcx = condPush(Register.RCX);
         boolean pushedRdx = false;
         if (arg.type() == VarType.INT) {
-          pushedRdx = condPush(Registers.RDX);
-          emit("mov rcx, __PRINTF_NUMBER_FMT ; First argument is address of message");
-          emit("mov rdx, %s           ; Second argument is parameter", argVal);
+          pushedRdx = condPush(Register.RDX);
+          emit("mov RCX, __PRINTF_NUMBER_FMT ; First argument is address of message");
+          emit("mov RDX, %s           ; Second argument is parameter", argVal);
           emit("call printf           ; printf(message)");
           emit("add rsp, 0x28         ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
-            emit("mov rcx, __TRUE");
+            emit("mov RCX, __TRUE");
           } else if (argVal.equals("0")) {
-            emit("mov rcx, __FALSE");
+            emit("mov RCX, __FALSE");
           } else {
             // translate from 0/1 to false/true
-            emit("mov rcx, __FALSE");
+            emit("mov RCX, __FALSE");
             emit("cmp byte %s, 1", argVal);
-            pushedRdx = condPush(Registers.RDX);
-            emit("lea rdx, __TRUE");
+            pushedRdx = condPush(Register.RDX);
+            emit("lea RDX, __TRUE");
             emit("cmovz rcx, rdx");
           }
           emit("call printf           ; printf(message)");
@@ -170,8 +172,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         } else {
           fail("Cannot print string yet: %s", arg);
         }
-        condPop(Registers.RDX, pushedRdx);
-        condPop(Registers.RCX, pushedRcx);
+        condPop(Register.RDX, pushedRdx);
+        condPop(Register.RCX, pushedRcx);
         break;
       default:
         fail("Cannot generate %s yet", op);
@@ -221,7 +223,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String operandName = operand.toString();
       Register reg = aliases.get(operandName);
       if (reg != null) {
-        emit("; Deallocating %s (at %s)", operand, reg);
+        emit("; Deallocating %s from %s", operand, reg);
         aliases.remove(operandName);
         registers.deallocate(reg);
       }
@@ -244,34 +246,37 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // 4. set up left in EDX:EAX
       // 5. idiv by right, result in eax
       // 6. mov destName, eax
-      boolean raxUsed = condPush(Registers.RAX);
-      boolean rdxUsed = condPush(Registers.RDX);
-      //      if (op.right().isConstant()) {
-      registers.reserve(Registers.RAX);
-      registers.reserve(Registers.RDX);
+      boolean raxUsed = condPush(Register.RAX);
+      boolean rdxUsed = condPush(Register.RDX);
+      registers.reserve(Register.RAX);
+      registers.reserve(Register.RDX);
       Register temp = registers.allocate();
-      emit("mov %sd, %s", temp.name(), rightName);
-      emit("mov eax, %s", leftName);
+      emit("mov %s, %s ; right", temp.name32, rightName);
+      if (!leftName.equals(Register.RAX.name32)) {
+        emit("mov EAX, %s ; left", leftName);
+      }
       // sign extend eax to edx
-      emit("cdq");
-      emit("idiv %sd", temp.name());
+      emit("cdq ; sign extend eax to edx");
+      emit("idiv %s ; %s / %s", temp.name32, leftName, rightName);
       registers.deallocate(temp);
       if (!rdxUsed) {
-        registers.deallocate(Registers.RDX);
+        registers.deallocate(Register.RDX);
       }
       if (!raxUsed) {
-        registers.deallocate(Registers.RAX);
+        registers.deallocate(Register.RAX);
       }
-      // TODO: this might not be required if it's already in eax
-      emit("mov %s, eax", destName);
-      if (!destName.equals("R2d")) {
-        condPop(Registers.RDX, rdxUsed);
+      // not required if it's already supposed to be in eax
+      if (!destName.equals(Register.RAX.name32)) {
+        emit("mov %s, EAX", destName);
+      }
+      if (!destName.equals(Register.RDX.name32)) {
+        condPop(Register.RDX, rdxUsed);
       } else {
         // pseudo pop
         emit("add rsp, 8");
       }
-      if (!destName.equals("R0d")) {
-        condPop(Registers.RAX, raxUsed);
+      if (!destName.equals(Register.RAX.name32)) {
+        condPop(Register.RAX, raxUsed);
       } else {
         // pseudo pop
         emit("add rsp, 8");
@@ -330,7 +335,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     deallocate(op.right());
   }
 
-  private String dataSize(VarType type) {
+  private static String dataSize(VarType type) {
     String size = "";
     if (type == VarType.INT) {
       size = "dword";
@@ -341,28 +346,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private String resolveDestination(Location destination) {
-    Register reg = this.aliases.get(destination.name());
+    Register reg = aliases.get(destination.name());
     if (reg != null) {
       return reg.toString();
     }
     switch (destination.storage()) {
       case TEMP:
         reg = registers.allocate();
-        //        if (reg == null) {
-        //          // deal with out-of-registers situation
-        //          // pick the least recently used one (say, the first one)
-        //          reg = lruRegs.remove(0);
-        //          // don't have to deallocate, since we're just re-using the register out from
+        // if (reg == null) {
+        //   // deal with out-of-registers situation
+        //   // pick the least recently used one (say, the first one)
+        //   reg = lruRegs.remove(0);
+        //   // don't have to deallocate, since we're just re-using the register out from
         // underneath
-        //          // the registers object.
-        //          // TODO: push the value onto the stack
-        //          // remove the alias too.
-        //          aliases.inverse().remove(reg);
-        //        }
-        //        lruRegs.add(reg); // add to the end.
+        //   // the registers object.
+        //   // TODO: push the value onto the stack
+        //   // remove the alias too.
+        //   aliases.inverse().remove(reg);
+        // }
+        // lruRegs.add(reg); // add to the end.
         aliases.put(destination.name(), reg);
         emit("; Allocating %s to %s", destination, reg);
-        return reg.name() + registerSuffix(destination.type());
+        return registerNameSized(reg, destination.type());
       case GLOBAL:
         return "[" + destination.name() + "]";
       default:
@@ -371,14 +376,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private static String registerSuffix(VarType type) {
-    String suffix = "";
+  private static String registerNameSized(Register reg, VarType type) {
     if (type == VarType.INT) {
-      suffix = "d";
+      return reg.name32;
     } else if (type == VarType.BOOL) {
-      suffix = "b";
+      return reg.name8;
     }
-    return suffix;
+    return reg.name64;
   }
 
   @Override
@@ -399,9 +403,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case NOT:
         // binary not
         // 1. compare to 0
+        // TODO: this will fail for non-registers
         emit("test %s, %s", sourceName, sourceName);
         // 2. setz %s
-        // TODO: this will fail for non-registers
         emit("setz %s", destName);
         break;
       case MINUS:
@@ -437,7 +441,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Register sourceReg = aliases.get(operand.toString());
     if (sourceReg != null) {
-      return sourceReg.name() + registerSuffix(operand.type());
+      return registerNameSized(sourceReg, operand.type());
     }
     switch (operand.storage()) {
       case GLOBAL:

@@ -6,10 +6,6 @@ import java.util.Set;
 import com.google.common.base.Preconditions;
 
 public class Registers {
-  public static final Register RAX = Register.R0;
-  public static final Register RCX = Register.R1;
-  public static final Register RDX = Register.R2;
-  public static final Register RBX = Register.R3;
   private static final int MAX_REGISTERS = Register.values().length;
 
   // these are the USED registers
