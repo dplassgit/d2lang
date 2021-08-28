@@ -124,12 +124,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // TODO: fails for strings.
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
-      // TODO: deal with out-of-registers
       if (!sourceLoc.startsWith("[")) {
         // register. Just move it.
         emit("mov %s %s, %s", size, destLoc, sourceLoc);
       } else {
         Register tempReg = registers.allocate();
+        // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
@@ -165,7 +165,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("cmp byte %s, 1", argVal);
             pushedRdx = condPush(Register.RDX);
             emit("lea RDX, __TRUE");
-            emit("cmovz rcx, rdx");
+            emit("cmovz RCX, RDX");
           }
           emit("call printf           ; printf(message)");
           emit("add rsp, 0x28         ; Remove shadow space");
@@ -184,7 +184,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   /** Conditionally push the register, if it's already in use. */
   private boolean condPush(Register reg) {
     if (registers.isAllocated(reg)) {
-      emit("push %s", reg);
+      emit("push %s", reg.name64);
       return true;
     }
     return false;
@@ -193,7 +193,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   /** Conditionally pop the register, if it's been pushed. */
   private void condPop(Register reg, boolean pushed) {
     if (pushed) {
-      emit("pop %s", reg);
+      emit("pop %s", reg.name64);
     }
   }
 
@@ -301,6 +301,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case MULT:
         emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
         break;
+      case BIT_AND:
+        emit("and %s, %s ; binary and", destName, rightName);
+        break;
+      case BIT_OR:
+        emit("or %s, %s ; binary or", destName, rightName);
+        break;
+      case BIT_XOR:
+        emit("xor %s, %s ; binary xor", destName, rightName);
+        break;
+
       case EQEQ:
         // TODO: THIS IS WRONG. it's not comparing with the right size - it's using the
         // *destination* size instead of the *source* size.
@@ -327,7 +337,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setle %s", destName);
         break;
-
+        
       default:
         fail("Cannot generate %s yet", op);
     }
@@ -436,7 +446,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         }
         return "0";
       }
-      // TODO: fails for string constants.
+      fail("Cannot generate %s operand %s yet", operand.storage(), operand);
+      return null;
     }
 
     Register sourceReg = aliases.get(operand.toString());
@@ -448,7 +459,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         return "[" + operand.toString() + "]";
       default:
         fail("Cannot generate %s operand %s yet", operand.storage(), operand);
-        return operand.toString();
+        return null;
     }
   }
 

@@ -64,6 +64,15 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void binOps() throws Exception {
+    for (char c : "+-*/&|^".toCharArray()) {
+      execute(
+          String.format("a=123 b=-234 c=a%cb print c d=b%ca print d", c, c),
+          String.format("binOp%d", (int) c));
+    }
+  }
+
+  @Test
   public void tree() throws Exception {
     execute(
         "      a=2 "
@@ -72,7 +81,9 @@ public class NasmCodeGeneratorTest {
             + "d=7 "
             + "e=11 "
             + "f=13 "
-            + "g = (((a+b)*(b+c))*((c-d)/(d-e))*((e+f)*(f-a)))*((a+c)/(b-d)) print g",
+            + "g = (((a+b+c+2)*(b+c+d+1))*((c-d-e-1)/(d-e-f-2))*((e+f+a-3)*"
+            + "      (f-a-b+4)))*((a+c+e-9)/(b-d-f+11)) "
+            + "print g",
         "tree");
   }
 
@@ -147,23 +158,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void add() throws Exception {
-    execute("a=3 b=a+3 c=4+a d=c+b print d", "add");
-  }
-
-  @Test
-  public void sub() throws Exception {
-    execute("a=10 b=a-3 c=4-b print b print c", "sub");
-  }
-
-  @Test
   public void addToItself() throws Exception {
     execute("a=3 a=a+10 print a", "addToItself");
-  }
-
-  @Test
-  public void mul() throws Exception {
-    execute("a=3 c=9*a d=a*7 print c print d", "mul");
   }
 
   @Test
@@ -176,16 +172,6 @@ public class NasmCodeGeneratorTest {
   @Test
   public void divLoopByte() throws Exception {
     execute("a=100 while a > 0 {print a a = a / 3 }", "divLoopByte");
-  }
-
-  @Test
-  public void div() throws Exception {
-    execute("a=10000 a=a/30 b=a/3 c=100000/a/b print b print c", "div");
-  }
-
-  @Test
-  public void divNeg() throws Exception {
-    execute("a=100 b=-1000/a print b c=a/-5 print c", "divNeg");
   }
 
   @Test
