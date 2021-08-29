@@ -8,8 +8,10 @@ import java.util.List;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
@@ -44,6 +46,7 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
 
+@RunWith(TestParameterInjector.class)
 public class ParserTest {
   @Test
   public void print() {
@@ -390,17 +393,14 @@ public class ParserTest {
   }
 
   @Test
-  public void binopOperator() {
-    for (char c : "+-*/%><|&".toCharArray()) {
-      parseStatements(String.format("a=b%c5", c));
-    }
+  public void binOpOperator(
+      @TestParameter({"+", "-", "*", "/", "%", "|", "&", "^"}) String operator) {
+    parseStatements(String.format("a=b%s5", operator));
   }
 
   @Test
-  public void binopCompare() {
-    for (String op : ImmutableList.of("==", "!=", "<=", ">=")) {
-      parseStatements(String.format("a=b%s5", op));
-    }
+  public void binOpCompare(@TestParameter({">", "<", "==", "!=", "<=", ">="}) String operator) {
+    parseStatements(String.format("a=b%s5", operator));
   }
 
   @Test

@@ -25,6 +25,7 @@ maven_install(
         "com.google.flogger:flogger-system-backend:0.6",
         "com.google.truth:truth:1.1.3",
         "com.google.truth.extensions:truth-java8-extension:1.1.3",
+        "com.google.testparameterinjector:test-parameter-injector:1.0",
     ],
     repositories = [
         "https://maven.google.com",

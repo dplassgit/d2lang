@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,13 +11,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.testing.TestUtils;
 
-/** NOTE: THESE TESTS CANNOT RUN FROM BAZEL */
+/** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
+@RunWith(TestParameterInjector.class)
 public class GoldenTests {
 
   @Test
@@ -27,8 +34,8 @@ public class GoldenTests {
       String quine = text.replace("text = input", String.format("text = \"%s\"", text));
       TestUtils.optimizeAssertSameVariables(quine);
     } else {
-      // running in blaze
-      System.err.println("Sorry, cannot run from blaze");
+      // running in bazel
+      fail("Sorry, cannot test in bazel");
     }
   }
 
@@ -41,8 +48,8 @@ public class GoldenTests {
       String quine = text.replace("text = input", String.format("text = \"%s\"", text));
       TestUtils.optimizeAssertSameVariables(quine);
     } else {
-      // running in blaze
-      System.err.println("Sorry, cannot run from blaze");
+      // running in bazel
+      fail("Sorry, cannot test in bazel");
     }
   }
 
@@ -51,44 +58,64 @@ public class GoldenTests {
     if (System.getenv("TEST_SRCDIR") == null) {
       compileFile(Paths.get("samples/d2ind2/parser.d").toString());
     } else {
-      // running in blaze
-      System.err.println("Sorry, cannot run from blaze");
+      // running in bazel
+      fail("Sorry, cannot test in bazel");
     }
   }
 
   @Test
-  public void compileAllNonGoldenSamples() throws IOException {
+  public void compileAllNonGoldenSamples(
+      @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      List<File> files =
-          Files.list(Paths.get("samples/non-golden"))
-              .filter(Files::isRegularFile)
-              .filter(path -> path.toString().endsWith(".d"))
-              .map(Path::toFile)
-              .collect(Collectors.toList());
-      for (File file : files) {
-        compileFile(file.getAbsolutePath());
-      }
+      compileFile(file.getAbsolutePath());
     } else {
-      // running in blaze
-      System.err.println("Sorry, cannot run from blaze");
+      // running in bazel
+      fail("Sorry, cannot test in bazel");
     }
   }
 
   @Test
-  public void runAllSamples() throws Exception {
+  public void runAllSamples(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
+      throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      List<File> files =
-          Files.list(Paths.get("samples"))
-              .filter(Files::isRegularFile)
-              .filter(path -> path.toString().endsWith(".d"))
-              .map(Path::toFile)
-              .collect(Collectors.toList());
-      for (File file : files) {
-        testFromFile(file.getAbsolutePath());
-      }
+      testFromFile(file.getAbsolutePath());
     } else {
-      // running in blaze
-      System.err.println("Sorry, cannot run from blaze");
+      // running in bazel
+      fail("Sorry, cannot test in bazel");
+    }
+  }
+
+  private abstract static class FilesProvider implements TestParameterValuesProvider {
+    private final String directory;
+
+    FilesProvider(String directory) {
+      this.directory = directory;
+    }
+
+    @Override
+    public List<File> provideValues() {
+      try {
+        return Files.list(Paths.get(directory))
+            .filter(Files::isRegularFile)
+            .filter(path -> path.toString().endsWith(".d"))
+            .map(Path::toFile)
+            .collect(Collectors.toList());
+      } catch (IOException e) {
+        fail(e.getMessage());
+        return null;
+      }
+    }
+  }
+
+  private static class NonGoldenFilesProvider extends FilesProvider {
+    NonGoldenFilesProvider() {
+      super("samples/non-golden");
+    }
+  }
+
+  private static class GoldenFilesProvider extends FilesProvider {
+    GoldenFilesProvider() {
+      super("samples");
     }
   }
 

@@ -3,8 +3,11 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -14,6 +17,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
+@RunWith(TestParameterInjector.class)
 public class ArithmeticOptimizerTest {
   private final Optimizer optimizer = new ArithmeticOptimizer(2);
   private final ILOptimizer OPTIMIZERS =
@@ -28,9 +32,12 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusVarInts() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP2, TokenType.PLUS, TEMP2));
+
     ImmutableList<Op> optimized = optimizer.optimize(program);
+
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
+
     BinOp first = (BinOp) optimized.get(0);
     assertThat(first.left()).isEqualTo(TEMP2);
     assertThat(first.operator()).isEqualTo(TokenType.SHIFT_LEFT);
@@ -50,7 +57,9 @@ public class ArithmeticOptimizerTest {
         ImmutableList.of(
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.LEQ, ConstantOperand.ZERO),
             new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.LEQ, ConstantOperand.ONE));
+
     ImmutableList<Op> optimized = optimizer.optimize(program);
+
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Transfer first = (Transfer) optimized.get(0);
@@ -65,7 +74,9 @@ public class ArithmeticOptimizerTest {
         ImmutableList.of(
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.GT, ConstantOperand.ZERO),
             new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.GT, ConstantOperand.ONE));
+
     ImmutableList<Op> optimized = optimizer.optimize(program);
+
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Transfer first = (Transfer) optimized.get(0);
@@ -88,7 +99,9 @@ public class ArithmeticOptimizerTest {
                 new ConstantOperand<String>("a"),
                 TokenType.LEQ,
                 new ConstantOperand<String>("b")));
+
     ImmutableList<Op> optimized = optimizer.optimize(program);
+
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Transfer first = (Transfer) optimized.get(0);
@@ -111,7 +124,9 @@ public class ArithmeticOptimizerTest {
                 new ConstantOperand<String>("a"),
                 TokenType.GT,
                 new ConstantOperand<String>("b")));
+
     ImmutableList<Op> optimized = optimizer.optimize(program);
+
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Transfer first = (Transfer) optimized.get(0);
@@ -121,8 +136,8 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
-  public void bitOperations() {
-    TestUtils.optimizeAssertSameVariables("b=111&4 c=111|20 d=!111 e=111^4 ", OPTIMIZERS);
+  public void bitOperations(@TestParameter({"&", "|", "^"}) String operation) {
+    TestUtils.optimizeAssertSameVariables(String.format("b=111%s4 d=!111", operation), OPTIMIZERS);
   }
 
   @Test
@@ -138,16 +153,11 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
-  public void boolOperations() {
-    for (String bool1 : ImmutableList.of("true", "false")) {
-      // this is optimized in the parser
-      // TestUtils.optimizeAssertSameVariables(String.format("a=not %s", bool1), optimizer);
-      for (String bool2 : ImmutableList.of("true", "false")) {
-        for (String op : ImmutableList.of("and", "or", "xor")) {
-          TestUtils.optimizeAssertSameVariables(
-              String.format("a=%s %s %s", bool1, op, bool2), OPTIMIZERS);
-        }
-      }
-    }
+  public void boolOperations(
+      @TestParameter({"true", "false"}) String left,
+      @TestParameter({"true", "false"}) String right,
+      @TestParameter({"and", "or", "xor"}) String operator) {
+    TestUtils.optimizeAssertSameVariables(
+        String.format("a=%s %s %s", left, operator, right), OPTIMIZERS);
   }
 }

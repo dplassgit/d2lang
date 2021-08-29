@@ -5,8 +5,10 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
@@ -20,6 +22,7 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.phase.State;
 
+@RunWith(TestParameterInjector.class)
 public class StaticCheckerTest {
 
   @Test
@@ -291,55 +294,41 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void binOpMismatch() {
-    for (String op : ImmutableList.of("==", "!=")) {
-      assertError(String.format("a=true %s 3", op), "Type mismatch");
-      assertError(String.format("a='hi' %s 3", op), "Type mismatch");
-    }
+  public void binOpMismatch(@TestParameter({"==", "!="}) String op) {
+    assertError(String.format("a=true %s 3", op), "Type mismatch");
+    assertError(String.format("a='hi' %s 3", op), "Type mismatch");
   }
 
   @Test
-  public void goodBooleanBinOp() {
-    for (String op : ImmutableList.of("==", "or", "and", "<", ">")) {
-      checkProgram(String.format("a=true %s false", op));
-    }
+  public void goodBooleanBinOp(@TestParameter({"==", "or", "and", "<", ">"}) String op) {
+    checkProgram(String.format("a=true %s false", op));
   }
 
   @Test
-  public void badBooleanBinOp() {
-    for (String op : ImmutableList.of(">=", "<=")) {
-      assertError(String.format("a=true %s false", op), "Cannot apply");
-      assertError(String.format("a=true %s 3", op), "Cannot apply");
-    }
+  public void badBooleanBinOp(@TestParameter({">=", "<="}) String op) {
+    assertError(String.format("a=true %s false", op), "Cannot apply");
+    assertError(String.format("a=true %s 3", op), "Cannot apply");
   }
 
   @Test
-  public void badBooleanSingleCharMismatch() {
-    for (char c : "+-|&".toCharArray()) {
-      assertError(String.format("a=true %c 3", c), "Cannot apply");
-    }
+  public void badBooleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
+    assertError(String.format("a=true %s 3", c), "Cannot apply");
   }
 
   @Test
-  public void badStringSingleCharMismatch() {
-    for (char c : "-|&".toCharArray()) {
-      assertError(String.format("a='hi' %c 3", c), "Cannot apply");
-    }
+  public void badStringSingleCharMismatch(@TestParameter({"-", "|", "&"}) String c) {
+    assertError(String.format("a='hi' %s 3", c), "Cannot apply");
     assertError("a='hi' + 3", "Type mismatch");
   }
 
   @Test
-  public void stringOperators_errors() {
-    for (char c : "|&-%*/".toCharArray()) {
-      assertError(String.format("a='hi' %c 'not'", c), "Cannot apply");
-    }
+  public void stringOperators_errors(@TestParameter({"|", "&", "-", "%", "*", "/"}) String c) {
+    assertError(String.format("a='hi' %s 'not'", c), "Cannot apply");
   }
 
   @Test
-  public void stringOperators() {
-    for (String op : ImmutableList.of("+", "<", ">", "==", "!=", "<=", ">=")) {
-      checkProgram(String.format("a='hi' %s 'bye'", op));
-    }
+  public void stringOperators(@TestParameter({"+", "<", ">", "==", "!=", "<=", ">="}) String op) {
+    checkProgram(String.format("a='hi' %s 'bye'", op));
   }
 
   @Test
@@ -394,11 +383,8 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayOperators_errors() {
-    for (char c : "+-/%".toCharArray()) {
-      assertError(
-          String.format("a1 = [1,2,3] %c [2,3,4]", c), "operator to ARRAY expression");
-    }
+  public void arrayOperators_errors(@TestParameter({"+", "-", "/", "%"}) String c) {
+    assertError(String.format("a1 = [1,2,3] %s [2,3,4]", c), "operator to ARRAY expression");
   }
 
   @Test
@@ -573,10 +559,8 @@ public class StaticCheckerTest {
   @Test
   public void return_mismatch() {
     assertError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
-    assertError(
-        "fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
-    assertError(
-        "fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
+    assertError("fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
+    assertError("fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
 
     assertError("fib:proc() {return 3}", "declared to return VOID but returned INT");
     assertError("fib:proc():int {return}", "declared to return INT but returned VOID");
@@ -600,8 +584,7 @@ public class StaticCheckerTest {
             + "}"
             + "}",
         "Not all codepaths");
-    assertError(
-        "fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
+    assertError("fib:proc():bool {if false {return false} else {print 'hi'}}", "Not all codepaths");
     assertError(
         "fob:proc():int {"
             + "if (false) {"
@@ -639,8 +622,7 @@ public class StaticCheckerTest {
         "fib:proc(n:int){} fib(3, 4)",
         "Wrong number of arguments to PROC 'fib': found 2, expected 1");
     // indeterminable arg type
-    assertError(
-        "fib:proc(n) {fib(n)}", "Indeterminable type for parameter 'n' of PROC 'fib'");
+    assertError("fib:proc(n) {fib(n)}", "Indeterminable type for parameter 'n' of PROC 'fib'");
     // wrong arg type
     assertError(
         "fib:proc(n:int) {} fib(false)",
@@ -739,7 +721,7 @@ public class StaticCheckerTest {
   public void variableDecl_recordType() {
     SymTab symTab = checkProgram("r2: record{s:string} instance: r2");
     assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
-    
+
     Symbol rec = symTab.get("instance");
     assertThat(rec.isAssigned()).isFalse();
     RecordReferenceType refType = (RecordReferenceType) rec.varType();
