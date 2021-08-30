@@ -413,8 +413,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case NOT:
         // binary not
         // 1. compare to 0
-        // TODO: this will fail for non-registers
-        emit("test %s, %s", sourceName, sourceName);
+        emit("cmp byte %s, 0", sourceName);
         // 2. setz %s
         emit("setz %s", destName);
         break;

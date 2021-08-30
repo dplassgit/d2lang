@@ -11,17 +11,21 @@ import java.nio.charset.Charset;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.Executor;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
 
+@RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorTest {
   private static File dir;
 
@@ -40,12 +44,12 @@ public class NasmCodeGeneratorTest {
   @Test
   public void printInt() throws Exception {
     execute("print 3", "printInt" /*heh*/);
+    execute("print -3", "printNegInt");
   }
 
   @Test
-  public void printBool() throws Exception {
-    execute("print true", "printTrue");
-    execute("print false", "printFalse");
+  public void printBool(@TestParameter boolean bool) throws Exception {
+    execute("print " + bool, "print" + bool);
   }
 
   @Test
@@ -54,22 +58,15 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void notVariable() throws Exception {
-    execute("a=3 b=!a print b", "notVariable");
+  public void unaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
+    execute(String.format("a=3 b=%sa print b", op), "unaryOps");
   }
 
-  @Test
-  public void negVariable() throws Exception {
-    execute("a=3 b=-a print b", "negVariable");
-  }
 
   @Test
-  public void binOps() throws Exception {
-    for (char c : "+-*/&|^".toCharArray()) {
-      execute(
-          String.format("a=123 b=-234 c=a%cb print c d=b%ca print d", c, c),
-          String.format("binOp%d", (int) c));
-    }
+  public void binOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^"}) String op)
+      throws Exception {
+    execute(String.format("a=123 b=-234 c=a%sb print c d=b%sa print d", op, op), "binOps");
   }
 
   @Test
@@ -180,9 +177,13 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void boolAssign() throws Exception {
-    execute("a=true b=a print a print b", "boolAssignTrue");
-    execute("a=false b=a print a print b", "boolAssignFalse");
+  public void boolAssign(@TestParameter boolean bool) throws Exception {
+    execute(String.format("a=%s b=a print a print b", bool), "boolAssign" + bool);
+  }
+
+  @Test
+  public void not(@TestParameter boolean bool) throws Exception {
+    execute(String.format("a=%s c=not a print a print c", bool), "not" + bool);
   }
 
   @Test
