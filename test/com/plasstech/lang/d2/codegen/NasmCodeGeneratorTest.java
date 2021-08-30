@@ -58,13 +58,13 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void unaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
+  public void intUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
     execute(String.format("a=3 b=%sa print b", op), "unaryOps");
   }
 
 
   @Test
-  public void binOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^"}) String op)
+  public void intBinOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^"}) String op)
       throws Exception {
     execute(String.format("a=123 b=-234 c=a%sb print c d=b%sa print d", op, op), "binOps");
   }
@@ -184,6 +184,15 @@ public class NasmCodeGeneratorTest {
   @Test
   public void not(@TestParameter boolean bool) throws Exception {
     execute(String.format("a=%s c=not a print a print c", bool), "not" + bool);
+  }
+
+  @Test
+  public void boolBinOp(
+      @TestParameter boolean boola,
+      @TestParameter boolean boolb,
+      @TestParameter({"and", "or", "xor"}) String op)
+      throws Exception {
+    execute(String.format("a=%s b=%s c=a %s b print c", boola, boolb, op), "boolBinOp" + op);
   }
 
   @Test

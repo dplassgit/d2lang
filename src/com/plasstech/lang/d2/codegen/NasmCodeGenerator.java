@@ -301,12 +301,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case MULT:
         emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
         break;
+      case AND:
       case BIT_AND:
         emit("and %s, %s ; binary and", destName, rightName);
         break;
+      case OR:
       case BIT_OR:
         emit("or %s, %s ; binary or", destName, rightName);
         break;
+      case XOR:
       case BIT_XOR:
         emit("xor %s, %s ; binary xor", destName, rightName);
         break;
@@ -337,7 +340,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setle %s", destName);
         break;
-        
+
       default:
         fail("Cannot generate %s yet", op);
     }
