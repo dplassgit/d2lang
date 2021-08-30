@@ -62,11 +62,19 @@ public class NasmCodeGeneratorTest {
     execute(String.format("a=3 b=%sa print b", op), "unaryOps");
   }
 
+  @Test
+  public void intBinOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op)
+      throws Exception {
+    execute(
+        String.format(
+            "a=123 b=-234 c=a%sb print c d=b%sa print d e=a%sa print e f=b%sb print f",
+            op, op, op, op),
+        "binOps");
+  }
 
   @Test
-  public void intBinOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^"}) String op)
-      throws Exception {
-    execute(String.format("a=123 b=-234 c=a%sb print c d=b%sa print d", op, op), "binOps");
+  public void shiftOps(@TestParameter({"<<", ">>"}) String op) throws Exception {
+    execute(String.format("a=123 b=4 c=a%sb print c a=-234 d=b%sa print d", op, op), "shiftOps");
   }
 
   @Test

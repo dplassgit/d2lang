@@ -240,49 +240,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 2. get right
     String rightName = resolve(op.right());
 
-    if (op.operator() == TokenType.DIV) {
-      // 3. determine dest location
-      String destName = resolveDestination(op.destination());
-      // 4. set up left in EDX:EAX
-      // 5. idiv by right, result in eax
-      // 6. mov destName, eax
-      boolean raxUsed = condPush(Register.RAX);
-      boolean rdxUsed = condPush(Register.RDX);
-      registers.reserve(Register.RAX);
-      registers.reserve(Register.RDX);
-      Register temp = registers.allocate();
-      emit("mov %s, %s ; right", temp.name32, rightName);
-      if (!leftName.equals(Register.RAX.name32)) {
-        emit("mov EAX, %s ; left", leftName);
-      }
-      // sign extend eax to edx
-      emit("cdq ; sign extend eax to edx");
-      emit("idiv %s ; %s / %s", temp.name32, leftName, rightName);
-      registers.deallocate(temp);
-      if (!rdxUsed) {
-        registers.deallocate(Register.RDX);
-      }
-      if (!raxUsed) {
-        registers.deallocate(Register.RAX);
-      }
-      // not required if it's already supposed to be in eax
-      if (!destName.equals(Register.RAX.name32)) {
-        emit("mov %s, EAX", destName);
-      }
-      if (!destName.equals(Register.RDX.name32)) {
-        condPop(Register.RDX, rdxUsed);
-      } else {
-        // pseudo pop
-        emit("add rsp, 8");
-      }
-      if (!destName.equals(Register.RAX.name32)) {
-        condPop(Register.RAX, raxUsed);
-      } else {
-        // pseudo pop
-        emit("add rsp, 8");
-      }
-      deallocate(op.left());
-      deallocate(op.right());
+    if (op.operator() == TokenType.DIV || op.operator() == TokenType.MOD) {
+      generateDivMod(op, leftName, rightName);
       return;
     }
     // 3. determine dest location
@@ -300,6 +259,36 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case MULT:
         emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
+        break;
+
+      case SHIFT_LEFT:
+        {
+          boolean used = registers.isAllocated(Register.RCX);
+          if (used) {
+            emit("push RCX");
+          }
+          // this is a problem if rightname is CL
+          emit("mov CL, %s ; shift left prep", rightName);
+          // this is a problem if dest is CL
+          emit("shl %s, CL ; binary %s", destName, op.operator());
+          if (used) {
+            // this is a problem if dest is CL
+            emit("pop RCX");
+          }
+        }
+        break;
+      case SHIFT_RIGHT:
+        {
+          boolean used = registers.isAllocated(Register.RCX);
+          if (used) {
+            emit("push RCX");
+          }
+          emit("mov CL, %s ; shift left prep", rightName);
+          emit("sar %s, CL ; binary %s", destName, op.operator());
+          if (used) {
+            emit("pop RCX");
+          }
+        }
         break;
       case AND:
       case BIT_AND:
@@ -343,6 +332,56 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
       default:
         fail("Cannot generate %s yet", op);
+    }
+    deallocate(op.left());
+    deallocate(op.right());
+  }
+
+  private void generateDivMod(BinOp op, String leftName, String rightName) {
+    // 3. determine dest location
+    String destName = resolveDestination(op.destination());
+    // 4. set up left in EDX:EAX
+    // 5. idiv by right, result in eax
+    // 6. mov destName, eax
+    boolean raxUsed = condPush(Register.RAX);
+    boolean rdxUsed = condPush(Register.RDX);
+    registers.reserve(Register.RAX);
+    registers.reserve(Register.RDX);
+    Register temp = registers.allocate();
+    emit("mov %s, %s ; right", temp.name32, rightName);
+    if (!leftName.equals(Register.RAX.name32)) {
+      emit("mov EAX, %s ; left", leftName);
+    }
+    // sign extend eax to edx
+    emit("cdq ; sign extend eax to edx");
+    emit("idiv %s ; %s / %s", temp.name32, leftName, rightName);
+    registers.deallocate(temp);
+    if (!rdxUsed) {
+      registers.deallocate(Register.RDX);
+    }
+    if (!raxUsed) {
+      registers.deallocate(Register.RAX);
+    }
+    // not required if it's already supposed to be in eax
+    if (op.operator() == TokenType.DIV && !destName.equals(Register.RAX.name32)) {
+      // eax has dividend
+      emit("mov %s, EAX ; dividend", destName);
+    }
+    if (op.operator() == TokenType.MOD && !destName.equals(Register.RDX.name32)) {
+      // edx has remainder
+      emit("mov %s, EDX ; remainder", destName);
+    }
+    if (!destName.equals(Register.RDX.name32)) {
+      condPop(Register.RDX, rdxUsed);
+    } else {
+      // pseudo pop
+      emit("add rsp, 8");
+    }
+    if (!destName.equals(Register.RAX.name32)) {
+      condPop(Register.RAX, raxUsed);
+    } else {
+      // pseudo pop
+      emit("add rsp, 8");
     }
     deallocate(op.left());
     deallocate(op.right());
