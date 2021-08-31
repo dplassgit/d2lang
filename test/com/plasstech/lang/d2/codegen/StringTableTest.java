@@ -91,6 +91,7 @@ public class StringTableTest {
     table.addEntry("different");
     table.addEntry("not different");
     table.addEntry("differently");
+    table.addEntry("different from");
 
     System.err.println(table.orderedEntries());
 

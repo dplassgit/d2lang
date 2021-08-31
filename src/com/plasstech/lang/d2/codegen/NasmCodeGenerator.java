@@ -42,9 +42,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   // its register. (Maybe put this feature into Registers? Maybe make an "Aliases" object?)
   private final Stack<String> tempStack = new Stack<>();
 
+  private StringTable stringTable;
+
   @Override
   public State execute(State input) {
-    StringTable stringTable = new StringFinder().execute(input.lastIlCode());
+    stringTable = new StringFinder().execute(input.lastIlCode());
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -81,7 +83,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         }
       }
     }
-    // TODO: only emit these if we need to.
+
+    // TODO: only emit these if we need to. Probably can do this in the StringFinder
     emit("__PRINTF_NUMBER_FMT: db \"%%d\", 0");
     emit("__TRUE: db \"true\", 0");
     emit("__FALSE: db \"false\", 0");
@@ -174,8 +177,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           }
           emit("call printf           ; printf(message)");
           emit("add rsp, 0x28         ; Remove shadow space");
+        } else if (arg.type() == VarType.STRING) {
+          // String, hopefully.
+          emit("mov RCX, %s ; First argument is address of message", argVal);
+          emit("call printf           ; printf(message)");
+          emit("add rsp, 0x28         ; Remove shadow space");
         } else {
-          fail("Cannot print string yet: %s", arg);
+          fail("Cannot print %s yet", arg);
         }
         condPop(Register.RDX, pushedRdx);
         condPop(Register.RCX, pushedRcx);
@@ -426,6 +434,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("; Allocating %s to %s", destination, reg);
         return registerNameSized(reg, destination.type());
       case GLOBAL:
+        // TODO: this is wrong if it's a string.
         return "[" + destination.name() + "]";
       default:
         fail("Cannot generate %s destination %s yet", destination.storage(), destination);
@@ -491,6 +500,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           return "1";
         }
         return "0";
+      } else if (operand.type() == VarType.STRING) {
+        // look it up in the string table.
+        ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
+        StringEntry entry = stringTable.lookup(stringConst.value());
+        return entry.name();
       }
       fail("Cannot generate %s operand %s yet", operand.storage(), operand);
       return null;
@@ -502,6 +516,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     switch (operand.storage()) {
       case GLOBAL:
+        // TODO: this is wrong if string.
         return "[" + operand.toString() + "]";
       default:
         fail("Cannot generate %s operand %s yet", operand.storage(), operand);

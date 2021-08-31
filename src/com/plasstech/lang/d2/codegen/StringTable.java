@@ -36,8 +36,8 @@ public class StringTable {
         for (int parent = 0; parent < child; ++parent) {
           StringEntry parentEntry = orderedEntries.get(parent);
           //    a. go from largest to smallest to find a good "parent".
-          int offset = parentEntry.value().lastIndexOf(childValue);
-          if (offset != -1) {
+          if (parentEntry.value().endsWith(childValue)) {
+            int offset = parentEntry.value().lastIndexOf(childValue);
             //    b. if found a good parent, replace child with relative
             RelativeStringConstant newChild =
                 new RelativeStringConstant(childEntry.name(), parentEntry, offset);

@@ -36,9 +36,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void printString() throws Exception {
-    execute("a='hello' b='lo' print 'printString'", "printString");
+    execute("print 'hello world'", "printString");
   }
 
   @Test
@@ -53,8 +52,14 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void printVariable() throws Exception {
-    execute("a=3 print a", "printVariable");
+  public void printIntVariable() throws Exception {
+    execute("a=3 print a", "printIntVariable");
+  }
+
+  @Test
+  @Ignore
+  public void printStringVariable() throws Exception {
+    execute("a='hello' print a", "printStringVariable");
   }
 
   @Test
@@ -180,8 +185,14 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void assign() throws Exception {
-    execute("a=3 b=a a=4 print b print a", "assign");
+  public void assignInt() throws Exception {
+    execute("a=3 b=a a=4 print b print a", "assignInt");
+  }
+
+  @Test
+  @Ignore
+  public void assignString() throws Exception {
+    execute("a='hello' b='lo' print b print a", "assignString");
   }
 
   @Test
