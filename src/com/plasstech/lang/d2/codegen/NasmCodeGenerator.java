@@ -44,6 +44,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public State execute(State input) {
+    StringTable stringTable = new StringFinder().execute(input.lastIlCode());
+
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
     if (input.filename() != null) {
@@ -84,6 +86,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("__TRUE: db \"true\", 0");
     emit("__FALSE: db \"false\", 0");
     emit("__EXIT_MSG: db \"ERROR: \", 0");
+    for (StringEntry entry : stringTable.orderedEntries()) {
+      emit(entry.dataEntry());
+    }
 
     emit0("\nsection .text\n");
 

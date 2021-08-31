@@ -35,10 +35,10 @@ public class NasmCodeGeneratorTest {
     dir = Files.createTempDir();
   }
 
-  @Ignore
   @Test
+  @Ignore
   public void printString() throws Exception {
-    execute("print 'printString'", "printString");
+    execute("a='hello' b='lo' print 'printString'", "printString");
   }
 
   @Test
