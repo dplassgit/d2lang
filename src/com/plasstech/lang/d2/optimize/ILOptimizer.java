@@ -19,6 +19,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
         ImmutableList.of(
             new ArithmeticOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
+            new PrintOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),

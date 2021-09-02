@@ -55,7 +55,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   protected void preProcess() {}
 
   /** Return the opcode at the given IP, if it's in range. Otherwise, return null. */
-  protected Op getOpAt(int theIp) {
+  protected final Op getOpAt(int theIp) {
     if (theIp < code.size()) {
       return code.get(theIp);
     }
@@ -63,7 +63,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   }
 
   /** Replace the op at the given ip with the given op. */
-  protected void replaceAt(int theIp, Op newOp) {
+  protected final void replaceAt(int theIp, Op newOp) {
     setChanged(true);
     logger
         .at(loggingLevel)
@@ -73,23 +73,23 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   }
 
   /** Replace the current op with the given op. */
-  protected void replaceCurrent(Op newOp) {
+  protected final void replaceCurrent(Op newOp) {
     replaceAt(ip, newOp);
   }
 
   /** Replace the op at the given ip with a nop. */
-  protected void deleteAt(int theIp) {
+  protected final void deleteAt(int theIp) {
     Op theOp = code.get(theIp);
     Op newOp = new Nop(theOp);
     replaceAt(theIp, newOp);
   }
 
   /** Replace the current op with a nop. */
-  protected void deleteCurrent() {
+  protected final void deleteCurrent() {
     deleteAt(ip);
   }
 
-  protected int ip() {
+  protected final int ip() {
     return ip;
   }
 

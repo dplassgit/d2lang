@@ -46,8 +46,8 @@ public class TestUtils {
     System.out.println(Joiner.on("").join(optimizedResult.environment().output()));
 
     assertWithMessage("Output should be the same")
-        .that(optimizedResult.environment().output())
-        .isEqualTo(unoptimizedResult.environment().output());
+        .that(Joiner.on("").join(optimizedResult.environment().output()))
+        .isEqualTo(Joiner.on("").join(unoptimizedResult.environment().output()));
     assertWithMessage("Environment should be the same")
         .that(optimizedResult.environment().variables())
         .isEqualTo(unoptimizedResult.environment().variables());
