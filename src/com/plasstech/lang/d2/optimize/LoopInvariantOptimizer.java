@@ -38,11 +38,10 @@ import com.plasstech.lang.d2.type.SymbolStorage;
  *  5. For temps: if a temp is set to a value that is not itself set in the loop, it's invariant.
  * </pre>
  */
-class LoopInvariantOptimizer implements Optimizer {
+class LoopInvariantOptimizer extends DefaultOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Level loggingLevel;
-  private boolean changed;
   private ArrayList<Op> code;
 
   LoopInvariantOptimizer(int debugLevel) {
@@ -52,7 +51,7 @@ class LoopInvariantOptimizer implements Optimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> program) {
     code = new ArrayList<>(program);
-    changed = false;
+    setChanged(false);
 
     // Find loop starts & ends
     List<Block> loops = new LoopFinder(code).findLoops();
@@ -64,18 +63,13 @@ class LoopInvariantOptimizer implements Optimizer {
       while (optimizeLoop(loop)) {
         // OH NO the starts and ends may have moved...do we just give up? or re-start?
         iterations++;
-        changed = true;
+        setChanged(true);
       }
     }
 
     logger.at(loggingLevel).log("LoopInvariant loops (heh): %d", iterations);
 
     return ImmutableList.copyOf(code);
-  }
-
-  @Override
-  public boolean isChanged() {
-    return changed;
   }
 
   private boolean optimizeLoop(Block loop) {

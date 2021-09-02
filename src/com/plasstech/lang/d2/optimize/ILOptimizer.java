@@ -6,10 +6,9 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
-public class ILOptimizer implements Optimizer, Phase {
+public class ILOptimizer extends DefaultOptimizer implements Phase {
   private int debugLevel;
   private final ImmutableList<Optimizer> children;
-  private boolean changed;
 
   public ILOptimizer() {
     this(0);
@@ -42,15 +41,6 @@ public class ILOptimizer implements Optimizer, Phase {
   public ILOptimizer setDebugLevel(int debugLevel) {
     this.debugLevel = debugLevel;
     return this;
-  }
-
-  @Override
-  public boolean isChanged() {
-    return changed;
-  }
-
-  public void setChanged(boolean changed) {
-    this.changed = changed;
   }
 
   @Override

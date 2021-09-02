@@ -7,14 +7,28 @@ import java.util.logging.Level;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.LogSites;
-import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
+import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Inc;
+import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
+import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.Stop;
+import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 
-abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
+abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private boolean changed;
   private int ip;
 
   protected final Level loggingLevel;
@@ -39,15 +53,6 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   protected void postProcess() {}
 
   protected void preProcess() {}
-
-  @Override
-  public boolean isChanged() {
-    return changed;
-  }
-
-  public void setChanged(boolean changed) {
-    this.changed = changed;
-  }
 
   /** Return the opcode at the given IP, if it's in range. Otherwise, return null. */
   protected Op getOpAt(int theIp) {
@@ -87,4 +92,49 @@ abstract class LineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   protected int ip() {
     return ip;
   }
+
+  @Override
+  public void visit(Label op) {}
+
+  @Override
+  public void visit(IfOp op) {}
+
+  @Override
+  public void visit(Transfer op) {}
+
+  @Override
+  public void visit(BinOp op) {}
+
+  @Override
+  public void visit(Return op) {}
+
+  @Override
+  public void visit(Stop op) {}
+
+  @Override
+  public void visit(SysCall op) {}
+
+  @Override
+  public void visit(UnaryOp op) {}
+
+  @Override
+  public void visit(Goto op) {}
+
+  @Override
+  public void visit(Call op) {}
+
+  @Override
+  public void visit(ProcExit op) {}
+
+  @Override
+  public void visit(ProcEntry op) {}
+
+  @Override
+  public void visit(Dec op) {}
+
+  @Override
+  public void visit(Inc op) {}
+
+  @Override
+  public void visit(AllocateOp op) {}
 }
