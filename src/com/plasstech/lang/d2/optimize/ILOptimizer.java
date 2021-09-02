@@ -25,7 +25,8 @@ public class ILOptimizer implements Optimizer, Phase {
             new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
             new InlineOptimizer(debugLevel),
-            new LoopInvariantOptimizer(debugLevel) // ,
+            new LoopInvariantOptimizer(debugLevel),
+            new NopOptimizer() // ,
             ));
     setDebugLevel(debugLevel);
   }
