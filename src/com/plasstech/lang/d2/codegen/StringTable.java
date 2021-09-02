@@ -11,8 +11,16 @@ import com.google.common.base.Preconditions;
 
 public class StringTable {
   private final List<StringEntry> orderedEntries = new ArrayList<>();
-  // Values sorted by descending length
-  private final Set<String> values = new TreeSet<>((a, b) -> b.length() - a.length());
+  // Values sorted by descending length, with hash as tiebreak
+  private final Set<String> values =
+      new TreeSet<>(
+          (a, b) -> {
+            int lenDiff = b.length() - a.length();
+            if (lenDiff != 0) {
+              return lenDiff;
+            }
+            return b.hashCode() - a.hashCode();
+          });
   private final Map<String, StringEntry> entries = new HashMap<>();
   private int index;
 
@@ -73,7 +81,8 @@ public class StringTable {
 
   public StringEntry lookup(String value) {
     regenerateEntries();
-    Preconditions.checkState(entries.containsKey(value), "Does not contain value %s", value);
+    Preconditions.checkState(
+        entries.containsKey(value), "Does not contain value %s: %s", value, orderedEntries);
     return entries.get(value);
   }
 

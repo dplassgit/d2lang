@@ -407,9 +407,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
         break;
       case MESSAGE:
         if (interactive) {
-          System.err.println("SYSTEM ERROR: " + resolve(op.arg()));
+          System.err.println("ERROR: " + resolve(op.arg()));
         }
-        rootEnv.addOutput("SYSTEM ERROR: " + resolve(op.arg()));
+        rootEnv.addOutput("ERROR: " + resolve(op.arg()));
         break;
       case INPUT:
         assert (op.arg() instanceof Location);

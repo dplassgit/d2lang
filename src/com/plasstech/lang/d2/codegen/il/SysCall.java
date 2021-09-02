@@ -1,8 +1,17 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import com.google.common.escape.Escaper;
+import com.google.common.escape.Escapers;
 import com.plasstech.lang.d2.codegen.Operand;
 
 public class SysCall extends Op {
+  private static final Escaper ESCAPER =
+      Escapers.builder()
+          .addEscape('\n', "\\n")
+          .addEscape('\t', "\\t")
+          .addEscape('\"', "\\\"")
+          .build();
+
   public enum Call {
     MESSAGE,
     PRINT,
@@ -27,11 +36,11 @@ public class SysCall extends Op {
 
   @Override
   public String toString() {
-    switch(call) {
+    switch (call) {
       case PRINT:
-        return String.format("printf(\"%%s\", %s);", arg);
+        return String.format("printf(\"%%s\", %s);", ESCAPER.escape(arg.toString()));
       case MESSAGE:
-        return String.format("printf(\"ERROR: %%s\", %s);", arg);
+        return String.format("printf(\"ERROR: %%s\", %s);", ESCAPER.escape(arg.toString()));
       case INPUT:
         return String.format("%s=scanf();", arg);
       default:

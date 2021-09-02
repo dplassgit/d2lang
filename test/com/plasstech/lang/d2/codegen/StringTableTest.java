@@ -24,6 +24,13 @@ public class StringTableTest {
   }
 
   @Test
+  public void addEntry_duplicateLength() {
+    table.addEntry("a");
+    table.addEntry("b");
+    assertThat(table.size()).isEqualTo(2);
+  }
+
+  @Test
   public void addEntry_twoUnrelated() {
     table.addEntry("constant");
     StringEntry entry = table.lookup("constant");
@@ -66,7 +73,6 @@ public class StringTableTest {
     RelativeStringConstant entryAgain = (RelativeStringConstant) table.lookup("constant");
     assertThat(entryAgain.value()).isEqualTo("constant");
     assertThat(entryAgain.offset()).isEqualTo(2);
-    System.err.println(table.orderedEntries());
   }
 
   @Test
@@ -74,7 +80,6 @@ public class StringTableTest {
     table.addEntry("constant");
     table.addEntry("t");
     table.addEntry("tant");
-    System.err.println(table.orderedEntries());
 
     StringEntry entry = table.lookup("constant");
     RelativeStringConstant entry3 = (RelativeStringConstant) table.lookup("t");
@@ -92,8 +97,6 @@ public class StringTableTest {
     table.addEntry("not different");
     table.addEntry("differently");
     table.addEntry("different from");
-
-    System.err.println(table.orderedEntries());
 
     StringEntry entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");

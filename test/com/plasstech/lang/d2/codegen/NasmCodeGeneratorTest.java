@@ -37,7 +37,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void printString() throws Exception {
-    execute("print 'hello world'", "printString");
+    execute("println 'hello world'", "println");
+    execute("print 'hello' print 'world' print 'hello world'", "printString");
+    //    execute("println 'hello world \"ln' println '\"ln'", "println");
   }
 
   @Test
@@ -225,17 +227,6 @@ public class NasmCodeGeneratorTest {
     String sourceCode = "exit 'exitErrorGlobal'";
     State state = TestUtils.compile(sourceCode);
     state = state.addFilename("exitErrorGlobal");
-    state = new NasmCodeGenerator().execute(state);
-    System.err.println(Joiner.on('\n').join(state.asmCode()));
-    assertThat(state.asmCode()).isNotEmpty();
-  }
-
-  @Test
-  @Ignore
-  public void exitError() {
-    String sourceCode = "exit 'exit'";
-    State state = TestUtils.compile(sourceCode);
-    state = state.addFilename("exitError");
     state = new NasmCodeGenerator().execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
     assertThat(state.asmCode()).isNotEmpty();
