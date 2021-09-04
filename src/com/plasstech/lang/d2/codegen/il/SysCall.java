@@ -8,6 +8,7 @@ public class SysCall extends Op {
   private static final Escaper ESCAPER =
       Escapers.builder()
           .addEscape('\n', "\\n")
+          .addEscape('\r', "\\r")
           .addEscape('\t', "\\t")
           .addEscape('\"', "\\\"")
           .build();

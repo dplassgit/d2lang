@@ -29,7 +29,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
  *  * for each string codegen asks the string finder -- based on the constant - which name to reference
  */
 
-public class StringFinder extends DefaultOpcodeVisitor {
+class StringFinder extends DefaultOpcodeVisitor {
   private final StringTable stringTable = new StringTable();
 
   public StringTable execute(ImmutableList<Op> code) {

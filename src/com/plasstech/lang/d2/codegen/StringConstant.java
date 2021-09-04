@@ -7,17 +7,17 @@ import com.google.common.collect.ImmutableMap;
 class StringConstant extends StringEntry {
   private static final Map<Character, Integer> ESCAPES =
       ImmutableMap.of(
-          '\n', 10,
+          '\n', 13, // NOTYPO; printf inserts an extra \\r after each \\n
           '\r', 13,
           '\t', 9,
           '\"', 34);
 
-  public StringConstant(String name, String value) {
+  StringConstant(String name, String value) {
     super(name, value);
   }
 
   @Override
-  public String dataEntry() {
+  String dataEntry() {
     StringBuilder escaped = new StringBuilder();
     boolean inQuote = false;
     for (char c : value().toCharArray()) {

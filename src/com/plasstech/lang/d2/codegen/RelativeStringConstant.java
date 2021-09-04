@@ -11,16 +11,16 @@ class RelativeStringConstant extends StringEntry {
     this.base = source.name();
   }
 
-  public int offset() {
+  int offset() {
     return offset;
   }
 
-  public String base() {
+  String base() {
     return base;
   }
 
   @Override
-  public String dataEntry() {
+  String dataEntry() {
     return String.format("%s EQU %s+%d", name(), base(), offset());
   }
 }

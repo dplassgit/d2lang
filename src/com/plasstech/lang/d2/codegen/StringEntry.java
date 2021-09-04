@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
-public abstract class StringEntry {
+abstract class StringEntry {
 
   private final String name;
   private final String value;
@@ -17,11 +17,11 @@ public abstract class StringEntry {
     return dataEntry();
   }
 
-  public String name() {
+  String name() {
     return name;
   }
 
-  public String value() {
+  String value() {
     return value;
   }
 }

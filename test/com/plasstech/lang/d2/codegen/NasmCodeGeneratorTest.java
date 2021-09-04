@@ -36,10 +36,15 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void printString() throws Exception {
+  public void printDuplicateStrings() throws Exception {
+    execute("print 'hello' print 'world' print 'hello world'", "printDuplicateStrings");
+  }
+
+  @Test
+  public void printLn() throws Exception {
     execute("println 'hello world'", "println");
-    execute("print 'hello' print 'world' print 'hello world'", "printString");
-    //    execute("println 'hello world \"ln' println '\"ln'", "println");
+    execute("println 'println with cr\\r' println 'println with newline\\n'", "printlnWithCrLf");
+    execute("print 'print\"ln' println '\"mixed'", "printlnMixed");
   }
 
   @Test
@@ -288,12 +293,13 @@ public class NasmCodeGeneratorTest {
     InputStream stream = process.getInputStream();
     assertNoProcessError(process, "Executable");
 
-    String compiledOutput = new String(ByteStreams.toByteArray(stream));
+    String compiledOutput = new String(ByteStreams.toByteArray(stream)).replaceAll("\n", "\r");
 
     Executor ee = new Executor(sourceCode);
     ee.setOptimize(true);
     ExecutionResult result = ee.execute();
-    String interpreterOutput = Joiner.on("").join(result.environment().output());
+    String interpreterOutput =
+        Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r");
 
     assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }
