@@ -64,7 +64,6 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void printStringVariable() throws Exception {
     execute("a='hello' print a", "printStringVariable");
   }
@@ -160,7 +159,7 @@ public class NasmCodeGeneratorTest {
             + "  n2 = nth"
             + "}"
             + "print nth",
-        "realfib");
+        "fib");
   }
 
   @Test
@@ -197,9 +196,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void assignString() throws Exception {
-    execute("a='hello' b='lo' print b print a", "assignString");
+    execute("a='hello' b=a print b", "assignString");
   }
 
   @Test
@@ -228,24 +226,14 @@ public class NasmCodeGeneratorTest {
 
   @Test
   @Ignore
-  public void exitErrorGlobal() {
-    String sourceCode = "exit 'exitErrorGlobal'";
-    State state = TestUtils.compile(sourceCode);
-    state = state.addFilename("exitErrorGlobal");
-    state = new NasmCodeGenerator().execute(state);
-    System.err.println(Joiner.on('\n').join(state.asmCode()));
-    assertThat(state.asmCode()).isNotEmpty();
+  public void exitErrorGlobal() throws Exception {
+    execute("exit 'exitErrorGlobal'", "exitErrorGlobal");
   }
 
   @Test
   @Ignore
-  public void exitMain() {
-    String sourceCode = "main {exit 'exitMain'}";
-    State state = TestUtils.compile(sourceCode);
-    state = state.addFilename("exitMain");
-    state = new NasmCodeGenerator().execute(state);
-    System.err.println(Joiner.on('\n').join(state.asmCode()));
-    assertThat(state.asmCode()).isNotEmpty();
+  public void exitMain() throws Exception {
+    execute("main {exit 'exitMain'}", "exitMain");
   }
 
   @Test

@@ -126,10 +126,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     String sourceLoc = resolve(source);
     Location destination = op.destination();
-    String destLoc = resolveDestination(destination);
+    String destLoc = resolve(destination);
     String size = dataSize(op.source().type());
+
+    if (source.type() == VarType.STRING) {
+      // move from sourceLoc to temp
+      // then from temp to dest
+      Register tempReg = registers.allocate();
+      // TODO: deal with out-of-registers
+      String tempName = registerNameSized(tempReg, op.source().type());
+      emit("mov %s, [%s]", tempName, sourceLoc);
+      emit("mov [%s], %s", destLoc, tempName);
+      registers.deallocate(tempReg);
+      return;
+    }
+
     if (source.isConstant()) {
-      // TODO: fails for strings.
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
       if (!sourceLoc.startsWith("[")) {
@@ -258,7 +270,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
     // 3. determine dest location
-    String destName = resolveDestination(op.destination());
+    String destName = resolve(op.destination());
     // 4. mov dest, left
     emit("mov %s %s, %s ; binary setup", size, destName, leftName);
 
@@ -352,7 +364,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void generateDivMod(BinOp op, String leftName, String rightName) {
     // 3. determine dest location
-    String destName = resolveDestination(op.destination());
+    String destName = resolve(op.destination());
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
@@ -410,38 +422,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     return size;
   }
 
-  private String resolveDestination(Location destination) {
-    Register reg = aliases.get(destination.name());
-    if (reg != null) {
-      return reg.toString();
-    }
-    switch (destination.storage()) {
-      case TEMP:
-        reg = registers.allocate();
-        // if (reg == null) {
-        //   // deal with out-of-registers situation
-        //   // pick the least recently used one (say, the first one)
-        //   reg = lruRegs.remove(0);
-        //   // don't have to deallocate, since we're just re-using the register out from
-        // underneath
-        //   // the registers object.
-        //   // TODO: push the value onto the stack
-        //   // remove the alias too.
-        //   aliases.inverse().remove(reg);
-        // }
-        // lruRegs.add(reg); // add to the end.
-        aliases.put(destination.name(), reg);
-        emit("; Allocating %s to %s", destination, reg);
-        return registerNameSized(reg, destination.type());
-      case GLOBAL:
-        // TODO: this is wrong if it's a string.
-        return "[" + destination.name() + "]";
-      default:
-        fail("Cannot generate %s destination %s yet", destination.storage(), destination);
-        return null;
-    }
-  }
-
   private static String registerNameSized(Register reg, VarType type) {
     if (type == VarType.INT) {
       return reg.name32;
@@ -458,7 +438,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 2. apply op
     // 3. store in destination
     Location destination = op.destination();
-    String destName = resolveDestination(destination);
+    String destName = resolve(destination);
     // apply op
     switch (op.operator()) {
       case BIT_NOT:
@@ -491,7 +471,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private String resolve(Operand operand) {
-    if (operand.storage() == SymbolStorage.IMMEDIATE) {
+    if (operand.isConstant()) {
       if (operand.type() == VarType.INT) {
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
@@ -510,16 +490,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return null;
     }
 
-    Register sourceReg = aliases.get(operand.toString());
-    if (sourceReg != null) {
-      return registerNameSized(sourceReg, operand.type());
+    Location location = (Location) operand;
+    Register reg = aliases.get(location.toString());
+    if (reg != null) {
+      return registerNameSized(reg, location.type());
     }
-    switch (operand.storage()) {
+    switch (location.storage()) {
+      case TEMP:
+        reg = registers.allocate();
+        // if (reg == null) {
+        //   // deal with out-of-registers situation
+        //   // pick the least recently used one (say, the first one)
+        //   reg = lruRegs.remove(0);
+        //   // don't have to deallocate, since we're just re-using the register out from
+        // underneath
+        //   // the registers object.
+        //   // TODO: push the value onto the stack
+        //   // remove the alias too.
+        //   aliases.inverse().remove(reg);
+        // }
+        // lruRegs.add(reg); // add to the end.
+        aliases.put(location.name(), reg);
+        emit("; Allocating %s to %s", location, reg);
+        return registerNameSized(reg, location.type());
       case GLOBAL:
-        // TODO: this is wrong if string.
-        return "[" + operand.toString() + "]";
+        if (location.type() == VarType.BOOL || location.type() == VarType.INT) {
+          return "[" + location.name() + "]";
+        } else {
+          // string or record or array
+          return location.name();
+        }
       default:
-        fail("Cannot generate %s operand %s yet", operand.storage(), operand);
+        fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;
     }
   }
