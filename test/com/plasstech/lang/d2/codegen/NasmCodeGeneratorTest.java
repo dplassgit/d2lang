@@ -220,6 +220,17 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void stringLength() throws Exception {
+    execute(
+        "a='hello' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", "stringLength");
+  }
+
+  @Test
+  public void constStringLength() throws Exception {
+    execute("b=length('hello' + 'world') print b", "constStringLength");
+  }
+
+  @Test
   public void exit() throws Exception {
     execute("exit", "exit");
   }

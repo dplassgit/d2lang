@@ -59,8 +59,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
 
     emit0("global main"); // required
-    //    emit0("extern puts"); // we'll use this for println
     emit0("extern printf"); // optional
+    emit0("extern strlen"); // optional
     emit0("extern exit"); // required
 
     // Probably what we should do is:
@@ -165,7 +165,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.call()) {
       case PRINT:
         String argVal = resolve(arg);
-        emit("sub rsp, 0x28         ; Reserve the shadow space");
+        emit("sub RSP, 0x28         ; Reserve the shadow space");
         boolean pushedRcx = condPush(Register.RCX);
         boolean pushedRdx = false;
         if (arg.type() == VarType.INT) {
@@ -173,7 +173,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov RCX, __PRINTF_NUMBER_FMT ; First argument is address of message");
           emit("mov RDX, %s           ; Second argument is parameter", argVal);
           emit("call printf           ; printf(message)");
-          emit("add rsp, 0x28         ; Remove shadow space");
+          emit("add RSP, 0x28         ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
             emit("mov RCX, __TRUE");
@@ -188,12 +188,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("cmovz RCX, RDX");
           }
           emit("call printf           ; printf(message)");
-          emit("add rsp, 0x28         ; Remove shadow space");
+          emit("add RSP, 0x28         ; Remove shadow space");
         } else if (arg.type() == VarType.STRING) {
           // String, hopefully.
           emit("mov RCX, %s ; First argument is address of message", argVal);
           emit("call printf           ; printf(message)");
-          emit("add rsp, 0x28         ; Remove shadow space");
+          emit("add RSP, 0x28         ; Remove shadow space");
         } else {
           fail("Cannot print %s yet", arg);
         }
@@ -400,13 +400,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       condPop(Register.RDX, rdxUsed);
     } else {
       // pseudo pop
-      emit("add rsp, 8");
+      emit("add RSP, 8");
     }
     if (!destName.equals(Register.RAX.name32)) {
       condPop(Register.RAX, raxUsed);
     } else {
       // pseudo pop
-      emit("add rsp, 8");
+      emit("add RSP, 8");
     }
     deallocate(op.left());
     deallocate(op.right());
@@ -458,6 +458,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("neg %s  ; unary negation", destName);
         break;
       case LENGTH:
+        boolean pushedRcx = condPush(Register.RCX);
+        boolean pushedRax = condPush(Register.RAX);
+        emit("sub RSP, 0x28         ; Reserve the shadow space");
+        emit("mov RCX, %s    ; argument is address of string", sourceName);
+        emit("call strlen    ; strlen(message)");
+        emit("add RSP, 0x28  ; Remove shadow space");
+        if (destName.equals(Register.RAX.name32)) {
+          // pseudo pop; eax already has the length.
+          emit("add RSP, 8");
+        } else {
+          // NOTE: eax not rax, because lengths are always ints (32 bits)
+          emit("mov %s, EAX    ; %s = length(%s)", destName, destName, sourceName);
+          condPop(Register.RAX, pushedRax);
+        }
+
+        if (destName.equals(Register.RCX.name32)) {
+          // pseudo pop
+          emit("add RSP, 8");
+        } else {
+          condPop(Register.RCX, pushedRcx);
+        }
+        break;
       case ASC:
       case CHR:
       default:
