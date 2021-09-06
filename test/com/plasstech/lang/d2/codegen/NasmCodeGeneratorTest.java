@@ -23,7 +23,6 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.Executor;
 import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.testing.TestUtils;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorTest {
@@ -240,12 +239,6 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void stringLength() throws Exception {
-    execute(
-        "a='hello' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", "stringLength");
-  }
-
-  @Test
   public void constStringLength() throws Exception {
     execute("b=length('hello' + 'world') print b", "constStringLength");
   }
@@ -272,8 +265,23 @@ public class NasmCodeGeneratorTest {
     execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec");
   }
 
+  @Test
+  public void stringLength() throws Exception {
+    execute(
+        "a='hello' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", "stringLength");
+  }
+
+  @Test
+  @Ignore
+  public void asc() throws Exception {
+    execute("a='hello' b=asc(a) print b", "asc");
+  }
+
   private void execute(String sourceCode, String filename) throws Exception {
-    State state = TestUtils.compile(sourceCode);
+    Executor ee = new Executor(sourceCode);
+    ee.setOptimize(true);
+    ExecutionResult result = ee.execute();
+    State state = ee.state();
     System.err.println(Joiner.on('\n').join(state.lastIlCode()));
     state = state.addFilename(filename);
     
@@ -314,9 +322,6 @@ public class NasmCodeGeneratorTest {
 
     String compiledOutput = new String(ByteStreams.toByteArray(stream));
 
-    Executor ee = new Executor(sourceCode);
-    ee.setOptimize(true);
-    ExecutionResult result = ee.execute();
     // the compiler converts \n to \r\n, so we have to do the same.
     String interpreterOutput =
         Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");

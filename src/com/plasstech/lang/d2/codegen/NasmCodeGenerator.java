@@ -206,22 +206,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  /** Conditionally push the register, if it's already in use. */
-  private boolean condPush(Register reg) {
-    if (registers.isAllocated(reg)) {
-      emit("push %s", reg.name64);
-      return true;
-    }
-    return false;
-  }
-
-  /** Conditionally pop the register, if it's been pushed. */
-  private void condPop(Register reg, boolean pushed) {
-    if (pushed) {
-      emit("pop %s", reg.name64);
-    }
-  }
-
   @Override
   public void visit(Dec op) {
     emit("dec dword %s", resolve(op.target()));
@@ -240,19 +224,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // deallocate
     Operand operand = op.condition();
     deallocate(operand);
-  }
-
-  private void deallocate(Operand operand) {
-    if (operand.storage() == SymbolStorage.TEMP) {
-      // now that we used the temp, unallocate it (?)
-      String operandName = operand.toString();
-      Register reg = aliases.get(operandName);
-      if (reg != null) {
-        emit("; Deallocating %s from %s", operand, reg);
-        aliases.remove(operandName);
-        registers.deallocate(reg);
-      }
-    }
   }
 
   @Override
@@ -412,29 +383,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     deallocate(op.right());
   }
 
-  private static String dataSize(VarType type) {
-    String size = "";
-    if (type == VarType.INT) {
-      size = "dword";
-    } else if (type == VarType.BOOL) {
-      size = "byte";
-    }
-    return size;
-  }
-
-  private static String registerNameSized(Register reg, VarType type) {
-    if (type == VarType.INT) {
-      return reg.name32;
-    } else if (type == VarType.BOOL) {
-      return reg.name8;
-    }
-    return reg.name64;
-  }
-
   @Override
   public void visit(UnaryOp op) {
     // 1. get source location name
-    String sourceName = resolve(op.operand());
+    Operand source = op.operand();
+    String sourceName = resolve(source);
     // 2. apply op
     // 3. store in destination
     Location destination = op.destination();
@@ -458,29 +411,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("neg %s  ; unary negation", destName);
         break;
       case LENGTH:
-        boolean pushedRcx = condPush(Register.RCX);
-        boolean pushedRax = condPush(Register.RAX);
-        emit("sub RSP, 0x28         ; Reserve the shadow space");
-        emit("mov RCX, %s    ; argument is address of string", sourceName);
-        emit("call strlen    ; strlen(message)");
-        emit("add RSP, 0x28  ; Remove shadow space");
-        if (destName.equals(Register.RAX.name32)) {
-          // pseudo pop; eax already has the length.
-          emit("add RSP, 8");
-        } else {
-          // NOTE: eax not rax, because lengths are always ints (32 bits)
-          emit("mov %s, EAX    ; %s = length(%s)", destName, destName, sourceName);
-          condPop(Register.RAX, pushedRax);
-        }
+        if (source.type() == VarType.STRING) {
+          boolean pushedRcx = condPush(Register.RCX);
+          boolean pushedRax = condPush(Register.RAX);
+          emit("sub RSP, 0x28         ; Reserve the shadow space");
+          emit("mov RCX, %s    ; argument is address of string", sourceName);
+          emit("call strlen    ; strlen(message)");
+          emit("add RSP, 0x28  ; Remove shadow space");
+          if (destName.equals(Register.RAX.name32)) {
+            // pseudo pop; eax already has the length.
+            emit("add RSP, 8");
+          } else {
+            // NOTE: eax not rax, because lengths are always ints (32 bits)
+            emit("mov %s, EAX    ; %s = length(%s)", destName, destName, sourceName);
+            condPop(Register.RAX, pushedRax);
+          }
 
-        if (destName.equals(Register.RCX.name32)) {
-          // pseudo pop
-          emit("add RSP, 8");
+          if (destName.equals(Register.RCX.name32)) {
+            // pseudo pop
+            emit("add RSP, 8");
+          } else {
+            condPop(Register.RCX, pushedRcx);
+          }
         } else {
-          condPop(Register.RCX, pushedRcx);
+          fail("Cannot generate %s yet", op);
         }
         break;
       case ASC:
+        // 1. get address.
+        // 2. get first character
+        // 3. move to dest.
+        fail("Cannot generate %s yet", op);
+        break;
       case CHR:
       default:
         fail("Cannot generate %s yet", op);
@@ -488,8 +450,33 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private void fail(String format, Object... values) {
-    throw new UnsupportedOperationException(String.format(format, values));
+  /** Conditionally push the register, if it's already in use. */
+  private boolean condPush(Register reg) {
+    if (registers.isAllocated(reg)) {
+      emit("push %s", reg.name64);
+      return true;
+    }
+    return false;
+  }
+
+  /** Conditionally pop the register, if it's been pushed. */
+  private void condPop(Register reg, boolean pushed) {
+    if (pushed) {
+      emit("pop %s", reg.name64);
+    }
+  }
+
+  private void deallocate(Operand operand) {
+    if (operand.storage() == SymbolStorage.TEMP) {
+      // now that we used the temp, unallocate it (?)
+      String operandName = operand.toString();
+      Register reg = aliases.get(operandName);
+      if (reg != null) {
+        emit("; Deallocating %s from %s", operand, reg);
+        aliases.remove(operandName);
+        registers.deallocate(reg);
+      }
+    }
   }
 
   private String resolve(Operand operand) {
@@ -548,10 +535,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  // Emit at column 0
-  private void emit0(String format, Object... values) {
-    asm.add(String.format(format, values));
-    logger.atFine().log(String.format(format, values));
+  private static String dataSize(VarType type) {
+    String size = "";
+    if (type == VarType.INT) {
+      size = "dword";
+    } else if (type == VarType.BOOL) {
+      size = "byte";
+    }
+    return size;
+  }
+
+  private static String registerNameSized(Register reg, VarType type) {
+    if (type == VarType.INT) {
+      return reg.name32;
+    } else if (type == VarType.BOOL) {
+      return reg.name8;
+    }
+    return reg.name64;
   }
 
   // Emit at column 2
@@ -561,5 +561,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void emit(Op op) {
     emit0("\n  ; %s", op.toString());
+  }
+
+  // Emit at column 0
+  private void emit0(String format, Object... values) {
+    asm.add(String.format(format, values));
+    logger.atFine().log(String.format(format, values));
+  }
+
+  private void fail(String format, Object... values) {
+    throw new UnsupportedOperationException(String.format(format, values));
   }
 }
