@@ -163,6 +163,26 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void fib0() throws Exception {
+    execute(
+        "n=10\r\n"
+            + "n1 = 0\r\n"
+            + "n2 = 1\r\n"
+            + "i=1 while i <= n do i = i+1 {\r\n"
+            + "  nth = n1 + n2\r\n"
+            + "  n1 = n2\r\n"
+            + "  n2 = nth\r\n"
+            + "  print i\r\n"
+            + "  print \"th fib: \"\r\n"
+            + "  println nth\r\n"
+            + "}\r\n"
+            + "println '' // NOTE: cannot just do PRINT (no expression)...\r\n"
+            + "print \"Final fib: \"\r\n"
+            + "println nth",
+        "fib0");
+  }
+
+  @Test
   public void fact() throws Exception {
     execute(
         "      fact = 1 "
@@ -292,13 +312,14 @@ public class NasmCodeGeneratorTest {
     InputStream stream = process.getInputStream();
     assertNoProcessError(process, "Executable");
 
-    String compiledOutput = new String(ByteStreams.toByteArray(stream)).replaceAll("\n", "\r");
+    String compiledOutput = new String(ByteStreams.toByteArray(stream));
 
     Executor ee = new Executor(sourceCode);
     ee.setOptimize(true);
     ExecutionResult result = ee.execute();
+    // the compiler converts \n to \r\n, so we have to do the same.
     String interpreterOutput =
-        Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r");
+        Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
 
     assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }

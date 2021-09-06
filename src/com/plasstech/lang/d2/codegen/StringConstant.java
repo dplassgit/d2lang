@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableMap;
 class StringConstant extends StringEntry {
   private static final Map<Character, Integer> ESCAPES =
       ImmutableMap.of(
-          '\n', 13, // NOTYPO; printf inserts an extra \\r after each \\n
+          '\n', 10,
           '\r', 13,
           '\t', 9,
           '\"', 34);

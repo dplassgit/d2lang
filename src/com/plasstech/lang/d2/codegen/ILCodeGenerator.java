@@ -123,7 +123,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     expr.accept(this);
     emit(new SysCall(SysCall.Call.PRINT, expr.location()));
     if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand<String>("\r")));
+      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand<String>("\n")));
     }
   }
 

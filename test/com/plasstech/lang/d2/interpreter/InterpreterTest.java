@@ -11,7 +11,7 @@ public class InterpreterTest {
   public void stringTest() {
     Environment env = execute("i='hi' println i");
     assertThat(env.getValue("i")).isEqualTo("hi");
-    assertThat(env.output()).containsExactly("hi", "\r");
+    assertThat(env.output()).containsExactly("hi", "\n");
   }
 
   @Test
