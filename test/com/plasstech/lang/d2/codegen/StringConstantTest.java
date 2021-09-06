@@ -33,19 +33,19 @@ public class StringConstantTest {
   @Test
   public void dataEntryLFEnd() {
     StringEntry entry = new StringConstant("name", "value\n");
-    assertThat(entry.dataEntry()).isEqualTo("name: db \"value\", 13, 0");
+    assertThat(entry.dataEntry()).isEqualTo("name: db \"value\", 10, 0");
   }
 
   @Test
   public void dataEntryLFBeginning() {
     StringEntry entry = new StringConstant("name", "\nvalue");
-    assertThat(entry.dataEntry()).isEqualTo("name: db 13, \"value\", 0");
+    assertThat(entry.dataEntry()).isEqualTo("name: db 10, \"value\", 0");
   }
 
   @Test
   public void dataEntryOneLF() {
     StringEntry entry = new StringConstant("name", "\n");
-    assertThat(entry.dataEntry()).isEqualTo("name: db 13, 0");
+    assertThat(entry.dataEntry()).isEqualTo("name: db 10, 0");
   }
 
   @Test
@@ -69,12 +69,12 @@ public class StringConstantTest {
   @Test
   public void dataEntryMultipleLF() {
     StringEntry entry = new StringConstant("name", "\n\n");
-    assertThat(entry.dataEntry()).isEqualTo("name: db 13, 13, 0");
+    assertThat(entry.dataEntry()).isEqualTo("name: db 10, 10, 0");
   }
 
   @Test
   public void dataEntryMultiple() {
     StringEntry entry = new StringConstant("name", "\nhello\tworld\r\n");
-    assertThat(entry.dataEntry()).isEqualTo("name: db 13, \"hello\", 9, \"world\", 13, 13, 0");
+    assertThat(entry.dataEntry()).isEqualTo("name: db 10, \"hello\", 9, \"world\", 13, 10, 0");
   }
 }

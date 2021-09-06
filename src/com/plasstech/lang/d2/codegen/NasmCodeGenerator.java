@@ -165,15 +165,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.call()) {
       case PRINT:
         String argVal = resolve(arg);
-        emit("sub RSP, 0x28         ; Reserve the shadow space");
+        emit("sub RSP, 0x28  ; Reserve the shadow space");
         boolean pushedRcx = condPush(Register.RCX);
         boolean pushedRdx = false;
         if (arg.type() == VarType.INT) {
           pushedRdx = condPush(Register.RDX);
           emit("mov RCX, __PRINTF_NUMBER_FMT ; First argument is address of message");
-          emit("mov RDX, %s           ; Second argument is parameter", argVal);
-          emit("call printf           ; printf(message)");
-          emit("add RSP, 0x28         ; Remove shadow space");
+          emit("mov RDX, %s  ; Second argument is parameter", argVal);
+          emit("call printf  ; printf(message)");
+          emit("add RSP, 0x28  ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
             emit("mov RCX, __TRUE");
@@ -187,13 +187,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("lea RDX, __TRUE");
             emit("cmovz RCX, RDX");
           }
-          emit("call printf           ; printf(message)");
-          emit("add RSP, 0x28         ; Remove shadow space");
+          emit("call printf  ; printf(message)");
+          emit("add RSP, 0x28  ; Remove shadow space");
         } else if (arg.type() == VarType.STRING) {
           // String, hopefully.
           emit("mov RCX, %s ; First argument is address of message", argVal);
-          emit("call printf           ; printf(message)");
-          emit("add RSP, 0x28         ; Remove shadow space");
+          emit("call printf  ; printf(message)");
+          emit("add RSP, 0x28  ; Remove shadow space");
         } else {
           fail("Cannot print %s yet", arg);
         }
@@ -344,13 +344,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registers.reserve(Register.RAX);
     registers.reserve(Register.RDX);
     Register temp = registers.allocate();
-    emit("mov %s, %s ; right", temp.name32, rightName);
+    emit("mov %s, %s  ; denominator", temp.name32, rightName);
     if (!leftName.equals(Register.RAX.name32)) {
-      emit("mov EAX, %s ; left", leftName);
+      emit("mov EAX, %s  ; numerator", leftName);
+    } else {
+      emit("; denominator already in EAX");
     }
     // sign extend eax to edx
     emit("cdq ; sign extend eax to edx");
-    emit("idiv %s ; %s / %s", temp.name32, leftName, rightName);
+    emit("idiv %s  ; %s / %s", temp.name32, leftName, rightName);
     registers.deallocate(temp);
     if (!rdxUsed) {
       registers.deallocate(Register.RDX);
@@ -414,16 +416,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         if (source.type() == VarType.STRING) {
           boolean pushedRcx = condPush(Register.RCX);
           boolean pushedRax = condPush(Register.RAX);
-          emit("sub RSP, 0x28         ; Reserve the shadow space");
-          emit("mov RCX, %s    ; argument is address of string", sourceName);
-          emit("call strlen    ; strlen(message)");
+          emit("sub RSP, 0x28  ; Reserve the shadow space");
+          emit("mov RCX, %s  ; argument is address of string", sourceName);
+          emit("call strlen  ; strlen(message)");
           emit("add RSP, 0x28  ; Remove shadow space");
           if (destName.equals(Register.RAX.name32)) {
             // pseudo pop; eax already has the length.
             emit("add RSP, 8");
           } else {
             // NOTE: eax not rax, because lengths are always ints (32 bits)
-            emit("mov %s, EAX    ; %s = length(%s)", destName, destName, sourceName);
+            emit("mov %s, EAX  ; %s = length(%s)", destName, destName, sourceName);
             condPop(Register.RAX, pushedRax);
           }
 
@@ -438,10 +440,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         }
         break;
       case ASC:
-        // 1. get address.
-        // 2. get first character
-        // 3. move to dest.
-        fail("Cannot generate %s yet", op);
+        // move from sourceLoc to temp
+        // then from temp to dest
+        Register tempReg = registers.allocate();
+        // TODO: deal with out-of-registers
+        emit("mov %s, 0 ; clear high bytes", tempReg.name32);
+        // Just read one byte
+        emit("mov byte %s, [%s] ; copy one byte / first character", tempReg.name8, sourceName);
+        // but have to write 32, because ints are 32. unicode? shrug.
+        emit("mov dword %s, %s ; store a full int. shrug", destName, tempReg.name32);
+        registers.deallocate(tempReg);
         break;
       case CHR:
       default:

@@ -272,9 +272,9 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void asc() throws Exception {
     execute("a='hello' b=asc(a) print b", "asc");
+    execute("a='hello' b=a c=asc(b) print c", "asc2");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
