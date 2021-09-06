@@ -12,8 +12,10 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -21,7 +23,8 @@ import com.plasstech.lang.d2.type.VarType;
 public class ArithmeticOptimizerTest {
   private final Optimizer optimizer = new ArithmeticOptimizer(2);
   private final ILOptimizer OPTIMIZERS =
-      new ILOptimizer(ImmutableList.of(optimizer, new ConstantPropagationOptimizer(0)))
+      new ILOptimizer(
+              ImmutableList.of(optimizer, new ConstantPropagationOptimizer(0), new NopOptimizer()))
           .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
@@ -150,6 +153,25 @@ public class ArithmeticOptimizerTest {
   public void stringOperations() {
     TestUtils.optimizeAssertSameVariables(
         "p:proc {s='123' a=s[0] b=length(s) c=asc(a) d=chr(c)}", OPTIMIZERS);
+  }
+
+  @Test
+  public void printConstantInt() {
+    ExecutionResult result = TestUtils.optimizeAssertSameVariables("print 3", OPTIMIZERS);
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<String> arg = (ConstantOperand<String>) first.arg();
+    assertThat(arg.value()).isEqualTo("3");
+  }
+
+  @Test
+  public void printConstantBool(@TestParameter boolean val) {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(String.format("print %s", val), OPTIMIZERS);
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<String> arg = (ConstantOperand<String>) first.arg();
+    assertThat(arg.value()).isEqualTo(String.valueOf(val));
   }
 
   @Test

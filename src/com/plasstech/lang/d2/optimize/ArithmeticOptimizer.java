@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
@@ -224,6 +225,23 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), left));
       return;
     }
+  }
+
+  @Override
+  public void visit(SysCall op) {
+    if (op.call() != SysCall.Call.PRINT) {
+      return;
+    }
+    Operand arg = op.arg();
+    if (!arg.isConstant()) {
+      return;
+    }
+    ConstantOperand<?> operand = (ConstantOperand<?>) arg;
+    if (operand.value() instanceof String) {
+      return;
+    }
+    String asString = operand.value().toString();
+    replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
   }
 
   private void optimizeBitAnd(BinOp op, Operand left, Operand right) {
