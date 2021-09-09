@@ -297,6 +297,35 @@ public class NasmCodeGeneratorTest {
     execute(String.format("a='%s' b=a c=asc(b) print c", value), "asc2");
   }
 
+  @Test
+  public void stringIndex(
+      @TestParameter({"world", "hello this is a very long string"}) String value,
+      @TestParameter({"1", "4"}) int index)
+      throws Exception {
+    execute(
+        String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index),
+        "stringIndex");
+  }
+
+  @Test
+  public void constantStringIndex(
+      @TestParameter({"world", "hello this is a very long string"}) String value,
+      @TestParameter({"1", "4"}) int index)
+      throws Exception {
+    execute(
+        String.format("i=%d b='%s'[i] print b c='%s'[%d] print c", index, value, value, index),
+        "constantStringIndex");
+  }
+
+  @Test
+  public void printParse() throws Exception {
+    execute(
+        "print 123 print ', '\n" //
+            + " print 'should be b:'\n" //
+            + " Println 'abcde'[1]",
+        "printParse");
+  }
+
   private void execute(String sourceCode, String filename) throws Exception {
     execute(sourceCode, filename, 0);
   }

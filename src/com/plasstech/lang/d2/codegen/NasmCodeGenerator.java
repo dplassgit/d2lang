@@ -56,17 +56,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit0("; To execute:");
     // -Ox = optimize
-    emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f);
+    emit0("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f);
 
     emit0("global main"); // required
-    emit0("extern printf"); // optional
+
+    emit0("\nextern printf"); // optional
     emit0("extern strlen"); // optional
+    emit0("extern malloc"); // optional
     emit0("extern exit"); // required
 
     // Probably what we should do is:
     // 1. emit all globals OK
-    // 2. emit all string constants not done - if string constants are propagated, ???
-    // maybe we shouldn't constant propagate string constants except if it's "foo"[3]
+    // 2. emit all string constants OK
     // 3. emit all array constants (?)
     emit0("\nsection .data");
     SymTab globals = input.symbolTable();
@@ -236,12 +237,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(BinOp op) {
-    VarType type = op.destination().type();
-    if (type != VarType.BOOL && type != VarType.INT) {
-      fail("Cannot do %s on %ss", op.operator(), type);
-    }
-    String size = dataSize(type);
-
     // 1. get left
     String leftName = resolve(op.left());
     // 2. get right
@@ -253,14 +248,24 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       deallocate(op.right());
       return;
     }
+
     // 3. determine dest location
     String destName = resolve(op.destination());
-    // 4. mov dest, left
-    emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+    VarType destType = op.destination().type();
+    VarType sourceType = op.left().type();
+    String size = dataSize(destType);
+    if (op.operator() != TokenType.LBRACKET) {
+      // 4. mov dest, left
+      emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+    }
 
-    // 5. {op] dest, right
+    boolean pushedRcx = false;
+    // 5. [op] dest, right
     switch (op.operator()) {
       case PLUS:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         // TODO: optimize adding 1
         emit("add %s, %s ; binary %s", destName, rightName, op.operator());
         break;
@@ -273,22 +278,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
 
       case SHIFT_LEFT:
-        {
-          boolean pushedRcx = condPush(Register.RCX);
-          // this is a problem if rightname is CL
-          emit("mov CL, %s ; shift left prep", rightName);
-          // this is a problem if dest is CL
-          emit("shl %s, CL ; binary %s", destName, op.operator());
-          condPop(Register.RCX, pushedRcx);
-        }
+        pushedRcx = condPush(Register.RCX);
+        // TODO: this is a problem if rightname is CL
+        emit("mov CL, %s ; shift left prep", rightName);
+        emit("shl %s, CL ; binary %s", destName, op.operator());
+        condPop(Register.RCX, pushedRcx);
         break;
       case SHIFT_RIGHT:
-        {
-          boolean pushedRcx = condPush(Register.RCX);
-          emit("mov CL, %s ; shift left prep", rightName);
-          emit("sar %s, CL ; binary %s", destName, op.operator());
-          condPop(Register.RCX, pushedRcx);
-        }
+        pushedRcx = condPush(Register.RCX);
+        // TODO: this is a problem if rightname is CL
+        emit("mov CL, %s ; shift left prep", rightName);
+        emit("sar %s, CL ; binary %s", destName, op.operator());
+        condPop(Register.RCX, pushedRcx);
         break;
       case AND:
       case BIT_AND:
@@ -304,30 +305,55 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
 
       case EQEQ:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         // TODO: THIS IS WRONG. it's not comparing with the right size - it's using the
         // *destination* size instead of the *source* size.
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setz %s", destName);
         break;
       case NEQ:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setnz %s", destName);
         break;
       case GT:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setg %s", destName);
         break;
       case GEQ:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setge %s", destName);
         break;
       case LT:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setl %s", destName);
         break;
       case LEQ:
+        if (sourceType != VarType.INT) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
         emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
         emit("setle %s", destName);
+        break;
+
+      case LBRACKET:
+        if (sourceType != VarType.STRING) {
+          fail("Cannot do %s on %ss", op.operator(), destType);
+        }
+        generateStringIndex(leftName, rightName, destName);
         break;
 
       default:
@@ -335,6 +361,35 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     deallocate(op.left());
     deallocate(op.right());
+  }
+
+  private void generateStringIndex(String leftName, String rightName, String destName) {
+    boolean pushedRcx = condPush(Register.RCX);
+    // 1. allocate a new 2-char string
+    emit("sub RSP, 0x28  ; Reserve the shadow space");
+    emit("mov RCX, 2");
+    emit("call malloc  ; malloc(2)");
+    emit("add RSP, 0x28  ; Remove shadow space");
+    condPop(Register.RCX, pushedRcx);
+    // 2. copy the location to the dest
+    emit("mov %s, RAX  ; destination from rax", destName);
+
+    // TODO: deal with out-of-registers
+    Register indexReg = registers.allocate();
+    Register charReg = registers.allocate();
+    // 3. get the string
+    emit("mov %s, %s  ; get the string into %s", charReg, leftName, charReg);
+    // 4. get the index
+    emit("mov %s, %s  ; put index value into %s", indexReg.name32, rightName, indexReg.name32);
+    // 5. get the actual character (it's in tempreg)
+    emit("mov %s, [%s+%s]  ; get the character", charReg, charReg, indexReg);
+    emit("and %s, 0x000000ff", charReg);
+    registers.deallocate(indexReg);
+    // 6. copy the character to the first location
+    emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
+    registers.deallocate(charReg);
+    // 7. clear the 2nd location
+    emit("mov byte [RAX+1], 0  ; clear the 2nd location");
   }
 
   private void generateDivMod(BinOp op, String leftName, String rightName) {
