@@ -173,7 +173,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         boolean pushedRdx = false;
         if (arg.type() == VarType.INT) {
           pushedRdx = condPush(Register.RDX);
-          emit("mov RCX, __PRINTF_NUMBER_FMT ; First argument is address of message");
+          emit("mov RCX, __PRINTF_NUMBER_FMT  ; First argument is address of pattern");
           emit("mov DWORD EDX, %s  ; Second argument is parameter", argVal);
           emit("call printf  ; printf(message)");
           emit("add RSP, 0x28  ; Remove shadow space");
@@ -195,13 +195,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         } else if (arg.type() == VarType.STRING) {
           if (op.call() == SysCall.Call.MESSAGE) {
             pushedRdx = condPush(Register.RDX);
-            emit("mov RCX, __EXIT_MSG; First argument is pattern");
-            emit("mov RDX, %s ; Second argument is address of message", argVal);
+            emit("mov RCX, __EXIT_MSG  ; First argument is address of pattern");
+            emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
           } else {
-            emit("mov RCX, %s; First argument is pattern", argVal);
+            emit("mov RCX, %s  ; String to print", argVal);
           }
           // String
-          emit("call printf  ; printf(message)");
+          emit("call printf  ; printf(%s)", argVal);
           emit("add RSP, 0x28  ; Remove shadow space");
         } else {
           fail("Cannot print %s yet", arg);
@@ -213,6 +213,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         fail("Cannot generate %s yet", op);
         break;
     }
+    deallocate(op.arg());
   }
 
   @Override
@@ -381,7 +382,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov %s, %s  ; get the string into %s", charReg, leftName, charReg);
     // 4. get the index
     emit("mov %s, %s  ; put index value into %s", indexReg.name32, rightName, indexReg.name32);
-    // 5. get the actual character (it's in tempreg)
+    // 5. get the actual character
     emit("mov %s, [%s+%s]  ; get the character", charReg, charReg, indexReg);
     emit("and %s, 0x000000ff", charReg);
     registers.deallocate(indexReg);
@@ -495,6 +496,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             condPop(Register.RCX, pushedRcx);
           }
         } else {
+          // array length
           fail("Cannot generate %s yet", op);
         }
         break;
@@ -516,10 +518,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         registers.deallocate(tempReg);
         break;
       case CHR:
+        generateChr(sourceName, destName);
+        break;
       default:
         fail("Cannot generate %s yet", op);
         break;
     }
+    deallocate(op.operand());
+  }
+
+  private void generateChr(String sourceName, String destName) {
+    boolean pushedRax = condPush(Register.RAX);
+    boolean pushedRcx = condPush(Register.RCX);
+    // 1. allocate a new 2-char string
+    emit("sub RSP, 0x28  ; Reserve the shadow space");
+    emit("mov RCX, 2");
+    emit("call malloc  ; malloc(2)");
+    emit("add RSP, 0x28  ; Remove shadow space");
+    condPop(Register.RCX, pushedRcx);
+    // 2. set destName to allocated string
+    emit("mov %s, RAX  ; copy string location from RAX", destName);
+
+    // 3. get source char as character
+    Register charReg = registers.allocate();
+    // 3. get the string
+    emit("mov DWORD %s, %s  ; get the character int into %s", charReg.name32, sourceName, charReg);
+    emit("and %s, 0x000000ff", charReg);
+    // 4. write source char in first location
+    emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
+    // 5. clear second location.
+    emit("mov byte [RAX+1], 0  ; clear the 2nd location");
+    condPop(Register.RAX, pushedRax);
+    registers.deallocate(charReg);
   }
 
   /** Conditionally push the register, if it's already in use. */

@@ -326,6 +326,12 @@ public class NasmCodeGeneratorTest {
         "printParse");
   }
 
+  @Test
+  public void chr(@TestParameter({"65", "96"}) int value) throws Exception {
+    execute(String.format("a=%d b=chr(a) print b", value), "chr");
+    execute(String.format("a=chr(%d) print a", value), "chrConst");
+  }
+
   private void execute(String sourceCode, String filename) throws Exception {
     execute(sourceCode, filename, 0);
   }
