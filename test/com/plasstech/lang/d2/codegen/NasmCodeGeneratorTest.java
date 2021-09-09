@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +28,8 @@ import com.plasstech.lang.d2.phase.State;
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorTest {
   private static File dir;
+
+  @TestParameter boolean optimize;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
@@ -215,8 +218,10 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void assignString() throws Exception {
-    execute("a='hello' b=a print b", "assignString");
+  public void assignString(
+      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    execute(String.format("a='%s' b=a print b", value), "assignString");
   }
 
   @Test
@@ -235,12 +240,17 @@ public class NasmCodeGeneratorTest {
       @TestParameter boolean boolb,
       @TestParameter({"and", "or", "xor"}) String op)
       throws Exception {
-    execute(String.format("a=%s b=%s c=a %s b print c", boola, boolb, op), "boolBinOp" + op);
+    execute(
+        String.format("a=%s b=%s c=a %s b print c d=b %s a print d", boola, boolb, op, op),
+        "boolBinOp" + op + boola + boolb);
   }
 
   @Test
-  public void constStringLength() throws Exception {
-    execute("b=length('hello' + 'world') print b", "constStringLength");
+  public void constStringLength(
+      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    assumeTrue(optimize);
+    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
   }
 
   @Test
@@ -266,20 +276,28 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void stringLength() throws Exception {
+  public void stringLength(
+      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
     execute(
-        "a='hello' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", "stringLength");
+        String.format(
+            "a='%s' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", value),
+        "stringLength");
   }
 
   @Test
-  public void asc() throws Exception {
-    execute("a='hello' b=asc(a) print b", "asc");
-    execute("a='hello' b=a c=asc(b) print c", "asc2");
+  public void asc(@TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    execute(String.format("a='%s' b=asc(a) print b", value), "asc");
+    execute(String.format("b=asc('%s') print b", value), "ascConst");
+    execute(String.format("a='%s' b=a c=asc(b) print c", value), "asc2");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
+    filename = filename + "_opt_" + String.valueOf(optimize);
+
     Executor ee = new Executor(sourceCode);
-    ee.setOptimize(true);
+    ee.setOptimize(optimize);
     ExecutionResult result = ee.execute();
     State state = ee.state();
     System.err.println(Joiner.on('\n').join(state.lastIlCode()));

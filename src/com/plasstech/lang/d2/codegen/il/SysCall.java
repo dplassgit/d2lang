@@ -1,17 +1,8 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import com.google.common.escape.Escaper;
-import com.google.common.escape.Escapers;
 import com.plasstech.lang.d2.codegen.Operand;
 
 public class SysCall extends Op {
-  private static final Escaper ESCAPER =
-      Escapers.builder()
-          .addEscape('\n', "\\n")
-          .addEscape('\r', "\\r")
-          .addEscape('\t', "\\t")
-          .addEscape('\"', "\\\"")
-          .build();
 
   public enum Call {
     MESSAGE,
