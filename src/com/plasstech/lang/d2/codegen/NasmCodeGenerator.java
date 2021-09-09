@@ -88,7 +88,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("__PRINTF_NUMBER_FMT: db \"%%d\", 0");
     emit("__TRUE: db \"true\", 0");
     emit("__FALSE: db \"false\", 0");
-    emit("__EXIT_MSG: db \"ERROR: \", 0");
+    emit("__EXIT_MSG: db \"ERROR: %%s\", 0");
     for (StringEntry entry : stringTable.orderedEntries()) {
       emit(entry.dataEntry());
     }
@@ -164,6 +164,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(SysCall op) {
     Operand arg = op.arg();
     switch (op.call()) {
+      case MESSAGE:
       case PRINT:
         String argVal = resolve(arg);
         emit("sub RSP, 0x28  ; Reserve the shadow space");
@@ -185,14 +186,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov RCX, __FALSE");
             emit("cmp byte %s, 1", argVal);
             pushedRdx = condPush(Register.RDX);
-            emit("lea RDX, __TRUE");
+            emit("mov RDX, __TRUE");
             emit("cmovz RCX, RDX");
           }
           emit("call printf  ; printf(message)");
           emit("add RSP, 0x28  ; Remove shadow space");
         } else if (arg.type() == VarType.STRING) {
+          if (op.call() == SysCall.Call.MESSAGE) {
+            pushedRdx = condPush(Register.RDX);
+            emit("mov RCX, __EXIT_MSG; First argument is pattern");
+            emit("mov RDX, %s ; Second argument is address of message", argVal);
+          } else {
+            emit("mov RCX, %s; First argument is pattern", argVal);
+          }
           // String
-          emit("mov RCX, %s ; First argument is address of message", argVal);
           emit("call printf  ; printf(message)");
           emit("add RSP, 0x28  ; Remove shadow space");
         } else {

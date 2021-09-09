@@ -259,9 +259,13 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
-  public void exitErrorGlobal() throws Exception {
-    execute("exit 'exitErrorGlobal'", "exitErrorGlobal");
+  public void exitErrorConst() throws Exception {
+    execute("exit 'exitErrorConst'", "exitErrorConst", -1);
+  }
+
+  @Test
+  public void exitErrorVariable() throws Exception {
+    execute("a='exitErrorVariable' exit a", "exitErrorVariable", -1);
   }
 
   @Test
@@ -294,6 +298,10 @@ public class NasmCodeGeneratorTest {
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
+    execute(sourceCode, filename, 0);
+  }
+
+  private void execute(String sourceCode, String filename, int exitCode) throws Exception {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
     Executor ee = new Executor(sourceCode);
@@ -321,7 +329,7 @@ public class NasmCodeGeneratorTest {
     pb.directory(dir);
     Process process = pb.start();
     process.waitFor();
-    assertNoProcessError(process, "nasm");
+    assertNoProcessError(process, "nasm", 0);
 
     File obj = new File(dir, filename + ".obj");
     File exe = new File(dir, filename);
@@ -329,14 +337,14 @@ public class NasmCodeGeneratorTest {
     pb.directory(dir);
     process = pb.start();
     process.waitFor();
-    assertNoProcessError(process, "Linking");
+    assertNoProcessError(process, "Linking", 0);
 
     pb = new ProcessBuilder(exe.getAbsolutePath());
     pb.directory(dir);
     process = pb.start();
     process.waitFor();
     InputStream stream = process.getInputStream();
-    assertNoProcessError(process, "Executable");
+    assertNoProcessError(process, "Executable", exitCode);
 
     String compiledOutput = new String(ByteStreams.toByteArray(stream));
 
@@ -347,8 +355,8 @@ public class NasmCodeGeneratorTest {
     assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }
 
-  private void assertNoProcessError(Process process, String name) throws IOException {
-    if (process.exitValue() != 0) {
+  private void assertNoProcessError(Process process, String name, int exitCode) throws IOException {
+    if (process.exitValue() != exitCode) {
       InputStream stream = process.getErrorStream();
       String output = new String(ByteStreams.toByteArray(stream));
       System.err.printf("%s output: %s\n", name, output);
