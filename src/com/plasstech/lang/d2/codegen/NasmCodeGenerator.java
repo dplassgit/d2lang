@@ -86,6 +86,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("extern strlen"); // optional
     emit0("extern strcat"); // optional
     emit0("extern strcpy"); // optional
+    emit0("extern strcmp"); // optional
     emit0("extern malloc"); // optional
     emit0("extern exit"); // required
 
@@ -284,7 +285,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LBRACKET:
           generateStringIndex(leftName, rightName, destName);
           break;
-          // TODO: EQ, NEQ, etc.
+        case EQEQ:
+        case NEQ:
+        case GT:
+        case GEQ:
+        case LT:
+        case LEQ:
+          generateStringCompare(leftName, rightName, destName, operator);
+          break;
+
         default:
           fail("Cannot do %s on %ss", operator, leftType);
           break;
@@ -371,6 +380,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     deallocate(op.left());
     deallocate(op.right());
+  }
+
+  private void generateStringCompare(
+      String leftName, String rightName, String destName, TokenType operator) {
+    boolean pushedRax = condPush(Register.RAX);
+    boolean pushedRcx = condPush(Register.RCX);
+    boolean pushedRdx = condPush(Register.RDX);
+    emit("sub RSP, 0x28  ; Reserve the shadow space");
+    emit("mov RCX, %s  ; Address of left string", leftName);
+    emit("mov RDX, %s  ; Address of right string", rightName);
+    emit("call strcmp");
+    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("cmp RAX, 0");
+    emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
+    condPop(Register.RAX, pushedRax);
+    condPop(Register.RCX, pushedRcx);
+    condPop(Register.RDX, pushedRdx);
   }
 
   private void generateStringIndex(String leftName, String rightName, String destName) {

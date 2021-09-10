@@ -102,7 +102,7 @@ public class NasmCodeGeneratorTest {
         String.format(
             "      a=%d b=%d " //
                 + "c=a %s b print c " //
-                + "d=a %s a print d",
+                + "d=b %s a print d",
             first, second, op, op),
         "intCompOps");
   }
@@ -358,6 +358,21 @@ public class NasmCodeGeneratorTest {
     execute(
         "a='abc' b='def' c=a+b print c d=c+'xyz' print d e='ijk'+d+chr(32) print e",
         "stringAddComplex");
+  }
+
+  @Test
+  public void stringCompOps(
+      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"abc", "def", ""}) String first,
+      @TestParameter({"abc", "def", ""}) String second)
+      throws Exception {
+    execute(
+        String.format(
+            "      a='%s' b='%s' " //
+                + "c=a %s b print c " //
+                + "d=b %s a print d",
+            first, second, op, op),
+        "stringCompOps");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
