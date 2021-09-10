@@ -7,14 +7,14 @@ globf = 3 == 3
 globg = 4 != 4
 
 
-p:proc() {
+p:proc(x:int) {
   a = true
   b = a and true
   c = b and false
-  d = true == true
+  d = true == a
   e = a == b
-  f = 3 == 3
-  g = 4 != 4
+  f = x == x
+  g = x != x
   println a
   println b
   println c
@@ -22,6 +22,10 @@ p:proc() {
   println e
   println f
   println g
+  println a<b
+  println a<=b
+  println a>=b
+  println a>b
 }
 
 println globa
@@ -32,4 +36,4 @@ println globe
 println globf
 println globg
 println ''
-p()
+p(3)

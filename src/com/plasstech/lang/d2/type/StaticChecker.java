@@ -89,9 +89,11 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
   private static final Set<TokenType> BOOLEAN_OPERATORS =
       ImmutableSet.of(
-          TokenType.EQEQ,
           TokenType.LT,
+          TokenType.LEQ,
+          TokenType.EQEQ,
           TokenType.GT,
+          TokenType.GEQ,
           TokenType.NEQ,
           TokenType.AND,
           TokenType.OR,

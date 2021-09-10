@@ -8,6 +8,7 @@ import java.util.Stack;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -43,6 +44,27 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final Stack<String> tempStack = new Stack<>();
 
   private StringTable stringTable;
+
+  private Map<TokenType, String> BINARY_OPCODE =
+      ImmutableMap.<TokenType, String>builder()
+          .put(TokenType.PLUS, "add")
+          .put(TokenType.MINUS, "sub")
+          .put(TokenType.MULT, "imul")
+          .put(TokenType.AND, "and") // for boolean
+          .put(TokenType.OR, "or") // for boolean
+          .put(TokenType.XOR, "xor") // for boolean
+          .put(TokenType.BIT_AND, "and") // for ints
+          .put(TokenType.BIT_OR, "or") // for ints
+          .put(TokenType.BIT_XOR, "xor") // for ints
+          .put(TokenType.SHIFT_LEFT, "shl")
+          .put(TokenType.SHIFT_RIGHT, "sar")
+          .put(TokenType.EQEQ, "setz") // for both int and boolean
+          .put(TokenType.NEQ, "setnz") // for both int and boolean
+          .put(TokenType.GT, "setg") // for both int and boolean
+          .put(TokenType.GEQ, "setge") // for both int and boolean
+          .put(TokenType.LT, "setl") // for both int and boolean
+          .put(TokenType.LEQ, "setle") // for both intand boolean
+          .build();
 
   @Override
   public State execute(State input) {
@@ -242,132 +264,110 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(BinOp op) {
     // 1. get left
     String leftName = resolve(op.left());
+    VarType leftType = op.left().type();
     // 2. get right
     String rightName = resolve(op.right());
 
-    if (op.operator() == TokenType.DIV || op.operator() == TokenType.MOD) {
-      generateDivMod(op, leftName, rightName);
-      deallocate(op.left());
-      deallocate(op.right());
-      return;
-    }
-    VarType sourceType = op.left().type();
-    String destName = resolve(op.destination());
-    if (op.operator() == TokenType.PLUS && sourceType == VarType.STRING) {
-      generateStringAdd(leftName, rightName, destName);
-      deallocate(op.left());
-      deallocate(op.right());
-      return;
-    }
-
     // 3. determine dest location
-    VarType destType = op.destination().type();
-    String size = dataSize(destType);
-    if (op.operator() != TokenType.LBRACKET) {
-      // 4. mov dest, left
-      emit("mov %s %s, %s ; binary setup", size, destName, leftName);
-    }
+    String destName = resolve(op.destination());
 
+    Register tempReg = null;
     boolean pushedRcx = false;
+
     // 5. [op] dest, right
-    switch (op.operator()) {
-      case PLUS:
-        if (sourceType == VarType.INT) {
-          // TODO: optimize adding 1
-          emit("add %s, %s ; binary %s", destName, rightName, op.operator());
-        } else {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        break;
-      case MINUS:
-        // TODO: optimize subtracting 1
-        emit("sub %s, %s ; binary %s", destName, rightName, op.operator());
-        break;
-      case MULT:
-        emit("imul %s, %s ; binary %s", destName, rightName, op.operator());
-        break;
+    TokenType operator = op.operator();
+    if (leftType == VarType.STRING) {
+      switch (operator) {
+        case PLUS:
+          generateStringAdd(leftName, rightName, destName);
+          break;
+        case LBRACKET:
+          generateStringIndex(leftName, rightName, destName);
+          break;
+          // TODO: EQ, NEQ, etc.
+        default:
+          fail("Cannot do %s on %ss", operator, leftType);
+          break;
+      }
+    } else if (leftType == VarType.BOOL) {
+      switch (operator) {
+        case AND:
+        case OR:
+        case XOR:
+          emit("mov BYTE %s, %s ; binary setup", destName, leftName);
+          emit(
+              "%s %s, %s ; boolean %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          break;
 
-      case SHIFT_LEFT:
-        pushedRcx = condPush(Register.RCX);
-        // TODO: this is a problem if rightname is CL
-        emit("mov CL, %s ; shift left prep", rightName);
-        emit("shl %s, CL ; binary %s", destName, op.operator());
-        condPop(Register.RCX, pushedRcx);
-        break;
-      case SHIFT_RIGHT:
-        pushedRcx = condPush(Register.RCX);
-        // TODO: this is a problem if rightname is CL
-        emit("mov CL, %s ; shift left prep", rightName);
-        emit("sar %s, CL ; binary %s", destName, op.operator());
-        condPop(Register.RCX, pushedRcx);
-        break;
-      case AND:
-      case BIT_AND:
-        emit("and %s, %s ; binary and", destName, rightName);
-        break;
-      case OR:
-      case BIT_OR:
-        emit("or %s, %s ; binary or", destName, rightName);
-        break;
-      case XOR:
-      case BIT_XOR:
-        emit("xor %s, %s ; binary xor", destName, rightName);
-        break;
+        case EQEQ:
+        case NEQ:
+        case GT:
+        case GEQ:
+        case LT:
+        case LEQ:
+          tempReg = registers.allocate();
+          emit("mov BYTE %s, %s ; binary setup", tempReg.name8, leftName);
+          emit("cmp %s, %s", tempReg.name8, rightName, operator);
+          emit("%s %s ; binary %s", BINARY_OPCODE.get(operator), destName, operator);
+          break;
 
-      case EQEQ:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        // TODO: THIS IS WRONG. it's not comparing with the right size - it's using the
-        // *destination* size instead of the *source* size.
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setz %s", destName);
-        break;
-      case NEQ:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setnz %s", destName);
-        break;
-      case GT:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setg %s", destName);
-        break;
-      case GEQ:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setge %s", destName);
-        break;
-      case LT:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setl %s", destName);
-        break;
-      case LEQ:
-        if (sourceType != VarType.INT) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        emit("cmp %s, %s ; binary %s", destName, rightName, op.operator());
-        emit("setle %s", destName);
-        break;
+        default:
+          fail("Cannot do %s on %ss", operator, leftType);
+          break;
+      }
+    } else if (leftType == VarType.INT) {
+      String size = "DWORD";
+      switch (operator) {
+        case PLUS:
+        case MINUS:
+        case MULT:
+          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+          emit("%s %s, %s ; binary %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          break;
 
-      case LBRACKET:
-        if (sourceType != VarType.STRING) {
-          fail("Cannot do %s on %ss", op.operator(), destType);
-        }
-        generateStringIndex(leftName, rightName, destName);
-        break;
+        case SHIFT_LEFT:
+        case SHIFT_RIGHT:
+          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+          pushedRcx = condPush(Register.RCX);
+          // TODO: this is a problem if rightname is CL
+          emit("mov CL, %s ; shift left prep", rightName);
+          emit("%s %s, CL ; binary %s", BINARY_OPCODE.get(operator), destName, operator);
+          condPop(Register.RCX, pushedRcx);
+          break;
 
-      default:
-        fail("Cannot generate %s yet", op);
+        case BIT_AND:
+        case BIT_OR:
+        case BIT_XOR:
+          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
+          emit("%s %s, %s  ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          break;
+
+        case EQEQ:
+        case NEQ:
+        case GT:
+        case GEQ:
+        case LT:
+        case LEQ:
+          tempReg = registers.allocate();
+          emit("mov DWORD %s, %s ; binary setup", tempReg.name32, leftName);
+          emit("cmp %s, %s", tempReg.name32, rightName);
+          emit("%s %s  ; int %s", BINARY_OPCODE.get(operator), destName, operator);
+          break;
+
+        case DIV:
+        case MOD:
+          generateDivMod(op, leftName, rightName);
+          break;
+
+        default:
+          fail("Cannot do %s on %ss", operator, leftType);
+          break;
+      }
+    } else {
+      fail("Cannot do %s on %ss", operator, leftType);
+    }
+    if (tempReg != null) {
+      registers.deallocate(tempReg);
     }
     deallocate(op.left());
     deallocate(op.right());
@@ -459,30 +459,36 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registers.reserve(Register.RAX);
     registers.reserve(Register.RDX);
     Register temp = registers.allocate();
-    emit("mov %s, %s  ; denominator", temp.name32, rightName);
     if (!leftName.equals(Register.RAX.name32)) {
       emit("mov EAX, %s  ; numerator", leftName);
     } else {
-      emit("; denominator already in EAX");
+      emit("; numerator already in EAX");
     }
+    emit("mov %s, %s  ; denominator", temp.name32, rightName);
+
     // sign extend eax to edx
-    emit("cdq ; sign extend eax to edx");
-    emit("idiv %s  ; %s / %s", temp.name32, leftName, rightName);
+    emit("cdq  ; sign extend eax to edx");
+    emit("idiv %s  ; EAX = %s / %s", temp.name32, leftName, rightName);
     registers.deallocate(temp);
+    // not required if it's already supposed to be in eax
+    if (op.operator() == TokenType.DIV && !destName.equals(Register.RAX.name32)) {
+      // eax has dividend
+      emit("mov %s, EAX  ; dividend", destName);
+    } else {
+      emit("; dividend in EAX, where we wanted it to be");
+    }
+    if (op.operator() == TokenType.MOD && !destName.equals(Register.RDX.name32)) {
+      // edx has remainder
+      emit("mov %s, EDX  ; remainder", destName);
+    } else {
+      emit("; remainder in EDX, where we wanted it to be");
+    }
+
     if (!pushedRdx) {
       registers.deallocate(Register.RDX);
     }
     if (!pushedRax) {
       registers.deallocate(Register.RAX);
-    }
-    // not required if it's already supposed to be in eax
-    if (op.operator() == TokenType.DIV && !destName.equals(Register.RAX.name32)) {
-      // eax has dividend
-      emit("mov %s, EAX ; dividend", destName);
-    }
-    if (op.operator() == TokenType.MOD && !destName.equals(Register.RDX.name32)) {
-      // edx has remainder
-      emit("mov %s, EDX ; remainder", destName);
     }
     if (!destName.equals(Register.RDX.name32)) {
       condPop(Register.RDX, pushedRdx);

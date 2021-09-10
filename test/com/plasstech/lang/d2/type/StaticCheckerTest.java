@@ -300,12 +300,13 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void goodBooleanBinOp(@TestParameter({"==", "or", "and", "<", ">"}) String op) {
+  public void goodBooleanBinOp(
+      @TestParameter({"==", "or", "and", "<", ">", "<=", ">="}) String op) {
     checkProgram(String.format("a=true %s false", op));
   }
 
   @Test
-  public void badBooleanBinOp(@TestParameter({">=", "<="}) String op) {
+  public void badBooleanBinOp(@TestParameter({"+", "-", "*", "/"}) String op) {
     assertError(String.format("a=true %s false", op), "Cannot apply");
     assertError(String.format("a=true %s 3", op), "Cannot apply");
   }

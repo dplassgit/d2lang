@@ -304,6 +304,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return left == right;
       case NEQ:
         return left != right;
+      case LT:
+        return !left && right;
+      case GT:
+        return left && !right;
+      case LEQ:
+        return (!left && right) || left == right;
+      case GEQ:
+        return (left && !right) || left == right;
       default:
         throw new IllegalStateException("Unknown bool binop " + op.operator());
     }

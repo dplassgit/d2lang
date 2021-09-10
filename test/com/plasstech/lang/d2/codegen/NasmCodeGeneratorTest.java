@@ -76,17 +76,35 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void intUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
-    execute(String.format("a=3 b=%sa print b", op), "unaryOps");
+    execute(String.format("a=3 b=%sa print b", op), "intUnaryOps");
   }
 
   @Test
-  public void intBinOps(@TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op)
+  public void intBinOps(
+      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
+      @TestParameter({"1234", "-234567"}) int first,
+      @TestParameter({"1234", "-234567"}) int second)
       throws Exception {
     execute(
         String.format(
-            "a=123 b=-234 c=a%sb print c d=b%sa print d e=a%sa print e f=b%sb print f",
-            op, op, op, op),
-        "binOps");
+            "a=%d b=%d c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
+            first, second, op, op, op, op),
+        "intBinOps");
+  }
+
+  @Test
+  public void intCompOps(
+      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"0", "1234", "-34567"}) int first,
+      @TestParameter({"0", "1234", "-34567"}) int second)
+      throws Exception {
+    execute(
+        String.format(
+            "      a=%d b=%d " //
+                + "c=a %s b print c " //
+                + "d=a %s a print d",
+            first, second, op, op),
+        "intCompOps");
   }
 
   @Test
@@ -205,9 +223,7 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void divLoop() throws Exception {
-    // this fails because we can't compare to numbers > 256 yet
     execute("a=10000 while a > 0 {print a a = a / 10 }", "divLoop");
   }
 
@@ -240,13 +256,13 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void boolBinOp(
+      @TestParameter({"and", "or", "xor", "<", "<=", "==", "!=", ">", ">="}) String op,
       @TestParameter boolean boola,
-      @TestParameter boolean boolb,
-      @TestParameter({"and", "or", "xor"}) String op)
+      @TestParameter boolean boolb)
       throws Exception {
     execute(
         String.format("a=%s b=%s c=a %s b print c d=b %s a print d", boola, boolb, op, op),
-        "boolBinOp" + op + boola + boolb);
+        "boolBinOp" + boola + boolb);
   }
 
   @Test
