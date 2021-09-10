@@ -76,7 +76,7 @@ class StringTable {
         sanitizedNameValue.append('_');
       }
     }
-    return String.format("__CONST_%s_%d", sanitizedNameValue, index++);
+    return String.format("CONST_%s_%d", sanitizedNameValue, index++);
   }
 
   StringEntry lookup(String value) {

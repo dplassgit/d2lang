@@ -66,6 +66,11 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  public void evilVariableName() throws Exception {
+    execute("rax=3 print rax", "evilVariableName");
+  }
+
+  @Test
   public void printStringVariable() throws Exception {
     execute("a='hello' print a", "printStringVariable");
   }
