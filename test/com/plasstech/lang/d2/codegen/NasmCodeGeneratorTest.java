@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -280,18 +279,14 @@ public class NasmCodeGeneratorTest {
   public void constStringLength(
       @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
       throws Exception {
-    assumeTrue(optimize);
     execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
   }
 
   @Test
   public void stringLength(
-      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      @TestParameter({"", "s", "hello", "hello this is a very long string"}) String value)
       throws Exception {
-    execute(
-        String.format(
-            "a='%s' c='lo' b=length(c)*(length(a)+length(c)*(1+length(a))) print b", value),
-        "stringLength");
+    execute(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value), "stringLength");
   }
 
   @Test
@@ -345,7 +340,8 @@ public class NasmCodeGeneratorTest {
   @Test
   public void stringAddComplex() throws Exception {
     execute(
-        "a='abc' b='def' c=a+b print c d=a+'xyz' print d e='ijk'+b print e", "stringAddComplex");
+        "a='abc' b='def' c=a+b print c d=c+'xyz' print d e='ijk'+d+chr(32) print e",
+        "stringAddComplex");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
@@ -361,7 +357,7 @@ public class NasmCodeGeneratorTest {
     State state = ee.state();
     System.err.println(Joiner.on('\n').join(state.lastIlCode()));
     state = state.addFilename(filename);
-    
+
     state = new NasmCodeGenerator().execute(state);
     String asmCode = Joiner.on('\n').join(state.asmCode());
     System.err.println(asmCode);

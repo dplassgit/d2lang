@@ -393,7 +393,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov %s, %s  ; put index value into %s", indexReg.name32, rightName, indexReg.name32);
     // 5. get the actual character
     emit("mov %s, [%s+%s]  ; get the character", charReg, charReg, indexReg);
-    emit("and %s, 0x000000ff", charReg);
     registers.deallocate(indexReg);
     // 6. copy the character to the first location
     emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
@@ -414,7 +413,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("");
     emit("; Get right length:");
     generateStringLength(right, rightReg.name32);
-
     emit("add %s, %s  ; Total new string length", leftReg.name32, rightReg.name32);
     emit("inc %s  ; Plus 1 for end of string", leftReg.name32);
     registers.deallocate(rightReg);
@@ -429,7 +427,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("call malloc  ; malloc(%s)", leftReg.name32);
     registers.deallocate(leftReg);
     // 4. put string into dest
-    emit("mov %s, RAX  ; destination from rax", dest);
+    if (!dest.equals(Register.RAX.name64)) {
+      emit("mov %s, RAX  ; destination from rax", dest);
+    }
 
     // 5. strcpy from left to dest
     emit0("");
@@ -454,7 +454,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
-    boolean pushdRax = condPush(Register.RAX);
+    boolean pushedRax = condPush(Register.RAX);
     boolean pushedRdx = condPush(Register.RDX);
     registers.reserve(Register.RAX);
     registers.reserve(Register.RDX);
@@ -472,7 +472,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (!pushedRdx) {
       registers.deallocate(Register.RDX);
     }
-    if (!pushdRax) {
+    if (!pushedRax) {
       registers.deallocate(Register.RAX);
     }
     // not required if it's already supposed to be in eax
@@ -491,7 +491,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("add RSP, 8");
     }
     if (!destName.equals(Register.RAX.name32)) {
-      condPop(Register.RAX, pushdRax);
+      condPop(Register.RAX, pushedRax);
     } else {
       // pseudo pop
       emit("add RSP, 8");
@@ -596,15 +596,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("add RSP, 0x28  ; Remove shadow space");
     condPop(Register.RCX, pushedRcx);
     // 2. set destName to allocated string
-    if (!destName.equals(Register.RAX.name32)) {
+    if (!destName.equals(Register.RAX.name64)) {
       emit("mov %s, RAX  ; copy string location from RAX", destName);
     }
 
-    // 3. get source char as character
     Register charReg = registers.allocate();
-    // 3. get the string
+    // 3. get source char as character
     emit("mov DWORD %s, %s  ; get the character int into %s", charReg.name32, sourceName, charReg);
-    emit("and %s, 0x000000ff", charReg);
     // 4. write source char in first location
     emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
     // 5. clear second location.
