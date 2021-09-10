@@ -62,6 +62,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit0("\nextern printf"); // optional
     emit0("extern strlen"); // optional
+    emit0("extern strcat"); // optional
+    emit0("extern strcpy"); // optional
     emit0("extern malloc"); // optional
     emit0("extern exit"); // required
 
@@ -249,11 +251,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       deallocate(op.right());
       return;
     }
+    VarType sourceType = op.left().type();
+    String destName = resolve(op.destination());
+    if (op.operator() == TokenType.PLUS && sourceType == VarType.STRING) {
+      generateStringAdd(leftName, rightName, destName);
+      deallocate(op.left());
+      deallocate(op.right());
+      return;
+    }
 
     // 3. determine dest location
-    String destName = resolve(op.destination());
     VarType destType = op.destination().type();
-    VarType sourceType = op.left().type();
     String size = dataSize(destType);
     if (op.operator() != TokenType.LBRACKET) {
       // 4. mov dest, left
@@ -264,11 +272,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. [op] dest, right
     switch (op.operator()) {
       case PLUS:
-        if (sourceType != VarType.INT) {
+        if (sourceType == VarType.INT) {
+          // TODO: optimize adding 1
+          emit("add %s, %s ; binary %s", destName, rightName, op.operator());
+        } else {
           fail("Cannot do %s on %ss", op.operator(), destType);
         }
-        // TODO: optimize adding 1
-        emit("add %s, %s ; binary %s", destName, rightName, op.operator());
         break;
       case MINUS:
         // TODO: optimize subtracting 1
@@ -391,6 +400,52 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registers.deallocate(charReg);
     // 7. clear the 2nd location
     emit("mov byte [RAX+1], 0  ; clear the 2nd location");
+  }
+
+  private void generateStringAdd(String left, String right, String dest) {
+    // 1. get left length
+    Register leftReg = registers.allocate();
+    emit0("");
+    emit("; Get left length:");
+    generateStringLength(left, leftReg.name32);
+    // 2. get right length
+    Register rightReg = registers.allocate();
+    // TODO: if leftReg is volatile, push it first
+    emit0("");
+    emit("; Get right length:");
+    generateStringLength(right, rightReg.name32);
+
+    emit("add %s, %s  ; Total new string length", leftReg.name32, rightReg.name32);
+    emit("inc %s  ; Plus 1 for end of string", leftReg.name32);
+    registers.deallocate(rightReg);
+
+    // 3. allocate string of length left+right + 1
+    emit0("");
+    emit("; Allocate string of length %s", leftReg.name32);
+    boolean pushedRcx = condPush(Register.RCX);
+    boolean pushedRdx = condPush(Register.RDX);
+    emit("sub RSP, 0x28  ; Reserve the shadow space");
+    emit("mov ECX, %s", leftReg.name32);
+    emit("call malloc  ; malloc(%s)", leftReg.name32);
+    registers.deallocate(leftReg);
+    // 4. put string into dest
+    emit("mov %s, RAX  ; destination from rax", dest);
+
+    // 5. strcpy from left to dest
+    emit0("");
+    emit("; strcpy from %s to %s", left, dest);
+    emit("mov RCX, %s", dest);
+    emit("mov RDX, %s", left);
+    emit("call strcpy");
+    // 6. strcat dest, right
+    emit0("");
+    emit("; strcat from %s to %s", right, dest);
+    emit("mov RCX, %s", dest);
+    emit("mov RDX, %s", right);
+    emit("call strcat");
+    emit("add RSP, 0x28  ; Remove shadow space");
+    condPop(Register.RDX, pushedRdx);
+    condPop(Register.RCX, pushedRcx);
   }
 
   private void generateDivMod(BinOp op, String leftName, String rightName) {
@@ -556,15 +611,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov byte [RAX+1], 0  ; clear the 2nd location");
     condPop(Register.RAX, pushedRax);
     registers.deallocate(charReg);
-  }
-
-  private void generateStringAdd(String left, String right, String dest) {
-    // 1. get left length
-    // 2. get right length
-    // 3. allocate string of length left+right + 1
-    // 4. put string into dest
-    // 5. strcpy from left to dest
-    // 6. strcat dest, right
   }
 
   /** Conditionally push the register, if it's already in use. */

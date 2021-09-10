@@ -251,14 +251,6 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void constStringLength(
-      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
-      throws Exception {
-    assumeTrue(optimize);
-    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
-  }
-
-  @Test
   public void exit() throws Exception {
     execute("exit", "exit");
   }
@@ -282,6 +274,14 @@ public class NasmCodeGeneratorTest {
   @Test
   public void incDec() throws Exception {
     execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec");
+  }
+
+  @Test
+  public void constStringLength(
+      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    assumeTrue(optimize);
+    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
   }
 
   @Test
@@ -335,6 +335,17 @@ public class NasmCodeGeneratorTest {
   public void chr(@TestParameter({"65", "96"}) int value) throws Exception {
     execute(String.format("a=%d b=chr(a) print b", value), "chr");
     execute(String.format("a=chr(%d) print a", value), "chrConst");
+  }
+
+  @Test
+  public void stringAddSimple() throws Exception {
+    execute("a='a' c=a+'b' print c", "stringAddSimple");
+  }
+
+  @Test
+  public void stringAddComplex() throws Exception {
+    execute(
+        "a='abc' b='def' c=a+b print c d=a+'xyz' print d e='ijk'+b print e", "stringAddComplex");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {
