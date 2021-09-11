@@ -433,7 +433,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(MainNode node) {
-    emit(new Label("__main"));
+    emit(new Label("main"));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
     if (node.block() != null) {
@@ -463,9 +463,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       Location procDest = procedures.peek().node().location();
       // copy the exprloc to the dest
       emit(new Transfer(procDest, exprLoc));
-      emit(new Return(procDest));
+      emit(new Return(procedures.peek().node().name(), procDest));
     } else {
-      emit(new Return());
+      emit(new Return(procedures.peek().node().name()));
     }
   }
 
@@ -483,7 +483,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       node.setLocation(returnValueDestination);
     }
     // Guard to prevent just falling into this method
-    String afterLabel = newLabel("after_user_proc_" + node.name());
+    String afterLabel = newLabel("after_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 
@@ -499,9 +499,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     // there should have already been a regular "return" with the value.
     if (node.returnType() == VarType.VOID) {
-      emit(new Return());
+      emit(new Return(node.name()));
     }
-    emit(new ProcExit());
+    emit(new ProcExit(node.name()));
     emit(new Label(afterLabel));
 
     procedures.pop();

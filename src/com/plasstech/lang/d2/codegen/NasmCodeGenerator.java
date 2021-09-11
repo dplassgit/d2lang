@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -18,6 +19,9 @@ import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
+import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -133,7 +137,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Label op) {
-    emit0("%s:", op.label());
+    emit0("__%s:", op.label());
   }
 
   @Override
@@ -144,7 +148,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Goto op) {
-    emit("jmp %s", op.label());
+    emit("jmp __%s", op.label());
   }
 
   @Override
@@ -641,6 +645,33 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov byte [RAX+1], 0  ; clear the 2nd location");
     condPop(Register.RAX, pushedRax);
     registers.deallocate(charReg);
+  }
+
+  @Override
+  public void visit(ProcEntry op) {
+    // TODO: save volatile registers
+    //    fail("Cannot codegen %s yet", op);
+    emit("; entry to %s", op.name());
+  }
+
+  @Override
+  public void visit(ProcExit op) {
+    // restore volatile registers
+    emit("exit_of_%s:", op.procName());
+    emit("ret  ; return from procedure");
+    //    fail("Cannot codegen %s yet", op);
+  }
+
+  @Override
+  public void visit(Call op) {
+    emit("; TODO: set up actuals, mapped to RCX, RDX, etc.");
+    emit("call __%s", op.functionToCall());
+  }
+
+  @Override
+  public void visit(Return op) {
+    emit("; TODO: return %s", op.returnValueLocation());
+    emit("jmp exit_of_%s", op.procName());
   }
 
   /** Conditionally push the register, if it's already in use. */

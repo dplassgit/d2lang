@@ -173,7 +173,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       Operand returnValue = op.returnValueLocation().get();
       ConstantOperand<?> replacement = findReplacementConstant(returnValue);
       if (replacement != null) {
-        replaceCurrent(new Return(replacement));
+        replaceCurrent(new Return(op.procName(), replacement));
       }
     }
     stackConstants.clear();

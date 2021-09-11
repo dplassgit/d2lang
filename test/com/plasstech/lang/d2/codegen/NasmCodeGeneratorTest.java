@@ -375,6 +375,17 @@ public class NasmCodeGeneratorTest {
         "stringCompOps");
   }
 
+  @Test
+  public void proc() throws Exception {
+    execute(
+        "      a=1 \n"
+            + "fun:proc() { \n" //
+            + "   println a \n" //
+            + "} \n" //
+            + "fun()",
+        "proc");
+  }
+
   private void execute(String sourceCode, String filename) throws Exception {
     execute(sourceCode, filename, 0);
   }

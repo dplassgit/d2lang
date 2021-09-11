@@ -141,7 +141,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       // no return value, at least at this location. nuke it.
       code.set(ip, new Nop(op));
     } else {
-      code.set(ip, new Return(remap(op.returnValueLocation().get())));
+      code.set(ip, new Return(op.procName(), remap(op.returnValueLocation().get())));
     }
   }
 

@@ -478,7 +478,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(ProcExit op) {
     // if we get here, it means the method should have returned void. It may be an error, shrug.
     logger.atWarning().log("ProcExit reached - doing return void instead");
-    visit(new Return());
+    visit(new Return(op.procName()));
   }
 
   @Override

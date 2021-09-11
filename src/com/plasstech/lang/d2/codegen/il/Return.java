@@ -7,12 +7,15 @@ import com.plasstech.lang.d2.codegen.Operand;
 public class Return extends Op {
 
   private final Optional<Operand> returnValueLocation;
+  private final String procName;
 
-  public Return() {
+  public Return(String procName) {
+    this.procName = procName;
     this.returnValueLocation = Optional.empty();
   }
 
-  public Return(Operand operand) {
+  public Return(String procName, Operand operand) {
+    this.procName = procName;
     this.returnValueLocation = Optional.of(operand);
   }
 
@@ -29,5 +32,9 @@ public class Return extends Op {
   @Override
   public void accept(OpcodeVisitor visitor) {
     visitor.visit(this);
+  }
+
+  public String procName() {
+    return procName;
   }
 }
