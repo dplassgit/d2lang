@@ -334,6 +334,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case PLUS:
         case MINUS:
         case MULT:
+        case BIT_AND:
+        case BIT_OR:
+        case BIT_XOR:
           emit("mov %s %s, %s ; binary setup", size, destName, leftName);
           emit("%s %s, %s ; binary %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           break;
@@ -346,13 +349,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov CL, %s ; shift left prep", rightName);
           emit("%s %s, CL ; binary %s", BINARY_OPCODE.get(operator), destName, operator);
           condPop(Register.RCX, pushedRcx);
-          break;
-
-        case BIT_AND:
-        case BIT_OR:
-        case BIT_XOR:
-          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
-          emit("%s %s, %s  ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           break;
 
         case EQEQ:
