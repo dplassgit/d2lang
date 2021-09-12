@@ -259,7 +259,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(IfOp op) {
     String condName = resolve(op.condition());
     emit("cmp byte %s, 0", condName);
-    emit("jne %s", op.destination());
+    emit("jne __%s", op.destination());
     // deallocate
     Operand operand = op.condition();
     deallocate(operand);
