@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assume.assumeFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -380,10 +381,43 @@ public class NasmCodeGeneratorTest {
     execute(
         "      a=1 \n"
             + "fun:proc() { \n" //
-            + "   println a \n" //
+            + "   if a==1 {println a return } else {println 4 return} \n" //
             + "} \n" //
             + "fun()",
         "proc");
+  }
+
+  @Test
+  public void procReturnsInt() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      fun:proc():int { \n" //
+            + "   return 3 \n" //
+            + "} \n" //
+            + "x=fun() print x",
+        "procReturnsInt");
+  }
+
+  @Test
+  public void procReturnsBool() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      fun:proc():bool { \n" //
+            + "   return true \n" //
+            + "} \n" //
+            + "x=fun() print x",
+        "procReturnsBool");
+  }
+
+  @Test
+  public void procReturnsString() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      fun:proc():string { \n" //
+            + "   return 'hi' \n" //
+            + "} \n" //
+            + "x=fun() print x",
+        "procReturnsString");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {

@@ -182,6 +182,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         Register tempReg = registers.allocate();
         // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
+        // TODO: this is redundant if destLoc is a register
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
         registers.deallocate(tempReg);
@@ -646,28 +647,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(ProcEntry op) {
     // TODO: save volatile registers
-    //    fail("Cannot codegen %s yet", op);
     emit("; entry to %s", op.name());
   }
 
   @Override
+  public void visit(Return op) {
+    // we can't just "ret" here because there's cleanup we need to do first.
+    if (op.returnValueLocation().isPresent()) {
+      // transfer from return value to RAX
+      Operand returnValue = op.returnValueLocation().get();
+      visit(
+          new Transfer(new RegisterLocation("RAX", Register.RAX, returnValue.type()), returnValue));
+    }
+    emit("jmp __exit_of_%s", op.procName());
+  }
+
+  @Override
   public void visit(ProcExit op) {
-    // restore volatile registers
-    emit("exit_of_%s:", op.procName());
+    emit0("__exit_of_%s:", op.procName());
+    // TODO: restore volatile registers
     emit("ret  ; return from procedure");
-    //    fail("Cannot codegen %s yet", op);
   }
 
   @Override
   public void visit(Call op) {
     emit("; TODO: set up actuals, mapped to RCX, RDX, etc.");
     emit("call __%s", op.functionToCall());
-  }
-
-  @Override
-  public void visit(Return op) {
-    emit("; TODO: return %s", op.returnValueLocation());
-    emit("jmp exit_of_%s", op.procName());
+    if (op.destination().isPresent()) {
+      Location destination = op.destination().get();
+      String destName = resolve(destination);
+      String size = dataSize(destination.type());
+      emit("mov %s %s, %s", size, destName, registerNameSized(Register.RAX, destination.type()));
+    }
   }
 
   /** Conditionally push the register, if it's already in use. */
@@ -720,6 +731,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     Location location = (Location) operand;
+    if (location instanceof RegisterLocation) {
+      Register reg = ((RegisterLocation) location).register();
+      return registerNameSized(reg, location.type());
+    }
     Register reg = aliases.get(location.toString());
     if (reg != null) {
       // Found it in a register.

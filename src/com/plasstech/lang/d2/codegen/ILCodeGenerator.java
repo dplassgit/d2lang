@@ -456,16 +456,14 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(ReturnNode node) {
+    String procedureName = procedures.peek().node().name();
     if (node.expr().isPresent()) {
       node.expr().get().accept(this);
       // copy the location of the result to the current procedure's destination.
       Location exprLoc = node.expr().get().location();
-      Location procDest = procedures.peek().node().location();
-      // copy the exprloc to the dest
-      emit(new Transfer(procDest, exprLoc));
-      emit(new Return(procedures.peek().node().name(), procDest));
+      emit(new Return(procedureName, exprLoc));
     } else {
-      emit(new Return(procedures.peek().node().name()));
+      emit(new Return(procedureName));
     }
   }
 
@@ -477,11 +475,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     procedures.push(procSym);
 
-    if (node.returnType() != VarType.VOID) {
-      // generate a destination
-      StackLocation returnValueDestination = allocateStack(node.returnType());
-      node.setLocation(returnValueDestination);
-    }
     // Guard to prevent just falling into this method
     String afterLabel = newLabel("after_proc_" + node.name());
 
@@ -494,13 +487,14 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             node.name(),
             node.parameters().stream().map(Parameter::name).collect(toImmutableList())));
 
-    // Also TODO: how to reference arguments???
     node.block().accept(this);
 
     // there should have already been a regular "return" with the value.
     if (node.returnType() == VarType.VOID) {
+      // This is needed for the inline optimizer.
       emit(new Return(node.name()));
     }
+
     emit(new ProcExit(node.name()));
     emit(new Label(afterLabel));
 
