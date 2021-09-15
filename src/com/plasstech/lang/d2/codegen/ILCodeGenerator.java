@@ -96,19 +96,13 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   }
 
   private String newLabel(String prefix) {
-    return String.format("__%s_%d", prefix, ++id);
+    return String.format("____%s_%d", prefix, ++id);
   }
 
   private TempLocation allocateTemp(VarType varType) {
     String name = String.format("__temp%d", ++id);
     symbolTable().declareTemp(name, varType);
     return new TempLocation(name, varType);
-  }
-
-  private StackLocation allocateStack(VarType varType) {
-    String name = String.format("__stack%d", ++id);
-    symbolTable().declare(name, varType);
-    return new StackLocation(name, varType);
   }
 
   private MemoryAddress allocateMemory(VarType varType) {

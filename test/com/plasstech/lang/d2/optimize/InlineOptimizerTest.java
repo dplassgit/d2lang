@@ -14,7 +14,13 @@ import com.plasstech.lang.d2.interpreter.ExecutionResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class InlineOptimizerTest {
-  private Optimizer optimizer = new ILOptimizer(new InlineOptimizer(2)).setDebugLevel(2);
+  private Optimizer optimizer =
+      new ILOptimizer(
+              ImmutableList.of(
+                  new ConstantPropagationOptimizer(0),
+                  new DeadCodeOptimizer(0),
+                  new InlineOptimizer(2)))
+          .setDebugLevel(2);
 
   @Test
   public void shortVoidNoArg() {
@@ -193,6 +199,31 @@ public class InlineOptimizerTest {
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
+  }
+
+  @Test
+  public void twoReturns() {
+    ExecutionResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "      twoReturns: proc(n:int):bool {"
+                + "  if n>0 {return true} else {return false} "
+                + "} "
+                + "println twoReturns(10) "
+                + "println twoReturns(-10) ",
+            optimizer);
+    ImmutableList<Op> code = result.code();
+
+    // Show that there are still calls to the procedure
+    OpcodeVisitor visitor =
+        new DefaultOpcodeVisitor() {
+          @Override
+          public void visit(Call op) {
+            assertThat(op.functionToCall()).isEqualTo("twoReturns");
+          }
+        };
+    for (Op op : code) {
+      op.accept(visitor);
+    }
   }
 
   @Test

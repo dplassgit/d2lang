@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
@@ -74,7 +75,10 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
           foundEnd = true;
           break;
         }
-        if (otherOp instanceof Call || otherOp instanceof IfOp || otherOp instanceof Goto) {
+        if (otherOp instanceof Call
+            || otherOp instanceof IfOp
+            || otherOp instanceof Goto
+            || otherOp instanceof Label) {
           logger.at(loggingLevel).log(
               "NOT inlining '%s' because it has '%s'",
               op.name(), otherOp.getClass().getSimpleName());
@@ -86,13 +90,8 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         opcodes.add(otherOp);
       }
       // Only consider procedures with size < 10 and that don't allow certain opcodes, like calls,
-      // gotos/ifs that go outside the block or labels referenced outside the block. Also don't
-      // allow any local variables (?)
-      boolean candidate =
-          foundEnd
-              && opcodes.size() < 10
-              && returnCount < 2
-              && (Iterables.getLast(opcodes) instanceof Return);
+      // gotos/ifs that go outside the block or labels referenced outside the block.
+      boolean candidate = foundEnd && opcodes.size() < 10 && returnCount < 2;
       logger.at(loggingLevel).log("'%s' is %sa candidate", op.name(), candidate ? "" : "not ");
       if (candidate) {
         inlineableCode.put(op.name(), opcodes);
