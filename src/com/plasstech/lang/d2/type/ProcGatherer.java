@@ -52,7 +52,7 @@ class ProcGatherer extends DefaultVisitor {
 
     // 4. add all formals to proc's symbol table
     for (Parameter formal : node.parameters()) {
-      child.declareParam(formal.name(), formal.type());
+      child.declareParam(formal.name(), formal.varType());
     }
   }
 }

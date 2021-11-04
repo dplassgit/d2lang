@@ -11,7 +11,7 @@ public class DeclarationNode extends AbstractNode implements StatementNode {
   public DeclarationNode(String variableName, VarType type, Position position) {
     super(position);
     this.variableName = variableName;
-    setVarType(type);
+    internalSetVarType(type);
   }
 
   /** Variable name */

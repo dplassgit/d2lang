@@ -8,34 +8,19 @@ import com.plasstech.lang.d2.type.VarType;
 
 /** Represents a procedure declaration. */
 public class ProcedureNode extends DeclarationNode {
-  public static class Parameter {
-    private final String name;
-    private VarType type;
-
-    public Parameter(String name, VarType type) {
-      this.name = name;
-      this.type = type;
+  public static class Parameter extends DeclarationNode {
+    public Parameter(String name, VarType type, Position position) {
+      super(name, type, position);
     }
 
-    public Parameter(String name) {
-      this(name, VarType.UNKNOWN);
-    }
-
-    public String name() {
-      return name;
-    }
-
-    public VarType type() {
-      return type;
-    }
-
-    public void setVarType(VarType varType) {
-      this.type = varType;
+    /** no type defined */
+    public Parameter(String name, Position position) {
+      this(name, VarType.UNKNOWN, position);
     }
 
     @Override
     public String toString() {
-      return String.format("%s:%s", name, type);
+      return String.format("%s:%s", name(), varType());
     }
   }
 

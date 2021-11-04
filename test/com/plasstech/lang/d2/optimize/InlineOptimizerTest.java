@@ -218,7 +218,7 @@ public class InlineOptimizerTest {
         new DefaultOpcodeVisitor() {
           @Override
           public void visit(Call op) {
-            assertThat(op.functionToCall()).isEqualTo("twoReturns");
+            assertThat(op.procName()).isEqualTo("twoReturns");
           }
         };
     for (Op op : code) {
@@ -245,7 +245,7 @@ public class InlineOptimizerTest {
         new DefaultOpcodeVisitor() {
           @Override
           public void visit(Call op) {
-            assertThat(op.functionToCall()).isEqualTo("longProc");
+            assertThat(op.procName()).isEqualTo("longProc");
           }
         };
     for (Op op : code) {

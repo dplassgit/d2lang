@@ -458,12 +458,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
     // 3. look up each actual parameter in old environment and add to child environment as formal
     // name from symbol table
-    ProcSymbol procSymbol = (ProcSymbol) table.get(op.functionToCall());
+    ProcSymbol procSymbol = (ProcSymbol) table.get(op.procName());
     for (int i = 0; i < op.actuals().size(); ++i) {
       Operand actualSource = op.actuals().get(i);
       Parameter formalParam = procSymbol.node().parameters().get(i);
       // formals are not necessarily on the stack...
-      Location formal = new StackLocation(formalParam.name(), formalParam.type());
+      Location formal = new StackLocation(formalParam.name(), formalParam.varType());
       childEnv.setValue(formal, resolve(actualSource));
     }
 

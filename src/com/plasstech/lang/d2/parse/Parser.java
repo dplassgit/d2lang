@@ -425,10 +425,10 @@ public class Parser implements Phase {
     Token paramName = advance();
     if (token.type() == TokenType.COLON) {
       VarType paramType = parseVarType();
-      return new Parameter(paramName.text(), paramType);
+      return new Parameter(paramName.text(), paramType, paramName.start());
     } else {
       // no colon, just an unknown param type
-      return new Parameter(paramName.text());
+      return new Parameter(paramName.text(), paramName.start());
     }
   }
 

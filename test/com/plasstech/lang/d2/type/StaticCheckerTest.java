@@ -508,11 +508,11 @@ public class StaticCheckerTest {
 
   @Test
   public void proc() {
-    checkProgram("fib:proc(n1:int, n2:int) : int { n1=3 n2=n1 return n1}");
-    checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram("fib:proc() {a=3} a=true");
-    checkProgram("a=true fib:proc() {a:int a=3} ");
+    checkProgram("fib:proc(n) : int { n=3 return n}");
     checkProgram("fib:proc(n:int) : int { n=3 return n}");
+    checkProgram("fib:proc(n1:int, n2:int) : int { n1=3 n2=n1 return n1}");
+    checkProgram("a=true fib:proc() {a:int a=3} ");
     checkProgram(
         "level1:proc() : bool { "
             + " level2:proc() : int  {n=3 return n}"
@@ -550,10 +550,11 @@ public class StaticCheckerTest {
 
   @Test
   public void procParams_errors() {
+    assertError("fib:proc(n1):int {return n1}", "Indeterminable type for RETURN statement");
     assertError("fib:proc(a, b, a) {}", "Duplicate parameter");
     assertError("fib:proc() {a=3 a=true}", "declared as INT");
     assertError("a=true fib:proc() {a=3}", "declared as BOOL");
-    assertError("fib:proc(n1) { }", "determine type of formal parameter");
+    assertError("fib:proc(n1) {}", "determine type of formal parameter");
     assertError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
   }
 
@@ -744,7 +745,7 @@ public class StaticCheckerTest {
     SymTab symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
     Parameter instance = proc.node().parameters().get(0);
-    RecordReferenceType r1 = (RecordReferenceType) instance.type();
+    RecordReferenceType r1 = (RecordReferenceType) instance.varType();
     assertThat(r1.name()).isEqualTo("r1");
   }
 

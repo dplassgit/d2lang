@@ -29,7 +29,8 @@ import com.plasstech.lang.d2.phase.State;
 public class NasmCodeGeneratorTest {
   private static File dir;
 
-  @TestParameter boolean optimize;
+  // @TestParameter boolean optimize;
+  boolean optimize = false;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
@@ -155,8 +156,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void allOpsLocals() throws Exception {
+    assumeFalse(optimize);
     execute(
         "      a=1 b=2 c=3 d=4 e=5 f=6 g=3\n"
             + "fun:proc():int { \n"
@@ -418,6 +419,18 @@ public class NasmCodeGeneratorTest {
             + "} \n" //
             + "x=fun() print x",
         "procReturnsString");
+  }
+
+  @Test
+  @Ignore
+  public void procIntParam() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      fun:proc(n:int):int { \n" //
+            + "   return n+1 \n" //
+            + "} \n" //
+            + "x=fun(4) print x",
+        "procReturnsInt");
   }
 
   private void execute(String sourceCode, String filename) throws Exception {

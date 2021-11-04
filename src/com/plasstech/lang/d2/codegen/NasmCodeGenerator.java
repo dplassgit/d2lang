@@ -672,7 +672,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Call op) {
     emit("; TODO: set up actuals, mapped to RCX, RDX, etc.");
-    emit("call __%s", op.functionToCall());
+    emit("call __%s", op.procName());
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
       String destName = resolve(destination);

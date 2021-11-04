@@ -29,10 +29,15 @@ abstract class AbstractNode implements Node {
 
   @Override
   public void setVarType(VarType varType) {
+    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set to unknown");
+    internalSetVarType(varType);
+  }
+
+  /** This is only used for parameters with no type. */
+  protected final void internalSetVarType(VarType varType) {
     Preconditions.checkArgument(
         this.varType.isUnknown(),
         "Cannot overwrite already-set vartype. Was: " + this.varType.name());
-    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set to unknown");
     Preconditions.checkNotNull(varType, "Cannot set to null");
     this.varType = varType;
   }

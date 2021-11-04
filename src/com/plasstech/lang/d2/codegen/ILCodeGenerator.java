@@ -508,12 +508,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
         node.actuals().stream().map(Node::location).collect(toImmutableList());
     if (node.isStatement()) {
       // No return value
-      call = new Call(node.functionToCall(), actualLocations);
+      call = new Call(node.procName(), actualLocations);
     } else {
       // 3. put result location into node.location
       Location location = allocateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, node.functionToCall(), actualLocations);
+      call = new Call(location, node.procName(), actualLocations);
     }
     emit(call);
   }

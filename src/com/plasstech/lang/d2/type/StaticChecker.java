@@ -280,10 +280,10 @@ public class StaticChecker extends DefaultVisitor implements Phase {
   @Override
   public void visit(CallNode node) {
     // 1. make sure the function is really a function
-    Symbol maybeProc = symbolTable().getRecursive(node.functionToCall());
+    Symbol maybeProc = symbolTable().getRecursive(node.procName());
     if (maybeProc == null || maybeProc.varType() != VarType.PROC) {
       throw new TypeException(
-          String.format("PROC '%s' is unknown", node.functionToCall()), node.position());
+          String.format("PROC '%s' is unknown", node.procName()), node.position());
     }
     // 2. make sure the arg length is right.
     ProcSymbol proc = (ProcSymbol) maybeProc;
@@ -291,7 +291,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       throw new TypeException(
           String.format(
               "Wrong number of arguments to PROC '%s': found %d, expected %d",
-              node.functionToCall(), node.actuals().size(), proc.node().parameters().size()),
+              node.procName(), node.actuals().size(), proc.node().parameters().size()),
           node.position());
     }
     // 3. eval parameter expressions.
@@ -301,7 +301,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     for (int i = 0; i < node.actuals().size(); ++i) {
       Parameter formal = proc.node().parameters().get(i);
       ExprNode actual = node.actuals().get(i);
-      if (formal.type().isUnknown()) {
+      if (formal.varType().isUnknown()) {
         if (actual.varType().isUnknown()) {
           // wah.
           throw new TypeException(
@@ -314,11 +314,11 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         }
       }
       // 5. make sure expr types == param types
-      if (!formal.type().compatibleWith(actual.varType())) {
+      if (!formal.varType().compatibleWith(actual.varType())) {
         throw new TypeException(
             String.format(
                 "Type mismatch for parameter '%s' to PROC '%s': found %s, expected %s",
-                formal.name(), proc.name(), actual.varType(), formal.type()),
+                formal.name(), proc.name(), actual.varType(), formal.varType()),
             node.position());
       }
     }
@@ -699,7 +699,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     // 4. add all args to local symbol table
     if (innerProc) {
       for (Parameter param : node.parameters()) {
-        symbolTable().declareParam(param.name(), param.type());
+        symbolTable().declareParam(param.name(), param.varType());
       }
     }
 
@@ -797,6 +797,10 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     if (node.expr().isPresent()) {
       ExprNode expr = node.expr().get();
       expr.accept(this);
+      if (expr.varType().isUnknown()) {
+        throw new TypeException(
+            String.format("Indeterminable type for RETURN statement %s", node), node.position());
+      }
       node.setVarType(expr.varType());
     }
 

@@ -798,7 +798,7 @@ public class ParserTest {
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
     assertThat(proc.parameters()).hasSize(1);
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
-    assertThat(proc.parameters().get(0).type().isUnknown()).isTrue();
+    assertThat(proc.parameters().get(0).varType().isUnknown()).isTrue();
   }
 
   @Test
@@ -809,9 +809,9 @@ public class ParserTest {
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
     assertThat(proc.parameters()).hasSize(2);
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
-    assertThat(proc.parameters().get(0).type().isUnknown()).isTrue();
+    assertThat(proc.parameters().get(0).varType().isUnknown()).isTrue();
     assertThat(proc.parameters().get(1).name()).isEqualTo("param2");
-    assertThat(proc.parameters().get(1).type()).isEqualTo(VarType.STRING);
+    assertThat(proc.parameters().get(1).varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
@@ -868,7 +868,7 @@ public class ParserTest {
     ProgramNode root = parseProgram("doit(3)");
     CallNode call = (CallNode) (root.statements().statements().get(0));
 
-    assertThat(call.functionToCall()).isEqualTo("doit");
+    assertThat(call.procName()).isEqualTo("doit");
     assertThat(call.actuals()).hasSize(1);
     ExprNode param = call.actuals().get(0);
     assertThat(param.isSimpleType()).isTrue();
@@ -1167,7 +1167,7 @@ public class ParserTest {
     ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     ProcedureNode.Parameter param = proc.parameters().get(0);
     assertThat(param.name()).isEqualTo("a");
-    RecordReferenceType type = (RecordReferenceType) param.type();
+    RecordReferenceType type = (RecordReferenceType) param.varType();
     assertThat(type.name()).isEqualTo("R");
   }
 

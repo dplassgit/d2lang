@@ -10,10 +10,10 @@ public class ProcSymbol extends AbstractSymbol {
   public ProcSymbol(ProcedureNode node) {
     super(node.name());
     this.node = node;
-    this.setVarType(VarType.PROC); // TODO: make this into its complex type!!!
+    this.setVarType(VarType.PROC); // TODO: make this into its complex type?
   }
 
-  // Maybe think about this?
+  // TODO: Think about this? Is it exposing too much?
   public ProcedureNode node() {
     return node;
   }
