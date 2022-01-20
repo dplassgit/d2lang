@@ -6,16 +6,17 @@ public enum Register {
   // R5/RBP - not used as GP register
   RSI("RSI", "ESI", "SI", "SIL"),
   RDI("RDI", "EDI", "DI", "DIL"),
-  R8("R8"),
-  R9("R9"),
-  R10("R10"),
-  R11("R11"),
   R12("R12"),
   R13("R13"),
   R14("R14"),
   R15("R15"),
+  // RBX through R15 are always saved/restored by procedures so they should be used first.
+  R10("R10"),
+  R11("R11"),
+  R8("R8"),
+  R9("R9"),
   // These are at the bottom so that they're less frequently used, since division uses EDX:EAX
-  // and system calls use RCX and RDX.
+  // and system calls use RCX and RDX, and because RCX, RDX, R8, R9 are the first 4 params
   RCX("RCX", "ECX", "CX", "CL"),
   RDX("RDX", "EDX", "DX", "DL"),
   RAX("RAX", "EAX", "AX", "AL");

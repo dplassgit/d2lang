@@ -128,7 +128,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // TODO: convert command-line arguments to ??? and send to __main
     emit0("main:");
     for (Op opcode : code) {
-      emit(opcode);
+      emitComment(opcode);
       opcode.accept(this);
     }
 
@@ -194,6 +194,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(SysCall op) {
     Operand arg = op.arg();
+    // need to preserve used registers!
+    boolean pushedRax = condPush(Register.RAX);
+    boolean pushedR8 = condPush(Register.R8);
+    boolean pushedR9 = condPush(Register.R9);
+
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
@@ -243,6 +248,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         fail("Cannot generate %s yet", op);
         break;
     }
+    condPop(Register.R9, pushedR9);
+    condPop(Register.R8, pushedR8);
+    condPop(Register.RAX, pushedRax);
     deallocate(op.arg());
   }
 
@@ -278,7 +286,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String destName = resolve(op.destination());
 
     Register tempReg = null;
-    boolean pushedRcx = false;
 
     // 5. [op] dest, right
     TokenType operator = op.operator();
@@ -308,7 +315,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case AND:
         case OR:
         case XOR:
-          emit("mov BYTE %s, %s ; binary setup", destName, leftName);
+          emit("mov BYTE %s, %s ; boolean setup", destName, leftName);
           emit(
               "%s %s, %s ; boolean %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           break;
@@ -320,9 +327,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = registers.allocate();
-          emit("mov BYTE %s, %s ; binary setup", tempReg.name8, leftName);
+          emit("mov BYTE %s, %s ; compare setup", tempReg.name8, leftName);
           emit("cmp %s, %s", tempReg.name8, rightName, operator);
-          emit("%s %s ; binary %s", BINARY_OPCODE.get(operator), destName, operator);
+          emit("%s %s ; bool compare %s", BINARY_OPCODE.get(operator), destName, operator);
           break;
 
         default:
@@ -338,18 +345,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case BIT_AND:
         case BIT_OR:
         case BIT_XOR:
-          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
-          emit("%s %s, %s ; binary %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          emit("mov %s %s, %s ; int setup", size, destName, leftName);
+          emit("%s %s, %s ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           break;
 
         case SHIFT_LEFT:
         case SHIFT_RIGHT:
-          emit("mov %s %s, %s ; binary setup", size, destName, leftName);
-          pushedRcx = condPush(Register.RCX);
-          // TODO: this is a problem if rightname is CL
-          emit("mov CL, %s ; shift left prep", rightName);
-          emit("%s %s, CL ; binary %s", BINARY_OPCODE.get(operator), destName, operator);
-          condPop(Register.RCX, pushedRcx);
+          {
+            emit("mov %s %s, %s ; shift setup", size, destName, leftName);
+            boolean pushedRcx = condPush(Register.RCX);
+            // TODO: this is a problem if rightname is CL
+            emit("mov CL, %s ; shift prep", rightName);
+            emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
+            condPop(Register.RCX, pushedRcx);
+          }
           break;
 
         case EQEQ:
@@ -359,9 +368,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = registers.allocate();
-          emit("mov DWORD %s, %s ; binary setup", tempReg.name32, leftName);
+          emit("mov DWORD %s, %s ; int compare setup", tempReg.name32, leftName);
           emit("cmp %s, %s", tempReg.name32, rightName);
-          emit("%s %s  ; int %s", BINARY_OPCODE.get(operator), destName, operator);
+          emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
           break;
 
         case DIV:
@@ -547,25 +556,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
         emit("mov dword %s, %s  ; unary setup", destName, sourceName);
-        emit("not %s  ; unary not", destName);
+        emit("not %s  ; bit not", destName);
         break;
       case NOT:
-        // binary not
+        // boolean not
         // 1. compare to 0
-        emit("cmp byte %s, 0", sourceName);
+        emit("cmp byte %s, 0  ; unary not", sourceName);
         // 2. setz %s
-        emit("setz %s", destName);
+        emit("setz %s  ; boolean not", destName);
         break;
       case MINUS:
         emit("mov dword %s, %s  ; unary setup", destName, sourceName);
-        emit("neg %s  ; unary negation", destName);
+        emit("neg %s  ; unary minus", destName);
         break;
       case LENGTH:
         if (source.type() == VarType.STRING) {
           generateStringLength(sourceName, destName);
         } else {
           // array length
-          fail("Cannot generate %s yet", op);
+          fail("Cannot generate array %s yet", op);
         }
         break;
       case ASC:
@@ -646,8 +655,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcEntry op) {
-    // TODO: save volatile registers
+    // save nonvolatile registers
     emit("; entry to %s", op.name());
+    emit("push rbx");
+    emit("push r12");
+    emit("push r13");
+    emit("push r14");
+    emit("push r15");
+    emit("push rdi");
+    emit("push rsi");
   }
 
   @Override
@@ -656,6 +672,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (op.returnValueLocation().isPresent()) {
       // transfer from return value to RAX
       Operand returnValue = op.returnValueLocation().get();
+      // I hate this. why can't we emit the "mov"?
       visit(
           new Transfer(new RegisterLocation("RAX", Register.RAX, returnValue.type()), returnValue));
     }
@@ -665,13 +682,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(ProcExit op) {
     emit0("__exit_of_%s:", op.procName());
-    // TODO: restore volatile registers
+    // restore registers
+    emit("pop rsi");
+    emit("pop rdi");
+    emit("pop r15");
+    emit("pop r14");
+    emit("pop r13");
+    emit("pop r12");
+    emit("pop rbx");
     emit("ret  ; return from procedure");
   }
 
   @Override
   public void visit(Call op) {
-    emit("; TODO: set up actuals, mapped to RCX, RDX, etc.");
+    emit("; set up actuals, mapped to RCX, RDX, etc.");
+    int index = 0;
+    //    for (Operand actual : op.actuals()) {
+    //      Location formal = op.formals().get(index);
+    //      String size = dataSize(actual.type());
+    //      String actualLocation = resolve(actual);
+    //      emit("mov %s %s, %s", formal.baseLocation(), actualLocation);
+    //      index++;
+    //    }
     emit("call __%s", op.procName());
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
@@ -791,7 +823,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("  " + format, values);
   }
 
-  private void emit(Op op) {
+  private void emitComment(Op op) {
     emit0("\n  ; %s", op.toString());
   }
 

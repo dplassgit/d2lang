@@ -29,8 +29,8 @@ import com.plasstech.lang.d2.phase.State;
 public class NasmCodeGeneratorTest {
   private static File dir;
 
-  // @TestParameter boolean optimize;
-  boolean optimize = false;
+  @TestParameter boolean optimize;
+  //  boolean optimize = false;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
@@ -52,8 +52,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void printInt() throws Exception {
-    execute("print 3", "printInt" /*heh*/);
-    execute("print -3", "printNegInt");
+    execute("print 3 print -3 ", "printInt" /*heh*/);
   }
 
   @Test
@@ -174,6 +173,7 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
+  @Ignore
   public void fib() throws Exception {
     // DANG THIS WORKS!
     execute(
@@ -283,9 +283,8 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void exitMain() throws Exception {
-    execute("main {exit 'exitMain'}", "exitMain");
+    execute("main {exit 'exitMain'}", "exitMain", -1);
   }
 
   @Test
@@ -422,9 +421,7 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void procIntParam() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      fun:proc(n:int):int { \n" //
             + "   return n+1 \n" //

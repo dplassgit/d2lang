@@ -14,8 +14,7 @@ public class Call extends Op {
   private final Optional<Location> destination;
   private final ImmutableList<Location> formals;
 
-  public Call(
-      Optional<Location> destination, String procName, ImmutableList<Operand> actuals) {
+  public Call(Optional<Location> destination, String procName, ImmutableList<Operand> actuals) {
     this.destination = destination;
     this.procName = procName;
     this.actuals = actuals;

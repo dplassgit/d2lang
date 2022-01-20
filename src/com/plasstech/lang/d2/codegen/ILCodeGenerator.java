@@ -204,9 +204,14 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case HEAP:
       case GLOBAL:
         return new MemoryAddress(name, variable.varType());
-      default:
-        // TODO: This is insufficient; need to distinguish between locals and params and temps
+      case LOCAL:
         return new StackLocation(name, variable.varType());
+      case PARAM:
+        // this depends on where it's really stored - may be stack or register
+        return new StackLocation(name, variable.varType());
+      default:
+        throw new IllegalStateException(
+            String.format("Cannot lookup location of %s of type %s", name, variable.storage()));
     }
   }
 
@@ -506,6 +511,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Call call;
     ImmutableList<Operand> actualLocations =
         node.actuals().stream().map(Node::location).collect(toImmutableList());
+
+    // TODO: look up the procedure node to get its parameter list to put into the
+    // call object
+    Symbol symbol = symbolTable().get(node.procName());
+    if (!(symbol instanceof ProcSymbol)) {}
+
     if (node.isStatement()) {
       // No return value
       call = new Call(node.procName(), actualLocations);
