@@ -24,7 +24,7 @@ TempLocation (?)
 HeapLocation (?) isn't this global?
 ImmediateLocation (?) do we even need this? no.
 
-Hm, do temps have symbols?
+Hm, do temps have symbols? yes. they're a Symbol with SymbolStorage.TEMP
 
 
 EXISTING:
@@ -51,19 +51,22 @@ Symbol has VarType
 PROPOSAL:
 
 Node
-  has Location (!!) ugh.
+oh but node needs something...
+  has Location (?) GONE. Only IlCodeGenerator needed this.
+
+Opcodes have operands:
 
 Operand
   ConstantOperand
-  VariableOperand has Symbol and getLocation
+  VariableOperand has Symbol and Location
     FieldSetOperand (?) this is needed for an l-value only - but seems extranous because we can calculate the memory location and then set it. but, it makes the interpreter much easier...
-  TempOperand has Location
+    TempOperand has Location
 
 
 Symbol has name, VarType
   RecordDefSymbol
   ProcSymbol
-  AbstractSymbol has Location
+  VariableSymbol has Location
     GlobalSymbol
     LocalSymbol
     FormalSymbol has index
