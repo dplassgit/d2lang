@@ -26,4 +26,9 @@ public class RegisterLocation extends Location {
   public String name() {
     return register.name();
   }
+
+  @Override
+  public boolean isRegister() {
+    return true;
+  }
 }

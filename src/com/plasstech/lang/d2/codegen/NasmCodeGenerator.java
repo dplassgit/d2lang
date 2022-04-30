@@ -172,21 +172,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
-    if (source.isConstant()) {
+    if (source.isConstant() || source.isRegister()) {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
-      if (!sourceLoc.startsWith("[")) {
-        // register. Just move it.
-        emit("mov %s %s, %s", size, destLoc, sourceLoc);
-      } else {
-        Register tempReg = registers.allocate();
-        // TODO: deal with out-of-registers
-        String tempName = registerNameSized(tempReg, op.source().type());
-        // TODO: this is redundant if destLoc is a register
-        emit("mov %s %s, %s", size, tempName, sourceLoc);
-        emit("mov %s %s, %s", size, destLoc, tempName);
-        registers.deallocate(tempReg);
-      }
+      Register tempReg = registers.allocate();
+      // TODO: deal with out-of-registers
+      String tempName = registerNameSized(tempReg, op.source().type());
+      // TODO: this is redundant if destLoc is a register
+      emit("mov %s %s, %s", size, tempName, sourceLoc);
+      emit("mov %s %s, %s", size, destLoc, tempName);
+      registers.deallocate(tempReg);
     }
     deallocate(source);
   }

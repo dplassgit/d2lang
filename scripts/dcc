@@ -1,0 +1,1 @@
+bazel run //src/com/plasstech/lang/d2:D2Compiler -- $PWD/$1 $@

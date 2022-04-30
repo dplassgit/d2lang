@@ -9,7 +9,12 @@ public interface Operand {
 
   VarType type();
 
+  // I'm not loving these methods.
   default boolean isConstant() {
+    return false;
+  }
+
+  default boolean isRegister() {
     return false;
   }
 }
