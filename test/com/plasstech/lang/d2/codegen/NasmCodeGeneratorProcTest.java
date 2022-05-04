@@ -70,11 +70,11 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
         "procReturnsInt");
   }
 
-  @Ignore
   @Test
+  @Ignore
   public void procParamFirst4Locations() {
-    State state =
-        allButFiles("fib:proc(p1: int, p2: bool, p3: int, p4: string) {} fib(1,true,3,'')");
+    assumeFalse(optimize);
+    State state = compileToNasm("fib:proc(p1: int, p2: bool, p3: int, p4: string) {} fib(1,true,3,'')");
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 

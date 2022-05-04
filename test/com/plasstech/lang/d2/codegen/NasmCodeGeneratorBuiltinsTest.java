@@ -52,17 +52,17 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void exitErrorConst() throws Exception {
-    execute("exit 'exitErrorConst'", "exitErrorConst", -1);
+    assertCompiledEqualsInterpreted("exit 'exitErrorConst'", "exitErrorConst", -1);
   }
 
   @Test
   public void exitErrorVariable() throws Exception {
-    execute("a='exitErrorVariable' exit a", "exitErrorVariable", -1);
+    assertCompiledEqualsInterpreted("a='exitErrorVariable' exit a", "exitErrorVariable", -1);
   }
 
   @Test
   public void exitMain() throws Exception {
-    execute("main {exit 'exitMain'}", "exitMain", -1);
+    assertCompiledEqualsInterpreted("main {exit 'exitMain'}", "exitMain", -1);
   }
 
   @Test

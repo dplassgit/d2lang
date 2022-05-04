@@ -33,10 +33,10 @@ public class NasmCodeGeneratorTestBase {
   }
 
   public void execute(String sourceCode, String filename) throws Exception {
-    execute(sourceCode, filename, 0);
+    assertCompiledEqualsInterpreted(sourceCode, filename, 0);
   }
 
-  public State allButFiles(String sourceCode) {
+  public State compileToNasm(String sourceCode) {
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
     ee.setOptimize(optimize);
     // Compiles and interprets
@@ -47,7 +47,8 @@ public class NasmCodeGeneratorTestBase {
     return state;
   }
 
-  public void execute(String sourceCode, String filename, int exitCode) throws Exception {
+  public void assertCompiledEqualsInterpreted(String sourceCode, String filename, int exitCode)
+      throws Exception {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
@@ -67,7 +68,7 @@ public class NasmCodeGeneratorTestBase {
     }
     file.createNewFile();
 
-    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
+    //    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
     CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode());
 
