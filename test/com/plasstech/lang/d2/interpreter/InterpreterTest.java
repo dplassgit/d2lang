@@ -4,7 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
-import com.plasstech.lang.d2.Executor;
+import com.plasstech.lang.d2.InterpreterExecutor;
 
 public class InterpreterTest {
   @Test
@@ -325,9 +325,9 @@ public class InterpreterTest {
   }
 
   private Environment execute(String program, boolean optimize) {
-    Executor ee = new Executor(program);
+    InterpreterExecutor ee = new InterpreterExecutor(program);
     ee.setOptimize(optimize);
-    ExecutionResult result = ee.execute();
+    InterpreterResult result = ee.execute();
     //    System.out.println(ee.programNode());
     //
     //    System.out.println("Environment:");

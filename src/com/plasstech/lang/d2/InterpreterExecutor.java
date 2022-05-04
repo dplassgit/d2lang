@@ -2,7 +2,7 @@ package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
@@ -13,7 +13,7 @@ import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymTab;
 
 @SuppressWarnings("unused")
-public class Executor {
+public class InterpreterExecutor {
 
   private boolean optimize;
   private boolean interactive;
@@ -24,54 +24,54 @@ public class Executor {
   private int debugParse;
   private int debugInt;
   private State state;
-  private ExecutionResult result;
+  private InterpreterResult result;
 
   /** TODO: Make this a builder */
-  public Executor(String sourceCode) {
+  public InterpreterExecutor(String sourceCode) {
     this.state = State.create(sourceCode).build();
   }
 
-  public Executor setOptimize(boolean optimize) {
+  public InterpreterExecutor setOptimize(boolean optimize) {
     this.optimize = optimize;
     return this;
   }
 
-  public Executor setInteractive(boolean interactive) {
+  public InterpreterExecutor setInteractive(boolean interactive) {
     this.interactive = interactive;
     return this;
   }
 
-  public Executor setLexDebugLevel(int level) {
+  public InterpreterExecutor setLexDebugLevel(int level) {
     this.debuglex = level;
     return this;
   }
 
-  public Executor setParseDebugLevel(int level) {
+  public InterpreterExecutor setParseDebugLevel(int level) {
     this.debugParse = level;
     return this;
   }
 
-  public Executor setTypeDebugLevel(int level) {
+  public InterpreterExecutor setTypeDebugLevel(int level) {
     this.debugType = level;
     return this;
   }
 
-  public Executor setCodeGenDebugLevel(int level) {
+  public InterpreterExecutor setCodeGenDebugLevel(int level) {
     this.debugCodeGen = level;
     return this;
   }
 
-  public Executor setOptDebugLevel(int level) {
+  public InterpreterExecutor setOptDebugLevel(int level) {
     this.debugOpt = level;
     return this;
   }
 
-  public Executor setIntDebugLevel(int level) {
+  public InterpreterExecutor setIntDebugLevel(int level) {
     this.debugInt = level;
     return this;
   }
 
-  public ExecutionResult execute() {
+  public InterpreterResult execute() {
     Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
     state = parser.execute(state);
@@ -110,7 +110,7 @@ public class Executor {
     return execute(state);
   }
 
-  public ExecutionResult execute(State state) {
+  public InterpreterResult execute(State state) {
     Interpreter interpreter = new Interpreter(state, interactive);
     interpreter.setDebugLevel(debugInt);
     result = interpreter.execute();

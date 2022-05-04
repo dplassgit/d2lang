@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 
-public class ExecutionResult {
+public class InterpreterResult {
 
   private final ImmutableList<Op> code;
   private final Environment environment;
@@ -18,7 +18,7 @@ public class ExecutionResult {
   private int branchesNotTaken;
   private int calls;
 
-  public ExecutionResult(State state, Environment environment) {
+  public InterpreterResult(State state, Environment environment) {
     this.code = state.lastIlCode();
     this.environment = environment;
     this.symbolTable = state.symbolTable();

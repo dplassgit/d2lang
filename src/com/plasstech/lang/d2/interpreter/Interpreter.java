@@ -58,7 +58,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private boolean running = true;
 
   private Level loggingLevel;
-  private ExecutionResult result;
+  private InterpreterResult result;
 
   public Interpreter(State state, boolean interactive) {
     this.state = state;
@@ -83,8 +83,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  public ExecutionResult execute() {
-    result = new ExecutionResult(state, rootEnv);
+  public InterpreterResult execute() {
+    result = new InterpreterResult(state, rootEnv);
     while (running) {
       Op op = code.get(ip);
       if (!(op instanceof Nop) && !(op instanceof Label)) {

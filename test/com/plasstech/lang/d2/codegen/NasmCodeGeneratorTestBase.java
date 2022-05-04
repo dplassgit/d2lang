@@ -16,8 +16,8 @@ import com.google.common.io.CharSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.plasstech.lang.d2.Executor;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
 
 public class NasmCodeGeneratorTestBase {
@@ -36,12 +36,23 @@ public class NasmCodeGeneratorTestBase {
     execute(sourceCode, filename, 0);
   }
 
+  public State allButFiles(String sourceCode) {
+    InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
+    ee.setOptimize(optimize);
+    // Compiles and interprets
+    ee.execute();
+    State state = ee.state();
+
+    state = new NasmCodeGenerator().execute(state);
+    return state;
+  }
+
   public void execute(String sourceCode, String filename, int exitCode) throws Exception {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
-    Executor ee = new Executor(sourceCode);
+    InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
     ee.setOptimize(optimize);
-    ExecutionResult result = ee.execute();
+    InterpreterResult result = ee.execute();
     State state = ee.state();
     //    System.err.println(Joiner.on('\n').join(state.lastIlCode()));
     state = state.addFilename(filename);

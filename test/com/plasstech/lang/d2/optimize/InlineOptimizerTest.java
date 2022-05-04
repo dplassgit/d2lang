@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class InlineOptimizerTest {
@@ -24,7 +24,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortVoidNoArg() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      g = 0 "
                 + "shortVoidNoArg:proc() { g = 3 } " //
@@ -38,7 +38,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortVoidLocal() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      shortVoidLocal:proc(n:int) { m = n + 1 print m } " //
                 + "shortVoidLocal(3) ",
@@ -50,7 +50,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortVoidGlobal() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      g = 0"
                 + "shortVoidGlobal:proc(n:int) { g = g + n } " //
@@ -64,7 +64,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortProc() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      shortProc:proc(n:int):int { return n + 1 } " //
                 + "println shortProc(10)",
@@ -76,7 +76,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortProcRecord() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      rt:record{i:int} "
                 + "shortProcRecord:proc():rt { "
@@ -95,7 +95,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortProcGlobalRecord() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      rt:record{i:int} r:rt "
                 + "shortProcGlobalRecord:proc() { "
@@ -113,7 +113,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortProcWithCall() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      p:proc(n:int):int { return n+1 }"
                 + "shortProcWithCall:proc(n:int):int { return p(n) } " //
@@ -126,7 +126,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void medium() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      medium:proc(c:string):bool { return c >= '0' and c <= '9' } " //
                 + "println medium('12')",
@@ -148,7 +148,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void ignoreReturnValue() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      ignoredReturnValue:proc():int {" //
                 + "  return 6 "
@@ -161,7 +161,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void ignoreReturnValueSometimes() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      ignoredReturnValueSometimes:proc():int {" //
                 + "  return 6 "
@@ -175,7 +175,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void ignoreReturnValueSometimesAllOpts() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      ignoredReturnValueSometimesAllOpts:proc():int {" //
                 + "  return 6 "
@@ -188,7 +188,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void multipleCalls() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      multipleCalls:proc(c:string):bool { return c >= '0' and c <= '9' } " //
                 + "" //
@@ -203,7 +203,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void twoReturns() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      twoReturns: proc(n:int):bool {"
                 + "  if n>0 {return true} else {return false} "
@@ -228,7 +228,7 @@ public class InlineOptimizerTest {
 
   @Test
   public void longProc() {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             "      longProc: proc(n:int):int {"
                 + "  sum = 0 i=0 while i < n do i = i + 1 {"

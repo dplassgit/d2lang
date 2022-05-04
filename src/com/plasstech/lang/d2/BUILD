@@ -105,7 +105,7 @@ java_binary(name="InterpreterDriver",
 
 java_library(
     name="executor",
-    srcs=["Executor.java"],
+    srcs=["InterpreterExecutor.java"],
     deps=[
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/common",

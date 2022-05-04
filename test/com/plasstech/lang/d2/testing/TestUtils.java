@@ -5,10 +5,10 @@ import static org.junit.Assert.fail;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.Executor;
+import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
@@ -18,13 +18,13 @@ import com.plasstech.lang.d2.type.StaticChecker;
 
 public class TestUtils {
 
-  public static ExecutionResult optimizeAssertSameVariables(String program) {
+  public static InterpreterResult optimizeAssertSameVariables(String program) {
     return optimizeAssertSameVariables(program, new ILOptimizer(2));
   }
 
-  public static ExecutionResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
-    Executor ee = new Executor(program);
-    ExecutionResult unoptimizedResult = ee.execute();
+  public static InterpreterResult optimizeAssertSameVariables(String program, Optimizer optimizer) {
+    InterpreterExecutor ee = new InterpreterExecutor(program);
+    InterpreterResult unoptimizedResult = ee.execute();
     ImmutableList<Op> originalCode = unoptimizedResult.code();
     
     System.out.printf("\nUNOPTIMIZED:\n");
@@ -35,7 +35,7 @@ public class TestUtils {
     System.out.println(Joiner.on("").join(unoptimizedResult.environment().output()));
 
     ImmutableList<Op> optimized = optimizer.optimize(originalCode);
-    ExecutionResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
+    InterpreterResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
 
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));

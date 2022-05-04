@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import com.google.common.base.Joiner;
 import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.common.D2Options;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 
 public class InterpreterDriver {
 
@@ -45,8 +45,8 @@ public class InterpreterDriver {
       return;
     }
 
-    Executor ee = 
-        new Executor(text)
+    InterpreterExecutor ee = 
+        new InterpreterExecutor(text)
             .setInteractive(true)
             .setLexDebugLevel(options.debuglex)
             .setParseDebugLevel(options.debugparse)
@@ -56,7 +56,7 @@ public class InterpreterDriver {
             .setIntDebugLevel(options.debugint)
             .setOptimize(options.optimize);
 
-    ExecutionResult result = ee.execute();
+    InterpreterResult result = ee.execute();
     if (options.debugparse > 0) {
       System.out.println("\nPARSED PROGRAM:");
       System.out.println("------------------------------");

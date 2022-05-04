@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.interpreter.ExecutionResult;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -157,7 +157,7 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void printConstantInt() {
-    ExecutionResult result = TestUtils.optimizeAssertSameVariables("print 3", OPTIMIZERS);
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("print 3", OPTIMIZERS);
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
     ConstantOperand<String> arg = (ConstantOperand<String>) first.arg();
@@ -166,7 +166,7 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void printConstantBool(@TestParameter boolean val) {
-    ExecutionResult result =
+    InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(String.format("print %s", val), OPTIMIZERS);
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
