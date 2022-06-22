@@ -507,22 +507,24 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     // 2. emit call(parameters)
     Call call;
-    ImmutableList<Operand> actualLocations =
+    ImmutableList<Operand> actuals =
         node.actuals().stream().map(Node::location).collect(toImmutableList());
 
-    // TODO: look up the procedure node to get its parameter list to put into the
+    // look up the procedure node to get its parameter list to put into the
     // call object
     Symbol symbol = symbolTable().get(node.procName());
-    if (!(symbol instanceof ProcSymbol)) {}
-
+    //    if (!(symbol instanceof ProcSymbol)) {
+    //    }
+    ProcSymbol procSym = (ProcSymbol) symbol;
+    ImmutableList<Location> formals = procSym.formals();
     if (node.isStatement()) {
       // No return value
-      call = new Call(node.procName(), actualLocations);
+      call = new Call(node.procName(), actuals, formals);
     } else {
       // 3. put result location into node.location
       Location location = allocateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, node.procName(), actualLocations);
+      call = new Call(location, node.procName(), actuals, formals);
     }
     emit(call);
   }

@@ -2,8 +2,8 @@ package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.interpreter.Interpreter;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -75,6 +75,11 @@ public class InterpreterExecutor {
     Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
     state = parser.execute(state);
+    if (debugParse > 0) {
+      System.out.println("\nPARSED:");
+      System.out.println("------------------------------");
+      System.out.println(state.programNode());
+    }
     if (state.error()) {
       throw state.exception();
     }

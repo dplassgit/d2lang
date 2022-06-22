@@ -1,6 +1,10 @@
 package com.plasstech.lang.d2.type;
 
+import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 
 public class ProcSymbol extends AbstractSymbol {
 
@@ -40,5 +44,16 @@ public class ProcSymbol extends AbstractSymbol {
   public SymbolStorage storage() {
     // TODO: this might be a local if it's nested
     return SymbolStorage.GLOBAL;
+  }
+
+  public ImmutableList<Location> formals() {
+    ImmutableList<Parameter> formalParams = node().parameters();
+
+    ImmutableList.Builder<Location> formals = ImmutableList.builder();
+    int i = 0;
+    for (Parameter formal : formalParams) {
+      formals.add(new ParamLocation(formal.name(), formal.varType(), i++));
+    }
+    return formals.build();
   }
 }

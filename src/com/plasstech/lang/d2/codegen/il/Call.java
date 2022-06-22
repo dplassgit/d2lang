@@ -14,19 +14,28 @@ public class Call extends Op {
   private final Optional<Location> destination;
   private final ImmutableList<Location> formals;
 
-  public Call(Optional<Location> destination, String procName, ImmutableList<Operand> actuals) {
+  public Call(
+      Optional<Location> destination,
+      String procName,
+      ImmutableList<Operand> actuals,
+      ImmutableList<Location> formals) {
     this.destination = destination;
     this.procName = procName;
     this.actuals = actuals;
-    this.formals = null;
+    this.formals = formals;
   }
 
-  public Call(Location destination, String procName, ImmutableList<Operand> actuals) {
-    this(Optional.of(destination), procName, actuals);
+  public Call(
+      Location destination,
+      String procName,
+      ImmutableList<Operand> actuals,
+      ImmutableList<Location> formals) {
+    this(Optional.of(destination), procName, actuals, formals);
   }
 
-  public Call(String functionToCall, ImmutableList<Operand> actuals) {
-    this(Optional.empty(), functionToCall, actuals);
+  public Call(
+      String functionToCall, ImmutableList<Operand> actuals, ImmutableList<Location> formals) {
+    this(Optional.empty(), functionToCall, actuals, formals);
   }
 
   public String procName() {

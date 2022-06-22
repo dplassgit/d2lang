@@ -161,7 +161,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     }
 
     if (changed) {
-      replaceCurrent(new Call(op.destination(), op.procName(), replacementParams.build()));
+      replaceCurrent(
+          new Call(op.destination(), op.procName(), replacementParams.build(), op.formals()));
     }
 
     stackConstants.clear();

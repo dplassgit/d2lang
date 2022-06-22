@@ -15,14 +15,14 @@ import com.plasstech.lang.d2.phase.State;
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   @Test
-  public void proc() throws Exception {
+  public void procTest() throws Exception {
     execute(
         "      a=1 \n"
-            + "fun:proc() { \n" //
+            + "procTest:proc() { \n" //
             + "   if a==1 {println a return } else {println 4 return} \n" //
             + "} \n" //
-            + "fun()",
-        "proc");
+            + "procTest()",
+        "procTest");
   }
 
   @Test
@@ -60,26 +60,30 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procIntParam() throws Exception {
+    // cannot run with optimize=true because the inline optimizer is creating a "local"
+    // variable, which cannot be generated yet.
     assumeFalse(optimize);
-    // this is throwing "cannot generate LOCAL" from codegen.resolve method.
-    // why is it LOCAL instead of PARAM?
     execute(
-        "      fun:proc(n:int):int { \n" //
+        "      procIntParam:proc(n:int):int { \n" //
             + "   return n+1 \n" //
             + "} \n" //
-            + "x=fun(4) print x",
+            + "x=procIntParam(4) print x",
         "procReturnsInt");
   }
 
   @Test
   public void procParamFirst4Locations() {
     assumeFalse(optimize);
+    // this is failing because:
+    // 1. print p1 is losing the value of p1 (ECX) because it's being overwritten by the setup for
+    // "print"
+
     State state =
         compileToNasm(
-            "fib:proc(p1: int, p2: bool, p3: int, p4: string) { "
+            "procParamFirst4Locations:proc(p1: int, p2: bool, p3: int, p4: string) { "
                 + "  print p1 print p2 print p3 print p4"
                 + "} "
-                + "fib(1,true,3,'')");
+                + "procParamFirst4Locations(1,true,3,'hi')");
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 

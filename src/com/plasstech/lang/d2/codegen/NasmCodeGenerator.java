@@ -659,6 +659,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(ProcEntry op) {
     // Assign locations of each parameter
     int i = 0;
+    // I hate this. the param should already know its location, as a ParamLocation
     for (Parameter formal : op.formals()) {
       Location location;
       switch (i) {
@@ -684,6 +685,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // maybe use the vartype to decide how much space to allocate?
           //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
       }
+      i++;
       // Is this even ever used?!
       formal.setLocation(location);
     }
@@ -737,9 +739,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
     int index = 0;
     for (Operand actual : op.actuals()) {
-      Location formal = op.formals().get(index++);
+      String formalLocation = resolve(op.formals().get(index++));
       String actualLocation = resolve(actual);
-      emit("mov %s %s, %s", formal.baseLocation(), actualLocation);
+      String size = dataSize(actual.type());
+      // I'm not sure if formal.baseLocation is right
+      emit("mov %s %s, %s", size, formalLocation, actualLocation);
     }
     emit("call __%s", op.procName());
     if (op.destination().isPresent()) {

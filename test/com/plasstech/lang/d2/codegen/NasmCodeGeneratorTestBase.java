@@ -38,6 +38,7 @@ public class NasmCodeGeneratorTestBase {
 
   public State compileToNasm(String sourceCode) {
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
+    ee.setParseDebugLevel(2);
     ee.setCodeGenDebugLevel(1);
     ee.setOptimize(optimize);
     // Compiles and interprets
@@ -45,6 +46,11 @@ public class NasmCodeGeneratorTestBase {
     State state = ee.state();
 
     state = new NasmCodeGenerator().execute(state);
+    System.out.println("\nNASM:");
+    System.out.println("------------------------------");
+    System.out.println(Joiner.on("\n").join(state.asmCode()));
+    System.out.println();
+
     return state;
   }
 
@@ -60,8 +66,8 @@ public class NasmCodeGeneratorTestBase {
     state = state.addFilename(filename);
 
     state = new NasmCodeGenerator().execute(state);
-    //    String asmCode = Joiner.on('\n').join(state.asmCode());
-    //    System.err.println(asmCode);
+    String asmCode = Joiner.on('\n').join(state.asmCode());
+    System.err.println(asmCode);
 
     File file = new File(dir, filename + ".asm");
     if (file.exists()) {
@@ -69,7 +75,7 @@ public class NasmCodeGeneratorTestBase {
     }
     file.createNewFile();
 
-    //    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
+    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
     CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode());
 
