@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeFalse;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -60,8 +59,10 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void procIntParam() throws Exception {
+    assumeFalse(optimize);
+    // this is throwing "cannot generate LOCAL" from codegen.resolve method.
+    // why is it LOCAL instead of PARAM?
     execute(
         "      fun:proc(n:int):int { \n" //
             + "   return n+1 \n" //
@@ -71,10 +72,14 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void procParamFirst4Locations() {
     assumeFalse(optimize);
-    State state = compileToNasm("fib:proc(p1: int, p2: bool, p3: int, p4: string) {} fib(1,true,3,'')");
+    State state =
+        compileToNasm(
+            "fib:proc(p1: int, p2: bool, p3: int, p4: string) { "
+                + "  print p1 print p2 print p3 print p4"
+                + "} "
+                + "fib(1,true,3,'')");
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 

@@ -42,7 +42,6 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -50,6 +49,7 @@ import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
@@ -205,10 +205,11 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case GLOBAL:
         return new MemoryAddress(name, variable.varType());
       case LOCAL:
+        // TODO: capture what its offset should be
         return new StackLocation(name, variable.varType());
       case PARAM:
-        // this depends on where it's really stored - may be stack or register
-        return new StackLocation(name, variable.varType());
+        ParamSymbol param = (ParamSymbol) variable;
+        return new ParamLocation(name, variable.varType(), param.index());
       default:
         throw new IllegalStateException(
             String.format("Cannot lookup location of %s of type %s", name, variable.storage()));
@@ -481,10 +482,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     // This is the real entry point.
     emit(new Label(node.name()));
-    emit(
-        new ProcEntry(
-            node.name(),
-            node.parameters().stream().map(Parameter::name).collect(toImmutableList())));
+    emit(new ProcEntry(node.name(), node.parameters()));
 
     node.block().accept(this);
 
@@ -530,7 +528,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   }
 
   private void emit(Op op) {
-    logger.atFine().log(op.toString());
+    logger.atFine().log("%s", op.toString());
     operations.add(op);
   }
 }

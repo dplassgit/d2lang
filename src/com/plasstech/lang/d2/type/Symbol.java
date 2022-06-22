@@ -10,5 +10,6 @@ public interface Symbol {
 
   boolean isAssigned();
 
+  // this is insufficient - if it's register or stack, we need to know *where* it is
   SymbolStorage storage();
 }

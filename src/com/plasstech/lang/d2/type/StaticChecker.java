@@ -698,8 +698,9 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
     // 4. add all args to local symbol table
     if (innerProc) {
+      int i = 0;
       for (Parameter param : node.parameters()) {
-        symbolTable().declareParam(param.name(), param.varType());
+        symbolTable().declareParam(param.name(), param.varType(), i++);
       }
     }
 

@@ -51,8 +51,9 @@ class ProcGatherer extends DefaultVisitor {
     procSymbol.setSymTab(child);
 
     // 4. add all formals to proc's symbol table
+    int i = 0;
     for (Parameter formal : node.parameters()) {
-      child.declareParam(formal.name(), formal.varType());
+      child.declareParam(formal.name(), formal.varType(), i++);
     }
   }
 }

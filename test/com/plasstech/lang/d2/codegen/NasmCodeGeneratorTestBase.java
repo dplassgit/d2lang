@@ -38,6 +38,7 @@ public class NasmCodeGeneratorTestBase {
 
   public State compileToNasm(String sourceCode) {
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
+    ee.setCodeGenDebugLevel(1);
     ee.setOptimize(optimize);
     // Compiles and interprets
     ee.execute();

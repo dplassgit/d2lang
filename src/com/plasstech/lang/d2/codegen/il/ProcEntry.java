@@ -1,14 +1,17 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 
 public class ProcEntry extends Op {
 
   private final String name;
-  private final ImmutableList<String> formals;
+  private final ImmutableList<Parameter> formals;
 
-  public ProcEntry(String name, ImmutableList<String> formals) {
+  public ProcEntry(String name, ImmutableList<Parameter> formals) {
     this.name = name;
     this.formals = formals;
   }
@@ -17,8 +20,12 @@ public class ProcEntry extends Op {
     return name;
   }
 
-  public ImmutableList<String> formalNames() {
+  public ImmutableList<Parameter> formals() {
     return formals;
+  }
+
+  public ImmutableList<String> formalNames() {
+    return formals.stream().map(Parameter::name).collect(toImmutableList());
   }
 
   @Override

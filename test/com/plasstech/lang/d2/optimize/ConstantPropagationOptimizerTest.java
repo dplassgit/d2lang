@@ -27,7 +27,7 @@ public class ConstantPropagationOptimizerTest {
   public void doubleCopy() {
     TempLocation t1 = new TempLocation("__temp1", VarType.INT);
     TempLocation t2 = new TempLocation("__temp2", VarType.INT);
-    StackLocation s1 = new StackLocation("s1", VarType.INT);
+    StackLocation s1 = new StackLocation("s1", 0, VarType.INT);
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(t1, ConstantOperand.ONE), new Transfer(t2, t1), new Transfer(s1, t2));

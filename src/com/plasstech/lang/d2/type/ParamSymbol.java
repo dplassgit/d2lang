@@ -12,15 +12,7 @@ public class ParamSymbol extends AbstractSymbol {
 
   @Override
   public SymbolStorage storage() {
-    switch(index()) {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-        return SymbolStorage.REGISTER;
-      default:
-        return SymbolStorage.LOCAL;
-    }
+    return SymbolStorage.PARAM;
   }
 
   public int index() {

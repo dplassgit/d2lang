@@ -68,11 +68,19 @@ public class SymTab {
   }
 
   public Symbol declareTemp(String name, VarType varType) {
-    return declareInternal(name, varType, SymbolStorage.TEMP);
+    return declareVariable(name, varType, SymbolStorage.TEMP);
   }
 
-  public Symbol declareParam(String name, VarType varType) {
-    Symbol param = declareInternal(name, varType, SymbolStorage.PARAM);
+  public Symbol declareParam(String name, VarType varType, int index) {
+    Preconditions.checkState(
+        !values.containsKey(name),
+        "%s already declared as %s. Cannot be redeclared as %s.",
+        name,
+        values.get(name),
+        varType);
+    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
+    Symbol param = new ParamSymbol(name, index).setVarType(varType);
+    values.put(name, param);
     param.setAssigned(); // parameters are always assigned, by definition.
     return param;
   }
@@ -107,10 +115,10 @@ public class SymTab {
 
   // It's only declared.
   public Symbol declare(String name, VarType varType) {
-    return declareInternal(name, varType, this.storage);
+    return declareVariable(name, varType, this.storage);
   }
 
-  private Symbol declareInternal(String name, VarType varType, SymbolStorage storage) {
+  private Symbol declareVariable(String name, VarType varType, SymbolStorage storage) {
     Preconditions.checkState(
         !values.containsKey(name),
         "%s already declared as %s. Cannot be redeclared as %s.",

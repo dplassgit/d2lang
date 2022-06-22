@@ -5,21 +5,20 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class StackLocation extends Location {
 
-  private final SymbolStorage storage;
+  private final int offset;
 
   public StackLocation(String name, VarType varType) {
-    this(name, SymbolStorage.LOCAL, varType);
+    this(name, 0, varType);
   }
 
-  // TODO: capture "offset" into stack frame
-  public StackLocation(String name, SymbolStorage storage, VarType varType) {
+  public StackLocation(String name, int offset, VarType varType) {
     super(name, varType);
-    this.storage = storage;
+    this.offset = offset;
   }
 
   @Override
   public SymbolStorage storage() {
-    return storage;
+    return SymbolStorage.LOCAL;
   }
 
   @Override
@@ -33,6 +32,10 @@ public class StackLocation extends Location {
 
   @Override
   public int hashCode() {
-    return 37 + 11 * this.name().hashCode();
+    return 37 + 11 * this.name().hashCode() + 5 * getOffset();
+  }
+
+  public int getOffset() {
+    return offset;
   }
 }
