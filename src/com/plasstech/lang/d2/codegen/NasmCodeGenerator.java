@@ -163,12 +163,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     String sourceLoc = resolve(source);
     Location destination = op.destination();
+    Register fromReg = toRegister(source);
     Register toReg = toRegister(destination);
     String destLoc = resolve(destination);
     String size = dataSize(op.source().type());
 
     if (source.type() == VarType.STRING) {
-      if (toReg == null) {
+      if (toReg != null || fromReg != null) {
+        // go right from source to dest
+        emit("; short circuit string");
+        emit("mov %s, %s", destLoc, sourceLoc);
+      } else {
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = registers.allocate();
@@ -178,10 +183,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov %s, %s", destLoc, tempName);
         registers.deallocate(tempReg);
         deallocate(source);
-      } else {
-        // go right from source to dest
-        emit("; short circuit string");
-        emit("mov %s, %s", destLoc, sourceLoc);
       }
 
       return;
@@ -191,17 +192,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // this isn't the only way to have the source be a register
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
-      if (toReg == null) {
+      if (toReg != null || fromReg != null) {
+        // go right from source to dest
+        emit("; short circuit int");
+        emit("mov %s %s, %s", size, destLoc, sourceLoc);
+      } else {
         Register tempReg = registers.allocate();
         // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
         registers.deallocate(tempReg);
-      } else {
-        // go right from source to dest
-        emit("; short circuit int");
-        emit("mov %s %s, %s", size, destLoc, sourceLoc);
       }
     }
     deallocate(source);
@@ -212,7 +213,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand arg = op.arg();
     // need to preserve used registers!
     boolean pushedRax = condPush(RAX);
-    // why are we doing this?!
     boolean pushedR8 = condPush(R8);
     boolean pushedR9 = condPush(R9);
 
@@ -229,6 +229,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           pushedRdx = condPush(RDX);
           if (!isInRegister(arg, RDX)) {
             emit("mov DWORD EDX, %s  ; Second argument is parameter", argVal);
+          } else {
+            emit("; Second argument already in EDX");
           }
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
           emit("call printf  ; printf(message)");
@@ -245,6 +247,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("cmp byte %s, 1", argVal);
             pushedRdx = condPush(RDX);
             emit("mov RDX, CONST_TRUE");
+            // conditional move?
             emit("cmovz RCX, RDX");
           }
           emit("call printf  ; printf(message)");
@@ -278,17 +281,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   /**
-   * @param arg
+   * @param source
    * @return the equivalent register, or null if none.
    */
-  private Register toRegister(Location arg) {
-    if (arg.isConstant()) {
+  private Register toRegister(Operand source) {
+    if (source.isConstant()) {
+      return null;
+    }
+    if (!(source instanceof Location)) {
       return null;
     }
 
     // maybe look up the location in the symbol table?
-    Location location = arg;
-    if (arg instanceof RegisterLocation) {
+    Location location = (Location) source;
+    if (source instanceof RegisterLocation) {
       return ((RegisterLocation) location).register();
     }
     Register aliasReg = aliases.get(location.toString());
