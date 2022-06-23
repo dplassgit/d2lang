@@ -42,6 +42,7 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -456,7 +457,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(ReturnNode node) {
-    String procedureName = procedures.peek().node().name();
+    String procedureName = procedures.peek().name();
     if (node.expr().isPresent()) {
       node.expr().get().accept(this);
       // copy the location of the result to the current procedure's destination.
@@ -518,7 +519,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
           "proc " + node.procName() + " not found in symtab " + symbolTable());
     }
     ProcSymbol procSym = (ProcSymbol) symbol;
-    ImmutableList<Location> formals = procSym.formals();
+    ImmutableList<Location> formals = procSymFormals(procSym);
     if (node.isStatement()) {
       // No return value
       call = new Call(node.procName(), actuals, formals);
@@ -529,6 +530,17 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       call = new Call(location, node.procName(), actuals, formals);
     }
     emit(call);
+  }
+
+  private ImmutableList<Location> procSymFormals(ProcSymbol procSym) {
+    ImmutableList<Parameter> formalParams = procSym.parameters();
+
+    ImmutableList.Builder<Location> formals = ImmutableList.builder();
+    int i = 0;
+    for (Parameter formal : formalParams) {
+      formals.add(new ParamLocation(formal.name(), formal.varType(), i++));
+    }
+    return formals.build();
   }
 
   private void emit(Op op) {

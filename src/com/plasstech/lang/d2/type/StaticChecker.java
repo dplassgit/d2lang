@@ -145,8 +145,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       if (!procedures.isEmpty()) {
         ProcSymbol top = procedures.peek();
         throw new TypeException(
-            String.format("Still in PROC '%s'. (This should never happen)", top),
-            top.node().position());
+            String.format("Still in PROC '%s'. (This should never happen)", top), top.position());
       }
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
@@ -287,11 +286,11 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     }
     // 2. make sure the arg length is right.
     ProcSymbol proc = (ProcSymbol) maybeProc;
-    if (proc.node().parameters().size() != node.actuals().size()) {
+    if (proc.parameters().size() != node.actuals().size()) {
       throw new TypeException(
           String.format(
               "Wrong number of arguments to PROC '%s': found %d, expected %d",
-              node.procName(), node.actuals().size(), proc.node().parameters().size()),
+              node.procName(), node.actuals().size(), proc.parameters().size()),
           node.position());
     }
     // 3. eval parameter expressions.
@@ -299,7 +298,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
     // 4. for each param, if param type is unknown, set it from the expr if possible
     for (int i = 0; i < node.actuals().size(); ++i) {
-      Parameter formal = proc.node().parameters().get(i);
+      Parameter formal = proc.parameters().get(i);
       ExprNode actual = node.actuals().get(i);
       if (formal.varType().isUnknown()) {
         if (actual.varType().isUnknown()) {
@@ -323,7 +322,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       }
     }
     // 6. set the type of the expression to the return type of the node
-    node.setVarType(proc.node().returnType());
+    node.setVarType(proc.returnType());
   }
 
   @Override
@@ -815,7 +814,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           String.format("Indeterminable type for RETURN statement %s", node), node.position());
     }
 
-    if (!proc.node().varType().compatibleWith(actualReturnType)) {
+    if (!proc.returnType().compatibleWith(actualReturnType)) {
       throw new TypeException(
           String.format(
               "PROC '%s' declared to return %s but returned %s",

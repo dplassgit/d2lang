@@ -744,7 +744,7 @@ public class StaticCheckerTest {
   public void paramDecl_recordType() {
     SymTab symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
-    Parameter instance = proc.node().parameters().get(0);
+    Parameter instance = proc.parameters().get(0);
     RecordReferenceType r1 = (RecordReferenceType) instance.varType();
     assertThat(r1.name()).isEqualTo("r1");
   }
