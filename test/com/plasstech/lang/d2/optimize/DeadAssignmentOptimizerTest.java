@@ -9,6 +9,16 @@ public class DeadAssignmentOptimizerTest {
   private Optimizer optimizer = new ILOptimizer(new DeadAssignmentOptimizer(2)).setDebugLevel(2);
 
   @Test
+  public void notDeadParams() {
+    TestUtils.optimizeAssertSameVariables(
+        "      p:proc(n:int):int {" //
+            + "  n=n*2 x=n-1 return x+n " //
+            + "}" //
+            + "println p(10)",
+        optimizer);
+  }
+
+  @Test
   public void deadTemps() {
     TestUtils.optimizeAssertSameVariables(
         "      p:proc(n:int):int {"

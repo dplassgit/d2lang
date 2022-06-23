@@ -78,7 +78,9 @@ public class SymTab {
         name,
         values.get(name),
         varType);
-    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
+    // parameters are declared before they have a type so we can't verify that it's not unknown yet.
+    //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
+    // name);
     Symbol param = new ParamSymbol(name, index).setVarType(varType);
     values.put(name, param);
     param.setAssigned(); // parameters are always assigned, by definition.

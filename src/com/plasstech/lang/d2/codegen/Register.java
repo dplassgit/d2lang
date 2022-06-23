@@ -13,12 +13,12 @@ public enum Register {
   // RBX through R15 are always saved/restored by procedures so they should be used first.
   R10("R10"),
   R11("R11"),
-  R8("R8"),
   R9("R9"),
+  R8("R8"),
   // These are at the bottom so that they're less frequently used, since division uses EDX:EAX
   // and system calls use RCX and RDX, and because RCX, RDX, R8, R9 are the first 4 params
-  RCX("RCX", "ECX", "CX", "CL"),
   RDX("RDX", "EDX", "DX", "DL"),
+  RCX("RCX", "ECX", "CX", "CL"),
   RAX("RAX", "EAX", "AX", "AL");
 
   public final String name64;

@@ -163,7 +163,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
           return new FieldSetAddress(
               "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
         }
-        // params are not necessarily on the stack.
+        // TODO: params are not necessarily on the stack.
         return new StackLocation("__" + location.name() + suffix, location.type());
       default:
         return operand;

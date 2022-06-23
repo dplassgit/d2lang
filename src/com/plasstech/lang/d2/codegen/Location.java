@@ -36,8 +36,8 @@ public abstract class Location implements Operand {
       case GLOBAL:
       case HEAP:
         return new MemoryAddress(name, varType);
-//      case LOCAL:
-//        return new StackLocation(name, SymbolStorage.LOCAL, varType);
+      case LOCAL:
+        return new StackLocation(name, varType);
 //      case PARAM:
 //        return new StackLocation(name, SymbolStorage.PARAM, varType);
       case TEMP:

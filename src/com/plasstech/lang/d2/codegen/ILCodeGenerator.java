@@ -512,9 +512,11 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     // look up the procedure node to get its parameter list to put into the
     // call object
-    Symbol symbol = symbolTable().get(node.procName());
-    //    if (!(symbol instanceof ProcSymbol)) {
-    //    }
+    Symbol symbol = symbolTable().getRecursive(node.procName());
+    if (!(symbol instanceof ProcSymbol)) {
+      throw new RuntimeException(
+          "proc " + node.procName() + " not found in symtab " + symbolTable());
+    }
     ProcSymbol procSym = (ProcSymbol) symbol;
     ImmutableList<Location> formals = procSym.formals();
     if (node.isStatement()) {

@@ -49,7 +49,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procReturnsString() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      fun:proc():string { \n" //
             + "   return 'hi' \n" //
@@ -64,10 +63,11 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     // variable, which cannot be generated yet.
     assumeFalse(optimize);
     execute(
-        "      procIntParam:proc(n:int):int { \n" //
-            + "   return n+1 \n" //
-            + "} \n" //
-            + "x=procIntParam(4) print x",
+        "      procIntParam:proc(n:int):int { "
+            + "   return n+1"
+            + "}"
+            + "x=procIntParam(4) "
+            + "print x",
         "procReturnsInt");
   }
 
@@ -75,26 +75,29 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   public void procLocals() throws Exception {
     assumeFalse(optimize);
     execute(
-        "      procLocals:proc(n:int):int { \n" //
-            + "   a=n+1 return a\n" //
-            + "} \n" //
-            + "x=procLocals(4) print x",
+        "      procLocals:proc(n:int):int { "
+            + "  // a is a local \n"
+            + "  a=n+1"
+            + "  return a"
+            + "} "
+            + "x=procLocals(4) "
+            + "print x",
         "procLocals");
   }
 
-  @Test
-  public void procParamFirst4Locations() {
-    assumeFalse(optimize);
-    // this is failing because:
-    // 1. print p1 is losing the value of p1 (ECX) because it's being overwritten by the setup for
-    // "print"
+  private static final String FOUR_PARAM_PROC =
+      "procParamFirst4Locations:proc(p1: int, p2: bool, p3: int, p4: string) { "
+          + "  print p1 print p2 print p3 print p4 "
+          + "  p1 = p3 + 1 "
+          + "  p2 = p1 == p3"
+          + "} "
+          + "procParamFirst4Locations(1,true,3,'hi')";
 
-    State state =
-        compileToNasm(
-            "procParamFirst4Locations:proc(p1: int, p2: bool, p3: int, p4: string) { "
-                + "  print p1 print p2 print p3 print p4"
-                + "} "
-                + "procParamFirst4Locations(1,true,3,'hi')");
+  @Test
+  public void procParamFirst4Locations() throws Exception {
+    assumeFalse(optimize);
+
+    State state = compileToNasm(FOUR_PARAM_PROC);
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 
@@ -120,5 +123,10 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     assertThat(param4.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register4 = (RegisterLocation) param4.location();
     assertThat(register4.register()).isEqualTo(Register.R9);
+
+    // this may be failing because:
+    // 1. print p1 is losing the value of p1 (ECX) because it's being overwritten by the setup for
+    // "print"
+    execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
   }
 }

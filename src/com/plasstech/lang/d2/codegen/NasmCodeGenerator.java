@@ -163,32 +163,46 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     String sourceLoc = resolve(source);
     Location destination = op.destination();
+    Register toReg = toRegister(destination);
     String destLoc = resolve(destination);
     String size = dataSize(op.source().type());
 
     if (source.type() == VarType.STRING) {
-      // move from sourceLoc to temp
-      // then from temp to dest
-      Register tempReg = registers.allocate();
-      // TODO: deal with out-of-registers
-      String tempName = registerNameSized(tempReg, op.source().type());
-      emit("mov %s, %s", tempName, sourceLoc);
-      emit("mov %s, %s", destLoc, tempName);
-      registers.deallocate(tempReg);
-      deallocate(source);
+      if (toReg == null) {
+        // move from sourceLoc to temp
+        // then from temp to dest
+        Register tempReg = registers.allocate();
+        // TODO: deal with out-of-registers
+        String tempName = registerNameSized(tempReg, op.source().type());
+        emit("mov %s, %s", tempName, sourceLoc);
+        emit("mov %s, %s", destLoc, tempName);
+        registers.deallocate(tempReg);
+        deallocate(source);
+      } else {
+        // go right from source to dest
+        emit("; short circuit string");
+        emit("mov %s, %s", destLoc, sourceLoc);
+      }
+
       return;
     }
 
     if (source.isConstant() || source.isRegister()) {
+      // this isn't the only way to have the source be a register
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
-      Register tempReg = registers.allocate();
-      // TODO: deal with out-of-registers
-      String tempName = registerNameSized(tempReg, op.source().type());
-      // TODO: this is redundant if destLoc is a register
-      emit("mov %s %s, %s", size, tempName, sourceLoc);
-      emit("mov %s %s, %s", size, destLoc, tempName);
-      registers.deallocate(tempReg);
+      if (toReg == null) {
+        Register tempReg = registers.allocate();
+        // TODO: deal with out-of-registers
+        String tempName = registerNameSized(tempReg, op.source().type());
+        emit("mov %s %s, %s", size, tempName, sourceLoc);
+        emit("mov %s %s, %s", size, destLoc, tempName);
+        registers.deallocate(tempReg);
+      } else {
+        // go right from source to dest
+        emit("; short circuit int");
+        emit("mov %s %s, %s", size, destLoc, sourceLoc);
+      }
     }
     deallocate(source);
   }
@@ -198,6 +212,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand arg = op.arg();
     // need to preserve used registers!
     boolean pushedRax = condPush(RAX);
+    // why are we doing this?!
     boolean pushedR8 = condPush(R8);
     boolean pushedR9 = condPush(R9);
 
@@ -209,9 +224,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         boolean pushedRcx = condPush(RCX);
         boolean pushedRdx = false;
         if (arg.type() == VarType.INT) {
+          // what if rcx is argval? we need to push it, which we already did
+          // if arg is already in rdx, still have to save it because it may be munged.
           pushedRdx = condPush(RDX);
+          if (!isInRegister(arg, RDX)) {
+            emit("mov DWORD EDX, %s  ; Second argument is parameter", argVal);
+          }
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
-          emit("mov DWORD EDX, %s  ; Second argument is parameter", argVal);
           emit("call printf  ; printf(message)");
           emit("add RSP, 0x28  ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
@@ -221,6 +240,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov RCX, CONST_FALSE");
           } else {
             // translate dynamically from 0/1 to false/true
+            // crap we munged rcx, which might have had the argument.
             emit("mov RCX, CONST_FALSE");
             emit("cmp byte %s, 1", argVal);
             pushedRdx = condPush(RDX);
@@ -232,6 +252,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         } else if (arg.type() == VarType.STRING) {
           if (op.call() == SysCall.Call.MESSAGE) {
             pushedRdx = condPush(RDX);
+            // crap we munged rcx, which might have had the argument.
             emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
             emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
           } else {
@@ -254,6 +275,77 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     condPop(R8, pushedR8);
     condPop(RAX, pushedRax);
     deallocate(op.arg());
+  }
+
+  /**
+   * @param arg
+   * @return the equivalent register, or null if none.
+   */
+  private Register toRegister(Location arg) {
+    if (arg.isConstant()) {
+      return null;
+    }
+
+    // maybe look up the location in the symbol table?
+    Location location = arg;
+    if (arg instanceof RegisterLocation) {
+      return ((RegisterLocation) location).register();
+    }
+    Register aliasReg = aliases.get(location.toString());
+    if (aliasReg != null) {
+      return aliasReg;
+    }
+    switch (location.storage()) {
+      case TEMP:
+        return null; // we would have found its alias already.
+      case GLOBAL:
+        return null;
+      case PARAM:
+        ParamLocation paramLoc = (ParamLocation) location;
+        Register actualReg = paramRegister(paramLoc.index());
+        return actualReg;
+      case LOCAL:
+        return null;
+      default:
+        fail("Cannot generate %s operand %s yet", location.storage(), location);
+        return null;
+    }
+  }
+
+  private boolean isInRegister(Operand arg, Register register) {
+    return false;
+  }
+
+  private boolean isInRegister2(Operand arg, Register register) {
+    if (arg.isConstant()) {
+      return false;
+    }
+
+    // maybe look up the location in the symbol table?
+    if (arg instanceof RegisterLocation) {
+      Register actualReg = ((RegisterLocation) arg).register();
+      return register == actualReg;
+    }
+    Location location = (Location) arg;
+    Register aliasReg = aliases.get(location.toString());
+    if (aliasReg != null) {
+      return aliasReg == register;
+    }
+    switch (location.storage()) {
+      case TEMP:
+        return false; // we would have found its alias already.
+      case GLOBAL:
+        return false;
+      case PARAM:
+        ParamLocation paramLoc = (ParamLocation) location;
+        Register actualReg = paramRegister(paramLoc.index());
+        return actualReg == register;
+      case LOCAL:
+        return false;
+      default:
+        fail("Cannot generate %s operand %s yet", location.storage(), location);
+        return false;
+    }
   }
 
   @Override
@@ -662,28 +754,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // I hate this. the param should already know its location, as a ParamLocation
     for (Parameter formal : op.formals()) {
       Location location;
-      switch (i) {
-        case 0:
-          location = new RegisterLocation(formal.name(), RCX, formal.varType());
-          registers.reserve(RCX);
-          break;
-        case 1:
-          location = new RegisterLocation(formal.name(), RDX, formal.varType());
-          registers.reserve(RDX);
-          break;
-        case 2:
-          location = new RegisterLocation(formal.name(), R8, formal.varType());
-          registers.reserve(R8);
-          break;
-        case 3:
-          location = new RegisterLocation(formal.name(), R9, formal.varType());
-          registers.reserve(R9);
-          break;
-        default:
-          fail("Cannot generate more than 4 params yet");
-          return;
-          // maybe use the vartype to decide how much space to allocate?
-          //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
+      Register reg = paramRegister(i);
+      if (reg != null) {
+        location = new RegisterLocation(formal.name(), reg, formal.varType());
+        registers.reserve(reg);
+      } else {
+        fail("Cannot generate more than 4 params yet");
+        return;
+        // maybe use the vartype to decide how much space to allocate?
+        //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
       }
       i++;
       // Is this even ever used?!
@@ -692,6 +771,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Save nonvolatile registers:
     emit("; entry to %s", op.name());
+    // TODO: push rbp, move rbp, rsp
     emit("push rbx");
     emit("push r12");
     emit("push r13");
@@ -708,8 +788,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // transfer from return value to RAX
       Operand returnValue = op.returnValueLocation().get();
       // I hate this. why can't we emit the "mov"?
-      visit(
-          new Transfer(new RegisterLocation("RAX", RAX, returnValue.type()), returnValue));
+      visit(new Transfer(new RegisterLocation("RAX", RAX, returnValue.type()), returnValue));
     }
     emit("jmp __exit_of_%s", op.procName());
   }
@@ -731,6 +810,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("pop r13");
     emit("pop r12");
     emit("pop rbx");
+    // TODO: pop rbp
     emit("ret  ; return from procedure");
   }
 
@@ -839,35 +919,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         ParamLocation paramLoc = (ParamLocation) location;
         return generateParamLocationName(paramLoc.index(), location.type());
       case LOCAL:
-        StackLocation stackLoc = (StackLocation)location;
+        StackLocation stackLoc = (StackLocation) location;
         // NO idea if this is right...
-        return "RSP-" + stackLoc.offset();
+        return "RBP-" + stackLoc.offset();
       default:
         fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;
     }
   }
 
-  private String generateParamLocationName(int index, VarType varType) {
-    Register reg;
+  private Register paramRegister(int index) {
+    // JFC use an array
     switch (index) {
       case 0:
-        reg = RCX;
-        break;
+        return RCX;
       case 1:
-        reg = RDX;
-        break;
+        return RDX;
       case 2:
-        reg = R8;
-        break;
+        return R8;
       case 3:
-        reg = R9;
-        break;
+        return R9;
       default:
-        fail("Cannot generate more than 4 params yet");
         return null;
-        // maybe use the vartype to decide how much space to allocate?
-        //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
+    }
+  }
+
+  private String generateParamLocationName(int index, VarType varType) {
+    Register reg = paramRegister(index);
+    if (reg == null) {
+      fail("Cannot generate more than 4 params yet");
+      return null;
+      // maybe use the vartype to decide how much space to allocate?
+      //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
     }
     return registerNameSized(reg, varType);
   }
