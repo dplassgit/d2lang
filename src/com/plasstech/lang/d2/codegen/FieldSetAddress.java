@@ -12,7 +12,7 @@ public class FieldSetAddress extends Location {
     super(variable, varType);
     this.storage = storage;
     // we should already know the location, because the variable should already exist
-    this.recordLocation = Location.allocate(storage, variable, varType);
+    this.recordLocation = allocate(storage, variable, varType);
     this.field = field;
   }
 
@@ -56,5 +56,23 @@ public class FieldSetAddress extends Location {
   @Override
   public SymbolStorage storage() {
     return storage;
+  }
+
+  private Location allocate(SymbolStorage storage, String name, VarType varType) {
+    switch (storage) {
+      case GLOBAL:
+      case HEAP:
+        return new MemoryAddress(name, varType);
+      case LOCAL:
+        // this is broken
+        return new StackLocation(name, varType);
+      case PARAM:
+        // this is broken
+        return new StackLocation(name, varType);
+      case TEMP:
+        return new TempLocation(name, varType);
+      default:
+        throw new IllegalArgumentException("Cannot allocate storage for " + storage.name());
+    }
   }
 }

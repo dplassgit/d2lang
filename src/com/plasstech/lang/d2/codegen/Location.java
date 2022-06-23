@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public abstract class Location implements Operand {
@@ -29,21 +28,5 @@ public abstract class Location implements Operand {
   
   public Location baseLocation() {
     return this;
-  }
-
-  public static Location allocate(SymbolStorage storage, String name, VarType varType) {
-    switch (storage) {
-      case GLOBAL:
-      case HEAP:
-        return new MemoryAddress(name, varType);
-      case LOCAL:
-        return new StackLocation(name, varType);
-//      case PARAM:
-//        return new StackLocation(name, SymbolStorage.PARAM, varType);
-      case TEMP:
-        return new TempLocation(name, varType);
-      default:
-        throw new IllegalArgumentException("Cannot allocate storage for " + storage.name());
-    }
   }
 }
