@@ -32,10 +32,10 @@ public class StackLocation extends Location {
 
   @Override
   public int hashCode() {
-    return 37 + 11 * this.name().hashCode() + 5 * getOffset();
+    return 37 + 11 * this.name().hashCode() + 5 * offset();
   }
 
-  public int getOffset() {
+  public int offset() {
     return offset;
   }
 }

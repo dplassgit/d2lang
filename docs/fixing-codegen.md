@@ -52,7 +52,7 @@ PROPOSAL:
 
 Node
 oh but node needs something...
-  has Location (?) GONE. Only IlCodeGenerator needed this. <<< NOT TRUE WTH
+  has Location (?) IlCodeGenerator needed this. <<< NOT TRUE WTH
 
 Opcodes have operands:
 
@@ -69,14 +69,14 @@ Symbol has name, VarType
   VariableSymbol has Location
     GlobalSymbol
     LocalSymbol
-    FormalSymbol has index (?)
+    FormalSymbol has index (?) << didn't need this.
 
 Location
   RegisterLocation (includes which register) OK
-  StackLocation (includes offset)
-  ParamLocation? converts to register location or stack location later ? may make the ilcodegenerator easier.
+  StackLocation (includes offset) ok, but... how/when to set the offset? ideally it would be in nasm, but we don't necessarily know the offset 
+  ParamLocation (includes index) OK. 
   MemoryAddress
   HeapLocation
 
 PROBLEM:
-**IL (CG?) code only uses strings for locals and params, but needs to use SYMBOLS**
+**IL (CG?) code only uses strings for locals and params, but needs to use SYMBOLS** <<< this didn't matter.

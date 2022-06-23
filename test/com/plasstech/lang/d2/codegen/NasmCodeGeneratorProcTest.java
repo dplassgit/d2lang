@@ -72,6 +72,17 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void procLocals() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      procLocals:proc(n:int):int { \n" //
+            + "   a=n+1 return a\n" //
+            + "} \n" //
+            + "x=procLocals(4) print x",
+        "procLocals");
+  }
+
+  @Test
   public void procParamFirst4Locations() {
     assumeFalse(optimize);
     // this is failing because:

@@ -836,9 +836,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // TODO: deal with array
         return "[__" + location.name() + "]";
       case PARAM:
-        // look up the thing
         ParamLocation paramLoc = (ParamLocation) location;
         return generateParamLocationName(paramLoc.index(), location.type());
+      case LOCAL:
+        StackLocation stackLoc = (StackLocation)location;
+        // NO idea if this is right...
+        return "RSP-" + stackLoc.offset();
       default:
         fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;
