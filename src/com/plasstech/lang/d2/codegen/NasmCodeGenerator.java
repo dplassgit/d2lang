@@ -416,7 +416,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          generateStringCompare(leftName, rightName, destName, operator);
+          generateStringCompare(op.left(), op.right(), destName, operator);
           break;
 
         default:
@@ -506,20 +506,43 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateStringCompare(
-      String leftName, String rightName, String destName, TokenType operator) {
+      Operand left, Operand right, String destName, TokenType operator) {
     boolean pushedRax = condPush(RAX);
     boolean pushedRcx = condPush(RCX);
     boolean pushedRdx = condPush(RDX);
-    emit("mov RCX, %s  ; Address of left string", leftName);
-    emit("mov RDX, %s  ; Address of right string", rightName);
+    // TODO: might need to save r8 & r8 too
+
+    emit("; strcmp: %s = %s %s %s", destName, resolve(left), operator, resolve(right));
+
+    if (isInRegister(left, RDX) && isInRegister(right, RCX)) {
+      if (operator == TokenType.EQEQ || operator == TokenType.NEQ) {
+        emit("; no need to set up RCX, RDX for %s", operator);
+      } else {
+        // not an equality comparison, need to swap either the operator or the operands.
+        emit("xchg RCX, RDX  ; left was rdx, right was rcx, so swap them");
+      }
+    } else {
+
+      if (isInRegister(left, RCX)) {
+        emit("; left already in RCX");
+      } else {
+        emit("mov RCX, %s  ; Address of left string", resolve(left));
+      }
+
+      if (isInRegister(right, RDX)) {
+        emit("; right already in RDX");
+      } else {
+        emit("mov RDX, %s  ; Address of right string", resolve(right));
+      }
+    }
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call strcmp");
     emit("add RSP, 0x20  ; Remove shadow space");
     emit("cmp RAX, 0");
     emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
-    condPop(RAX, pushedRax);
-    condPop(RCX, pushedRcx);
     condPop(RDX, pushedRdx);
+    condPop(RCX, pushedRcx);
+    condPop(RAX, pushedRax);
   }
 
   private void generateStringIndex(String leftName, String rightName, String destName) {

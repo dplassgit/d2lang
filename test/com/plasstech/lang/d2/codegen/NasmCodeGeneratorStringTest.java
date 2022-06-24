@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -10,14 +9,14 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
-  public void assignString(
+  public void assign(
       @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
       throws Exception {
     execute(String.format("a='%s' b=a print b", value), "assignString");
   }
 
   @Test
-  public void stringIndex(
+  public void index(
       @TestParameter({"world", "hello this is a very long string"}) String value,
       @TestParameter({"1", "4"}) int index)
       throws Exception {
@@ -27,7 +26,6 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void constantStringIndex(
       @TestParameter({"world", "hello this is a very long string"}) String value,
       @TestParameter({"1", "4"}) int index)
@@ -38,19 +36,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void stringAddSimple() throws Exception {
+  public void addSimple() throws Exception {
     execute("a='a' c=a+'b' print c", "stringAddSimple");
   }
 
   @Test
-  public void stringAddComplex() throws Exception {
+  public void addComplex() throws Exception {
     execute(
         "a='abc' b='def' c=a+b print c d=c+'xyz' print d e='ijk'+d+chr(32) print e",
         "stringAddComplex");
   }
 
   @Test
-  public void stringCompOps(
+  public void compOpsGlobals(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
       @TestParameter({"abc", "def", ""}) String first,
       @TestParameter({"abc", "def", ""}) String second)
@@ -61,6 +59,39 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
                 + "c=a %s b print c " //
                 + "d=b %s a print d",
             first, second, op, op),
-        "stringCompOps");
+        "compOpsGlobals");
+  }
+
+  @Test
+  public void compOpsParams(@TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op)
+      throws Exception {
+    execute(
+        String.format(
+            "      c:bool d:bool doit:proc(a:string,b:string) { "
+                + "  c=a %s b "
+                + "  print c " //
+                + "  d=b %s a "
+                + "  print d "
+                + "} "
+                + "doit('abc', 'def') ",
+            op, op),
+        "compOpsParams");
+  }
+
+  @Test
+  public void compOpsThreeParams(@TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op)
+      throws Exception {
+    execute(
+        String.format(
+            "      doit:proc(x:int, a:string,b:string) { "
+                + "  print x "
+                + "  print a %s b "
+                + "  print x "
+                + "  print b %s a "
+                + "  print x "
+                + "} "
+                + "doit(123, 'abc', 'def') ",
+            op, op),
+        "compOpsThreeParams");
   }
 }
