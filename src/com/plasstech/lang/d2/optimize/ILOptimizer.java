@@ -24,7 +24,8 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
-            new InlineOptimizer(debugLevel),
+            // this doesn't play nicely with the nasm code generator yet
+            //            new InlineOptimizer(debugLevel),
             new LoopInvariantOptimizer(debugLevel),
             new NopOptimizer() // ,
             ));

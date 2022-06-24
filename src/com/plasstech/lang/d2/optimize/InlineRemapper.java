@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
@@ -41,8 +41,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   Location remapFormal(String name, VarType type) {
     // I *really* want this to be TempLocation, but the ConstantPropagation optimizer
     // assumes that temps are never changed, so if we call it a Temp, it fails.
-    // However, we don't know that the formal wants to be on the stack yet.
-    return new StackLocation("__" + name + suffix, type, 0);
+    // Then, I *really* wanted this to be a stack location but, shrug.
+    return new MemoryAddress("__" + name + suffix, type);
   }
 
   List<Op> remap() {
@@ -163,8 +163,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
           return new FieldSetAddress(
               "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
         }
-        // TODO: params are not on the stack.
-        return new StackLocation("__" + location.name() + suffix, location.type(), 0);
+        // I *really* want this to be a temp or stack but (see above)
+        return new MemoryAddress("__" + location.name() + suffix, location.type());
       default:
         return operand;
     }
