@@ -65,10 +65,10 @@ public class FieldSetAddress extends Location {
         return new MemoryAddress(name, varType);
       case LOCAL:
         // this is broken
-        return new StackLocation(name, varType);
+        return new StackLocation(name, varType, 0);
       case PARAM:
         // this is broken
-        return new StackLocation(name, varType);
+        return new StackLocation(name, varType, 0);
       case TEMP:
         return new TempLocation(name, varType);
       default:

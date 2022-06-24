@@ -83,15 +83,33 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
       throws Exception {
     execute(
         String.format(
-            "      doit:proc(x:int, a:string,b:string) { "
+            "      compOpsThreeParams:proc(x:int, a:string,b:string) { "
                 + "  print x "
                 + "  print a %s b "
                 + "  print x "
                 + "  print b %s a "
                 + "  print x "
                 + "} "
-                + "doit(123, 'abc', 'def') ",
+                + "compOpsThreeParams(123, 'abc', 'def') ",
             op, op),
         "compOpsThreeParams");
+  }
+
+  @Test
+  public void compOpsLocals(@TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op)
+      throws Exception {
+    execute(
+        String.format(
+            "      compOpsLocals:proc() { "
+                + "  a='abc' "
+                + "  b='def' "
+                + "  print b "
+                + "  print a "
+                + "  c = a %s b "
+                + "  print c "
+                + "} "
+                + "compOpsLocals() ",
+            op),
+        "compOpsLocals");
   }
 }

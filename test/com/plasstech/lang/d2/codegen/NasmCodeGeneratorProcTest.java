@@ -128,6 +128,21 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     assertThat(param4.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register4 = (RegisterLocation) param4.location();
     assertThat(register4.register()).isEqualTo(Register.R9);
-
   }
+  
+  @Test
+  public void allOpsLocals() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      allOpsLocals:proc():int { \n"
+            + "   a=1 b=2 c=3 d=4 e=5 f=6 g=3\n"
+            + "   g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f  \n"
+            + "   b=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f  \n"
+            + "   return g+b \n"
+            + "} \n"
+            + "print allOpsLocals()",
+        "allOpsLocals");
+  }
+
+
 }

@@ -42,7 +42,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     // I *really* want this to be TempLocation, but the ConstantPropagation optimizer
     // assumes that temps are never changed, so if we call it a Temp, it fails.
     // However, we don't know that the formal wants to be on the stack yet.
-    return new StackLocation("__" + name + suffix, type);
+    return new StackLocation("__" + name + suffix, type, 0);
   }
 
   List<Op> remap() {
@@ -163,8 +163,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
           return new FieldSetAddress(
               "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
         }
-        // TODO: params are not necessarily on the stack.
-        return new StackLocation("__" + location.name() + suffix, location.type());
+        // TODO: params are not on the stack.
+        return new StackLocation("__" + location.name() + suffix, location.type(), 0);
       default:
         return operand;
     }

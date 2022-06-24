@@ -50,6 +50,7 @@ import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.LocalSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
@@ -206,8 +207,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case GLOBAL:
         return new MemoryAddress(name, variable.varType());
       case LOCAL:
-        // TODO: capture what its offset should be
-        return new StackLocation(name, variable.varType());
+        LocalSymbol local = (LocalSymbol) variable;
+        // captures its offset
+        return new StackLocation(local.name(), local.varType(), local.offset());
       case PARAM:
         ParamSymbol param = (ParamSymbol) variable;
         return new ParamLocation(name, variable.varType(), param.index());
@@ -475,7 +477,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     assert (procSym != null);
 
     procedures.push(procSym);
-
     // Guard to prevent just falling into this method
     String afterLabel = newLabel("after_proc_" + node.name());
 
@@ -483,7 +484,26 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     // This is the real entry point.
     emit(new Label(node.name()));
-    emit(new ProcEntry(node.name(), node.parameters()));
+    SymTab symTab = procSym.symTab();
+    ImmutableList<Symbol> locals =
+        symTab
+            .entries()
+            .values()
+            .stream()
+            .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
+            .collect(ImmutableList.toImmutableList());
+    int localBytes = 0;
+    for (Symbol symbol : locals) {
+      LocalSymbol localSymbol = (LocalSymbol) symbol;
+      if (localSymbol.varType() == VarType.STRING) {
+        localBytes += 8;
+      } else {
+        localBytes += 4;
+      }
+      localSymbol.setOffset(localBytes);
+    }
+
+    emit(new ProcEntry(node.name(), node.parameters(), localBytes));
 
     node.block().accept(this);
 

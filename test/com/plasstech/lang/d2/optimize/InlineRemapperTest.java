@@ -23,7 +23,7 @@ public class InlineRemapperTest {
   private static final TempLocation TEMP_SOURCE = new TempLocation("__source", VarType.INT);
   private static final TempLocation TEMP_LEFT = new TempLocation("__left", VarType.INT);
   private static final TempLocation TEMP_RIGHT = new TempLocation("__right", VarType.INT);
-  private static final StackLocation STACK = new StackLocation("stack", VarType.INT);
+  private static final StackLocation STACK = new StackLocation("stack", VarType.INT, 0);
   private static final MemoryAddress MEMORY = new MemoryAddress("memory", VarType.INT);
 
   @Test

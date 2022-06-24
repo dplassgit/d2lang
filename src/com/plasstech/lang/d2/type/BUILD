@@ -32,7 +32,7 @@ java_library(name="result",
              )
 
 java_library(name="symbols",
-             srcs=glob(["*Symbol.java", "SymTab.java"]),
+             srcs=glob(["*Symbol.java"]) + ["SymTab.java"],
              deps = [
                  ":exception",
                  ":storage",

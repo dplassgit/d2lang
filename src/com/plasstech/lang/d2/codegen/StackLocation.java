@@ -7,11 +7,7 @@ public class StackLocation extends Location {
 
   private final int offset;
 
-  public StackLocation(String name, VarType varType) {
-    this(name, 0, varType);
-  }
-
-  public StackLocation(String name, int offset, VarType varType) {
+  public StackLocation(String name, VarType varType, int offset) {
     super(name, varType);
     this.offset = offset;
   }
@@ -35,6 +31,7 @@ public class StackLocation extends Location {
     return 37 + 11 * this.name().hashCode() + 5 * offset();
   }
 
+  /** this is ALWAYS positive */
   public int offset() {
     return offset;
   }

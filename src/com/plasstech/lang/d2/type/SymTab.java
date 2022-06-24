@@ -81,9 +81,9 @@ public class SymTab {
     // parameters are declared before they have a type so we can't verify that it's not unknown yet.
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
-    Symbol param = new ParamSymbol(name, index).setVarType(varType);
+    // parameters are always assigned, by definition.
+    Symbol param = new ParamSymbol(name, index).setVarType(varType).setAssigned();
     values.put(name, param);
-    param.setAssigned(); // parameters are always assigned, by definition.
     return param;
   }
 
@@ -129,9 +129,17 @@ public class SymTab {
         varType);
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
-    Symbol sym = new VariableSymbol(name, storage).setVarType(varType);
+    Symbol sym = createVariable(name, storage).setVarType(varType);
     values.put(name, sym);
     return sym;
+  }
+
+  private static Symbol createVariable(String name, SymbolStorage storage) {
+    if (storage == SymbolStorage.LOCAL) {
+      return new LocalSymbol(name, storage);
+    } else {
+      return new VariableSymbol(name, storage);
+    }
   }
 
   public Symbol assign(String name, VarType varType) {
@@ -146,7 +154,7 @@ public class SymTab {
           varType);
     } else {
       // this is wrong - we need to know if it's a local or a param - wth
-      sym = new VariableSymbol(name, this.storage).setVarType(varType);
+      sym = createVariable(name, this.storage).setVarType(varType);
     }
     sym.setAssigned();
     values.put(name, sym);

@@ -22,7 +22,7 @@ public class IncDecOptimizerTest {
   private static final ConstantOperand<Integer> TWO = new ConstantOperand<Integer>(2);
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
-  private static final StackLocation STACK = new StackLocation("stack", VarType.INT);
+  private static final StackLocation STACK = new StackLocation("stack", VarType.INT, 0);
   private static final TempLocation SOURCE = new TempLocation("source", VarType.INT);
   private static final TempLocation DEST = new TempLocation("dest", VarType.INT);
 

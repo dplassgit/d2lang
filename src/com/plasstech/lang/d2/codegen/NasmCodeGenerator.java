@@ -813,14 +813,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Save nonvolatile registers:
     emit("; entry to %s", op.name());
-    // TODO: push rbp, move rbp, rsp
-    emit("push rbx");
-    emit("push r12");
-    emit("push r13");
-    emit("push r14");
-    emit("push r15");
-    emit("push rdi");
-    emit("push rsi");
+    emit("push RBP");
+    emit("mov RBP, RSP");
+    emit("sub RSP, %d", op.localBytes());
+    emit("push RBX");
+    emit("push R12");
+    emit("push R13");
+    emit("push R14");
+    emit("push R15");
+    emit("push RDI");
+    emit("push RSI");
   }
 
   @Override
@@ -845,14 +847,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit0("__exit_of_%s:", op.procName());
     // restore registers
-    emit("pop rsi");
-    emit("pop rdi");
-    emit("pop r15");
-    emit("pop r14");
-    emit("pop r13");
-    emit("pop r12");
-    emit("pop rbx");
-    // TODO: pop rbp
+    emit("pop RSI");
+    emit("pop RDI");
+    emit("pop R15");
+    emit("pop R14");
+    emit("pop R13");
+    emit("pop R12");
+    emit("pop RBX");
+    emit("leave");
     emit("ret  ; return from procedure");
   }
 
@@ -961,8 +963,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         return generateParamLocationName(paramLoc.index(), location.type());
       case LOCAL:
         StackLocation stackLoc = (StackLocation) location;
-        // NO idea if this is right...
-        return "RBP-" + stackLoc.offset();
+        return "[RBP - " + stackLoc.offset() + "]";
       default:
         fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;

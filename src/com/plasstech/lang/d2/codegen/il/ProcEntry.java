@@ -10,10 +10,12 @@ public class ProcEntry extends Op {
 
   private final String name;
   private final ImmutableList<Parameter> formals;
+  private final int localBytes;
 
-  public ProcEntry(String name, ImmutableList<Parameter> formals) {
+  public ProcEntry(String name, ImmutableList<Parameter> formals, int localBytes) {
     this.name = name;
     this.formals = formals;
+    this.localBytes = localBytes;
   }
 
   public String name() {
@@ -36,5 +38,10 @@ public class ProcEntry extends Op {
   @Override
   public void accept(OpcodeVisitor visitor) {
     visitor.visit(this);
+  }
+
+  /** Number of bytes needed for storage for locals */
+  public int localBytes() {
+    return localBytes;
   }
 }
