@@ -7,8 +7,10 @@ import static com.plasstech.lang.d2.codegen.Register.RCX;
 import static com.plasstech.lang.d2.codegen.Register.RDX;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -500,7 +502,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     boolean pushedRax = condPush(RAX);
     boolean pushedRcx = condPush(RCX);
     boolean pushedRdx = condPush(RDX);
-    // TODO: might need to save r8 & r8 too
+    // TODO: might need to save r8 & r9 too
 
     emit("; strcmp: %s = %s %s %s", destName, resolve(left), operator, resolve(right));
 
@@ -803,9 +805,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Save nonvolatile registers:
     emit("; entry to %s", op.name());
+    // TODO: if no locals, don't need to muck with rbp, rsp
     emit("push RBP");
     emit("mov RBP, RSP");
-    emit("sub RSP, %d", op.localBytes());
+    if (op.localBytes() > 0) {
+      emit("sub RSP, %d", op.localBytes());
+    }
     emit("push RBX");
     emit("push R12");
     emit("push R13");
@@ -851,6 +856,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Call op) {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
+    Set<Register> pushedRegs = new HashSet<>();
+    for (Register reg : ImmutableList.of(RCX, RDX, R8, R9)) {
+      if (registers.isAllocated(reg)) {
+        emit("push %s", reg.name64);
+        pushedRegs.add(reg);
+      }
+    }
+
     int index = 0;
     for (Operand actual : op.actuals()) {
       String formalLocation = resolve(op.formals().get(index++));
@@ -859,6 +872,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size.asmName, formalLocation, actualLocation);
     }
     emit("call __%s", op.procName());
+    for (Register reg : ImmutableList.of(R9, R8, RDX, RCX)) {
+      if (pushedRegs.contains(reg)) {
+        emit("pop %s", reg.name64);
+      }
+    }
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
       String destName = resolve(destination);
