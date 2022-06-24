@@ -7,6 +7,11 @@ public class NullType extends SimpleType {
   }
 
   @Override
+  public boolean isNull() {
+    return true;
+  }
+
+  @Override
   public boolean compatibleWith(VarType that) {
     return that.isRecord() || that.isNull();
   }

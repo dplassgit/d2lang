@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.type;
 
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType implements VarType {
-
   private final String name;
 
   public RecordReferenceType(String recordTypeName) {
@@ -12,6 +11,16 @@ public class RecordReferenceType implements VarType {
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public int size() {
+    return 8;
+  }
+
+  @Override
+  public boolean isRecord() {
+    return true;
   }
 
   @Override

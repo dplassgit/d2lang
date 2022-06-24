@@ -3,14 +3,25 @@ package com.plasstech.lang.d2.type;
 /** Simple (primitive) type: int, bool, string, void. */
 public class SimpleType implements VarType {
   private final String name;
+  private final int size;
 
   public SimpleType(String name) {
+    this(name, 0);
+  }
+
+  public SimpleType(String name, int size) {
     this.name = name;
+    this.size = size;
   }
 
   @Override
   public String name() {
     return name;
+  }
+
+  @Override
+  public int size() {
+    return size;
   }
 
   @Override

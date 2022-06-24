@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.VarType;
 
 /*
  * what should the output of this class be?
@@ -42,9 +43,8 @@ class StringFinder extends DefaultOpcodeVisitor {
   private void addEntry(Operand operand) {
     if (operand.isConstant()) {
       ConstantOperand<?> constOp = (ConstantOperand<?>) operand;
-      Object value = constOp.value();
-      if (value instanceof String) {
-        stringTable.addEntry((String) value);
+      if (operand.type() == VarType.STRING) {
+        stringTable.addEntry(constOp.value().toString());
       }
     }
   }

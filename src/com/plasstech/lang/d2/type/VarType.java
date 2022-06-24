@@ -3,9 +3,9 @@ package com.plasstech.lang.d2.type;
 /** The type of an expression or variable. */
 public interface VarType {
   // TODO: Map name to type
-  VarType INT = new SimpleType("INT");
-  VarType STRING = new SimpleType("STRING");
-  VarType BOOL = new SimpleType("BOOL");
+  VarType INT = new SimpleType("INT", 4);
+  VarType STRING = new SimpleType("STRING", 8);
+  VarType BOOL = new SimpleType("BOOL", 4);
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");
   VarType NULL = new NullType();
@@ -15,6 +15,11 @@ public interface VarType {
         @Override
         public String name() {
           return "UNKNOWN";
+        }
+
+        @Override
+        public int size() {
+          throw new IllegalStateException("Should not try to get size of UNKNOWN");
         }
 
         @Override
@@ -29,20 +34,23 @@ public interface VarType {
    */
   String name();
 
+  /** # of bytes (on the stack) that this type occupies. For non-stack things, returns 0. */
+  int size();
+
   default boolean isUnknown() {
     return this == UNKNOWN;
   }
 
   default boolean isNull() {
-    return this == NULL;
+    return false;
   }
 
   default boolean isArray() {
-    return this instanceof ArrayType;
+    return false;
   }
   
   default boolean isRecord() {
-    return this instanceof RecordReferenceType;
+    return false;
   }
 
   default boolean compatibleWith(VarType that) {

@@ -9,7 +9,6 @@ import static com.plasstech.lang.d2.codegen.Register.RDX;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -63,10 +62,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final Registers registers = new Registers();
   // map from name to register
   private final BiMap<String, Register> aliases = HashBiMap.create(16);
-  private final List<Register> lruRegs = new ArrayList<>();
-  // it's possible that we've run out of registers. Push the name on the stack and deallocate
-  // its register. (Maybe put this feature into Registers? Maybe make an "Aliases" object?)
-  private final Stack<String> tempStack = new Stack<>();
 
   private StringTable stringTable;
 
@@ -301,13 +296,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (source.isConstant()) {
       return null;
     }
-    if (!(source instanceof Location)) {
-      return null;
-    }
 
-    // maybe look up the location in the symbol table?
     Location location = (Location) source;
-    if (source instanceof RegisterLocation) {
+    if (source.isRegister()) {
       return ((RegisterLocation) location).register();
     }
     Register aliasReg = aliases.get(location.toString());
@@ -340,8 +331,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return false;
     }
 
-    // maybe look up the location in the symbol table?
-    if (arg instanceof RegisterLocation) {
+    if (arg.isRegister()) {
       Register actualReg = ((RegisterLocation) arg).register();
       return register == actualReg;
     }
@@ -928,7 +918,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Location location = (Location) operand;
     // maybe look up the location in the symbol table?
-    if (location instanceof RegisterLocation) {
+    if (location.isRegister()) {
       Register reg = ((RegisterLocation) location).register();
       return registerNameSized(reg, location.type());
     }

@@ -12,6 +12,16 @@ public class ArrayType implements VarType {
     return String.format("array:%s", baseType.name());
   }
 
+  @Override
+  public int size() {
+    return 8;
+  }
+
+  @Override
+  public boolean isArray() {
+    return true;
+  }
+
   public VarType baseType() {
     return baseType;
   }

@@ -165,15 +165,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
                       sym.storage(),
                       sym.varType());
             } else {
-              // ???
-              logger.atSevere().log(
-                  "Could not find record symbol %s in symtab", fieldSetNode.variableName());
-              dest =
-                  new FieldSetAddress(
-                      fieldSetNode.variableName(),
-                      fieldSetNode.fieldName(),
-                      SymbolStorage.HEAP, // ???
-                      sym.varType());
+              throw new RuntimeException(
+                  String.format(
+                      "Could not find record symbol %s in symtab", fieldSetNode.variableName()));
             }
 
             fieldSetNode.setLocation(dest);
@@ -190,6 +184,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   public void visit(NewNode node) {
     Symbol symbol = symbolTable().getRecursive(node.recordName());
     if (!(symbol instanceof RecordSymbol)) {
+      // this should never happen - should be caught by typechecker
       throw new D2RuntimeException(
           String.format("Cannot call NEW on non-record type %s at %s", symbol, node),
           node.position(),
@@ -495,11 +490,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     int localBytes = 0;
     for (Symbol symbol : locals) {
       LocalSymbol localSymbol = (LocalSymbol) symbol;
-      if (localSymbol.varType() == VarType.STRING) {
-        localBytes += 8;
-      } else {
-        localBytes += 4;
-      }
+      localBytes += localSymbol.varType().size();
       localSymbol.setOffset(localBytes);
     }
 
