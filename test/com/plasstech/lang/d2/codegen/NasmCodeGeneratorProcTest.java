@@ -86,24 +86,29 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   private static final String FOUR_PARAM_PROC =
-      "procParamFirst4Locations:proc(p1: int, p2: bool, p3: int, p4: string) { "
-          + "  print p1 print p2 print p3 print p4 "
-          + "  p1 = p3 + 1 "
-          + "  p2 = p1 == p3"
+      "  procParamFirst4Locations:proc(p3:bool, p4: string, p1: int, p2: int) { "
+          + "  print p2 println p1 print p2 println p1 print p3 print p4 \n"
+          + "  p1 = p2 + 1 "
+          + "  p3 = p1 == p2"
+          + "  print p1 "
+          + "  print p3"
           + "} "
-          + "procParamFirst4Locations(1,true,3,'hi')";
+          + "glob='theglob' "
+          + "print glob "
+          + "procParamFirst4Locations(true,'thep4',1,3) "
+          + "procParamFirst4Locations(false,'thep4',-1,-2) ";
 
   @Test
   public void procParamFirst4Locations() throws Exception {
     assumeFalse(optimize);
+
+    execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
 
     State state = compileToNasm(FOUR_PARAM_PROC);
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 
     // RCX, RDX, R8, and R9
-
-    // Should this be in parser? Or codegen?
     Parameter param1 = proc.parameters().get(0);
     assertThat(param1.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register1 = (RegisterLocation) param1.location();
@@ -124,9 +129,5 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     RegisterLocation register4 = (RegisterLocation) param4.location();
     assertThat(register4.register()).isEqualTo(Register.R9);
 
-    // this may be failing because:
-    // 1. print p1 is losing the value of p1 (ECX) because it's being overwritten by the setup for
-    // "print"
-    execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
   }
 }

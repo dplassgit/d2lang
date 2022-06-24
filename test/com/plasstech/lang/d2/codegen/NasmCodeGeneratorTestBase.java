@@ -114,7 +114,9 @@ public class NasmCodeGeneratorTestBase {
       InputStream stream = process.getErrorStream();
       String output = new String(ByteStreams.toByteArray(stream));
       System.err.printf("%s output: %s\n", name, output);
-      assertWithMessage(name + " had wrong exit value").that(process.exitValue()).isEqualTo(0);
+      assertWithMessage(name + " had wrong exit value: " + output)
+          .that(process.exitValue())
+          .isEqualTo(0);
     }
   }
 }

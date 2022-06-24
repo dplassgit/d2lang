@@ -43,6 +43,20 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
+  public enum Size {
+    _1BYTE(1, "byte"),
+    _32BITS(32, "dword"),
+    _64BITS(64, "");
+
+    public final int bytes;
+    public final String asmName;
+
+    Size(int bytes, String asmName) {
+      this.bytes = bytes;
+      this.asmName = asmName;
+    }
+  }
+
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<String> asm = new ArrayList<>();
@@ -166,7 +180,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Register fromReg = toRegister(source);
     Register toReg = toRegister(destination);
     String destLoc = resolve(destination);
-    String size = dataSize(op.source().type());
+    String size = size(op.source().type()).asmName;
 
     if (source.type() == VarType.STRING) {
       if (toReg != null || fromReg != null) {
@@ -220,21 +234,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case MESSAGE:
       case PRINT:
         String argVal = resolve(arg);
-        emit("sub RSP, 0x28  ; Reserve the shadow space");
         boolean pushedRcx = condPush(RCX);
-        boolean pushedRdx = false;
+        boolean pushedRdx = condPush(RDX);
         if (arg.type() == VarType.INT) {
-          // what if rcx is argval? we need to push it, which we already did
-          // if arg is already in rdx, still have to save it because it may be munged.
-          pushedRdx = condPush(RDX);
-          if (!isInRegister(arg, RDX)) {
-            emit("mov DWORD EDX, %s  ; Second argument is parameter", argVal);
-          } else {
-            emit("; Second argument already in EDX");
-          }
+          // move with sign extend. intentionally set rdx first, in case the arg is in ecx
+
+          emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
+          emit("sub RSP, 0x20 ; Reserve the shadow space");
           emit("call printf  ; printf(message)");
-          emit("add RSP, 0x28  ; Remove shadow space");
+          emit("add RSP, 0x20  ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
             emit("mov RCX, CONST_TRUE");
@@ -242,28 +251,32 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov RCX, CONST_FALSE");
           } else {
             // translate dynamically from 0/1 to false/true
-            // crap we munged rcx, which might have had the argument.
-            emit("mov RCX, CONST_FALSE");
+            // Intentionally do the comp first, in case the arg is in dl or cl
             emit("cmp byte %s, 1", argVal);
-            pushedRdx = condPush(RDX);
+            emit("mov RCX, CONST_FALSE");
             emit("mov RDX, CONST_TRUE");
-            // conditional move?
+            // conditional move, I think.
             emit("cmovz RCX, RDX");
           }
+          emit("sub RSP, 0x20  ; Reserve the shadow space");
           emit("call printf  ; printf(message)");
-          emit("add RSP, 0x28  ; Remove shadow space");
+          emit("add RSP, 0x20  ; Remove shadow space");
         } else if (arg.type() == VarType.STRING) {
+          // String
           if (op.call() == SysCall.Call.MESSAGE) {
-            pushedRdx = condPush(RDX);
-            // crap we munged rcx, which might have had the argument.
+            // Intentionally set rdx first in case the arg is in rcx
+            if (!isInRegister(arg, RDX)) {
+              // arg is not in rdx yet
+              emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
+            }
             emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
-            emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
-          } else {
+          } else if (!isInRegister(arg, RCX)) {
+            // arg is not in rcx yet
             emit("mov RCX, %s  ; String to print", argVal);
           }
-          // String
+          emit("sub RSP, 0x20  ; Reserve the shadow space");
           emit("call printf  ; printf(%s)", argVal);
-          emit("add RSP, 0x28  ; Remove shadow space");
+          emit("add RSP, 0x20  ; Remove shadow space");
         } else {
           fail("Cannot print %s yet", arg);
         }
@@ -319,7 +332,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private boolean isInRegister(Operand arg, Register register) {
-    return false;
+    return isInRegister2(arg, register);
   }
 
   private boolean isInRegister2(Operand arg, Register register) {
@@ -497,11 +510,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     boolean pushedRax = condPush(RAX);
     boolean pushedRcx = condPush(RCX);
     boolean pushedRdx = condPush(RDX);
-    emit("sub RSP, 0x28  ; Reserve the shadow space");
     emit("mov RCX, %s  ; Address of left string", leftName);
     emit("mov RDX, %s  ; Address of right string", rightName);
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call strcmp");
-    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("add RSP, 0x20  ; Remove shadow space");
     emit("cmp RAX, 0");
     emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
     condPop(RAX, pushedRax);
@@ -512,10 +525,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private void generateStringIndex(String leftName, String rightName, String destName) {
     boolean pushedRcx = condPush(RCX);
     // 1. allocate a new 2-char string
-    emit("sub RSP, 0x28  ; Reserve the shadow space");
     emit("mov RCX, 2");
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call malloc  ; malloc(2)");
-    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("add RSP, 0x20  ; Remove shadow space");
     condPop(RCX, pushedRcx);
     // 2. copy the location to the dest
     emit("mov %s, RAX  ; destination from rax", destName);
@@ -558,8 +571,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; Allocate string of length %s", leftReg.name32);
     boolean pushedRcx = condPush(RCX);
     boolean pushedRdx = condPush(RDX);
-    emit("sub RSP, 0x28  ; Reserve the shadow space");
     emit("mov ECX, %s", leftReg.name32);
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call malloc  ; malloc(%s)", leftReg.name32);
     registers.deallocate(leftReg);
     // 4. put string into dest
@@ -579,7 +592,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov RCX, %s", dest);
     emit("mov RDX, %s", right);
     emit("call strcat");
-    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("add RSP, 0x20  ; Remove shadow space");
     condPop(RDX, pushedRdx);
     condPop(RCX, pushedRcx);
   }
@@ -707,10 +720,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private void generateStringLength(String sourceName, String destName) {
     boolean pushedRcx = condPush(RCX);
     boolean pushedRax = condPush(RAX);
-    emit("sub RSP, 0x28  ; Reserve the shadow space");
     emit("mov RCX, %s  ; Address of string", sourceName);
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call strlen  ; strlen(%s)", sourceName);
-    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("add RSP, 0x20  ; Remove shadow space");
     if (destName.equals(RAX.name32)) {
       // pseudo pop; eax already has the length.
       emit("add RSP, 8");
@@ -732,10 +745,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     boolean pushedRax = condPush(RAX);
     boolean pushedRcx = condPush(RCX);
     // 1. allocate a new 2-char string
-    emit("sub RSP, 0x28  ; Reserve the shadow space");
     emit("mov RCX, 2");
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call malloc  ; malloc(2)");
-    emit("add RSP, 0x28  ; Remove shadow space");
+    emit("add RSP, 0x20  ; Remove shadow space");
     condPop(RCX, pushedRcx);
     // 2. set destName to allocated string
     if (!destName.equals(RAX.name64)) {
@@ -827,15 +840,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     for (Operand actual : op.actuals()) {
       String formalLocation = resolve(op.formals().get(index++));
       String actualLocation = resolve(actual);
-      String size = dataSize(actual.type());
-      // I'm not sure if formal.baseLocation is right
-      emit("mov %s %s, %s", size, formalLocation, actualLocation);
+      Size size = size(actual.type());
+      emit("mov %s %s, %s", size.asmName, formalLocation, actualLocation);
     }
     emit("call __%s", op.procName());
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
       String destName = resolve(destination);
-      String size = dataSize(destination.type());
+      String size = size(destination.type()).asmName;
       emit("mov %s %s, %s", size, destName, registerNameSized(RAX, destination.type()));
     }
   }
@@ -961,17 +973,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     return registerNameSized(reg, varType);
   }
 
-  private static String dataSize(VarType type) {
-    String size = "";
+  private static Size size(VarType type) {
     if (type == VarType.INT) {
-      size = "dword";
+      return Size._32BITS;
     } else if (type == VarType.BOOL) {
-      size = "byte";
+      return Size._1BYTE;
+    } else if (type == VarType.STRING) {
+      // string
+      return Size._64BITS;
     }
-    return size;
+    throw new IllegalStateException("Cannot get type of " + type);
   }
 
   private static String registerNameSized(Register reg, VarType type) {
+    // TODO: figure out how to generalize this.
     if (type == VarType.INT) {
       return reg.name32;
     } else if (type == VarType.BOOL) {
