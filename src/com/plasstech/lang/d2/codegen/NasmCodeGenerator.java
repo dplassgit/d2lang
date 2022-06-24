@@ -326,10 +326,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private boolean isInRegister(Operand arg, Register register) {
-    return isInRegister2(arg, register);
-  }
-
-  private boolean isInRegister2(Operand arg, Register register) {
     if (arg.isConstant()) {
       return false;
     }
@@ -398,7 +394,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (leftType == VarType.STRING) {
       switch (operator) {
         case PLUS:
-          generateStringAdd(leftName, rightName, destName);
+          generateStringAdd(op.left(), op.right(), destName);
           break;
         case LBRACKET:
           generateStringIndex(leftName, rightName, destName);
@@ -557,40 +553,42 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 4. get the index
     emit("mov %s, %s  ; put index value into %s", indexReg.name32, rightName, indexReg.name32);
     // 5. get the actual character
-    emit("mov %s, [%s+%s]  ; get the character", charReg, charReg, indexReg);
+    emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
     registers.deallocate(indexReg);
     // 6. copy the character to the first location
     emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
     registers.deallocate(charReg);
     // 7. clear the 2nd location
-    emit("mov byte [RAX+1], 0  ; clear the 2nd location");
+    emit("mov byte [RAX + 1], 0  ; clear the 2nd location");
   }
 
-  private void generateStringAdd(String left, String right, String dest) {
+  private void generateStringAdd(Operand leftOperand, Operand rightOperand, String dest) {
     // 1. get left length
-    Register leftReg = registers.allocate();
+    Register leftLengthReg = registers.allocate();
     emit0("");
     emit("; Get left length:");
-    generateStringLength(left, leftReg.name32);
+    generateStringLength(
+        leftOperand, new RegisterLocation("____leftLengthReg", leftLengthReg, VarType.INT));
     // 2. get right length
-    Register rightReg = registers.allocate();
-    // TODO: if leftReg is volatile, push it first
+    Register rightLengthReg = registers.allocate();
+    // TODO: if leftLengthReg is volatile, push it first
     emit0("");
     emit("; Get right length:");
-    generateStringLength(right, rightReg.name32);
-    emit("add %s, %s  ; Total new string length", leftReg.name32, rightReg.name32);
-    emit("inc %s  ; Plus 1 for end of string", leftReg.name32);
-    registers.deallocate(rightReg);
+    generateStringLength(
+        rightOperand, new RegisterLocation("____rightLengthReg", rightLengthReg, VarType.INT));
+    emit("add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
+    emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
+    registers.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
     emit0("");
-    emit("; Allocate string of length %s", leftReg.name32);
+    emit("; Allocate string of length %s", leftLengthReg.name32);
     boolean pushedRcx = condPush(RCX);
     boolean pushedRdx = condPush(RDX);
-    emit("mov ECX, %s", leftReg.name32);
+    emit("mov ECX, %s", leftLengthReg.name32);
     emit("sub RSP, 0x20  ; Reserve the shadow space");
-    emit("call malloc  ; malloc(%s)", leftReg.name32);
-    registers.deallocate(leftReg);
+    emit("call malloc  ; malloc(%s)", leftLengthReg.name32);
+    registers.deallocate(leftLengthReg);
     // 4. put string into dest
     if (!dest.equals(RAX.name64)) {
       emit("mov %s, RAX  ; destination from rax", dest);
@@ -598,12 +596,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // 5. strcpy from left to dest
     emit0("");
+    String left = resolve(leftOperand);
     emit("; strcpy from %s to %s", left, dest);
     emit("mov RCX, %s", dest);
     emit("mov RDX, %s", left);
     emit("call strcpy");
     // 6. strcat dest, right
     emit0("");
+    String right = resolve(rightOperand);
     emit("; strcat from %s to %s", right, dest);
     emit("mov RCX, %s", dest);
     emit("mov RDX, %s", right);
@@ -700,7 +700,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case LENGTH:
         if (source.type() == VarType.STRING) {
-          generateStringLength(sourceName, destName);
+          generateStringLength(source, destination);
         } else {
           // array length
           fail("Cannot generate array %s yet", op);
@@ -733,24 +733,32 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     deallocate(op.operand());
   }
 
-  private void generateStringLength(String sourceName, String destName) {
+  private void generateStringLength(Operand source, Location destination) {
     boolean pushedRcx = condPush(RCX);
     boolean pushedRax = condPush(RAX);
-    emit("mov RCX, %s  ; Address of string", sourceName);
+    String sourceName = resolve(source);
+    String destinationName = resolve(destination);
+    if (isInRegister(source, RCX)) {
+      emit("; RCX already has address of string");
+    } else {
+      emit("mov RCX, %s  ; Address of string", sourceName);
+    }
     emit("sub RSP, 0x20  ; Reserve the shadow space");
-    emit("call strlen  ; strlen(%s)", sourceName);
+    emit("call strlen    ; strlen(%s)", sourceName);
     emit("add RSP, 0x20  ; Remove shadow space");
-    if (destName.equals(RAX.name32)) {
+    if (isInRegister(destination, RAX)) {
       // pseudo pop; eax already has the length.
+      emit("; pseudo-pop; destination was already %s", destination);
       emit("add RSP, 8");
     } else {
       // NOTE: eax not rax, because lengths are always ints (32 bits)
-      emit("mov %s, EAX  ; %s = strlen(%s)", destName, destName, sourceName);
+      emit("mov %s, EAX  ; %s = strlen(%s)", destinationName, destinationName, sourceName);
       condPop(RAX, pushedRax);
     }
 
-    if (destName.equals(RCX.name32)) {
+    if (isInRegister(destination, RCX)) {
       // pseudo pop
+      emit("; pseudo-pop; destination was already %s", destination);
       emit("add RSP, 8");
     } else {
       condPop(RCX, pushedRcx);
