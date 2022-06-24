@@ -1,1 +1,2 @@
-bazel run //src/com/plasstech/lang/d2:D2Compiler -- $PWD/$1 $@
+bazel build src/com/plasstech/lang/d2:D2Compiler 
+bazel-bin/src/com/plasstech/lang/d2/D2Compiler.exe $PWD/$1 $@

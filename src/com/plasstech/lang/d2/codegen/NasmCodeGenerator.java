@@ -58,6 +58,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
+  private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
+  private static final ImmutableList<Register> PARAM_REGISTERS_REVERSED = PARAM_REGISTERS.reverse();
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final List<String> asm = new ArrayList<>();
@@ -200,7 +202,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     if (source.isConstant() || source.isRegister()) {
-      // this isn't the only way to have the source be a register
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
       if (toReg != null || fromReg != null) {
@@ -226,20 +227,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     boolean pushedRax = condPush(RAX);
     boolean pushedR8 = condPush(R8);
     boolean pushedR9 = condPush(R9);
+    boolean pushedRcx = condPush(RCX);
+    boolean pushedRdx = condPush(RDX);
 
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
         String argVal = resolve(arg);
-        boolean pushedRcx = condPush(RCX);
-        boolean pushedRdx = condPush(RDX);
         if (arg.type() == VarType.INT) {
           // move with sign extend. intentionally set rdx first, in case the arg is in ecx
 
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
-          emit("sub RSP, 0x20 ; Reserve the shadow space");
-          emit("call printf  ; printf(message)");
+          emit("sub RSP, 0x20  ; Reserve the shadow space");
+          emit("call printf    ; printf(message)");
           emit("add RSP, 0x20  ; Remove shadow space");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
@@ -252,11 +253,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("cmp byte %s, 1", argVal);
             emit("mov RCX, CONST_FALSE");
             emit("mov RDX, CONST_TRUE");
-            // conditional move, I think.
+            // Conditional move
             emit("cmovz RCX, RDX");
           }
           emit("sub RSP, 0x20  ; Reserve the shadow space");
-          emit("call printf  ; printf(message)");
+          emit("call printf    ; printf(%s)", argVal);
           emit("add RSP, 0x20  ; Remove shadow space");
         } else if (arg.type() == VarType.STRING) {
           // String
@@ -272,18 +273,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov RCX, %s  ; String to print", argVal);
           }
           emit("sub RSP, 0x20  ; Reserve the shadow space");
-          emit("call printf  ; printf(%s)", argVal);
+          emit("call printf    ; printf(%s)", argVal);
           emit("add RSP, 0x20  ; Remove shadow space");
         } else {
           fail("Cannot print %s yet", arg);
         }
-        condPop(RDX, pushedRdx);
-        condPop(RCX, pushedRcx);
         break;
       default:
         fail("Cannot generate %s yet", op);
         break;
     }
+    condPop(RDX, pushedRdx);
+    condPop(RCX, pushedRcx);
     condPop(R9, pushedR9);
     condPop(R8, pushedR8);
     condPop(RAX, pushedRax);
@@ -834,7 +835,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcExit op) {
-    for (Register reg : ImmutableList.of(RCX, RDX, R8, R9)) {
+    for (Register reg : PARAM_REGISTERS) {
       if (registers.isAllocated(reg)) {
         registers.deallocate(reg);
       }
@@ -857,7 +858,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Call op) {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
     Set<Register> pushedRegs = new HashSet<>();
-    for (Register reg : ImmutableList.of(RCX, RDX, R8, R9)) {
+    for (Register reg : PARAM_REGISTERS) {
       if (registers.isAllocated(reg)) {
         emit("push %s", reg.name64);
         pushedRegs.add(reg);
@@ -872,7 +873,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size.asmName, formalLocation, actualLocation);
     }
     emit("call __%s", op.procName());
-    for (Register reg : ImmutableList.of(R9, R8, RDX, RCX)) {
+    for (Register reg : PARAM_REGISTERS_REVERSED) {
       if (pushedRegs.contains(reg)) {
         emit("pop %s", reg.name64);
       }
@@ -930,7 +931,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         StringEntry entry = stringTable.lookup(stringConst.value());
         return entry.name();
       }
-      fail("Cannot generate %s operand %s yet", operand.storage(), operand);
+      fail("Cannot generate %s operand %s yet", operand.type(), operand);
       return null;
     }
 
@@ -979,19 +980,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private Register paramRegister(int index) {
-    // JFC use an array
-    switch (index) {
-      case 0:
-        return RCX;
-      case 1:
-        return RDX;
-      case 2:
-        return R8;
-      case 3:
-        return R9;
-      default:
-        return null;
+    if (index > 3) {
+      return null;
     }
+    return PARAM_REGISTERS.get(index);
   }
 
   private String generateParamLocationName(int index, VarType varType) {
@@ -999,8 +991,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (reg == null) {
       fail("Cannot generate more than 4 params yet");
       return null;
-      // maybe use the vartype to decide how much space to allocate?
-      //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
     }
     return registerNameSized(reg, varType);
   }
@@ -1011,7 +1001,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else if (type == VarType.BOOL) {
       return Size._1BYTE;
     } else if (type == VarType.STRING) {
-      // string
       return Size._64BITS;
     }
     throw new IllegalStateException("Cannot get type of " + type);
