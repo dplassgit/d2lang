@@ -10,7 +10,8 @@ class StringConstant extends StringEntry {
           '\n', 10,
           '\r', 13,
           '\t', 9,
-          '\"', 34);
+          '\"', 34,
+          '%', 37);
 
   StringConstant(String name, String value) {
     super(name, value);
