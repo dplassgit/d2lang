@@ -41,7 +41,7 @@ public class DeadCodeOptimizerTest {
   public void incDec() {
     ImmutableList<Op> program = ImmutableList.of(new Inc(TEMP1), new Dec(TEMP1));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
@@ -51,7 +51,7 @@ public class DeadCodeOptimizerTest {
   public void incDecDifferent() {
     ImmutableList<Op> program = ImmutableList.of(new Inc(TEMP1), new Dec(TEMP2));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(optimized.get(0)).isInstanceOf(Inc.class);
@@ -62,7 +62,7 @@ public class DeadCodeOptimizerTest {
   public void decInc() {
     ImmutableList<Op> program = ImmutableList.of(new Dec(TEMP1), new Inc(TEMP1));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
@@ -72,7 +72,7 @@ public class DeadCodeOptimizerTest {
   public void decIncDec() {
     ImmutableList<Op> program = ImmutableList.of(new Dec(TEMP1), new Inc(TEMP1), new Dec(TEMP1));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);

@@ -14,7 +14,7 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class InlineOptimizerTest {
-  private Optimizer optimizer =
+  private static final Optimizer OPTIMIZER =
       new ILOptimizer(
               ImmutableList.of(
                   new ConstantPropagationOptimizer(0),
@@ -30,7 +30,7 @@ public class InlineOptimizerTest {
                 + "shortVoidNoArg:proc() { g = 3 } " //
                 + "shortVoidNoArg() "
                 + "println g",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -42,7 +42,7 @@ public class InlineOptimizerTest {
         TestUtils.optimizeAssertSameVariables(
             "      shortVoidLocal:proc(n:int) { m = n + 1 print m } " //
                 + "shortVoidLocal(3) ",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -56,7 +56,7 @@ public class InlineOptimizerTest {
                 + "shortVoidGlobal:proc(n:int) { g = g + n } " //
                 + "shortVoidGlobal(10) "
                 + "println g",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -68,7 +68,7 @@ public class InlineOptimizerTest {
         TestUtils.optimizeAssertSameVariables(
             "      shortProc:proc(n:int):int { return n + 1 } " //
                 + "println shortProc(10)",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -86,7 +86,7 @@ public class InlineOptimizerTest {
                 + "} " //
                 + "r = shortProcRecord() "
                 + "println r.i",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     // show that there are no calls to the procedure
@@ -104,7 +104,7 @@ public class InlineOptimizerTest {
                 + "} " //
                 + "shortProcGlobalRecord() "
                 + "println r.i",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     // show that there are no calls to the procedure
@@ -118,7 +118,7 @@ public class InlineOptimizerTest {
             "      p:proc(n:int):int { return n+1 }"
                 + "shortProcWithCall:proc(n:int):int { return p(n) } " //
                 + "println shortProcWithCall(10)",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -130,7 +130,7 @@ public class InlineOptimizerTest {
         TestUtils.optimizeAssertSameVariables(
             "      medium:proc(c:string):bool { return c >= '0' and c <= '9' } " //
                 + "println medium('12')",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -138,12 +138,12 @@ public class InlineOptimizerTest {
 
   @Test
   public void linkedList() {
-    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
+    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, OPTIMIZER);
   }
 
   @Test
   public void recordLoopInvariant() {
-    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, optimizer);
+    TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, OPTIMIZER);
   }
 
   @Test
@@ -154,7 +154,7 @@ public class InlineOptimizerTest {
                 + "  return 6 "
                 + "} "
                 + "ignoredReturnValue()",
-            optimizer);
+            OPTIMIZER);
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
   }
@@ -168,7 +168,7 @@ public class InlineOptimizerTest {
                 + "} "
                 + "ignoredReturnValueSometimes() "
                 + "println ignoredReturnValueSometimes()",
-            optimizer);
+            OPTIMIZER);
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
   }
@@ -195,7 +195,7 @@ public class InlineOptimizerTest {
                 + "println multipleCalls('12') " //
                 + "println multipleCalls('3') " //
                 + "println multipleCalls('no') ",
-            optimizer);
+            OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);
@@ -210,7 +210,7 @@ public class InlineOptimizerTest {
                 + "} "
                 + "println twoReturns(10) "
                 + "println twoReturns(-10) ",
-            optimizer);
+            OPTIMIZER);
     ImmutableList<Op> code = result.code();
 
     // Show that there are still calls to the procedure
@@ -237,7 +237,7 @@ public class InlineOptimizerTest {
                 + "  return sum"
                 + "}"
                 + "println longProc(10)",
-            optimizer);
+            OPTIMIZER);
     ImmutableList<Op> code = result.code();
 
     // Show that there are still calls to the procedure

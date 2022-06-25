@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.SymTab;
 
 public class ILOptimizer extends DefaultOptimizer implements Phase {
   private int debugLevel;
@@ -25,7 +26,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
             // this doesn't play nicely with the nasm code generator yet
-            //            new InlineOptimizer(debugLevel),
+            new InlineOptimizer(debugLevel),
             new LoopInvariantOptimizer(debugLevel),
             new NopOptimizer() // ,
             ));
@@ -47,12 +48,12 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
 
   @Override
   public State execute(State input) {
-    ImmutableList<Op> optimized = optimize(input.ilCode());
+    ImmutableList<Op> optimized = optimize(input.ilCode(), input.symbolTable());
     return input.addOptimizedCode(optimized);
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> input, SymTab symbolTable) {
     setChanged(false);
 
     ImmutableList<Op> program = ImmutableList.copyOf(input);
@@ -63,7 +64,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
       changed = false;
 
       for (Optimizer child : children) {
-        program = child.optimize(program);
+        program = child.optimize(program, symbolTable);
         if (child.isChanged()) {
           iterations++;
           if (debugLevel == 2) {

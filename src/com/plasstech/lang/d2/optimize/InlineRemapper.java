@@ -22,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 /** For each opcode, remap temps with a new id. Remap any stack variables too. */
@@ -30,10 +31,12 @@ class InlineRemapper extends DefaultOpcodeVisitor {
 
   private final List<Op> code;
   private final String suffix;
+  private final SymTab symtab;
 
   private int ip;
 
-  InlineRemapper(List<Op> code) {
+  InlineRemapper(List<Op> code, SymTab symtab) {
+    this.symtab = symtab;
     this.suffix = "__inline__" + (global_counter++);
     this.code = new ArrayList<>(code);
   }
@@ -42,7 +45,11 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     // I *really* want this to be TempLocation, but the ConstantPropagation optimizer
     // assumes that temps are never changed, so if we call it a Temp, it fails.
     // Then, I *really* wanted this to be a stack location but, shrug.
-    return new MemoryAddress("__" + name + suffix, type);
+    String fullName = "__" + name + suffix;
+    if (symtab.get(fullName) == null) {
+      symtab.declare(fullName, type);
+    }
+    return new MemoryAddress(fullName, type);
   }
 
   List<Op> remap() {
@@ -164,7 +171,11 @@ class InlineRemapper extends DefaultOpcodeVisitor {
               "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
         }
         // I *really* want this to be a temp or stack but (see above)
-        return new MemoryAddress("__" + location.name() + suffix, location.type());
+        String fullName = "__" + location.name() + suffix;
+        if (symtab.get(fullName) == null) {
+          symtab.declare(fullName, location.type());
+        }
+        return new MemoryAddress(fullName, location.type());
       default:
         return operand;
     }

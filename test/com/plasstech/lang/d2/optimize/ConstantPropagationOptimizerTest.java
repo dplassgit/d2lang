@@ -34,7 +34,7 @@ public class ConstantPropagationOptimizerTest {
     System.out.printf("\nUNOPTIMIZED:\n");
     System.out.println(Joiner.on("\n").join(program));
 
-    program = optimizer.optimize(program);
+    program = optimizer.optimize(program, null);
 
     assertThat(program.get(0)).isInstanceOf(Nop.class);
     assertThat(program.get(1)).isInstanceOf(Nop.class);

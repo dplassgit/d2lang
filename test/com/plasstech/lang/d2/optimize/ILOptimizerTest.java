@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.SymTab;
 
 public class ILOptimizerTest {
   @Test
@@ -70,7 +71,7 @@ public class ILOptimizerTest {
     } catch (ArithmeticException expected) {
     }
 
-    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.state().ilCode());
+    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.state().ilCode(), new SymTab());
     try {
       ee.execute(ee.state().addOptimizedCode(optimized));
       fail("Should fail with division by 0");

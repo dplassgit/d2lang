@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 public class InlineRemapperTest {
@@ -29,7 +30,7 @@ public class InlineRemapperTest {
   @Test
   public void transferConstantToStack() {
     ImmutableList<Op> input = ImmutableList.of(new Transfer(STACK, ConstantOperand.ONE));
-    List<Op> mapped = new InlineRemapper(input).remap();
+    List<Op> mapped = new InlineRemapper(input, new SymTab()).remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__stack__inline__");
     assertThat(op.source().isConstant()).isTrue();
@@ -38,7 +39,8 @@ public class InlineRemapperTest {
   @Test
   public void transferConstantToTemp() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE)))
+        new InlineRemapper(
+                ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE)), new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__dest__inline__");
@@ -48,7 +50,8 @@ public class InlineRemapperTest {
   @Test
   public void transferTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE))).remap();
+        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE)), new SymTab())
+            .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__dest__inline__");
     assertThat(op.source().toString()).startsWith("__source__inline__");
@@ -57,7 +60,8 @@ public class InlineRemapperTest {
   @Test
   public void transferFromTemp() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE))).remap();
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE)), new SymTab())
+            .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
     assertThat(op.source().toString()).startsWith("__source__inline__");
@@ -66,9 +70,7 @@ public class InlineRemapperTest {
   @Test
   public void transferNoTemps() {
     List<Op> mapped =
-        new InlineRemapper(
-                ImmutableList.of(new Transfer(STACK, MEMORY)))
-            .remap();
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY)), new SymTab()).remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
     assertThat(op.source()).isEqualTo(MEMORY);
@@ -78,7 +80,7 @@ public class InlineRemapperTest {
   public void binOpTempDest() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY)))
+                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY)), new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__dest__inline__");
@@ -91,7 +93,8 @@ public class InlineRemapperTest {
   public void binOpTempSource() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT)))
+                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT)),
+                new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
@@ -104,7 +107,7 @@ public class InlineRemapperTest {
   public void unaryOpTempSource_formal() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE)))
+                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE)), new SymTab())
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");

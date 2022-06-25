@@ -36,7 +36,7 @@ public class ArithmeticOptimizerTest {
   public void varPlusVarInts() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP2, TokenType.PLUS, TEMP2));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
@@ -50,7 +50,7 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusVarStrings() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP3, TokenType.PLUS, TEMP3));
-    optimizer.optimize(program);
+    optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
 
@@ -61,7 +61,7 @@ public class ArithmeticOptimizerTest {
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.LEQ, ConstantOperand.ZERO),
             new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.LEQ, ConstantOperand.ONE));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
@@ -78,7 +78,7 @@ public class ArithmeticOptimizerTest {
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.GT, ConstantOperand.ZERO),
             new BinOp(TEMP1, ConstantOperand.ZERO, TokenType.GT, ConstantOperand.ONE));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
@@ -103,7 +103,7 @@ public class ArithmeticOptimizerTest {
                 TokenType.LEQ,
                 new ConstantOperand<String>("b")));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
@@ -128,7 +128,7 @@ public class ArithmeticOptimizerTest {
                 TokenType.GT,
                 new ConstantOperand<String>("b")));
 
-    ImmutableList<Op> optimized = optimizer.optimize(program);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
