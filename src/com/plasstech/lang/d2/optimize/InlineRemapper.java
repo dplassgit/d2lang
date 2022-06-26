@@ -49,6 +49,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (symtab.get(fullName) == null) {
       symtab.declare(fullName, type);
     }
+    System.err.printf("Remapping formal to %s (type %s)\n", fullName, type);
     return new MemoryAddress(fullName, type);
   }
 
@@ -157,6 +158,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       return operand;
     }
     Location location = (Location) operand;
+    System.err.printf("Remapping operand to %s (type %s)\n", location.toString(), location.type());
     // This fails for records, because records are stored globally (global or heap) but
     // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
     switch (location.storage()) {

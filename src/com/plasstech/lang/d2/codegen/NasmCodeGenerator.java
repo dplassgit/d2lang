@@ -939,8 +939,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         StringEntry entry = stringTable.lookup(stringConst.value());
         return entry.name();
       }
-      // array, but.. it's saying type is UNKNOWN which is weird and scary
-      // when it's an array of strings,
+      
       fail("Cannot generate %s operand %s yet", operand.type().name(), operand);
       return null;
     }

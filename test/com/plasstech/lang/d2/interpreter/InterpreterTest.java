@@ -298,18 +298,17 @@ public class InterpreterTest {
   public void recordInProc() {
     Environment env =
         execute(
-            " Parser: record {token:string}"
-                + "new_parser: proc(): Parser {\r\n"
-                + "  parser = new Parser\r\n"
-                + "  advance_parser(parser)\r\n"
-                + "  return parser\r\n"
-                + "}\r\n"
-                + "\r\n"
-                + "advance_parser: proc(this: Parser): String {\r\n"
-                + "  prev = this.token\r\n"
-                + "  this.token = 'hi'\r\n"
-                + "  return prev\r\n"
-                + "}\r\n"
+            "      Parser: record {token:string}"
+                + "new_parser: proc(): Parser {"
+                + "  parser = new Parser "
+                + "  advance_parser(parser) "
+                + "  return parser"
+                + "}"
+                + "advance_parser: proc(this: Parser) {"
+                + "  prev = this.token"
+                + "  this.token = 'hi'"
+                //                + "  return prev"
+                + "}"
                 + "p=new_parser()"
                 + "print p.token",
             true);
@@ -326,6 +325,8 @@ public class InterpreterTest {
 
   private Environment execute(String program, boolean optimize) {
     InterpreterExecutor ee = new InterpreterExecutor(program);
+    ee.setCodeGenDebugLevel(2);
+    ee.setOptDebugLevel(2);
     ee.setOptimize(optimize);
     InterpreterResult result = ee.execute();
     //    System.out.println(ee.programNode());

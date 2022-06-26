@@ -278,6 +278,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // if left and right are "simple", just get it.
     if (left.isSimpleType()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
+      // possibly
       leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
     } else {
       left.accept(this);
@@ -294,7 +295,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
       // TODO: this is weird, and possibly wrong. Why String?!
-      rightSrc = new ConstantOperand<String>(rightVarNode.name(), rightVarNode.varType());
+      rightSrc = ConstantOperand.of(rightVarNode.name());
     } else {
       // if left and right are "simple", just get it.
       if (right.isSimpleType()) {
