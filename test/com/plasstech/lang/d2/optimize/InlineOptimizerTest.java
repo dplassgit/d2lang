@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -174,6 +175,7 @@ public class InlineOptimizerTest {
   }
 
   @Test
+  @Ignore
   public void ignoreReturnValueSometimesAllOpts() {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
