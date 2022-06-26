@@ -33,12 +33,10 @@ class ArithmeticOptimizer extends LineOptimizer {
           if (value instanceof String) {
             String valueString = (String) value;
             replaceCurrent(
-                new Transfer(
-                    opcode.destination(), new ConstantOperand<Integer>(valueString.length())));
+                new Transfer(opcode.destination(), ConstantOperand.of(valueString.length())));
           } else if (value.getClass().isArray()) {
             Object[] array = (Object[]) value;
-            replaceCurrent(
-                new Transfer(opcode.destination(), new ConstantOperand<Integer>(array.length)));
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(array.length)));
           }
         }
         return;
@@ -48,8 +46,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           Object value = constant.value();
           if (value instanceof Boolean) {
             boolean valueBoolean = (Boolean) value;
-            replaceCurrent(
-                new Transfer(opcode.destination(), new ConstantOperand<Boolean>(!valueBoolean)));
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(!valueBoolean)));
           }
         }
         return;
@@ -59,8 +56,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           Object value = constant.value();
           if (value instanceof Integer) {
             Integer valueInt = (Integer) value;
-            replaceCurrent(
-                new Transfer(opcode.destination(), new ConstantOperand<Integer>(~valueInt)));
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~valueInt)));
           }
         }
         return;
@@ -70,8 +66,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           Object value = constant.value();
           if (value instanceof Integer) {
             int valueInt = (Integer) value;
-            replaceCurrent(
-                new Transfer(opcode.destination(), new ConstantOperand<Integer>(-valueInt)));
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-valueInt)));
           }
         }
         return;
@@ -81,8 +76,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           ConstantOperand<String> constant = (ConstantOperand<String>) operand;
           String value = constant.value();
           char first = value.charAt(0);
-          replaceCurrent(
-              new Transfer(opcode.destination(), new ConstantOperand<Integer>((int) first)));
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(first)));
         }
         return;
       case CHR:
@@ -93,7 +87,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           replaceCurrent(
               new Transfer(
                   opcode.destination(),
-                  new ConstantOperand<String>("" + Character.valueOf((char) value))));
+                  ConstantOperand.of(Character.valueOf((char) value).toString())));
         }
         return;
       default:
@@ -196,7 +190,7 @@ class ArithmeticOptimizer extends LineOptimizer {
             replaceCurrent(
                 new Transfer(
                     op.destination(),
-                    new ConstantOperand<String>(String.valueOf(valueString.charAt(index)))));
+                    ConstantOperand.of(String.valueOf(valueString.charAt(index)))));
           }
         }
         return;
@@ -292,7 +286,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                   op.destination(),
                   left,
                   TokenType.SHIFT_RIGHT,
-                  new ConstantOperand<Integer>(power)));
+                  ConstantOperand.of(power)));
           return;
         }
       } else if (left.equals(right)) {
@@ -332,8 +326,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
           replaceCurrent(
-              new BinOp(
-                  op.destination(), left, TokenType.PLUS, new ConstantOperand<Integer>(-rightval)));
+              new BinOp(op.destination(), left, TokenType.PLUS, ConstantOperand.of(-rightval)));
         }
       }
     }
@@ -368,7 +361,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           replaceCurrent(
               new Transfer(
                   op.destination(),
-                  new ConstantOperand<String>(leftConstant.value() + rightConstant.value())));
+                  ConstantOperand.of(leftConstant.value() + rightConstant.value())));
           return;
         }
       }
@@ -380,11 +373,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
           replaceCurrent(
-              new BinOp(
-                  op.destination(),
-                  left,
-                  TokenType.MINUS,
-                  new ConstantOperand<Integer>(-rightval)));
+              new BinOp(op.destination(), left, TokenType.MINUS, ConstantOperand.of(-rightval)));
         }
       }
     }
@@ -422,18 +411,13 @@ class ArithmeticOptimizer extends LineOptimizer {
       int power = powerOfTwo(left);
       if (power != 0) {
         replaceCurrent(
-            new BinOp(
-                op.destination(),
-                right,
-                TokenType.SHIFT_LEFT,
-                new ConstantOperand<Integer>(power)));
+            new BinOp(op.destination(), right, TokenType.SHIFT_LEFT, ConstantOperand.of(power)));
       }
     } else if (right.isConstant()) {
       int power = powerOfTwo(right);
       if (power != 0) {
         replaceCurrent(
-            new BinOp(
-                op.destination(), left, TokenType.SHIFT_LEFT, new ConstantOperand<Integer>(power)));
+            new BinOp(op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.of(power)));
       }
     }
   }
@@ -508,8 +492,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
       Comparable leftval = (Comparable) leftConstant.value();
       Comparable rightval = (Comparable) rightConstant.value();
-      replaceCurrent(
-          new Transfer(destination, new ConstantOperand<Boolean>(fun.test(leftval, rightval))));
+      replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.test(leftval, rightval))));
       return true;
     }
     return false;
@@ -530,7 +513,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(
           new Transfer(
               destination,
-              new ConstantOperand<Boolean>(fun.test(leftConstant.value(), rightConstant.value()))));
+              ConstantOperand.of(fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
     }
     return false;
@@ -551,8 +534,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
         int leftval = (int) leftConstant.value();
         int rightval = (int) rightConstant.value();
-        replaceCurrent(
-            new Transfer(destination, new ConstantOperand<Integer>(fun.apply(leftval, rightval))));
+        replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
         return true;
       }
     }
@@ -574,8 +556,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
         boolean leftval = (boolean) leftConstant.value();
         boolean rightval = (boolean) rightConstant.value();
-        replaceCurrent(
-            new Transfer(destination, new ConstantOperand<Boolean>(fun.apply(leftval, rightval))));
+        replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
         return true;
       }
     }

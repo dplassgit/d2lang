@@ -49,7 +49,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ConstantOperand<?> replacement = findReplacementConstant(op.target());
     if (replacement != null) {
       int value = (int) replacement.value();
-      stackConstants.put(op.target().name(), new ConstantOperand<Integer>(value + 1));
+      stackConstants.put(op.target().name(), ConstantOperand.of(value + 1));
       logger.at(loggingLevel).log("Incremented stackConstant %s to %d", op.target(), value + 1);
     }
   }
@@ -59,7 +59,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ConstantOperand<?> replacement = findReplacementConstant(op.target());
     if (replacement != null) {
       int value = (int) replacement.value();
-      stackConstants.put(op.target().name(), new ConstantOperand<Integer>(value - 1));
+      stackConstants.put(op.target().name(), ConstantOperand.of(value - 1));
       logger.at(loggingLevel).log("Decremented stackConstant %s to %d", op.target(), value - 1);
     }
   }

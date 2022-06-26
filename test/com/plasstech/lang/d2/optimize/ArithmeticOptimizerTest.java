@@ -92,16 +92,8 @@ public class ArithmeticOptimizerTest {
   public void compareStringsLeq() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(
-                TEMP1,
-                new ConstantOperand<String>("b"),
-                TokenType.LEQ,
-                new ConstantOperand<String>("a")),
-            new BinOp(
-                TEMP1,
-                new ConstantOperand<String>("a"),
-                TokenType.LEQ,
-                new ConstantOperand<String>("b")));
+            new BinOp(TEMP1, ConstantOperand.of("b"), TokenType.LEQ, ConstantOperand.of("a")),
+            new BinOp(TEMP1, ConstantOperand.of("a"), TokenType.LEQ, ConstantOperand.of("b")));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -117,16 +109,8 @@ public class ArithmeticOptimizerTest {
   public void compareStringsGe() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(
-                TEMP1,
-                new ConstantOperand<String>("b"),
-                TokenType.GT,
-                new ConstantOperand<String>("a")),
-            new BinOp(
-                TEMP1,
-                new ConstantOperand<String>("a"),
-                TokenType.GT,
-                new ConstantOperand<String>("b")));
+            new BinOp(TEMP1, ConstantOperand.of("b"), TokenType.GT, ConstantOperand.of("a")),
+            new BinOp(TEMP1, ConstantOperand.of("a"), TokenType.GT, ConstantOperand.of("b")));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 

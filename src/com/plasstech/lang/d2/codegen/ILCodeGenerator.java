@@ -119,7 +119,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     expr.accept(this);
     emit(new SysCall(SysCall.Call.PRINT, expr.location()));
     if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, new ConstantOperand<String>("\n")));
+      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
     }
   }
 
@@ -222,8 +222,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // "location"?
     node.setLocation(destination);
 
-    // TODO: figure out storage for strings
-    ConstantOperand<T> constOperand = new ConstantOperand<T>(node.value());
+    ConstantOperand<T> constOperand = new ConstantOperand<T>(node.value(), node.varType());
     Transfer transfer = new Transfer(destination, constOperand);
     emit(transfer);
   }
@@ -279,7 +278,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // if left and right are "simple", just get it.
     if (left.isSimpleType()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
-      leftSrc = new ConstantOperand(simpleLeft.value());
+      leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
     } else {
       left.accept(this);
       leftSrc = left.location();
@@ -294,12 +293,13 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     if (node.operator() == TokenType.DOT) {
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
-      rightSrc = new ConstantOperand<String>(rightVarNode.name());
+      // TODO: this is weird, and possibly wrong. Why String?!
+      rightSrc = new ConstantOperand<String>(rightVarNode.name(), rightVarNode.varType());
     } else {
       // if left and right are "simple", just get it.
       if (right.isSimpleType()) {
         ConstNode<?> simpleRight = (ConstNode<?>) right;
-        rightSrc = new ConstantOperand(simpleRight.value());
+        rightSrc = new ConstantOperand(simpleRight.value(), simpleRight.varType());
       } else {
         right.accept(this);
         rightSrc = right.location();

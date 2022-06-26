@@ -10,24 +10,24 @@ public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Boolean> FALSE = of(false);
   public static final ConstantOperand<Boolean> TRUE = of(true);
 
-  public static <T> ConstantOperand<T> of(T value) {
-    return new ConstantOperand<T>(value);
+  public static ConstantOperand<String> of(String value) {
+    return new ConstantOperand<String>(value, VarType.STRING);
+  }
+
+  public static ConstantOperand<Integer> of(int value) {
+    return new ConstantOperand<Integer>(value, VarType.INT);
+  }
+
+  public static ConstantOperand<Boolean> of(boolean value) {
+    return new ConstantOperand<Boolean>(value, VarType.BOOL);
   }
 
   private final T value;
   private final VarType type;
 
-  public ConstantOperand(T value) {
+  public ConstantOperand(T value, VarType varType) {
     this.value = value;
-    if (value instanceof Integer) {
-      this.type = VarType.INT;
-    } else if (value instanceof String) {
-      this.type = VarType.STRING;
-    } else if (value instanceof Boolean) {
-      this.type = VarType.BOOL;
-    } else {
-      this.type = VarType.UNKNOWN;
-    }
+    this.type = varType;
   }
 
   @Override

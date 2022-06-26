@@ -19,7 +19,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class IncDecOptimizerTest {
-  private static final ConstantOperand<Integer> TWO = new ConstantOperand<Integer>(2);
+  private static final ConstantOperand<Integer> TWO = ConstantOperand.of(2);
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
   private static final StackLocation STACK = new StackLocation("stack", VarType.INT, 0);
