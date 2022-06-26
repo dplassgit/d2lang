@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,19 +14,18 @@ import com.plasstech.lang.d2.phase.State;
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   @Test
-  public void procTest() throws Exception {
+  public void voidProcNoArgs() throws Exception {
     execute(
         "      a=1 \n"
             + "procTest:proc() { \n" //
             + "   if a==1 {println a return } else {println 4 return} \n" //
             + "} \n" //
             + "procTest()",
-        "procTest");
+        "voidProcNoArgs");
   }
 
   @Test
   public void procReturnsInt() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      fun:proc():int { \n" //
             + "   return 3 \n" //
@@ -38,7 +36,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procReturnsBool() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      fun:proc():bool { \n" //
             + "   return true \n" //
@@ -59,9 +56,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procIntParam() throws Exception {
-    // cannot run with optimize=true because the inline optimizer is creating a "local"
-    // variable, which cannot be generated yet.
-    assumeFalse(optimize);
     execute(
         "      procIntParam:proc(n:int):int { "
             + "   return n+1"
@@ -73,7 +67,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procLocals() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      procLocals:proc(n:int):int { "
             + "  // a is a local \n"
@@ -100,8 +93,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void procParamFirst4Locations() throws Exception {
-    assumeFalse(optimize);
-
     execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
 
     State state = compileToNasm(FOUR_PARAM_PROC);
@@ -132,7 +123,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   
   @Test
   public void allOpsLocals() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      allOpsLocals:proc():int { \n"
             + "   a=1 b=2 c=3 d=4 e=5 f=6 g=3\n"
@@ -143,6 +133,4 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "print allOpsLocals()",
         "allOpsLocals");
   }
-
-
 }
