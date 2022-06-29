@@ -985,13 +985,13 @@ public class ParserTest {
   }
 
   @Test
-  @Ignore("Assignments are still broken")
+  @Ignore("Array assignments are still unimplemented")
   public void arraySet() {
     parseStatements("a[3] = 4");
   }
 
   @Test
-  @Ignore
+  @Ignore("Array assignments are still unimplemented")
   public void arrayStmt() {
     parseStatements("fn()[fn()]");
   }

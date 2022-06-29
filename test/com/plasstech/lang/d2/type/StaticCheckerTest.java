@@ -980,7 +980,13 @@ public class StaticCheckerTest {
     Parser parser = new Parser(lexer);
     State state = State.create(program).build();
     state = parser.execute(state);
-    assertWithMessage("Should have passed parse for:\n " + program).that(state.error()).isFalse();
+    if (state.error()) {
+      fail(
+          "Should have passed parse for:\n "
+              + program
+              + "\nbut failed with error "
+              + state.errorMessage());
+    }
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     return state;

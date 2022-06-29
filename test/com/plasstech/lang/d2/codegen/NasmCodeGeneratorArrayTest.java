@@ -10,7 +10,13 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   @Ignore
+  public void arrayRetrieve() throws Exception {
+    execute("a=['hi']", "arrayRetrieve");
+  }
+
+  @Test
+  @Ignore
   public void arrayAssign() throws Exception {
-    execute("a=['hi']", "arrayAssign");
+    execute("a=['hi'] a[0]='bye'", "arrayAssign");
   }
 }

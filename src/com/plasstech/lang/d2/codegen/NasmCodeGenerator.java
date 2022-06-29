@@ -174,13 +174,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Transfer op) {
     Operand source = op.source();
-    String sourceLoc = resolve(source);
     Location destination = op.destination();
+
+    if (source.type().isArray()) {
+      // for now, all arrays contain constant values.
+      fail("Cannot generate transfer from array yet (source type is %s)", source.type());
+      return;
+    }
+
     Register fromReg = toRegister(source);
     Register toReg = toRegister(destination);
     String destLoc = resolve(destination);
-    String size = size(op.source().type()).asmName;
-
+    String sourceLoc = resolve(source);
     if (source.type() == VarType.STRING) {
       if (toReg != null || fromReg != null) {
         // go right from source to dest
@@ -201,6 +206,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
+    String size = size(op.source().type()).asmName;
     if (source.isConstant() || source.isRegister()) {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
