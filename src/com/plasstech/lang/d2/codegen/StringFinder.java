@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 
 /*
@@ -42,9 +43,18 @@ class StringFinder extends DefaultOpcodeVisitor {
 
   private void addEntry(Operand operand) {
     if (operand.isConstant()) {
-      ConstantOperand<?> constOp = (ConstantOperand<?>) operand;
       if (operand.type() == VarType.STRING) {
-        stringTable.addEntry(constOp.value().toString());
+        ConstantOperand<String> constOp = (ConstantOperand<String>) operand;
+        stringTable.addEntry(constOp.value());
+      } else if (operand.type().isArray()) {
+        ArrayType at = (ArrayType) operand.type();
+        if (at.baseType() == VarType.STRING) {
+          // collect the const strings
+          ConstantOperand<String[]> arrayStringOp = (ConstantOperand<String[]>) operand;
+          for (String s : arrayStringOp.value()) {
+            stringTable.addEntry(s);
+          }
+        }
       }
     }
   }

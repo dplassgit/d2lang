@@ -68,12 +68,10 @@ class StringTable {
 
   private String generateName(String value) {
     StringBuilder sanitizedNameValue = new StringBuilder();
-    // replace all non-alphanumerics with underscore
+    // remove all non-alphanumerics
     for (char c : value.toCharArray()) {
       if (Character.isLetterOrDigit(c)) {
         sanitizedNameValue.append(c);
-      } else {
-        sanitizedNameValue.append('_');
       }
     }
     return String.format("CONST_%s_%d", sanitizedNameValue, index++);

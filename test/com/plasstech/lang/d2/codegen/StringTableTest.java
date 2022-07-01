@@ -107,4 +107,22 @@ public class StringTableTest {
     StringEntry entry4 = table.lookup("different");
     assertThat(entry4.value()).isEqualTo("different");
   }
+
+  @Test
+  public void non_alphas() {
+    table.addEntry("tant");
+    table.addEntry("t, ant");
+    table.addEntry("t,ant");
+    table.addEntry("ant");
+
+    System.err.println(table.orderedEntries());
+    StringEntry entry = table.lookup("tant");
+    assertThat(entry.value()).isEqualTo("tant");
+    StringEntry entry2 = table.lookup("t, ant");
+    assertThat(entry2.value()).isEqualTo("t, ant");
+    StringEntry entry3 = table.lookup("t,ant");
+    assertThat(entry3.value()).isEqualTo("t,ant");
+    StringEntry entry4 = table.lookup("ant");
+    assertThat(entry4.value()).isEqualTo("ant");
+  }
 }
