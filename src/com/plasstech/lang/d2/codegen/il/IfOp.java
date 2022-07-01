@@ -6,8 +6,8 @@ public class IfOp extends Op {
   private final Operand condition;
   private final String dest;
 
-  public IfOp(Operand notCondition, String dest) {
-    this.condition = notCondition;
+  public IfOp(Operand condition, String dest) {
+    this.condition = condition;
     this.dest = dest;
   }
 
