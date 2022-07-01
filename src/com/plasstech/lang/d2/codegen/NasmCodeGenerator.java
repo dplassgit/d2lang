@@ -364,12 +364,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Dec op) {
-    emit("dec dword %s", resolve(op.target()));
+    String target = resolve(op.target());
+    emit("dec dword %s", target);
+    deallocate(op.target());
   }
 
   @Override
   public void visit(Inc op) {
-    emit("inc dword %s", resolve(op.target()));
+    String target = resolve(op.target());
+    emit("inc dword %s", target);
+    deallocate(op.target());
   }
 
   @Override
@@ -377,9 +381,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String condName = resolve(op.condition());
     emit("cmp byte %s, 0", condName);
     emit("jne __%s", op.destination());
-    // deallocate
-    Operand operand = op.condition();
-    deallocate(operand);
+    deallocate(op.condition());
   }
 
   @Override
@@ -641,18 +643,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("cdq  ; sign extend eax to edx");
     emit("idiv %s  ; EAX = %s / %s", temp.name32, leftName, rightName);
     registers.deallocate(temp);
-    // not required if it's already supposed to be in eax
-    if (op.operator() == TokenType.DIV && !destName.equals(RAX.name32)) {
+    if (op.operator() == TokenType.DIV) {
       // eax has dividend
-      emit("mov %s, EAX  ; dividend", destName);
-    } else {
-      emit("; dividend in EAX, where we wanted it to be");
+      if (!destName.equals(RAX.name32)) {
+        emit("mov %s, EAX  ; dividend", destName);
+      } else {
+        // not required if it's already supposed to be in eax
+        emit("; dividend in EAX, where we wanted it to be");
+      }
     }
-    if (op.operator() == TokenType.MOD && !destName.equals(RDX.name32)) {
+    if (op.operator() == TokenType.MOD) {
       // edx has remainder
-      emit("mov %s, EDX  ; remainder", destName);
-    } else {
-      emit("; remainder in EDX, where we wanted it to be");
+      if (!destName.equals(RDX.name32)) {
+        emit("mov %s, EDX  ; remainder", destName);
+      } else {
+        emit("; remainder in EDX, where we wanted it to be");
+      }
     }
 
     if (!pushedRdx) {
@@ -885,6 +891,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String actualLocation = resolve(actual);
       Size size = size(actual.type());
       emit("mov %s %s, %s", size.asmName, formalLocation, actualLocation);
+      // is this right?!
+      deallocate(actual);
     }
     emit("call __%s", op.procName());
     for (Register reg : PARAM_REGISTERS_REVERSED) {
@@ -945,7 +953,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         StringEntry entry = stringTable.lookup(stringConst.value());
         return entry.name();
       }
-      
+
       fail("Cannot generate %s operand %s yet", operand.type().name(), operand);
       return null;
     }
