@@ -23,7 +23,7 @@ public class Registers {
         return r;
       }
     }
-    return null;
+    throw new IllegalStateException("No registers left");
   }
 
   public boolean isAllocated(Register r) {
