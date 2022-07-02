@@ -66,7 +66,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final List<String> prelude = new ArrayList<>();
   private final Set<String> externs = new HashSet<>();
   private final Set<String> data = new TreeSet<>();
-  private final List<String> asm = new ArrayList<>();
   private final Registers registers = new Registers();
   // map from name to register
   private final BiMap<String, Register> aliases = HashBiMap.create(16);
@@ -93,6 +92,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.LT, "setl") // for both int and boolean
           .put(TokenType.LEQ, "setle") // for both intand boolean
           .build();
+
+  private Emitter emitter = new ListEmitter();
 
   @Override
   public State execute(State input) {
@@ -148,7 +149,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             .add("\nsection .data")
             .addAll(data)
             .add("\nsection .text")
-            .addAll(asm)
+            .addAll(emitter.all())
             .build();
 
     return input.addAsmCode(allCode);
@@ -1098,7 +1099,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   // Emit at column 0
   private void emit0(String format, Object... values) {
-    asm.add(String.format(format, values));
+    emitter.emit(format, values);
     logger.atFine().logVarargs(format, values);
   }
 

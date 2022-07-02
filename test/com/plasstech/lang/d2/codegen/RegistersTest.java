@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
@@ -12,7 +13,7 @@ public class RegistersTest {
     for (Register r : Register.values()) {
       assertThat(registers.allocate()).isEqualTo(r);
     }
-    assertThat(registers.allocate()).isNull();
+    assertThrows(IllegalStateException.class, () -> registers.allocate());
   }
 
   @Test
