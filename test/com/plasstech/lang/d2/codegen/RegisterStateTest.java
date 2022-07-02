@@ -56,4 +56,27 @@ public class RegisterStateTest {
     assertThat(emitter.all())
         .containsExactly("  push RCX", "  push RDX", "; hi", "  pop RDX", "  pop RCX");
   }
+
+  @Test
+  public void pushed() {
+    registers.reserve(Register.RDX);
+    RegisterState registerState =
+        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RDX));
+    assertThat(registerState.pushed(Register.RDX)).isTrue();
+    assertThat(registerState.pushed(Register.RAX)).isFalse();
+  }
+
+  @Test
+  public void manualPop() {
+    registers.reserve(Register.RDX);
+    registers.reserve(Register.RCX);
+    RegisterState registerState =
+        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RDX, Register.RCX));
+    registerState.condPop(Register.RCX);
+    assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX");
+    assertThat(registerState.pushed(Register.RCX)).isFalse();
+    registerState.condPop();
+    assertThat(registerState.pushed(Register.RDX)).isFalse();
+    assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX", "  pop RDX");
+  }
 }

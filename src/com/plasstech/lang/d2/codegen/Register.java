@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import com.google.common.collect.ImmutableList;
+
 public enum Register {
   RBX("RBX", "EBX", "BX", "BL"),
   // R4/RSP - not used as GP register
@@ -16,10 +18,13 @@ public enum Register {
   R9("R9"),
   R8("R8"),
   // These are at the bottom so that they're less frequently used, since division uses EDX:EAX
-  // and system calls use RCX and RDX, and because RCX, RDX, R8, R9 are the first 4 params
+  // and RCX, RDX, R8, R9 are the first 4 params to both system and regular calls.
   RDX("RDX", "EDX", "DX", "DL"),
   RCX("RCX", "ECX", "CX", "CL"),
   RAX("RAX", "EAX", "AX", "AL");
+
+  public static final ImmutableList<Register> VOLATILE_REGISTERS =
+      ImmutableList.of(RAX, RCX, RDX, R8, R9, R10, R11);
 
   public final String name64;
   public final String name32;

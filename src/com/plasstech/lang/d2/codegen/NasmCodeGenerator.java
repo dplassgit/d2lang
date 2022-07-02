@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.plasstech.lang.d2.codegen.Register.R10;
+import static com.plasstech.lang.d2.codegen.Register.R11;
 import static com.plasstech.lang.d2.codegen.Register.R8;
 import static com.plasstech.lang.d2.codegen.Register.R9;
 import static com.plasstech.lang.d2.codegen.Register.RAX;
@@ -59,9 +61,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
-  private static final ImmutableList<Register> PARAM_REGISTERS_REVERSED = PARAM_REGISTERS.reverse();
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
 
   private final List<String> prelude = new ArrayList<>();
   private final Set<String> externs = new HashSet<>();
@@ -230,11 +232,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(SysCall op) {
     Operand arg = op.arg();
     // need to preserve used registers!
-    boolean pushedRax = condPush(RAX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     switch (op.call()) {
       case MESSAGE:
@@ -298,11 +296,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         fail("Cannot generate %s yet", op);
         break;
     }
-    condPop(RDX, pushedRdx);
-    condPop(RCX, pushedRcx);
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RAX, pushedRax);
+    registerState.condPop();
     deallocate(op.arg());
   }
 
@@ -472,11 +466,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case SHIFT_RIGHT:
           {
             emit("mov %s %s, %s ; shift setup", size, destName, leftName);
-            boolean pushedRcx = condPush(RCX);
+            RegisterState pushedRcx = condPush(ImmutableList.of(RCX));
             // TODO: this is a problem if rightname is CL
             emit("mov CL, %s ; shift prep", rightName);
             emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
-            condPop(RCX, pushedRcx);
+            pushedRcx.condPop();
           }
           break;
 
@@ -513,11 +507,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void generateStringCompare(
       Operand left, Operand right, String destName, TokenType operator) {
-    boolean pushedRax = condPush(RAX);
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
+    RegisterState state = condPush(Register.VOLATILE_REGISTERS);
 
     emit("; strcmp: %s = %s %s %s", destName, resolve(left), operator, resolve(right));
 
@@ -548,28 +538,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("add RSP, 0x20  ; Remove shadow space");
     emit("cmp RAX, 0");
     emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RDX, pushedRdx);
-    condPop(RCX, pushedRcx);
-    condPop(RAX, pushedRax);
+    state.condPop();
   }
 
   private void generateStringIndex(String leftName, String rightName, String destName) {
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     // 1. allocate a new 2-char string
     emit("mov RCX, 2");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern malloc");
     emit("call malloc  ; malloc(2)");
     emit("add RSP, 0x20  ; Remove shadow space");
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RDX, pushedRdx);
-    condPop(RCX, pushedRcx);
+    registerState.condPop();
     // 2. copy the location to the dest
     emit("mov %s, RAX  ; destination from rax", destName);
 
@@ -611,10 +591,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 3. allocate string of length left+right + 1
     emit0("");
     emit("; Allocate string of length %s", leftLengthReg.name32);
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     emit("mov ECX, %s", leftLengthReg.name32);
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern malloc");
@@ -642,10 +619,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     externs.add("extern strcat");
     emit("call strcat");
     emit("add RSP, 0x20  ; Remove shadow space");
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RDX, pushedRdx);
-    condPop(RCX, pushedRcx);
+    registerState.condPop();
   }
 
   private void generateDivMod(BinOp op, String leftName, String rightName) {
@@ -654,8 +628,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
-    boolean pushedRax = condPush(RAX);
-    boolean pushedRdx = condPush(RDX);
+    RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
     registers.reserve(RAX);
     registers.reserve(RDX);
     Register temp = registers.allocate();
@@ -688,23 +661,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
 
-    if (!pushedRdx) {
+    if (!registerState.pushed(RDX)) {
       registers.deallocate(RDX);
     }
-    if (!pushedRax) {
+    if (!registerState.pushed(RAX)) {
       registers.deallocate(RAX);
     }
     if (!destName.equals(RDX.name32)) {
-      condPop(RDX, pushedRdx);
+      registerState.condPop(RDX);
     } else {
       // pseudo pop
-      emit("add RSP, 8");
+      emit("add RSP, 8  ; pseudo pop RDX");
     }
     if (!destName.equals(RAX.name32)) {
-      condPop(RAX, pushedRax);
+      registerState.condPop(RAX);
     } else {
       // pseudo pop
-      emit("add RSP, 8");
+      emit("add RSP, 8  ; pseudo pop RAX");
     }
     deallocate(op.left());
     deallocate(op.right());
@@ -773,11 +746,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateStringLength(Operand source, Location destination) {
-    boolean pushedRax = condPush(RAX);
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
+    // We're doing something special with RAX & RCX
+    RegisterState raxRcxState = condPush(ImmutableList.of(RAX, RCX));
+    RegisterState registerState = condPush(ImmutableList.of(RDX, R8, R9, R10, R11));
     String sourceName = resolve(source);
     String destinationName = resolve(destination);
     if (isInRegister(source, RCX)) {
@@ -789,51 +760,41 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     externs.add("extern strlen");
     emit("call strlen    ; strlen(%s)", sourceName);
     emit("add RSP, 0x20  ; Remove shadow space");
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RDX, pushedRdx);
+    registerState.condPop();
+
     if (isInRegister(destination, RCX)) {
       // pseudo pop
       emit("; pseudo-pop; destination was already %s", destination);
-      if (pushedRcx) {
+      if (raxRcxState.pushed(RCX)) {
         emit("add RSP, 8");
       }
     } else {
-      if (pushedRcx) {
-        condPop(RCX, pushedRcx);
-      }
+      raxRcxState.condPop(RCX);
     }
     if (isInRegister(destination, RAX)) {
       // pseudo pop; eax already has the length.
       emit("; pseudo-pop; destination was already %s", destination);
-      if (pushedRax) {
+      if (raxRcxState.pushed(RAX)) {
         emit("add RSP, 8");
       }
     } else {
       // NOTE: eax not rax, because lengths are always ints (32 bits)
       emit("mov %s, EAX  ; %s = strlen(%s)", destinationName, destinationName, sourceName);
-      if (pushedRax) {
-        condPop(RAX, pushedRax);
-      }
+      raxRcxState.condPop(RAX);
     }
   }
 
   private void generateChr(String sourceName, String destName) {
-    boolean pushedRax = condPush(RAX);
-    boolean pushedRcx = condPush(RCX);
-    boolean pushedRdx = condPush(RDX);
-    boolean pushedR8 = condPush(R8);
-    boolean pushedR9 = condPush(R9);
+    RegisterState raxState = condPush(ImmutableList.of(RAX));
+    RegisterState registerState = condPush(ImmutableList.of(RCX, RDX, R8, R9, R10, R11));
+
     // 1. allocate a new 2-char string
     emit("mov RCX, 2");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern malloc");
     emit("call malloc  ; malloc(2)");
     emit("add RSP, 0x20  ; Remove shadow space");
-    condPop(R9, pushedR9);
-    condPop(R8, pushedR8);
-    condPop(RDX, pushedRdx);
-    condPop(RCX, pushedRcx);
+    registerState.condPop();
     // 2. set destName to allocated string
     if (!destName.equals(RAX.name64)) {
       emit("mov %s, RAX  ; copy string location from RAX", destName);
@@ -846,7 +807,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
     // 5. clear second location.
     emit("mov byte [RAX+1], 0  ; clear the 2nd location");
-    condPop(RAX, pushedRax);
+    raxState.condPop();
     registers.deallocate(charReg);
   }
 
@@ -903,7 +864,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcExit op) {
-    for (Register reg : PARAM_REGISTERS) {
+    for (Register reg : Register.VOLATILE_REGISTERS) {
       if (registers.isAllocated(reg)) {
         registers.deallocate(reg);
       }
@@ -925,13 +886,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Call op) {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
-    Set<Register> pushedRegs = new HashSet<>();
-    for (Register reg : PARAM_REGISTERS) {
-      if (registers.isAllocated(reg)) {
-        emit("push %s", reg.name64);
-        pushedRegs.add(reg);
-      }
-    }
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     int index = 0;
 
@@ -944,11 +899,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       deallocate(actual);
     }
     emit("call __%s", op.procName());
-    for (Register reg : PARAM_REGISTERS_REVERSED) {
-      if (pushedRegs.contains(reg)) {
-        emit("pop %s", reg.name64);
-      }
-    }
+    registerState.condPop();
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
       String destName = resolve(destination);
@@ -957,20 +908,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  /** Conditionally push the register, if it's already in use. */
-  private boolean condPush(Register reg) {
-    if (registers.isAllocated(reg)) {
-      emit("push %s", reg.name64);
-      return true;
-    }
-    return false;
-  }
-
-  /** Conditionally pop the register, if it's been pushed. */
-  private void condPop(Register reg, boolean pushed) {
-    if (pushed) {
-      emit("pop %s", reg.name64);
-    }
+  /** Conditionally push all allocated registers in the list */
+  private RegisterState condPush(ImmutableList<Register> registerList) {
+    return RegisterState.condPush(emitter, registers, registerList);
   }
 
   private void deallocate(Operand operand) {
