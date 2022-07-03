@@ -33,3 +33,8 @@ bazel-d2lang
 bazel-out
 bazel-testlogs
 .apt_generated/
+
+# Forgotten files
+*.asm
+*.obj
+*.exe

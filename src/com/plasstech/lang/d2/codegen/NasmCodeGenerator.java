@@ -184,8 +184,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
-    Register fromReg = toRegister(source);
-    Register toReg = toRegister(destination);
+    Register fromReg = toRegister(source); // if this is *already* a register
+    Register toReg = toRegister(destination); // if this is *already* a register
     String destLoc = resolve(destination);
     String sourceLoc = resolve(source);
     if (source.type() == VarType.STRING) {
@@ -199,12 +199,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         Register tempReg = registers.allocate();
         // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
+        // TODO: this can be short-circuited too if dest is a register
         emit("mov %s, %s", tempName, sourceLoc);
         emit("mov %s, %s", destLoc, tempName);
         registers.deallocate(tempReg);
-        deallocate(source);
       }
-
+      deallocate(source);
       return;
     }
 
@@ -555,7 +555,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // TODO: deal with out-of-registers
     Register indexReg = registers.allocate();
+    emit("; allocated indexReg to %s", indexReg);
     Register charReg = registers.allocate();
+    emit("; allocated charReg to %s", charReg);
     // 3. get the string
     emit("mov %s, %s  ; get the string into %s", charReg, leftName, charReg);
     // 4. get the index
@@ -563,9 +565,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. get the actual character
     emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
     registers.deallocate(indexReg);
+    emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
     emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
     registers.deallocate(charReg);
+    emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
     emit("mov byte [RAX + 1], 0  ; clear the 2nd location");
   }
@@ -574,49 +578,61 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 1. get left length
     Register leftLengthReg = registers.allocate();
     emit0("");
-    emit("; Get left length:");
+    emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
         leftOperand, new RegisterLocation("____leftLengthReg", leftLengthReg, VarType.INT));
     // 2. get right length
     Register rightLengthReg = registers.allocate();
-    // TODO: if leftLengthReg is volatile, push it first
+    // TODO: if leftLengthReg is volatile, push it first (?!)
     emit0("");
-    emit("; Get right length:");
+    emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
         rightOperand, new RegisterLocation("____rightLengthReg", rightLengthReg, VarType.INT));
     emit("add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
     emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
+    emit("; deallocating right length %s", rightLengthReg);
     registers.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
     emit0("");
     emit("; Allocate string of length %s", leftLengthReg.name32);
+
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     emit("mov ECX, %s", leftLengthReg.name32);
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern malloc");
     emit("call malloc  ; malloc(%s)", leftLengthReg.name32);
+    emit("add RSP, 0x20  ; Remove shadow space");
+    emit("; deallocating leftlength %s", leftLengthReg);
     registers.deallocate(leftLengthReg);
     // 4. put string into dest
+    registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
     if (!dest.equals(RAX.name64)) {
       emit("mov %s, RAX  ; destination from rax", dest);
     }
 
     // 5. strcpy from left to dest
     emit0("");
+    registerState = condPush(Register.VOLATILE_REGISTERS);
     String left = resolve(leftOperand);
     emit("; strcpy from %s to %s", left, dest);
     emit("mov RCX, %s", dest);
     emit("mov RDX, %s", left);
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern strcpy");
     emit("call strcpy");
+    emit("add RSP, 0x20  ; Remove shadow space");
+    registerState.condPop();
+
     // 6. strcat dest, right
     emit0("");
+    registerState = condPush(Register.VOLATILE_REGISTERS);
     String right = resolve(rightOperand);
     emit("; strcat from %s to %s", right, dest);
     emit("mov RCX, %s", dest);
     emit("mov RDX, %s", right);
     externs.add("extern strcat");
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call strcat");
     emit("add RSP, 0x20  ; Remove shadow space");
     registerState.condPop();

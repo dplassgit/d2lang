@@ -16,7 +16,7 @@ reverse2: proc(s: string, start: int): string {
   if start == 0 {
     return ""
   } else {
-    return s[start-1] + reverse2(s, start-1)
+    return s[start - 1] + reverse2(s, start - 1)
   }
 }
 

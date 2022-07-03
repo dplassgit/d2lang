@@ -112,4 +112,17 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             op),
         "compOpsLocals");
   }
+
+  @Test
+  public void concat() throws Exception {
+    execute(
+        "      x='hi' "
+            + "x='hi' "
+            + "z='' "
+            + "z=' ' "
+            + "x=x+z "
+            + "x=x+' there' "
+            + "println x + x[0]",
+        "concat");
+  }
 }

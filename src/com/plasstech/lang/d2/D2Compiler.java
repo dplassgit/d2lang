@@ -102,7 +102,7 @@ public class D2Compiler {
     asmFile.createNewFile();
 
     CharSink charSink = Files.asCharSink(asmFile, Charset.defaultCharset(), FileWriteMode.APPEND);
-    charSink.writeLines(state.asmCode());
+    charSink.writeLines(state.asmCode(), "\n");
 
     if (!options.compileOnly) {
       File objFile = new File(dir, baseName + ".obj");
