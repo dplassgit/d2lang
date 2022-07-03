@@ -588,6 +588,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
         rightOperand, new RegisterLocation("____rightLengthReg", rightLengthReg, VarType.INT));
+    emit0("");
     emit("add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
     emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
     emit("; deallocating right length %s", rightLengthReg);
@@ -616,8 +617,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registerState = condPush(Register.VOLATILE_REGISTERS);
     String left = resolve(leftOperand);
     emit("; strcpy from %s to %s", left, dest);
-    emit("mov RCX, %s", dest);
-    emit("mov RDX, %s", left);
+    if (left.equals(RCX.name64) && dest.equals(RDX.name64)) {
+      // just swap rdx & rcx
+      emit("; left wants to be in rcx dest in rdx, just swap");
+      emit("xchg RDX, RCX");
+    } else if (left.equals(RCX.name64)) {
+      emit("; opposite order, so that we don't munge rcx");
+      emit("mov RDX, %s", left);
+      emit("mov RCX, %s", dest);
+    } else {
+      emit("mov RCX, %s", dest);
+      emit("mov RDX, %s", left);
+    }
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern strcpy");
     emit("call strcpy");
@@ -629,8 +640,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registerState = condPush(Register.VOLATILE_REGISTERS);
     String right = resolve(rightOperand);
     emit("; strcat from %s to %s", right, dest);
-    emit("mov RCX, %s", dest);
-    emit("mov RDX, %s", right);
+    if (right.equals(RCX.name64) && dest.equals(RDX.name64)) {
+      // just swap rdx & rcx
+      emit("; right wants to be in rcx dest in rdx, just swap");
+      emit("xchg RDX, RCX");
+    } else if (right.equals(RCX.name64)) {
+      emit("; opposite order, so that we don't munge rcx");
+      emit("mov RDX, %s", right);
+      emit("mov RCX, %s", dest);
+    } else {
+      emit("mov RCX, %s", dest);
+      emit("mov RDX, %s", right);
+    }
     externs.add("extern strcat");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     emit("call strcat");

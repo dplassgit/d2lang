@@ -1,9 +1,12 @@
 // hanoi.d - standard "Towers of Hanoi" in D(2). Ported from toy (http://www.graysage.com/cg/Compilers/Toy/hanoi.toy)
 
-PEGS = ["", "left", "center", "right"]
+//PEGS = ["", "left", "center", "right"]
 
 printPeg: proc(peg:int) {
-  print PEGS[peg]
+  if peg == 1 { print "left"}
+  if peg == 2 { print "center"}
+  if peg == 3 { print "right"}
+  //print PEGS[peg]
 }
 
 hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {

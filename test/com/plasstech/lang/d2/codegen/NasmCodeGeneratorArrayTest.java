@@ -11,12 +11,12 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   @Ignore
   public void arraySet() throws Exception {
-    execute("b='oh, hi' a=['hi']", "arraySet");
+    execute("a:string[1] a[0]='hi'", "arraySet");
   }
 
   @Test
   @Ignore
   public void arrayAssign() throws Exception {
-    execute("a=['hi'] a[0]='bye'", "arrayAssign");
+    execute("a=['hi']'", "arrayAssign");
   }
 }

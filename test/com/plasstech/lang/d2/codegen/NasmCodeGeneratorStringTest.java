@@ -12,7 +12,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   public void assign(
       @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
       throws Exception {
-    execute(String.format("a='%s' b=a print b", value), "assignString");
+    execute(String.format("a='%s' b=a print b", value), "assign");
   }
 
   @Test
@@ -21,8 +21,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
       @TestParameter({"1", "4"}) int index)
       throws Exception {
     execute(
-        String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index),
-        "stringIndex");
+        String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index), "index");
   }
 
   @Test
@@ -37,14 +36,13 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void addSimple() throws Exception {
-    execute("a='a' c=a+'b' print c", "stringAddSimple");
+    execute("a='a' c=a+'b' print c", "addSimple");
   }
 
   @Test
   public void addComplex() throws Exception {
     execute(
-        "a='abc' b='def' c=a+b print c d=c+'xyz' print d e='ijk'+d+chr(32) print e",
-        "stringAddComplex");
+        "a='abc' b='def' c=a+b print c d=c+'xyz' print d e='ijk'+d+chr(32) print e", "addComplex");
   }
 
   @Test
@@ -67,9 +65,9 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
       throws Exception {
     execute(
         String.format(
-            "      c:bool d:bool doit:proc(a:string,b:string) { "
+            "      doit:proc(a:string,b:string) { "
                 + "  c=a %s b "
-                + "  print c " //
+                + "  print c "
                 + "  d=b %s a "
                 + "  print d "
                 + "} "
@@ -86,9 +84,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             "      compOpsThreeParams:proc(x:int, a:string,b:string) { "
                 + "  print x "
                 + "  print a %s b "
-                + "  print x "
                 + "  print b %s a "
-                + "  print x "
                 + "} "
                 + "compOpsThreeParams(123, 'abc', 'def') ",
             op, op),
@@ -114,7 +110,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void concat() throws Exception {
+  public void concat_bug83() throws Exception {
     execute(
         "      x='hi' "
             + "x='hi' "
@@ -124,5 +120,15 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "x=x+' there' "
             + "println x + x[0]",
         "concat");
+  }
+  
+  @Test
+  public void concatInProc() throws Exception {
+    execute(
+        "      tester: proc(s:string) {" //
+            + "   println 'the first letter of \"' + s + '\" is ' + s[0]"
+            + "}"
+            + "  tester('h ')",
+        "concatInProc");
   }
 }
