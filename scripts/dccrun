@@ -1,0 +1,1 @@
+./scripts/dcc $1 $@ && ./d2out.exe

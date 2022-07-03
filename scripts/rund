@@ -1,1 +1,1 @@
-bazel run src/com/plasstech/lang/d2:InterpreterDriver -- $PWD/$1 $@
+bazel run src/com/plasstech/lang/d2:InterpreterDriver --ui_event_filters=-info,-stdout,-stderr --noshow_progress -- $PWD/$1 $@
