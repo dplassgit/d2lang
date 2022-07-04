@@ -1,16 +1,17 @@
 package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.type.ArrayType;
 
 /** Represents an array allocation operation, e.g.: foo:int[3] */
 public class ArrayAlloc extends Op {
 
   private final ArrayType arrayType;
-  private final Location sizeLocation;
+  private final Operand sizeLocation;
   private final Location destination;
 
-  public ArrayAlloc(Location destination, ArrayType arrayType, Location sizeLocation) {
+  public ArrayAlloc(Location destination, ArrayType arrayType, Operand sizeLocation) {
     this.destination = destination;
     this.arrayType = arrayType;
     this.sizeLocation = sizeLocation;
@@ -29,12 +30,13 @@ public class ArrayAlloc extends Op {
     return arrayType;
   }
 
-  public Location sizeLocation() {
+  public Operand sizeLocation() {
     return sizeLocation;
   }
 
   @Override
   public String toString() {
-    return String.format("alloc array of %s; size in %s", arrayType.baseType(), sizeLocation);
+    return String.format(
+        "%s: array of %s; size in %s", destination, arrayType.baseType(), sizeLocation);
   }
 }

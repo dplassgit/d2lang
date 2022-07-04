@@ -11,8 +11,9 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayDecl() throws Exception {
     execute("a:string[2]", "stringArrayDecl");
-    //    execute("a:int[2]", "intArrayDecl");
-    //    execute("a:bool[2]", "boolArrayDecl");
+    execute("i:int[3]", "intArrayDecl");
+    execute("b:bool[4]", "boolArrayDecl");
+    execute("c:bool[calc()] calc: proc:int{return 3}", "boolArrayCalculatedSize");
   }
 
   @Test

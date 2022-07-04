@@ -231,13 +231,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArrayAlloc op) {
-    Location sizeLoc = op.sizeLocation();
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
+    Operand sizeLoc = op.sizeLocation();
     String numEntriesLoc = resolve(sizeLoc);
 
     // 1. calculate # of bytes to allocate:
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
-    Register allocSizeBytes = registers.allocate();
+    Register allocSizeBytes = Register.RDX;
     emit("mov %s, %s", allocSizeBytes.name32, numEntriesLoc);
     int entrySize = op.arrayType().baseType().size();
     if (entrySize > 1) {
@@ -246,11 +247,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     int dimensions = op.arrayType().dimensions();
     emit("add %s, %s", allocSizeBytes.name32, 1 + 4 * dimensions);
 
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-    emit("mov RCX, %s", allocSizeBytes.name64);
+    emit("mov RCX, 1");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern malloc");
-    emit("call malloc; malloc(%s)", allocSizeBytes.name32);
+    externs.add("extern calloc");
+    emit("call calloc; calloc(%s)", allocSizeBytes.name32);
     emit("add RSP, 0x20  ; Remove shadow space");
     String dest = resolve(op.destination());
     emit("mov %s, RAX", dest);
@@ -261,9 +261,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           "mov dword [RAX+%s], %s  ; store size of the %sth dimension",
           i * 4 + 1, numEntriesLoc, i + 1);
     }
-    // TODO: clear the rest of the array
     deallocate(sizeLoc);
-    registers.deallocate(allocSizeBytes);
   }
 
   @Override
@@ -861,7 +859,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void generateChr(String sourceName, String destName) {
     RegisterState raxState = condPush(ImmutableList.of(RAX));
-    RegisterState registerState = condPush(ImmutableList.of(RCX, RDX, R8, R9, R10, R11));
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     // 1. allocate a new 2-char string
     emit("mov RCX, 2");

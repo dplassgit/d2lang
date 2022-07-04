@@ -24,7 +24,7 @@ public enum Register {
   RAX("RAX", "EAX", "AX", "AL");
 
   public static final ImmutableList<Register> VOLATILE_REGISTERS =
-      ImmutableList.of(RAX, RCX, RDX, R8, R9, R10, R11);
+      ImmutableList.of(RCX, RDX, R8, R9, R10, R11);
 
   public final String name64;
   public final String name32;

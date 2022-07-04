@@ -10,6 +10,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -122,6 +123,15 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ConstantOperand<?> replacement = findReplacementConstant(operand);
     if (replacement != null) {
       replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement));
+    }
+  }
+
+  @Override
+  public void visit(ArrayAlloc op) {
+    Operand operand = op.sizeLocation();
+    ConstantOperand<?> replacement = findReplacementConstant(operand);
+    if (replacement != null) {
+      replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement));
     }
   }
 

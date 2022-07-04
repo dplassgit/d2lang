@@ -8,6 +8,7 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -114,6 +115,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Goto op) {
     // a goto means potentially a loop and we can't rely on unused non-temps
     assignments.clear();
+  }
+
+  @Override
+  public void visit(ArrayAlloc op) {
+    markRead(op.sizeLocation());
+    Location dest = op.destination();
+    killIfReassigned(dest);
+    recordAssignment(dest);
   }
 
   // a=123 - add a to "assignedUnused" map at line IP
