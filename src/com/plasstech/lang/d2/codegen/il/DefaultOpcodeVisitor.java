@@ -3,48 +3,37 @@ package com.plasstech.lang.d2.codegen.il;
 public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
-  public void visit(Label op) {
-  }
+  public void visit(Label op) {}
 
   @Override
-  public void visit(IfOp op) {
-  }
+  public void visit(IfOp op) {}
 
   @Override
-  public void visit(BinOp op) {
-  }
+  public void visit(BinOp op) {}
 
   @Override
-  public void visit(Return op) {
-  }
+  public void visit(Return op) {}
 
   @Override
-  public void visit(Stop op) {
-  }
+  public void visit(Stop op) {}
 
   @Override
-  public void visit(SysCall op) {
-  }
+  public void visit(SysCall op) {}
 
   @Override
-  public void visit(UnaryOp op) {
-  }
+  public void visit(UnaryOp op) {}
 
   @Override
-  public void visit(Goto op) {
-  }
+  public void visit(Goto op) {}
 
   @Override
-  public void visit(Transfer op) {
-  }
+  public void visit(Transfer op) {}
 
   @Override
-  public void visit(Call op) {
-  }
+  public void visit(Call op) {}
 
   @Override
-  public void visit(ProcExit op) {
-  }
+  public void visit(ProcExit op) {}
 
   @Override
   public void visit(ProcEntry op) {}
@@ -57,4 +46,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(AllocateOp op) {}
+
+  @Override
+  public void visit(ArrayAlloc op) {}
 }

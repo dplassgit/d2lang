@@ -31,5 +31,7 @@ public interface OpcodeVisitor {
   void visit(Inc op);
 
   void visit(AllocateOp op);
+
+  void visit(ArrayAlloc arrayAlloc);
 }
 

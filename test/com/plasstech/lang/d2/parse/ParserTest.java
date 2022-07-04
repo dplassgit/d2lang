@@ -940,7 +940,7 @@ public class ParserTest {
   }
 
   @Test
-  public void arrayDecl() {
+  public void declArray() {
     BlockNode root = parseStatements("a:int[3]");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);

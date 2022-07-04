@@ -280,6 +280,8 @@ public class StaticCheckerTest {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
+    checkProgram("a:int[3] b=a");
+    checkProgram("a:int[3] b:int[3] b=a");
   }
 
   @Test

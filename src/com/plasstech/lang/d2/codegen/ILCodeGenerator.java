@@ -9,6 +9,7 @@ import java.util.Stack;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -24,6 +25,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BreakNode;
@@ -178,6 +180,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             emit(new Transfer(dest, source));
           }
         });
+  }
+
+  @Override
+  public void visit(ArrayDeclarationNode node) {
+    Location dest = lookupLocation(node.name());
+    emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location()));
   }
 
   @Override

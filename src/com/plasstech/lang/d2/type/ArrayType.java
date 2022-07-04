@@ -27,6 +27,15 @@ public class ArrayType implements VarType {
   }
 
   @Override
+  public boolean compatibleWith(VarType thatType) {
+    if (!(thatType instanceof ArrayType)) {
+      return false;
+    }
+    ArrayType that = (ArrayType) thatType;
+    return this.baseType().compatibleWith(that.baseType());
+  }
+
+  @Override
   public boolean equals(Object thatObject) {
     if (thatObject == null || !(thatObject instanceof ArrayType)) {
       return false;
@@ -34,7 +43,7 @@ public class ArrayType implements VarType {
     ArrayType that = (ArrayType) thatObject;
     return this.baseType.equals(that.baseType);
   }
-
+  
   @Override
   public int hashCode() {
     return 23 * name().hashCode() + 7;

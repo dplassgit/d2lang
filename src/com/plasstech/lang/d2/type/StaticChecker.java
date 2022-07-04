@@ -618,7 +618,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           arraySizeExpr.position());
     }
 
-    symbolTable().declare(node.name(), node.varType());
+    // declaring the array actually assigns it.
+    symbolTable().assign(node.name(), node.varType());
   }
 
   @Override

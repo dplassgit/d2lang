@@ -7,10 +7,12 @@ import com.plasstech.lang.d2.type.ArrayType;
 public class ArrayDeclarationNode extends DeclarationNode {
 
   private final ExprNode sizeExpr;
+  private final ArrayType arrayType;
 
   public ArrayDeclarationNode(
       String varName, ArrayType type, Position position, ExprNode sizeExpr) {
     super(varName, type, position);
+    this.arrayType = type;
     this.sizeExpr = sizeExpr;
   }
 
@@ -22,5 +24,9 @@ public class ArrayDeclarationNode extends DeclarationNode {
   public void accept(NodeVisitor visitor) {
     sizeExpr.accept(visitor);
     visitor.visit(this);
+  }
+
+  public ArrayType arrayType() {
+    return arrayType;
   }
 }

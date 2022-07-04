@@ -118,6 +118,16 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void arrayAlloc() {
+    generateProgram("a:int[3]");
+  }
+
+  @Test
+  public void arrayGet() {
+    generateProgram("a:int[3] print a[0]");
+  }
+
+  @Test
   public void stringLength() {
     generateProgram("a=length('hi')");
   }
