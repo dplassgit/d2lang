@@ -20,6 +20,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -123,12 +124,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {
-        // temporarily reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
+        // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
         if (symbol.varType() == VarType.INT) {
           data.add(String.format("  __%s: dd 0", entry.getKey()));
         } else if (symbol.varType() == VarType.BOOL) {
           data.add(String.format("  __%s: db 0", entry.getKey()));
-        } else if (symbol.varType() == VarType.STRING) {
+        } else if (symbol.varType() == VarType.STRING || symbol.varType().isArray()) {
           data.add(String.format("  __%s: dq 0", entry.getKey()));
         }
       }
@@ -226,6 +227,43 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
     deallocate(source);
+  }
+
+  @Override
+  public void visit(ArrayAlloc op) {
+    Location sizeLoc = op.sizeLocation();
+    String numEntriesLoc = resolve(sizeLoc);
+
+    // 1. calculate # of bytes to allocate:
+    //    size * entrySize +
+    //    1 byte (# of dimensions) + 4 * # dimensions
+    Register allocSizeBytes = registers.allocate();
+    emit("mov %s, %s", allocSizeBytes.name32, numEntriesLoc);
+    int entrySize = op.arrayType().baseType().size();
+    if (entrySize > 1) {
+      emit("imul %s, %s", allocSizeBytes.name32, entrySize);
+    }
+    int dimensions = op.arrayType().dimensions();
+    emit("add %s, %s", allocSizeBytes.name32, 1 + 4 * dimensions);
+
+    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
+    emit("mov RCX, %s", allocSizeBytes.name64);
+    emit("sub RSP, 0x20  ; Reserve the shadow space");
+    externs.add("extern malloc");
+    emit("call malloc; malloc(%s)", allocSizeBytes.name32);
+    emit("add RSP, 0x20  ; Remove shadow space");
+    String dest = resolve(op.destination());
+    emit("mov %s, RAX", dest);
+    registerState.condPop();
+    emit("mov byte [RAX], %s  ; store # of dimensions", dimensions);
+    for (int i = 0; i < dimensions; ++i) {
+      emit(
+          "mov dword [RAX+%s], %s  ; store size of the %sth dimension",
+          i * 4 + 1, numEntriesLoc, i + 1);
+    }
+    // TODO: clear the rest of the array
+    deallocate(sizeLoc);
+    registers.deallocate(allocSizeBytes);
   }
 
   @Override

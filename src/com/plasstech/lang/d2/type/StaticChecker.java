@@ -608,6 +608,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
     // Make sure size type is int
     ExprNode arraySizeExpr = node.sizeExpr();
+    arraySizeExpr.accept(this);
     if (arraySizeExpr.varType().isUnknown()) {
       throw new TypeException(
           "Indeterminable type for array size; must be INT", arraySizeExpr.position());

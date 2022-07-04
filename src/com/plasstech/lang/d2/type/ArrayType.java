@@ -2,9 +2,11 @@ package com.plasstech.lang.d2.type;
 
 public class ArrayType implements VarType {
   private final VarType baseType;
+  private final int dimensions;
 
-  public ArrayType(VarType baseType) {
+  public ArrayType(VarType baseType /*, int dimensions*/) {
     this.baseType = baseType;
+    this.dimensions = 1;
   }
 
   @Override
@@ -15,6 +17,10 @@ public class ArrayType implements VarType {
   @Override
   public int size() {
     return 8;
+  }
+
+  public int dimensions() {
+    return dimensions;
   }
 
   @Override
@@ -32,6 +38,7 @@ public class ArrayType implements VarType {
       return false;
     }
     ArrayType that = (ArrayType) thatType;
+    /** also compare dimensions */
     return this.baseType().compatibleWith(that.baseType());
   }
 

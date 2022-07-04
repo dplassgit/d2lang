@@ -323,6 +323,7 @@ public class Parser implements Phase {
       }
     } else if (token.type() == TokenType.VARIABLE) {
       Token typeToken = advance(); // eat the variable type record reference
+      // TODO: allow arrays of records!
       return new DeclarationNode(
           varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
     }
@@ -355,6 +356,7 @@ public class Parser implements Phase {
 
   /** declaration -> '[' expr ']' */
   private DeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
+    /** while... (dimensions) */
     expect(TokenType.LBRACKET);
     advance();
     // The size can be variable.

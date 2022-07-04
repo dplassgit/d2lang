@@ -22,7 +22,6 @@ public class ArrayDeclarationNode extends DeclarationNode {
 
   @Override
   public void accept(NodeVisitor visitor) {
-    sizeExpr.accept(visitor);
     visitor.visit(this);
   }
 

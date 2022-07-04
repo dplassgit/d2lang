@@ -24,11 +24,17 @@ public class ArrayAlloc extends Op {
   public Location destination() {
     return destination;
   }
+
   public ArrayType arrayType() {
     return arrayType;
   }
 
   public Location sizeLocation() {
     return sizeLocation;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("alloc array of %s; size in %s", arrayType.baseType(), sizeLocation);
   }
 }

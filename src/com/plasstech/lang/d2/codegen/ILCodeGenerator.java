@@ -184,6 +184,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(ArrayDeclarationNode node) {
+    node.sizeExpr().accept(this);
+    // Symbol symbol = symbolTable().getRecursive(node.name());
+    // TODO: put the symbol somewhere?
     Location dest = lookupLocation(node.name());
     emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location()));
   }
