@@ -1,7 +1,10 @@
 package com.plasstech.lang.d2.optimize;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.Test;
 
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 public class DeadAssignmentOptimizerTest {
@@ -16,6 +19,19 @@ public class DeadAssignmentOptimizerTest {
             + "}" //
             + "println p(10)",
         optimizer);
+  }
+
+  @Test
+  public void notDeadArraySetGlobal() {
+    TestUtils.optimizeAssertSameVariables("a:int[2] d=1 a[d]=d println a[d]", optimizer);
+  }
+
+  @Test
+  public void notDeadArraySetLocal() {
+    InterpreterResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "p:proc() {a:int[2] d=1 a[d]=d print a[d]} p()", optimizer);
+    assertThat(result.environment().output()).containsExactly("1");
   }
 
   @Test

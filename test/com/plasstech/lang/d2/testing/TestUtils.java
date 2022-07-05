@@ -1,7 +1,10 @@
 package com.plasstech.lang.d2.testing;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
+
+import java.util.Map;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -47,9 +50,8 @@ public class TestUtils {
     assertWithMessage("Output should be the same")
         .that(Joiner.on("").join(optimizedResult.environment().output()))
         .isEqualTo(Joiner.on("").join(unoptimizedResult.environment().output()));
-    assertWithMessage("Environment should be the same")
-        .that(optimizedResult.environment().variables())
-        .isEqualTo(unoptimizedResult.environment().variables());
+    assertMapsSame(
+        unoptimizedResult.environment().variables(), optimizedResult.environment().variables());
     //    assertWithMessage("New code should be smaller")
     //        .that(unoptimizedResult.linesOfCode())
     //        .isAtLeast(optimizedResult.linesOfCode());
@@ -57,6 +59,18 @@ public class TestUtils {
         .that(unoptimizedResult.instructionCycles())
         .isAtLeast(optimizedResult.instructionCycles());
     return optimizedResult;
+  }
+
+  private static void assertMapsSame(Map<String, Object> first, Map<String, Object> second) {
+    assertThat(first.size()).isEqualTo(second.size());
+    for (Map.Entry<String, Object> entry : first.entrySet()) {
+      // make sure everything's there.
+      Object firstValue = entry.getValue();
+      Object secondValue = second.get(entry.getKey());
+      assertWithMessage(String.format("Value of %s is wrong", entry.getKey()))
+          .that(firstValue)
+          .isEqualTo(secondValue);
+    }
   }
 
   public static final String LINKED_LIST =

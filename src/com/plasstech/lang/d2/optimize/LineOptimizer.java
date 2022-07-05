@@ -9,6 +9,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.LogSites;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -144,4 +145,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   @Override
   public void visit(ArrayAlloc op) {}
+
+  @Override
+  public void visit(ArraySet op) {}
 }
