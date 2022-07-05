@@ -995,6 +995,17 @@ public class ParserTest {
     AssignmentNode node = (AssignmentNode) statements.get(0);
     LValueNode lValue = node.variable();
     assertThat(lValue).isInstanceOf(ArraySetNode.class);
+    ArraySetNode asn = (ArraySetNode) lValue;
+    assertThat(asn.variableName()).isEqualTo("a");
+    assertThat(asn.indexNode()).isInstanceOf(ConstNode.class);
+    ConstNode<Integer> value = (ConstNode<Integer>) asn.indexNode();
+    assertThat(value.value()).isEqualTo(3);
+  }
+
+  @Test
+  public void arraySetError() {
+    assertParseError("a[3] = ", "expected literal");
+    assertParseError("a[3 = ", "expected ]");
   }
 
   @Test
@@ -1007,6 +1018,7 @@ public class ParserTest {
   public void arrayGetError() {
     assertParseError("a=3[4+c b", "expected ]");
     assertParseError("a=3[4+c b]", "expected ]");
+    assertParseError("a=b[4", "expected ]");
   }
 
   @Test
@@ -1229,7 +1241,6 @@ public class ParserTest {
   @Test
   public void recordGetRecursive() {
     BlockNode root = parseStatements("s=rec.s[(a+b)] s=rec.f1.f2[3] ");
-    System.err.println(root);
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(BinOpNode.class);
