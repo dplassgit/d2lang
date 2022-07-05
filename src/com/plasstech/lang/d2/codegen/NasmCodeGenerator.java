@@ -41,27 +41,13 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
-
-  public enum Size {
-    _1BYTE(1, "byte"),
-    _32BITS(32, "dword"),
-    _64BITS(64, "");
-
-    public final int bytes;
-    public final String asmName;
-
-    Size(int bytes, String asmName) {
-      this.bytes = bytes;
-      this.asmName = asmName;
-    }
-  }
-
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
@@ -141,7 +127,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // TODO: convert command-line arguments to ??? and send to __main
     emit0("main:");
     for (Op opcode : code) {
-      emitComment(opcode);
+      emit0("\n  ; %s", opcode.toString());
       opcode.accept(this);
     }
 
@@ -198,7 +184,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = registers.allocate();
-        // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
         // TODO: this can be short-circuited too if dest is a register
         emit("mov %s, %s", tempName, sourceLoc);
@@ -209,7 +194,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
-    String size = size(op.source().type()).asmName;
+    String size = Size.of(op.source().type()).asmName;
     if (source.isConstant() || source.isRegister()) {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
@@ -219,7 +204,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov %s %s, %s", size, destLoc, sourceLoc);
       } else {
         Register tempReg = registers.allocate();
-        // TODO: deal with out-of-registers
         String tempName = registerNameSized(tempReg, op.source().type());
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
@@ -238,22 +222,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 1. calculate # of bytes to allocate:
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
-    Register allocSizeBytes = Register.RDX;
-    emit("mov %s, %s", allocSizeBytes.name32, numEntriesLoc);
+    Register allocSizeBytesRegister = Register.RDX;
+    emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLoc);
     int entrySize = op.arrayType().baseType().size();
     if (entrySize > 1) {
-      emit("imul %s, %s", allocSizeBytes.name32, entrySize);
+      emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
     }
     int dimensions = op.arrayType().dimensions();
-    emit("add %s, %s", allocSizeBytes.name32, 1 + 4 * dimensions);
+    emit("add %s, %s  ; add for dimensions", allocSizeBytesRegister.name32, 1 + 4 * dimensions);
 
-    emit("mov RCX, 1");
+    emit("mov RCX, 1  ; # of 'entries' for calloc");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
     externs.add("extern calloc");
-    emit("call calloc; calloc(%s)", allocSizeBytes.name32);
+    emit("call calloc; calloc(%s)", allocSizeBytesRegister.name32);
     emit("add RSP, 0x20  ; Remove shadow space");
     String dest = resolve(op.destination());
-    emit("mov %s, RAX", dest);
+    emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
     emit("mov byte [RAX], %s  ; store # of dimensions", dimensions);
     for (int i = 0; i < dimensions; ++i) {
@@ -531,14 +515,46 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss", operator, leftType);
           break;
       }
+    } else if (leftType.isArray()) {
+      ArrayType arrayType = (ArrayType) leftType;
+      generateArrayIndex(leftName, arrayType, rightName, destName);
     } else {
-      fail("Cannot do %s on %ss", operator, leftType);
+      fail("No idea how to do %s on %ss", operator, leftType);
     }
     if (tempReg != null) {
       registers.deallocate(tempReg);
     }
     deallocate(op.left());
     deallocate(op.right());
+  }
+
+  private void generateArrayIndex(
+      String arrayLoc, ArrayType arrayType, String indexName, String destName) {
+    // 1. using leftName get # of dimensions
+    Register temp = registers.allocate();
+    emit("; allocated %s for calculations", temp);
+    //    emit("mov %s, %d  ; get # of dimensions", temp, arrayType.dimensions());
+    // TODO: 2. using arrayLoc get dimension size
+    // TODO: 3. check dimension size against index
+    // 4. calculate start of array:  4 * # dimensions + 1
+    //    emit("imul %s, 4  ; 4 * dimensions", temp);
+    emit(
+        "mov %s, %d  ; effective start of array = 1 + # of dimensions * 4",
+        temp, 1 + arrayType.dimensions() * 4);
+    //    emit("inc %s  ; 1 more for actual dimension slot", temp);
+    // 5. calculate full index: basetype.size()*indexName + arrayLoc
+    Register temp2 = registers.allocate();
+    emit("; allocated %s for calculations", temp2);
+    emit("mov %s, %s  ; index", temp2, indexName);
+    emit("imul %s, %s  ; index * base size", temp2, arrayType.baseType().size());
+    emit("add %s, %s  ; effective index", temp, temp2);
+    registers.deallocate(temp2);
+    emit("; deallocating %s", temp2);
+    emit("add %s, %s  ; actual location", temp, arrayLoc);
+    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, temp);
+
+    registers.deallocate(temp);
+    emit("; deallocating %s", temp);
   }
 
   private void generateStringCompare(
@@ -589,7 +605,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 2. copy the location to the dest
     emit("mov %s, RAX  ; destination from rax", destName);
 
-    // TODO: deal with out-of-registers
     Register indexReg = registers.allocate();
     emit("; allocated indexReg to %s", indexReg);
     Register charReg = registers.allocate();
@@ -795,7 +810,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = registers.allocate();
-        // TODO: deal with out-of-registers
         // Just read one byte
         if (source.isConstant()) {
           emit("mov byte %s, %s ; copy one byte / first character", tempReg.name8, sourceName);
@@ -896,10 +910,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         location = new RegisterLocation(formal.name(), reg, formal.varType());
         registers.reserve(reg);
       } else {
+        // use the vartype to decide how much space to allocate
+        // location = new StackLocation(formal.name(), -i * 8, formal.varType());
+        // TODO: implement this
         fail("Cannot generate more than 4 params yet");
         return;
-        // maybe use the vartype to decide how much space to allocate?
-        //          location = new StackLocation(formal.name(), -i * 8, formal.varType());
       }
       i++;
       // Is this even ever used?!
@@ -908,7 +923,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Save nonvolatile registers:
     emit("; entry to %s", op.name());
-    // TODO: if no locals, don't need to muck with rbp, rsp
+    // TODO: if no locals, don't need to muck with rbp, rsp.
+    // NOTE: procend doesn't know about localbytes so we can't remove this completely.
     emit("push RBP");
     emit("mov RBP, RSP");
     if (op.localBytes() > 0) {
@@ -966,8 +982,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     for (Operand actual : op.actuals()) {
       String formalLocation = resolve(op.formals().get(index++));
       String actualLocation = resolve(actual);
-      Size size = size(actual.type());
-      emit("mov %s %s, %s", size.asmName, formalLocation, actualLocation);
+      Size size = Size.of(actual.type());
+      emit("mov %s %s, %s", size, formalLocation, actualLocation);
       // is this right?!
       deallocate(actual);
     }
@@ -976,7 +992,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
       String destName = resolve(destination);
-      String size = size(destination.type()).asmName;
+      Size size = Size.of(destination.type());
       emit("mov %s %s, %s", size, destName, registerNameSized(RAX, destination.type()));
     }
   }
@@ -1033,24 +1049,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     switch (location.storage()) {
       case TEMP:
+        // TODO: deal with out-of-registers
         reg = registers.allocate();
-        // if (reg == null) {
-        //   // deal with out-of-registers situation
-        //   // pick the least recently used one (say, the first one)
-        //   reg = lruRegs.remove(0);
-        //   // don't have to deallocate, since we're just re-using the register out from
-        // underneath
-        //   // the registers object.
-        //   // TODO: push the value onto the stack
-        //   // remove the alias too.
-        //   aliases.inverse().remove(reg);
-        // }
-        // lruRegs.add(reg); // add to the end.
         aliases.put(location.name(), reg);
         emit("; Allocating %s to %s", location, reg);
         return registerNameSized(reg, location.type());
       case GLOBAL:
-        // TODO: deal with array
         return "[__" + location.name() + "]";
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
@@ -1074,21 +1078,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private String generateParamLocationName(int index, VarType varType) {
     Register reg = paramRegister(index);
     if (reg == null) {
+      // TODO: implement > 4 params.
       fail("Cannot generate more than 4 params yet");
       return null;
     }
     return registerNameSized(reg, varType);
-  }
-
-  private static Size size(VarType type) {
-    if (type == VarType.INT) {
-      return Size._32BITS;
-    } else if (type == VarType.BOOL) {
-      return Size._1BYTE;
-    } else if (type == VarType.STRING) {
-      return Size._64BITS;
-    }
-    throw new IllegalStateException("Cannot get type of " + type);
   }
 
   private static String registerNameSized(Register reg, VarType type) {
@@ -1106,10 +1100,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("  " + format, values);
   }
 
-  private void emitComment(Op op) {
-    emit0("\n  ; %s", op.toString());
-  }
-
   // Emit at column 0
   private void emit0(String format, Object... values) {
     emitter.emit(format, values);
@@ -1118,5 +1108,33 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void fail(String format, Object... values) {
     throw new UnsupportedOperationException(String.format(format, values));
+  }
+
+  private enum Size {
+    _1BYTE("byte"),
+    _32BITS("dword"),
+    _64BITS("");
+
+    public final String asmName;
+
+    Size(String asmName) {
+      this.asmName = asmName;
+    }
+
+    @Override
+    public String toString() {
+      return asmName;
+    }
+
+    static Size of(VarType type) {
+      if (type == VarType.INT) {
+        return Size._32BITS;
+      } else if (type == VarType.BOOL) {
+        return Size._1BYTE;
+      } else if (type == VarType.STRING) {
+        return Size._64BITS;
+      }
+      throw new IllegalStateException("Cannot get type of " + type);
+    }
   }
 }

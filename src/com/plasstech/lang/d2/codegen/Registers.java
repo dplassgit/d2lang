@@ -11,8 +11,9 @@ public class Registers {
   // these are the USED registers
   private final Set<Register> used = new HashSet<>();
 
-  public void reserve(Register r) {
+  public Register reserve(Register r) {
     used.add(r);
+    return r;
   }
 
   public Register allocate() {

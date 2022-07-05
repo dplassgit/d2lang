@@ -4,7 +4,13 @@ package com.plasstech.lang.d2.type;
 public interface VarType {
   // TODO: Map name to type
   VarType INT = new SimpleType("INT", 4);
-  VarType STRING = new SimpleType("STRING", 8);
+  VarType STRING =
+      new SimpleType("STRING", 8) {
+        @Override
+        public boolean compatibleWith(VarType that) {
+          return super.compatibleWith(that) || that == NULL;
+        }
+      };
   VarType BOOL = new SimpleType("BOOL", 1);
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");

@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -16,6 +17,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -131,6 +133,28 @@ public class Interpreter extends DefaultOpcodeVisitor {
       // Previously it would fail if rhsValue was null, but that needed to be relaxed to support
       // you know, nulls.
       setValue(op.destination(), rhsVal);
+    }
+  }
+
+  @Override
+  public void visit(ArrayAlloc op) {
+    int sizeVal = (Integer) resolve(op.sizeLocation());
+    logger.atInfo().log("Allocating array of size %d", sizeVal);
+    VarType baseType = op.arrayType().baseType();
+    if (baseType == VarType.BOOL) {
+      Boolean[] booleans = new Boolean[sizeVal];
+      Arrays.setAll(booleans, (index) -> false);
+      setValue(op.destination(), booleans);
+    } else if (baseType == VarType.INT) {
+      Integer[] integers = new Integer[sizeVal];
+      Arrays.setAll(integers, (index) -> 0);
+      setValue(op.destination(), integers);
+    } else if (baseType == VarType.STRING) {
+      String[] strings = new String[sizeVal];
+      Arrays.setAll(strings, (index) -> "");
+      setValue(op.destination(), strings);
+    } else {
+      throw new IllegalStateException("Cannot allocate array of type " + baseType);
     }
   }
 

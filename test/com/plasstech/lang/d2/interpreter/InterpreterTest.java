@@ -323,6 +323,11 @@ public class InterpreterTest {
     assertThat(env.getValue("a")).isNull();
   }
 
+  @Test
+  public void allocArray() {
+    execute("a:int[2] print a[0]");
+  }
+
   private Environment execute(String program, boolean optimize) {
     InterpreterExecutor ee = new InterpreterExecutor(program);
     ee.setCodeGenDebugLevel(2);

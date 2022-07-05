@@ -25,6 +25,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void procIndex() throws Exception {
+    execute(
+        "       b: string "
+            + "foo: proc(a: string, i:int) {"
+            + "   b=a[i]"
+            + "   print b"
+            + "   c=a[4]"
+            + "   print c"
+            + "} "
+            + "foo('world', 1)",
+        "procIndex");
+  }
+
   public void constantStringIndex(
       @TestParameter({"world", "hello this is a very long string"}) String value,
       @TestParameter({"1", "4"}) int index)

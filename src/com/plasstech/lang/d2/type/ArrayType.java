@@ -11,7 +11,7 @@ public class ArrayType implements VarType {
 
   @Override
   public String name() {
-    return String.format("array:%s", baseType.name());
+    return String.format("array of %s", baseType.name());
   }
 
   @Override
