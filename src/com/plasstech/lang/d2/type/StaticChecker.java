@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -190,8 +191,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         new LValueNode.Visitor() {
           @Override
           public void visit(FieldSetNode fsn) {
-            //
-            // Now get the record from the symbol table.
+            // Get the record from the symbol table.
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
             if (variableSymbol == null || !variableSymbol.varType().isRecord()) {
               throw new TypeException(
@@ -250,6 +250,9 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
             variable.setVarType(right.varType());
           }
+
+          @Override
+          public void visit(ArraySetNode arraySetNode) {}
         });
 
     // TODO: why do we need variable.vartype, node.vartype and symbol.type?
