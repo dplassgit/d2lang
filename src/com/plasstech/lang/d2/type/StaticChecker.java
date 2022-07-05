@@ -269,6 +269,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                       variableName, symbol.varType()),
                   lvalue.position());
             }
+            asn.setVarType(symbol.varType());
 
             // 2. index must be int
             asn.indexNode().accept(StaticChecker.this);

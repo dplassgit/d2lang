@@ -49,4 +49,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(ArrayAlloc op) {}
+
+  @Override
+  public void visit(ArraySet op) {}
 }
