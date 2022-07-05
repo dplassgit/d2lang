@@ -26,6 +26,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BreakNode;
@@ -179,6 +180,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
             emit(new Transfer(dest, source));
           }
+
+          @Override
+          public void visit(ArraySetNode arraySetNode) {}
         });
   }
 

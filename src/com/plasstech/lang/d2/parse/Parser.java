@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -256,31 +257,51 @@ public class Parser implements Phase {
 
     Token variable = advance(); // eat the variable name
     switch (token.type()) {
-        // Assignment
+        // Assignment (variable=expression)
       case EQ:
         advance(); // eat the =
         VariableSetNode var = new VariableSetNode(variable.text(), variable.start());
         ExprNode expr = expr();
         return new AssignmentNode(var, expr);
 
-        // Declaration
+        // Declaration (variable:type)
       case COLON:
         return declaration(variable);
 
-        // Procedure call statement
+        // Procedure call statement (variable(comma-separated-list))
       case LPAREN:
         return procedureCall(variable, true);
 
-        // for record field set
+        // for record field set (field.name=expression)
       case DOT:
         return fieldAssignment(variable);
 
-        // TODO: bracket for string or array slot assignment
+        //  bracket for array slot assignment (field[expression] = expression)
+      case LBRACKET:
+        return arraySlotAssignment(variable);
+
       default:
         break;
     }
     throw new ParseException(
         String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
+  }
+
+  private StatementNode arraySlotAssignment(Token variable) {
+    expect(TokenType.LBRACKET);
+    advance(); // eat the [
+    // now get an expression
+    ExprNode indexNode = expr();
+    ArraySetNode asn = new ArraySetNode(variable.text(), indexNode, variable.start());
+
+    expect(TokenType.RBRACKET);
+    advance(); // eat the ]
+
+    expect(TokenType.EQ);
+    advance();
+    ExprNode rhs = expr();
+
+    return new AssignmentNode(asn, rhs);
   }
 
   private StatementNode fieldAssignment(Token variable) {

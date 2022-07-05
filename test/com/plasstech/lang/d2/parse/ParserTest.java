@@ -15,6 +15,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -28,6 +29,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
+import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
@@ -985,9 +987,14 @@ public class ParserTest {
   }
 
   @Test
-  @Ignore("Array assignments are still unimplemented")
   public void arraySet() {
-    parseStatements("a[3] = 4");
+    BlockNode root = parseStatements("a[3] = 4");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) statements.get(0);
+    LValueNode lValue = node.variable();
+    assertThat(lValue).isInstanceOf(ArraySetNode.class);
   }
 
   @Test
