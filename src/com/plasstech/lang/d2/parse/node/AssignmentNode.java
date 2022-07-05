@@ -11,7 +11,7 @@ public class AssignmentNode extends AbstractNode implements StatementNode {
     this.expr = expr;
   }
 
-  public LValueNode variable() {
+  public LValueNode lvalue() {
     return variable;
   }
 
