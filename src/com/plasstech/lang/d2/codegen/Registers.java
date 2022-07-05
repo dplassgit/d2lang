@@ -36,6 +36,9 @@ public class Registers {
   }
 
   public void deallocate(Register r) {
+    if (r == null) {
+      return;
+    }
     Preconditions.checkState(
         used.contains(r), String.format("Register %s not allocated in register bank", r.name()));
     used.remove(r);

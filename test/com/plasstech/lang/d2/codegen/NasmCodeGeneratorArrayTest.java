@@ -10,33 +10,45 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
-  public void arrayDecl(@TestParameter({"string", "int", "bool"}) String type) throws Exception {
-    execute(String.format("x:%s[%d]", type, type.length()), "arayDecl");
+  public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool"}) String type)
+      throws Exception {
+    execute(String.format("x:%s[%d]", type, type.length()), "arrayDeclConstantSize");
   }
 
   @Test
-  public void arrayDeclInProc(@TestParameter({"string", "int", "bool"}) String type)
+  public void arrayDeclConstantSizeInProc(@TestParameter({"string", "int", "bool"}) String type)
       throws Exception {
     execute(
         String.format(
-            "      p:proc() {" //
-                + "  x:%s[%d]" //
+            "      p:proc(): %s {" //
+                + "  x:%s[%d] return x[0]" //
                 + "}" //
                 + "p()",
-            type, type.length()),
-        "arayDeclInProc");
+            type, type, type.length()),
+        "arrayDeclConstantSizeInProc");
   }
 
   @Test
   public void arrayDeclCalculatedSize() throws Exception {
-    execute("c:bool[calc()] calc: proc:int{return 3}", "boolArrayCalculatedSize");
+    execute("c:int[calc()] calc: proc:int{return 3}", "arrayCalculatedSize");
+  }
+
+  @Test
+  public void arrayDeclGlobalSize() throws Exception {
+    execute("size=3 string_arr:string[size]", "arrayDeclGlobalSize");
+  }
+
+  @Test
+  public void arrayDeclLocalSize() throws Exception {
+    execute("f:proc() {size=3 string_arr:string[size]} f()", "arrayDeclLocalSize");
   }
 
   @Test
   public void arrayGet(
       @TestParameter({
-              /*"string", */
-            "int", "bool"
+            /*"string", */
+            "int",
+            "bool"
           })
           String type)
       throws Exception {
@@ -46,8 +58,9 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayGetInProc(
       @TestParameter({
-              /*"string", */
-            "int", "bool"
+            /*"string", */
+            "int",
+            "bool"
           })
           String type)
       throws Exception {

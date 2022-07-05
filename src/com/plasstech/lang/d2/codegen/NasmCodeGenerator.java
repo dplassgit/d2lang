@@ -216,20 +216,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(ArrayAlloc op) {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-    Operand sizeLoc = op.sizeLocation();
-    String numEntriesLoc = resolve(sizeLoc);
+    Operand numEntriesLoc = op.sizeLocation();
+    String numEntriesLocName = resolve(numEntriesLoc);
 
     // 1. calculate # of bytes to allocate:
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
     Register allocSizeBytesRegister = Register.RDX;
-    emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLoc);
+    // TODO: if numEntriesLocName is a constant, pre-calculate some of these #s.
+    emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
     int entrySize = op.arrayType().baseType().size();
     if (entrySize > 1) {
       emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
     }
     int dimensions = op.arrayType().dimensions();
-    emit("add %s, %s  ; add for dimensions", allocSizeBytesRegister.name32, 1 + 4 * dimensions);
+    emit(
+        "add %s, %s  ; add storage for # of dimensions, and %d dimension values",
+        allocSizeBytesRegister.name32, 1 + 4 * dimensions, dimensions);
 
     emit("mov RCX, 1  ; # of 'entries' for calloc");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
@@ -240,12 +243,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
     emit("mov byte [RAX], %s  ; store # of dimensions", dimensions);
-    for (int i = 0; i < dimensions; ++i) {
+
+    Register numEntriesReg = null;
+    if (!(isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
+      // not a constant and not in a registers; put it in a register
+      numEntriesReg = registers.allocate();
       emit(
-          "mov dword [RAX+%s], %s  ; store size of the %sth dimension",
-          i * 4 + 1, numEntriesLoc, i + 1);
+          "; numEntriesLoc (%s) is not in a register; putting it into %s",
+          numEntriesLoc, numEntriesReg);
+      emit("mov DWORD %s, %s", numEntriesReg.name32, numEntriesLocName);
+      numEntriesLocName = numEntriesReg.name32;
     }
-    deallocate(sizeLoc);
+    // TODO: iterate over dimensions.
+    emit("mov DwORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
+    if (numEntriesReg != null) {
+      emit("; deallocating numEntriesLoc from %s", numEntriesReg);
+      registers.deallocate(numEntriesReg);
+    }
   }
 
   @Override
@@ -354,6 +368,34 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
+  private boolean isInAnyRegister(Operand arg) {
+    if (arg.isConstant()) {
+      return false;
+    }
+    if (arg.isRegister()) {
+      return true;
+    }
+
+    Location location = (Location) arg;
+    if (aliases.get(location.toString()) != null) {
+      return true;
+    }
+    switch (location.storage()) {
+      case TEMP:
+        return false; // we would have found its alias already.
+      case GLOBAL:
+        return false;
+      case PARAM:
+        ParamLocation paramLoc = (ParamLocation) location;
+        return paramRegister(paramLoc.index()) != null;
+      case LOCAL:
+        return false;
+      default:
+        fail("Cannot determine if %s is in a reg", location);
+        return false;
+    }
+  }
+
   private boolean isInRegister(Operand arg, Register register) {
     if (arg.isConstant()) {
       return false;
@@ -380,7 +422,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case LOCAL:
         return false;
       default:
-        fail("Cannot generate %s operand %s yet", location.storage(), location);
+        fail("Cannot determine if %s is in a reg", location);
         return false;
     }
   }
