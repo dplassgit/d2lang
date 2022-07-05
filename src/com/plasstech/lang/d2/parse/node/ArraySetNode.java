@@ -14,12 +14,25 @@ public class ArraySetNode extends AbstractNode implements LValueNode {
   }
 
   @Override
+  public String toString() {
+    return name();
+  }
+
+  @Override
   public String name() {
-    return String.format("%s[(%s]", variableName, indexNode.toString());
+    return String.format("ArraySetNode: %s[%s]", variableName(), indexNode().toString());
   }
 
   @Override
   public void accept(Visitor visitor) {
     visitor.visit(this);
+  }
+
+  public ExprNode indexNode() {
+    return indexNode;
+  }
+
+  public String variableName() {
+    return variableName;
   }
 }
