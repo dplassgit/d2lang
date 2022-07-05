@@ -10,6 +10,6 @@ public interface LValueNode extends Node {
 
     void visit(VariableSetNode node);
 
-    void visit(ArraySetNode arraySetNode);
+    void visit(ArraySetNode node);
   }
 }

@@ -128,8 +128,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(AssignmentNode node) {
-    LValueNode variable = node.variable();
-    variable.accept(
+    LValueNode lvalue = node.lvalue();
+    lvalue.accept(
         new LValueNode.Visitor() {
 
           @Override

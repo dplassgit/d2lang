@@ -175,19 +175,20 @@ public class StaticChecker extends DefaultVisitor implements Phase {
   @Override
   public void visit(AssignmentNode node) {
     // Make sure that the left = right
-    LValueNode variable = node.variable();
 
     Node right = node.expr();
     right.accept(this);
     if (right.varType().isUnknown()) {
+      // TODO: Can we infer anything form this?
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
     if (right.varType() == VarType.VOID) {
       throw new TypeException(
-          String.format("Cannot assign value of void expression %s", right), right.position());
+          String.format("Cannot assign value of VOID expression %s", right), right.position());
     }
 
-    variable.accept(
+    LValueNode lvalue = node.lvalue();
+    lvalue.accept(
         new LValueNode.Visitor() {
           @Override
           public void visit(FieldSetNode fsn) {
@@ -195,8 +196,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
             if (variableSymbol == null || !variableSymbol.varType().isRecord()) {
               throw new TypeException(
-                  String.format("Variable '%s' not a known RECORD", variable.name()),
-                  variable.position());
+                  String.format("Cannot set field of '%s'; not a known RECORD", lvalue.name()),
+                  lvalue.position());
             }
 
             Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.varType().name());
@@ -221,17 +222,18 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                   String.format(
                       "field '%s' of RECORD '%s' declared as %s but RHS (%s) is %s",
                       fieldName, record.name(), fieldType, right, right.varType()),
-                  variable.position());
+                  lvalue.position());
             }
-            variable.setVarType(fieldType);
+            lvalue.setVarType(fieldType);
           }
 
           @Override
           public void visit(VariableSetNode node) {
-            Symbol symbol = symbolTable().getRecursive(variable.name());
+            // simple this=that
+            Symbol symbol = symbolTable().getRecursive(lvalue.name());
             if (symbol == null) {
               // Brand new symbol in all scopes. Assign in current scope.
-              symbolTable().assign(variable.name(), right.varType());
+              symbolTable().assign(lvalue.name(), right.varType());
             } else {
               // Already known in some scope. Update.
               if (symbol.varType().isUnknown()) {
@@ -241,18 +243,56 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                 throw new TypeException(
                     String.format(
                         "variable '%s' declared as %s but RHS (%s) is %s",
-                        variable.name(), symbol.varType(), right, right.varType()),
-                    variable.position());
+                        lvalue.name(), symbol.varType(), right, right.varType()),
+                    lvalue.position());
               }
 
               symbol.setAssigned();
             }
 
-            variable.setVarType(right.varType());
+            lvalue.setVarType(right.varType());
           }
 
           @Override
-          public void visit(ArraySetNode arraySetNode) {}
+          public void visit(ArraySetNode asn) {
+            // 1. lhs must be known array
+            String variableName = asn.variableName();
+            Symbol symbol = symbolTable().getRecursive(variableName);
+            if (symbol == null) {
+              throw new TypeException(
+                  String.format("unknown ARRAY variable '%s'", variableName), lvalue.position());
+            }
+            if (!symbol.varType().isArray()) {
+              throw new TypeException(
+                  String.format(
+                      "variable '%s' must be of type ARRAY; was %s",
+                      variableName, symbol.varType()),
+                  lvalue.position());
+            }
+
+            // 2. index must be int
+            asn.indexNode().accept(StaticChecker.this);
+            VarType indexType = asn.indexNode().varType();
+            if (indexType != VarType.INT) {
+              throw new TypeException(
+                  String.format("ARRAY index must be INT; was %s", indexType),
+                  asn.indexNode().position());
+            }
+
+            ArrayType arrayType = (ArrayType) symbol.varType();
+
+            if (right.varType() == VarType.UNKNOWN) {
+              // should we infer it?
+            }
+            // 3. rhs must match lhs
+            if (!arrayType.baseType().compatibleWith(right.varType())) {
+              throw new TypeException(
+                  String.format(
+                      "ARRAY '%s' declared as %s but RHS (%s) is %s",
+                      variableName, arrayType.baseType(), right, right.varType()),
+                  lvalue.position());
+            }
+          }
         });
 
     // TODO: why do we need variable.vartype, node.vartype and symbol.type?
