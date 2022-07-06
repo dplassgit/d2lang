@@ -116,8 +116,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   public void visit(ArraySet op) {
     Operand source = remap(op.source());
     Operand index = remap(op.index());
-    Location destination = (Location) remap(op.destination());
-    if (source == op.source() && destination == op.destination() && index == op.index()) {
+    Location destination = (Location) remap(op.array());
+    if (source == op.source() && destination == op.array() && index == op.index()) {
       return;
     }
     code.set(ip, new ArraySet(op.arrayType(), destination, index, source));

@@ -221,7 +221,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       source = replacement;
     }
     if (index != op.index() || source != op.source()) {
-      replaceCurrent(new ArraySet(op.arrayType(), op.destination(), index, source));
+      replaceCurrent(new ArraySet(op.arrayType(), op.array(), index, source));
     }
   }
 

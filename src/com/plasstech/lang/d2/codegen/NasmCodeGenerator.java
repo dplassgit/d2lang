@@ -616,32 +616,30 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void generateArrayIndex(
       String arrayLoc, ArrayType arrayType, String indexName, String destName) {
-    // 1. using leftName get # of dimensions
-    Register temp = registers.allocate();
-    emit("; allocated %s for calculations", temp);
-    //    emit("mov %s, %d  ; get # of dimensions", temp, arrayType.dimensions());
-    // TODO: 2. using arrayLoc get dimension size
-    // TODO: 3. check dimension size against index
-    // 4. calculate start of array:  4 * # dimensions + 1
-    //    emit("imul %s, 4  ; 4 * dimensions", temp);
+
+    // TODO: if index is constant, can skip some of this calculation.
+
+    Register arrayStart = registers.allocate();
+    emit("; allocated %s for calculations", arrayStart);
+    // TODO: using arrayLoc get dimension size
+    // TODO: check dimension size against index
     emit(
         "mov %s, %d  ; effective start of array = 1 + # of dimensions * 4",
-        temp, 1 + arrayType.dimensions() * 4);
-    //    emit("inc %s  ; 1 more for actual dimension slot", temp);
-    // 5. calculate full index: basetype.size()*indexName + arrayLoc
-    Register temp2 = registers.allocate();
-    emit("; allocated %s for calculations", temp2);
+        arrayStart, 1 + arrayType.dimensions() * 4);
+    // calculate full index: basetype.size()*indexName + arrayLoc
+    Register effectiveIndex = registers.allocate();
+    emit("; allocated %s for calculations", effectiveIndex);
     // index is always a dword/int because I said so.
-    emit("mov DWORD %s, %s  ; index", temp2.name32, indexName);
-    emit("imul %s, %s  ; index * base size", temp2, arrayType.baseType().size());
-    emit("add %s, %s  ; effective index", temp, temp2);
-    registers.deallocate(temp2);
-    emit("; deallocating %s", temp2);
-    emit("add %s, %s  ; actual location", temp, arrayLoc);
-    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, temp);
+    emit("mov DWORD %s, %s  ; index", effectiveIndex.name32, indexName);
+    emit("imul %s, %s  ; index * base size", effectiveIndex, arrayType.baseType().size());
+    emit("add %s, %s  ; effective index", arrayStart, effectiveIndex);
+    registers.deallocate(effectiveIndex);
+    emit("; deallocating %s", effectiveIndex);
+    emit("add %s, %s  ; actual location", arrayStart, arrayLoc);
+    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, arrayStart);
 
-    registers.deallocate(temp);
-    emit("; deallocating %s", temp);
+    registers.deallocate(arrayStart);
+    emit("; deallocating %s", arrayStart);
   }
 
   private void generateStringCompare(

@@ -130,7 +130,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(ArraySet op) {
     markRead(op.source());
     markRead(op.index());
-    Location dest = op.destination();
+    Location dest = op.array();
     // Don't kill assignments to "dest" because we only modified part of it.
     recordAssignment(dest);
   }

@@ -68,9 +68,21 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
-  public void arraySet() throws Exception {
-    execute("x:string[1] x[0]='hi'", "arraySet");
+  @Ignore("Not written yet")
+  public void arraySetString() throws Exception {
+    execute("x:string[1] x[0]='hi' println x[0]", "arraySetString");
+  }
+
+  @Test
+  @Ignore("Not written yet")
+  public void arraySetInt() throws Exception {
+    execute("x:int[2] x[1]=2 println x[1]", "arraySetInt");
+  }
+
+  @Test
+  @Ignore("Not written yet")
+  public void arraySetIntProc() throws Exception {
+    execute("f:proc(i:int) {x:int[2] x[i]=i+2 println x[i]} f(0) f(1)", "arraySetIntProc");
   }
 
   @Test

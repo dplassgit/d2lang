@@ -161,7 +161,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(ArraySet op) {
     int index = (Integer) resolve(op.index());
-    Object[] arrayValue = (Object[]) resolve(op.destination());
+    Object[] arrayValue = (Object[]) resolve(op.array());
     arrayValue[index] = resolve(op.source());
   }
 
