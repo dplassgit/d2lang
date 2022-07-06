@@ -5,6 +5,8 @@ import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
+import com.plasstech.lang.d2.common.D2RuntimeException;
+
 public class RegistersTest {
   private Registers registers = new Registers();
 
@@ -13,7 +15,7 @@ public class RegistersTest {
     for (Register r : Register.values()) {
       assertThat(registers.allocate()).isEqualTo(r);
     }
-    assertThrows(IllegalStateException.class, () -> registers.allocate());
+    assertThrows(D2RuntimeException.class, () -> registers.allocate());
   }
 
   @Test
