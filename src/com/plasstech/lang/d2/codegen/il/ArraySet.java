@@ -1,19 +1,21 @@
 package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.type.ArrayType;
 
 public class ArraySet extends Op {
-  private final Location destLocation;
-  private final Location indexLocation;
-  private final Location rhsLocation;
+  private final Location destination;
+  private final Operand index;
+  private final Operand rhs;
   private final ArrayType arrayType;
 
-  public ArraySet(ArrayType arrayType, Location destLocation, Location indexLocation, Location rhsLocation) {
+  public ArraySet(
+      ArrayType arrayType, Location destination, Operand index, Operand rhs) {
     this.arrayType = arrayType;
-    this.destLocation = destLocation;
-    this.indexLocation = indexLocation;
-    this.rhsLocation = rhsLocation;
+    this.destination = destination;
+    this.index = index;
+    this.rhs = rhs;
   }
 
   @Override
@@ -22,20 +24,20 @@ public class ArraySet extends Op {
   }
 
   public Location destination() {
-    return destLocation;
+    return destination;
   }
 
-  public Location index() {
-    return indexLocation;
+  public Operand index() {
+    return index;
   }
 
-  public Location source() {
-    return rhsLocation;
+  public Operand source() {
+    return rhs;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[%s] = %s;", destLocation, indexLocation, rhsLocation);
+    return String.format("%s[%s] = %s;", destination, index, rhs);
   }
 
   public ArrayType arrayType() {

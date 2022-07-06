@@ -8,6 +8,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -110,7 +111,18 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     }
     code.set(ip, new Transfer((Location) destination, source));
   }
-  
+
+  @Override
+  public void visit(ArraySet op) {
+    Operand source = remap(op.source());
+    Operand index = remap(op.index());
+    Location destination = (Location) remap(op.destination());
+    if (source == op.source() && destination == op.destination() && index == op.index()) {
+      return;
+    }
+    code.set(ip, new ArraySet(op.arrayType(), destination, index, source));
+  }
+
   @Override
   public void visit(SysCall op) {
     Operand arg = remap(op.arg());
@@ -158,7 +170,6 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       return operand;
     }
     Location location = (Location) operand;
-    System.err.printf("Remapping operand to %s (type %s)\n", location.toString(), location.type());
     // This fails for records, because records are stored globally (global or heap) but
     // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
     switch (location.storage()) {

@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -204,6 +205,23 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     }
     if (left != op.left() || right != op.right()) {
       replaceCurrent(new BinOp(op.destination(), left, op.operator(), right));
+    }
+  }
+
+  @Override
+  public void visit(ArraySet op) {
+    Operand index = op.index();
+    ConstantOperand<?> replacement = findReplacementConstant(index);
+    if (replacement != null) {
+      index = replacement;
+    }
+    Operand source = op.source();
+    replacement = findReplacementConstant(source);
+    if (replacement != null) {
+      source = replacement;
+    }
+    if (index != op.index() || source != op.source()) {
+      replaceCurrent(new ArraySet(op.arrayType(), op.destination(), index, source));
     }
   }
 
