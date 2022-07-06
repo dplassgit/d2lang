@@ -20,6 +20,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
@@ -37,6 +38,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
@@ -126,9 +128,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // TODO: convert command-line arguments to ??? and send to __main
     emit0("main:");
-    for (Op opcode : code) {
-      emit0("\n  ; %s", opcode.toString());
-      opcode.accept(this);
+    try {
+      for (Op opcode : code) {
+        emit0("\n  ; %s", opcode.toString());
+        opcode.accept(this);
+      }
+    } catch (D2RuntimeException e) {
+      ImmutableList<String> allCode =
+          ImmutableList.<String>builder()
+              .add("PARTIAL ASSEMBLY\n\n")
+              .add("================\n\n")
+              .addAll(prelude)
+              .addAll(externs)
+              .add("\nsection .data")
+              .addAll(data)
+              .add("\nsection .text")
+              .addAll(emitter.all())
+              .build();
+      input = input.addAsmCode(allCode).addException(e);
+      return input;
     }
 
     ImmutableList<String> allCode =
@@ -211,6 +229,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
     deallocate(source);
+  }
+
+  @Override
+  public void visit(AllocateOp op) {
+    fail("Cannot generate AllocateOp yet");
   }
 
   @Override
@@ -1148,8 +1171,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     logger.atFine().logVarargs(format, values);
   }
 
-  private void fail(String format, Object... values) {
-    throw new UnsupportedOperationException(String.format(format, values));
+  private static void fail(String format, Object... values) {
+    throw new D2RuntimeException("UnsupportedOperation", null, String.format(format, values));
   }
 
   private enum Size {
@@ -1176,7 +1199,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       } else if (type == VarType.STRING) {
         return Size._64BITS;
       }
-      throw new IllegalStateException("Cannot get type of " + type);
+      throw new D2RuntimeException("IllegalState", null, "Cannot get type of " + type);
     }
   }
 }

@@ -92,7 +92,6 @@ public class D2Compiler {
       System.out.println("------------------------------");
     }
 
-    // use temp unless flag is set
     File dir = new File(System.getProperty("user.dir"));
     String baseName = Files.getNameWithoutExtension(sourceFilename);
     File asmFile = new File(dir, baseName + ".asm");
@@ -104,6 +103,10 @@ public class D2Compiler {
     CharSink charSink = Files.asCharSink(asmFile, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode(), "\n");
 
+    // wait until now to throw the exception so that we've written the asm file.
+    if (state.error()) {
+      throw state.exception();
+    }
     if (!options.compileOnly) {
       File objFile = new File(dir, baseName + ".obj");
       if (objFile.exists()) {

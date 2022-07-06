@@ -46,6 +46,7 @@ java_library(
     srcs=["Registers.java", "Register.java"],
     visibility=["//visibility:public"],
     deps=[
+        "//src/com/plasstech/lang/d2/common",
         "@maven//:com_google_guava_guava",
     ],
 )
