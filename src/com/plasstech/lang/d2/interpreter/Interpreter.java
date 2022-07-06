@@ -140,7 +140,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(ArrayAlloc op) {
     int sizeVal = (Integer) resolve(op.sizeLocation());
-    logger.atInfo().log("Allocating array of size %d", sizeVal);
     VarType baseType = op.arrayType().baseType();
     if (baseType == VarType.BOOL) {
       Boolean[] booleans = new Boolean[sizeVal];
@@ -163,8 +162,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(ArraySet op) {
     int index = (Integer) resolve(op.index());
     Object[] arrayValue = (Object[]) resolve(op.destination());
-    System.err.printf("array set %s[%s]=%s\n", op.destination(), index, resolve(op.source()));
-    //    VarType baseType = op.arrayType().baseType();
     arrayValue[index] = resolve(op.source());
   }
 
