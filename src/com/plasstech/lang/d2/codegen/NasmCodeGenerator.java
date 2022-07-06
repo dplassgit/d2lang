@@ -181,27 +181,34 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    Operand sourceLoc = op.source();
     Operand indexLoc = op.index();
-
-    // TODO: if index is constant, can skip some of this calculation.
 
     // TODO: using arrayLoc get dimension size
     // TODO: check dimension size against index
     ArrayType arrayType = op.arrayType();
-    // calculate full index: basetype.size()*indexName + 1+4*dimensions+arrayLoc
+
+    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
     Register fullIndex = registers.allocate();
     emit("; allocated %s for calculations", fullIndex);
-    // index is always a dword/int because I said so.
-    emit("mov DWORD %s, %s  ; index", fullIndex.name32, resolve(indexLoc));
-    emit("imul %s, %s  ; index * base size", fullIndex, arrayType.baseType().size());
-    emit(
-        "add %s, %d  ; offset by 1 + dimensions * 4",
-        fullIndex, 1 + arrayType.dimensions() * 4);
+    if (indexLoc.isConstant()) {
+      // if index is constant, can skip some of this calculation.
+      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
+      int index = indexConst.value();
+      // index is always a dword/int because I said so.
+      emit(
+          "mov %s, %d  ; const int; full index = 1+dims*4+base size*index",
+          fullIndex, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
+    } else {
+      // index is always a dword/int because I said so.
+      emit("mov DWORD %s, %s  ; index", fullIndex.name32, resolve(indexLoc));
+      emit("imul %s, %s  ; index * base size", fullIndex, arrayType.baseType().size());
+      emit("add %s, %d  ; offset by 1 + dims * 4", fullIndex, 1 + arrayType.dimensions() * 4);
+    }
     emit("add %s, %s  ; actual location", fullIndex, resolve(op.array()));
 
-    Register sourceReg = null;
+    Operand sourceLoc = op.source();
     String sourceName = resolve(sourceLoc);
+    Register sourceReg = null;
     String baseTypeSize = Size.of(arrayType.baseType()).asmName;
     if (!(isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
@@ -213,9 +220,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           baseTypeSize, registerNameSized(sourceReg, arrayType.baseType()), sourceName);
       sourceName = registerNameSized(sourceReg, arrayType.baseType());
     }
-    emit(
-        "mov %s [%s], %s  ; store it!",
-        baseTypeSize, fullIndex, sourceName);
+    emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
     if (sourceReg != null) {
       emit("; deallocating %s", sourceReg);
       registers.deallocate(sourceReg);
