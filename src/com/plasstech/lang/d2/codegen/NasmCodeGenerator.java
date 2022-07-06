@@ -181,10 +181,49 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    logger.atInfo().log("Cannot fully generate array set yet");
     Operand sourceLoc = op.source();
-    deallocate(sourceLoc);
     Operand indexLoc = op.index();
+
+    // TODO: if index is constant, can skip some of this calculation.
+
+    // TODO: using arrayLoc get dimension size
+    // TODO: check dimension size against index
+    ArrayType arrayType = op.arrayType();
+    // calculate full index: basetype.size()*indexName + 1+4*dimensions+arrayLoc
+    Register fullIndex = registers.allocate();
+    emit("; allocated %s for calculations", fullIndex);
+    // index is always a dword/int because I said so.
+    emit("mov DWORD %s, %s  ; index", fullIndex.name32, resolve(indexLoc));
+    emit("imul %s, %s  ; index * base size", fullIndex, arrayType.baseType().size());
+    emit(
+        "add %s, %d  ; offset by 1 + dimensions * 4",
+        fullIndex, 1 + arrayType.dimensions() * 4);
+    emit("add %s, %s  ; actual location", fullIndex, resolve(op.array()));
+
+    Register sourceReg = null;
+    String sourceName = resolve(sourceLoc);
+    String baseTypeSize = Size.of(arrayType.baseType()).asmName;
+    if (!(isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
+      // not a constant and not in a registers; put it in a register
+      sourceReg = registers.allocate();
+      emit("; source (%s) is not in a register; putting it into %s", sourceLoc, sourceReg);
+      // need to
+      emit(
+          "mov %s %s, %s",
+          baseTypeSize, registerNameSized(sourceReg, arrayType.baseType()), sourceName);
+      sourceName = registerNameSized(sourceReg, arrayType.baseType());
+    }
+    emit(
+        "mov %s [%s], %s  ; store it!",
+        baseTypeSize, fullIndex, sourceName);
+    if (sourceReg != null) {
+      emit("; deallocating %s", sourceReg);
+      registers.deallocate(sourceReg);
+    }
+    registers.deallocate(fullIndex);
+    emit("; deallocating %s", fullIndex);
+
+    deallocate(sourceLoc);
     deallocate(indexLoc);
   }
 
@@ -930,8 +969,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s, [%s + 1]  ; get length from first dimension", destName, tempReg);
       registers.deallocate(tempReg);
     }
-    deallocate(destination);
-    deallocate(source);
   }
 
   private void generateStringLength(Operand source, Location destination) {
@@ -1215,7 +1252,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private enum Size {
     _1BYTE("BYTE"),
     _32BITS("DWORD"),
-    _64BITS("");
+    _64BITS("QWORD");
 
     public final String asmName;
 
