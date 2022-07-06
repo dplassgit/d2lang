@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -176,6 +177,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Goto op) {
     emit("jmp __%s", op.label());
+  }
+
+  @Override
+  public void visit(ArraySet op) {
+    logger.atInfo().log("Cannot fully generate array set yet");
+    Operand sourceLoc = op.source();
+    deallocate(sourceLoc);
+    Operand indexLoc = op.index();
+    deallocate(indexLoc);
   }
 
   @Override
