@@ -256,16 +256,27 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
     Register allocSizeBytesRegister = Register.RDX;
-    // TODO: if numEntriesLocName is a constant, pre-calculate some of these #s.
-    emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
-    int entrySize = op.arrayType().baseType().size();
-    if (entrySize > 1) {
-      emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
-    }
     int dimensions = op.arrayType().dimensions();
-    emit(
-        "add %s, %s  ; add storage for # of dimensions, and %d dimension values",
-        allocSizeBytesRegister.name32, 1 + 4 * dimensions, dimensions);
+    int entrySize = op.arrayType().baseType().size();
+    if (numEntriesLoc.isConstant()) {
+      // if numEntriesLocName is a constant, pre-calculate storage requireds.
+      ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
+      int numEntries = numEntriesOp.value();
+      emit(
+          "mov %s, %s  ; storage for # dimensions (1), dimension values (%d), actual storage (%d)",
+          allocSizeBytesRegister,
+          1 + 4 * dimensions + numEntries * entrySize,
+          4 * dimensions,
+          numEntries * entrySize);
+    } else {
+      emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
+      if (entrySize > 1) {
+        emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
+      }
+      emit(
+          "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
+          allocSizeBytesRegister.name32, 1 + 4 * dimensions, dimensions);
+    }
 
     emit("mov RCX, 1  ; # of 'entries' for calloc");
     emit("sub RSP, 0x20  ; Reserve the shadow space");
@@ -275,7 +286,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String dest = resolve(op.destination());
     emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
-    emit("mov byte [RAX], %s  ; store # of dimensions", dimensions);
+    emit("mov BYTE [RAX], %s  ; store # of dimensions", dimensions);
 
     Register numEntriesReg = null;
     if (!(isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
@@ -288,7 +299,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       numEntriesLocName = numEntriesReg.name32;
     }
     // TODO: iterate over dimensions.
-    emit("mov DwORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
+    emit("mov DWORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
     if (numEntriesReg != null) {
       emit("; deallocating numEntriesLoc from %s", numEntriesReg);
       registers.deallocate(numEntriesReg);
@@ -325,7 +336,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           } else {
             // translate dynamically from 0/1 to false/true
             // Intentionally do the comp first, in case the arg is in dl or cl
-            emit("cmp byte %s, 1", argVal);
+            emit("cmp BYTE %s, 1", argVal);
             data.add("  CONST_FALSE: db \"false\", 0");
             emit("mov RCX, CONST_FALSE");
             data.add("  CONST_TRUE: db \"true\", 0");
@@ -463,21 +474,21 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Dec op) {
     String target = resolve(op.target());
-    emit("dec dword %s", target);
+    emit("dec DWORD %s", target);
     deallocate(op.target());
   }
 
   @Override
   public void visit(Inc op) {
     String target = resolve(op.target());
-    emit("inc dword %s", target);
+    emit("inc DWORD %s", target);
     deallocate(op.target());
   }
 
   @Override
   public void visit(IfOp op) {
     String condName = resolve(op.condition());
-    emit("cmp byte %s, 0", condName);
+    emit("cmp BYTE %s, 0", condName);
     emit("jne __%s", op.destination());
     deallocate(op.condition());
   }
@@ -694,11 +705,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registers.deallocate(indexReg);
     emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
-    emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
+    emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
     registers.deallocate(charReg);
     emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
-    emit("mov byte [RAX + 1], 0  ; clear the 2nd location");
+    emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
   }
 
   private void generateStringAdd(Operand leftOperand, Operand rightOperand, String dest) {
@@ -860,18 +871,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.operator()) {
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
-        emit("mov dword %s, %s  ; unary setup", destName, sourceName);
+        emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
         emit("not %s  ; bit not", destName);
         break;
       case NOT:
         // boolean not
         // 1. compare to 0
-        emit("cmp byte %s, 0  ; unary not", sourceName);
+        emit("cmp BYTE %s, 0  ; unary not", sourceName);
         // 2. setz %s
         emit("setz %s  ; boolean not", destName);
         break;
       case MINUS:
-        emit("mov dword %s, %s  ; unary setup", destName, sourceName);
+        emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
         emit("neg %s  ; unary minus", destName);
         break;
       case LENGTH:
@@ -889,12 +900,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         Register tempReg = registers.allocate();
         // Just read one byte
         if (source.isConstant()) {
-          emit("mov byte %s, %s ; copy one byte / first character", tempReg.name8, sourceName);
-          emit("mov byte %s, %s ; store a full int. shrug", destName, tempReg.name32);
+          emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8, sourceName);
+          emit("mov BYTE %s, %s ; store a full int. shrug", destName, tempReg.name32);
         } else {
           // need to do two indirects
           emit("mov %s, %s  ; %s has address of string", tempReg, sourceName, tempReg);
-          emit("mov byte %s, [%s] ; copy a byte", destName, tempReg);
+          emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
         }
         emit("and %s, 0x000000ff", destName);
         registers.deallocate(tempReg);
@@ -984,9 +995,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 3. get source char as character
     emit("mov DWORD %s, %s  ; get the character int into %s", charReg.name32, sourceName, charReg);
     // 4. write source char in first location
-    emit("mov byte [RAX], %s  ; move the character into the first location", charReg.name8);
+    emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
     // 5. clear second location.
-    emit("mov byte [RAX+1], 0  ; clear the 2nd location");
+    emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
     raxState.condPop();
     registers.deallocate(charReg);
   }
@@ -1204,8 +1215,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private enum Size {
-    _1BYTE("byte"),
-    _32BITS("dword"),
+    _1BYTE("BYTE"),
+    _32BITS("DWORD"),
     _64BITS("");
 
     public final String asmName;
