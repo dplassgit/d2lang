@@ -610,7 +610,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. calculate full index: basetype.size()*indexName + arrayLoc
     Register temp2 = registers.allocate();
     emit("; allocated %s for calculations", temp2);
-    emit("mov %s, %s  ; index", temp2, indexName);
+    // index is always a dword/int because I said so.
+    emit("mov DWORD %s, %s  ; index", temp2.name32, indexName);
     emit("imul %s, %s  ; index * base size", temp2, arrayType.baseType().size());
     emit("add %s, %s  ; effective index", temp, temp2);
     registers.deallocate(temp2);
@@ -866,9 +867,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case LENGTH:
         if (source.type() == VarType.STRING) {
           generateStringLength(source, destination);
+        } else if (source.type().isArray()) {
+          generateArrayLength(source, destination);
         } else {
-          // array length
-          fail("Cannot generate array %s yet", op);
+          fail("Cannot generate length of %s", source.type());
         }
         break;
       case ASC:
@@ -895,6 +897,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
     }
     deallocate(op.operand());
+  }
+
+  private void generateArrayLength(Operand source, Location destination) {
+    String sourceName = resolve(source);
+    String destName = resolve(destination);
+    if (isInAnyRegister(source)) {
+      emit("mov %s, [%s + 1]  ; get length from first dimension", destName, sourceName);
+    } else {
+      // if source is not a register we have to allocate a register first
+      Register tempReg = registers.allocate();
+      emit("mov %s, %s  ; get array location into reg", tempReg, sourceName);
+      emit("mov %s, [%s + 1]  ; get length from first dimension", destName, tempReg);
+      registers.deallocate(tempReg);
+    }
+    deallocate(destination);
+    deallocate(source);
   }
 
   private void generateStringLength(Operand source, Location destination) {

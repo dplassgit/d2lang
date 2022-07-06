@@ -1,1 +1,1 @@
-bazel build src/com/plasstech/lang/d2:D2Compiler --ui_event_filters=-info,-stdout,-stderr --noshow_progress && bazel-bin/src/com/plasstech/lang/d2/D2Compiler.exe $PWD/$1 $@
+rm -f d2out.exe; bazel build src/com/plasstech/lang/d2:D2Compiler --ui_event_filters=-info,-stdout,-stderr --noshow_progress && bazel-bin/src/com/plasstech/lang/d2/D2Compiler.exe $PWD/$1 $@
