@@ -127,7 +127,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   public void dumbSort() throws Exception {
     execute(
         "        MAX=99999 "
-            + "      data:int[7] "
+            + "  data:int[7] "
             + "  data[0]=2 "
             + "  data[1]=1 "
             + "  data[2]=4 "

@@ -182,29 +182,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(ArraySet op) {
     Operand indexLoc = op.index();
-
-    // TODO: using arrayLoc get dimension size
-    // TODO: check dimension size against index
     ArrayType arrayType = op.arrayType();
 
+    // TODO: get dimension size using arrayLoc
+    // TODO: check dimension size against index
+
     // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
-    Register fullIndex = registers.allocate();
-    emit("; allocated %s for calculations", fullIndex);
-    if (indexLoc.isConstant()) {
-      // if index is constant, can skip some of this calculation.
-      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
-      int index = indexConst.value();
-      // index is always a dword/int because I said so.
-      emit(
-          "mov %s, %d  ; const int; full index = 1+dims*4+base size*index",
-          fullIndex, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
-    } else {
-      // index is always a dword/int because I said so.
-      emit("mov DWORD %s, %s  ; index", fullIndex.name32, resolve(indexLoc));
-      emit("imul %s, %s  ; index * base size", fullIndex, arrayType.baseType().size());
-      emit("add %s, %d  ; offset by 1 + dims * 4", fullIndex, 1 + arrayType.dimensions() * 4);
-    }
-    emit("add %s, %s  ; actual location", fullIndex, resolve(op.array()));
+    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolve(op.array()));
 
     Operand sourceLoc = op.source();
     String sourceName = resolve(sourceLoc);
@@ -213,12 +197,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (!(isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
       sourceReg = registers.allocate();
-      emit("; source (%s) is not in a register; putting it into %s", sourceLoc, sourceReg);
-      // need to
-      emit(
-          "mov %s %s, %s",
-          baseTypeSize, registerNameSized(sourceReg, arrayType.baseType()), sourceName);
-      sourceName = registerNameSized(sourceReg, arrayType.baseType());
+      emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
+      String sourceRegisterSized = registerNameSized(sourceReg, arrayType.baseType());
+      emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
+      sourceName = sourceRegisterSized;
     }
     emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
     if (sourceReg != null) {
@@ -230,6 +212,32 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     deallocate(sourceLoc);
     deallocate(indexLoc);
+  }
+
+  /**
+   * Generate code that puts the location of the given index into the given array into the register
+   * returned.
+   */
+  private Register generateArrayIndex(Operand indexLoc, ArrayType arrayType, String arrayLoc) {
+    Register fullIndex = registers.allocate();
+    emit("; allocated %s for calculations", fullIndex);
+    if (indexLoc.isConstant()) {
+      // if index is constant, can skip some of this calculation.
+      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
+      int index = indexConst.value();
+      // index is always a dword/int because I said so.
+      emit(
+          "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
+          fullIndex, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
+    } else {
+      // index is always a dword/int because I said so.
+      emit("; calculate index*base size+1+dims*4");
+      emit("mov DWORD %s, %s  ; index...", fullIndex.name32, resolve(indexLoc));
+      emit("imul %s, %s  ; ...*base size ...", fullIndex, arrayType.baseType().size());
+      emit("add %s, %d  ; ... +1+dims*4", fullIndex, 1 + arrayType.dimensions() * 4);
+    }
+    emit("add %s, %s  ; actual location", fullIndex, arrayLoc);
+    return fullIndex;
   }
 
   @Override
@@ -348,6 +356,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("; deallocating numEntriesLoc from %s", numEntriesReg);
       registers.deallocate(numEntriesReg);
     }
+    deallocate(op.sizeLocation());
   }
 
   @Override
@@ -646,8 +655,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
       }
     } else if (leftType.isArray()) {
-      ArrayType arrayType = (ArrayType) leftType;
-      generateArrayIndex(leftName, arrayType, rightName, destName);
+      switch (operator) {
+        case LBRACKET:
+          ArrayType arrayType = (ArrayType) leftType;
+          generateArrayGet(arrayType, destName, leftName, op.right());
+          break;
+        default:
+          fail("Cannot do %s on %ss yet", operator, leftType);
+          break;
+      }
     } else {
       fail("No idea how to do %s on %ss", operator, leftType);
     }
@@ -658,32 +674,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     deallocate(op.right());
   }
 
-  private void generateArrayIndex(
-      String arrayLoc, ArrayType arrayType, String indexName, String destName) {
+  private void generateArrayGet(
+      ArrayType arrayType, String destName, String arrayLoc, Operand indexLoc) {
 
-    // TODO: if index is constant, can skip some of this calculation.
-
-    Register arrayStart = registers.allocate();
-    emit("; allocated %s for calculations", arrayStart);
-    // TODO: using arrayLoc get dimension size
+    // TODO: get dimension size using arrayLoc
     // TODO: check dimension size against index
-    emit(
-        "mov %s, %d  ; effective start of array = 1 + # of dimensions * 4",
-        arrayStart, 1 + arrayType.dimensions() * 4);
-    // calculate full index: basetype.size()*indexName + arrayLoc
-    Register effectiveIndex = registers.allocate();
-    emit("; allocated %s for calculations", effectiveIndex);
-    // index is always a dword/int because I said so.
-    emit("mov DWORD %s, %s  ; index", effectiveIndex.name32, indexName);
-    emit("imul %s, %s  ; index * base size", effectiveIndex, arrayType.baseType().size());
-    emit("add %s, %s  ; effective index", arrayStart, effectiveIndex);
-    registers.deallocate(effectiveIndex);
-    emit("; deallocating %s", effectiveIndex);
-    emit("add %s, %s  ; actual location", arrayStart, arrayLoc);
-    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, arrayStart);
 
-    registers.deallocate(arrayStart);
-    emit("; deallocating %s", arrayStart);
+    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
+    Register fullIndex = generateArrayIndex(indexLoc, arrayType, arrayLoc);
+
+    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, fullIndex);
+
+    registers.deallocate(fullIndex);
+    emit("; deallocating %s", fullIndex);
   }
 
   private void generateStringCompare(
