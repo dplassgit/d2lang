@@ -182,19 +182,18 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             // Look up storage in current symbol table
             Symbol sym = symbolTable().getRecursive(asn.variableName());
             if (sym != null) {
-              Location destLocation = lookupLocation(asn.variableName());
+              Location arrayLocation = lookupLocation(asn.variableName());
 
-              Node index = asn.indexNode();
-              index.accept(ILCodeGenerator.this);
-              Location indexLocation = index.location();
+              Node indexNode = asn.indexNode();
+              indexNode.accept(ILCodeGenerator.this);
+              Operand indexLocation = indexNode.location();
 
               Node rhs = node.expr();
               rhs.accept(ILCodeGenerator.this);
               Location rhsLocation = rhs.location();
-
               emit(
                   new ArraySet(
-                      (ArrayType) asn.varType(), destLocation, indexLocation, rhsLocation));
+                      (ArrayType) asn.varType(), arrayLocation, indexLocation, rhsLocation));
             } else {
               throw new RuntimeException(
                   String.format("Could not find record symbol %s in symtab", asn.variableName()));
@@ -308,8 +307,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Node left = node.left();
     // Source for the value of left - either a register or memory location or a value.
     Operand leftSrc;
-    // if left and right are "simple", just get it.
-    if (left.isSimpleType()) {
+    // if left is a constant, just get it.
+    if (left.isConstant()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
       // possibly
       leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
@@ -330,8 +329,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // TODO: this is weird, and possibly wrong. Why String?!
       rightSrc = ConstantOperand.of(rightVarNode.name());
     } else {
-      // if left and right are "simple", just get it.
-      if (right.isSimpleType()) {
+      // if right is a constant, just get it.
+      if (right.isConstant()) {
         ConstNode<?> simpleRight = (ConstNode<?>) right;
         rightSrc = new ConstantOperand(simpleRight.value(), simpleRight.varType());
       } else {

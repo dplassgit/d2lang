@@ -873,7 +873,7 @@ public class ParserTest {
     assertThat(call.procName()).isEqualTo("doit");
     assertThat(call.actuals()).hasSize(1);
     ExprNode param = call.actuals().get(0);
-    assertThat(param.isSimpleType()).isTrue();
+    assertThat(param.isConstant()).isTrue();
   }
 
   @Test

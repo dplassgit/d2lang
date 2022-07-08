@@ -16,9 +16,9 @@ abstract class AbstractNode implements Node {
     this.position = position;
   }
 
-  // Indicates it's a simple type - constant or variable.
+  // Indicates it's a simple type - constant
   @Override
-  public boolean isSimpleType() {
+  public boolean isConstant() {
     return false;
   }
 

@@ -15,7 +15,7 @@ public class ConstNode<T> extends AbstractNode implements SimpleNode {
   }
 
   @Override
-  public boolean isSimpleType() {
+  public boolean isConstant() {
     return true;
   }
 

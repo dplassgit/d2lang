@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.CallNode;
+import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
@@ -272,12 +273,21 @@ public class StaticChecker extends DefaultVisitor implements Phase {
             asn.setVarType(symbol.varType());
 
             // 2. index must be int
-            asn.indexNode().accept(StaticChecker.this);
-            VarType indexType = asn.indexNode().varType();
+            ExprNode indexNode = asn.indexNode();
+            indexNode.accept(StaticChecker.this);
+            VarType indexType = indexNode.varType();
             if (indexType != VarType.INT) {
               throw new TypeException(
                   String.format("ARRAY index must be INT; was %s", indexType),
-                  asn.indexNode().position());
+                  indexNode.position());
+            }
+            if (indexNode.isConstant()) {
+              ConstNode<Integer> index = (ConstNode<Integer>) indexNode;
+              if (index.value() < 0) {
+                throw new TypeException(
+                    String.format("ARRAY index must be non-negative; was %d", index.value()),
+                    indexNode.position());
+              }
             }
 
             ArrayType arrayType = (ArrayType) symbol.varType();
@@ -655,12 +665,20 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     arraySizeExpr.accept(this);
     if (arraySizeExpr.varType().isUnknown()) {
       throw new TypeException(
-          "Indeterminable type for array size; must be INT", arraySizeExpr.position());
+          "Indeterminable type for ARRAY size; must be INT", arraySizeExpr.position());
     }
     if (arraySizeExpr.varType() != VarType.INT) {
       throw new TypeException(
-          String.format("Array size must be INT; was %s", arraySizeExpr.varType()),
+          String.format("ARRAY size must be INT; was %s", arraySizeExpr.varType()),
           arraySizeExpr.position());
+    }
+    if (arraySizeExpr.isConstant()) {
+      ConstNode<Integer> size = (ConstNode<Integer>) arraySizeExpr;
+      if (size.value() <= 0) {
+        throw new TypeException(
+            String.format("ARRAY size must be positive; was %d", size.value()),
+            arraySizeExpr.position());
+      }
     }
 
     // declaring the array actually assigns it.

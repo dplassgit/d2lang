@@ -269,14 +269,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declAssignMismatch() {
+  public void assignAfterDeclMismatch() {
     assertError("a:int b=true a=b", "declared as INT");
     assertError("a:bool b=a b=3", "used before assignment");
     assertError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
-  public void declArray() {
+  public void arrayDecl() {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
@@ -285,14 +285,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declArrayMismatch() {
-    assertError("a:int[b]", "Indeterminable type for array size; must be INT");
-    assertError("a:int[false]", "Array size must be INT; was BOOL");
-    assertError("a:int['hi']", "Array size must be INT; was STRING");
-    assertError("a:string['hi']", "Array size must be INT; was STRING");
-    assertError("b:proc() {} a:string[b()]", "Array size must be INT; was VOID");
-    // this fails in an unexpected way ("used before assignment")
-    // assertExecuteError("b:proc() {} a:string[b]", "Array size must be INT; was PROC");
+  public void arrayDeclMismatch() {
+    assertError("a:int[b]", "Indeterminable type for ARRAY size; must be INT");
+    assertError("a:int[false]", "ARRAY size must be INT; was BOOL");
+    assertError("a:int['hi']", "ARRAY size must be INT; was STRING");
+    assertError("a:string['hi']", "ARRAY size must be INT; was STRING");
+    assertError("b:proc():string {return ''} a:string[b()]", "ARRAY size must be INT; was STRING");
+    // this fails in an unexpected way but at least it fails.
+    assertError("b:proc() {} a:string[b]", "Variable 'b' used before assignment");
   }
 
   @Test
@@ -302,19 +302,18 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void goodBooleanBinOp(
-      @TestParameter({"==", "or", "and", "<", ">", "<=", ">="}) String op) {
+  public void boolBinOp(@TestParameter({"==", "or", "and", "<", ">", "<=", ">="}) String op) {
     checkProgram(String.format("a=true %s false", op));
   }
 
   @Test
-  public void badBooleanBinOp(@TestParameter({"+", "-", "*", "/"}) String op) {
+  public void boolBinOpBad(@TestParameter({"+", "-", "*", "/"}) String op) {
     assertError(String.format("a=true %s false", op), "Cannot apply");
     assertError(String.format("a=true %s 3", op), "Cannot apply");
   }
 
   @Test
-  public void badBooleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
+  public void booleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
     assertError(String.format("a=true %s 3", c), "Cannot apply");
   }
 
@@ -361,7 +360,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayIndex_error() {
+  public void arrayIndexMismatch() {
     assertError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
@@ -386,7 +385,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayOperators_errors(@TestParameter({"+", "-", "/", "%"}) String c) {
+  public void arrayOperatorErrors(@TestParameter({"+", "-", "/", "%"}) String c) {
     assertError(String.format("a1 = [1,2,3] %s [2,3,4]", c), "operator to ARRAY expression");
   }
 
@@ -396,6 +395,13 @@ public class StaticCheckerTest {
     assertThat(symTab.get("a").varType().isArray()).isTrue();
 
     checkProgram("b=3 a:int[1] a[b+1]=1");
+  }
+
+  @Test
+  public void arrayDeclError() {
+    assertError("a:int[0]", "must be positive; was 0");
+    assertError("a:int[-1]", "must be positive; was -1");
+    assertError("a:int[true]", "must be INT; was BOOL");
   }
 
   @Test
@@ -413,7 +419,9 @@ public class StaticCheckerTest {
     assertError("a:int[1] a[true]=1", "ARRAY index must be INT");
     assertError("b='hi' a:int[1] a[b]=1", "ARRAY index must be INT");
     assertError("b=true a:int[1] a[b]=1", "ARRAY index must be INT");
+    assertError("a:int[1] a[-1]=1", "ARRAY index must be non-negative; was -1");
   }
+
   @Test
   public void stringIndex_error() {
     assertError("b='hi' a=b['bye']", "STRING index must be INT");

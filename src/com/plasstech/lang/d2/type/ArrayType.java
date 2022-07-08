@@ -34,12 +34,7 @@ public class ArrayType implements VarType {
 
   @Override
   public boolean compatibleWith(VarType thatType) {
-    if (!(thatType instanceof ArrayType)) {
-      return false;
-    }
-    ArrayType that = (ArrayType) thatType;
-    /** also compare dimensions */
-    return this.baseType().compatibleWith(that.baseType());
+    return this.equals(thatType);
   }
 
   @Override
@@ -48,7 +43,7 @@ public class ArrayType implements VarType {
       return false;
     }
     ArrayType that = (ArrayType) thatObject;
-    return this.baseType.equals(that.baseType);
+    return this.dimensions() == that.dimensions() && this.baseType.equals(that.baseType);
   }
   
   @Override

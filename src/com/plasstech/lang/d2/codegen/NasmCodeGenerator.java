@@ -184,7 +184,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand indexLoc = op.index();
     ArrayType arrayType = op.arrayType();
 
-    // TODO: get dimension size using arrayLoc
     // TODO: check dimension size against index
 
     // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
