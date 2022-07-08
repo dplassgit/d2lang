@@ -76,10 +76,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.LEQ, "setle") // for both intand boolean
           .build();
 
-  private static final String ARRAY_INDEX_ERR =
-      "ARRAY_INDEX_ERR: db \"ARRAY index must be non-negative, was %d\", 10, 0";
+  private static final String ARRAY_INDEX_NEGATIVE_ERR =
+      "ARRAY_INDEX_NEGATIVE_ERR: db \"ARRAY index must be non-negative; was %d\", 10, 0";
+  private static final String ARRAY_INDEX_OOB_ERR =
+      "ARRAY_INDEX_OOB_ERR: db \"ARRAY index out of bounds (length %d); was %d\", 10, 0";
   private static final String ARRAY_SIZE_ERR =
-      "ARRAY_SIZE_ERR: db \"ARRAY size must be positive, was %d\", 10, 0";
+      "ARRAY_SIZE_ERR: db \"ARRAY size must be positive; was %d\", 10, 0";
   private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
   private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
   private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
@@ -140,8 +142,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("main:");
     try {
       for (Op opcode : code) {
-        emit0("\n  ; %s", opcode.toString());
+        emit0("\n  ; START %s", opcode.toString());
         opcode.accept(this);
+        emit("; END %s", opcode.toString());
       }
     } catch (D2RuntimeException e) {
       ImmutableList<String> allCode =
@@ -174,7 +177,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Label op) {
-    emit0("__%s:", op.label());
+    emit0("\n__%s:", op.label());
   }
 
   @Override
@@ -236,34 +239,95 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             String.format("ARRAY index must be non-negative; was %d", index), null, "Type");
       }
 
+      if (index > 0) {
+        // fun fact, we never have to calculate this for index 0, because all arrays
+        // are at least size 1.
+        // 1. get size from arrayloc
+        emit0("\n  ; make sure index is < length");
+        emit("mov %s, %s  ; get base of array", fullIndex, arrayLoc);
+        emit("inc %s  ; skip past # dimensions", fullIndex);
+        // this gets the size in the register
+        emit("mov %s, [%s]  ; get array length", fullIndex, fullIndex);
+        // 2. compare - NOTE SWAPPED ARGS
+        emit("cmp %s, %s  ; check length > index (SIC)", fullIndex.name32, index);
+        // 3. if good, continue
+        String continueLabel = "_continue" + id++;
+        emit("jg __%s", continueLabel);
+
+        emit0("\n  ; no good. print error and stop");
+        data.add(ARRAY_INDEX_OOB_ERR);
+        emit("mov DWORD %s, %s", R8.name32, index);
+        if (fullIndex == RDX) {
+          emit("; index already in RDX");
+        } else {
+          emit("mov RDX, %s", fullIndex);
+        }
+        emit("mov RCX, ARRAY_INDEX_OOB_ERR");
+        generatePrintf();
+        visit(new Stop(-1));
+
+        visit(new Label(continueLabel));
+      } else {
+        emit("; don't have to check if index of 0 is within bounds. :)");
+      }
+
       // index is always a dword/int because I said so.
       emit(
           "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
           fullIndex, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
     } else {
-      // index is always a dword/int because I said so.
-      emit("; calculate index*base size+1+dims*4");
       String indexName = resolve(indexLoc);
 
       // TODO: make this an asm function instead of inlining each time?
+      emit("; make sure index is >= 0");
       // Validate index part 1
       emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
-      String goodLabel = "_good" + id++;
-      emit("jge __%s", goodLabel);
-      data.add(ARRAY_INDEX_ERR);
-      emit("mov EDX, %s", fullIndex.name32);
-      emit("mov RCX, ARRAY_INDEX_ERR");
+      String continueLabel = "_continue" + id++;
+      emit("jge __%s", continueLabel);
+
+      // print error and stop.
+      emit0("\n  ; no good. print error and stop");
+      data.add(ARRAY_INDEX_NEGATIVE_ERR);
+      if (fullIndex == RDX) {
+        emit("; index already in RDX");
+      } else {
+        emit("mov EDX, %s", fullIndex.name32);
+      }
+      emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
       generatePrintf();
       visit(new Stop(-1));
 
-      visit(new Label(goodLabel));
+      visit(new Label(continueLabel));
 
-      // TODO: check index against dimension size
       // 1. get size from arrayloc
+      emit0("\n  ; make sure index is < length");
+      emit("mov %s, %s  ; get base of array", fullIndex, arrayLoc);
+      emit("inc %s  ; skip past # dimensions", fullIndex);
+      // this gets the size in the register
+      emit("mov %s, [%s]  ; get array length", fullIndex, fullIndex);
       // 2. compare
-      // 3. as above
+      emit("cmp DWORD %s, %s  ; check index is < length", indexName, fullIndex.name32);
+      // 3. if good, continue
+      continueLabel = "_continue" + id++;
+      emit("jl __%s", continueLabel);
 
+      emit0("\n  ; no good. print error and stop");
+      data.add(ARRAY_INDEX_OOB_ERR);
+      emit("mov DWORD %s, %s", R8.name32, indexName);
+      if (fullIndex == RDX) {
+        emit("; index already in RDX");
+      } else {
+        emit("mov RDX, %s", fullIndex);
+      }
+      emit("mov RCX, ARRAY_INDEX_OOB_ERR");
+      generatePrintf();
+      visit(new Stop(-1));
+
+      visit(new Label(continueLabel));
+
+      emit0("\n  ; calculate index*base size+1+dims*4");
+      // index is always a dword/int because I said so.
       emit("mov DWORD %s, %s  ; index...", fullIndex.name32, indexName);
       emit("imul %s, %s  ; ...*base size ...", fullIndex, arrayType.baseType().size());
       emit("add %s, %d  ; ... +1+dims*4", fullIndex, 1 + arrayType.dimensions() * 4);
@@ -340,6 +404,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
     Register allocSizeBytesRegister = Register.RDX;
+    emit("; allocated RDX (hard-coded) for calculations");
     int dimensions = op.arrayType().dimensions();
     int entrySize = op.arrayType().baseType().size();
     if (numEntriesLoc.isConstant()) {
@@ -360,15 +425,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // Validate array size is positive.
       emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
       // Note, three underscores
-      String goodLabel = "_good" + id++;
-      emit("jge __%s", goodLabel);
+      String continueLabel = "_continue" + id++;
+      emit("jge __%s", continueLabel);
       data.add(ARRAY_SIZE_ERR);
-      emit("mov EDX, %s", allocSizeBytesRegister.name32);
+      if (allocSizeBytesRegister == RDX) {
+        emit("; RDX already has requested (invalid) size");
+      } else {
+        emit("mov EDX, %s", allocSizeBytesRegister.name32);
+      }
       emit("mov RCX, ARRAY_SIZE_ERR");
       generatePrintf();
       visit(new Stop(-1));
 
-      visit(new Label(goodLabel));
+      visit(new Label(continueLabel));
       emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
 
       if (entrySize > 1) {

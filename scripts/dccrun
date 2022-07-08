@@ -1,1 +1,1 @@
-./scripts/dcc $1 $@ && [[ -f d2out.exe ]] && ./d2out.exe
+./scripts/dcc $1 --save-temps $@ && [[ -f d2out.exe ]] && ./d2out.exe

@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -139,14 +140,16 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   @Ignore
   public void arrayAllocLengthNegative_error() throws Exception {
-    // If optimized, the proc may be inlined and it will degenerate to the previous test.
+    // If optimized, the proc or constant and it will degenerate to the previous test.
     assumeFalse(optimize);
-    execute("x:string[size()] size: proc():int{return -3}", "must_be_positive");
+    assertRuntimeError("s=-3 x:string[s]", "ARRAY size must be positive");
+    assertRuntimeError(
+        "x:string[size()] size: proc():int{return -3}", "ARRAY size must be positive");
   }
 
-  //  private void assertRuntimeError(String sourceCdoe, String error) {
-  //    fail("Not implemented");
-  //  }
+  private void assertRuntimeError(String sourceCdoe, String error) {
+    assertThat(error).isEqualTo("Not implemented");
+  }
 
   @Test
   public void arraySetIndexConstNegative_error() throws Exception {

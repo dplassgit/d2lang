@@ -6,8 +6,7 @@ data[3]="s"
 data[4]="o"
 
 len=length(data)
+println "Should print azdso"
 i = 0 while i < len do i = i + 1 {
-  print "data[" 
-  print i
-  println "]='" + data[i] + "'"
+  print data[i]
 }
