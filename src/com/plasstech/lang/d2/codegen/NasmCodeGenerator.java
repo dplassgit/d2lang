@@ -260,7 +260,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         if (fullIndex == RDX) {
           emit("; index already in RDX");
         } else {
-          emit("mov RDX, %s", fullIndex);
+          emit("mov EDX, %s", fullIndex.name32);
         }
         emit("mov RCX, ARRAY_INDEX_OOB_ERR");
         generatePrintf();
@@ -287,12 +287,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("jge __%s", continueLabel);
 
       // print error and stop.
-      emit0("\n  ; no good. print error and stop");
+      emit0("\n  ; negative. no good. print error and stop");
       data.add(ARRAY_INDEX_NEGATIVE_ERR);
       if (fullIndex == RDX) {
         emit("; index already in RDX");
       } else {
-        emit("mov EDX, %s", fullIndex.name32);
+        emit("mov DWORD EDX, %s", indexName);
       }
       emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
       generatePrintf();
@@ -428,11 +428,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String continueLabel = "_continue" + id++;
       emit("jge __%s", continueLabel);
       data.add(ARRAY_SIZE_ERR);
-      if (allocSizeBytesRegister == RDX) {
-        emit("; RDX already has requested (invalid) size");
-      } else {
-        emit("mov EDX, %s", allocSizeBytesRegister.name32);
-      }
+      emit("mov DWORD EDX, %s", numEntriesLocName);
       emit("mov RCX, ARRAY_SIZE_ERR");
       generatePrintf();
       visit(new Stop(-1));
@@ -498,7 +494,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String argVal = resolve(arg);
         if (arg.type() == VarType.INT) {
           // move with sign extend. intentionally set rdx first, in case the arg is in ecx
-
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
           data.add(PRINTF_NUMBER_FMT);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");

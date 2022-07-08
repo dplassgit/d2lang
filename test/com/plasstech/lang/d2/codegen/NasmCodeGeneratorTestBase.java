@@ -156,4 +156,75 @@ public class NasmCodeGeneratorTestBase {
     assertThat(state.error()).isTrue();
     assertThat(state.errorMessage()).contains(error);
   }
+
+  public void assertRuntimeError(String sourceCode, String filename, String error)
+      throws Exception {
+    filename = filename + "_opt_" + String.valueOf(optimize);
+
+    State state = State.create(sourceCode).build();
+    Lexer lexer = new Lexer(state.sourceCode());
+    Parser parser = new Parser(lexer);
+    state = parser.execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
+    if (optimize) {
+      // Runs all the optimizers.
+      ILOptimizer optimizer = new ILOptimizer();
+      state = optimizer.execute(state);
+    }
+
+    state = new NasmCodeGenerator().execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+    state = state.addFilename(filename);
+
+    state = new NasmCodeGenerator().execute(state);
+    String asmCode = Joiner.on('\n').join(state.asmCode());
+    System.err.println(asmCode);
+
+    File file = new File(dir, filename + ".asm");
+    if (file.exists()) {
+      file.delete();
+    }
+    file.createNewFile();
+
+    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
+    CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
+    charSink.writeLines(state.asmCode());
+
+    ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
+    pb.directory(dir);
+    Process process = pb.start();
+    process.waitFor();
+    assertNoProcessError(process, "nasm", 0);
+
+    File obj = new File(dir, filename + ".obj");
+    File exe = new File(dir, filename);
+    pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
+    pb.directory(dir);
+    process = pb.start();
+    process.waitFor();
+    assertNoProcessError(process, "Linking", 0);
+
+    pb = new ProcessBuilder(exe.getAbsolutePath());
+    pb.directory(dir);
+    process = pb.start();
+    process.waitFor();
+    InputStream stream = process.getInputStream();
+    assertNoProcessError(process, "Executable", -1);
+
+    String compiledOutput = new String(ByteStreams.toByteArray(stream));
+    assertThat(compiledOutput).contains(error);
+  }
 }
