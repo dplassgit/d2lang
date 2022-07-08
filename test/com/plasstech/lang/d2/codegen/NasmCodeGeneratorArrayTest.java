@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import static org.junit.Assume.assumeTrue;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -121,6 +123,33 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayLengthLocalSize() throws Exception {
     execute("f:proc() {size=3 x:string[size] print length(x)} f()", "arrayLengthLocalSize");
+  }
+
+  @Test
+  public void arrayLengthNegative_error() throws Exception {
+    // If it's not optimized, the size constant won't be propagated.
+    assumeTrue(optimize);
+    assertGenerateError(
+        "f:proc() {size=-3 x:string[size] print length(x)} f()", "must be positive; was -3");
+    assertGenerateError(
+        "f:proc() {size=-3 x:string[size-size] print length(x)} f()", "must be positive; was 0");
+  }
+
+  @Test
+  public void arraySetIndexNegative_error() throws Exception {
+    // If it's not optimized, the size constant won't be propagated.
+    assumeTrue(optimize);
+    assertGenerateError(
+        "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "must be non-negative; was -3");
+  }
+
+  @Test
+  public void arrayGetIndexNegative_error() throws Exception {
+    // If it's not optimized, the size constant won't be propagated.
+    assumeTrue(optimize);
+    assertGenerateError(
+        "f:proc() {y=-3 x:string[1] print x[y]} f()", "must be non-negative; was -3");
   }
 
   @Test

@@ -463,6 +463,14 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         throw new TypeException(
             String.format("STRING index must be INT; was %s", right.varType()), right.position());
       }
+      if (right.isConstant()) {
+        ConstNode<Integer> index = (ConstNode<Integer>) right;
+        if (index.value() < 0) {
+          throw new TypeException(
+              String.format("STRING index must be non-negative; was %d", index.value()),
+              right.position());
+        }
+      }
       node.setVarType(VarType.STRING);
       // NOTE RETURN
       return;
@@ -472,6 +480,15 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         throw new TypeException(
             String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
       }
+      if (right.isConstant()) {
+        ConstNode<Integer> index = (ConstNode<Integer>) right;
+        if (index.value() < 0) {
+          throw new TypeException(
+              String.format("ARRAY index must be non-negative; was %d", index.value()),
+              right.position());
+        }
+      }
+
       // I hate this.
       ArrayType arrayType = (ArrayType) left.varType();
       node.setVarType(arrayType.baseType());

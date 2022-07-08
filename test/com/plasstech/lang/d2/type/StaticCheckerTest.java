@@ -415,11 +415,18 @@ public class StaticCheckerTest {
 
   @Test
   public void arraySetIndexError() {
-    assertError("a:int[1] a['hi']=1", "ARRAY index must be INT");
-    assertError("a:int[1] a[true]=1", "ARRAY index must be INT");
-    assertError("b='hi' a:int[1] a[b]=1", "ARRAY index must be INT");
-    assertError("b=true a:int[1] a[b]=1", "ARRAY index must be INT");
+    assertError("a:int[1] a['hi']=1", "ARRAY index must be INT; was STRING");
+    assertError("a:int[1] a[true]=1", "ARRAY index must be INT; was BOOL");
+    assertError("b='hi' a:int[1] a[b]=1", "ARRAY index must be INT; was STRING");
+    assertError("b=true a:int[1] a[b]=1", "ARRAY index must be INT; was BOOL");
     assertError("a:int[1] a[-1]=1", "ARRAY index must be non-negative; was -1");
+  }
+
+  @Test
+  public void arrayGetIndexError() {
+    assertError("a:int[1] print a['hi']", "ARRAY index must be INT; was STRING");
+    assertError("a:int[1] print a[true]", "ARRAY index must be INT; was BOOL");
+    assertError("a:int[1] print a[-1]", "ARRAY index must be non-negative; was -1");
   }
 
   @Test
@@ -427,6 +434,7 @@ public class StaticCheckerTest {
     assertError("b='hi' a=b['bye']", "STRING index must be INT");
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
+    assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
     assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
   }
 

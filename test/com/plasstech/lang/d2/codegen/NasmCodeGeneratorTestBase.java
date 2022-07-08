@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -17,8 +18,13 @@ import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
+import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.optimize.ILOptimizer;
+import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.StaticChecker;
 
 public class NasmCodeGeneratorTestBase {
   private static File dir;
@@ -118,5 +124,36 @@ public class NasmCodeGeneratorTestBase {
           .that(process.exitValue())
           .isEqualTo(0);
     }
+  }
+
+  protected void assertGenerateError(String sourceCode, String error) {
+    State state = State.create(sourceCode).build();
+    Lexer lexer = new Lexer(state.sourceCode());
+    Parser parser = new Parser(lexer);
+    state = parser.execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
+    if (optimize) {
+      // Runs all the optimizers.
+      ILOptimizer optimizer = new ILOptimizer();
+      state = optimizer.execute(state);
+    }
+
+    System.err.println(
+        String.join(
+            "\n", state.lastIlCode().stream().map(Op::toString).collect(toImmutableList())));
+    state = new NasmCodeGenerator().execute(state);
+    assertThat(state.error()).isTrue();
+    assertThat(state.errorMessage()).contains(error);
   }
 }

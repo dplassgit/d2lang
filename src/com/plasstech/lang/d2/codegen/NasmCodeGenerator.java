@@ -224,6 +224,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // if index is constant, can skip some of this calculation.
       ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
       int index = indexConst.value();
+      if (index < 0) {
+        throw new D2RuntimeException(
+            String.format("ARRAY index must be non-negative; was %d", index), null, "Type");
+      }
+
       // index is always a dword/int because I said so.
       emit(
           "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
@@ -313,6 +318,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // if numEntriesLocName is a constant, pre-calculate storage requireds.
       ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
       int numEntries = numEntriesOp.value();
+      if (numEntries <= 0) {
+        throw new D2RuntimeException(
+            String.format("ARRAY size must be positive; was %d", numEntries), null, "Type");
+      }
       emit(
           "mov %s, %s  ; storage for # dimensions (1), dimension values (%d), actual storage (%d)",
           allocSizeBytesRegister,
