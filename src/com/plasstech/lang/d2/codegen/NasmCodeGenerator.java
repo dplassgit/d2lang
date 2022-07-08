@@ -190,16 +190,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    Operand indexLoc = op.index();
     ArrayType arrayType = op.arrayType();
+    String baseTypeSize = Size.of(arrayType.baseType()).asmName;
 
-    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
-    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolve(op.array()));
-
+    Register sourceReg = null;
     Operand sourceLoc = op.source();
     String sourceName = resolve(sourceLoc);
-    Register sourceReg = null;
-    String baseTypeSize = Size.of(arrayType.baseType()).asmName;
     if (!(isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
       sourceReg = registers.allocate();
@@ -208,6 +204,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
       sourceName = sourceRegisterSized;
     }
+
+    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
+    Operand indexLoc = op.index();
+    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolve(op.array()));
     emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
     if (sourceReg != null) {
       emit("; deallocating %s", sourceReg);
@@ -260,6 +260,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       visit(new Label(goodLabel));
 
       // TODO: check index against dimension size
+      // 1. get size from arrayloc
+      // 2. compare
+      // 3. as above
 
       emit("mov DWORD %s, %s  ; index...", fullIndex.name32, indexName);
       emit("imul %s, %s  ; ...*base size ...", fullIndex, arrayType.baseType().size());
@@ -704,8 +707,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       switch (operator) {
         case LBRACKET:
           ArrayType arrayType = (ArrayType) leftType;
-          generateArrayGet(arrayType, destName, leftName, op.right());
+          // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
+          Register fullIndex = generateArrayIndex(op.right(), arrayType, leftName);
+          emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, fullIndex);
+          registers.deallocate(fullIndex);
+          emit("; deallocating %s", fullIndex);
           break;
+
         default:
           fail("Cannot do %s on %ss yet", operator, leftType);
           break;
@@ -718,21 +726,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     deallocate(op.left());
     deallocate(op.right());
-  }
-
-  private void generateArrayGet(
-      ArrayType arrayType, String destName, String arrayLoc, Operand indexLoc) {
-
-    // TODO: get dimension size using arrayLoc
-    // TODO: check dimension size against index
-
-    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
-    Register fullIndex = generateArrayIndex(indexLoc, arrayType, arrayLoc);
-
-    emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, fullIndex);
-
-    registers.deallocate(fullIndex);
-    emit("; deallocating %s", fullIndex);
   }
 
   private void generateStringCompare(
