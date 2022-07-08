@@ -55,16 +55,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
 
-  private final List<String> prelude = new ArrayList<>();
-  private final Set<String> externs = new HashSet<>();
-  private final Set<String> data = new TreeSet<>();
-  private final Registers registers = new Registers();
-  // map from name to register
-  private final BiMap<String, Register> aliases = HashBiMap.create(16);
-
-  private StringTable stringTable;
-
-  private Map<TokenType, String> BINARY_OPCODE =
+  private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.PLUS, "add")
           .put(TokenType.MINUS, "sub")
@@ -85,7 +76,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.LEQ, "setle") // for both intand boolean
           .build();
 
-  private Emitter emitter = new ListEmitter();
+  private static final String ARRAY_INDEX_ERR =
+      "ARRAY_INDEX_ERR: db \"ARRAY index must be non-negative, was %d\", 10, 0";
+  private static final String ARRAY_SIZE_ERR =
+      "ARRAY_SIZE_ERR: db \"ARRAY size must be positive, was %d\", 10, 0";
+  private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
+  private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
+  private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
+  private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
+
+  private final List<String> prelude = new ArrayList<>();
+  private final Set<String> externs = new HashSet<>();
+  private final Set<String> data = new TreeSet<>();
+  private final Registers registers = new Registers();
+  // map from name to register
+  private final BiMap<String, Register> aliases = HashBiMap.create(16);
+  private final Emitter emitter = new ListEmitter();
+
+  private int id;
+  private StringTable stringTable;
 
   @Override
   public State execute(State input) {
@@ -103,7 +112,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String.format("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
 
     prelude.add("global main\n"); // required
-    externs.add("extern exit"); // required
+    externs.add("exit"); // required
 
     // Probably what we should do is:
     // 1. emit all globals OK
@@ -115,16 +124,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       if (symbol.storage() == SymbolStorage.GLOBAL) {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
         if (symbol.varType() == VarType.INT) {
-          data.add(String.format("  __%s: dd 0", entry.getKey()));
+          data.add(String.format("__%s: dd 0", entry.getKey()));
         } else if (symbol.varType() == VarType.BOOL) {
-          data.add(String.format("  __%s: db 0", entry.getKey()));
+          data.add(String.format("__%s: db 0", entry.getKey()));
         } else if (symbol.varType() == VarType.STRING || symbol.varType().isArray()) {
-          data.add(String.format("  __%s: dq 0", entry.getKey()));
+          data.add(String.format("__%s: dq 0", entry.getKey()));
         }
       }
     }
     for (StringEntry entry : stringTable.orderedEntries()) {
-      data.add("  " + entry.dataEntry());
+      data.add(entry.dataEntry());
     }
 
     // TODO: convert command-line arguments to ??? and send to __main
@@ -140,9 +149,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               .add("PARTIAL ASSEMBLY\n\n")
               .add("================\n\n")
               .addAll(prelude)
-              .addAll(externs)
+              .addAll(externs.stream().map(s -> "extern " + s).iterator())
               .add("\nsection .data")
-              .addAll(data)
+              .addAll(data.stream().map(s -> "  " + s).iterator())
               .add("\nsection .text")
               .addAll(emitter.all())
               .build();
@@ -153,9 +162,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     ImmutableList<String> allCode =
         ImmutableList.<String>builder()
             .addAll(prelude)
-            .addAll(externs)
+            .addAll(externs.stream().map(s -> "extern " + s).iterator())
             .add("\nsection .data")
-            .addAll(data)
+            .addAll(data.stream().map(s -> "  " + s).iterator())
             .add("\nsection .text")
             .addAll(emitter.all())
             .build();
@@ -183,8 +192,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(ArraySet op) {
     Operand indexLoc = op.index();
     ArrayType arrayType = op.arrayType();
-
-    // TODO: check dimension size against index
 
     // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
     Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolve(op.array()));
@@ -236,7 +243,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       // index is always a dword/int because I said so.
       emit("; calculate index*base size+1+dims*4");
-      emit("mov DWORD %s, %s  ; index...", fullIndex.name32, resolve(indexLoc));
+      String indexName = resolve(indexLoc);
+
+      // TODO: make this an asm function instead of inlining each time?
+      // Validate index part 1
+      emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
+      // Note, three underscores
+      String goodLabel = "_good" + id++;
+      emit("jge __%s", goodLabel);
+      data.add(ARRAY_INDEX_ERR);
+      emit("mov EDX, %s", fullIndex.name32);
+      emit("mov RCX, ARRAY_INDEX_ERR");
+      generatePrintf();
+      visit(new Stop(-1));
+
+      visit(new Label(goodLabel));
+
+      // TODO: check index against dimension size
+
+      emit("mov DWORD %s, %s  ; index...", fullIndex.name32, indexName);
       emit("imul %s, %s  ; ...*base size ...", fullIndex, arrayType.baseType().size());
       emit("add %s, %d  ; ... +1+dims*4", fullIndex, 1 + arrayType.dimensions() * 4);
     }
@@ -329,7 +354,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           4 * dimensions,
           numEntries * entrySize);
     } else {
+      // Validate array size is positive.
+      emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
+      // Note, three underscores
+      String goodLabel = "_good" + id++;
+      emit("jge __%s", goodLabel);
+      data.add(ARRAY_SIZE_ERR);
+      emit("mov EDX, %s", allocSizeBytesRegister.name32);
+      emit("mov RCX, ARRAY_SIZE_ERR");
+      generatePrintf();
+      visit(new Stop(-1));
+
+      visit(new Label(goodLabel));
       emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
+
       if (entrySize > 1) {
         emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
       }
@@ -339,10 +377,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     emit("mov RCX, 1  ; # of 'entries' for calloc");
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern calloc");
-    emit("call calloc; calloc(%s)", allocSizeBytesRegister.name32);
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("calloc");
     String dest = resolve(op.destination());
     emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
@@ -367,6 +402,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     deallocate(op.sizeLocation());
   }
 
+  /** Generates code to print whatever is in RCX and/or RDX etc. */
+  private void generatePrintf() {
+    generateSyscall("printf");
+  }
+
+  private void generateSyscall(String name) {
+    emit("sub RSP, 0x20");
+    externs.add(name);
+    emit("call %s", name);
+    emit("add RSP, 0x20");
+  }
+
   @Override
   public void visit(SysCall op) {
     Operand arg = op.arg();
@@ -381,34 +428,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // move with sign extend. intentionally set rdx first, in case the arg is in ecx
 
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
-          data.add("  PRINTF_NUMBER_FMT: db \"%d\", 0");
+          data.add(PRINTF_NUMBER_FMT);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
-          emit("sub RSP, 0x20  ; Reserve the shadow space");
-          externs.add("extern printf");
-          emit("call printf    ; printf(message)");
-          emit("add RSP, 0x20  ; Remove shadow space");
+          generatePrintf();
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
-            data.add("  CONST_TRUE: db \"true\", 0");
+            data.add(CONST_TRUE);
             emit("mov RCX, CONST_TRUE");
           } else if (argVal.equals("0")) {
-            data.add("  CONST_FALSE: db \"false\", 0");
+            data.add(CONST_FALSE);
             emit("mov RCX, CONST_FALSE");
           } else {
             // translate dynamically from 0/1 to false/true
             // Intentionally do the comp first, in case the arg is in dl or cl
             emit("cmp BYTE %s, 1", argVal);
-            data.add("  CONST_FALSE: db \"false\", 0");
+            data.add(CONST_FALSE);
             emit("mov RCX, CONST_FALSE");
-            data.add("  CONST_TRUE: db \"true\", 0");
+            data.add(CONST_TRUE);
             emit("mov RDX, CONST_TRUE");
             // Conditional move
             emit("cmovz RCX, RDX");
           }
-          emit("sub RSP, 0x20  ; Reserve the shadow space");
-          externs.add("extern printf");
-          emit("call printf    ; printf(%s)", argVal);
-          emit("add RSP, 0x20  ; Remove shadow space");
+          generatePrintf();
         } else if (arg.type() == VarType.STRING) {
           // String
           if (op.call() == SysCall.Call.MESSAGE) {
@@ -417,16 +458,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               // arg is not in rdx yet
               emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
             }
-            data.add("  EXIT_MSG: db \"ERROR: %s\", 0");
+            data.add(EXIT_MSG);
             emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
           } else if (!isInRegister(arg, RCX)) {
             // arg is not in rcx yet
             emit("mov RCX, %s  ; String to print", argVal);
           }
-          emit("sub RSP, 0x20  ; Reserve the shadow space");
-          externs.add("extern printf");
-          emit("call printf    ; printf(%s)", argVal);
-          emit("add RSP, 0x20  ; Remove shadow space");
+          generatePrintf();
         } else {
           fail("Cannot print %s yet", arg);
         }
@@ -724,10 +762,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov RDX, %s  ; Address of right string", resolve(right));
       }
     }
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern strcmp");
-    emit("call strcmp");
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("strcmp");
     emit("cmp RAX, 0");
     emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
     state.condPop();
@@ -736,11 +771,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private void generateStringIndex(String leftName, String rightName, String destName) {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     // 1. allocate a new 2-char string
+
     emit("mov RCX, 2");
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern malloc");
-    emit("call malloc  ; malloc(2)");
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("malloc");
     registerState.condPop();
     // 2. copy the location to the dest
     emit("mov %s, RAX  ; destination from rax", destName);
@@ -791,10 +824,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     emit("mov ECX, %s", leftLengthReg.name32);
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern malloc");
-    emit("call malloc  ; malloc(%s)", leftLengthReg.name32);
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("malloc");
     emit("; deallocating leftlength %s", leftLengthReg);
     registers.deallocate(leftLengthReg);
     // 4. put string into dest
@@ -820,10 +850,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov RCX, %s", dest);
       emit("mov RDX, %s", left);
     }
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern strcpy");
-    emit("call strcpy");
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("strcpy");
     registerState.condPop();
 
     // 6. strcat dest, right
@@ -843,10 +870,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov RCX, %s", dest);
       emit("mov RDX, %s", right);
     }
-    externs.add("extern strcat");
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    emit("call strcat");
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("strcat");
     registerState.condPop();
   }
 
@@ -998,10 +1022,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       emit("mov RCX, %s  ; Address of string", sourceName);
     }
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern strlen");
-    emit("call strlen    ; strlen(%s)", sourceName);
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("strlen");
     registerState.condPop();
 
     if (isInRegister(destination, RCX)) {
@@ -1032,10 +1053,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // 1. allocate a new 2-char string
     emit("mov RCX, 2");
-    emit("sub RSP, 0x20  ; Reserve the shadow space");
-    externs.add("extern malloc");
-    emit("call malloc  ; malloc(2)");
-    emit("add RSP, 0x20  ; Remove shadow space");
+    generateSyscall("malloc");
     registerState.condPop();
     // 2. set destName to allocated string
     if (!destName.equals(RAX.name64)) {
@@ -1139,7 +1157,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String actualLocation = resolve(actual);
       Size size = Size.of(actual.type());
       emit("mov %s %s, %s", size, formalLocation, actualLocation);
-      // is this right?!
       deallocate(actual);
     }
     emit("call __%s", op.procName());

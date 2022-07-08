@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import org.junit.Ignore;
@@ -126,7 +127,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void arrayLengthNegative_error() throws Exception {
+  public void arrayAllocConstLengthNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
     assumeTrue(optimize);
     assertGenerateError(
@@ -136,7 +137,19 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void arraySetIndexNegative_error() throws Exception {
+  @Ignore
+  public void arrayAllocLengthNegative_error() throws Exception {
+    // If optimized, the proc may be inlined and it will degenerate to the previous test.
+    assumeFalse(optimize);
+    execute("x:string[size()] size: proc():int{return -3}", "must_be_positive");
+  }
+
+  //  private void assertRuntimeError(String sourceCdoe, String error) {
+  //    fail("Not implemented");
+  //  }
+
+  @Test
+  public void arraySetIndexConstNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
     assumeTrue(optimize);
     assertGenerateError(
@@ -145,7 +158,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void arrayGetIndexNegative_error() throws Exception {
+  public void arrayGetIndexConstNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
     assumeTrue(optimize);
     assertGenerateError(

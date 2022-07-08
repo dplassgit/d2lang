@@ -1,8 +1,8 @@
 data:string[5]
 data[0]="a"
 data[1]="z"
-data[2]="d"
 data[3]="s"
+data[2]="d"
 data[4]="o"
 
 len=length(data)
@@ -15,6 +15,7 @@ print_array: proc {
   }
 }
 
+println "Unsorted:"
 print_array()
 
 i = 0 while i < len - 1 do i = i + 1 {
@@ -29,4 +30,5 @@ i = 0 while i < len - 1 do i = i + 1 {
 }
 
 
+println "\nSorted:"
 print_array()
