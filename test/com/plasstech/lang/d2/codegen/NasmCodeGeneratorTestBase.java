@@ -68,10 +68,17 @@ public class NasmCodeGeneratorTestBase {
     ee.setOptimize(optimize);
     InterpreterResult result = ee.execute();
     State state = ee.state();
+    if (state.error()) {
+      throw state.exception();
+    }
     //    System.err.println(Joiner.on('\n').join(state.lastIlCode()));
     state = state.addFilename(filename);
 
     state = new NasmCodeGenerator().execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
+
     String asmCode = Joiner.on('\n').join(state.asmCode());
     System.err.println(asmCode);
 

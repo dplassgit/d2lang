@@ -4,7 +4,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Represents an int, boolean, string or (someday) float constant node. */
-public class ConstNode<T> extends AbstractNode implements SimpleNode {
+public class ConstNode<T> extends AbstractNode implements ExprNode {
 
   private final T value;
 
@@ -21,11 +21,6 @@ public class ConstNode<T> extends AbstractNode implements SimpleNode {
 
   public T value() {
     return value;
-  }
-
-  @Override
-  public String simpleValue() {
-    return String.valueOf(value);
   }
 
   @Override

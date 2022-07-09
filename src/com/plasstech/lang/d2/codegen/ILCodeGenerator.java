@@ -127,7 +127,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
     }
   }
-
+  
   @Override
   public void visit(AssignmentNode node) {
     LValueNode lvalue = node.lvalue();
@@ -146,13 +146,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             Node rhs = node.expr();
             rhs.accept(ILCodeGenerator.this);
             Location source = rhs.location();
-            if (dest == null || source == null) {
-              throw new D2RuntimeException(
-                  String.format(
-                      "lvalue source or dest is null: dest = %s, source=%s", dest, source),
-                  rhs.position(),
-                  "ILCodeGenerator");
-            }
             emit(new Transfer(dest, source));
           }
 
@@ -229,6 +222,10 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   private Location lookupLocation(String name) {
     Symbol variable = symbolTable().getRecursive(name);
+    if (variable == null) {
+      throw new IllegalStateException(
+          String.format("Cannot find location of %s in symbol table", name));
+    }
     switch (variable.storage()) {
       case HEAP:
       case GLOBAL:
@@ -242,7 +239,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
         return new ParamLocation(name, variable.varType(), param.index());
       default:
         throw new IllegalStateException(
-            String.format("Cannot lookup location of %s of type %s", name, variable.storage()));
+            String.format(
+                "Cannot create location of %s of type %s in symbol table",
+                name, variable.storage()));
     }
   }
 
@@ -310,7 +309,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // if left is a constant, just get it.
     if (left.isConstant()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
-      // possibly
       leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
     } else {
       left.accept(this);

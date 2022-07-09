@@ -91,9 +91,17 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void arrayConstantAssign() throws Exception {
-    execute("x=['hi']'", "arrayConstantAssign");
+    assumeFalse(optimize);
+    execute("x=['hi'] print x[0]", "arrayConstantAssign");
+  }
+
+  @Test
+  @Ignore
+  public void arrayConstantCalcAssign() throws Exception {
+    execute(
+        "x=[1, f()] f: proc(): int { return 3} println 'Should print 3' print x[1]",
+        "arrayConstantCalcAssign");
   }
 
   @Test

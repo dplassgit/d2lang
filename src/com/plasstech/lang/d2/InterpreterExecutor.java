@@ -95,6 +95,9 @@ public class InterpreterExecutor {
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
+    if (state.error()) {
+      throw state.exception();
+    }
     if (debugCodeGen > 0) {
       System.out.println("\nUNOPTIMIZED:");
       System.out.println("------------------------------");

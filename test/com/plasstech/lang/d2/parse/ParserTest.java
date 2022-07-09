@@ -15,6 +15,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -1006,6 +1007,21 @@ public class ParserTest {
   public void arraySetError() {
     assertParseError("a[3] = ", "expected literal");
     assertParseError("a[3 = ", "expected ]");
+  }
+
+  @Test
+  public void arrayConstant() {
+    BlockNode blockNode = parseStatements("a=['1', '2']");
+    StatementNode statementNode = blockNode.statements().get(0);
+    assertThat(statementNode).isInstanceOf(AssignmentNode.class);
+    AssignmentNode node = (AssignmentNode) statementNode;
+    ExprNode rhs = node.expr();
+    assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
+    ArrayLiteralNode array = (ArrayLiteralNode) rhs;
+    ConstNode<String> first = (ConstNode<String>) array.elements().get(0);
+    assertThat(first.value()).isEqualTo("1");
+    ConstNode<String> second = (ConstNode<String>) array.elements().get(1);
+    assertThat(second.value()).isEqualTo("2");
   }
 
   @Test
