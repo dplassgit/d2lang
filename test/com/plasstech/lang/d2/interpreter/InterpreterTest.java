@@ -182,6 +182,27 @@ public class InterpreterTest {
   }
 
   @Test
+  public void arraySet() {
+    Environment env = execute("a:int[2] a[1]=1 print a[1]");
+    assertThat(env.getValue("a")).isEqualTo(new Integer[] {0, 1});
+    assertThat(env.output()).containsExactly("1");
+  }
+
+  @Test
+  public void stringArraySet() {
+    Environment env = execute("a:string[2] a[1]='hi' print a[1]");
+    assertThat(env.getValue("a")).isEqualTo(new String[] {"", "hi"});
+    assertThat(env.output()).containsExactly("hi");
+  }
+
+  @Test
+  public void boolArraySet() {
+    Environment env = execute("a:bool[2] a[1]=true print a[1]");
+    assertThat(env.getValue("a")).isEqualTo(new Boolean[] {false, true});
+    assertThat(env.output()).containsExactly("true");
+  }
+
+  @Test
   public void compareString() {
     Environment env =
         execute(

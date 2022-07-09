@@ -34,6 +34,6 @@ public class FieldSetNode extends AbstractNode implements LValueNode {
 
   @Override
   public String toString() {
-    return String.format("FieldSetNode: %s . %s", variableName, fieldName);
+    return String.format("FieldSetNode: %s.%s", variableName, fieldName);
   }
 }

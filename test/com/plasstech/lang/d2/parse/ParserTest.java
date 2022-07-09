@@ -15,6 +15,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -28,6 +29,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
+import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
@@ -97,7 +99,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -130,7 +132,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -148,7 +150,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -170,7 +172,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -198,7 +200,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -213,7 +215,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -230,7 +232,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ConstNode<Integer> expr = (ConstNode<Integer>) node.expr();
@@ -244,7 +246,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ConstNode<Integer> expr = (ConstNode<Integer>) node.expr();
@@ -258,7 +260,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ConstNode<Boolean> constNode = (ConstNode<Boolean>) node.expr();
@@ -272,7 +274,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -286,7 +288,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -303,7 +305,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     Node expr = node.expr();
@@ -334,7 +336,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableNode var = (VariableNode) node.variable();
+    VariableNode var = (VariableNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -348,7 +350,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -365,7 +367,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -382,7 +384,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -448,7 +450,7 @@ public class ParserTest {
     assertThat(root.statements()).hasSize(1);
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -569,7 +571,7 @@ public class ParserTest {
     WhileNode whileNode = (WhileNode) statements.get(0);
 
     AssignmentNode assignment = (AssignmentNode) whileNode.doStatement().get();
-    VariableSetNode var = (VariableSetNode) assignment.variable();
+    VariableSetNode var = (VariableSetNode) assignment.lvalue();
     assertThat(var.name()).isEqualTo("i");
 
     ExprNode expr = assignment.expr();
@@ -743,7 +745,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -759,7 +761,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -871,7 +873,7 @@ public class ParserTest {
     assertThat(call.procName()).isEqualTo("doit");
     assertThat(call.actuals()).hasSize(1);
     ExprNode param = call.actuals().get(0);
-    assertThat(param.isSimpleType()).isTrue();
+    assertThat(param.isConstant()).isTrue();
   }
 
   @Test
@@ -923,7 +925,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     BinOpNode expr = (BinOpNode) node.expr();
@@ -985,9 +987,25 @@ public class ParserTest {
   }
 
   @Test
-  @Ignore("Array assignments are still unimplemented")
   public void arraySet() {
-    parseStatements("a[3] = 4");
+    BlockNode root = parseStatements("a[3] = 4");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) statements.get(0);
+    LValueNode lValue = node.lvalue();
+    assertThat(lValue).isInstanceOf(ArraySetNode.class);
+    ArraySetNode asn = (ArraySetNode) lValue;
+    assertThat(asn.variableName()).isEqualTo("a");
+    assertThat(asn.indexNode()).isInstanceOf(ConstNode.class);
+    ConstNode<Integer> value = (ConstNode<Integer>) asn.indexNode();
+    assertThat(value.value()).isEqualTo(3);
+  }
+
+  @Test
+  public void arraySetError() {
+    assertParseError("a[3] = ", "expected literal");
+    assertParseError("a[3 = ", "expected ]");
   }
 
   @Test
@@ -1000,6 +1018,7 @@ public class ParserTest {
   public void arrayGetError() {
     assertParseError("a=3[4+c b", "expected ]");
     assertParseError("a=3[4+c b]", "expected ]");
+    assertParseError("a=b[4", "expected ]");
   }
 
   @Test
@@ -1010,7 +1029,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -1027,7 +1046,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -1044,7 +1063,7 @@ public class ParserTest {
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
@@ -1059,7 +1078,7 @@ public class ParserTest {
     BlockNode root = parseStatements("a=[true, false][1]");
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
 
     BinOpNode expr = (BinOpNode) node.expr();
@@ -1095,7 +1114,7 @@ public class ParserTest {
     BlockNode root = parseStatements("f=input");
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("f");
 
     ExprNode expr = node.expr();
@@ -1222,7 +1241,6 @@ public class ParserTest {
   @Test
   public void recordGetRecursive() {
     BlockNode root = parseStatements("s=rec.s[(a+b)] s=rec.f1.f2[3] ");
-    System.err.println(root);
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(BinOpNode.class);
@@ -1240,13 +1258,13 @@ public class ParserTest {
   public void recordSet() {
     BlockNode root = parseStatements("rec.i = 3 rec.s = 'hi'");
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
-    FieldSetNode lvalue = (FieldSetNode) assignment.variable();
+    FieldSetNode lvalue = (FieldSetNode) assignment.lvalue();
     assertThat(lvalue.variableName()).isEqualTo("rec");
     assertThat(lvalue.fieldName()).isEqualTo("i");
     assertThat(((ConstNode<Integer>) assignment.expr()).value()).isEqualTo(3);
 
     assignment = (AssignmentNode) root.statements().get(1);
-    lvalue = (FieldSetNode) assignment.variable();
+    lvalue = (FieldSetNode) assignment.lvalue();
     assertThat(lvalue.variableName()).isEqualTo("rec");
     assertThat(lvalue.fieldName()).isEqualTo("s");
     assertThat(((ConstNode<String>) assignment.expr()).value()).isEqualTo("hi");

@@ -10,6 +10,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -26,6 +27,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BreakNode;
@@ -52,6 +54,7 @@ import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.LocalSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
@@ -127,8 +130,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(AssignmentNode node) {
-    LValueNode variable = node.variable();
-    variable.accept(
+    LValueNode lvalue = node.lvalue();
+    lvalue.accept(
         new LValueNode.Visitor() {
 
           @Override
@@ -140,44 +143,61 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             Location dest = lookupLocation(name);
             variableNode.setLocation(dest);
 
-            Node expr = node.expr();
-            expr.accept(ILCodeGenerator.this);
-            Location source = expr.location();
+            Node rhs = node.expr();
+            rhs.accept(ILCodeGenerator.this);
+            Location source = rhs.location();
             if (dest == null || source == null) {
               throw new D2RuntimeException(
                   String.format(
                       "lvalue source or dest is null: dest = %s, source=%s", dest, source),
-                  expr.position(),
+                  rhs.position(),
                   "ILCodeGenerator");
             }
             emit(new Transfer(dest, source));
           }
 
           @Override
-          public void visit(FieldSetNode fieldSetNode) {
+          public void visit(FieldSetNode fsn) {
             // Look up storage in current symbol table
-            Symbol sym = symbolTable().getRecursive(fieldSetNode.variableName());
-            FieldSetAddress dest;
+            Symbol sym = symbolTable().getRecursive(fsn.variableName());
             if (sym != null) {
-              // this is wrong, probably
-              dest =
+              FieldSetAddress dest =
                   new FieldSetAddress(
-                      fieldSetNode.variableName(),
-                      fieldSetNode.fieldName(),
-                      sym.storage(),
-                      sym.varType());
+                      fsn.variableName(), fsn.fieldName(), sym.storage(), sym.varType());
+              // this may be wrong
+              fsn.setLocation(dest);
+              Node rhs = node.expr();
+              rhs.accept(ILCodeGenerator.this);
+              Location source = rhs.location();
+
+              emit(new Transfer(dest, source));
             } else {
               throw new RuntimeException(
-                  String.format(
-                      "Could not find record symbol %s in symtab", fieldSetNode.variableName()));
+                  String.format("Could not find record symbol %s in symtab", fsn.variableName()));
             }
+          }
 
-            fieldSetNode.setLocation(dest);
-            Node expr = node.expr();
-            expr.accept(ILCodeGenerator.this);
-            Location source = expr.location();
+          @Override
+          public void visit(ArraySetNode asn) {
+            // Look up storage in current symbol table
+            Symbol sym = symbolTable().getRecursive(asn.variableName());
+            if (sym != null) {
+              Location arrayLocation = lookupLocation(asn.variableName());
 
-            emit(new Transfer(dest, source));
+              Node indexNode = asn.indexNode();
+              indexNode.accept(ILCodeGenerator.this);
+              Operand indexLocation = indexNode.location();
+
+              Node rhs = node.expr();
+              rhs.accept(ILCodeGenerator.this);
+              Location rhsLocation = rhs.location();
+              emit(
+                  new ArraySet(
+                      (ArrayType) asn.varType(), arrayLocation, indexLocation, rhsLocation));
+            } else {
+              throw new RuntimeException(
+                  String.format("Could not find record symbol %s in symtab", asn.variableName()));
+            }
           }
         });
   }
@@ -287,8 +307,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Node left = node.left();
     // Source for the value of left - either a register or memory location or a value.
     Operand leftSrc;
-    // if left and right are "simple", just get it.
-    if (left.isSimpleType()) {
+    // if left is a constant, just get it.
+    if (left.isConstant()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
       // possibly
       leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
@@ -309,8 +329,8 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // TODO: this is weird, and possibly wrong. Why String?!
       rightSrc = ConstantOperand.of(rightVarNode.name());
     } else {
-      // if left and right are "simple", just get it.
-      if (right.isSimpleType()) {
+      // if right is a constant, just get it.
+      if (right.isConstant()) {
         ConstNode<?> simpleRight = (ConstNode<?>) right;
         rightSrc = new ConstantOperand(simpleRight.value(), simpleRight.varType());
       } else {

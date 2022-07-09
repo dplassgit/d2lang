@@ -1,7 +1,14 @@
 MAX=99999999
 
 main {
-  data = [2,1,4,8,6,98,0]
+  data:int[7]
+  data[0]=2
+  data[1]=1
+  data[2]=4
+  data[3]=8
+  data[4]=6
+  data[5]=98
+  data[6]=0
   min=MAX
   last_min = -MAX
   // 1. find next element greater than min

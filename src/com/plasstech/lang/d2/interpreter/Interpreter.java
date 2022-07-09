@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
@@ -139,7 +140,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(ArrayAlloc op) {
     int sizeVal = (Integer) resolve(op.sizeLocation());
-    logger.atInfo().log("Allocating array of size %d", sizeVal);
     VarType baseType = op.arrayType().baseType();
     if (baseType == VarType.BOOL) {
       Boolean[] booleans = new Boolean[sizeVal];
@@ -156,6 +156,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else {
       throw new IllegalStateException("Cannot allocate array of type " + baseType);
     }
+  }
+
+  @Override
+  public void visit(ArraySet op) {
+    int index = (Integer) resolve(op.index());
+    Object[] arrayValue = (Object[]) resolve(op.array());
+    arrayValue[index] = resolve(op.source());
   }
 
   @Override

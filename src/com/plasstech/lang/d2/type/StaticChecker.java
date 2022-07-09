@@ -11,10 +11,12 @@ import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.CallNode;
+import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
@@ -174,29 +176,29 @@ public class StaticChecker extends DefaultVisitor implements Phase {
   @Override
   public void visit(AssignmentNode node) {
     // Make sure that the left = right
-    LValueNode variable = node.variable();
 
     Node right = node.expr();
     right.accept(this);
     if (right.varType().isUnknown()) {
+      // TODO: Can we infer anything form this?
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
     if (right.varType() == VarType.VOID) {
       throw new TypeException(
-          String.format("Cannot assign value of void expression %s", right), right.position());
+          String.format("Cannot assign value of VOID expression %s", right), right.position());
     }
 
-    variable.accept(
+    LValueNode lvalue = node.lvalue();
+    lvalue.accept(
         new LValueNode.Visitor() {
           @Override
           public void visit(FieldSetNode fsn) {
-            //
-            // Now get the record from the symbol table.
+            // Get the record from the symbol table.
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
             if (variableSymbol == null || !variableSymbol.varType().isRecord()) {
               throw new TypeException(
-                  String.format("Variable '%s' not a known RECORD", variable.name()),
-                  variable.position());
+                  String.format("Cannot set field of '%s'; not a known RECORD", lvalue.name()),
+                  lvalue.position());
             }
 
             Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.varType().name());
@@ -221,17 +223,18 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                   String.format(
                       "field '%s' of RECORD '%s' declared as %s but RHS (%s) is %s",
                       fieldName, record.name(), fieldType, right, right.varType()),
-                  variable.position());
+                  lvalue.position());
             }
-            variable.setVarType(fieldType);
+            lvalue.setVarType(fieldType);
           }
 
           @Override
           public void visit(VariableSetNode node) {
-            Symbol symbol = symbolTable().getRecursive(variable.name());
+            // simple this=that
+            Symbol symbol = symbolTable().getRecursive(lvalue.name());
             if (symbol == null) {
               // Brand new symbol in all scopes. Assign in current scope.
-              symbolTable().assign(variable.name(), right.varType());
+              symbolTable().assign(lvalue.name(), right.varType());
             } else {
               // Already known in some scope. Update.
               if (symbol.varType().isUnknown()) {
@@ -241,14 +244,65 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                 throw new TypeException(
                     String.format(
                         "variable '%s' declared as %s but RHS (%s) is %s",
-                        variable.name(), symbol.varType(), right, right.varType()),
-                    variable.position());
+                        lvalue.name(), symbol.varType(), right, right.varType()),
+                    lvalue.position());
               }
 
               symbol.setAssigned();
             }
 
-            variable.setVarType(right.varType());
+            lvalue.setVarType(right.varType());
+          }
+
+          @Override
+          public void visit(ArraySetNode asn) {
+            // 1. lhs must be known array
+            String variableName = asn.variableName();
+            Symbol symbol = symbolTable().getRecursive(variableName);
+            if (symbol == null) {
+              throw new TypeException(
+                  String.format("unknown ARRAY variable '%s'", variableName), lvalue.position());
+            }
+            if (!symbol.varType().isArray()) {
+              throw new TypeException(
+                  String.format(
+                      "variable '%s' must be of type ARRAY; was %s",
+                      variableName, symbol.varType()),
+                  lvalue.position());
+            }
+            asn.setVarType(symbol.varType());
+
+            // 2. index must be int
+            ExprNode indexNode = asn.indexNode();
+            indexNode.accept(StaticChecker.this);
+            VarType indexType = indexNode.varType();
+            if (indexType != VarType.INT) {
+              throw new TypeException(
+                  String.format("ARRAY index must be INT; was %s", indexType),
+                  indexNode.position());
+            }
+            if (indexNode.isConstant()) {
+              ConstNode<Integer> index = (ConstNode<Integer>) indexNode;
+              if (index.value() < 0) {
+                throw new TypeException(
+                    String.format("ARRAY index must be non-negative; was %d", index.value()),
+                    indexNode.position());
+              }
+            }
+
+            ArrayType arrayType = (ArrayType) symbol.varType();
+
+            if (right.varType() == VarType.UNKNOWN) {
+              // should we infer it?
+            }
+            // 3. rhs must match lhs
+            if (!arrayType.baseType().compatibleWith(right.varType())) {
+              throw new TypeException(
+                  String.format(
+                      "ARRAY '%s' declared as %s but RHS (%s) is %s",
+                      variableName, arrayType.baseType(), right, right.varType()),
+                  lvalue.position());
+            }
           }
         });
 
@@ -409,6 +463,14 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         throw new TypeException(
             String.format("STRING index must be INT; was %s", right.varType()), right.position());
       }
+      if (right.isConstant()) {
+        ConstNode<Integer> index = (ConstNode<Integer>) right;
+        if (index.value() < 0) {
+          throw new TypeException(
+              String.format("STRING index must be non-negative; was %d", index.value()),
+              right.position());
+        }
+      }
       node.setVarType(VarType.STRING);
       // NOTE RETURN
       return;
@@ -418,6 +480,15 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         throw new TypeException(
             String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
       }
+      if (right.isConstant()) {
+        ConstNode<Integer> index = (ConstNode<Integer>) right;
+        if (index.value() < 0) {
+          throw new TypeException(
+              String.format("ARRAY index must be non-negative; was %d", index.value()),
+              right.position());
+        }
+      }
+
       // I hate this.
       ArrayType arrayType = (ArrayType) left.varType();
       node.setVarType(arrayType.baseType());
@@ -611,12 +682,20 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     arraySizeExpr.accept(this);
     if (arraySizeExpr.varType().isUnknown()) {
       throw new TypeException(
-          "Indeterminable type for array size; must be INT", arraySizeExpr.position());
+          "Indeterminable type for ARRAY size; must be INT", arraySizeExpr.position());
     }
     if (arraySizeExpr.varType() != VarType.INT) {
       throw new TypeException(
-          String.format("Array size must be INT; was %s", arraySizeExpr.varType()),
+          String.format("ARRAY size must be INT; was %s", arraySizeExpr.varType()),
           arraySizeExpr.position());
+    }
+    if (arraySizeExpr.isConstant()) {
+      ConstNode<Integer> size = (ConstNode<Integer>) arraySizeExpr;
+      if (size.value() <= 0) {
+        throw new TypeException(
+            String.format("ARRAY size must be positive; was %d", size.value()),
+            arraySizeExpr.position());
+      }
     }
 
     // declaring the array actually assigns it.

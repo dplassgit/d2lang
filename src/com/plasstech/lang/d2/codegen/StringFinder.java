@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen;
 import java.util.Optional;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
@@ -83,6 +84,11 @@ class StringFinder extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Transfer op) {
+    addEntry(op.source());
+  }
+
+  @Override
+  public void visit(ArraySet op) {
     addEntry(op.source());
   }
 

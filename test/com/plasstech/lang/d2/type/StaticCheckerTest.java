@@ -45,7 +45,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -62,7 +62,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -80,7 +80,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
@@ -98,7 +98,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
     Node expr = node.expr();
@@ -115,7 +115,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.BOOL);
 
@@ -220,7 +220,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("a");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -253,7 +253,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -269,14 +269,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declAssignMismatch() {
+  public void assignAfterDeclMismatch() {
     assertError("a:int b=true a=b", "declared as INT");
     assertError("a:bool b=a b=3", "used before assignment");
     assertError("a=3 a:bool", "already declared as INT");
   }
 
   @Test
-  public void declArray() {
+  public void arrayDecl() {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
@@ -285,14 +285,14 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void declArrayMismatch() {
-    assertError("a:int[b]", "Indeterminable type for array size; must be INT");
-    assertError("a:int[false]", "Array size must be INT; was BOOL");
-    assertError("a:int['hi']", "Array size must be INT; was STRING");
-    assertError("a:string['hi']", "Array size must be INT; was STRING");
-    assertError("b:proc() {} a:string[b()]", "Array size must be INT; was VOID");
-    // this fails in an unexpected way ("used before assignment")
-    // assertExecuteError("b:proc() {} a:string[b]", "Array size must be INT; was PROC");
+  public void arrayDeclMismatch() {
+    assertError("a:int[b]", "Indeterminable type for ARRAY size; must be INT");
+    assertError("a:int[false]", "ARRAY size must be INT; was BOOL");
+    assertError("a:int['hi']", "ARRAY size must be INT; was STRING");
+    assertError("a:string['hi']", "ARRAY size must be INT; was STRING");
+    assertError("b:proc():string {return ''} a:string[b()]", "ARRAY size must be INT; was STRING");
+    // this fails in an unexpected way but at least it fails.
+    assertError("b:proc() {} a:string[b]", "Variable 'b' used before assignment");
   }
 
   @Test
@@ -302,19 +302,18 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void goodBooleanBinOp(
-      @TestParameter({"==", "or", "and", "<", ">", "<=", ">="}) String op) {
+  public void boolBinOp(@TestParameter({"==", "or", "and", "<", ">", "<=", ">="}) String op) {
     checkProgram(String.format("a=true %s false", op));
   }
 
   @Test
-  public void badBooleanBinOp(@TestParameter({"+", "-", "*", "/"}) String op) {
+  public void boolBinOpBad(@TestParameter({"+", "-", "*", "/"}) String op) {
     assertError(String.format("a=true %s false", op), "Cannot apply");
     assertError(String.format("a=true %s 3", op), "Cannot apply");
   }
 
   @Test
-  public void badBooleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
+  public void booleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
     assertError(String.format("a=true %s 3", c), "Cannot apply");
   }
 
@@ -361,7 +360,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayIndex_error() {
+  public void arrayIndexMismatch() {
     assertError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
     assertError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
@@ -386,8 +385,48 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayOperators_errors(@TestParameter({"+", "-", "/", "%"}) String c) {
+  public void arrayOperatorErrors(@TestParameter({"+", "-", "/", "%"}) String c) {
     assertError(String.format("a1 = [1,2,3] %s [2,3,4]", c), "operator to ARRAY expression");
+  }
+
+  @Test
+  public void arraySet() {
+    SymTab symTab = checkProgram("a:int[1] a[0]=1");
+    assertThat(symTab.get("a").varType().isArray()).isTrue();
+
+    checkProgram("b=3 a:int[1] a[b+1]=1");
+  }
+
+  @Test
+  public void arrayDeclError() {
+    assertError("a:int[0]", "must be positive; was 0");
+    assertError("a:int[-1]", "must be positive; was -1");
+    assertError("a:int[true]", "must be INT; was BOOL");
+  }
+
+  @Test
+  public void arraySetTypeError() {
+    assertError("a:int[1] a[0]='hi'", "declared as INT");
+    assertError("a:bool[1] a[0]=3", "declared as BOOL");
+    assertError("a:string[1] a[0]=true", "declared as STRING");
+    assertError("a[0]=true", "unknown ARRAY variable");
+    assertError("a=3 a[0]=1", "must be of type ARRAY; was INT");
+  }
+
+  @Test
+  public void arraySetIndexError() {
+    assertError("a:int[1] a['hi']=1", "ARRAY index must be INT; was STRING");
+    assertError("a:int[1] a[true]=1", "ARRAY index must be INT; was BOOL");
+    assertError("b='hi' a:int[1] a[b]=1", "ARRAY index must be INT; was STRING");
+    assertError("b=true a:int[1] a[b]=1", "ARRAY index must be INT; was BOOL");
+    assertError("a:int[1] a[-1]=1", "ARRAY index must be non-negative; was -1");
+  }
+
+  @Test
+  public void arrayGetIndexError() {
+    assertError("a:int[1] print a['hi']", "ARRAY index must be INT; was STRING");
+    assertError("a:int[1] print a[true]", "ARRAY index must be INT; was BOOL");
+    assertError("a:int[1] print a[-1]", "ARRAY index must be non-negative; was -1");
   }
 
   @Test
@@ -395,6 +434,7 @@ public class StaticCheckerTest {
     assertError("b='hi' a=b['bye']", "STRING index must be INT");
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
+    assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
     assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
   }
 
@@ -448,7 +488,7 @@ public class StaticCheckerTest {
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.main().get().block().statements().get(1);
-    VariableSetNode var = (VariableSetNode) node.variable();
+    VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);
 
@@ -632,7 +672,7 @@ public class StaticCheckerTest {
         "fib:proc(n:int) {} fib(false)",
         "Type mismatch for parameter 'n' to PROC 'fib': found BOOL, expected INT");
     // can't assign to void
-    assertError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of void expression");
+    assertError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of VOID expression");
   }
 
   @Test

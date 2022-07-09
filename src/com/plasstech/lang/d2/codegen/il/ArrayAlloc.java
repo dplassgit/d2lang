@@ -37,6 +37,7 @@ public class ArrayAlloc extends Op {
   @Override
   public String toString() {
     return String.format(
-        "%s: array of %s; size in %s", destination, arrayType.baseType(), sizeLocation);
+        "ArrayAlloc: %s: array of %s; size is in %s",
+        destination, arrayType.baseType(), sizeLocation);
   }
 }

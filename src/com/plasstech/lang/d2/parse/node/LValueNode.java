@@ -9,5 +9,7 @@ public interface LValueNode extends Node {
     void visit(FieldSetNode node);
 
     void visit(VariableSetNode node);
+
+    void visit(ArraySetNode node);
   }
 }

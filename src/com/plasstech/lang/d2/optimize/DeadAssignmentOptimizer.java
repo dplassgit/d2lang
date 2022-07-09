@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -122,6 +123,15 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     markRead(op.sizeLocation());
     Location dest = op.destination();
     killIfReassigned(dest);
+    recordAssignment(dest);
+  }
+
+  @Override
+  public void visit(ArraySet op) {
+    markRead(op.source());
+    markRead(op.index());
+    Location dest = op.array();
+    // Don't kill assignments to "dest" because we only modified part of it.
     recordAssignment(dest);
   }
 
