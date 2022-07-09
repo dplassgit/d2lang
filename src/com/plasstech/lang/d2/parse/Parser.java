@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.lex.IntToken;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -773,62 +774,33 @@ public class Parser implements Phase {
 
     Token openBracket = advance(); // eat left bracket
 
-    // Future version:
-    // List<ExprNode> values = commaSeparatedExpressions();
-
-    // For first iteration: only allow const int[] or const string[] or const bool[]
-    if (token.type() != TokenType.RBRACKET) {
-      List<ConstNode<?>> values =
-          commaSeparated(
-              () -> {
-                ExprNode atom = atom();
-                if (atom instanceof ConstNode) {
-                  return (ConstNode<?>) atom;
-                }
-
-                throw new ParseException(
-                    String.format(
-                        "Illegal entry %s in array literal; only scalar literals allowed",
-                        token.text()),
-                    token.start());
-              });
-
-      expect(TokenType.RBRACKET);
-      advance(); // eat rbracket
-
-      VarType baseType = values.get(0).varType();
-      ArrayType arrayType = new ArrayType(baseType);
-
-      // TODO: when the values are expressions, check all values to make sure they're the same type
-      // in the static checker.
-      for (int i = 1; i < values.size(); ++i) {
-        if (!values.get(i).varType().equals(baseType)) {
-          throw new ParseException(
-              String.format(
-                  "Inconsistent types in array literal; first was %s but one was %s",
-                  baseType, values.get(i).varType()),
-              openBracket.start());
-        }
-      }
-      if (baseType == VarType.BOOL) {
-        Boolean[] valuesArray = values.stream().map(node -> node.value()).toArray(Boolean[]::new);
-        return new ConstNode<Boolean[]>(valuesArray, arrayType, openBracket.start());
-      } else if (baseType == VarType.STRING) {
-        String[] valuesArray = values.stream().map(node -> node.value()).toArray(String[]::new);
-        return new ConstNode<String[]>(valuesArray, arrayType, openBracket.start());
-      } else if (baseType == VarType.INT) {
-        Integer[] valuesArray = values.stream().map(node -> node.value()).toArray(Integer[]::new);
-        return new ConstNode<Integer[]>(valuesArray, arrayType, openBracket.start());
-      }
-      throw new ParseException(
-          String.format(
-              "Illegal type %s in array literal; only scalar literals allowed",
-              baseType.toString()),
-          openBracket.start());
-    } else {
-      // empty array constants
+    List<ExprNode> values = commaSeparatedExpressions();
+    if (values.isEmpty()) {
       // will this ever be allowed?
       throw new ParseException("Empty array constants are not allowed yet", token.start());
     }
+
+    expect(TokenType.RBRACKET);
+    advance(); // eat rbracket
+
+    // First implementation: find the first non-unknown value and use it
+    Optional<VarType> baseType =
+        values
+            .stream()
+            .map(Node::varType)
+            .filter(varType -> varType != VarType.UNKNOWN)
+            .findFirst();
+    if (!baseType.isPresent()) {
+      throw new ParseException(
+          "Cannot determine type of array; all elements are UNKNOWN", openBracket.start());
+    }
+    // None are unknown now!
+    for (ExprNode element : values) {
+      if (element.varType() == VarType.UNKNOWN) {
+        element.setVarType(baseType.get());
+      }
+    }
+
+    return new ArrayLiteralNode(openBracket.start(), values, baseType.get());
   }
 }

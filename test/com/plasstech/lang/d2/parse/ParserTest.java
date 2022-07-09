@@ -1010,21 +1010,6 @@ public class ParserTest {
   }
 
   @Test
-  public void arrayConstant() {
-    BlockNode blockNode = parseStatements("a=['1', '2']");
-    StatementNode statementNode = blockNode.statements().get(0);
-    assertThat(statementNode).isInstanceOf(AssignmentNode.class);
-    AssignmentNode node = (AssignmentNode) statementNode;
-    ExprNode rhs = node.expr();
-    assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
-    ArrayLiteralNode array = (ArrayLiteralNode) rhs;
-    ConstNode<String> first = (ConstNode<String>) array.elements().get(0);
-    assertThat(first.value()).isEqualTo("1");
-    ConstNode<String> second = (ConstNode<String>) array.elements().get(1);
-    assertThat(second.value()).isEqualTo("2");
-  }
-
-  @Test
   @Ignore("Array assignments are still unimplemented")
   public void arrayStmt() {
     parseStatements("fn()[fn()]");
@@ -1038,59 +1023,59 @@ public class ParserTest {
   }
 
   @Test
-  public void literalIntArray() {
-    BlockNode root = parseStatements("a=[1,2,3]");
-    List<StatementNode> statements = root.statements();
-    assertThat(statements).hasSize(1);
-
-    AssignmentNode node = (AssignmentNode) root.statements().get(0);
-
-    VariableSetNode var = (VariableSetNode) node.lvalue();
-    assertThat(var.name()).isEqualTo("a");
-
-    ExprNode expr = node.expr();
-    @SuppressWarnings("unchecked")
-    ConstNode<Integer[]> array = (ConstNode<Integer[]>) expr;
-    assertThat(array.value()[0]).isEqualTo(1);
+  public void arrayLiteralInts() {
+    BlockNode blockNode = parseStatements("a=[1,2,3]");
+    StatementNode statementNode = blockNode.statements().get(0);
+    assertThat(statementNode).isInstanceOf(AssignmentNode.class);
+    AssignmentNode node = (AssignmentNode) statementNode;
+    ExprNode rhs = node.expr();
+    assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
+    ArrayLiteralNode array = (ArrayLiteralNode) rhs;
+    assertThat(array.elements()).hasSize(3);
+    assertThat(array.varType().isArray()).isTrue();
+    assertThat(array.arrayType().baseType()).isEqualTo(VarType.INT);
+    ConstNode<Integer> first = (ConstNode<Integer>) array.elements().get(0);
+    assertThat(first.value()).isEqualTo(1);
+    ConstNode<Integer> second = (ConstNode<Integer>) array.elements().get(1);
+    assertThat(second.value()).isEqualTo(2);
   }
 
   @Test
-  public void literalStringArray() {
-    BlockNode root = parseStatements("a=['one', 'two', 'three']");
-    List<StatementNode> statements = root.statements();
-    assertThat(statements).hasSize(1);
-
-    AssignmentNode node = (AssignmentNode) root.statements().get(0);
-
-    VariableSetNode var = (VariableSetNode) node.lvalue();
-    assertThat(var.name()).isEqualTo("a");
-
-    ExprNode expr = node.expr();
-    @SuppressWarnings("unchecked")
-    ConstNode<String[]> array = (ConstNode<String[]>) expr;
-    assertThat(array.value()[0]).isEqualTo("one");
+  public void arrayLiteral() {
+    BlockNode blockNode = parseStatements("a=['1', '2']");
+    StatementNode statementNode = blockNode.statements().get(0);
+    assertThat(statementNode).isInstanceOf(AssignmentNode.class);
+    AssignmentNode node = (AssignmentNode) statementNode;
+    ExprNode rhs = node.expr();
+    assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
+    ArrayLiteralNode array = (ArrayLiteralNode) rhs;
+    assertThat(array.varType().isArray()).isTrue();
+    assertThat(array.arrayType().baseType()).isEqualTo(VarType.STRING);
+    ConstNode<String> first = (ConstNode<String>) array.elements().get(0);
+    assertThat(first.value()).isEqualTo("1");
+    ConstNode<String> second = (ConstNode<String>) array.elements().get(1);
+    assertThat(second.value()).isEqualTo("2");
   }
 
   @Test
-  public void literalBoolArray() {
-    BlockNode root = parseStatements("a=[true, false]");
-    List<StatementNode> statements = root.statements();
-    assertThat(statements).hasSize(1);
-
-    AssignmentNode node = (AssignmentNode) root.statements().get(0);
-
-    VariableSetNode var = (VariableSetNode) node.lvalue();
-    assertThat(var.name()).isEqualTo("a");
-
-    ExprNode expr = node.expr();
-    @SuppressWarnings("unchecked")
-    ConstNode<Boolean[]> array = (ConstNode<Boolean[]>) expr;
-    assertThat(array.value()[0]).isTrue();
-    assertThat(array.value()[1]).isFalse();
+  public void arrayLiteralBools() {
+    BlockNode blockNode = parseStatements("a=[true, false]");
+    StatementNode statementNode = blockNode.statements().get(0);
+    assertThat(statementNode).isInstanceOf(AssignmentNode.class);
+    AssignmentNode node = (AssignmentNode) statementNode;
+    ExprNode rhs = node.expr();
+    assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
+    ArrayLiteralNode array = (ArrayLiteralNode) rhs;
+    assertThat(array.varType().isArray()).isTrue();
+    assertThat(array.arrayType().baseType()).isEqualTo(VarType.BOOL);
+    ConstNode<Boolean> first = (ConstNode<Boolean>) array.elements().get(0);
+    assertThat(first.value()).isTrue();
+    ConstNode<Boolean> second = (ConstNode<Boolean>) array.elements().get(1);
+    assertThat(second.value()).isFalse();
   }
 
   @Test
-  public void literalArrayIndex() {
+  public void arrayLiteralIndex() {
     BlockNode root = parseStatements("a=[true, false][1]");
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
@@ -1098,16 +1083,17 @@ public class ParserTest {
     assertThat(var.name()).isEqualTo("a");
 
     BinOpNode expr = (BinOpNode) node.expr();
-    assertThat(expr.left()).isInstanceOf(ConstNode.class);
+    assertThat(expr.left()).isInstanceOf(ArrayLiteralNode.class);
     assertThat(expr.right()).isInstanceOf(ConstNode.class);
   }
 
   @Test
-  public void literalArrayErrors() {
-    assertParseError("a=[]", "Empty");
-    assertParseError("a=[a]", "only scalar");
-    assertParseError("a=[a+1]", "only scalar");
-    assertParseError("a=[1,'hi']", "Inconsistent types");
+  public void arrayLiteralErrors() {
+    assertParseError("a=[]", "Unexpected ']'");
+    assertParseError("a=[a]", "all elements are UNKNOWN");
+    assertParseError("a=[a+1]", "all elements are UNKNOWN");
+    // this is no longer checked in parser; it's in the static checker now.
+    // assertParseError("a=[1,'hi']", "Inconsistent types");
   }
 
   @Test
