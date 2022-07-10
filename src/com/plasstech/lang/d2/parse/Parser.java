@@ -427,6 +427,7 @@ public class Parser implements Phase {
     expect(TokenType.COLON);
     advance();
     if (token.type() == TokenType.VARIABLE) {
+      // Record type.
       Token typeToken = advance(); // eat the record type
       return new RecordReferenceType(typeToken.text());
     }
@@ -436,6 +437,13 @@ public class Parser implements Phase {
     if (paramType != null && paramType != VarType.PROC) {
       // We have a param type
       advance(); // eat the param type
+      // possibly an array. see if there's an open and close bracket
+      if (token.type() == TokenType.LBRACKET) {
+        advance();
+        expect(TokenType.RBRACKET);
+        advance();
+        return new ArrayType(paramType);
+      }
       return paramType;
     }
     throw new ParseException(

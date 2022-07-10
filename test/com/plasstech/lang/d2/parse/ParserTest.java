@@ -818,6 +818,17 @@ public class ParserTest {
   }
 
   @Test
+  public void procWithArrayParam() {
+    ProgramNode root = parseProgram("f:proc(param1:int[]) {}");
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("f");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.parameters()).hasSize(1);
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).varType()).hasArrayBaseType(VarType.INT);
+  }
+
+  @Test
   public void procWithLocals() {
     ProgramNode root = parseProgram("fib:proc() {local:int}");
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));

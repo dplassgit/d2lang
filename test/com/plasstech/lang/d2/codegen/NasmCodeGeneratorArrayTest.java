@@ -132,6 +132,16 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void arrayParam() throws Exception {
+    execute(
+        "       arrayParam:proc(arr:int[]) {"
+            + "   println 'Should print 2' print arr[1]"
+            + " }"
+            + " arrayParam([1,2])",
+        "arrayParam");
+  }
+
+  @Test
   public void arrayAllocConstLengthNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
     assumeTrue(optimize);

@@ -1,7 +1,9 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assume.assumeFalse;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -77,6 +79,22 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "print x",
         "procLocals");
   }
+
+  @Test
+  @Ignore("bug 102")
+  public void bug102ParamMunge() throws Exception {
+    assumeFalse(optimize);
+    execute(
+        "      f2: proc(c:bool, b:string, a:int) {"
+            + "  print 'c=' println c print 'b=' println b print 'a=' println a"
+            + "}"
+            + "f1: proc(a:int, b:string, c:bool) {"
+            + "   f2(c,b,a)"
+            + "}"
+            + "f1(2,'hi', true)",
+        "bug102ParamMunge");
+  }
+  
 
   private static final String FOUR_PARAM_PROC =
       "  procParamFirst4Locations:proc(p3:bool, p4: string, p1: int, p2: int) { "

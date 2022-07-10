@@ -583,6 +583,7 @@ public class StaticCheckerTest {
             + " level2:proc() : int  {n=3 return n}"
             + " return false"
             + "} level1()");
+    checkProgram("fib:proc(a:int[]) {a[0]=3} fib([1,2,3])");
   }
 
   @Test
@@ -621,6 +622,8 @@ public class StaticCheckerTest {
     assertError("a=true fib:proc() {a=3}", "declared as BOOL");
     assertError("fib:proc(n1) {}", "determine type of formal parameter");
     assertError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
+    assertError("fib:proc(a:int[]) {a[0]=3} fib(1)", "expected 1-d ARRAY of INT");
+    assertError("fib:proc(a:int) {a=3} fib([1])", "found 1-d ARRAY of INT");
   }
 
   @Test

@@ -1226,7 +1226,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String actualLocation = resolve(actual);
       Size size = Size.of(actual.type());
       if (formalLocation.equals(actualLocation)) {
-        emit("; parameter %d already in %s", index, actualLocation);
+        emit(
+            "; parameter #%d (%s) already in %s",
+            index, op.formals().get(index).name(), actualLocation);
       } else {
         emit("mov %s %s, %s", size, formalLocation, actualLocation);
       }
