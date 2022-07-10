@@ -38,6 +38,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
         "procIndex");
   }
 
+  @Test
   public void constantStringIndex(
       @TestParameter({"world", "hello this is a very long string"}) String value,
       @TestParameter({"1", "4"}) int index)
@@ -102,6 +103,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
                 + "compOpsThreeParams(123, 'abc', 'def') ",
             op, op),
         "compOpsThreeParams");
+  }
+
+  @Test
+  public void bug97ComparingParams() throws Exception {
+    execute(
+        "      compOpsParam:proc(a:string, b:string) { "
+            + "  println a == chr(10) "
+            + "  println chr(10) == a "
+            + "  println b == chr(10) "
+            + "  println chr(10) == b "
+            + "} "
+            + "bug97ComparingParams('abc', 'def')",
+        "bug97ComparingParams");
   }
 
   @Test

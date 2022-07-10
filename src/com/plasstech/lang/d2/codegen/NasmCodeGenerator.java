@@ -19,7 +19,9 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.escape.Escaper;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.net.PercentEscaper;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
@@ -51,6 +53,9 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
+  private static final Escaper ESCAPER =
+      new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ", false);
+
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
@@ -140,9 +145,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("main:");
     try {
       for (Op opcode : code) {
-        emit0("\n  ; START %s", opcode.toString());
+        // need to escape this!
+        String opcodeString = opcode.toString();
+        String escaped = ESCAPER.escape(opcodeString);
+        emit0("\n  ; START %s", escaped);
         opcode.accept(this);
-        emit("; END %s", opcode.toString());
+        emit("; END %s", escaped);
       }
     } catch (D2RuntimeException e) {
       ImmutableList<String> allCode =
@@ -798,18 +806,32 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("xchg RCX, RDX  ; left was rdx, right was rcx, so swap them");
       }
     } else {
-
-      if (isInRegister(left, RCX)) {
-        emit("; left already in RCX");
+      if (isInRegister(right, RCX)) {
+        emit("; right is in RCX, so set RDX first.");
+        // rcx is in the right register, need to set rdx first
+        if (isInRegister(right, RDX)) {
+          emit("; right already in RDX");
+        } else {
+          emit("mov RDX, %s  ; Address of right string", resolve(right));
+        }
+        if (isInRegister(left, RCX)) {
+          emit("; left already in RCX");
+        } else {
+          emit("mov RCX, %s  ; Address of left string", resolve(left));
+        }
       } else {
-        emit("mov RCX, %s  ; Address of left string", resolve(left));
+        if (isInRegister(left, RCX)) {
+          emit("; left already in RCX");
+        } else {
+          emit("mov RCX, %s  ; Address of left string", resolve(left));
+        }
+        if (isInRegister(right, RDX)) {
+          emit("; right already in RDX");
+        } else {
+          emit("mov RDX, %s  ; Address of right string", resolve(right));
+        }
       }
 
-      if (isInRegister(right, RDX)) {
-        emit("; right already in RDX");
-      } else {
-        emit("mov RDX, %s  ; Address of right string", resolve(right));
-      }
     }
     generateSyscall("strcmp");
     emit("cmp RAX, 0");
