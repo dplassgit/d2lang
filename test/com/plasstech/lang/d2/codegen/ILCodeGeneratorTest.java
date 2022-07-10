@@ -128,6 +128,16 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void arrayLiteral() {
+    generateProgram("a=['a', 'b', 'c']");
+  }
+
+  @Test
+  public void arrayLiteralCalculated() {
+    generateProgram("f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()");
+  }
+
+  @Test
   public void stringLength() {
     generateProgram("a=length('hi')");
   }

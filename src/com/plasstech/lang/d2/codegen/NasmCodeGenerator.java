@@ -113,13 +113,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     prelude.add(
         String.format("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
 
-    prelude.add("global main\n"); // required
-    externs.add("exit"); // required
+    prelude.add("global main\n");
+    externs.add("exit");
 
-    // Probably what we should do is:
-    // 1. emit all globals OK
-    // 2. emit all string constants OK
-    // 3. emit all array constants (?)
+    // 1. emit all globals
+    // 2. emit all string constants
     SymTab globals = input.symbolTable();
     for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
       Symbol symbol = entry.getValue();
@@ -340,12 +338,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Transfer op) {
     Operand source = op.source();
     Location destination = op.destination();
-
-    if (source.type().isArray()) {
-      // for now, all arrays contain constant values.
-      fail("Cannot generate transfer from array yet (source type is %s)", source.type());
-      return;
-    }
 
     Register fromReg = toRegister(source); // if this is *already* a register
     Register toReg = toRegister(destination); // if this is *already* a register
@@ -1360,7 +1352,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         return Size._32BITS;
       } else if (type == VarType.BOOL) {
         return Size._1BYTE;
-      } else if (type == VarType.STRING) {
+      } else if (type == VarType.STRING || type.isArray()) {
         return Size._64BITS;
       }
       throw new D2RuntimeException("IllegalState", null, "Cannot get type of " + type);

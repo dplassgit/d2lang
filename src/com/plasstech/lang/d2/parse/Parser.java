@@ -794,12 +794,6 @@ public class Parser implements Phase {
       throw new ParseException(
           "Cannot determine type of array; all elements are UNKNOWN", openBracket.start());
     }
-    // None are unknown now!
-    for (ExprNode element : values) {
-      if (element.varType() == VarType.UNKNOWN) {
-        element.setVarType(baseType.get());
-      }
-    }
 
     return new ArrayLiteralNode(openBracket.start(), values, baseType.get());
   }

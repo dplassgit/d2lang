@@ -27,6 +27,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -127,7 +128,24 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
     }
   }
-  
+
+  @Override
+  public void visit(ArrayLiteralNode node) {
+    // 1. allocate an array of the desired type and length
+    // 2. set each value of the array to what we want.
+    TempLocation destination = allocateTemp(node.varType());
+    node.setLocation(destination);
+
+    ArrayType arrayType = node.arrayType();
+    emit(new ArrayAlloc(destination, arrayType, ConstantOperand.of(node.elements().size())));
+
+    int i = 0;
+    for (ExprNode element : node.elements()) {
+      element.accept(ILCodeGenerator.this);
+      emit(new ArraySet(arrayType, destination, ConstantOperand.of(i++), element.location()));
+    }
+  }
+
   @Override
   public void visit(AssignmentNode node) {
     LValueNode lvalue = node.lvalue();

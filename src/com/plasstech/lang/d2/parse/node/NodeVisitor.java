@@ -6,6 +6,8 @@ public interface NodeVisitor {
 
   void visit(AssignmentNode node);
 
+  void visit(ArrayLiteralNode node);
+
   void visit(BinOpNode node);
 
   <T> void visit(ConstNode<T> node);

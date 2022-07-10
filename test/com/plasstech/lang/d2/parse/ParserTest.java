@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -45,7 +46,6 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -950,11 +950,10 @@ public class ParserTest {
 
     ArrayDeclarationNode node = (ArrayDeclarationNode) statements.get(0);
     assertThat(node.name()).isEqualTo("a");
-    assertThat(node.varType()).isInstanceOf(ArrayType.class);
+    assertThat(node.varType()).isArray();
     assertThat(node.sizeExpr()).isInstanceOf(ConstNode.class);
 
-    ArrayType arrType = (ArrayType) node.varType();
-    assertThat(arrType.baseType()).isEqualTo(VarType.INT);
+    assertThat(node.varType()).hasArrayBaseType(VarType.INT);
   }
 
   @Test
@@ -965,11 +964,10 @@ public class ParserTest {
 
     ArrayDeclarationNode node = (ArrayDeclarationNode) statements.get(0);
     assertThat(node.name()).isEqualTo("a");
-    assertThat(node.varType()).isInstanceOf(ArrayType.class);
+    assertThat(node.varType()).isArray();
     assertThat(node.sizeExpr()).isInstanceOf(BinOpNode.class);
 
-    ArrayType arrType = (ArrayType) node.varType();
-    assertThat(arrType.baseType()).isEqualTo(VarType.INT);
+    assertThat(node.varType()).hasArrayBaseType(VarType.INT);
   }
 
   @Test
@@ -1032,8 +1030,8 @@ public class ParserTest {
     assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
     ArrayLiteralNode array = (ArrayLiteralNode) rhs;
     assertThat(array.elements()).hasSize(3);
-    assertThat(array.varType().isArray()).isTrue();
-    assertThat(array.arrayType().baseType()).isEqualTo(VarType.INT);
+    assertThat(array.varType()).hasArrayBaseType(VarType.INT);
+
     ConstNode<Integer> first = (ConstNode<Integer>) array.elements().get(0);
     assertThat(first.value()).isEqualTo(1);
     ConstNode<Integer> second = (ConstNode<Integer>) array.elements().get(1);
@@ -1049,8 +1047,8 @@ public class ParserTest {
     ExprNode rhs = node.expr();
     assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
     ArrayLiteralNode array = (ArrayLiteralNode) rhs;
-    assertThat(array.varType().isArray()).isTrue();
-    assertThat(array.arrayType().baseType()).isEqualTo(VarType.STRING);
+    assertThat(array.varType()).hasArrayBaseType(VarType.STRING);
+
     ConstNode<String> first = (ConstNode<String>) array.elements().get(0);
     assertThat(first.value()).isEqualTo("1");
     ConstNode<String> second = (ConstNode<String>) array.elements().get(1);
@@ -1066,8 +1064,8 @@ public class ParserTest {
     ExprNode rhs = node.expr();
     assertThat(rhs).isInstanceOf(ArrayLiteralNode.class);
     ArrayLiteralNode array = (ArrayLiteralNode) rhs;
-    assertThat(array.varType().isArray()).isTrue();
-    assertThat(array.arrayType().baseType()).isEqualTo(VarType.BOOL);
+    assertThat(array.varType()).hasArrayBaseType(VarType.BOOL);
+
     ConstNode<Boolean> first = (ConstNode<Boolean>) array.elements().get(0);
     assertThat(first.value()).isTrue();
     ConstNode<Boolean> second = (ConstNode<Boolean>) array.elements().get(1);

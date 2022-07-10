@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -379,6 +380,28 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void arrayLiteral() {
+    SymTab symTab = checkProgram("a=[1,2,3]");
+    assertThat(symTab.get("a").varType()).isArray();
+  }
+
+  @Test
+  public void arrayLiteralMismatch() {
+    assertError("a=[1,true]", "Inconsistent type");
+    assertError("b=3 a=[true,b]", "Inconsistent type");
+    assertError("a=[true,b]", "Indeterminable type");
+    assertError("a:int[2] a[0]=[1,2]", "declared as INT but.*ARRAY of INT");
+  }
+
+  @Test
+  public void arrayLiteralGood() {
+    SymTab symTab = checkProgram("f:proc():int {return 1} a=[1,f()]");
+    VarType varType = symTab.get("a").varType();
+    assertThat(varType).isArray();
+    assertThat(varType).hasArrayBaseType(VarType.INT);
+  }
+
+  @Test
   public void arrayLiteral_index() {
     SymTab symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.INT);
@@ -392,7 +415,7 @@ public class StaticCheckerTest {
   @Test
   public void arraySet() {
     SymTab symTab = checkProgram("a:int[1] a[0]=1");
-    assertThat(symTab.get("a").varType().isArray()).isTrue();
+    assertThat(symTab.get("a").varType()).isArray();
 
     checkProgram("b=3 a:int[1] a[b+1]=1");
   }
@@ -747,7 +770,7 @@ public class StaticCheckerTest {
     assertError("r: record{p:proc() {} }", "nested PROC 'p' in RECORD 'r'");
     assertError(
         "r: record{i:int f:int f:bool i:int b:bool}",
-        "Duplicate field(s) '[f, i]' declared in RECORD 'r'");
+        "Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
     assertError("r: record{f:dne}", "Unknown RECORD type 'dne'");
   }
 
@@ -1001,7 +1024,7 @@ public class StaticCheckerTest {
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
     assertWithMessage("Should have correct error for:\n " + program)
         .that(state.errorMessage())
-        .contains(messageShouldContain);
+        .containsMatch(messageShouldContain);
   }
 
   private SymTab checkProgram(String program) {

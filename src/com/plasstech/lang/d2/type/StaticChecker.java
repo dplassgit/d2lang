@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
@@ -152,7 +153,6 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       return new TypeCheckResult(symbolTable);
     } catch (TypeException e) {
       e.printStackTrace();
-      //      throw e;
       return new TypeCheckResult(e);
     }
   }
@@ -186,6 +186,30 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     if (right.varType() == VarType.VOID) {
       throw new TypeException(
           String.format("Cannot assign value of VOID expression %s", right), right.position());
+    }
+    if (right instanceof ArrayLiteralNode) {
+      // Make sure all element types are the same.
+      ArrayLiteralNode arrayLiteral = (ArrayLiteralNode) right;
+      ArrayType arrayType = arrayLiteral.arrayType();
+      VarType baseType = arrayType.baseType();
+      int i = 0;
+      for (ExprNode element : arrayLiteral.elements()) {
+        element.accept(this);
+        if (element.varType().isUnknown()) {
+          throw new TypeException(
+              String.format("Indeterminable type for %s", element), element.position());
+        }
+
+        // this may fail for records, bleah.
+        if (element.varType() != baseType) {
+          throw new TypeException(
+              String.format(
+                  "Inconsistent type in array literal; expected %s but element %d was %s",
+                  baseType, i, element.varType()),
+              element.position());
+        }
+        i++;
+      }
     }
 
     LValueNode lvalue = node.lvalue();
@@ -248,6 +272,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                     lvalue.position());
               }
 
+              // TODO: if arrays, the sizes must match.
+
               symbol.setAssigned();
             }
 
@@ -292,7 +318,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
             ArrayType arrayType = (ArrayType) symbol.varType();
 
-            if (right.varType() == VarType.UNKNOWN) {
+            if (right.varType().isUnknown()) {
               // should we infer it?
             }
             // 3. rhs must match lhs

@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -91,14 +90,11 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Not implemented yet")
   public void arrayConstantAssign() throws Exception {
-    assumeFalse(optimize);
     execute("x=['hi'] print x[0]", "arrayConstantAssign");
   }
 
   @Test
-  @Ignore("Not implemented yet")
   public void arrayConstantCalcAssign() throws Exception {
     execute(
         "x=[1, f()] f: proc(): int { return 3} println 'Should print 3' print x[1]",
