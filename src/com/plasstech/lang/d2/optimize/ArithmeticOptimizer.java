@@ -282,11 +282,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         int power = powerOfTwo(right);
         if (power != 0) {
           replaceCurrent(
-              new BinOp(
-                  op.destination(),
-                  left,
-                  TokenType.SHIFT_RIGHT,
-                  ConstantOperand.of(power)));
+              new BinOp(op.destination(), left, TokenType.SHIFT_RIGHT, ConstantOperand.of(power)));
           return;
         }
       } else if (left.equals(right)) {
@@ -367,14 +363,12 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
     }
     // Replace foo + -32 with foo - 32
-    if (right.isConstant()) {
-      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-      if (rightConstant.value() instanceof Integer) {
-        int rightval = (int) rightConstant.value();
-        if (rightval < 0) {
-          replaceCurrent(
-              new BinOp(op.destination(), left, TokenType.MINUS, ConstantOperand.of(-rightval)));
-        }
+    if (right.isConstant() && right.type() == VarType.INT) {
+      ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
+      int rightval = rightConstant.value();
+      if (rightval < 0) {
+        replaceCurrent(
+            new BinOp(op.destination(), left, TokenType.MINUS, ConstantOperand.of(-rightval)));
       }
     }
     if (left.equals(ConstantOperand.ZERO)) {
@@ -550,15 +544,13 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeBoolArith(
       Location destination, Operand left, Operand right, BinaryOperator<Boolean> fun) {
 
-    if (left.isConstant() && right.isConstant()) {
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      if (leftConstant.value() instanceof Boolean) {
-        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-        boolean leftval = (boolean) leftConstant.value();
-        boolean rightval = (boolean) rightConstant.value();
-        replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
-        return true;
-      }
+    if (left.isConstant() && right.isConstant() && left.type() == VarType.BOOL) {
+      ConstantOperand<Boolean> leftConstant = (ConstantOperand<Boolean>) left;
+      ConstantOperand<Boolean> rightConstant = (ConstantOperand<Boolean>) right;
+      boolean leftval = leftConstant.value();
+      boolean rightval = rightConstant.value();
+      replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
+      return true;
     }
     return false;
   }

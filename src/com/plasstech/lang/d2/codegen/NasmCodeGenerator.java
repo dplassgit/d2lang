@@ -831,7 +831,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov RDX, %s  ; Address of right string", resolve(right));
         }
       }
-
     }
     generateSyscall("strcmp");
     emit("cmp RAX, 0");
@@ -1222,12 +1221,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     int index = 0;
-
     for (Operand actual : op.actuals()) {
-      String formalLocation = resolve(op.formals().get(index++));
+      String formalLocation = resolve(op.formals().get(index));
       String actualLocation = resolve(actual);
       Size size = Size.of(actual.type());
-      emit("mov %s %s, %s", size, formalLocation, actualLocation);
+      if (formalLocation.equals(actualLocation)) {
+        emit("; parameter %d already in %s", index, actualLocation);
+      } else {
+        emit("mov %s %s, %s", size, formalLocation, actualLocation);
+      }
+      index++;
       deallocate(actual);
     }
     emit("call __%s", op.procName());

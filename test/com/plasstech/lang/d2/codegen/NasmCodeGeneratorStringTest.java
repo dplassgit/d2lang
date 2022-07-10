@@ -108,7 +108,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void bug97ComparingParams() throws Exception {
     execute(
-        "      compOpsParam:proc(a:string, b:string) { "
+        "      bug97ComparingParams:proc(a:string, b:string) { "
             + "  println a == chr(10) "
             + "  println chr(10) == a "
             + "  println b == chr(10) "

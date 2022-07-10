@@ -5,21 +5,32 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantOperand<T> implements Operand {
-  public static final ConstantOperand<Integer> ZERO = of(0);
-  public static final ConstantOperand<Integer> ONE = of(1);
-  public static final ConstantOperand<Boolean> FALSE = of(false);
-  public static final ConstantOperand<Boolean> TRUE = of(true);
+  public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
+  public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
+  public static final ConstantOperand<Boolean> FALSE =
+      new ConstantOperand<Boolean>(false, VarType.BOOL);
+  public static final ConstantOperand<Boolean> TRUE =
+      new ConstantOperand<Boolean>(true, VarType.BOOL);
 
   public static ConstantOperand<String> of(String value) {
     return new ConstantOperand<String>(value, VarType.STRING);
   }
 
   public static ConstantOperand<Integer> of(int value) {
+    if (value == 0) {
+      return ZERO;
+    } else if (value == 1) {
+      return ONE;
+    }
     return new ConstantOperand<Integer>(value, VarType.INT);
   }
 
   public static ConstantOperand<Boolean> of(boolean value) {
-    return new ConstantOperand<Boolean>(value, VarType.BOOL);
+    if (value) {
+      return TRUE;
+    } else {
+      return FALSE;
+    }
   }
 
   private final T value;

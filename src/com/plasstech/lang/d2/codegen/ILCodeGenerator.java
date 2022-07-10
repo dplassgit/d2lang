@@ -322,7 +322,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   public void visit(BinOpNode node) {
     // Calculate the value and put it somewhere
     Node left = node.left();
-    // Source for the value of left - either a register or memory location or a value.
+    // Source for the value of left - either a register or memory location or a constant value.
     Operand leftSrc;
     // if left is a constant, just get it.
     if (left.isConstant()) {
@@ -333,11 +333,10 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       leftSrc = left.location();
     }
 
-    // Source for the value of right - either a register or memory location or a
-    // value or a constant.
-    Operand rightSrc;
     // Calculate the value and put it somewhere
     Node right = node.right();
+    // Source for the value of right - either a register or memory location or a constant value.
+    Operand rightSrc;
 
     if (node.operator() == TokenType.DOT) {
       // the RHS is a field reference
@@ -402,6 +401,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // if it's not true, jump to the next block
       // temp = !cond
       // if temp skip to next block.
+      // TODO: I hate this, it adds too many operations.
       emit(new UnaryOp(temp, TokenType.NOT, cond.location()));
       emit(new IfOp(temp, nextLabel));
 
