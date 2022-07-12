@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,7 +80,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void bug102ParamMunge() throws Exception {
-    assumeFalse(optimize);
     execute(
         "      f2: proc(c2:bool, b2:string, d2:int, a2:int) {"
             + "  print 'c=' println c2 print 'b=' println b2 print 'a=' println a2 "

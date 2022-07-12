@@ -5,11 +5,15 @@ import com.google.common.collect.HashBiMap;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Resolves temp and other variables and keeps track if they're in registers or not. TODO: rename
+ * this to something better.
+ */
 public class Resolver {
   private final BiMap<String, Register> aliases = HashBiMap.create(16);
-  private Registers registers;
-  private StringTable stringTable;
-  private Emitter emitter;
+  private final Registers registers;
+  private final StringTable stringTable;
+  private final Emitter emitter;
 
   public Resolver(Registers registers, StringTable stringTable, Emitter emitter) {
     this.registers = registers;
@@ -17,6 +21,10 @@ public class Resolver {
     this.emitter = emitter;
   }
 
+  /**
+   * Given an operand returns a string representation of where it can be accessed. It also allocates
+   * a register for a temp if it's not already allocated.
+   */
   public String resolve(Operand operand) {
     if (operand.isConstant()) {
       if (operand.type() == VarType.INT) {
@@ -54,7 +62,7 @@ public class Resolver {
         // TODO: deal with out-of-registers
         reg = registers.allocate();
         aliases.put(location.name(), reg);
-        emitter.emit("; Allocating %s to %s", location, reg);
+        emitter.emit("  ; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
       case GLOBAL:
         return "[__" + location.name() + "]";
@@ -70,7 +78,8 @@ public class Resolver {
     }
   }
 
-  public String generateParamLocationName(int index, VarType varType) {
+  /** Given a parameter index and type, returns a string representation of that parameter. */
+  private String generateParamLocationName(int index, VarType varType) {
     Register reg = Register.paramRegister(index);
     if (reg == null) {
       // TODO: implement > 4 params.
@@ -80,21 +89,24 @@ public class Resolver {
     return reg.sizeByType(varType);
   }
 
+  /** Allocate and return a register. */
   public Register allocate() {
     return registers.allocate();
   }
 
+  /** Deallocate the given register. */
   public void deallocate(Register register) {
     registers.deallocate(register);
   }
 
+  /** If the operand is a temp and was allocated, deallocate its register. */
   public void deallocate(Operand operand) {
     if (operand.storage() == SymbolStorage.TEMP) {
       // now that we used the temp, unallocate it
       String operandName = operand.toString();
       Register reg = aliases.get(operandName);
       if (reg != null) {
-        emitter.emit("; Deallocating %s from %s", operand, reg);
+        emitter.emit("  ; Deallocating %s from %s", operand, reg);
         aliases.remove(operandName);
         deallocate(reg);
       }
@@ -102,7 +114,6 @@ public class Resolver {
   }
 
   /**
-   * @param source
    * @return the equivalent register, or null if none.
    */
   public Register toRegister(Operand source) {
@@ -110,10 +121,10 @@ public class Resolver {
       return null;
     }
 
-    Location location = (Location) source;
     if (source.isRegister()) {
-      return ((RegisterLocation) location).register();
+      return ((RegisterLocation) source).register();
     }
+    Location location = (Location) source;
     Register aliasReg = aliases.get(location.toString());
     if (aliasReg != null) {
       return aliasReg;
@@ -135,38 +146,13 @@ public class Resolver {
     }
   }
 
+  /** Returns true if the given operand is in any register. */
   public boolean isInAnyRegister(Operand arg) {
     return toRegister(arg) != null;
   }
 
+  /** Returns true if the given operand is in the given register. */
   public boolean isInRegister(Operand arg, Register register) {
-    if (arg.isConstant()) {
-      return false;
-    }
-
-    if (arg.isRegister()) {
-      Register actualReg = ((RegisterLocation) arg).register();
-      return register == actualReg;
-    }
-    Location location = (Location) arg;
-    Register aliasReg = aliases.get(location.toString());
-    if (aliasReg != null) {
-      return aliasReg == register;
-    }
-    switch (location.storage()) {
-      case TEMP:
-        return false; // we would have found its alias already.
-      case GLOBAL:
-        return false;
-      case PARAM:
-        ParamLocation paramLoc = (ParamLocation) location;
-        Register actualReg = Register.paramRegister(paramLoc.index());
-        return actualReg == register;
-      case LOCAL:
-        return false;
-      default:
-        emitter.fail("Cannot determine if %s is in a reg", location);
-        return false;
-    }
+    return toRegister(arg) == register;
   }
 }

@@ -1136,7 +1136,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
      * We ONLY have to do gymnastics when a param register needs to be copied to a LATER param
      * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
      */
-    callGenerator.emitCall(op);
+    callGenerator.generate(op);
     emit0("\n  call __%s\n", op.procName());
     registerState.condPop();
     if (op.destination().isPresent()) {
