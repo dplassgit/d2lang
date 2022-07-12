@@ -9,4 +9,6 @@ interface Emitter {
 
   /** Returns all lines so far. */
   ImmutableList<String> all();
+
+  void fail(String format, Object... values);
 }

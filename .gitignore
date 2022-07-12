@@ -35,6 +35,8 @@ bazel-testlogs
 .apt_generated/
 
 # Forgotten files
+*.c
+*.s
 *.asm
 *.obj
 *.exe

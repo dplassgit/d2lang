@@ -2,22 +2,23 @@
 
 PEGS = ["", "left", "center", "right"]
 
-printIt: proc(index:int, arr:string[]) {
-  print arr[index]
-}
 
 printPeg: proc(peg:int) {
-  printIt(peg, PEGS)
+  // print "peg: " print peg print ": " 
+  print PEGS[peg]
 }
 
 hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
   if n != 0 {
     hanoi(n - 1, fromPeg, toPeg, usingPeg)
-    print("Move disk from ")
+    print "Move disk from "
+    //print fromPeg
     printPeg(fromPeg)
-    print(" peg to ")
+    print " peg to "
     printPeg(toPeg)
-    print(" peg.\n")
+    //print toPeg
+    println " peg"
+    //println ""
     hanoi(n - 1, usingPeg, fromPeg, toPeg)
   }
 }

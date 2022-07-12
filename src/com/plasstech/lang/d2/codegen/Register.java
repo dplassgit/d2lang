@@ -1,8 +1,10 @@
 package com.plasstech.lang.d2.codegen;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.type.VarType;
 
 public enum Register {
+
   RBX("RBX", "EBX", "BX", "BL"),
   // R4/RSP - not used as GP register
   // R5/RBP - not used as GP register
@@ -26,6 +28,8 @@ public enum Register {
   public static final ImmutableList<Register> VOLATILE_REGISTERS =
       ImmutableList.of(RCX, RDX, R8, R9, R10, R11);
 
+  public static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
+
   public final String name64;
   public final String name32;
   public final String name16;
@@ -39,5 +43,28 @@ public enum Register {
     this.name64 = name64;
     this.name32 = name32;
     this.name16 = name16;
-    this.name8 = name8;}
+    this.name8 = name8;
+  }
+
+  @Override
+  public java.lang.String toString() {
+    return name64;
+  }
+
+  // TODO: implement equals by comparing the input string to any of the names
+  String sizeByType(VarType type) {
+    if (type == VarType.INT) {
+      return name32;
+    } else if (type == VarType.BOOL) {
+      return name8;
+    }
+    return name64;
+  }
+
+  public static Register paramRegister(int index) {
+    if (index > 3) {
+      return null;
+    }
+    return PARAM_REGISTERS.get(index);
+  }
 }

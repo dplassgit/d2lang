@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 
 public class ListEmitter implements Emitter {
 
@@ -17,5 +18,10 @@ public class ListEmitter implements Emitter {
   @Override
   public ImmutableList<String> all() {
     return ImmutableList.copyOf(code);
+  }
+
+  @Override
+  public void fail(String format, Object[] values) {
+    throw new D2RuntimeException("UnsupportedOperation", null, String.format(format, values));
   }
 }

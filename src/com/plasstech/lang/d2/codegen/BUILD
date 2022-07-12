@@ -47,6 +47,7 @@ java_library(
     visibility=["//visibility:public"],
     deps=[
         "//src/com/plasstech/lang/d2/common",
+        "//src/com/plasstech/lang/d2/type:var_types",
         "@maven//:com_google_guava_guava",
     ],
 )

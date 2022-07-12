@@ -7,7 +7,7 @@ data[4]="o"
 
 len=length(data)
 
-print_array: proc {
+print_array: proc(data:string[]) {
   i = 0 while i < len do i = i + 1 {
     print "data[" 
     print i
@@ -16,7 +16,7 @@ print_array: proc {
 }
 
 println "Unsorted:"
-print_array()
+print_array(data)
 
 i = 0 while i < len - 1 do i = i + 1 {
   j = i+1 while j < len  do j = j + 1 {
@@ -31,4 +31,4 @@ i = 0 while i < len - 1 do i = i + 1 {
 
 
 println "\nSorted:"
-print_array()
+print_array(data)

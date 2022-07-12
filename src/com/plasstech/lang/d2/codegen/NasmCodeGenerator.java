@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.escape.Escaper;
@@ -58,8 +56,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private static FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final ImmutableList<Register> PARAM_REGISTERS = ImmutableList.of(RCX, RDX, R8, R9);
-
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.PLUS, "add")
@@ -97,15 +93,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final Set<String> data = new TreeSet<>();
   private final Registers registers = new Registers();
   // map from name to register
-  private final BiMap<String, Register> aliases = HashBiMap.create(16);
   private final Emitter emitter = new ListEmitter();
+  private Resolver resolver;
+  private CallGenerator callGenerator;
 
   private int id;
   private StringTable stringTable;
-
+  
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
+    resolver = new Resolver(registers, stringTable, emitter);
+    callGenerator = new CallGenerator(registers, resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -204,19 +203,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Register sourceReg = null;
     Operand sourceLoc = op.source();
-    String sourceName = resolve(sourceLoc);
-    if (!(isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
+    String sourceName = resolver.resolve(sourceLoc);
+    if (!(resolver.isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
       sourceReg = registers.allocate();
       emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
-      String sourceRegisterSized = registerNameSized(sourceReg, arrayType.baseType());
+      String sourceRegisterSized = sourceReg.sizeByType(arrayType.baseType());
       emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
       sourceName = sourceRegisterSized;
     }
 
     // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
     Operand indexLoc = op.index();
-    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolve(op.array()));
+    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolver.resolve(op.array()));
     emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
     if (sourceReg != null) {
       emit("; deallocating %s", sourceReg);
@@ -225,8 +224,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registers.deallocate(fullIndex);
     emit("; deallocating %s", fullIndex);
 
-    deallocate(sourceLoc);
-    deallocate(indexLoc);
+    resolver.deallocate(sourceLoc);
+    resolver.deallocate(indexLoc);
   }
 
   /**
@@ -282,7 +281,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
           fullIndex, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
     } else {
-      String indexName = resolve(indexLoc);
+      String indexName = resolver.resolve(indexLoc);
 
       // TODO: make this an asm function instead of inlining each time?
       emit("; make sure index is >= 0");
@@ -347,10 +346,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     Location destination = op.destination();
 
-    Register fromReg = toRegister(source); // if this is *already* a register
-    Register toReg = toRegister(destination); // if this is *already* a register
-    String destLoc = resolve(destination);
-    String sourceLoc = resolve(source);
+    Register fromReg = resolver.toRegister(source); // if this is *already* a register
+    Register toReg = resolver.toRegister(destination); // if this is *already* a register
+    String destLoc = resolver.resolve(destination);
+    String sourceLoc = resolver.resolve(source);
     if (source.type() == VarType.STRING) {
       if (toReg != null || fromReg != null) {
         // go right from source to dest
@@ -360,13 +359,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = registers.allocate();
-        String tempName = registerNameSized(tempReg, op.source().type());
+        String tempName = tempReg.sizeByType(op.source().type());
         // TODO: this can be short-circuited too if dest is a register
         emit("mov %s, %s", tempName, sourceLoc);
         emit("mov %s, %s", destLoc, tempName);
         registers.deallocate(tempReg);
       }
-      deallocate(source);
+      resolver.deallocate(source);
       return;
     }
 
@@ -380,13 +379,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov %s %s, %s", size, destLoc, sourceLoc);
       } else {
         Register tempReg = registers.allocate();
-        String tempName = registerNameSized(tempReg, op.source().type());
+        String tempName = tempReg.sizeByType(op.source().type());
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
         registers.deallocate(tempReg);
       }
     }
-    deallocate(source);
+    resolver.deallocate(source);
   }
 
   @Override
@@ -398,7 +397,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(ArrayAlloc op) {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     Operand numEntriesLoc = op.sizeLocation();
-    String numEntriesLocName = resolve(numEntriesLoc);
+    String numEntriesLocName = resolver.resolve(numEntriesLoc);
 
     // 1. calculate # of bytes to allocate:
     //    size * entrySize +
@@ -446,13 +445,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit("mov RCX, 1  ; # of 'entries' for calloc");
     generateSyscall("calloc");
-    String dest = resolve(op.destination());
+    String dest = resolver.resolve(op.destination());
     emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
     emit("mov BYTE [RAX], %s  ; store # of dimensions", dimensions);
 
     Register numEntriesReg = null;
-    if (!(isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
+    if (!(resolver.isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
       numEntriesReg = registers.allocate();
       emit(
@@ -467,12 +466,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("; deallocating numEntriesLoc from %s", numEntriesReg);
       registers.deallocate(numEntriesReg);
     }
-    deallocate(op.sizeLocation());
+    resolver.deallocate(op.sizeLocation());
   }
 
   /** Generates code to print whatever is in RCX and/or RDX etc. */
   private void generatePrintf() {
     generateSyscall("printf");
+  }
+
+  private void generateMalloc() {
+    generateSyscall("malloc");
   }
 
   private void generateSyscall(String name) {
@@ -491,7 +494,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
-        String argVal = resolve(arg);
+        String argVal = resolver.resolve(arg);
         if (arg.type() == VarType.INT) {
           // move with sign extend. intentionally set rdx first, in case the arg is in ecx
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
@@ -521,13 +524,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // String
           if (op.call() == SysCall.Call.MESSAGE) {
             // Intentionally set rdx first in case the arg is in rcx
-            if (!isInRegister(arg, RDX)) {
+            if (!resolver.isInRegister(arg, RDX)) {
               // arg is not in rdx yet
               emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
             }
             data.add(EXIT_MSG);
             emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
-          } else if (!isInRegister(arg, RCX)) {
+          } else if (!resolver.isInRegister(arg, RCX)) {
             // arg is not in rcx yet
             emit("mov RCX, %s  ; String to print", argVal);
           }
@@ -541,134 +544,41 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
     }
     registerState.condPop();
-    deallocate(op.arg());
-  }
-
-  /**
-   * @param source
-   * @return the equivalent register, or null if none.
-   */
-  private Register toRegister(Operand source) {
-    if (source.isConstant()) {
-      return null;
-    }
-
-    Location location = (Location) source;
-    if (source.isRegister()) {
-      return ((RegisterLocation) location).register();
-    }
-    Register aliasReg = aliases.get(location.toString());
-    if (aliasReg != null) {
-      return aliasReg;
-    }
-    switch (location.storage()) {
-      case TEMP:
-        return null; // we would have found its alias already.
-      case GLOBAL:
-        return null;
-      case PARAM:
-        ParamLocation paramLoc = (ParamLocation) location;
-        Register actualReg = paramRegister(paramLoc.index());
-        return actualReg;
-      case LOCAL:
-        return null;
-      default:
-        fail("Cannot generate %s operand %s yet", location.storage(), location);
-        return null;
-    }
-  }
-
-  private boolean isInAnyRegister(Operand arg) {
-    if (arg.isConstant()) {
-      return false;
-    }
-    if (arg.isRegister()) {
-      return true;
-    }
-
-    Location location = (Location) arg;
-    if (aliases.get(location.toString()) != null) {
-      return true;
-    }
-    switch (location.storage()) {
-      case TEMP:
-        return false; // we would have found its alias already.
-      case GLOBAL:
-        return false;
-      case PARAM:
-        ParamLocation paramLoc = (ParamLocation) location;
-        return paramRegister(paramLoc.index()) != null;
-      case LOCAL:
-        return false;
-      default:
-        fail("Cannot determine if %s is in a reg", location);
-        return false;
-    }
-  }
-
-  private boolean isInRegister(Operand arg, Register register) {
-    if (arg.isConstant()) {
-      return false;
-    }
-
-    if (arg.isRegister()) {
-      Register actualReg = ((RegisterLocation) arg).register();
-      return register == actualReg;
-    }
-    Location location = (Location) arg;
-    Register aliasReg = aliases.get(location.toString());
-    if (aliasReg != null) {
-      return aliasReg == register;
-    }
-    switch (location.storage()) {
-      case TEMP:
-        return false; // we would have found its alias already.
-      case GLOBAL:
-        return false;
-      case PARAM:
-        ParamLocation paramLoc = (ParamLocation) location;
-        Register actualReg = paramRegister(paramLoc.index());
-        return actualReg == register;
-      case LOCAL:
-        return false;
-      default:
-        fail("Cannot determine if %s is in a reg", location);
-        return false;
-    }
+    resolver.deallocate(op.arg());
   }
 
   @Override
   public void visit(Dec op) {
-    String target = resolve(op.target());
+    String target = resolver.resolve(op.target());
     emit("dec DWORD %s", target);
-    deallocate(op.target());
+    resolver.deallocate(op.target());
   }
 
   @Override
   public void visit(Inc op) {
-    String target = resolve(op.target());
+    String target = resolver.resolve(op.target());
     emit("inc DWORD %s", target);
-    deallocate(op.target());
+    resolver.deallocate(op.target());
   }
 
   @Override
   public void visit(IfOp op) {
-    String condName = resolve(op.condition());
+    String condName = resolver.resolve(op.condition());
     emit("cmp BYTE %s, 0", condName);
     emit("jne __%s", op.destination());
-    deallocate(op.condition());
+    resolver.deallocate(op.condition());
   }
 
   @Override
   public void visit(BinOp op) {
     // 1. get left
-    String leftName = resolve(op.left());
+    String leftName = resolver.resolve(op.left());
     VarType leftType = op.left().type();
     // 2. get right
-    String rightName = resolve(op.right());
+    String rightName = resolver.resolve(op.right());
 
     // 3. determine dest location
-    String destName = resolve(op.destination());
+    String destName = resolver.resolve(op.destination());
 
     Register tempReg = null;
 
@@ -788,17 +698,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (tempReg != null) {
       registers.deallocate(tempReg);
     }
-    deallocate(op.left());
-    deallocate(op.right());
+    resolver.deallocate(op.left());
+    resolver.deallocate(op.right());
   }
 
   private void generateStringCompare(
       Operand left, Operand right, String destName, TokenType operator) {
     RegisterState state = condPush(Register.VOLATILE_REGISTERS);
 
-    emit("; strcmp: %s = %s %s %s", destName, resolve(left), operator, resolve(right));
+    emit(
+        "; strcmp: %s = %s %s %s",
+        destName, resolver.resolve(left), operator, resolver.resolve(right));
 
-    if (isInRegister(left, RDX) && isInRegister(right, RCX)) {
+    if (resolver.isInRegister(left, RDX) && resolver.isInRegister(right, RCX)) {
       if (operator == TokenType.EQEQ || operator == TokenType.NEQ) {
         emit("; no need to set up RCX, RDX for %s", operator);
       } else {
@@ -806,29 +718,29 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("xchg RCX, RDX  ; left was rdx, right was rcx, so swap them");
       }
     } else {
-      if (isInRegister(right, RCX)) {
+      if (resolver.isInRegister(right, RCX)) {
         emit("; right is in RCX, so set RDX first.");
         // rcx is in the right register, need to set rdx first
-        if (isInRegister(right, RDX)) {
+        if (resolver.isInRegister(right, RDX)) {
           emit("; right already in RDX");
         } else {
-          emit("mov RDX, %s  ; Address of right string", resolve(right));
+          emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
         }
-        if (isInRegister(left, RCX)) {
+        if (resolver.isInRegister(left, RCX)) {
           emit("; left already in RCX");
         } else {
-          emit("mov RCX, %s  ; Address of left string", resolve(left));
+          emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
         }
       } else {
-        if (isInRegister(left, RCX)) {
+        if (resolver.isInRegister(left, RCX)) {
           emit("; left already in RCX");
         } else {
-          emit("mov RCX, %s  ; Address of left string", resolve(left));
+          emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
         }
-        if (isInRegister(right, RDX)) {
+        if (resolver.isInRegister(right, RDX)) {
           emit("; right already in RDX");
         } else {
-          emit("mov RDX, %s  ; Address of right string", resolve(right));
+          emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
         }
       }
     }
@@ -843,7 +755,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 1. allocate a new 2-char string
 
     emit("mov RCX, 2");
-    generateSyscall("malloc");
+    generateMalloc();
     registerState.condPop();
     // 2. copy the location to the dest
     emit("mov %s, RAX  ; destination from rax", destName);
@@ -894,7 +806,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
     emit("mov ECX, %s", leftLengthReg.name32);
-    generateSyscall("malloc");
+    generateMalloc();
     emit("; deallocating leftlength %s", leftLengthReg);
     registers.deallocate(leftLengthReg);
     // 4. put string into dest
@@ -906,7 +818,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. strcpy from left to dest
     emit0("");
     registerState = condPush(Register.VOLATILE_REGISTERS);
-    String left = resolve(leftOperand);
+    String left = resolver.resolve(leftOperand);
     emit("; strcpy from %s to %s", left, dest);
     if (left.equals(RCX.name64) && dest.equals(RDX.name64)) {
       // just swap rdx & rcx
@@ -926,7 +838,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 6. strcat dest, right
     emit0("");
     registerState = condPush(Register.VOLATILE_REGISTERS);
-    String right = resolve(rightOperand);
+    String right = resolver.resolve(rightOperand);
     emit("; strcat from %s to %s", right, dest);
     if (right.equals(RCX.name64) && dest.equals(RDX.name64)) {
       // just swap rdx & rcx
@@ -946,7 +858,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void generateDivMod(BinOp op, String leftName, String rightName) {
     // 3. determine dest location
-    String destName = resolve(op.destination());
+    String destName = resolver.resolve(op.destination());
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
@@ -1001,19 +913,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // pseudo pop
       emit("add RSP, 8  ; pseudo pop RAX");
     }
-    deallocate(op.left());
-    deallocate(op.right());
+    resolver.deallocate(op.left());
+    resolver.deallocate(op.right());
   }
 
   @Override
   public void visit(UnaryOp op) {
     // 1. get source location name
     Operand source = op.operand();
-    String sourceName = resolve(source);
+    String sourceName = resolver.resolve(source);
     // 2. apply op
     // 3. store in destination
     Location destination = op.destination();
-    String destName = resolve(destination);
+    String destName = resolver.resolve(destination);
     // apply op
     switch (op.operator()) {
       case BIT_NOT:
@@ -1064,13 +976,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         fail("Cannot generate %s yet", op);
         break;
     }
-    deallocate(op.operand());
+    resolver.deallocate(op.operand());
   }
 
   private void generateArrayLength(Operand source, Location destination) {
-    String sourceName = resolve(source);
-    String destName = resolve(destination);
-    if (isInAnyRegister(source)) {
+    String sourceName = resolver.resolve(source);
+    String destName = resolver.resolve(destination);
+    if (resolver.isInAnyRegister(source)) {
       emit("mov %s, [%s + 1]  ; get length from first dimension", destName, sourceName);
     } else {
       // if source is not a register we have to allocate a register first
@@ -1085,9 +997,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // We're doing something special with RAX & RCX
     RegisterState raxRcxState = condPush(ImmutableList.of(RAX, RCX));
     RegisterState registerState = condPush(ImmutableList.of(RDX, R8, R9, R10, R11));
-    String sourceName = resolve(source);
-    String destinationName = resolve(destination);
-    if (isInRegister(source, RCX)) {
+    String sourceName = resolver.resolve(source);
+    String destinationName = resolver.resolve(destination);
+    if (resolver.isInRegister(source, RCX)) {
       emit("; RCX already has address of string");
     } else {
       emit("mov RCX, %s  ; Address of string", sourceName);
@@ -1095,7 +1007,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     generateSyscall("strlen");
     registerState.condPop();
 
-    if (isInRegister(destination, RCX)) {
+    if (resolver.isInRegister(destination, RCX)) {
       // pseudo pop
       emit("; pseudo-pop; destination was already %s", destination);
       if (raxRcxState.pushed(RCX)) {
@@ -1104,7 +1016,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       raxRcxState.condPop(RCX);
     }
-    if (isInRegister(destination, RAX)) {
+    if (resolver.isInRegister(destination, RAX)) {
       // pseudo pop; eax already has the length.
       emit("; pseudo-pop; destination was already %s", destination);
       if (raxRcxState.pushed(RAX)) {
@@ -1123,7 +1035,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // 1. allocate a new 2-char string
     emit("mov RCX, 2");
-    generateSyscall("malloc");
+    generateMalloc();
     registerState.condPop();
     // 2. set destName to allocated string
     if (!destName.equals(RAX.name64)) {
@@ -1148,7 +1060,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // I hate this. the param should already know its location, as a ParamLocation
     for (Parameter formal : op.formals()) {
       Location location;
-      Register reg = paramRegister(i);
+      Register reg = Register.paramRegister(i);
       if (reg != null) {
         location = new RegisterLocation(formal.name(), reg, formal.varType());
         registers.reserve(reg);
@@ -1220,127 +1132,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
-    int index = 0;
-    for (Operand actual : op.actuals()) {
-      String formalLocation = resolve(op.formals().get(index));
-      String actualLocation = resolve(actual);
-      Size size = Size.of(actual.type());
-      if (formalLocation.equals(actualLocation)) {
-        emit(
-            "; parameter #%d (%s) already in %s",
-            index, op.formals().get(index).name(), actualLocation);
-      } else {
-        emit("mov %s %s, %s", size, formalLocation, actualLocation);
-      }
-      index++;
-      deallocate(actual);
-    }
-    emit("call __%s", op.procName());
+    /**
+     * We ONLY have to do gymnastics when a param register needs to be copied to a LATER param
+     * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
+     */
+    callGenerator.emitCall(op);
+    emit0("\n  call __%s\n", op.procName());
     registerState.condPop();
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
-      String destName = resolve(destination);
+      String destName = resolver.resolve(destination);
       Size size = Size.of(destination.type());
-      emit("mov %s %s, %s", size, destName, registerNameSized(RAX, destination.type()));
+      emit("mov %s %s, %s", size, destName, RAX.sizeByType(destination.type()));
     }
   }
+
 
   /** Conditionally push all allocated registers in the list */
   private RegisterState condPush(ImmutableList<Register> registerList) {
     return RegisterState.condPush(emitter, registers, registerList);
-  }
-
-  private void deallocate(Operand operand) {
-    if (operand.storage() == SymbolStorage.TEMP) {
-      // now that we used the temp, unallocate it
-      String operandName = operand.toString();
-      Register reg = aliases.get(operandName);
-      if (reg != null) {
-        emit("; Deallocating %s from %s", operand, reg);
-        aliases.remove(operandName);
-        registers.deallocate(reg);
-      }
-    }
-  }
-
-  private String resolve(Operand operand) {
-    if (operand.isConstant()) {
-      if (operand.type() == VarType.INT) {
-        return operand.toString();
-      } else if (operand.type() == VarType.BOOL) {
-        ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;
-        if (boolConst.value() == Boolean.TRUE) {
-          return "1";
-        }
-        return "0";
-      } else if (operand.type() == VarType.STRING) {
-        // look it up in the string table.
-        ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
-        StringEntry entry = stringTable.lookup(stringConst.value());
-        return entry.name();
-      }
-
-      fail("Cannot generate %s operand %s yet", operand.type().name(), operand);
-      return null;
-    }
-
-    Location location = (Location) operand;
-    // maybe look up the location in the symbol table?
-    if (location.isRegister()) {
-      Register reg = ((RegisterLocation) location).register();
-      return registerNameSized(reg, location.type());
-    }
-    Register reg = aliases.get(location.toString());
-    if (reg != null) {
-      // Found it in a register.
-      return registerNameSized(reg, location.type());
-    }
-    switch (location.storage()) {
-      case TEMP:
-        // TODO: deal with out-of-registers
-        reg = registers.allocate();
-        aliases.put(location.name(), reg);
-        emit("; Allocating %s to %s", location, reg);
-        return registerNameSized(reg, location.type());
-      case GLOBAL:
-        return "[__" + location.name() + "]";
-      case PARAM:
-        ParamLocation paramLoc = (ParamLocation) location;
-        return generateParamLocationName(paramLoc.index(), location.type());
-      case LOCAL:
-        StackLocation stackLoc = (StackLocation) location;
-        return "[RBP - " + stackLoc.offset() + "]";
-      default:
-        fail("Cannot generate %s operand %s yet", location.storage(), location);
-        return null;
-    }
-  }
-
-  private Register paramRegister(int index) {
-    if (index > 3) {
-      return null;
-    }
-    return PARAM_REGISTERS.get(index);
-  }
-
-  private String generateParamLocationName(int index, VarType varType) {
-    Register reg = paramRegister(index);
-    if (reg == null) {
-      // TODO: implement > 4 params.
-      fail("Cannot generate more than 4 params yet");
-      return null;
-    }
-    return registerNameSized(reg, varType);
-  }
-
-  private static String registerNameSized(Register reg, VarType type) {
-    // TODO: figure out how to generalize this.
-    if (type == VarType.INT) {
-      return reg.name32;
-    } else if (type == VarType.BOOL) {
-      return reg.name8;
-    }
-    return reg.name64;
   }
 
   // Emit at column 2
@@ -1354,35 +1164,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     logger.atFine().logVarargs(format, values);
   }
 
-  private static void fail(String format, Object... values) {
-    throw new D2RuntimeException("UnsupportedOperation", null, String.format(format, values));
-  }
-
-  private enum Size {
-    _1BYTE("BYTE"),
-    _32BITS("DWORD"),
-    _64BITS("QWORD");
-
-    public final String asmName;
-
-    Size(String asmName) {
-      this.asmName = asmName;
-    }
-
-    @Override
-    public String toString() {
-      return asmName;
-    }
-
-    static Size of(VarType type) {
-      if (type == VarType.INT) {
-        return Size._32BITS;
-      } else if (type == VarType.BOOL) {
-        return Size._1BYTE;
-      } else if (type == VarType.STRING || type.isArray()) {
-        return Size._64BITS;
-      }
-      throw new D2RuntimeException("IllegalState", null, "Cannot get type of " + type);
-    }
+  private void fail(String format, Object... values) {
+    emitter.fail(format, values);
   }
 }

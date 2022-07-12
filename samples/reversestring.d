@@ -9,14 +9,14 @@ reverseIter: proc(s: string): string {
 }
 
 reverseRecursive: proc(s: string): string {
-  return reverse2(s, length(s))
+  return reverse2(length(s) ,s)
 }
 
-reverse2: proc(s: string, start: int): string {
+reverse2: proc(start: int, s: string): string {
   if start == 0 {
     return ""
   } else {
-    return s[start - 1] + reverse2(s, start - 1)
+    return s[start - 1] + reverse2(start - 1, s)
   }
 }
 
