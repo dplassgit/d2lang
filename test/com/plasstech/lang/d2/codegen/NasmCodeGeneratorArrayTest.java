@@ -11,6 +11,8 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
+  // TODO: test print
+
   @Test
   public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool"}) String type)
       throws Exception {

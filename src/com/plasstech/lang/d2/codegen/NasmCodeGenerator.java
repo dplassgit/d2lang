@@ -92,14 +92,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final Set<String> externs = new HashSet<>();
   private final Set<String> data = new TreeSet<>();
   private final Registers registers = new Registers();
-  // map from name to register
   private final Emitter emitter = new ListEmitter();
+
+  private StringTable stringTable;
   private Resolver resolver;
   private CallGenerator callGenerator;
 
   private int id;
-  private StringTable stringTable;
-  
+
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
@@ -698,7 +698,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (tempReg != null) {
       registers.deallocate(tempReg);
     }
-    resolver.deallocate(op.left());
+    if (!op.left().type().isArray()) {
+      resolver.deallocate(op.left());
+    }
     resolver.deallocate(op.right());
   }
 
@@ -976,7 +978,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         fail("Cannot generate %s yet", op);
         break;
     }
-    resolver.deallocate(op.operand());
+    // this affects print arrays.
+    if (!op.operand().type().isArray()) {
+      resolver.deallocate(op.operand());
+    }
   }
 
   private void generateArrayLength(Operand source, Location destination) {
@@ -1101,6 +1106,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // transfer from return value to RAX
       Operand returnValue = op.returnValueLocation().get();
       // I hate this. why can't we emit the "mov"?
+      registers.reserve(RAX);
       visit(new Transfer(new RegisterLocation("RAX", RAX, returnValue.type()), returnValue));
     }
     emit("jmp __exit_of_%s", op.procName());
@@ -1108,8 +1114,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcExit op) {
-    for (Register reg : Register.VOLATILE_REGISTERS) {
-      if (registers.isAllocated(reg)) {
+    for (Register reg : Register.values()) {
+      if (reg != RAX && registers.isAllocated(reg)) {
+        emit("; deallocating %s", reg);
         registers.deallocate(reg);
       }
     }
@@ -1146,7 +1153,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size, destName, RAX.sizeByType(destination.type()));
     }
   }
-
 
   /** Conditionally push all allocated registers in the list */
   private RegisterState condPush(ImmutableList<Register> registerList) {

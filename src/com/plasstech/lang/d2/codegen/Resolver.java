@@ -1,7 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -10,7 +11,8 @@ import com.plasstech.lang.d2.type.VarType;
  * this to something better.
  */
 public class Resolver {
-  private final BiMap<String, Register> aliases = HashBiMap.create(16);
+  // map from name to register
+  private final Map<String, Register> aliases = new HashMap<>();
   private final Registers registers;
   private final StringTable stringTable;
   private final Emitter emitter;

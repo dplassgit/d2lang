@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
@@ -123,7 +124,52 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   public void visit(PrintNode node) {
     Node expr = node.expr();
     expr.accept(this);
-    emit(new SysCall(SysCall.Call.PRINT, expr.location()));
+    if (expr.varType().isArray()) {
+      // Need 2 globals: index and length. Can't use temps, because they're one-time-use.
+      if (symbolTable.lookup("array_print_index") == VarType.UNKNOWN) {
+        symbolTable.declare("array_print_index", VarType.INT);
+      }
+      Location index = lookupLocation("array_print_index");
+      ArrayType arrayType = (ArrayType) expr.varType();
+      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("[")));
+      emit(new Transfer(index, ConstantOperand.of(0)));
+      // length = calculate length of array
+      if (symbolTable.lookup("array_print_length") == VarType.UNKNOWN) {
+        symbolTable.declare("array_print_length", VarType.INT);
+      }
+      Location length = lookupLocation("array_print_length");
+      TempLocation tempLength = allocateTemp(VarType.INT);
+      // can't assign right to the global because it barfs on the 2nd line:
+      // mov RBX, [__arr] ; get array location into reg
+      // mov [__length], [RBX + 1] ; get length from first dimension
+      emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location()));
+      emit(new Transfer(length, tempLength));
+      String loopLabel = newLabel("array_print_loop");
+      // loop:
+      emit(new Label(loopLabel));
+      String endLoopLabel = newLabel("array_print_loop_end");
+      //   compare index to length
+      TempLocation compare = allocateTemp(VarType.BOOL);
+      emit(new BinOp(compare, index, TokenType.EQEQ, length));
+      //   if equal, go to end
+      emit(new IfOp(compare, endLoopLabel));
+      TempLocation item = allocateTemp(arrayType.baseType());
+      //   item = get "index"th item
+      emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index));
+      //   print item
+      emit(new SysCall(SysCall.Call.PRINT, item));
+      // this adds a trailing comma but who cares.
+      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of(",")));
+      //   inc index
+      emit(new Inc(index));
+      //   goto loop
+      emit(new Goto(loopLabel));
+      // end:
+      emit(new Label(endLoopLabel));
+      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("]")));
+    } else {
+      emit(new SysCall(SysCall.Call.PRINT, expr.location()));
+    }
     if (node.isPrintln()) {
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
     }
