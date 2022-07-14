@@ -64,7 +64,7 @@ public class Resolver {
         // TODO: deal with out-of-registers
         reg = registers.allocate();
         aliases.put(location.name(), reg);
-        emitter.emit("  ; Allocating %s to %s", location, reg);
+        emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
       case GLOBAL:
         return "[__" + location.name() + "]";
@@ -108,7 +108,7 @@ public class Resolver {
       String operandName = operand.toString();
       Register reg = aliases.get(operandName);
       if (reg != null) {
-        emitter.emit("  ; Deallocating %s from %s", operand, reg);
+        emitter.emit("; Deallocating %s from %s", operand, reg);
         aliases.remove(operandName);
         deallocate(reg);
       }

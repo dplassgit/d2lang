@@ -29,7 +29,7 @@ public class RegisterStateTest {
     Register register = registers.allocate();
     assertThat(register).isEqualTo(Register.RBX);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
-    emitter.emit("; hi");
+    emitter.emit0("; hi");
     assertThat(emitter.all()).containsExactly("  push RBX", "; hi");
   }
 
@@ -39,7 +39,7 @@ public class RegisterStateTest {
     assertThat(register).isEqualTo(Register.RBX);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, ImmutableList.of(register));
-    emitter.emit("; hi");
+    emitter.emit0("; hi");
     registerState.condPop();
     assertThat(emitter.all()).containsExactly("  push RBX", "; hi", "  pop RBX");
   }
@@ -51,7 +51,7 @@ public class RegisterStateTest {
     registers.reserve(Register.RCX);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RCX, Register.RDX));
-    emitter.emit("; hi");
+    emitter.emit0("; hi");
     registerState.condPop();
     assertThat(emitter.all())
         .containsExactly("  push RCX", "  push RDX", "; hi", "  pop RDX", "  pop RCX");

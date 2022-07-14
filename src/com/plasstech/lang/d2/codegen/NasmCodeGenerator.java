@@ -9,7 +9,6 @@ import static com.plasstech.lang.d2.codegen.Register.RCX;
 import static com.plasstech.lang.d2.codegen.Register.RDX;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +88,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
 
   private final List<String> prelude = new ArrayList<>();
-  private final Set<String> externs = new HashSet<>();
   private final Set<String> data = new TreeSet<>();
   private final Registers registers = new Registers();
   private final Emitter emitter = new ListEmitter();
@@ -118,7 +116,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String.format("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
 
     prelude.add("global main\n");
-    externs.add("exit");
+    emitter.addExtern("exit");
 
     // 1. emit all globals
     // 2. emit all string constants
@@ -157,7 +155,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               .add("PARTIAL ASSEMBLY\n\n")
               .add("================\n\n")
               .addAll(prelude)
-              .addAll(externs.stream().map(s -> "extern " + s).iterator())
+              .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
               .add("\nsection .data")
               .addAll(data.stream().map(s -> "  " + s).iterator())
               .add("\nsection .text")
@@ -170,7 +168,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     ImmutableList<String> allCode =
         ImmutableList.<String>builder()
             .addAll(prelude)
-            .addAll(externs.stream().map(s -> "extern " + s).iterator())
+            .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
             .add("\nsection .data")
             .addAll(data.stream().map(s -> "  " + s).iterator())
             .add("\nsection .text")
@@ -479,10 +477,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateSyscall(String name) {
-    emit("sub RSP, 0x20");
-    externs.add(name);
-    emit("call %s", name);
-    emit("add RSP, 0x20");
+    emitter.emitExternCall(name);
   }
 
   @Override
@@ -539,12 +534,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot print %s yet", arg);
         }
         break;
+      case INPUT:
+        InputGenerator generator = new InputGenerator(resolver, registers, emitter);
+        generator.generate(arg);
+        break;
       default:
         fail("Cannot generate %s yet", op);
         break;
     }
     registerState.condPop();
-    resolver.deallocate(op.arg());
+    resolver.deallocate(arg);
   }
 
   @Override
@@ -1161,12 +1160,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   // Emit at column 2
   private void emit(String format, Object... values) {
-    emit0("  " + format, values);
+    emitter.emit(format, values);
+    logger.atFine().logVarargs(format, values);
   }
 
   // Emit at column 0
   private void emit0(String format, Object... values) {
-    emitter.emit(format, values);
+    emitter.emit0(format, values);
     logger.atFine().logVarargs(format, values);
   }
 

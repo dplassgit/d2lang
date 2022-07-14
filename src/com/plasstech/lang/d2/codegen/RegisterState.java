@@ -23,7 +23,7 @@ public class RegisterState {
             .filter(r -> registers.isAllocated(r))
             .collect(Collectors.toList());
     for (Register r : allocated) {
-      emitter.emit("  push %s", r.name64);
+      emitter.emit("push %s", r.name64);
     }
     return new RegisterState(emitter, allocated);
   }
@@ -40,7 +40,7 @@ public class RegisterState {
   }
 
   private void pop(Register r) {
-    emitter.emit("  pop %s", r.name64);
+    emitter.emit("pop %s", r.name64);
   }
 
   public void condPop() {

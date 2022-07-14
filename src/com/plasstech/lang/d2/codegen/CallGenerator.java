@@ -103,6 +103,6 @@ class CallGenerator {
   }
 
   private void emit(String format, Object... values) {
-    emitter.emit("  " + format, values);
+    emitter.emit(format, values);
   }
 }
