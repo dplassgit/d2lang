@@ -120,7 +120,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (source == op.source() && destination == op.array() && index == op.index()) {
       return;
     }
-    code.set(ip, new ArraySet(op.arrayType(), destination, index, source));
+    code.set(ip, new ArraySet(op.arrayType(), destination, index, source, false));
   }
 
   @Override

@@ -219,6 +219,11 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void arrayLiteral() throws Exception {
+    execute("x=[1,2,3] print x[0]", "arrayLiteral");
+  }
+
+  @Test
   public void dumbSort() throws Exception {
     execute(
         "        MAX=99999 "

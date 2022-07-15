@@ -188,7 +188,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     int i = 0;
     for (ExprNode element : node.elements()) {
       element.accept(ILCodeGenerator.this);
-      emit(new ArraySet(arrayType, destination, ConstantOperand.of(i++), element.location()));
+      emit(new ArraySet(arrayType, destination, ConstantOperand.of(i++), element.location(), true));
     }
   }
 
@@ -250,7 +250,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
               Location rhsLocation = rhs.location();
               emit(
                   new ArraySet(
-                      (ArrayType) asn.varType(), arrayLocation, indexLocation, rhsLocation));
+                      (ArrayType) asn.varType(), arrayLocation, indexLocation, rhsLocation, false));
             } else {
               throw new RuntimeException(
                   String.format("Could not find record symbol %s in symtab", asn.variableName()));

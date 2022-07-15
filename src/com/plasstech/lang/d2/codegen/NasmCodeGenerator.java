@@ -213,7 +213,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
     Operand indexLoc = op.index();
-    Register fullIndex = generateArrayIndex(indexLoc, arrayType, resolver.resolve(op.array()));
+
+    Register fullIndex =
+        generateArrayIndex(indexLoc, arrayType, resolver.resolve(op.array()), op.isArrayLiteral());
     emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
     if (sourceReg != null) {
       emit("; deallocating %s", sourceReg);
@@ -229,8 +231,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   /**
    * Generate code that puts the location of the given index into the given array into the register
    * returned.
+   *
+   * @param arrayLiteral
    */
-  private Register generateArrayIndex(Operand indexLoc, ArrayType arrayType, String arrayLoc) {
+  private Register generateArrayIndex(
+      Operand indexLoc, ArrayType arrayType, String arrayLoc, boolean arrayLiteral) {
     Register fullIndex = registers.allocate();
     emit("; allocated %s for calculations", fullIndex);
     if (indexLoc.isConstant()) {
@@ -242,7 +247,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             String.format("ARRAY index must be non-negative; was %d", index), null, "Type");
       }
 
-      if (index > 0) {
+      if (index > 0 && !arrayLiteral) {
         // fun fact, we never have to calculate this for index 0, because all arrays
         // are at least size 1.
         // 1. get size from arrayloc
@@ -271,7 +276,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
         visit(new Label(continueLabel));
       } else {
-        emit("; don't have to check if index of 0 is within bounds. :)");
+        emit("; don't have to check if index is within bounds. :)");
       }
 
       // index is always a dword/int because I said so.
@@ -681,7 +686,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LBRACKET:
           ArrayType arrayType = (ArrayType) leftType;
           // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
-          Register fullIndex = generateArrayIndex(op.right(), arrayType, leftName);
+          Register fullIndex = generateArrayIndex(op.right(), arrayType, leftName, false);
           emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, fullIndex);
           registers.deallocate(fullIndex);
           emit("; deallocating %s", fullIndex);
