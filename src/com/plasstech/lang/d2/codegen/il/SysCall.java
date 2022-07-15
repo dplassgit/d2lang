@@ -34,9 +34,9 @@ public class SysCall extends Op {
       case MESSAGE:
         return String.format("printf(\"ERROR: %%s\", %s);", ESCAPER.escape(arg.toString()));
       case INPUT:
-        return String.format("%s=scanf();", arg);
+        return String.format("%s=_read();", arg);
       default:
-        return String.format("call(%s, %s);", call.name(), arg);
+        throw new IllegalArgumentException("Unknown syscall: " + call);
     }
   }
 

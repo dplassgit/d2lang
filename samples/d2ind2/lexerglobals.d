@@ -326,7 +326,7 @@ makeSymbol: proc(): string {
     advance()
     return Token(Type_DOT, oc)
   } else {
-    error = 'Unknown character:' + lexer_cc + ' ASCII code: ' + toString(asc(lexer_cc))
+    error = "Line:" + toString(lexer_line) + ': Unknown character:' + lexer_cc + ' ASCII code: ' + toString(asc(lexer_cc))
     exit error
   }
 }
@@ -378,7 +378,7 @@ printToken: proc(token:string) {
 }
 
 main {
-  text = "print 'hi' "
+  text = input
   new_lexer(text)
 
   count = 1
