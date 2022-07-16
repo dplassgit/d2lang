@@ -70,7 +70,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       // no change
       return;
     }
-    code.set(ip, new BinOp((Location) dest, left, op.operator(), right));
+    code.set(ip, new BinOp((Location) dest, left, op.operator(), right, op.position()));
   }
 
   @Override
@@ -120,7 +120,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (source == op.source() && destination == op.array() && index == op.index()) {
       return;
     }
-    code.set(ip, new ArraySet(op.arrayType(), destination, index, source, false));
+    code.set(ip, new ArraySet(destination, op.arrayType(), index, source, false, op.position()));
   }
 
   @Override

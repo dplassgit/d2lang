@@ -150,12 +150,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       String endLoopLabel = newLabel("array_print_loop_end");
       //   compare index to length
       TempLocation compare = allocateTemp(VarType.BOOL);
-      emit(new BinOp(compare, index, TokenType.EQEQ, length));
+      emit(new BinOp(compare, index, TokenType.EQEQ, length, null));
       //   if equal, go to end
       emit(new IfOp(compare, endLoopLabel));
       TempLocation item = allocateTemp(arrayType.baseType());
       //   item = get "index"th item
-      emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index));
+      emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index, null));
       //   print item
       emit(new SysCall(SysCall.Call.PRINT, item));
       // this adds a trailing comma but who cares.
@@ -183,12 +183,21 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     node.setLocation(destination);
 
     ArrayType arrayType = node.arrayType();
-    emit(new ArrayAlloc(destination, arrayType, ConstantOperand.of(node.elements().size())));
+    emit(
+        new ArrayAlloc(
+            destination, arrayType, ConstantOperand.of(node.elements().size()), node.position()));
 
     int i = 0;
     for (ExprNode element : node.elements()) {
       element.accept(ILCodeGenerator.this);
-      emit(new ArraySet(arrayType, destination, ConstantOperand.of(i++), element.location(), true));
+      emit(
+          new ArraySet(
+              destination,
+              arrayType,
+              ConstantOperand.of(i++),
+              element.location(),
+              true,
+              node.position()));
     }
   }
 
@@ -250,7 +259,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
               Location rhsLocation = rhs.location();
               emit(
                   new ArraySet(
-                      (ArrayType) asn.varType(), arrayLocation, indexLocation, rhsLocation, false));
+                      arrayLocation,
+                      (ArrayType) asn.varType(),
+                      indexLocation,
+                      rhsLocation,
+                      false,
+                      asn.position()));
             } else {
               throw new RuntimeException(
                   String.format("Could not find record symbol %s in symtab", asn.variableName()));
@@ -266,7 +280,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // TODO: put the symbol somewhere?
     Location dest = lookupLocation(node.name());
     node.setLocation(dest);
-    emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location()));
+    emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location(), node.position()));
   }
 
   @Override
@@ -402,7 +416,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     TempLocation location = allocateTemp(node.varType());
     node.setLocation(location);
-    emit(new BinOp(location, leftSrc, node.operator(), rightSrc));
+    emit(new BinOp(location, leftSrc, node.operator(), rightSrc, node.position()));
   }
 
   @Override

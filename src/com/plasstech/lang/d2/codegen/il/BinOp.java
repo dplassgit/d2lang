@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 
 public class BinOp extends Op {
@@ -10,7 +11,8 @@ public class BinOp extends Op {
   private final Operand left;
   private final Operand right;
 
-  public BinOp(Location destination, Operand left, TokenType operator, Operand right) {
+  public BinOp(Location destination, Operand left, TokenType operator, Operand right, Position position) {
+    super(position);
     this.destination = destination;
     this.left = left;
     this.operator = operator;

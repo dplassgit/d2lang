@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ArrayType;
 
 /** Sets the value of an array slot, i.e., array[index] = source */
@@ -13,7 +14,8 @@ public class ArraySet extends Op {
   private final boolean arrayLiteral;
 
   public ArraySet(
-      ArrayType arrayType, Location array, Operand index, Operand source, boolean arrayLiteral) {
+      Location array, ArrayType arrayType, Operand index, Operand source, boolean arrayLiteral, Position position) {
+    super(position);
     this.arrayType = arrayType;
     this.array = array;
     this.index = index;

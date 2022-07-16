@@ -132,7 +132,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.sizeLocation();
     ConstantOperand<?> replacement = findReplacementConstant(operand);
     if (replacement != null) {
-      replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement));
+      replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement, null));
     }
   }
 
@@ -204,7 +204,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       right = replacement;
     }
     if (left != op.left() || right != op.right()) {
-      replaceCurrent(new BinOp(op.destination(), left, op.operator(), right));
+      replaceCurrent(new BinOp(op.destination(), left, op.operator(), right, op.position()));
     }
   }
 
@@ -221,7 +221,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       source = replacement;
     }
     if (index != op.index() || source != op.source()) {
-      replaceCurrent(new ArraySet(op.arrayType(), op.array(), index, source, op.isArrayLiteral()));
+      replaceCurrent(
+          new ArraySet(
+              op.array(), op.arrayType(), index, source, op.isArrayLiteral(), op.position()));
     }
   }
 

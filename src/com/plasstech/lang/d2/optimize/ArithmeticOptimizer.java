@@ -282,7 +282,12 @@ class ArithmeticOptimizer extends LineOptimizer {
         int power = powerOfTwo(right);
         if (power != 0) {
           replaceCurrent(
-              new BinOp(op.destination(), left, TokenType.SHIFT_RIGHT, ConstantOperand.of(power)));
+              new BinOp(
+                  op.destination(),
+                  left,
+                  TokenType.SHIFT_RIGHT,
+                  ConstantOperand.of(power),
+                  op.position()));
           return;
         }
       } else if (left.equals(right)) {
@@ -322,7 +327,12 @@ class ArithmeticOptimizer extends LineOptimizer {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
           replaceCurrent(
-              new BinOp(op.destination(), left, TokenType.PLUS, ConstantOperand.of(-rightval)));
+              new BinOp(
+                  op.destination(),
+                  left,
+                  TokenType.PLUS,
+                  ConstantOperand.of(-rightval),
+                  op.position()));
         }
       }
     }
@@ -368,7 +378,12 @@ class ArithmeticOptimizer extends LineOptimizer {
       int rightval = rightConstant.value();
       if (rightval < 0) {
         replaceCurrent(
-            new BinOp(op.destination(), left, TokenType.MINUS, ConstantOperand.of(-rightval)));
+            new BinOp(
+                op.destination(),
+                left,
+                TokenType.MINUS,
+                ConstantOperand.of(-rightval),
+                op.position()));
       }
     }
     if (left.equals(ConstantOperand.ZERO)) {
@@ -383,7 +398,9 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
     // foo = a+a -> foo = a<<1
     if (left.equals(right) && left.type() == VarType.INT) {
-      replaceCurrent(new BinOp(op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.ONE));
+      replaceCurrent(
+          new BinOp(
+              op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.ONE, op.position()));
       return;
     }
   }
@@ -405,13 +422,23 @@ class ArithmeticOptimizer extends LineOptimizer {
       int power = powerOfTwo(left);
       if (power != 0) {
         replaceCurrent(
-            new BinOp(op.destination(), right, TokenType.SHIFT_LEFT, ConstantOperand.of(power)));
+            new BinOp(
+                op.destination(),
+                right,
+                TokenType.SHIFT_LEFT,
+                ConstantOperand.of(power),
+                op.position()));
       }
     } else if (right.isConstant()) {
       int power = powerOfTwo(right);
       if (power != 0) {
         replaceCurrent(
-            new BinOp(op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.of(power)));
+            new BinOp(
+                op.destination(),
+                left,
+                TokenType.SHIFT_LEFT,
+                ConstantOperand.of(power),
+                op.position()));
       }
     }
   }

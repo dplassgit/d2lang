@@ -36,7 +36,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(DEST, ConstantOperand.ONE),
-            new BinOp(DEST, SOURCE, TokenType.PLUS, ConstantOperand.ZERO),
+            new BinOp(DEST, SOURCE, TokenType.PLUS, ConstantOperand.ZERO, null),
             new Transfer(SOURCE, DEST));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -47,7 +47,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE),
+            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -64,7 +64,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.PLUS, TEMP1),
+            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.PLUS, TEMP1, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -80,7 +80,7 @@ public class IncDecOptimizerTest {
   public void optimizeIncShort() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP1, STACK, TokenType.PLUS, ConstantOperand.ONE),
+            new BinOp(TEMP1, STACK, TokenType.PLUS, ConstantOperand.ONE, null),
             new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -95,7 +95,7 @@ public class IncDecOptimizerTest {
   public void optimizeIncShortReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.PLUS, STACK),
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.PLUS, STACK, null),
             new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -109,7 +109,7 @@ public class IncDecOptimizerTest {
   @Test
   public void optimizeInc2Short() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO), new Transfer(STACK, TEMP1));
+        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO, null), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -122,7 +122,7 @@ public class IncDecOptimizerTest {
   @Test
   public void optimizeInc2ShortReversed() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK), new Transfer(STACK, TEMP1));
+        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK, null), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -136,7 +136,7 @@ public class IncDecOptimizerTest {
   public void optimizeDecShort() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP1, STACK, TokenType.MINUS, ConstantOperand.ONE),
+            new BinOp(TEMP1, STACK, TokenType.MINUS, ConstantOperand.ONE, null),
             new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -151,7 +151,7 @@ public class IncDecOptimizerTest {
   public void optimizeDecShortReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.MINUS, STACK),
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.MINUS, STACK, null),
             new Transfer(STACK, TEMP1));
 
     optimizer.optimize(program, null);
@@ -163,7 +163,7 @@ public class IncDecOptimizerTest {
   public void optimizeMinus2Short() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP1, STACK, TokenType.MINUS, TWO), new Transfer(STACK, TEMP1));
+            new BinOp(TEMP1, STACK, TokenType.MINUS, TWO, null), new Transfer(STACK, TEMP1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -178,7 +178,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, TWO),
+            new BinOp(TEMP2, TEMP1, TokenType.PLUS, TWO, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -196,7 +196,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, TWO, TokenType.PLUS, TEMP1),
+            new BinOp(TEMP2, TWO, TokenType.PLUS, TEMP1, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -214,7 +214,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE),
+            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -231,7 +231,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.MINUS, TEMP1),
+            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.MINUS, TEMP1, null),
             new Transfer(STACK, TEMP2));
 
     optimizer.optimize(program, null);
@@ -244,7 +244,7 @@ public class IncDecOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK),
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, TWO),
+            new BinOp(TEMP2, TEMP1, TokenType.MINUS, TWO, null),
             new Transfer(STACK, TEMP2));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);

@@ -80,7 +80,7 @@ public class InlineRemapperTest {
   public void binOpTempDest() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY)), new SymTab())
+                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY, null)), new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__dest__inline__");
@@ -93,7 +93,7 @@ public class InlineRemapperTest {
   public void binOpTempSource() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT)),
+                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT, null)),
                 new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
