@@ -131,10 +131,17 @@ public abstract class State {
   abstract Builder toBuilder();
 
   public void stopOnError() {
+    stopOnError(false);
+  }
+
+  public void stopOnError(boolean showStackTrace) {
     if (error()) {
-      D2RuntimeException exception = exception();
-      System.err.println(exception.toString());
-      System.exit(-1);
+      if (showStackTrace) {
+        throw exception();
+      } else {
+        System.err.println(exception().toString());
+        System.exit(-1);
+      }
     }
   }
 }

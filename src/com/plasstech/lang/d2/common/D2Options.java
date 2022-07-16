@@ -61,4 +61,11 @@ public class D2Options extends OptionsBase {
       help = "Show intermediate commands",
       defaultValue = "false")
   public boolean showCommands;
+
+  @Option(
+      name = "show-stack-traces",
+      abbrev = 'T',
+      help = "Shows full stack trace of compile-time errors",
+      defaultValue = "false")
+  public boolean showStackTraces;
 }

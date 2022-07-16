@@ -47,7 +47,7 @@ public class D2Compiler {
       System.out.println(state.programNode());
       System.out.println("------------------------------");
     }
-    state.stopOnError();
+    state.stopOnError(options.debugparse > 0 || options.showStackTraces);
 
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
@@ -59,7 +59,7 @@ public class D2Compiler {
       System.out.println(symbolTable);
       System.out.println("------------------------------");
     }
-    state.stopOnError();
+    state.stopOnError(options.debugtype > 0 || options.showStackTraces);
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
@@ -69,7 +69,7 @@ public class D2Compiler {
       System.out.println(Joiner.on("\n").join(state.ilCode()));
       System.out.println("------------------------------");
     }
-    state.stopOnError();
+    state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
     if (options.optimize) {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(options.debugopt);
@@ -80,7 +80,7 @@ public class D2Compiler {
         System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
         System.out.println("------------------------------");
       }
-      state.stopOnError();
+      state.stopOnError(options.debugopt > 0 || options.showStackTraces);
     }
 
     state = new NasmCodeGenerator().execute(state);
@@ -103,7 +103,7 @@ public class D2Compiler {
     charSink.writeLines(state.asmCode(), "\n");
 
     // wait until now to throw the exception so that we've written the asm file.
-    state.stopOnError();
+    state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
     if (!options.compileOnly) {
       File objFile = new File(dir, baseName + ".obj");
       if (objFile.exists()) {
