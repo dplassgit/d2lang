@@ -22,14 +22,10 @@ public class CodeGenDriver {
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
     State state = parser.execute(State.create(text).build());
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.stopOnError();
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.stopOnError();
     ILCodeGenerator cg = new ILCodeGenerator();
     state = cg.execute(state);
     ImmutableList<Op> code = state.ilCode();

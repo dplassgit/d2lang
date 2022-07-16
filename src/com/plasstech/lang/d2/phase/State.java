@@ -130,4 +130,11 @@ public abstract class State {
 
   abstract Builder toBuilder();
 
+  public void stopOnError() {
+    if (error()) {
+      D2RuntimeException exception = exception();
+      System.err.println(exception.toString());
+      System.exit(-1);
+    }
+  }
 }

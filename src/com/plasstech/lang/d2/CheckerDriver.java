@@ -24,10 +24,8 @@ public class CheckerDriver {
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
     State state = parser.execute(State.create(text).build());
-    if (state.error()) {
-      System.err.println(state.errorMessage());
-      return;
-    }
+    state.stopOnError();
+
     ProgramNode node = state.programNode();
     System.out.println("BEFORE:");
     System.out.println(node);
@@ -35,8 +33,6 @@ public class CheckerDriver {
     state = checker.execute(state);
     System.out.println("\nAFTER:");
     System.out.println(node);
-    if (state.error()) {
-      System.err.println(state.exception().getMessage());
-    }
+    state.stopOnError();
   }
 }

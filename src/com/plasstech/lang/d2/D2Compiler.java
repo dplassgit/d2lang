@@ -40,21 +40,17 @@ public class D2Compiler {
     Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
     state = parser.execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
+
     if (options.debugparse > 0) {
       System.out.println("------------------------------");
       System.out.println("\nPARSED PROGRAM:");
       System.out.println(state.programNode());
       System.out.println("------------------------------");
     }
+    state.stopOnError();
 
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
 
     SymTab symbolTable = state.symbolTable();
     if (options.debugint > 0) {
@@ -63,6 +59,7 @@ public class D2Compiler {
       System.out.println(symbolTable);
       System.out.println("------------------------------");
     }
+    state.stopOnError();
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
@@ -72,6 +69,7 @@ public class D2Compiler {
       System.out.println(Joiner.on("\n").join(state.ilCode()));
       System.out.println("------------------------------");
     }
+    state.stopOnError();
     if (options.optimize) {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(options.debugopt);
@@ -82,6 +80,7 @@ public class D2Compiler {
         System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
         System.out.println("------------------------------");
       }
+      state.stopOnError();
     }
 
     state = new NasmCodeGenerator().execute(state);
@@ -104,9 +103,7 @@ public class D2Compiler {
     charSink.writeLines(state.asmCode(), "\n");
 
     // wait until now to throw the exception so that we've written the asm file.
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.stopOnError();
     if (!options.compileOnly) {
       File objFile = new File(dir, baseName + ".obj");
       if (objFile.exists()) {

@@ -25,9 +25,7 @@ public class ParserDriver {
     Lexer lex = new Lexer(text);
     Parser parser = new Parser(lex);
     State state = parser.execute(State.create(text).build());
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.stopOnError();
     Node node = state.programNode();
     System.out.println(node);
   }

@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.optimize;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
@@ -48,8 +49,12 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
 
   @Override
   public State execute(State input) {
-    ImmutableList<Op> optimized = optimize(input.ilCode(), input.symbolTable());
-    return input.addOptimizedCode(optimized);
+    try {
+      ImmutableList<Op> optimized = optimize(input.ilCode(), input.symbolTable());
+      return input.addOptimizedCode(optimized);
+    } catch (D2RuntimeException e) {
+      return input.addException(e);
+    }
   }
 
   @Override
