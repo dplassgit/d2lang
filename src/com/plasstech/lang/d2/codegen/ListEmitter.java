@@ -31,7 +31,7 @@ public class ListEmitter implements Emitter {
 
   @Override
   public void fail(String format, Object... values) {
-    throw new D2RuntimeException("UnsupportedOperation", null, String.format(format, values));
+    throw new D2RuntimeException(String.format(format, values), null, "UnsupportedOperation");
   }
 
   @Override

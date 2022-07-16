@@ -291,7 +291,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       throw new D2RuntimeException(
           String.format("Cannot call NEW on non-record type %s at %s", symbol, node),
           node.position(),
-          "ILCodeGenerator");
+          "Type");
     }
     MemoryAddress location = allocateMemory(symbol.varType());
     node.setLocation(location);

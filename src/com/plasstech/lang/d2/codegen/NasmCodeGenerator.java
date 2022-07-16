@@ -78,11 +78,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .build();
 
   private static final String ARRAY_INDEX_NEGATIVE_ERR =
-      "ARRAY_INDEX_NEGATIVE_ERR: db \"Line %d: ARRAY index must be non-negative; was %d\", 10, 0";
+      "ARRAY_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: ARRAY index must be non-negative; was %d\", 10, 0";
   private static final String ARRAY_INDEX_OOB_ERR =
-      "ARRAY_INDEX_OOB_ERR: db \"Line %d: ARRAY index out of bounds (length %d); was %d\", 10, 0";
+      "ARRAY_INDEX_OOB_ERR: db \"Invalid index error at line %d: ARRAY index out of bounds (length %d); was %d\", 10, 0";
   private static final String ARRAY_SIZE_ERR =
-      "ARRAY_SIZE_ERR: db \"Line %d: ARRAY size must be positive; was %d\", 10, 0";
+      "ARRAY_SIZE_ERR: db \"Invalid value error at line %d: ARRAY size must be positive; was %d\", 10, 0";
+  private static final String DIV_BY_ZERO_ERR =
+      "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
+
   private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
   private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
   private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
@@ -251,10 +254,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       int index = indexConst.value();
       if (index < 0) {
         throw new D2RuntimeException(
-            String.format(
-                "Line %d: ARRAY index must be non-negative; was %d", position.line(), index),
-            null,
-            "Type");
+            String.format("ARRAY index must be non-negative; was %d", index),
+            position,
+            "Invalid index");
       }
 
       if (index > 0 && !arrayLiteral) {
@@ -426,7 +428,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         throw new D2RuntimeException(
             String.format("ARRAY size must be positive; was %d", numEntries),
             op.position(),
-            "Type");
+            "Invalid index");
       }
       emit(
           "mov %s, %s  ; storage for # dimensions (1), dimension values (%d), actual storage (%d)",
@@ -689,7 +691,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
         case DIV:
         case MOD:
-          generateDivMod(op, leftName, rightName);
+          generateDivMod(op, leftName, op.right());
           break;
 
         default:
@@ -877,7 +879,29 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     registerState.condPop();
   }
 
-  private void generateDivMod(BinOp op, String leftName, String rightName) {
+  private void generateDivMod(BinOp op, String leftName, Operand rightOperand) {
+    String right = resolver.resolve(rightOperand);
+    if (rightOperand.isConstant()) {
+      ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
+      int rightValue = rightConstOperand.value();
+      if (rightValue == 0) {
+        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      }
+    } else {
+      emit("cmp DWORD %s, 0  ; detect division by 0", right);
+      String continueLabel = "_continue" + id++;
+      emit("jne __%s", continueLabel);
+
+      emit0("\n  ; division by zero. print error and stop");
+      data.add(DIV_BY_ZERO_ERR);
+      emit("mov EDX, %d  ; line number", op.position().line());
+      emit("mov RCX, DIV_BY_ZERO_ERR");
+      generatePrintf();
+      visit(new Stop(-1));
+
+      visit(new Label(continueLabel));
+    }
+
     // 3. determine dest location
     String destName = resolver.resolve(op.destination());
     // 4. set up left in EDX:EAX
@@ -892,11 +916,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       emit("; numerator already in EAX");
     }
-    emit("mov %s, %s  ; denominator", temp.name32, rightName);
+    emit("mov %s, %s  ; denominator", temp.name32, right);
 
     // sign extend eax to edx
     emit("cdq  ; sign extend eax to edx");
-    emit("idiv %s  ; EAX = %s / %s", temp.name32, leftName, rightName);
+    emit("idiv %s  ; EAX = %s / %s", temp.name32, leftName, right);
     registers.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
       // eax has dividend
