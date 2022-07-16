@@ -52,4 +52,7 @@ public class DefaultOpcodeVisitor implements OpcodeVisitor {
 
   @Override
   public void visit(ArraySet op) {}
+
+  @Override
+  public void visit(FieldSetOp op) {}
 }

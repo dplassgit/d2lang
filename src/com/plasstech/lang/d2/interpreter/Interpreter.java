@@ -12,7 +12,6 @@ import java.util.logging.Level;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
@@ -23,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -119,22 +119,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Transfer op) {
     Object rhsVal = resolve(op.source());
-    Location destination = op.destination();
-    if (destination instanceof FieldSetAddress) {
-      // destination may be a "field set address"
-      // which is a combination of a variable and a field
-
-      FieldSetAddress lvalue = (FieldSetAddress) destination;
-      // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
-      Location recordAddress = lvalue.baseLocation();
-      Map<String, Object> recordObject = (Map<String, Object>) resolve(recordAddress);
-      recordObject.put(lvalue.field(), rhsVal);
-      return;
-    } else {
-      // Previously it would fail if rhsValue was null, but that needed to be relaxed to support
-      // you know, nulls.
-      setValue(op.destination(), rhsVal);
-    }
+    // Previously it would fail if rhsValue was null, but that needed to be relaxed to support
+    // you know, nulls.
+    setValue(op.destination(), rhsVal);
   }
 
   @Override
@@ -163,6 +150,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
     int index = (Integer) resolve(op.index());
     Object[] arrayValue = (Object[]) resolve(op.array());
     arrayValue[index] = resolve(op.source());
+  }
+
+  @Override
+  public void visit(FieldSetOp op) {
+    Map<String, Object> recordObject = (Map<String, Object>) resolve(op.recordLocation());
+    Object rhsVal = resolve(op.source());
+    recordObject.put(op.field(), rhsVal);
   }
 
   @Override

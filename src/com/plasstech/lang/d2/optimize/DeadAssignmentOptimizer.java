@@ -5,13 +5,13 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
-import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
@@ -135,6 +135,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     recordAssignment(dest);
   }
 
+  @Override
+  public void visit(FieldSetOp op) {
+    markRead(op.source());
+    Location dest = op.recordLocation();
+    // Don't kill assignments to "dest" because we only modified part of it.
+    recordAssignment(dest);
+  }
+
   // a=123 - add a to "assignedUnused" map at line IP
   // a=234 - a already in "assignedUnused" map - delete at old IP
   // if a goto 4 - clear map
@@ -148,13 +156,8 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Transfer op) {
     Location dest = op.destination();
     markRead(op.source());
-    if (dest instanceof FieldSetAddress) {
-      // records are always globally allocated so we have to be *really* conservative
-      // and never record their assignments
-    } else {
-      killIfReassigned(dest);
-      recordAssignment(dest);
-    }
+    killIfReassigned(dest);
+    recordAssignment(dest);
   }
 
   @Override

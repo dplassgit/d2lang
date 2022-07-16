@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -227,19 +228,30 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
             // Look up storage in current symbol table
             Symbol sym = symbolTable().getRecursive(fsn.variableName());
             if (sym != null) {
-              FieldSetAddress dest =
-                  new FieldSetAddress(
-                      fsn.variableName(), fsn.fieldName(), sym.storage(), sym.varType());
-              // this may be wrong
-              fsn.setLocation(dest);
+              Location recordLocation = lookupLocation(fsn.variableName());
+              VarType varType = sym.varType();
+              if (!varType.isRecord()) {
+                throw new D2RuntimeException(
+                    String.format("Can't set field on non-record type; was %s", varType.name()),
+                    fsn.position(),
+                    "Internal");
+              }
+              Symbol hopefullyRecordSymbol = symbolTable().get(varType.name());
+
+              String fieldName = fsn.fieldName();
+
               Node rhs = node.expr();
               rhs.accept(ILCodeGenerator.this);
-              Location source = rhs.location();
-
-              emit(new Transfer(dest, source));
+              Location rhsLocation = rhs.location();
+              RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
+              emit(
+                  new FieldSetOp(
+                      recordLocation, recordSymbol, fieldName, rhsLocation, fsn.position()));
             } else {
-              throw new RuntimeException(
-                  String.format("Could not find record symbol %s in symtab", fsn.variableName()));
+              throw new D2RuntimeException(
+                  String.format("Could not find record symbol %s in symtab", fsn.variableName()),
+                  fsn.position(),
+                  "Internal");
             }
           }
 

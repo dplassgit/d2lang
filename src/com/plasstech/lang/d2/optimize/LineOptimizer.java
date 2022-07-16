@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -148,4 +149,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   @Override
   public void visit(ArraySet op) {}
+
+  @Override
+  public void visit(FieldSetOp op) {}
 }

@@ -1,8 +1,8 @@
 package com.plasstech.lang.d2.type;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import java.util.Set;
+import java.util.List;
 
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
@@ -24,19 +24,19 @@ public class RecordSymbol extends AbstractSymbol {
     return SymbolStorage.GLOBAL;
   }
 
-  public RecordDeclarationNode node() {
-    return node;
-  }
-
   @Override
   public String toString() {
     return String.format("Record %s: %s", node.name(), node.fields());
   }
 
-  public Set<String> fieldNames() {
-    return node.fields().stream().map(DeclarationNode::name).collect(toImmutableSet());
+  /** In the same order as definition */
+  public List<String> fieldNames() {
+    return node.fields().stream().map(DeclarationNode::name).collect(toImmutableList());
   }
 
+  /**
+   * Given a field name, returns the type of the field. If the field is not found, returns UNKNOWN
+   */
   public VarType fieldType(String fieldName) {
     for (DeclarationNode field : node.fields()) {
       if (field.name().equals(fieldName)) {

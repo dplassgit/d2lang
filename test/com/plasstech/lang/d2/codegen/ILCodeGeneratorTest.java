@@ -144,10 +144,10 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordFieldSet() {
-    generateProgram(
+    System.err.println(generateProgram(
         "rec: record {f:string i:int}\n" //
             + "r = new rec\n" //
-            + "r.f = 'hi'");
+            + "r.f = 'hi'"));
   }
 
   private List<Op> generateProgram(String program) {
