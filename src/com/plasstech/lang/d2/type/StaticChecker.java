@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableSet;
-import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
@@ -719,10 +718,9 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     if (arraySizeExpr.isConstant()) {
       ConstNode<Integer> size = (ConstNode<Integer>) arraySizeExpr;
       if (size.value() <= 0) {
-        throw new D2RuntimeException(
+        throw new TypeException(
             String.format("ARRAY size must be positive; was %d", size.value()),
-            arraySizeExpr.position(),
-            "Invalid value");
+            arraySizeExpr.position());
       }
     }
 

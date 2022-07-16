@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.optimize;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.InterpreterExecutor;
-import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.SymTab;
 
@@ -65,18 +64,11 @@ public class ILOptimizerTest {
   @Test
   public void divByZero() {
     InterpreterExecutor ee = new InterpreterExecutor("a = 1 / 0");
-    try {
-      ee.execute();
-      fail("Should fail with division by 0");
-    } catch (ArithmeticException expected) {
-    }
+    assertThrows(ArithmeticException.class, () -> ee.execute());
 
-    ImmutableList<Op> optimized = new ILOptimizer().optimize(ee.state().ilCode(), new SymTab());
-    try {
-      ee.execute(ee.state().addOptimizedCode(optimized));
-      fail("Should fail with division by 0");
-    } catch (ArithmeticException expected) {
-    }
+    assertThrows(
+        D2RuntimeException.class,
+        () -> new ILOptimizer().optimize(ee.state().ilCode(), new SymTab()));
   }
 
   @Test
