@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.plasstech.lang.d2.codegen.FieldSetAddress;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -13,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -122,6 +122,16 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     }
     code.set(ip, new ArraySet(destination, op.arrayType(), index, source, false, op.position()));
   }
+  
+  @Override
+  public void visit(FieldSetOp op) {
+    Operand source = remap(op.source());
+    Location destination = (Location) remap(op.recordLocation());
+    if (source == op.source() && destination == op.recordLocation()) {
+      return;
+    }
+    code.set(ip, new FieldSetOp(destination, op.recordSymbol(), op.field(), source, op.position()));
+  }
 
   @Override
   public void visit(SysCall op) {
@@ -177,12 +187,6 @@ class InlineRemapper extends DefaultOpcodeVisitor {
         return new TempLocation(location.name() + suffix, location.type());
       case LOCAL:
       case PARAM:
-        if (location instanceof FieldSetAddress) {
-          // hack it
-          FieldSetAddress fsa = (FieldSetAddress) location;
-          return new FieldSetAddress(
-              "__" + fsa.record() + suffix, fsa.field(), fsa.storage(), fsa.type());
-        }
         // I *really* want this to be a temp or stack but (see above)
         String fullName = "__" + location.name() + suffix;
         if (symtab.get(fullName) == null) {

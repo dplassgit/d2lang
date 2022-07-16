@@ -1,6 +1,5 @@
 LOCATION_SRCS = [
   "ConstantOperand.java",
-  "FieldSetAddress.java",
   "Location.java",
   "MemoryAddress.java",
   "Operand.java",

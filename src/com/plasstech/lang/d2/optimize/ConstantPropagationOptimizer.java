@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -224,6 +225,20 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       replaceCurrent(
           new ArraySet(
               op.array(), op.arrayType(), index, source, op.isArrayLiteral(), op.position()));
+    }
+  }
+
+  @Override
+  public void visit(FieldSetOp op) {
+    Operand source = op.source();
+    ConstantOperand<?> replacement = findReplacementConstant(source);
+    if (replacement != null) {
+      source = replacement;
+    }
+    if (source != op.source()) {
+      replaceCurrent(
+          new FieldSetOp(
+              op.recordLocation(), op.recordSymbol(), op.field(), source, op.position()));
     }
   }
 
