@@ -236,7 +236,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
                     fsn.position(),
                     "Internal");
               }
-              Symbol hopefullyRecordSymbol = symbolTable().get(varType.name());
+              Symbol hopefullyRecordSymbol = symbolTable().getRecursive(varType.name());
 
               String fieldName = fsn.fieldName();
 

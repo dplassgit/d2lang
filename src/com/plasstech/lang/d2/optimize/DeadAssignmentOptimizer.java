@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -127,18 +128,25 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   }
 
   @Override
-  public void visit(ArraySet op) {
-    markRead(op.source());
-    markRead(op.index());
-    Location dest = op.array();
-    // Don't kill assignments to "dest" because we only modified part of it.
+  public void visit(AllocateOp op) {
+    Location dest = op.destination();
+    killIfReassigned(dest);
     recordAssignment(dest);
   }
 
   @Override
-  public void visit(FieldSetOp op) {
-    // records are always globally allocated so we are really conservative.
+  public void visit(ArraySet op) {
     markRead(op.source());
+    markRead(op.index());
+    // Mark the array read here, so it's not killed.
+    markRead(op.array());
+  }
+
+  @Override
+  public void visit(FieldSetOp op) {
+    markRead(op.source());
+    // Mark the record read here, since it kind of was.
+    markRead(op.recordLocation());
   }
 
   // a=123 - add a to "assignedUnused" map at line IP

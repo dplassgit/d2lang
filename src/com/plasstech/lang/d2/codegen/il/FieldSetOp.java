@@ -35,6 +35,7 @@ public class FieldSetOp extends Op {
     return String.format("%s.%s = %s; // type: %s", record, field, source, recordSymbol);
   }
 
+  /** Location of the record in memory. */
   public Location recordLocation() {
     return record;
   }

@@ -26,6 +26,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -129,6 +130,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
+        // TODO: make these fields in the VarType object.
         if (symbol.varType() == VarType.INT) {
           data.add(String.format("__%s: dd 0", entry.getKey()));
         } else if (symbol.varType() == VarType.BOOL) {
@@ -404,6 +406,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(AllocateOp op) {
+    new RecordGenerator(resolver, registers, emitter).generate(op);
+  }
+
+  @Override
+  public void visit(FieldSetOp op) {
     new RecordGenerator(resolver, registers, emitter).generate(op);
   }
 
