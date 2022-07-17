@@ -305,7 +305,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
           node.position(),
           "Type");
     }
-    MemoryAddress location = allocateMemory(symbol.varType());
+    //    MemoryAddress location = allocateMemory(symbol.varType());
+    // TODO: this is causing issues with inline optimizer, not surprisngly...
+    TempLocation location = allocateTemp(symbol.varType());
     node.setLocation(location);
     emit(new AllocateOp(location, (RecordSymbol) symbol));
   }

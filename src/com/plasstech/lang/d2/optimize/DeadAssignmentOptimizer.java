@@ -22,7 +22,6 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.common.TokenType;
 
 class DeadAssignmentOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -200,12 +199,10 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(BinOp op) {
-    // Ignore records?
-    if (op.operator() != TokenType.DOT) {
-      markRead(op.left());
-      markRead(op.right());
-      killIfReassigned(op.destination());
-      recordAssignment(op.destination());
-    }
+    // Ignore records???
+    markRead(op.left());
+    markRead(op.right());
+    killIfReassigned(op.destination());
+    recordAssignment(op.destination());
   }
 }

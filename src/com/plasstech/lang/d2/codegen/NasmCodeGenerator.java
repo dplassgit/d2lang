@@ -404,7 +404,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(AllocateOp op) {
-    fail("Cannot generate AllocateOp yet");
+    new FieldGenerator(resolver, registers, emitter).generate(op);
   }
 
   @Override
@@ -1196,7 +1196,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size, destName, RAX.sizeByType(destination.type()));
     }
   }
-
+  
   /** Conditionally push all allocated registers in the list */
   private RegisterState condPush(ImmutableList<Register> registerList) {
     return RegisterState.condPush(emitter, registers, registerList);

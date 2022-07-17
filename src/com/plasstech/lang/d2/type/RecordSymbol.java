@@ -11,12 +11,22 @@ import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 public class RecordSymbol extends AbstractSymbol {
 
   private final RecordDeclarationNode node;
+  private int allocatedSize;
 
   public RecordSymbol(RecordDeclarationNode node) {
     super(node.name());
     // This isn't *quite* true. It's more of a RecordDefinitionType
     this.setVarType(new RecordReferenceType(node.name()));
     this.node = node;
+    allocatedSize = 0;
+    for (DeclarationNode field : node.fields()) {
+      allocatedSize += field.varType().size();
+    }
+  }
+
+  public int allocatedSize() {
+    // the size of all fields.
+    return allocatedSize;
   }
 
   @Override

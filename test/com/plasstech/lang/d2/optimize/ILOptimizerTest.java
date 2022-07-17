@@ -337,7 +337,12 @@ public class ILOptimizerTest {
   @Test
   public void incDec() {
     TestUtils.optimizeAssertSameVariables(
-        "incDec:proc(b:int):int {b=b+1 a=b*2 a=a-1 return a+b} print incDec(3)");
+        "      incDec:proc(b:int):int {"
+            + "  b=b+1 " // b=4
+            + "  a=b*2 " // a=8
+            + "  a=a-1 " // a=3
+            + "  return a+b} " // 7
+            + "print incDec(3)");
     TestUtils.optimizeAssertSameVariables("b=3 b=b+1 a=b*2 a=a-1 print a+1");
   }
 

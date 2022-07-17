@@ -1,18 +1,18 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import com.plasstech.lang.d2.codegen.MemoryAddress;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.type.RecordSymbol;
 
 public class AllocateOp extends Op {
   private final RecordSymbol record;
-  private final MemoryAddress destination;
+  private final Location destination;
 
-  public AllocateOp(MemoryAddress destination, RecordSymbol record) {
+  public AllocateOp(Location destination, RecordSymbol record) {
     this.destination = destination;
     this.record = record;
   }
 
-  public MemoryAddress destination() {
+  public Location destination() {
     return destination;
   }
 

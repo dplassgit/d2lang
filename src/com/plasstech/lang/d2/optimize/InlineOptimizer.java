@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
@@ -112,7 +113,8 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       InlineRemapper inlineRemapper = new InlineRemapper(replacement, symbolTable);
       List<Op> remapped = inlineRemapper.remap();
       logger.at(loggingLevel).log(
-          "Can inline '%s' from %s to %s", op.procName(), replacement, remapped);
+          "Can inline '%s' from:\n %s\n to:\n%s",
+          op.procName(), Joiner.on('\n').join(replacement), Joiner.on('\n').join(remapped));
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.

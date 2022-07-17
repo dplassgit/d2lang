@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
@@ -43,15 +43,14 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   Location remapFormal(String name, VarType type) {
-    // I *really* want this to be TempLocation, but the ConstantPropagation optimizer
-    // assumes that temps are never changed, so if we call it a Temp, it fails.
-    // Then, I *really* wanted this to be a stack location but, shrug.
     String fullName = "__" + name + suffix;
     if (symtab.get(fullName) == null) {
       symtab.declare(fullName, type);
     }
     System.err.printf("Remapping formal to %s (type %s)\n", fullName, type);
-    return new MemoryAddress(fullName, type);
+    // This is messed up because temps are read once, so dead code optimizer and constant
+    // propagation optimizer both create invalid code.
+    return new TempLocation(fullName, type);
   }
 
   List<Op> remap() {
@@ -132,6 +131,15 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     }
     code.set(ip, new FieldSetOp(destination, op.recordSymbol(), op.field(), source, op.position()));
   }
+  
+  @Override
+  public void visit(AllocateOp op) {
+    Location destination = (Location) remap(op.destination());
+    if (destination == op.destination()) {
+      return;
+    }
+    code.set(ip, new AllocateOp(destination, op.record()));
+  }
 
   @Override
   public void visit(SysCall op) {
@@ -180,19 +188,17 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       return operand;
     }
     Location location = (Location) operand;
-    // This fails for records, because records are stored globally (global or heap) but
-    // the "name" for FieldSetAddress is meaningless. We'd have to manually remap (something)...
     switch (location.storage()) {
       case TEMP:
-        return new TempLocation(location.name() + suffix, location.type());
       case LOCAL:
       case PARAM:
-        // I *really* want this to be a temp or stack but (see above)
         String fullName = "__" + location.name() + suffix;
         if (symtab.get(fullName) == null) {
           symtab.declare(fullName, location.type());
         }
-        return new MemoryAddress(fullName, location.type());
+        // This is messed up because temps are read once, so dead code optimizer and constant
+        // propagation optimizer both create invalid code.
+        return new TempLocation(fullName, location.type());
       default:
         return operand;
     }

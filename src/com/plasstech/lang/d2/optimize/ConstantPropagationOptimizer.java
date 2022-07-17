@@ -52,6 +52,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ConstantOperand<?> replacement = findReplacementConstant(op.target());
     if (replacement != null) {
       int value = (int) replacement.value();
+      // why stack constants and not tempconstants?!
       stackConstants.put(op.target().name(), ConstantOperand.of(value + 1));
       logger.at(loggingLevel).log("Incremented stackConstant %s to %d", op.target(), value + 1);
     }
@@ -62,6 +63,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ConstantOperand<?> replacement = findReplacementConstant(op.target());
     if (replacement != null) {
       int value = (int) replacement.value();
+      // why stack constants and not tempconstants?!
       stackConstants.put(op.target().name(), ConstantOperand.of(value - 1));
       logger.at(loggingLevel).log("Decremented stackConstant %s to %d", op.target(), value - 1);
     }
@@ -102,7 +104,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     }
 
     if (dest instanceof TempLocation && source.isConstant()) {
-      // easy case: temps are never overwritten.
+      // TODO: easy case: temps are never overwritten. -- ORLY?
+      // in inline remapper it often overwrites temps which used to be locals.
       logger.at(loggingLevel).log("Potentially replacing temp %s with %s", dest.name(), source);
       tempConstants.put(dest.name(), (ConstantOperand<?>) source);
       deleteCurrent();

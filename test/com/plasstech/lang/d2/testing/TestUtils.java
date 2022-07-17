@@ -51,7 +51,7 @@ public class TestUtils {
         .that(Joiner.on("").join(optimizedResult.environment().output()))
         .isEqualTo(Joiner.on("").join(unoptimizedResult.environment().output()));
     assertMapsSame(
-        unoptimizedResult.environment().variables(), optimizedResult.environment().variables());
+        optimizedResult.environment().variables(), unoptimizedResult.environment().variables());
     //    assertWithMessage("New code should be smaller")
     //        .that(unoptimizedResult.linesOfCode())
     //        .isAtLeast(optimizedResult.linesOfCode());
@@ -61,15 +61,15 @@ public class TestUtils {
     return optimizedResult;
   }
 
-  private static void assertMapsSame(Map<String, Object> first, Map<String, Object> second) {
-    assertThat(first.size()).isEqualTo(second.size());
-    for (Map.Entry<String, Object> entry : first.entrySet()) {
+  private static void assertMapsSame(Map<String, Object> actuals, Map<String, Object> expecteds) {
+    assertThat(actuals.size()).isEqualTo(expecteds.size());
+    for (Map.Entry<String, Object> entry : actuals.entrySet()) {
       // make sure everything's there.
-      Object firstValue = entry.getValue();
-      Object secondValue = second.get(entry.getKey());
+      Object actual = entry.getValue();
+      Object expected = expecteds.get(entry.getKey());
       assertWithMessage(String.format("Value of %s is wrong", entry.getKey()))
-          .that(firstValue)
-          .isEqualTo(secondValue);
+          .that(actual)
+          .isEqualTo(expected);
     }
   }
 
