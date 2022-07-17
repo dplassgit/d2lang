@@ -10,7 +10,13 @@ public class RecordDeclarationNode extends DeclarationNode {
 
   private final List<DeclarationNode> fields;
 
+  /**
+   * @param name the name of the record
+   * @param fields
+   * @param start
+   */
   public RecordDeclarationNode(String name, List<DeclarationNode> fields, Position start) {
+    // Technically this node doesn't have a type because it's not a referenceable *variable*
     super(name, new RecordReferenceType(name), start);
     this.fields = fields;
   }

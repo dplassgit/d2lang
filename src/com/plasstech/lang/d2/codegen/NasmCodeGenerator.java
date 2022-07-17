@@ -125,7 +125,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 1. emit all globals
     // 2. emit all string constants
     SymTab globals = input.symbolTable();
-    for (Map.Entry<String, Symbol> entry : globals.entries().entrySet()) {
+    for (Map.Entry<String, Symbol> entry : globals.variables().entrySet()) {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
@@ -133,7 +133,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           data.add(String.format("__%s: dd 0", entry.getKey()));
         } else if (symbol.varType() == VarType.BOOL) {
           data.add(String.format("__%s: db 0", entry.getKey()));
-        } else if (symbol.varType() == VarType.STRING || symbol.varType().isArray()) {
+        } else {
           data.add(String.format("__%s: dq 0", entry.getKey()));
         }
       }
@@ -404,7 +404,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(AllocateOp op) {
-    new FieldGenerator(resolver, registers, emitter).generate(op);
+    new RecordGenerator(resolver, registers, emitter).generate(op);
   }
 
   @Override

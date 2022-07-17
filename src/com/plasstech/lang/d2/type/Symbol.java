@@ -10,6 +10,13 @@ public interface Symbol {
 
   boolean isAssigned();
 
-  // this is insufficient - if it's register or stack, we need to know *where* it is
+  /**
+   * Locals or parameters will necessarily require more data than just "storage type" - they need an
+   * index or stack offset.
+   */
   SymbolStorage storage();
+
+  default boolean isVariable() {
+    return false;
+  }
 }

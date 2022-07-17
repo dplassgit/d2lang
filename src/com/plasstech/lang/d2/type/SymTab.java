@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -63,8 +64,19 @@ public class SymTab {
     return values.get(name);
   }
 
+  /** Returns all symbols in this level of the table. */
   public ImmutableMap<String, Symbol> entries() {
     return ImmutableMap.copyOf(values);
+  }
+
+  /** Returns all the variables in this level of the table. */
+  public ImmutableMap<String, Symbol> variables() {
+    return ImmutableMap.copyOf(
+        values
+            .entrySet()
+            .stream()
+            .filter(e -> e.getValue().isVariable())
+            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
   }
 
   public Symbol declareTemp(String name, VarType varType) {

@@ -272,7 +272,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                     lvalue.position());
               }
 
-              // TODO: if arrays, the sizes must match.
+              // TODO: if arrays, the dimensions must match.
 
               symbol.setAssigned();
             }

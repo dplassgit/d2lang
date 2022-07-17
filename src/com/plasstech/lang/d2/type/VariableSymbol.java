@@ -18,4 +18,9 @@ public class VariableSymbol extends AbstractSymbol {
   public String toString() {
     return String.format("%s: %s", name(), varType().toString());
   }
+
+  @Override
+  public boolean isVariable() {
+    return true;
+  }
 }
