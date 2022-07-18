@@ -4,8 +4,8 @@ package com.plasstech.lang.d2.type;
 public class RecordReferenceType implements VarType {
   private final String name;
 
-  public RecordReferenceType(String recordTypeName) {
-    this.name = recordTypeName;
+  public RecordReferenceType(String recordSymbolName) {
+    this.name = recordSymbolName;
   }
 
   @Override

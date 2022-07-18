@@ -65,6 +65,9 @@ public class NasmCodeGeneratorTestBase {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
+    ee.setParseDebugLevel(2);
+    ee.setTypeDebugLevel(2);
+    ee.setCodeGenDebugLevel(2);
     ee.setOptimize(optimize);
     InterpreterResult result = ee.execute();
     State state = ee.state();

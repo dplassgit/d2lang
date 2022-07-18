@@ -444,15 +444,14 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         throw new TypeException(
             String.format("Unknown RECORD type '%s'", recordName), left.position());
       }
-
-      RecordSymbol record = (RecordSymbol) symbol;
+      RecordSymbol recordSymbol = (RecordSymbol) symbol;
       // make sure RHS is a field in record
       String fieldName = ((VariableNode) right).name();
-      VarType fieldType = record.fieldType(fieldName);
+      VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
         throw new TypeException(
             String.format(
-                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordName),
+                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordSymbol),
             right.position());
       }
       node.setVarType(fieldType);
@@ -740,7 +739,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       new RecordGatherer(symbolTable()).visit(node);
       sym = symbolTable().get(node.name());
     }
-    
+
     // If we got this far, we know that the record doesn't have duplicate fields, or
     // invalid field types. Now we have to make sure any record fields are valid.
     for (DeclarationNode field : node.fields()) {

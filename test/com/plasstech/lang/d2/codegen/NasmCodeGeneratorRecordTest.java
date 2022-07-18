@@ -32,7 +32,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   public void setFieldInProc() throws Exception {
     execute(
         "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return i} print f()",
-        "setField");
+        "setFieldInProc");
   }
 
   @Test
@@ -52,5 +52,27 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "f:proc(x:rt):int {i=3 x.i=i return i} "
             + "print f(new rt)",
         "setFieldRecordIsParam");
+  }
+
+  @Test
+  public void getField() throws Exception {
+    execute("rt: record{i:int s:string} x=new rt x.i=3 print x.i", "getField");
+  }
+
+  @Test
+  public void getFieldInProc() throws Exception {
+    execute(
+        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return x.i} print f()",
+        "getFieldInProc");
+  }
+
+  @Test
+  public void getFieldRecordRefIsParam() throws Exception {
+    execute(
+        "      rt: record{s:string i:int} "
+            + "f:proc(x:rt):int {return x.i} "
+            + "y=new rt "
+            + "y.i=3 print f(y)",
+        "getFieldRecordRefIsParam");
   }
 }

@@ -100,6 +100,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private StringTable stringTable;
   private Resolver resolver;
   private CallGenerator callGenerator;
+  private RecordGenerator recordGenerator;
 
   private int id;
 
@@ -108,6 +109,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     stringTable = new StringFinder().execute(input.lastIlCode());
     resolver = new Resolver(registers, stringTable, emitter);
     callGenerator = new CallGenerator(registers, resolver, emitter);
+    recordGenerator = new RecordGenerator(resolver, registers, input.symbolTable(), emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -406,12 +408,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(AllocateOp op) {
-    new RecordGenerator(resolver, registers, emitter).generate(op);
+    recordGenerator.generate(op);
   }
 
   @Override
   public void visit(FieldSetOp op) {
-    new RecordGenerator(resolver, registers, emitter).generate(op);
+    recordGenerator.generate(op);
   }
 
   @Override
@@ -721,7 +723,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
       }
     } else {
-      fail("No idea how to do %s on %ss", operator, leftType);
+      recordGenerator.generate(op);
     }
     if (tempReg != null) {
       registers.deallocate(tempReg);

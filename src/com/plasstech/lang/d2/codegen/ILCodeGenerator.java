@@ -415,7 +415,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     if (node.operator() == TokenType.DOT) {
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
-      // TODO: this is weird, and possibly wrong. Why String?!
       rightSrc = ConstantOperand.of(rightVarNode.name());
     } else {
       // if right is a constant, just get it.

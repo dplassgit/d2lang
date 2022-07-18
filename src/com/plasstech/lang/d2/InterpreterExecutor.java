@@ -85,6 +85,11 @@ public class InterpreterExecutor {
     state = state.addProgramNode(programNode);
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
+    if (debugType > 0) {
+      System.out.println("\nCHECKED:");
+      System.out.println("------------------------------");
+      System.out.println(state.programNode());
+    }
     state.stopOnError();
 
     SymTab symbolTable = state.symbolTable();
