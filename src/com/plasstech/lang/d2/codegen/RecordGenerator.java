@@ -3,7 +3,10 @@ package com.plasstech.lang.d2.codegen;
 import static com.plasstech.lang.d2.codegen.Register.RCX;
 import static com.plasstech.lang.d2.codegen.Register.RDX;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
@@ -14,6 +17,9 @@ import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 class RecordGenerator {
+
+  private static final Map<TokenType, String> BINARY_OPCODE =
+      ImmutableMap.of(TokenType.EQEQ, "setz", TokenType.NEQ, "setnz");
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -81,10 +87,30 @@ class RecordGenerator {
   }
 
   void generate(BinOp op) {
-    if (op.operator() != TokenType.DOT) {
-      emitter.fail("Still don't know how to do %s on records", op.operator());
-    }
+    switch (op.operator()) {
+      case DOT:
+        generateDot(op);
+        break;
+      case EQEQ:
+      case NEQ:
+        Register tempReg = registers.allocate();
+        String leftName = resolver.resolve(op.left());
+        String rightName = resolver.resolve(op.right());
+        String destName = resolver.resolve(op.destination());
 
+        emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64, leftName);
+        emitter.emit("cmp %s, %s", tempReg.name64, rightName);
+        emitter.emit(
+            "%s %s  ; QWORD compare %s", BINARY_OPCODE.get(op.operator()), destName, op.operator());
+        break;
+
+      default:
+        emitter.fail("Still don't know how to do %s on records", op.operator());
+        break;
+    }
+  }
+
+  private void generateDot(BinOp op) {
     Operand record = op.left();
     VarType type = record.type();
     RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(type.name());

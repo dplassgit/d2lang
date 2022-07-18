@@ -42,6 +42,9 @@ public class Resolver {
         ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
         StringEntry entry = stringTable.lookup(stringConst.value());
         return entry.name();
+      } else if (operand.type().isNull()) {
+        // no idea if this will work, lol
+        return "0";
       }
 
       emitter.fail("Cannot generate %s operand %s yet", operand.type().name(), operand);
