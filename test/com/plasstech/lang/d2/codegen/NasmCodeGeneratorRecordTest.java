@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -79,25 +80,50 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void crashOnSet() throws Exception {
     execute(
-        "      Token: record {\n"
-            + "  type: int\n"
-            + "  start: Token\n"
-            + "  end: Token\n"
-            + "  value: String\n"
-            + "}\n"
-            + "makeToken: proc(type: int, start: Token, end: Token, text: String): Token {\n"
-            + "  token = new Token\n"
-            + "  token.type = type\n"
-            + "  token.start = start\n"
-            + "  token.end = end\n"
-            + "  token.value = text\n"
-            + "  print \"Made a token of value: \"\n"
-            + "  println token.value\n"
-            + "  print \"Made a token of type: \"\n"
-            + "  println token.type\n"
-            + "  return token\n"
-            + "}\n"
-            + "t = makeToken(1, null, null, \"keyword1\")\n",
+        "      Token: record { "
+            + "  type: int "
+            + "  start: Token "
+            + "  end: Token "
+            + "  value: String "
+            + "} "
+            + "makeToken: proc(type: int, start: Token, end: Token, text: String): Token { "
+            + "  token = new Token "
+            + "  token.type = type "
+            + "  token.start = start "
+            + "  token.end = end "
+            + "  token.value = text "
+            + "  print 'Made a token of value: ' "
+            + "  println token.value "
+            + "  print 'Made a token of type: ' "
+            + "  println token.type "
+            + "  return token "
+            + "} "
+            + "t = makeToken(1, null, null, 'keyword1') ",
         "crashOnSet");
+  }
+
+  @Test
+  @Ignore("Interpreter cannot compare records (!)")
+  public void compare() throws Exception {
+    execute(
+        "      rt: record {s:string i:int} "
+            + "a=new rt "
+            + "b=new rt "
+            + "println 'Should be false' "
+            + "println a==b "
+            + "println 'Should be true' "
+            + "println a!=b "
+            + "println 'Should be true' "
+            + "println a==a "
+            + "println 'Should be true' "
+            + "println b==b "
+            + "c=a "
+            + "println 'Should be true' "
+            + "println c==a "
+            + "println 'Should be false' "
+            + "println c==b "
+            + "println 'Should be true' "
+            + "println c!=b ",
+        "compare");
   }
 }

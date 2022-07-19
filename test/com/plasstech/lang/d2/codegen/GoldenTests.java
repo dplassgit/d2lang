@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,7 +26,6 @@ import com.plasstech.lang.d2.testing.TestUtils;
 public class GoldenTests {
 
   @Test
-  @Ignore
   public void lexerInDLexerInDGlobals() throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       String path = Paths.get("samples/d2ind2/lexerglobals.d").toString();

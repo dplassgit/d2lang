@@ -375,7 +375,6 @@ printToken: proc(token:Token) {
 }
 
 main {
-  //text = 'print "hello world"' 
   text = input
   lexer = new_lexer(text)
 

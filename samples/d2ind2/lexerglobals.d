@@ -317,7 +317,7 @@ makeSymbol: proc(): string {
   } elif oc == ':' {
     advance()
     return Token(Type_COLON, oc)
-  } elif oc == '"' or oc == "'" {
+  } elif oc == chr(34) or oc == chr(39) {
     return makeString(oc)
   } elif oc == ',' {
     advance()
