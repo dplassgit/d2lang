@@ -1,11 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.RCX;
-import static com.plasstech.lang.d2.codegen.Register.RDX;
-
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -35,7 +31,7 @@ class RecordGenerator {
 
   /** Generate asm code to allocate and assign a record. */
   void generate(AllocateOp op) {
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(RCX, RDX));
+    RegisterState state = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
     String dest = resolver.resolve(op.destination());
     emitter.emit("mov RCX, 1");
     // Allocate at least 1 byte
@@ -157,7 +153,6 @@ class RecordGenerator {
       emitter.emit("mov %s, [%s]  ; get it into the destination", size, destName, indirectReg);
       resolver.deallocate(indirectReg);
     }
-    resolver.deallocate(destination);
     resolver.deallocate(calcReg);
   }
 }

@@ -75,4 +75,29 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "y.i=3 print f(y)",
         "getFieldRecordRefIsParam");
   }
+
+  @Test
+  public void crashOnSet() throws Exception {
+    execute(
+        "      Token: record {\n"
+            + "  type: int\n"
+            + "  start: Token\n"
+            + "  end: Token\n"
+            + "  value: String\n"
+            + "}\n"
+            + "makeToken: proc(type: int, start: Token, end: Token, text: String): Token {\n"
+            + "  token = new Token\n"
+            + "  token.type = type\n"
+            + "  token.start = start\n"
+            + "  token.end = end\n"
+            + "  token.value = text\n"
+            + "  print \"Made a token of value: \"\n"
+            + "  println token.value\n"
+            + "  print \"Made a token of type: \"\n"
+            + "  println token.type\n"
+            + "  return token\n"
+            + "}\n"
+            + "t = makeToken(1, null, null, \"keyword1\")\n",
+        "crashOnSet");
+  }
 }

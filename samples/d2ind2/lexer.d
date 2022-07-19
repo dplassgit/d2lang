@@ -92,19 +92,9 @@ new_lexer: proc(text: string): Lexer {
   this = new Lexer
   this.text = text
   this.line = 1
+  this.cc = ''
   advance(this)
   return this
-}
-
-advance: proc(this: Lexer) {
-  if this.loc < length(this.text) {
-    this.cc=this.text[(this.loc)]
-    this.col=this.col + 1
-  } else {
-    // Indicates no more characters
-    this.cc=''
-  }
-  this.loc=this.loc + 1
 }
 
 nextToken: proc(this: Lexer): Token {
@@ -129,12 +119,25 @@ nextToken: proc(this: Lexer): Token {
   return makeToken(Type_EOF, start, start, '')
 }
 
+advance: proc(this: Lexer) {
+  if this.loc < length(this.text) {
+    // the parens are required for some stupid reason. wth?
+    temptext=this.text
+    this.cc=temptext[this.loc]
+    this.col=this.col + 1
+  } else {
+    // Indicates no more characters
+    this.cc=''
+  }
+  this.loc=this.loc + 1
+}
+
 isLetter: proc(c: string): bool {
-  return (c>='a' and c <= 'z') or (c>='A' and c <= 'Z') or c=='_'
+  return (c >= 'a' and c <= 'z') or (c>='A' and c <= 'Z') or c=='_'
 }
 
 isDigit: proc(c: string): bool {
-  return c>='0' and c <= '9'
+  return c >= '0' and c <= '9'
 }
 
 isLetterOrDigit: proc(c: string): bool {
@@ -152,7 +155,7 @@ makeText: proc(this: Lexer, start: Position): Token {
     advance(this)
   }
   end=makePosition(this)
-  // TODOgdon't allow leading __
+  // TODO: don't allow leading __ 
 
   if value == 'true' {
     return makeToken(Type_TRUE, start, end, value)
@@ -176,12 +179,8 @@ makeInt: proc(this: Lexer, start: Position): Token {
     value=value * 10 + (asc(this.cc) - asc('0'))
     value_as_string = value_as_string + this.cc
   }
-  end=makePosition(this)
-  token = new Token
-  token.type = Type_INT
-  token.start = start
-  token.end = end
-  token.value = value_as_string
+  end = makePosition(this)
+  token = makeToken(Type_INT, start, end, value_as_string)
   token.int_value = value
   return token
 }
@@ -290,11 +289,7 @@ startsWithGt: proc(this: Lexer, start: Position): Token {
     advance(this)
     return makeToken(Type_GEQ, start, end, '>=')
   }
-  t = new Token
-  t.type = Type_GT
-  t.start = start
-  t.value = oc
-  return t
+  return makeToken(Type_GT, start, start, oc)
 }
 
 startsWithLt: proc(this: Lexer, start: Position): Token {
@@ -365,6 +360,7 @@ makeToken: proc(type: int, start: Position, end: Position, text: String): Token 
 }
 
 printToken: proc(token:Token) {
+  //println toString(token.type)
   if token.type == Type_EOF {
     println 'Token: EOF'
   } elif token.type == Type_INT {
@@ -379,6 +375,7 @@ printToken: proc(token:Token) {
 }
 
 main {
+  //text = 'print "hello world"' 
   text = input
   lexer = new_lexer(text)
 

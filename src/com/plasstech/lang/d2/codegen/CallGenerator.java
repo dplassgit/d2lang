@@ -48,14 +48,15 @@ class CallGenerator {
       emit("; no sources conflict with dests, doing simple version");
       int index = 0;
       for (Operand actual : op.actuals()) {
-        String formalLocation = resolver.resolve(op.formals().get(index));
+        Location formal = op.formals().get(index);
+        String formalLocation = resolver.resolve(formal);
         String actualLocation = resolver.resolve(actual);
         if (formalLocation.equals(actualLocation)) {
           emit(
               "; parameter #%d (formal %s) already in %s (%s)",
-              index, op.formals().get(index).name(), actualLocation, actual);
+              index, formal.name(), actualLocation, actual);
         } else {
-          Size size = Size.of(actual.type());
+          Size size = Size.of(formal.type());
           emit("mov %s %s, %s", size, formalLocation, actualLocation);
         }
         index++;

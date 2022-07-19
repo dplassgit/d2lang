@@ -24,9 +24,9 @@ enum Size {
       return Size._32BITS;
     } else if (type == VarType.BOOL) {
       return Size._1BYTE;
-    } else if (type == VarType.STRING || type.isArray() || type.isRecord()) {
+    } else if (type == VarType.STRING || type.isArray() || type.isRecord() || type.isNull()) {
       return Size._64BITS;
     }
-    throw new D2RuntimeException("IllegalState", null, "Cannot get type of " + type);
+    throw new D2RuntimeException("Cannot get type of " + type, null, "IllegalState");
   }
 }

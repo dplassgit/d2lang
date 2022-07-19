@@ -939,8 +939,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // not required if it's already supposed to be in eax
         emit("; dividend in EAX, where we wanted it to be");
       }
-    }
-    if (op.operator() == TokenType.MOD) {
+    } else if (op.operator() == TokenType.MOD) {
       // edx has remainder
       if (!destName.equals(RDX.name32)) {
         emit("mov %s, EDX  ; remainder", destName);
@@ -949,6 +948,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
 
+    // this is weird - we reserved rax & rdx, but only partially unreserve them?
     if (!registerState.pushed(RDX)) {
       registers.deallocate(RDX);
     }
