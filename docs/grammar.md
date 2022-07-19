@@ -13,8 +13,7 @@ main -> 'MAIN' mainarg? '{' statements '}'
 mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> lvalue '=' expr
-// lvalue -> variable | variable '[' expr ']' | variable '.' variable // not fully built yet, and may become more complex
-lvalue -> variable | variable '.' variable
+lvalue -> variable | variable '[' expr ']' | variable '.' variable
 
 print -> 'PRINT' expr | 'PRINTLN' expr
 
@@ -69,7 +68,7 @@ atom ->   int_constant
 	| boolean_constant
 	| string_constant
 	| variable_name
-        | variable_name '(' comma-separated-expressions ')'
+  | variable_name '(' comma-separated-expressions ')'
 	| '(' expr ')'
 	| '[' comma-separated-expressions ']'
 	| 'INPUT'

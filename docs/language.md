@@ -2,9 +2,9 @@
 
 ## Types & Keywords
 
-Current built-in types: int, string, boolean, constant arrays
+Current built-in types: int, string, boolean, arrays, records
 
-Eventually: (more arrays), map?, record, lambda? (but not closures)
+Eventually: (more arrays), map?, lambda? (but not closures)
 
 Current keywords (excluding built-in types)
 
@@ -15,7 +15,7 @@ if, else, elif, do, while, break, continue, return, proc, print, println, main, 
 Eventually:
 
 ```
-array(?), keys?, values?, delete(?)
+keys?, values?, delete(?)
 ```
 
 ## Oddities
@@ -178,34 +178,32 @@ Winner: `length(array)`
 
 #### Declaration explorations
 
+This actually declares and allocates the array.
+
 ```
 keywords:Array of int
 keywords:array{int}
 keywords:array[int]
 keywords:int array
 keywords:[int]
-keywords:int[] // winner because multidimensional arrays.
 keywords:int[3] // winner because multidimensional arrays.
 ```
 
-Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated.
+Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated. We allow the size at declaration time.
 
 #### Multi-dimensional
 
 ```
-keywords:int[][]
+keywords:int[1,2]
 ```
 
 #### Constants
 
 ```
 keywords=[1,2,3,4]
+numbers=[1,2,functioncall(), a]
 ```
 
 #### Allocating 
 
-```
-keywords = new array[int](3) // yuk
-keywords = int[3] // defaults to zeros
-keywords = new int[3] // defaults to zeros -- winner, because why not
-```
+There's no separation between allocation and declaration of arrays.
