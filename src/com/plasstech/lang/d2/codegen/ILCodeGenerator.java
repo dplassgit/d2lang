@@ -105,20 +105,15 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     return procedures.peek().symTab();
   }
 
-  private String newLabel(String prefix) {
-    return String.format("____%s_%d", prefix, ++id);
+  private String nextLabel(String prefix) {
+    // leading underscore is an illegal character so this will never conflict.
+    return String.format("_%s_%d", prefix, ++id);
   }
 
   private TempLocation allocateTemp(VarType varType) {
     String name = String.format("__temp%d", ++id);
     symbolTable().declareTemp(name, varType);
     return new TempLocation(name, varType);
-  }
-
-  private MemoryAddress allocateMemory(VarType varType) {
-    String name = String.format("__memory%d", ++id);
-    symbolTable().declare(name, varType);
-    return new MemoryAddress(name, varType);
   }
 
   @Override
@@ -145,10 +140,10 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // mov [__length], [RBX + 1] ; get length from first dimension
       emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location()));
       emit(new Transfer(length, tempLength));
-      String loopLabel = newLabel("array_print_loop");
+      String loopLabel = nextLabel("array_print_loop");
       // loop:
       emit(new Label(loopLabel));
-      String endLoopLabel = newLabel("array_print_loop_end");
+      String endLoopLabel = nextLabel("array_print_loop_end");
       //   compare index to length
       TempLocation compare = allocateTemp(VarType.BOOL);
       emit(new BinOp(compare, index, TokenType.EQEQ, length, null));
@@ -462,10 +457,10 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(IfNode node) {
-    String after = newLabel("after_if");
+    String after = nextLabel("after_if");
 
     for (IfNode.Case ifCase : node.cases()) {
-      String nextLabel = newLabel("elif");
+      String nextLabel = nextLabel("elif");
 
       Node cond = ifCase.condition();
       cond.accept(this);
@@ -505,9 +500,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // ..if while condition is true, goto loop_begin
     // loop_end: ("break" target)
 
-    String before = newLabel(Label.LOOP_BEGIN_PREFIX);
-    String increment = newLabel(Label.LOOP_INCREMENT_PREFIX);
-    String after = newLabel(Label.LOOP_END_PREFIX);
+    String before = nextLabel(Label.LOOP_BEGIN_PREFIX);
+    String increment = nextLabel(Label.LOOP_INCREMENT_PREFIX);
+    String after = nextLabel(Label.LOOP_END_PREFIX);
     whileContinues.push(increment);
     whileBreaks.push(after);
 
@@ -553,10 +548,9 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(MainNode node) {
-    emit(new Label("main"));
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
-    if (node.block() != null) {
+    if (node.block() != null && !node.block().statements().isEmpty()) {
       node.block().accept(this);
     }
     emit(new Stop());
@@ -595,7 +589,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     procedures.push(procSym);
     // Guard to prevent just falling into this method
-    String afterLabel = newLabel("after_proc_" + node.name());
+    String afterLabel = nextLabel("after_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 

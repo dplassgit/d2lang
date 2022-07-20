@@ -1,5 +1,5 @@
 p2: proc {
-  println "Should print p1"
+  println "Should print 1"
   // forward reference
   val = p1()
   print val

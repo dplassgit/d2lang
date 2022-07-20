@@ -51,7 +51,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Label op) {
-    if (op.label().startsWith("__" + Label.LOOP_BEGIN_PREFIX)) {
+    if (op.label().startsWith("_" + Label.LOOP_BEGIN_PREFIX)) {
       if (mostRecentEnd == null) {
         logger.atFine().log("Found loop start %s without loop end", op.label());
       } else {
@@ -70,7 +70,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(IfOp op) {
-    if (op.destination().startsWith("__" + Label.LOOP_END_PREFIX)) {
+    if (op.destination().startsWith("_" + Label.LOOP_END_PREFIX)) {
       mostRecentEnd = op.destination();
     }
   }

@@ -70,7 +70,7 @@ public class Resolver {
         emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
       case GLOBAL:
-        return "[__" + location.name() + "]";
+        return "[_" + location.name() + "]";
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
         return generateParamLocationName(paramLoc.index(), location.type());

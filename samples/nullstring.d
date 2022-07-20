@@ -5,4 +5,5 @@ println null==b
 
 b=null
 println "Should print null"
+// this crashes
 println b

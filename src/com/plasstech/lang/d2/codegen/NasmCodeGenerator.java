@@ -134,11 +134,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
         // TODO: make these fields in the VarType object.
         if (symbol.varType() == VarType.INT) {
-          data.add(String.format("__%s: dd 0", entry.getKey()));
+          data.add(String.format("_%s: dd 0", entry.getKey()));
         } else if (symbol.varType() == VarType.BOOL) {
-          data.add(String.format("__%s: db 0", entry.getKey()));
+          data.add(String.format("_%s: db 0", entry.getKey()));
         } else {
-          data.add(String.format("__%s: dq 0", entry.getKey()));
+          data.add(String.format("_%s: dq 0", entry.getKey()));
         }
       }
     }
@@ -146,7 +146,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       data.add(entry.dataEntry());
     }
 
-    // TODO: convert command-line arguments to ??? and send to __main
+    // TODO: convert command-line arguments to ??? and send to _main
     emit0("main:");
     try {
       for (Op opcode : code) {
@@ -188,7 +188,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Label op) {
-    emit0("\n__%s:", op.label());
+    emit0("\n_%s:", op.label());
   }
 
   @Override
@@ -199,7 +199,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Goto op) {
-    emit("jmp __%s", op.label());
+    emit("jmp _%s", op.label());
   }
 
   @Override
@@ -275,8 +275,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // 2. compare - NOTE SWAPPED ARGS
         emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32, index);
         // 3. if good, continue
-        String continueLabel = "_continue" + id++;
-        emit("jg __%s", continueLabel);
+        String continueLabel = nextContinueLabel();
+        emit("jg _%s", continueLabel);
 
         emit0("\n  ; no good. print error and stop");
         data.add(ARRAY_INDEX_OOB_ERR);
@@ -304,8 +304,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // Validate index part 1
       emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
-      String continueLabel = "_continue" + id++;
-      emit("jge __%s", continueLabel);
+      String continueLabel = nextContinueLabel();
+      emit("jge _%s", continueLabel);
 
       // print error and stop.
       emit0("\n  ; negative. no good. print error and stop");
@@ -315,7 +315,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       } else {
         emit("mov R8d, %s  ; index", indexName);
       }
-      emit("mov RDX, %d  ; line number", position.line());
+      if (position != null) {
+        emit("mov RDX, %d  ; line number", position.line());
+      } else {
+        emit("mov RDX, 0  ; unknown line number");
+      }
       emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
       generatePrintf();
       visit(new Stop(-1));
@@ -331,8 +335,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // 2. compare
       emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32);
       // 3. if good, continue
-      continueLabel = "_continue" + id++;
-      emit("jl __%s", continueLabel);
+      continueLabel = nextContinueLabel();
+      emit("jl _%s", continueLabel);
 
       emit0("\n  ; no good. print error and stop");
       data.add(ARRAY_INDEX_OOB_ERR);
@@ -342,7 +346,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov R8d, %s  ; length ", lengthReg.name32);
       }
       emit("mov DWORD R9d, %s  ; index", indexName);
-      emit("mov EDX, %s  ; line number", position.line());
+      if (position != null) {
+        emit("mov EDX, %s  ; line number", position.line());
+      } else {
+        emit("mov EDX, 0  ; unknown line number");
+      }
       emit("mov RCX, ARRAY_INDEX_OOB_ERR");
       generatePrintf();
       visit(new Stop(-1));
@@ -357,6 +365,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     emit("add %s, %s  ; actual location", lengthReg, arrayLoc);
     return lengthReg;
+  }
+
+  private String nextContinueLabel() {
+    // it's actually two underscores, because every label gets prepended with an underscore.
+    return "_continue" + id++;
   }
 
   @Override
@@ -448,10 +461,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       // Validate array size is positive.
       emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
-      // Note, three underscores
-      String continueLabel = "_continue" + id++;
-
-      emit("jge __%s", continueLabel);
+      String continueLabel = nextContinueLabel();
+      emit("jge _%s", continueLabel);
 
       data.add(ARRAY_SIZE_ERR);
       emit("; no good; array size is not positive");
@@ -595,7 +606,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(IfOp op) {
     String condName = resolver.resolve(op.condition());
     emit("cmp BYTE %s, 0", condName);
-    emit("jne __%s", op.destination());
+    emit("jne _%s", op.destination());
     resolver.deallocate(op.condition());
   }
 
@@ -818,14 +829,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("");
     emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
-        leftOperand, new RegisterLocation("____leftLengthReg", leftLengthReg, VarType.INT));
+        leftOperand, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT));
     // 2. get right length
     Register rightLengthReg = registers.allocate();
     // TODO: if leftLengthReg is volatile, push it first (?!)
     emit0("");
     emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
-        rightOperand, new RegisterLocation("____rightLengthReg", rightLengthReg, VarType.INT));
+        rightOperand, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT));
     emit0("");
     emit("add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
     emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
@@ -898,8 +909,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     } else {
       emit("cmp DWORD %s, 0  ; detect division by 0", right);
-      String continueLabel = "_continue" + id++;
-      emit("jne __%s", continueLabel);
+      String continueLabel = nextContinueLabel();
+      emit("jne _%s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
       data.add(DIV_BY_ZERO_ERR);
@@ -1196,7 +1207,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
      * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
      */
     callGenerator.generate(op);
-    emit0("\n  call __%s\n", op.procName());
+    emit0("\n  call _%s\n", op.procName());
     registerState.condPop();
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
@@ -1205,7 +1216,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s %s, %s", size, destName, RAX.sizeByType(destination.type()));
     }
   }
-  
+
   /** Conditionally push all allocated registers in the list */
   private RegisterState condPush(ImmutableList<Register> registerList) {
     return RegisterState.condPush(emitter, registers, registerList);

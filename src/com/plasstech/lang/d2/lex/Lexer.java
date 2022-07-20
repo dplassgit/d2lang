@@ -81,7 +81,7 @@ public class Lexer {
     }
 
     String value = sb.toString();
-    if (value.startsWith("__")) {
+    if (value.startsWith("_")) {
       throw new ScannerException(String.format("Illegal variable name %s", value), start);
     }
     Position end = new Position(line, col);

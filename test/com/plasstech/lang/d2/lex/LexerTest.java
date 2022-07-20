@@ -253,7 +253,7 @@ public class LexerTest {
 
   @Test
   public void underscore() {
-    Lexer lexer = new Lexer("TYPE_token token_ token_with_lots_of_ _leading_ok _");
+    Lexer lexer = new Lexer("TYPE_token token_ token_with_lots_of_");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("TYPE_token");
@@ -263,17 +263,13 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
     assertThat(token.text()).isEqualTo("token_with_lots_of_");
-    token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
-    assertThat(token.text()).isEqualTo("_leading_ok");
-    token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
-    assertThat(token.text()).isEqualTo("_");
   }
 
   @Test
-  public void double_underscore_not_allowed() {
+  public void leading_underscore_not_allowed() {
+    assertThrows(ScannerException.class, () -> new Lexer("_token").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer("__token").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("_").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer("__").nextToken());
   }
 
