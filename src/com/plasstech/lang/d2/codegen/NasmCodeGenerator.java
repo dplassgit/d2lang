@@ -793,10 +793,31 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     state.condPop();
   }
 
-  private void generateStringIndex(String leftName, String rightName, String destName) {
+  private void generateStringIndex(String stringName, String indexName, String destName) {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-    // 1. allocate a new 2-char string
 
+    // Issue #112:
+    // if indexname == stringname's length-1, just return stringname-1
+    /*
+     * (condpush)
+     * mov rcx, stringname
+     * call strlen
+     * (condpop)
+     * dec rax
+     * cmp rax, indexname
+     * jne allocateit
+     *
+     * mov destname, stringmame <<< may have to be smarter in case neither is a constant
+     * jmp after
+     *
+     * allocateit:
+     * old code
+     *
+     * (regular code)
+     *
+     * after:
+     */
+    // 1. allocate a new 2-char string
     emit("mov RCX, 2");
     generateMalloc();
     registerState.condPop();
@@ -808,9 +829,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Register charReg = registers.allocate();
     emit("; allocated charReg to %s", charReg);
     // 3. get the string
-    emit("mov %s, %s  ; get the string into %s", charReg, leftName, charReg);
+    emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
     // 4. get the index
-    emit("mov %s, %s  ; put index value into %s", indexReg.name32, rightName, indexReg.name32);
+    emit("mov %s, %s  ; put index value into %s", indexReg.name32, indexName, indexReg.name32);
     // 5. get the actual character
     emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
     registers.deallocate(indexReg);
