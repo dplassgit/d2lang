@@ -20,6 +20,7 @@ enum Size {
   }
 
   static Size of(VarType type) {
+    // TODO: Just use type.size()!
     if (type == VarType.INT) {
       return Size._32BITS;
     } else if (type == VarType.BOOL) {
