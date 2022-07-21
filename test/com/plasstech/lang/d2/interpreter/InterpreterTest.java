@@ -325,9 +325,9 @@ public class InterpreterTest {
                 + "  advance_parser(parser) "
                 + "  return parser"
                 + "}"
-                + "advance_parser: proc(this: Parser) {"
-                + "  prev = this.token"
-                + "  this.token = 'hi'"
+                + "advance_parser: proc(it: Parser) {"
+                + "  prev = it.token"
+                + "  it.token = 'hi'"
                 //                + "  return prev"
                 + "}"
                 + "p=new_parser()"
@@ -351,8 +351,8 @@ public class InterpreterTest {
 
   private Environment execute(String program, boolean optimize) {
     InterpreterExecutor ee = new InterpreterExecutor(program);
-    ee.setCodeGenDebugLevel(2);
-    ee.setOptDebugLevel(2);
+    //    ee.setCodeGenDebugLevel(2);
+    //    ee.setOptDebugLevel(2);
     ee.setOptimize(optimize);
     InterpreterResult result = ee.execute();
     //    System.out.println(ee.programNode());

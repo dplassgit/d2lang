@@ -1,15 +1,18 @@
 package com.plasstech.lang.d2.common;
 
 public enum TokenType {
+  VARIABLE, // all variables are tagged with this type
   // Keywords:
   INT(true), // indicates the "int" keyword
   BOOL(true), // indicates the "bool" keyword
   STRING(true), // indicates the "string" keyword
-  VARIABLE,
+  FLOAT(true), // indicates the "float" keyword
+  LONG(true), // indicates the "long" keyword
+  CHAR(true), // indicates the "char" keyword
+  TRUE(true), // boolean literal
+  FALSE(true), // boolean literal
   PRINT(true),
   PRINTLN(true),
-  TRUE(true),
-  FALSE(true),
   NULL(true),
   IF(true),
   ELSE(true),
@@ -22,8 +25,6 @@ public enum TokenType {
   BREAK(true),
   CONTINUE(true),
   RECORD(true),
-  DELETE(true), // for future expansion
-  MAP(true), // for future expansion
   INPUT(true),
   EXIT(true),
   // Unary operators (& keywords)
@@ -66,6 +67,17 @@ public enum TokenType {
   COLON(":"),
   COMMA(","),
   DOT("."),
+  // For future expansion:
+  DELETE(true), // free a new
+  FOR(true), // for (x in array/list)
+  IN(true),
+  GET(true), // get one character
+  THIS(true), // for primitive classes
+  PRIVATE(true), // for primitive classes
+  LOAD(true), // load a file, maybe including binary type
+  SAVE(true), // save a file
+  EXTERN(true), // reference an externally defined symbol
+  EXPORT(true), // expose a symbol to externally
   EOF;
 
   private final String abbreviation;

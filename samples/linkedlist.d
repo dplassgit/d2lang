@@ -7,8 +7,8 @@ new_list: proc(): intlist {
   return new intlist
 }
 
-append: proc(this:intlist, newvalue:int) {
-  head = this
+append: proc(it:intlist, newvalue:int) {
+  head = it
   while head.next != null do head = head.next {
   }
 
@@ -17,10 +17,10 @@ append: proc(this:intlist, newvalue:int) {
   head.next = node
 }
 
-print_list: proc(this: intlist) {
-  if this != null {
-    println this.value
-    print_list(this.next)
+print_list: proc(it: intlist) {
+  if it != null {
+    println it.value
+    print_list(it.next)
   }
 }
 
