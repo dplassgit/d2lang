@@ -11,7 +11,8 @@ public class BinOp extends Op {
   private final Operand left;
   private final Operand right;
 
-  public BinOp(Location destination, Operand left, TokenType operator, Operand right, Position position) {
+  public BinOp(
+      Location destination, Operand left, TokenType operator, Operand right, Position position) {
     super(position);
     this.destination = destination;
     this.left = left;
@@ -44,5 +45,4 @@ public class BinOp extends Op {
   public void accept(OpcodeVisitor visitor) {
     visitor.visit(this);
   }
-
 }

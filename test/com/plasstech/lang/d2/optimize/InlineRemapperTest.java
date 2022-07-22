@@ -107,7 +107,8 @@ public class InlineRemapperTest {
   public void unaryOpTempSource_formal() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE)), new SymTab())
+                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE, null)),
+                new SymTab())
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");

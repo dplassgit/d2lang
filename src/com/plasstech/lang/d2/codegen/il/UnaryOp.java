@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 
 public class UnaryOp extends Op {
@@ -10,7 +11,8 @@ public class UnaryOp extends Op {
   private final Operand operand;
 
   // TODO: check the token type
-  public UnaryOp(Location destination, TokenType operator, Operand operand) {
+  public UnaryOp(Location destination, TokenType operator, Operand operand, Position position) {
+    super(position);
     this.destination = destination;
     this.operand = operand;
     this.operator = operator;

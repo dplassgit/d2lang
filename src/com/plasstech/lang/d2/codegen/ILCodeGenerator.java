@@ -138,7 +138,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // can't assign right to the global because it barfs on the 2nd line:
       // mov RBX, [__arr] ; get array location into reg
       // mov [__length], [RBX + 1] ; get length from first dimension
-      emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location()));
+      emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location(), node.position()));
       emit(new Transfer(length, tempLength));
       String loopLabel = nextLabel("array_print_loop");
       // loop:
@@ -443,7 +443,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case LENGTH:
       case ASC:
       case CHR:
-        emit(new UnaryOp(destination, node.operator(), expr.location()));
+        emit(new UnaryOp(destination, node.operator(), expr.location(), node.position()));
         break;
       case PLUS:
         // tiny optimization
@@ -470,7 +470,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // temp = !cond
       // if temp skip to next block.
       // TODO: I hate this, it adds too many operations.
-      emit(new UnaryOp(temp, TokenType.NOT, cond.location()));
+      emit(new UnaryOp(temp, TokenType.NOT, cond.location(), node.position()));
       emit(new IfOp(temp, nextLabel));
 
       ifCase.block().accept(this);
@@ -510,7 +510,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Node condition = node.condition();
     condition.accept(this);
     TempLocation notCondition = allocateTemp(condition.varType());
-    emit(new UnaryOp(notCondition, TokenType.NOT, condition.location()));
+    emit(new UnaryOp(notCondition, TokenType.NOT, condition.location(), node.position()));
     emit(new IfOp(notCondition, after));
 
     emit(new Label(before));

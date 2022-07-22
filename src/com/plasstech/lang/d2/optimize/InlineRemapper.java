@@ -80,7 +80,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
       // no change
       return;
     }
-    code.set(ip, new UnaryOp((Location) dest, op.operator(), operand));
+    code.set(ip, new UnaryOp((Location) dest, op.operator(), operand, op.position()));
   }
 
   @Override

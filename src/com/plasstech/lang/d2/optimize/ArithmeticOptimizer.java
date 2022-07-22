@@ -344,7 +344,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (left.equals(ConstantOperand.ZERO)) {
       // Replace with destination = -right
       // This may not be any better than 0-right...
-      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right));
+      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right, op.position()));
       return;
     } else if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left

@@ -127,7 +127,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.operand();
     ConstantOperand<?> replacement = findReplacementConstant(operand);
     if (replacement != null) {
-      replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement));
+      replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement, op.position()));
     }
   }
 

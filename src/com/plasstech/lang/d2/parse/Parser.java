@@ -674,7 +674,7 @@ public class Parser implements Phase {
       expect(TokenType.RPAREN);
       advance();
 
-      return new UnaryNode(keywordToken.type(), expr, unaryToken.start());
+      return new UnaryNode(keywordToken.type(), expr, keywordToken.start());
     } else if (token.type() == TokenType.NEW) {
       Position start = token.start();
       advance();
