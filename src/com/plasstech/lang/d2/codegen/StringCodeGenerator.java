@@ -31,12 +31,12 @@ class StringCodeGenerator {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final Registers registers;
+  private final RegistersInterface registers;
   private final NullPointerCheckGenerator npeCheckGenerator;
 
-  public StringCodeGenerator(Resolver resolver, Registers registers, Emitter emitter) {
+  public StringCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
-    this.registers = registers;
+    this.registers = resolver;
     this.emitter = emitter;
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }

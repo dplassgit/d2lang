@@ -8,11 +8,18 @@ LOCATION_SRCS = [
   "TempLocation.java",
 ]
 
+REGISTERS_SRCS = [
+  "Registers.java",
+  "Register.java",
+  "RegistersInterface.java",
+]
+
 java_library(
     name="codegen",
-    srcs=glob(["*.java"], exclude=LOCATION_SRCS),
+    srcs=glob(["*.java"], exclude=LOCATION_SRCS + REGISTERS_SRCS),
     deps=[
         ":location",
+        ":registers",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
@@ -42,7 +49,7 @@ java_library(
 
 java_library(
     name="registers",
-    srcs=["Registers.java", "Register.java"],
+    srcs=REGISTERS_SRCS,
     visibility=["//visibility:public"],
     deps=[
         "//src/com/plasstech/lang/d2/common",

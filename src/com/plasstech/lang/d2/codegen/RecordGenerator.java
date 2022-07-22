@@ -20,14 +20,12 @@ class RecordGenerator {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final Registers registers;
   private final SymTab symTab;
 
   private final NullPointerCheckGenerator npeCheckGenerator;
 
-  public RecordGenerator(Resolver resolver, Registers registers, SymTab symTab, Emitter emitter) {
+  public RecordGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
     this.resolver = resolver;
-    this.registers = registers;
     this.symTab = symTab;
     this.emitter = emitter;
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
@@ -35,7 +33,7 @@ class RecordGenerator {
 
   /** Generate nasm code to allocate and assign a record. */
   void generate(AllocateOp op) {
-    RegisterState state = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+    RegisterState state = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     String dest = resolver.resolve(op.destination());
     emitter.emit("mov RCX, 1");
     // Allocate at least 1 byte
@@ -96,7 +94,7 @@ class RecordGenerator {
         break;
       case EQEQ:
       case NEQ:
-        Register tempReg = registers.allocate();
+        Register tempReg = resolver.allocate();
         String leftName = resolver.resolve(op.left());
         String rightName = resolver.resolve(op.right());
         String destName = resolver.resolve(op.destination());
@@ -105,6 +103,7 @@ class RecordGenerator {
         emitter.emit("cmp %s, %s", tempReg.name64, rightName);
         emitter.emit(
             "%s %s  ; QWORD compare %s", BINARY_OPCODE.get(op.operator()), destName, op.operator());
+        resolver.deallocate(tempReg);
         break;
 
       default:

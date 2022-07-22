@@ -12,10 +12,8 @@ class CallGenerator {
 
   private final Emitter emitter;
   private final Resolver resolver;
-  private final Registers registers;
 
-  public CallGenerator(Registers registers, Resolver resolver, Emitter emitter) {
-    this.registers = registers;
+  public CallGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }
@@ -91,7 +89,7 @@ class CallGenerator {
       }
 
       for (Entry<Register, Register> pair : sourceToAlias.entrySet()) {
-        if (pair.getKey() != pair.getValue() && registers.isAllocated(pair.getValue())) {
+        if (pair.getKey() != pair.getValue() && resolver.isAllocated(pair.getValue())) {
           emitter.emit("; deallocating alias %s", pair.getValue());
           resolver.deallocate(pair.getValue());
         }

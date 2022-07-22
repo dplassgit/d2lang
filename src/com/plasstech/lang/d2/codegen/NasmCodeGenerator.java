@@ -1,9 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.R10;
-import static com.plasstech.lang.d2.codegen.Register.R11;
-import static com.plasstech.lang.d2.codegen.Register.R8;
-import static com.plasstech.lang.d2.codegen.Register.R9;
 import static com.plasstech.lang.d2.codegen.Register.RAX;
 import static com.plasstech.lang.d2.codegen.Register.RCX;
 import static com.plasstech.lang.d2.codegen.Register.RDX;
@@ -38,7 +34,6 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
@@ -76,12 +71,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.LEQ, "setle") // for both intand boolean
           .build();
 
-  private static final String ARRAY_INDEX_NEGATIVE_ERR =
-      "ARRAY_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: ARRAY index must be non-negative; was %d\", 10, 0";
-  private static final String ARRAY_INDEX_OOB_ERR =
-      "ARRAY_INDEX_OOB_ERR: db \"Invalid index error at line %d: ARRAY index out of bounds (length %d); was %d\", 10, 0";
-  private static final String ARRAY_SIZE_ERR =
-      "ARRAY_SIZE_ERR: db \"Invalid value error at line %d: ARRAY size must be positive; was %d\", 10, 0";
   private static final String DIV_BY_ZERO_ERR =
       "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
 
@@ -101,15 +90,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private RecordGenerator recordGenerator;
   private StringCodeGenerator stringGenerator;
   private NullPointerCheckGenerator npeCheckGenerator;
+  private ArrayCodeGenerator arrayGenerator;
 
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
     resolver = new Resolver(registers, stringTable, emitter);
-    callGenerator = new CallGenerator(registers, resolver, emitter);
-    recordGenerator = new RecordGenerator(resolver, registers, input.symbolTable(), emitter);
+    callGenerator = new CallGenerator(resolver, emitter);
+    recordGenerator = new RecordGenerator(resolver, input.symbolTable(), emitter);
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
-    stringGenerator = new StringCodeGenerator(resolver, registers, emitter);
+    stringGenerator = new StringCodeGenerator(resolver, emitter);
+    arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -196,172 +187,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    if (!op.isArrayLiteral()) {
-      // array literals are by definition never null.
-      npeCheckGenerator.generateNullPointerCheck(op, op.array());
-    }
-
-    Operand sourceLoc = op.source();
-    String sourceName = resolver.resolve(sourceLoc);
-    ArrayType arrayType = op.arrayType();
-    String baseTypeSize = Size.of(arrayType.baseType()).asmType;
-    Register sourceReg = null;
-    if (!(resolver.isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
-      // not a constant and not in a registers; put it in a register
-      sourceReg = registers.allocate();
-      emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
-      String sourceRegisterSized = sourceReg.sizeByType(arrayType.baseType());
-      emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
-      sourceName = sourceRegisterSized;
-    }
-
-    // calculate full index: indexName*basetype.size() + 1+4*dimensions+arrayLoc
-    Operand indexLoc = op.index();
-
-    Register fullIndex =
-        generateArrayIndex(
-            indexLoc, arrayType, resolver.resolve(op.array()), op.isArrayLiteral(), op.position());
-    emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
-    if (sourceReg != null) {
-      emit("; deallocating %s", sourceReg);
-      registers.deallocate(sourceReg);
-    }
-    registers.deallocate(fullIndex);
-    emit("; deallocating %s", fullIndex);
-
-    resolver.deallocate(sourceLoc);
-    resolver.deallocate(indexLoc);
-  }
-
-  /**
-   * Generate code that puts the location of the given index into the given array into the register
-   * returned. full index=indexLoc*basetype.size() + 1+4*dimensions+arrayLoc
-   *
-   * @param arrayLiteral
-   * @param position
-   */
-  private Register generateArrayIndex(
-      Operand indexLoc,
-      ArrayType arrayType,
-      String arrayLoc,
-      boolean arrayLiteral,
-      Position position) {
-    Register lengthReg = registers.allocate();
-    emit("; allocated %s for calculations", lengthReg);
-    if (indexLoc.isConstant()) {
-      // if index is constant, can skip some of this calculation.
-      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
-      int index = indexConst.value();
-      if (index < 0) {
-        throw new D2RuntimeException(
-            String.format("ARRAY index must be non-negative; was %d", index),
-            position,
-            "Invalid index");
-      }
-
-      if (index > 0 && !arrayLiteral) {
-        // fun fact, we never have to calculate this for index 0, because all arrays
-        // are at least size 1.
-        // 1. get size from arrayloc
-        emit0("\n  ; make sure index is < length");
-        emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
-        emit("inc %s  ; skip past # dimensions", lengthReg);
-        // this gets the size in the register
-        emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
-        // 2. compare - NOTE SWAPPED ARGS
-        emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32, index);
-        // 3. if good, continue
-        String continueLabel = nextLabel("good_array_index");
-        emit("jg _%s", continueLabel);
-
-        emit0("\n  ; no good. print error and stop");
-        emitter.addData(ARRAY_INDEX_OOB_ERR);
-        emit("mov R8d, %s  ; length ", lengthReg.name32);
-        emit("mov R9d, %s  ; index", index);
-        emit("mov EDX, %s  ; line number", position.line());
-        emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-        emitter.emitExternCall("printf");
-        emitter.emitExit(-1);
-
-        emitter.emitLabel(continueLabel);
-      } else {
-        emit("; don't have to check if index is within bounds. :)");
-      }
-
-      // index is always a dword/int because I said so.
-      emit(
-          "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
-          lengthReg, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
-    } else {
-      String indexName = resolver.resolve(indexLoc);
-
-      // TODO: make this an asm function instead of inlining each time?
-      emit("; make sure index is >= 0");
-      // Validate index part 1
-      emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
-      // Note, three underscores
-      String continueLabel = nextContinueLabel();
-      emit("jge _%s", continueLabel);
-
-      // print error and stop.
-      emit0("\n  ; negative. no good. print error and stop");
-      emitter.addData(ARRAY_INDEX_NEGATIVE_ERR);
-      if (lengthReg == R8) {
-        emit("; index already in R8");
-      } else {
-        emit("mov R8d, %s  ; index", indexName);
-      }
-      emit("mov RDX, %d  ; line number", position.line());
-      emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
-
-      // 1. get size from arrayloc
-      emit0("\n  ; make sure index is < length");
-      emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
-      emit("inc %s  ; skip past # dimensions", lengthReg);
-      // this gets the size in the register
-      emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
-      // 2. compare
-      emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32);
-      // 3. if good, continue
-      continueLabel = nextContinueLabel();
-      emit("jl _%s", continueLabel);
-
-      emit0("\n  ; no good. print error and stop");
-      emitter.addData(ARRAY_INDEX_OOB_ERR);
-      if (lengthReg == R8) {
-        emit("; index already in R8");
-      } else {
-        emit("mov R8d, %s  ; length ", lengthReg.name32);
-      }
-      emit("mov DWORD R9d, %s  ; index", indexName);
-      emit("mov EDX, %s  ; line number", position.line());
-      emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
-
-      emit0("\n  ; calculate index*base size+1+dims*4");
-      // index is always a dword/int because I said so.
-      emit("mov DWORD %s, %s  ; index...", lengthReg.name32, indexName);
-      emit("imul %s, %s  ; ...*base size ...", lengthReg, arrayType.baseType().size());
-      emit("add %s, %d  ; ... +1+dims*4", lengthReg, 1 + arrayType.dimensions() * 4);
-    }
-    emit("add %s, %s  ; actual location", lengthReg, arrayLoc);
-    return lengthReg;
-  }
-
-  private String nextContinueLabel() {
-    return nextLabel("continue");
-  }
-
-  private String nextLabel(String prefix) {
-    // it's actually two underscores, because every label gets prepended with an underscore.
-    return resolver.nextLabel(prefix);
+    arrayGenerator.generateArraySet(op);
   }
 
   @Override
@@ -423,82 +249,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArrayAlloc op) {
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-    Operand numEntriesLoc = op.sizeLocation();
-    String numEntriesLocName = resolver.resolve(numEntriesLoc);
-
-    // 1. calculate # of bytes to allocate:
-    //    size * entrySize +
-    //    1 byte (# of dimensions) + 4 * # dimensions
-    Register allocSizeBytesRegister = Register.RDX;
-    emit("; allocated RDX (hard-coded) for calculations");
-    int dimensions = op.arrayType().dimensions();
-    int entrySize = op.arrayType().baseType().size();
-    if (numEntriesLoc.isConstant()) {
-      // if numEntriesLocName is a constant, pre-calculate storage requirements
-      ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
-      int numEntries = numEntriesOp.value();
-      if (numEntries <= 0) {
-        throw new D2RuntimeException(
-            String.format("ARRAY size must be positive; was %d", numEntries),
-            op.position(),
-            "Invalid index");
-      }
-      emit(
-          "mov %s, %s  ; storage for # dimensions (1), dimension values (%d), actual storage (%d)",
-          allocSizeBytesRegister,
-          1 + 4 * dimensions + numEntries * entrySize,
-          4 * dimensions,
-          numEntries * entrySize);
-    } else {
-      // Validate array size is positive.
-      emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
-      String continueLabel = nextContinueLabel();
-      emit("jge _%s", continueLabel);
-
-      emitter.addData(ARRAY_SIZE_ERR);
-      emit("; no good; array size is not positive");
-      emit("mov R8d, %s  ; number of entries", numEntriesLocName);
-      emit("mov EDX, %s  ; line number", op.position().line());
-      emit("mov RCX, ARRAY_SIZE_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
-      emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
-
-      if (entrySize > 1) {
-        emit("imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
-      }
-      emit(
-          "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
-          allocSizeBytesRegister.name32, 1 + 4 * dimensions, dimensions);
-    }
-
-    emit("mov RCX, 1  ; # of 'entries' for calloc");
-    emitter.emitExternCall("calloc");
-    String dest = resolver.resolve(op.destination());
-    emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
-    registerState.condPop();
-    emit("mov BYTE [RAX], %s  ; store # of dimensions", dimensions);
-
-    Register numEntriesReg = null;
-    if (!(resolver.isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
-      // not a constant and not in a registers; put it in a register
-      numEntriesReg = registers.allocate();
-      emit(
-          "; numEntriesLoc (%s) is not in a register; putting it into %s",
-          numEntriesLoc, numEntriesReg);
-      emit("mov DWORD %s, %s", numEntriesReg.name32, numEntriesLocName);
-      numEntriesLocName = numEntriesReg.name32;
-    }
-    // TODO: iterate over dimensions.
-    emit("mov DWORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
-    if (numEntriesReg != null) {
-      emit("; deallocating numEntriesLoc from %s", numEntriesReg);
-      registers.deallocate(numEntriesReg);
-    }
-    resolver.deallocate(op.sizeLocation());
+    arrayGenerator.generate(op);
   }
 
   @Override
@@ -715,7 +466,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LBRACKET:
           ArrayType arrayType = (ArrayType) leftType;
           Register fullIndex =
-              generateArrayIndex(op.right(), arrayType, leftName, false, op.position());
+              arrayGenerator.generateArrayIndex(
+                  op.right(), arrayType, leftName, false, op.position());
           emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
           registers.deallocate(fullIndex);
           emit("; deallocating %s", fullIndex);
@@ -747,7 +499,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     } else {
       emit("cmp DWORD %s, 0  ; detect division by 0", right);
-      String continueLabel = nextLabel("not_div_by_zero");
+      String continueLabel = resolver.nextLabel("not_div_by_zero");
       emit("jne _%s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
@@ -849,9 +601,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case LENGTH:
         if (source.type() == VarType.STRING) {
-          generateStringLength(source, destination);
+          stringGenerator.generateStringLength(destination, source);
         } else if (source.type().isArray()) {
-          generateArrayLength(source, destination);
+          arrayGenerator.generateArrayLength(destination, source);
         } else {
           fail("Cannot generate length of %s", source.type());
         }
@@ -883,56 +635,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // this affects print arrays.
     if (!op.operand().type().isArray()) {
       resolver.deallocate(op.operand());
-    }
-  }
-
-  private void generateArrayLength(Operand source, Location destination) {
-    String sourceName = resolver.resolve(source);
-    String destName = resolver.resolve(destination);
-    if (resolver.isInAnyRegister(source)) {
-      emit("mov %s, [%s + 1]  ; get length from first dimension", destName, sourceName);
-    } else {
-      // if source is not a register we have to allocate a register first
-      Register tempReg = registers.allocate();
-      emit("mov %s, %s  ; get array location into reg", tempReg, sourceName);
-      emit("mov %s, [%s + 1]  ; get length from first dimension", destName, tempReg);
-      registers.deallocate(tempReg);
-    }
-  }
-
-  private void generateStringLength(Operand source, Location destination) {
-    // We're doing something special with RAX & RCX
-    RegisterState raxRcxState = condPush(ImmutableList.of(RAX, RCX));
-    RegisterState registerState = condPush(ImmutableList.of(RDX, R8, R9, R10, R11));
-    String sourceName = resolver.resolve(source);
-    String destinationName = resolver.resolve(destination);
-    if (resolver.isInRegister(source, RCX)) {
-      emit("; RCX already has address of string");
-    } else {
-      emit("mov RCX, %s  ; Address of string", sourceName);
-    }
-    emitter.emitExternCall("strlen");
-    registerState.condPop();
-
-    if (resolver.isInRegister(destination, RCX)) {
-      // pseudo pop
-      emit("; pseudo-pop; destination was already %s", destination);
-      if (raxRcxState.pushed(RCX)) {
-        emit("add RSP, 8");
-      }
-    } else {
-      raxRcxState.condPop(RCX);
-    }
-    if (resolver.isInRegister(destination, RAX)) {
-      // pseudo pop; eax already has the length.
-      emit("; pseudo-pop; destination was already %s", destination);
-      if (raxRcxState.pushed(RAX)) {
-        emit("add RSP, 8");
-      }
-    } else {
-      // NOTE: eax not rax, because lengths are always ints (32 bits)
-      emit("mov %s, EAX  ; %s = strlen(%s)", destinationName, destinationName, sourceName);
-      raxRcxState.condPop(RAX);
     }
   }
 

@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.VarType;
  * Resolves temp and other variables and keeps track if they're in registers or not. TODO: rename
  * this to something better.
  */
-public class Resolver {
+public class Resolver implements RegistersInterface {
   // map from name to register
   private final Map<String, Register> aliases = new HashMap<>();
   private final Registers registers;
@@ -95,11 +95,13 @@ public class Resolver {
   }
 
   /** Allocate and return a register. */
+  @Override
   public Register allocate() {
     return registers.allocate();
   }
 
   /** Deallocate the given register. */
+  @Override
   public void deallocate(Register register) {
     registers.deallocate(register);
   }
@@ -165,5 +167,15 @@ public class Resolver {
 
   public String nextLabel(String prefix) {
     return String.format("_%s_%d", prefix, id++);
+  }
+
+  @Override
+  public boolean isAllocated(Register r) {
+    return registers.isAllocated(r);
+  }
+
+  @Override
+  public Register reserve(Register r) {
+    return registers.reserve(r);
   }
 }

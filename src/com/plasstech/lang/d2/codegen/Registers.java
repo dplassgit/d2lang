@@ -6,17 +6,17 @@ import java.util.Set;
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 
-public class Registers {
-  private static final int MAX_REGISTERS = Register.values().length;
-
+public class Registers implements RegistersInterface {
   // these are the USED registers
   private final Set<Register> used = new HashSet<>();
 
+  @Override
   public Register reserve(Register r) {
     used.add(r);
     return r;
   }
 
+  @Override
   public Register allocate() {
     // find one to return
     for (Register r : Register.values()) {
@@ -28,14 +28,12 @@ public class Registers {
     throw new D2RuntimeException("IllegalStateException", null, "No registers left");
   }
 
+  @Override
   public boolean isAllocated(Register r) {
     return used.contains(r);
   }
 
-  public int numLeft() {
-    return MAX_REGISTERS - used.size();
-  }
-
+  @Override
   public void deallocate(Register r) {
     if (r == null) {
       return;

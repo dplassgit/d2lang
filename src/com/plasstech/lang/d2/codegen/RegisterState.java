@@ -16,7 +16,7 @@ public class RegisterState {
   }
 
   public static RegisterState condPush(
-      Emitter emitter, Registers registers, List<Register> toSaveIfAllocated) {
+      Emitter emitter, RegistersInterface registers, List<Register> toSaveIfAllocated) {
     List<Register> allocated =
         toSaveIfAllocated
             .stream()
