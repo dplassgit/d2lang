@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.type.RecordSymbol.Field;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
+// TODO: Should this extend DefaultOpcodeGenerator?
 class RecordGenerator {
 
   private static final Map<TokenType, String> BINARY_OPCODE =
@@ -32,7 +33,7 @@ class RecordGenerator {
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
-  /** Generate asm code to allocate and assign a record. */
+  /** Generate nasm code to allocate and assign a record. */
   void generate(AllocateOp op) {
     RegisterState state = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
     String dest = resolver.resolve(op.destination());
@@ -45,6 +46,7 @@ class RecordGenerator {
     state.condPop();
   }
 
+  /** Generate nasm code to set a field value: record.field = source */
   void generate(FieldSetOp op) {
     npeCheckGenerator.generateNullPointerCheck(op, op.recordLocation());
 
@@ -112,11 +114,12 @@ class RecordGenerator {
   }
 
   private void generateDot(BinOp op) {
+    npeCheckGenerator.generateNullPointerCheck(op, op.left());
+
     Operand record = op.left();
     VarType type = record.type();
     RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(type.name());
 
-    npeCheckGenerator.generateNullPointerCheck(op, op.left());
     String recordLoc = resolver.resolve(op.left());
     Register calcReg = resolver.allocate();
     // 1. if not already in register, put record location into a register

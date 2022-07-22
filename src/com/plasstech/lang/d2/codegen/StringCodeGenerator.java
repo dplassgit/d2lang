@@ -156,7 +156,7 @@ class StringCodeGenerator {
     emitter.emit("jmp _%s", afterLabel);
 
     // 1. allocate a new 2-char string
-    emitter.emit0("_%s", allocateLabel);
+    emitter.emitLabel(allocateLabel);
     registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
     emitter.emit("mov RCX, 2");
     emitter.emitExternCall("malloc");
@@ -185,7 +185,7 @@ class StringCodeGenerator {
     emitter.emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
 
     //  * after:
-    emitter.emit0("_%s", afterLabel);
+    emitter.emitLabel(afterLabel);
   }
 
   /** Generate dest = leftOperand + rightOperand */

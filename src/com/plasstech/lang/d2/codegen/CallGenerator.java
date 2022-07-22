@@ -37,7 +37,7 @@ class CallGenerator {
           // it means we're being copied to a later register.
           Register alias = resolver.allocate();
           sourceToAlias.put(reg, alias);
-          emit("mov %s, %s  ; stash in alias", alias, reg);
+          emitter.emit("mov %s, %s  ; stash in alias", alias, reg);
           break;
         }
       }
@@ -45,25 +45,25 @@ class CallGenerator {
 
     if (sourceToAlias.isEmpty()) {
       // simple case, no conflicts or all locals.
-      emit("; no sources conflict with dests, doing simple version");
+      emitter.emit("; no sources conflict with dests, doing simple version");
       int index = 0;
       for (Operand actual : op.actuals()) {
         Location formal = op.formals().get(index);
         String formalLocation = resolver.resolve(formal);
         String actualLocation = resolver.resolve(actual);
         if (formalLocation.equals(actualLocation)) {
-          emit(
+          emitter.emit(
               "; parameter #%d (formal %s) already in %s (%s)",
               index, formal.name(), actualLocation, actual);
         } else {
           Size size = Size.of(formal.type());
-          emit("mov %s %s, %s", size, formalLocation, actualLocation);
+          emitter.emit("mov %s %s, %s", size, formalLocation, actualLocation);
         }
         index++;
         resolver.deallocate(actual);
       }
     } else {
-      emit("; at least one conflict; doing complicated case");
+      emitter.emit("; at least one conflict; doing complicated case");
       for (int i = 0; i < op.actuals().size(); ++i) {
         Operand actual = op.actuals().get(i);
         VarType type = actual.type();
@@ -82,17 +82,17 @@ class CallGenerator {
         Register formalReg = Register.PARAM_REGISTERS.get(i);
         if (formalReg != sourceReg) {
           // it's not already in this register.
-          emit(
+          emitter.emit(
               "mov %s %s, %s  ; set %dth param",
               size.asmType, formalReg.sizeByType(type), source, i);
         } else {
-          emit("; %dth param already in %s", i, sourceReg);
+          emitter.emit("; %dth param already in %s", i, sourceReg);
         }
       }
 
       for (Entry<Register, Register> pair : sourceToAlias.entrySet()) {
         if (pair.getKey() != pair.getValue() && registers.isAllocated(pair.getValue())) {
-          emit("; deallocating alias %s", pair.getValue());
+          emitter.emit("; deallocating alias %s", pair.getValue());
           resolver.deallocate(pair.getValue());
         }
       }
@@ -101,9 +101,5 @@ class CallGenerator {
       Operand actual = op.actuals().get(i);
       resolver.deallocate(actual);
     }
-  }
-
-  private void emit(String format, Object... values) {
-    emitter.emit(format, values);
   }
 }

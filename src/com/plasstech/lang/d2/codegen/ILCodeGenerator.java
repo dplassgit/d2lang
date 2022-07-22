@@ -146,12 +146,12 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       String endLoopLabel = nextLabel("array_print_loop_end");
       //   compare index to length
       TempLocation compare = allocateTemp(VarType.BOOL);
-      emit(new BinOp(compare, index, TokenType.EQEQ, length, null));
+      emit(new BinOp(compare, index, TokenType.EQEQ, length, node.position()));
       //   if equal, go to end
       emit(new IfOp(compare, endLoopLabel));
       TempLocation item = allocateTemp(arrayType.baseType());
       //   item = get "index"th item
-      emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index, null));
+      emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index, node.position()));
       //   print item
       emit(new SysCall(SysCall.Call.PRINT, item));
       // this adds a trailing comma but who cares.

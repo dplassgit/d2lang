@@ -35,7 +35,7 @@ class NullPointerCheckGenerator {
       emitter.emit("cmp QWORD %s, 0", sourceName);
       emitter.emit("jne _%s", dest);
       generateNPEMessage(opcode.position());
-      emitter.emit0("_%s: ", dest);
+      emitter.emitLabel(dest);
     } else {
       emitter.emit("; skipping NPE check for constant non-null %s", sourceName);
     }

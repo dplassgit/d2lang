@@ -181,7 +181,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Label op) {
-    emit0("\n_%s:", op.label());
+    emitter.emitLabel(op.label());
   }
 
   @Override
@@ -196,9 +196,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    Operand sourceLoc = op.source();
-    npeCheckGenerator.generateNullPointerCheck(op, op.array());
+    if (!op.isArrayLiteral()) {
+      // array literals are by definition never null.
+      npeCheckGenerator.generateNullPointerCheck(op, op.array());
+    }
 
+    Operand sourceLoc = op.source();
     String sourceName = resolver.resolve(sourceLoc);
     ArrayType arrayType = op.arrayType();
     String baseTypeSize = Size.of(arrayType.baseType()).asmType;
@@ -280,7 +283,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emitter.emitExternCall("printf");
         emitter.emitExit(-1);
 
-        visit(new Label(continueLabel));
+        emitter.emitLabel(continueLabel);
       } else {
         emit("; don't have to check if index is within bounds. :)");
       }
@@ -308,16 +311,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       } else {
         emit("mov R8d, %s  ; index", indexName);
       }
-      if (position != null) {
-        emit("mov RDX, %d  ; line number", position.line());
-      } else {
-        emit("mov RDX, 0  ; unknown line number");
-      }
+      emit("mov RDX, %d  ; line number", position.line());
       emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
       emitter.emitExternCall("printf");
-      visit(new Stop(-1));
+      emitter.emitExit(-1);
 
-      visit(new Label(continueLabel));
+      emitter.emitLabel(continueLabel);
 
       // 1. get size from arrayloc
       emit0("\n  ; make sure index is < length");
@@ -339,16 +338,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov R8d, %s  ; length ", lengthReg.name32);
       }
       emit("mov DWORD R9d, %s  ; index", indexName);
-      if (position != null) {
-        emit("mov EDX, %s  ; line number", position.line());
-      } else {
-        emit("mov EDX, 0  ; unknown line number");
-      }
+      emit("mov EDX, %s  ; line number", position.line());
       emit("mov RCX, ARRAY_INDEX_OOB_ERR");
       emitter.emitExternCall("printf");
-      visit(new Stop(-1));
+      emitter.emitExit(-1);
 
-      visit(new Label(continueLabel));
+      emitter.emitLabel(continueLabel);
 
       emit0("\n  ; calculate index*base size+1+dims*4");
       // index is always a dword/int because I said so.
@@ -467,9 +462,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov EDX, %s  ; line number", op.position().line());
       emit("mov RCX, ARRAY_SIZE_ERR");
       emitter.emitExternCall("printf");
-      visit(new Stop(-1));
+      emitter.emitExit(-1);
 
-      visit(new Label(continueLabel));
+      emitter.emitLabel(continueLabel);
       emit("mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
 
       if (entrySize > 1) {
@@ -762,7 +757,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emitExternCall("printf");
       emitter.emitExit(-1);
 
-      visit(new Label(continueLabel));
+      emitter.emitLabel(continueLabel);
     }
 
     // 3. determine dest location

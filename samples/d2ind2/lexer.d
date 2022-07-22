@@ -364,13 +364,17 @@ printToken: proc(token:Token) {
   if token.type == Type_EOF {
     println 'Token: EOF'
   } elif token.type == Type_INT {
-    println 'Int token: ' + toString(token.int_value)
+    print 'Int token: '
+    println token.int_value
   } elif token.type == Type_STRING {
-    println 'String token: ' + chr(39) + token.value + chr(39)
+    print 'String token: ' + chr(39)
+    print token.value
+    println chr(39)
   } elif token.type == Type_KEYWORD {
-    println 'Keyword token: ' + token.value
+    print 'Keyword token: '
+    println token.value
   } else {
-    println 'Token: ' + token.value + ' (type: ' + toString(token.type) + ')'
+    print 'Token: ' print token.value print ' (type: ' print token.type println ')'
   }
 }
 
@@ -386,5 +390,6 @@ main {
     token = nextToken(lexer)
     printToken(token)
   }
-  println 'Total number of tokens: ' + toString(count)
+  print 'Total number of tokens: '
+  println count
 }

@@ -68,4 +68,9 @@ public class ListEmitter implements Emitter {
     emit("mov RCX, %d", exitCode);
     emit("call exit");
   }
+
+  @Override
+  public void emitLabel(String label) {
+    emit0("\n_%s:", label);
+  }
 }
