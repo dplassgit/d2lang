@@ -22,11 +22,14 @@ class RecordGenerator {
   private final Registers registers;
   private final SymTab symTab;
 
+  private final NullPointerCheckGenerator npeCheckGenerator;
+
   public RecordGenerator(Resolver resolver, Registers registers, SymTab symTab, Emitter emitter) {
     this.resolver = resolver;
     this.registers = registers;
     this.symTab = symTab;
     this.emitter = emitter;
+    this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
   /** Generate asm code to allocate and assign a record. */
@@ -43,6 +46,8 @@ class RecordGenerator {
   }
 
   void generate(FieldSetOp op) {
+    npeCheckGenerator.generateNullPointerCheck(op, op.recordLocation());
+
     String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate();
     // 1. if not already in register, put record location into a register
@@ -111,6 +116,7 @@ class RecordGenerator {
     VarType type = record.type();
     RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(type.name());
 
+    npeCheckGenerator.generateNullPointerCheck(op, op.left());
     String recordLoc = resolver.resolve(op.left());
     Register calcReg = resolver.allocate();
     // 1. if not already in register, put record location into a register

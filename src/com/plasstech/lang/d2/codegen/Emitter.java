@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Collection;
-
 import com.google.common.collect.ImmutableList;
 
 interface Emitter {
@@ -19,7 +17,14 @@ interface Emitter {
 
   void addExtern(String extern);
 
-  Collection<String> externs();
+  ImmutableList<String> externs();
 
   void emitExternCall(String call);
+
+  /** Add a data definiition, e.g., "NAME: db \"Name here\", 0" */
+  void addData(String data);
+
+  ImmutableList<String> data();
+
+  void emitExit(int exitCode);
 }

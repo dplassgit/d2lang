@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,6 +12,7 @@ public class ListEmitter implements Emitter {
 
   private final List<String> code = new ArrayList<>();
   private final Set<String> externs = new TreeSet<>();
+  private final Set<String> data = new TreeSet<>();
 
   @Override
   public void emit0(String format, Object... values) {
@@ -40,8 +40,8 @@ public class ListEmitter implements Emitter {
   }
 
   @Override
-  public Collection<String> externs() {
-    return externs;
+  public ImmutableList<String> externs() {
+    return ImmutableList.copyOf(externs);
   }
 
   @Override
@@ -50,5 +50,22 @@ public class ListEmitter implements Emitter {
     emit("sub RSP, 0x20");
     emit("call %s", call);
     emit("add RSP, 0x20");
+  }
+
+  @Override
+  public void addData(String datum) {
+    data.add(datum);
+  }
+
+  @Override
+  public ImmutableList<String> data() {
+    return ImmutableList.copyOf(data);
+  }
+
+  @Override
+  public void emitExit(int exitCode) {
+    addExtern("exit");
+    emit("mov RCX, %d", exitCode);
+    emit("call exit");
   }
 }

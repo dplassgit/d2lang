@@ -103,6 +103,18 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void nullCheck() throws Exception {
+    assertRuntimeError(
+        "      rt: record {s:string i:int} \r\n"
+            //
+            + " a:rt \r\n "
+            + "a=null \r\n"
+            + "println a.s",
+        "nulLCheck",
+        "Null pointer error");
+  }
+
+  @Test
   @Ignore("Interpreter cannot compare records (!)")
   public void compare() throws Exception {
     execute(

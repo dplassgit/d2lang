@@ -235,6 +235,10 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (operand.value() instanceof String) {
       return;
     }
+    if (operand.value() == null) {
+      replaceCurrent(new SysCall(op.call(), ConstantOperand.of("null")));
+      return;
+    }
     String asString = operand.value().toString();
     replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
   }

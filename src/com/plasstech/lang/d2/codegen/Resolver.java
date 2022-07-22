@@ -160,4 +160,10 @@ public class Resolver {
   public boolean isInRegister(Operand arg, Register register) {
     return toRegister(arg) == register;
   }
+
+  private static int id;
+
+  public String nextLabel(String prefix) {
+    return String.format("_%s_%d", prefix, id++);
+  }
 }

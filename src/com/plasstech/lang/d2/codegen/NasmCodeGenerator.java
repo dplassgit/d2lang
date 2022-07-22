@@ -11,8 +11,6 @@ import static com.plasstech.lang.d2.codegen.Register.RDX;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -91,9 +89,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
   private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
   private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
+  private static final String CONST_NULL = "CONST_NULL: db \"null\", 0";
 
   private final List<String> prelude = new ArrayList<>();
-  private final Set<String> data = new TreeSet<>();
   private final Registers registers = new Registers();
   private final Emitter emitter = new ListEmitter();
 
@@ -101,8 +99,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private Resolver resolver;
   private CallGenerator callGenerator;
   private RecordGenerator recordGenerator;
-
-  private int id;
+  private NullPointerCheckGenerator npeCheckGenerator;
 
   @Override
   public State execute(State input) {
@@ -110,6 +107,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver = new Resolver(registers, stringTable, emitter);
     callGenerator = new CallGenerator(registers, resolver, emitter);
     recordGenerator = new RecordGenerator(resolver, registers, input.symbolTable(), emitter);
+    npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -123,7 +121,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String.format("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
 
     prelude.add("global main\n");
-    emitter.addExtern("exit");
 
     // 1. emit all globals
     // 2. emit all string constants
@@ -133,11 +130,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       if (symbol.storage() == SymbolStorage.GLOBAL) {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
         Size size = Size.of(symbol.varType());
-        data.add(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
+        emitter.addData(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
       }
     }
     for (StringEntry entry : stringTable.orderedEntries()) {
-      data.add(entry.dataEntry());
+      emitter.addData(entry.dataEntry());
     }
 
     // TODO: convert command-line arguments to ??? and send to _main
@@ -159,7 +156,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               .addAll(prelude)
               .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
               .add("\nsection .data")
-              .addAll(data.stream().map(s -> "  " + s).iterator())
+              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
               .add("\nsection .text")
               .addAll(emitter.all())
               .build();
@@ -172,7 +169,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             .addAll(prelude)
             .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
             .add("\nsection .data")
-            .addAll(data.stream().map(s -> "  " + s).iterator())
+            .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
             .add("\nsection .text")
             .addAll(emitter.all())
             .build();
@@ -187,8 +184,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Stop op) {
-    emit("mov RCX, %d", op.exitCode());
-    emit("call exit");
+    emitter.emitExit(op.exitCode());
   }
 
   @Override
@@ -198,12 +194,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
+    Operand sourceLoc = op.source();
+    npeCheckGenerator.generateNullPointerCheck(op, op.array());
+
+    String sourceName = resolver.resolve(sourceLoc);
     ArrayType arrayType = op.arrayType();
     String baseTypeSize = Size.of(arrayType.baseType()).asmType;
-
     Register sourceReg = null;
-    Operand sourceLoc = op.source();
-    String sourceName = resolver.resolve(sourceLoc);
     if (!(resolver.isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
       sourceReg = registers.allocate();
@@ -273,13 +270,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("jg _%s", continueLabel);
 
         emit0("\n  ; no good. print error and stop");
-        data.add(ARRAY_INDEX_OOB_ERR);
+        emitter.addData(ARRAY_INDEX_OOB_ERR);
         emit("mov R8d, %s  ; length ", lengthReg.name32);
         emit("mov R9d, %s  ; index", index);
         emit("mov EDX, %s  ; line number", position.line());
         emit("mov RCX, ARRAY_INDEX_OOB_ERR");
         generatePrintf();
-        visit(new Stop(-1));
+        emitter.emitExit(-1);
 
         visit(new Label(continueLabel));
       } else {
@@ -303,7 +300,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
       // print error and stop.
       emit0("\n  ; negative. no good. print error and stop");
-      data.add(ARRAY_INDEX_NEGATIVE_ERR);
+      emitter.addData(ARRAY_INDEX_NEGATIVE_ERR);
       if (lengthReg == R8) {
         emit("; index already in R8");
       } else {
@@ -333,7 +330,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("jl _%s", continueLabel);
 
       emit0("\n  ; no good. print error and stop");
-      data.add(ARRAY_INDEX_OOB_ERR);
+      emitter.addData(ARRAY_INDEX_OOB_ERR);
       if (lengthReg == R8) {
         emit("; index already in R8");
       } else {
@@ -367,7 +364,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private String nextLabel(String prefix) {
     // it's actually two underscores, because every label gets prepended with an underscore.
-    return String.format("_%s_%d", prefix, id++);
+    return resolver.nextLabel(prefix);
   }
 
   @Override
@@ -462,7 +459,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String continueLabel = nextContinueLabel();
       emit("jge _%s", continueLabel);
 
-      data.add(ARRAY_SIZE_ERR);
+      emitter.addData(ARRAY_SIZE_ERR);
       emit("; no good; array size is not positive");
       emit("mov R8d, %s  ; number of entries", numEntriesLocName);
       emit("mov EDX, %s  ; line number", op.position().line());
@@ -533,23 +530,23 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         if (arg.type() == VarType.INT) {
           // move with sign extend. intentionally set rdx first, in case the arg is in ecx
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
-          data.add(PRINTF_NUMBER_FMT);
+          emitter.addData(PRINTF_NUMBER_FMT);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
           generatePrintf();
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
-            data.add(CONST_TRUE);
+            emitter.addData(CONST_TRUE);
             emit("mov RCX, CONST_TRUE");
           } else if (argVal.equals("0")) {
-            data.add(CONST_FALSE);
+            emitter.addData(CONST_FALSE);
             emit("mov RCX, CONST_FALSE");
           } else {
             // translate dynamically from 0/1 to false/true
             // Intentionally do the comp first, in case the arg is in dl or cl
             emit("cmp BYTE %s, 1", argVal);
-            data.add(CONST_FALSE);
+            emitter.addData(CONST_FALSE);
             emit("mov RCX, CONST_FALSE");
-            data.add(CONST_TRUE);
+            emitter.addData(CONST_TRUE);
             emit("mov RDX, CONST_TRUE");
             // Conditional move
             emit("cmovz RCX, RDX");
@@ -563,12 +560,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               // arg is not in rdx yet
               emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
             }
-            data.add(EXIT_MSG);
+            emitter.addData(EXIT_MSG);
             emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
           } else if (!resolver.isInRegister(arg, RCX)) {
             // arg is not in rcx yet
             emit("mov RCX, %s  ; String to print", argVal);
           }
+          if (!arg.isConstant()) {
+            // if null, print null
+            emit("cmp QWORD RCX, 0");
+            String notNullLabel = resolver.nextLabel("not_null");
+            emit("jne _%s", notNullLabel);
+            emitter.addData(CONST_NULL);
+            emit("mov RCX, CONST_NULL  ; constant 'null'");
+            emit0("_%s:", notNullLabel);
+          }
+          generatePrintf();
+        } else if (arg.type() == VarType.NULL) {
+          emitter.addData(CONST_NULL);
+          emit("mov RCX, CONST_NULL  ; constant 'null'");
           generatePrintf();
         } else {
           fail("Cannot print %s yet", arg);
@@ -626,10 +636,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (leftType == VarType.STRING) {
       switch (operator) {
         case PLUS:
-          generateStringAdd(op.left(), op.right(), destName);
+          generateStringAdd(op, op.left(), op.right(), destName);
           break;
         case LBRACKET:
-          generateStringIndex(op.left(), op.right(), op.destination());
+          generateStringIndex(op, op.left(), op.right(), op.destination());
           break;
         case EQEQ:
         case NEQ:
@@ -637,7 +647,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          generateStringCompare(op.left(), op.right(), destName, operator);
+          generateStringCompare(op, op.left(), op.right(), destName, operator);
           break;
 
         default:
@@ -744,7 +754,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateStringCompare(
-      Operand left, Operand right, String destName, TokenType operator) {
+      Op op, Operand left, Operand right, String destName, TokenType operator) {
+
+    // if the operator is == or != we can short-circuit the call to strcmp if one is null
+
     RegisterState state = condPush(Register.VOLATILE_REGISTERS);
 
     emit(
@@ -791,7 +804,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     state.condPop();
   }
 
-  private void generateStringIndex(Operand stringOperand, Operand index, Location destination) {
+  private void generateStringIndex(
+      Op op, Operand stringOperand, Operand index, Location destination) {
+
+    npeCheckGenerator.generateNullPointerCheck(op, stringOperand);
+
     String stringName = resolver.resolve(stringOperand);
     String indexName = resolver.resolve(index);
     String destName = resolver.resolve(destination);
@@ -799,7 +816,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Issue #112:
     // if indexname == stringname's length-1, just return stringname-1
-
     if (resolver.isInRegister(stringOperand, RCX)) {
       emit("; string already in rcx");
     } else {
@@ -879,7 +895,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     visit(new Label(afterLabel));
   }
 
-  private void generateStringAdd(Operand leftOperand, Operand rightOperand, String dest) {
+  private void generateStringAdd(Op op, Operand leftOperand, Operand rightOperand, String dest) {
+    npeCheckGenerator.generateNullPointerCheck(op, leftOperand);
+    npeCheckGenerator.generateNullPointerCheck(op, rightOperand);
+
     // 1. get left length
     Register leftLengthReg = registers.allocate();
     emit0("");
@@ -969,11 +988,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("jne _%s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
-      data.add(DIV_BY_ZERO_ERR);
+      emitter.addData(DIV_BY_ZERO_ERR);
       emit("mov EDX, %d  ; line number", op.position().line());
       emit("mov RCX, DIV_BY_ZERO_ERR");
       generatePrintf();
-      visit(new Stop(-1));
+      emitter.emitExit(-1);
 
       visit(new Label(continueLabel));
     }
