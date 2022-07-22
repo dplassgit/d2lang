@@ -99,6 +99,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private Resolver resolver;
   private CallGenerator callGenerator;
   private RecordGenerator recordGenerator;
+  private StringCodeGenerator stringGenerator;
   private NullPointerCheckGenerator npeCheckGenerator;
 
   @Override
@@ -108,6 +109,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     callGenerator = new CallGenerator(registers, resolver, emitter);
     recordGenerator = new RecordGenerator(resolver, registers, input.symbolTable(), emitter);
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
+    stringGenerator = new StringCodeGenerator(resolver, registers, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -275,7 +277,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov R9d, %s  ; index", index);
         emit("mov EDX, %s  ; line number", position.line());
         emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-        generatePrintf();
+        emitter.emitExternCall("printf");
         emitter.emitExit(-1);
 
         visit(new Label(continueLabel));
@@ -312,7 +314,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov RDX, 0  ; unknown line number");
       }
       emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
-      generatePrintf();
+      emitter.emitExternCall("printf");
       visit(new Stop(-1));
 
       visit(new Label(continueLabel));
@@ -343,7 +345,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("mov EDX, 0  ; unknown line number");
       }
       emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-      generatePrintf();
+      emitter.emitExternCall("printf");
       visit(new Stop(-1));
 
       visit(new Label(continueLabel));
@@ -464,7 +466,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov R8d, %s  ; number of entries", numEntriesLocName);
       emit("mov EDX, %s  ; line number", op.position().line());
       emit("mov RCX, ARRAY_SIZE_ERR");
-      generatePrintf();
+      emitter.emitExternCall("printf");
       visit(new Stop(-1));
 
       visit(new Label(continueLabel));
@@ -479,7 +481,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     emit("mov RCX, 1  ; # of 'entries' for calloc");
-    generateSyscall("calloc");
+    emitter.emitExternCall("calloc");
     String dest = resolver.resolve(op.destination());
     emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
     registerState.condPop();
@@ -504,19 +506,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.deallocate(op.sizeLocation());
   }
 
-  /** Generates code to print whatever is in RCX and/or RDX etc. */
-  private void generatePrintf() {
-    generateSyscall("printf");
-  }
-
-  private void generateMalloc() {
-    generateSyscall("malloc");
-  }
-
-  private void generateSyscall(String name) {
-    emitter.emitExternCall(name);
-  }
-
   @Override
   public void visit(SysCall op) {
     Operand arg = op.arg();
@@ -532,7 +521,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
           emitter.addData(PRINTF_NUMBER_FMT);
           emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
-          generatePrintf();
+          emitter.emitExternCall("printf");
         } else if (arg.type() == VarType.BOOL) {
           if (argVal.equals("1")) {
             emitter.addData(CONST_TRUE);
@@ -551,7 +540,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             // Conditional move
             emit("cmovz RCX, RDX");
           }
-          generatePrintf();
+          emitter.emitExternCall("printf");
         } else if (arg.type() == VarType.STRING) {
           // String
           if (op.call() == SysCall.Call.MESSAGE) {
@@ -575,11 +564,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov RCX, CONST_NULL  ; constant 'null'");
             emit0("_%s:", notNullLabel);
           }
-          generatePrintf();
+          emitter.emitExternCall("printf");
         } else if (arg.type() == VarType.NULL) {
           emitter.addData(CONST_NULL);
           emit("mov RCX, CONST_NULL  ; constant 'null'");
-          generatePrintf();
+          emitter.emitExternCall("printf");
         } else {
           fail("Cannot print %s yet", arg);
         }
@@ -636,10 +625,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (leftType == VarType.STRING) {
       switch (operator) {
         case PLUS:
-          generateStringAdd(op, op.left(), op.right(), destName);
+          stringGenerator.generateStringAdd(op, destName, op.left(), op.right());
           break;
         case LBRACKET:
-          generateStringIndex(op, op.left(), op.right(), op.destination());
+          stringGenerator.generateStringIndex(op, op.destination(), op.left(), op.right());
           break;
         case EQEQ:
         case NEQ:
@@ -647,7 +636,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          generateStringCompare(op, op.left(), op.right(), destName, operator);
+          stringGenerator.generateStringCompare(destName, op.left(), op.right(), operator);
           break;
 
         default:
@@ -753,227 +742,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.deallocate(op.right());
   }
 
-  private void generateStringCompare(
-      Op op, Operand left, Operand right, String destName, TokenType operator) {
-
-    // if the operator is == or != we can short-circuit the call to strcmp if one is null
-
-    RegisterState state = condPush(Register.VOLATILE_REGISTERS);
-
-    emit(
-        "; strcmp: %s = %s %s %s",
-        destName, resolver.resolve(left), operator, resolver.resolve(right));
-
-    if (resolver.isInRegister(left, RDX) && resolver.isInRegister(right, RCX)) {
-      if (operator == TokenType.EQEQ || operator == TokenType.NEQ) {
-        emit("; no need to set up RCX, RDX for %s", operator);
-      } else {
-        // not an equality comparison, need to swap either the operator or the operands.
-        emit("xchg RCX, RDX  ; left was rdx, right was rcx, so swap them");
-      }
-    } else {
-      if (resolver.isInRegister(right, RCX)) {
-        emit("; right is in RCX, so set RDX first.");
-        // rcx is in the right register, need to set rdx first
-        if (resolver.isInRegister(right, RDX)) {
-          emit("; right already in RDX");
-        } else {
-          emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
-        }
-        if (resolver.isInRegister(left, RCX)) {
-          emit("; left already in RCX");
-        } else {
-          emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
-        }
-      } else {
-        if (resolver.isInRegister(left, RCX)) {
-          emit("; left already in RCX");
-        } else {
-          emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
-        }
-        if (resolver.isInRegister(right, RDX)) {
-          emit("; right already in RDX");
-        } else {
-          emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
-        }
-      }
-    }
-    generateSyscall("strcmp");
-    emit("cmp RAX, 0");
-    emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
-    state.condPop();
-  }
-
-  private void generateStringIndex(
-      Op op, Operand stringOperand, Operand index, Location destination) {
-
-    npeCheckGenerator.generateNullPointerCheck(op, stringOperand);
-
-    String stringName = resolver.resolve(stringOperand);
-    String indexName = resolver.resolve(index);
-    String destName = resolver.resolve(destination);
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-
-    // Issue #112:
-    // if indexname == stringname's length-1, just return stringname-1
-    if (resolver.isInRegister(stringOperand, RCX)) {
-      emit("; string already in rcx");
-    } else {
-      emit("mov RCX, %s  ; get string", stringName);
-    }
-    generateSyscall("strlen");
-    registerState.condPop();
-    emit("dec RAX");
-    if (!indexName.equals("0")) {
-      // if index is 0, we're comparing to 0, and the ZF is set by dec.
-      emit("cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
-    }
-    String allocateLabel = nextLabel("allocate_1_char_string");
-    emit("jne _%s", allocateLabel);
-
-    emit("; %s = %s[%s]", destName, stringName, indexName);
-    if (indexName.equals("0")) {
-      // Simplest case - first character of 1-character string
-      if (resolver.isInAnyRegister(destination) || resolver.isInAnyRegister(stringOperand)) {
-        emit("; index is 0, at least one is in a register - easiest case");
-        emit("mov %s, %s", destName, stringName);
-      } else {
-        // both are not in registers - use one to transfer.
-        Register tempReg = registers.allocate();
-        emit("; index is 0, neither in a register; allocated %s", tempReg);
-        emit("mov %s, %s", tempReg, stringName);
-        emit("mov %s, %s", destName, tempReg);
-        registers.deallocate(tempReg);
-      }
-    } else {
-      if (resolver.isInAnyRegister(destination)) {
-        Register destReg = resolver.toRegister(destination);
-        emit("; dest in %s", destReg);
-        emit("mov %s, %s", destReg.sizeByType(index.type()), indexName);
-        emit("add %s, %s", destReg, stringName);
-      } else {
-        Register tempReg = registers.allocate();
-        emit("; dest not in reg; allocated %s as tempReg", tempReg);
-        emit("mov %s, %s", tempReg.sizeByType(index.type()), indexName);
-        emit("add %s, %s", tempReg, stringName);
-        emit("mov %s, %s", destName, tempReg);
-        registers.deallocate(tempReg);
-      }
-    }
-    String afterLabel = nextLabel("after_string_index");
-    emit("jmp _%s", afterLabel);
-
-    // 1. allocate a new 2-char string
-    visit(new Label(allocateLabel));
-    registerState = condPush(Register.VOLATILE_REGISTERS);
-    emit("mov RCX, 2");
-    generateMalloc();
-    registerState.condPop();
-    // 2. copy the location to the dest
-    emit("mov %s, RAX  ; destination from rax", destName);
-
-    Register indexReg = registers.allocate();
-    emit("; allocated indexReg to %s", indexReg);
-    Register charReg = registers.allocate();
-    emit("; allocated charReg to %s", charReg);
-    // 3. get the string
-    emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
-    // 4. get the index
-    emit("mov %s, %s  ; put index value into %s", indexReg.name32, indexName, indexReg.name32);
-    // 5. get the actual character
-    emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
-    registers.deallocate(indexReg);
-    emit("; deallocated indexReg from %s", indexReg);
-    // 6. copy the character to the first location
-    emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
-    registers.deallocate(charReg);
-    emit("; deallocated charReg from %s", charReg);
-    // 7. clear the 2nd location
-    emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
-
-    //  * after:
-    visit(new Label(afterLabel));
-  }
-
-  private void generateStringAdd(Op op, Operand leftOperand, Operand rightOperand, String dest) {
-    npeCheckGenerator.generateNullPointerCheck(op, leftOperand);
-    npeCheckGenerator.generateNullPointerCheck(op, rightOperand);
-
-    // 1. get left length
-    Register leftLengthReg = registers.allocate();
-    emit0("");
-    emit("; Get left length into %s:", leftLengthReg);
-    generateStringLength(
-        leftOperand, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT));
-    // 2. get right length
-    Register rightLengthReg = registers.allocate();
-    // TODO: if leftLengthReg is volatile, push it first (?!)
-    emit0("");
-    emit("; Get right length into %s:", rightLengthReg);
-    generateStringLength(
-        rightOperand, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT));
-    emit0("");
-    emit("add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
-    emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
-    emit("; deallocating right length %s", rightLengthReg);
-    registers.deallocate(rightLengthReg);
-
-    // 3. allocate string of length left+right + 1
-    emit0("");
-    emit("; Allocate string of length %s", leftLengthReg.name32);
-
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-    emit("mov ECX, %s", leftLengthReg.name32);
-    generateMalloc();
-    emit("; deallocating leftlength %s", leftLengthReg);
-    registers.deallocate(leftLengthReg);
-    // 4. put string into dest
-    registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
-    if (!dest.equals(RAX.name64)) {
-      emit("mov %s, RAX  ; destination from rax", dest);
-    }
-
-    // 5. strcpy from left to dest
-    emit0("");
-    registerState = condPush(Register.VOLATILE_REGISTERS);
-    String left = resolver.resolve(leftOperand);
-    emit("; strcpy from %s to %s", left, dest);
-    if (left.equals(RCX.name64) && dest.equals(RDX.name64)) {
-      // just swap rdx & rcx
-      emit("; left wants to be in rcx dest in rdx, just swap");
-      emit("xchg RDX, RCX");
-    } else if (left.equals(RCX.name64)) {
-      emit("; opposite order, so that we don't munge rcx");
-      emit("mov RDX, %s", left);
-      emit("mov RCX, %s", dest);
-    } else {
-      emit("mov RCX, %s", dest);
-      emit("mov RDX, %s", left);
-    }
-    generateSyscall("strcpy");
-    registerState.condPop();
-
-    // 6. strcat dest, right
-    emit0("");
-    registerState = condPush(Register.VOLATILE_REGISTERS);
-    String right = resolver.resolve(rightOperand);
-    emit("; strcat from %s to %s", right, dest);
-    if (right.equals(RCX.name64) && dest.equals(RDX.name64)) {
-      // just swap rdx & rcx
-      emit("; right wants to be in rcx dest in rdx, just swap");
-      emit("xchg RDX, RCX");
-    } else if (right.equals(RCX.name64)) {
-      emit("; opposite order, so that we don't munge rcx");
-      emit("mov RDX, %s", right);
-      emit("mov RCX, %s", dest);
-    } else {
-      emit("mov RCX, %s", dest);
-      emit("mov RDX, %s", right);
-    }
-    generateSyscall("strcat");
-    registerState.condPop();
-  }
-
   private void generateDivMod(BinOp op, String leftName, Operand rightOperand) {
     String right = resolver.resolve(rightOperand);
     if (rightOperand.isConstant()) {
@@ -991,7 +759,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.addData(DIV_BY_ZERO_ERR);
       emit("mov EDX, %d  ; line number", op.position().line());
       emit("mov RCX, DIV_BY_ZERO_ERR");
-      generatePrintf();
+      emitter.emitExternCall("printf");
       emitter.emitExit(-1);
 
       visit(new Label(continueLabel));
@@ -1094,6 +862,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         }
         break;
       case ASC:
+        npeCheckGenerator.generateNullPointerCheck(op, source);
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = registers.allocate();
@@ -1110,7 +879,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         registers.deallocate(tempReg);
         break;
       case CHR:
-        generateChr(sourceName, destName);
+        stringGenerator.generateChr(sourceName, destName);
         break;
       default:
         fail("Cannot generate %s yet", op);
@@ -1147,7 +916,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       emit("mov RCX, %s  ; Address of string", sourceName);
     }
-    generateSyscall("strlen");
+    emitter.emitExternCall("strlen");
     registerState.condPop();
 
     if (resolver.isInRegister(destination, RCX)) {
@@ -1170,30 +939,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov %s, EAX  ; %s = strlen(%s)", destinationName, destinationName, sourceName);
       raxRcxState.condPop(RAX);
     }
-  }
-
-  private void generateChr(String sourceName, String destName) {
-    RegisterState raxState = condPush(ImmutableList.of(RAX));
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-
-    // 1. allocate a new 2-char string
-    emit("mov RCX, 2");
-    generateMalloc();
-    registerState.condPop();
-    // 2. set destName to allocated string
-    if (!destName.equals(RAX.name64)) {
-      emit("mov %s, RAX  ; copy string location from RAX", destName);
-    }
-
-    Register charReg = registers.allocate();
-    // 3. get source char as character
-    emit("mov DWORD %s, %s  ; get the character int into %s", charReg.name32, sourceName, charReg);
-    // 4. write source char in first location
-    emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
-    // 5. clear second location.
-    emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
-    raxState.condPop();
-    registers.deallocate(charReg);
   }
 
   @Override
