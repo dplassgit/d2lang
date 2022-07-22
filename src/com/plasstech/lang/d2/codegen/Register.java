@@ -55,7 +55,7 @@ public enum Register {
   String sizeByType(VarType type) {
     if (type == VarType.INT) {
       return name32;
-    } else if (type == VarType.BOOL) {
+    } else if (type == VarType.BOOL || type == VarType.BYTE) {
       return name8;
     }
     return name64;

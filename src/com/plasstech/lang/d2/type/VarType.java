@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.type;
 
 /** The type of an expression or variable. */
 public interface VarType {
-  // TODO: Map name to type
   VarType INT = new SimpleType("INT", 4);
   VarType STRING =
       new SimpleType("STRING", 8) {
@@ -12,6 +11,7 @@ public interface VarType {
         }
       };
   VarType BOOL = new SimpleType("BOOL", 1);
+  VarType BYTE = new SimpleType("BYTE", 1);
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");
   VarType NULL = new NullType();

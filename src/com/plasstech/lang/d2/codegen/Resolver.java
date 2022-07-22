@@ -29,7 +29,7 @@ public class Resolver {
    */
   public String resolve(Operand operand) {
     if (operand.isConstant()) {
-      if (operand.type() == VarType.INT) {
+      if (operand.type() == VarType.INT || operand.type() == VarType.BYTE) {
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
         ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;

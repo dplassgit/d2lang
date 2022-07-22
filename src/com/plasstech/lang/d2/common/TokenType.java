@@ -9,6 +9,7 @@ public enum TokenType {
   FLOAT(true), // indicates the "float" keyword
   LONG(true), // indicates the "long" keyword
   CHAR(true), // indicates the "char" keyword
+  BYTE(true), // indicates the "byte" keyword
   TRUE(true), // boolean literal
   FALSE(true), // boolean literal
   PRINT(true),
