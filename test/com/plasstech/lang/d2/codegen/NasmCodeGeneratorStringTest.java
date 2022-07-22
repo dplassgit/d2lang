@@ -29,9 +29,9 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     execute(
         "       b: string "
             + "foo: proc(a: string, i:int) {"
-            + "   b=a[i]"
+            + "   b=a[i] // b = o\r\n"
             + "   print b"
-            + "   c=a[4]"
+            + "   c=a[4] // c = d\r\n"
             + "   print c"
             + "} "
             + "foo('world', 1)",

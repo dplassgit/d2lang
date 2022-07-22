@@ -275,7 +275,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // 2. compare - NOTE SWAPPED ARGS
         emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32, index);
         // 3. if good, continue
-        String continueLabel = nextContinueLabel();
+        String continueLabel = nextLabel("good_array_index");
         emit("jg _%s", continueLabel);
 
         emit0("\n  ; no good. print error and stop");
@@ -368,8 +368,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private String nextContinueLabel() {
+    return nextLabel("continue");
+  }
+
+  private String nextLabel(String prefix) {
     // it's actually two underscores, because every label gets prepended with an underscore.
-    return "_continue" + id++;
+    return String.format("_%s_%d", prefix, id++);
   }
 
   @Override
@@ -631,7 +635,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           generateStringAdd(op.left(), op.right(), destName);
           break;
         case LBRACKET:
-          generateStringIndex(leftName, rightName, destName);
+          generateStringIndex(op.left(), op.right(), op.destination());
           break;
         case EQEQ:
         case NEQ:
@@ -793,31 +797,65 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     state.condPop();
   }
 
-  private void generateStringIndex(String stringName, String indexName, String destName) {
+  private void generateStringIndex(Operand stringOperand, Operand index, Location destination) {
+    String stringName = resolver.resolve(stringOperand);
+    String indexName = resolver.resolve(index);
+    String destName = resolver.resolve(destination);
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     // Issue #112:
     // if indexname == stringname's length-1, just return stringname-1
-    /*
-     * (condpush)
-     * mov rcx, stringname
-     * call strlen
-     * (condpop)
-     * dec rax
-     * cmp rax, indexname
-     * jne allocateit
-     *
-     * mov destname, stringmame <<< may have to be smarter in case neither is a constant
-     * jmp after
-     *
-     * allocateit:
-     * old code
-     *
-     * (regular code)
-     *
-     * after:
-     */
+
+    if (resolver.isInRegister(stringOperand, RCX)) {
+      emit("; string already in rcx");
+    } else {
+      emit("mov RCX, %s  ; get string", stringName);
+    }
+    generateSyscall("strlen");
+    registerState.condPop();
+    emit("dec RAX");
+    if (!indexName.equals("0")) {
+      // if index is 0, we're comparing to 0, and the ZF is set by dec.
+      emit("cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
+    }
+    String allocateLabel = nextLabel("allocate_1_char_string");
+    emit("jne _%s", allocateLabel);
+
+    emit("; %s = %s[%s]", destName, stringName, indexName);
+    if (indexName.equals("0")) {
+      // Simplest case - first character of 1-character string
+      if (resolver.isInAnyRegister(destination) || resolver.isInAnyRegister(stringOperand)) {
+        emit("; index is 0, at least one is in a register - easiest case");
+        emit("mov %s, %s", destName, stringName);
+      } else {
+        // both are not in registers - use one to transfer.
+        Register tempReg = registers.allocate();
+        emit("; index is 0, neither in a register; allocated %s", tempReg);
+        emit("mov %s, %s", tempReg, stringName);
+        emit("mov %s, %s", destName, tempReg);
+        registers.deallocate(tempReg);
+      }
+    } else {
+      if (resolver.isInAnyRegister(destination)) {
+        Register destReg = resolver.toRegister(destination);
+        emit("; dest in %s", destReg);
+        emit("mov %s, %s", destReg.sizeByType(index.type()), indexName);
+        emit("add %s, %s", destReg, stringName);
+      } else {
+        Register tempReg = registers.allocate();
+        emit("; dest not in reg; allocated %s as tempReg", tempReg);
+        emit("mov %s, %s", tempReg.sizeByType(index.type()), indexName);
+        emit("add %s, %s", tempReg, stringName);
+        emit("mov %s, %s", destName, tempReg);
+        registers.deallocate(tempReg);
+      }
+    }
+    String afterLabel = nextLabel("after_string_index");
+    emit("jmp _%s", afterLabel);
+
     // 1. allocate a new 2-char string
+    visit(new Label(allocateLabel));
+    registerState = condPush(Register.VOLATILE_REGISTERS);
     emit("mov RCX, 2");
     generateMalloc();
     registerState.condPop();
@@ -842,6 +880,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
     emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
+
+    //  * after:
+    visit(new Label(afterLabel));
   }
 
   private void generateStringAdd(Operand leftOperand, Operand rightOperand, String dest) {
@@ -930,7 +971,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     } else {
       emit("cmp DWORD %s, 0  ; detect division by 0", right);
-      String continueLabel = nextContinueLabel();
+      String continueLabel = nextLabel("not_div_by_zero");
       emit("jne _%s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
@@ -1190,7 +1231,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // transfer from return value to RAX
       Operand returnValue = op.returnValueLocation().get();
       // I hate this. why can't we emit the "mov"?
-      registers.reserve(RAX);
       visit(new Transfer(new RegisterLocation("RAX", RAX, returnValue.type()), returnValue));
     }
     emit("jmp __exit_of_%s", op.procName());
