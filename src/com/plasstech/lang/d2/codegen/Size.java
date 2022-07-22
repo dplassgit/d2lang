@@ -1,33 +1,42 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Represents the size of a datatype. See https://www.nasm.us/doc/nasmdoc3.html#section-3.2.1 for
+ * reference.
+ */
 enum Size {
-  _1BYTE("BYTE"),
-  _32BITS("DWORD"),
-  _64BITS("QWORD");
+  _1BYTE("BYTE", "db"),
+  _32BITS("DWORD", "dd"),
+  _64BITS("QWORD", "dq");
 
-  public final String asmName;
+  public final String asmType;
+  public final String dataSizeName;
 
-  Size(String asmName) {
-    this.asmName = asmName;
+  Size(String asmName, String dataSizeName) {
+    this.asmType = asmName;
+    this.dataSizeName = dataSizeName;
   }
 
   @Override
   public String toString() {
-    return asmName;
+    return asmType;
   }
 
+  private static Map<Integer, Size> BYTES_TO_SIZE =
+      ImmutableMap.of(1, _1BYTE, 4, _32BITS, 8, _64BITS);
+
   static Size of(VarType type) {
-    // TODO: Just use type.size()!
-    if (type == VarType.INT) {
-      return Size._32BITS;
-    } else if (type == VarType.BOOL) {
-      return Size._1BYTE;
-    } else if (type == VarType.STRING || type.isArray() || type.isRecord() || type.isNull()) {
-      return Size._64BITS;
+    int bytes = type.size();
+    Size size = BYTES_TO_SIZE.get(bytes);
+    if (size == null) {
+      throw new D2RuntimeException("Cannot get type of " + type, null, "IllegalState");
     }
-    throw new D2RuntimeException("Cannot get type of " + type, null, "IllegalState");
+    return size;
   }
 }

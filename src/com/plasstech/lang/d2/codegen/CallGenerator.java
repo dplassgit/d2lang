@@ -84,7 +84,7 @@ class CallGenerator {
           // it's not already in this register.
           emit(
               "mov %s %s, %s  ; set %dth param",
-              size.asmName, formalReg.sizeByType(type), source, i);
+              size.asmType, formalReg.sizeByType(type), source, i);
         } else {
           emit("; %dth param already in %s", i, sourceReg);
         }

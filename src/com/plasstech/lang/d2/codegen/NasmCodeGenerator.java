@@ -132,14 +132,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {
         // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
-        // TODO: make these fields in the VarType object.
-        if (symbol.varType() == VarType.INT) {
-          data.add(String.format("_%s: dd 0", entry.getKey()));
-        } else if (symbol.varType() == VarType.BOOL) {
-          data.add(String.format("_%s: db 0", entry.getKey()));
-        } else {
-          data.add(String.format("_%s: dq 0", entry.getKey()));
-        }
+        Size size = Size.of(symbol.varType());
+        data.add(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
       }
     }
     for (StringEntry entry : stringTable.orderedEntries()) {
@@ -205,7 +199,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(ArraySet op) {
     ArrayType arrayType = op.arrayType();
-    String baseTypeSize = Size.of(arrayType.baseType()).asmName;
+    String baseTypeSize = Size.of(arrayType.baseType()).asmType;
 
     Register sourceReg = null;
     Operand sourceLoc = op.source();
@@ -404,7 +398,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
-    String size = Size.of(op.source().type()).asmName;
+    String size = Size.of(op.source().type()).asmType;
     if (source.isConstant() || source.isRegister()) {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);
     } else {
@@ -728,7 +722,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           ArrayType arrayType = (ArrayType) leftType;
           Register fullIndex =
               generateArrayIndex(op.right(), arrayType, leftName, false, op.position());
-          emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmName, destName, fullIndex);
+          emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
           registers.deallocate(fullIndex);
           emit("; deallocating %s", fullIndex);
           break;
