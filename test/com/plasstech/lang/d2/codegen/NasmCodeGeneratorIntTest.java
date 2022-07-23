@@ -47,6 +47,18 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void shiftConstant(@TestParameter({"<<", ">>"}) String op) throws Exception {
+    execute(String.format("a=123 c=a%s4 print c a=-234 d=a%s4 print d", op, op), "shiftConstant");
+  }
+
+  @Test
+  public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op) throws Exception {
+    execute(
+        String.format("f:proc(a:int) {b=4 a=b%sa println a  a=a%sb println a} f(2)", op, op),
+        "shiftOps");
+  }
+
+  @Test
   public void tree() throws Exception {
     execute(
         "      a=2 "
@@ -90,8 +102,7 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   @Test
   public void allOpsLocals() throws Exception {
     execute(
-        "fun:proc():int { \n"
-            + "a=2 "
+        "fun:proc(a:int, b:int):int { \n"
             + "b=3 "
             + "c=-5 "
             + "d=7 "
@@ -107,7 +118,7 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
             + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
             + "   return aa\n"
             + "} \n"
-            + "print fun()",
+            + "print fun(2, 3)",
         "allOpsLocals");
   }
 

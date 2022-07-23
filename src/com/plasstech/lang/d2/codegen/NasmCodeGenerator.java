@@ -411,7 +411,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
       }
     } else if (leftType == VarType.INT) {
-      String size = "DWORD";
+      String size = Size.of(leftType).asmType;
       switch (operator) {
         case PLUS:
         case MINUS:
@@ -425,12 +425,53 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
         case SHIFT_LEFT:
         case SHIFT_RIGHT:
-          emit("mov %s %s, %s ; shift setup", size, destName, leftName);
-          RegisterState pushedRcx = condPush(ImmutableList.of(RCX));
-          // TODO: this is a problem if rightname is CL
-          emit("mov CL, %s ; shift prep", rightName);
-          emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
-          pushedRcx.condPop();
+          // mov dest, left, then mov cl, amount to shirt, then shift.
+          if (op.right().isConstant()) {
+            // easy. left << right or left >> right
+            // TODO this will fail if dest and left are in memory
+            emit("mov %s %s, %s ; shift setup", size, destName, leftName);
+            emit("%s %s, %s  ; %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          } else {
+
+            Register rightReg = null;
+            VarType rightType = op.right().type();
+            if (resolver.isInRegister(op.right(), RCX)) {
+              rightReg = resolver.allocate();
+              Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, rightType);
+              emit(
+                  "mov %s, %s  ; saving right to a different register",
+                  rightReg.sizeByType(rightType), rightName);
+              rightName = resolver.resolve(rightOp);
+            }
+            Register destReg = null;
+            if (resolver.isInRegister(op.destination(), RCX)) {
+              destReg = resolver.allocate();
+              Location destOp =
+                  new RegisterLocation(op.destination().name(), destReg, op.destination().type());
+              emit("mov %s, %s  ; saving dest to a different register", destReg, destName);
+              destName = resolver.resolve(destOp);
+            }
+
+            RegisterState registerState = null;
+            if (destReg == null) {
+              // it wasn't in rcx, so we have to push now
+              registerState = condPush(ImmutableList.of(RCX));
+            }
+            emit("mov %s %s, %s ; shift setup", size, destName, leftName);
+            emit("mov %s, %s ; shift prep", RCX.sizeByType(rightType), rightName);
+            emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
+            if (rightReg != null) {
+              resolver.deallocate(rightReg);
+            }
+            if (destReg != null) {
+              // destReg was rcx, copy it out now.
+              emit("mov ECX, %s  ; copy to dest", destName);
+              resolver.deallocate(destReg);
+            } else {
+              // it wasn't in RCX, we already put it in the right place
+              registerState.condPop();
+            }
+          }
           break;
 
         case EQEQ:
@@ -440,14 +481,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = registers.allocate();
-          emit("mov DWORD %s, %s ; int compare setup", tempReg.name32, leftName);
+          emit("mov %s %s, %s ; int compare setup", size, tempReg.name32, leftName);
           emit("cmp %s, %s", tempReg.name32, rightName);
           emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
           break;
 
         case DIV:
         case MOD:
-          generateDivMod(op, leftName, op.right());
+          generateDivMod(op, leftName);
           break;
 
         default:
@@ -477,12 +518,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       registers.deallocate(tempReg);
     }
     if (!op.left().type().isArray()) {
+      // don't deallocate yet so that array literal assignments work.
       resolver.deallocate(op.left());
     }
     resolver.deallocate(op.right());
   }
 
-  private void generateDivMod(BinOp op, String leftName, Operand rightOperand) {
+  private void generateDivMod(BinOp op, String leftName) {
+    Operand rightOperand = op.right();
     String right = resolver.resolve(rightOperand);
     if (rightOperand.isConstant()) {
       ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
@@ -511,10 +554,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
-    registers.reserve(RAX);
-    registers.reserve(RDX);
     Register temp = registers.allocate();
-    if (!leftName.equals(RAX.name32)) {
+    if (!leftName.equals(RAX.name32)) { // TODO: don't use .equals
       emit("mov EAX, %s  ; numerator", leftName);
     } else {
       emit("; numerator already in EAX");
@@ -542,13 +583,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
 
-    // this is weird - we reserved rax & rdx, but only partially unreserve them?
-    if (!registerState.pushed(RDX)) {
-      registers.deallocate(RDX);
-    }
-    if (!registerState.pushed(RAX)) {
-      registers.deallocate(RAX);
-    }
     if (!destName.equals(RDX.name32)) {
       registerState.condPop(RDX);
     } else {
