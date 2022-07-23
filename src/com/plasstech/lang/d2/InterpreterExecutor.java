@@ -106,7 +106,7 @@ public class InterpreterExecutor {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(debugOpt);
       state = optimizer.execute(state);
-      if (debugOpt > 0) {
+      if (debugCodeGen > 0 || debugOpt > 0) {
         System.out.println("\nOPTIMIZED:");
         System.out.println("------------------------------");
         System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));

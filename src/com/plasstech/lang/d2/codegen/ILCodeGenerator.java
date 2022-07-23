@@ -197,30 +197,34 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     }
   }
 
+  private static <T> ConstantOperand<T> toConstOperand(ConstNode<T> node) {
+    return new ConstantOperand<T>(node.value(), node.varType());
+  }
+
   @Override
   public void visit(AssignmentNode node) {
+    Node rhs = node.expr();
+    Operand rhsLocation;
+    if (rhs.isConstant()) {
+      ConstNode<?> rhsConst = (ConstNode<?>) rhs;
+      rhsLocation = toConstOperand(rhsConst);
+    } else {
+      rhs.accept(ILCodeGenerator.this);
+      rhsLocation = rhs.location();
+    }
     LValueNode lvalue = node.lvalue();
     lvalue.accept(
         new LValueNode.Visitor() {
 
           @Override
           public void visit(VariableSetNode variableNode) {
-            String name = variableNode.name();
-
-            // Look up storage in current symbol table
-            // this may be a global or a local/parameter (stack)
-            Location dest = lookupLocation(name);
+            Location dest = lookupLocation(variableNode.name());
             variableNode.setLocation(dest);
-
-            Node rhs = node.expr();
-            rhs.accept(ILCodeGenerator.this);
-            Location source = rhs.location();
-            emit(new Transfer(dest, source));
+            emit(new Transfer(dest, rhsLocation));
           }
 
           @Override
           public void visit(FieldSetNode fsn) {
-            // Look up storage in current symbol table
             Symbol sym = symbolTable().getRecursive(fsn.variableName());
             if (sym != null) {
               Location recordLocation = lookupLocation(fsn.variableName());
@@ -235,9 +239,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
               String fieldName = fsn.fieldName();
 
-              Node rhs = node.expr();
-              rhs.accept(ILCodeGenerator.this);
-              Location rhsLocation = rhs.location();
               RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
               emit(
                   new FieldSetOp(
@@ -261,9 +262,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
               indexNode.accept(ILCodeGenerator.this);
               Operand indexLocation = indexNode.location();
 
-              Node rhs = node.expr();
-              rhs.accept(ILCodeGenerator.this);
-              Location rhsLocation = rhs.location();
               emit(
                   new ArraySet(
                       arrayLocation,
@@ -340,7 +338,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // "location"?
     node.setLocation(destination);
 
-    ConstantOperand<T> constOperand = new ConstantOperand<T>(node.value(), node.varType());
+    ConstantOperand<T> constOperand = toConstOperand(node);
     Transfer transfer = new Transfer(destination, constOperand);
     emit(transfer);
   }
@@ -396,7 +394,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     // if left is a constant, just get it.
     if (left.isConstant()) {
       ConstNode<?> simpleLeft = (ConstNode<?>) left;
-      leftSrc = new ConstantOperand(simpleLeft.value(), simpleLeft.varType());
+      leftSrc = toConstOperand(simpleLeft);
     } else {
       left.accept(this);
       leftSrc = left.location();
@@ -408,6 +406,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Operand rightSrc;
 
     if (node.operator() == TokenType.DOT) {
+
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
       rightSrc = ConstantOperand.of(rightVarNode.name());
@@ -415,7 +414,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       // if right is a constant, just get it.
       if (right.isConstant()) {
         ConstNode<?> simpleRight = (ConstNode<?>) right;
-        rightSrc = new ConstantOperand(simpleRight.value(), simpleRight.varType());
+        rightSrc = toConstOperand(simpleRight);
       } else {
         right.accept(this);
         rightSrc = right.location();

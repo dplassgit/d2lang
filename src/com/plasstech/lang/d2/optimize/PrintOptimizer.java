@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
+import com.plasstech.lang.d2.type.VarType;
 
 /** Optimizes consecutive print statements, if they're constant strings. */
 public class PrintOptimizer extends LineOptimizer {
@@ -37,8 +38,7 @@ public class PrintOptimizer extends LineOptimizer {
       }
       Operand operand = sysCall.arg();
       if (operand.isConstant()) {
-        ConstantOperand<?> constOp = (ConstantOperand<?>) operand;
-        return constOp.value() instanceof String;
+        return operand.type() == VarType.STRING;
       }
     }
     return false;

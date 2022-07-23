@@ -21,7 +21,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void simpleIf() {
-    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
+    System.err.println(generateProgram("i=1 j=i if 1==i {i=2 print i } "));
   }
 
   @Test
