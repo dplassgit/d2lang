@@ -3,9 +3,11 @@ package com.plasstech.lang.d2.codegen.il;
 public class ProcExit extends Op {
 
   private final String procName;
+  private final int localBytes;
 
-  public ProcExit(String procName) {
+  public ProcExit(String procName, int localBytes) {
     this.procName = procName;
+    this.localBytes = localBytes;
   }
 
   @Override
@@ -20,5 +22,9 @@ public class ProcExit extends Op {
 
   public String procName() {
     return procName;
+  }
+
+  public int localBytes() {
+    return localBytes;
   }
 }

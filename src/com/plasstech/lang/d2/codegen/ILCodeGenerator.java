@@ -619,7 +619,7 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       emit(new Return(node.name()));
     }
 
-    emit(new ProcExit(node.name()));
+    emit(new ProcExit(node.name(), localBytes));
     emit(new Label(afterLabel));
 
     procedures.pop();
