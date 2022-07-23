@@ -1,3 +1,5 @@
+p2()
+
 p2: proc {
   println "Should print 1"
   // forward reference
@@ -9,4 +11,3 @@ p1: proc: int {
   return 1
 }
 
-p2()

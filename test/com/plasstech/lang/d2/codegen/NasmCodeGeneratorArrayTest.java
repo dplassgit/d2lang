@@ -68,12 +68,25 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
           })
           String type)
       throws Exception {
-    execute(String.format("p:proc() {x:%s[2] print x[0]} p()", type), "arrayGetInProc");
+    execute(
+        String.format("p:proc() {x:%s[2] println 'Should be 0 or false' print x[0]} p()", type),
+        "arrayGetInProc");
   }
 
   @Test
   public void arraySetString() throws Exception {
     execute("x:string[1] x[0]='hi' println x[0]", "arraySetString");
+  }
+
+  @Test
+  public void arraySetAndGetString() throws Exception {
+    execute(
+        "x:string[2]\r\n"
+            + "x[0]=\"hi\"\r\n"
+            + "x[1]=x[0]+ \" there\"\r\n"
+            + "println \"Should be 'hi there'\"\r\n"
+            + "println x[1]\r\n",
+        "arraySetAndGetString");
   }
 
   @Test
@@ -105,7 +118,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayLengthConstantSize() throws Exception {
-    execute("x:int[4] print length(x)", "arrayLengthConstantSize");
+    execute("x:int[4] print 'Should be 4' println length(x)", "arrayLengthConstantSize");
   }
 
   @Test

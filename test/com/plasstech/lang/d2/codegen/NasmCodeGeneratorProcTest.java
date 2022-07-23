@@ -163,4 +163,44 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "  println 'Recursive reverse ' + reverseRecursive('Reverse')",
         "recursion");
   }
+
+  @Test
+  public void bug39() throws Exception {
+    execute(
+        "      a:string a='bye'"
+            + "setup: proc {"
+            + "  a = 'hi'"
+            + "  b = 'bee'"
+            + "}"
+            + "main {"
+            + "  setup()"
+            + "}",
+        "bug39");
+  }
+
+  @Test
+  public void forwardRef() throws Exception {
+    execute(
+        "      p2()\r\n"
+            + "p2: proc {\r\n"
+            + "  println \"Should print 1\"\r\n"
+            + "  // forward reference\r\n"
+            + "  val = p1()\r\n"
+            + "  print val\r\n"
+            + "}\r\n"
+            + "p1: proc: int {\r\n"
+            + "  return 1\r\n"
+            + "}\r\n",
+        "forwardRef");
+  }
+
+  @Test
+  public void ignoreReturn() throws Exception {
+    execute(
+        "      a:proc(): string {" //
+            + "  return 'aproc'"
+            + "}" //
+            + "a()",
+        "ignoreReturn");
+  }
 }

@@ -26,7 +26,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void setField() throws Exception {
-    execute("rt: record{i:int s:string} x=new rt x.i=3", "setField");
+    execute("rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1", "setField");
   }
 
   @Test

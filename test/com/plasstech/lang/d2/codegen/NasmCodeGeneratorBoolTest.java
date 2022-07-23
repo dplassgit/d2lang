@@ -28,4 +28,26 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
         String.format("a=%s b=%s c=a %s b print c d=b %s a print d", boola, boolb, op, op),
         "boolBinOp" + boola + boolb);
   }
+
+  @Test
+  public void boolAssignProc(@TestParameter boolean bool) throws Exception {
+    execute(String.format("f:proc {a=%s b=a print a print b} f()", bool), "boolAssignProc" + bool);
+  }
+
+  @Test
+  public void notProc(@TestParameter boolean bool) throws Exception {
+    execute(String.format("f:proc{a=%s c=not a print a print c} f()", bool), "notProc" + bool);
+  }
+
+  @Test
+  public void boolBinOpProc(
+      @TestParameter({"and", "or", "xor", "<", "<=", "==", "!=", ">", ">="}) String op,
+      @TestParameter boolean boola,
+      @TestParameter boolean boolb)
+      throws Exception {
+    execute(
+        String.format(
+            "f:proc{a=%s b=%s c=a %s b print c d=b %s a print d} f()", boola, boolb, op, op),
+        "boolBinOpProc" + boola + boolb);
+  }
 }

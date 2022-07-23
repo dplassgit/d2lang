@@ -146,4 +146,31 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   public void incDec() throws Exception {
     execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec");
   }
+
+  @Test
+  public void bug32() throws Exception {
+    execute(
+        "p:proc() {\r\n"
+            + "  a:int\r\n"
+            + "  a=3\r\n"
+            + "  a=-3\r\n"
+            + "  a=--3\r\n"
+            + "  a=-+-3\r\n"
+            + "  a=+3+-3\r\n"
+            + "  a=+3\r\n"
+            + "  b=a // 3\r\n"
+            + "  a=(3+a)*-b // (3+3)*-3 = 6*-3=-18, ruh roh.\r\n"
+            + "  b=+a\r\n"
+            + "  b=-a\r\n"
+            + "\r\n"
+            + "  println a\r\n"
+            + "  println 3+a*-b // 3+(-18*18)\r\n"
+            + "  println (3+a)*-b\r\n"
+            + "  println 4%6\r\n"
+            + "}\r\n"
+            + "main {\r\n"
+            + "  p()\r\n"
+            + "}\r\n",
+        "bug32");
+  }
 }
