@@ -55,7 +55,7 @@ public class Lexer {
 
     Position start = new Position(line, col);
     if (Character.isDigit(cc)) {
-      return makeInt(start);
+      return makeNumber(start);
     } else if (Character.isLetter(cc) || cc == '_') {
       return makeText(start);
     } else if (cc != 0) {
@@ -97,16 +97,32 @@ public class Lexer {
     return new Token(TokenType.VARIABLE, start, end, value);
   }
 
-  private IntToken makeInt(Position start) {
+  private Token makeNumber(Position start) {
     StringBuilder sb = new StringBuilder();
     while (Character.isDigit(cc)) {
       sb.append(cc);
       advance();
     }
+    // if cc is a dot, we're making a double
+    if (cc == '.') {
+      sb.append(cc);
+      advance();
+      while (Character.isDigit(cc)) {
+        sb.append(cc);
+        advance();
+      }
+      try {
+        Position end = new Position(line, col);
+        double value = Double.parseDouble(sb.toString());
+        return new ConstToken<Double>(TokenType.DOUBLE, value, start, end);
+      } catch (Exception e) {
+        throw new ScannerException(String.format("Double too big %s", sb), start);
+      }
+    }
     try {
       Position end = new Position(line, col);
       int value = Integer.parseInt(sb.toString());
-      return new IntToken(start, end, value);
+      return new ConstToken<Integer>(TokenType.INT, value, start, end);
     } catch (Exception e) {
       throw new ScannerException(String.format("Int too big %s", sb), start);
     }
@@ -279,6 +295,6 @@ public class Lexer {
 
     advance(); // eat the closing tick/quote
     Position end = new Position(line, col);
-    return new Token(TokenType.STRING, start, end, sb.toString());
+    return new ConstToken<String>(TokenType.STRING, sb.toString(), start, end);
   }
 }

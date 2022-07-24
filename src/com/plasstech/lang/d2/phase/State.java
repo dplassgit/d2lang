@@ -130,6 +130,12 @@ public abstract class State {
 
   abstract Builder toBuilder();
 
+  public void throwOnError() {
+    if (error()) {
+      throw exception();
+    }
+  }
+
   public void stopOnError() {
     stopOnError(false);
   }

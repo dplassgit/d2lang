@@ -33,7 +33,7 @@ public class Resolver implements RegistersInterface {
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
         ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;
-        if (boolConst.value() == Boolean.TRUE) {
+        if (boolConst.value().booleanValue()) {
           return "1";
         }
         return "0";
@@ -43,11 +43,10 @@ public class Resolver implements RegistersInterface {
         StringEntry entry = stringTable.lookup(stringConst.value());
         return entry.name();
       } else if (operand.type().isNull()) {
-        // no idea if this will work, lol
         return "0";
       }
 
-      emitter.fail("Cannot generate %s operand %s yet", operand.type().name(), operand);
+      emitter.fail("Cannot generate %s constant %s yet", operand.type().name(), operand);
       return null;
     }
 

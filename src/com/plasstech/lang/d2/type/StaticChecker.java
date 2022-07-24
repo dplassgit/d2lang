@@ -78,7 +78,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           TokenType.BIT_XOR,
           TokenType.BIT_AND);
 
-  private static final ImmutableSet<TokenType> FLOAT_OPERATORS =
+  private static final ImmutableSet<TokenType> DOUBLE_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -126,13 +126,13 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           STRING_OPERATORS,
           VarType.BYTE,
           INT_OPERATORS,
-          VarType.FLOAT,
-          FLOAT_OPERATORS);
+          VarType.DOUBLE,
+          DOUBLE_OPERATORS);
 
   private static final ImmutableSet<TokenType> INT_UNARY_OPERATORS =
       ImmutableSet.of(TokenType.MINUS, TokenType.PLUS, TokenType.BIT_NOT, TokenType.CHR);
 
-  private static final ImmutableSet<TokenType> FLOAT_UNARY_OPERATORS =
+  private static final ImmutableSet<TokenType> DOUBLE_UNARY_OPERATORS =
       ImmutableSet.of(TokenType.MINUS, TokenType.PLUS);
 
   private static final ImmutableSet<TokenType> STRING_UNARY_OPERATORS =
@@ -151,8 +151,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           STRING_UNARY_OPERATORS,
           VarType.BYTE,
           INT_UNARY_OPERATORS,
-          VarType.FLOAT,
-          FLOAT_UNARY_OPERATORS);
+          VarType.DOUBLE,
+          DOUBLE_UNARY_OPERATORS);
 
   private static final Set<TokenType> RECORD_COMPARATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);

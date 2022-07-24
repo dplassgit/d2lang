@@ -14,7 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.lex.IntToken;
+import com.plasstech.lang.d2.lex.ConstToken;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
@@ -60,7 +60,7 @@ public class Parser implements Phase {
           .put(TokenType.INT, VarType.INT)
           .put(TokenType.BOOL, VarType.BOOL)
           .put(TokenType.STRING, VarType.STRING)
-          .put(TokenType.FLOAT, VarType.FLOAT)
+          .put(TokenType.DOUBLE, VarType.DOUBLE)
           .put(TokenType.BYTE, VarType.BYTE)
           .put(TokenType.PROC, VarType.PROC)
           .put(TokenType.NULL, VarType.NULL)
@@ -75,6 +75,7 @@ public class Parser implements Phase {
           TokenType.NOT,
           TokenType.BIT_NOT,
           TokenType.INT,
+          TokenType.DOUBLE,
           TokenType.STRING,
           TokenType.BOOL,
           TokenType.TRUE,
@@ -658,6 +659,15 @@ public class Parser implements Phase {
           ConstNode<Integer> in = (ConstNode<Integer>) expr;
           return new ConstNode<Integer>(~in.value(), VarType.INT, unaryToken.start());
         }
+      } else if (expr.varType() == VarType.DOUBLE) {
+        // We can simplify now
+        if (unaryToken.type() == TokenType.PLUS) {
+          return expr;
+        } else if (unaryToken.type() == TokenType.MINUS) {
+          @SuppressWarnings("unchecked")
+          ConstNode<Double> in = (ConstNode<Double>) expr;
+          return new ConstNode<Double>(-in.value(), VarType.DOUBLE, unaryToken.start());
+        }
       } else if (expr.varType() == VarType.BOOL) {
         if (unaryToken.type() == TokenType.NOT) {
           @SuppressWarnings("unchecked")
@@ -740,20 +750,28 @@ public class Parser implements Phase {
    */
   private ExprNode atom() {
     if (token.type() == TokenType.INT) {
-      IntToken it = (IntToken) token;
+      ConstToken<Integer> it = (ConstToken<Integer>) token;
       advance();
       return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+    } else if (token.type() == TokenType.DOUBLE) {
+      ConstToken<Double> dt = (ConstToken<Double>) token;
+      advance();
+      return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
     } else if (token.type() == TokenType.TRUE || token.type() == TokenType.FALSE) {
-      Token bt = advance();
+      Token bt = token;
+      advance();
       return new ConstNode<Boolean>(bt.type() == TokenType.TRUE, VarType.BOOL, bt.start());
     } else if (token.type() == TokenType.STRING) {
-      Token st = advance();
-      return new ConstNode<String>(st.text(), VarType.STRING, st.start());
+      ConstToken<String> st = (ConstToken<String>) token;
+      advance();
+      return new ConstNode<String>(st.value(), VarType.STRING, st.start());
     } else if (token.type() == TokenType.NULL) {
-      Token st = advance();
-      return new ConstNode<Void>(null, VarType.NULL, st.start());
+      Token nt = token;
+      advance();
+      return new ConstNode<Void>(null, VarType.NULL, nt.start());
     } else if (token.type() == TokenType.VARIABLE) {
-      Token varToken = advance();
+      Token varToken = token;
+      advance();
       if (token.type() == TokenType.LPAREN) {
         return procedureCall(varToken, false);
       } else {
@@ -770,7 +788,8 @@ public class Parser implements Phase {
       // array literal
       return arrayLiteral();
     } else if (token.type() == TokenType.INPUT) {
-      Token it = advance();
+      Token it = token;
+      advance();
       return new InputNode(it.start());
     } else {
       throw new ParseException(

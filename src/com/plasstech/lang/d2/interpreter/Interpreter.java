@@ -136,6 +136,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Integer[] integers = new Integer[sizeVal];
       Arrays.setAll(integers, (index) -> 0);
       setValue(op.destination(), integers);
+    } else if (baseType == VarType.DOUBLE) {
+      Double[] doubles = new Double[sizeVal];
+      Arrays.setAll(doubles, (index) -> 0.0);
+      setValue(op.destination(), doubles);
     } else if (baseType == VarType.STRING) {
       String[] strings = new String[sizeVal];
       Arrays.setAll(strings, (index) -> "");
@@ -201,6 +205,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
       result = visitIntBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof Double && right instanceof Double) {
+      result = visitDoubleBinOp(op, (Double) left, (Double) right);
     } else if (left instanceof Boolean && right instanceof Boolean) {
       result = visitBoolBinOp(op, (Boolean) left, (Boolean) right);
     } else if (left instanceof String && right instanceof String) {
@@ -317,6 +323,33 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
+  private Object visitDoubleBinOp(BinOp op, double left, double right) {
+    switch (op.operator()) {
+      case DIV:
+        return left / right;
+      case EQEQ:
+        return left == right;
+      case GEQ:
+        return left >= right;
+      case GT:
+        return left > right;
+      case LEQ:
+        return left <= right;
+      case LT:
+        return left < right;
+      case MINUS:
+        return left - right;
+      case MULT:
+        return left * right;
+      case NEQ:
+        return left != right;
+      case PLUS:
+        return left + right;
+      default:
+        throw new IllegalStateException("Unknown double binop " + op.operator());
+    }
+  }
+
   private Object visitBoolBinOp(BinOp op, Boolean left, Boolean right) {
     switch (op.operator()) {
       case AND:
@@ -368,6 +401,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object result = null;
     if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
+    } else if (rhs instanceof Double) {
+      result = visitUnaryDouble(op, rhs);
     } else if (rhs instanceof String) {
       result = visitUnaryString(op, (String) rhs);
     } else if (rhs != null && rhs.getClass().isArray()) {
@@ -405,6 +440,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
     int r1 = (Integer) rhs;
     switch (op.operator()) {
+      case PLUS:
+        return r1;
       case MINUS:
         return 0 - r1;
       case BIT_NOT:
@@ -414,6 +451,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
     }
+  }
+
+  private Object visitUnaryDouble(UnaryOp op, Object rhs) {
+    double r1 = (Double) rhs;
+    if (op.operator() == TokenType.PLUS) {
+      return r1;
+    } else if (op.operator() == TokenType.MINUS) {
+      return 0 - r1;
+    }
+    throw new IllegalStateException("Unknown double unaryop " + op.operator());
   }
 
   private Object resolve(Operand operand) {

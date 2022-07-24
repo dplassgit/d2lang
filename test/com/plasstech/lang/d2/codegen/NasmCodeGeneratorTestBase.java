@@ -66,21 +66,19 @@ public class NasmCodeGeneratorTestBase {
 
     InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
     ee.setOptimize(optimize);
+    ee.setLexDebugLevel(2);
+    ee.setParseDebugLevel(2);
     ee.setCodeGenDebugLevel(2);
     InterpreterResult result = ee.execute();
     State state = ee.state();
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.throwOnError();
     state = state.addFilename(filename);
 
     state = new NasmCodeGenerator().execute(state);
 
     String asmCode = Joiner.on('\n').join(state.asmCode());
     System.err.println(asmCode);
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.throwOnError();
 
     File file = new File(dir, filename + ".asm");
     if (file.exists()) {

@@ -80,7 +80,7 @@ public class InterpreterExecutor {
       System.out.println("------------------------------");
       System.out.println(state.programNode());
     }
-    state.stopOnError();
+    state.throwOnError();
     ProgramNode programNode = state.programNode();
     state = state.addProgramNode(programNode);
     StaticChecker checker = new StaticChecker();
@@ -90,13 +90,13 @@ public class InterpreterExecutor {
       System.out.println("------------------------------");
       System.out.println(state.programNode());
     }
-    state.stopOnError();
+    state.throwOnError();
 
     SymTab symbolTable = state.symbolTable();
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
-    state.stopOnError();
+    state.throwOnError();
     if (debugCodeGen > 0) {
       System.out.println("\nUNOPTIMIZED:");
       System.out.println("------------------------------");

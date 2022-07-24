@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
+import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
@@ -126,7 +127,7 @@ public class StaticCheckerTest {
 
   @Test
   public void manyBinOps() {
-    SymTab types = checkProgram("a=4 b=5  e=(a>=3)or not (b<3)");
+    SymTab types = checkProgram("a=4 b=5 e=(a>=3) or not (b<3)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -135,12 +136,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBoolConstantUnaryError() {
-    assertError("a=-true", "- operand");
+    assertError("a=-true", "- operator");
   }
 
   @Test
   public void assignBoolUnaryError() {
-    assertError("a=true b=-a", "- operand");
+    assertError("a=true b=-a", "- operator");
   }
 
   @Test
@@ -148,6 +149,82 @@ public class StaticCheckerTest {
     SymTab types = checkProgram("a=3 b=!a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void assignDouble() {
+    State state = safeTypeCheck("a=3.0");
+    SymTab types = state.symbolTable();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+
+    ProgramNode root = state.programNode();
+    AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.name()).isEqualTo("a");
+    assertThat(var.varType()).isEqualTo(VarType.DOUBLE);
+
+    ExprNode expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.DOUBLE);
+  }
+
+  @Test
+  public void assignUnaryDoubleConst() {
+    State state = safeTypeCheck("a=-3.0");
+    SymTab types = state.symbolTable();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+
+    ProgramNode root = state.programNode();
+    AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.name()).isEqualTo("a");
+    assertThat(var.varType()).isEqualTo(VarType.DOUBLE);
+
+    ExprNode expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.DOUBLE);
+    ConstNode<Double> doubleExpr = (ConstNode<Double>) expr;
+    assertThat(doubleExpr.value()).isEqualTo(-3.0);
+  }
+
+  @Test
+  public void assignUnaryVarDouble() {
+    State state = safeTypeCheck("a=3.0 b=-a");
+    SymTab types = state.symbolTable();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.DOUBLE);
+
+    ProgramNode root = state.programNode();
+    AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.varType()).isEqualTo(VarType.DOUBLE);
+
+    Node expr = node.expr();
+    UnaryNode unaryNode = (UnaryNode) expr;
+    assertThat(unaryNode.varType()).isEqualTo(VarType.DOUBLE);
+  }
+
+  @Test
+  public void assignDoubleExpr() {
+    State state = safeTypeCheck("a=3.1+4.4*9.0/3.14 b=4.0 c=a>b");
+    SymTab types = state.symbolTable();
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+    ProgramNode root = state.programNode();
+    AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.varType()).isEqualTo(VarType.DOUBLE);
+  }
+
+  @Test
+  public void assignDoubleError() {
+    assertError("a=3.0 b=3 b=a", "declared as INT but expression is DOUBLE");
+    assertError("a=3 b=3.0 b=a", "declared as DOUBLE but expression is INT");
+  }
+
+  @Test
+  public void doubleUnaryError() {
+    assertError("a=3.0 a=!a", "Cannot apply ! operator to DOUBLE expression");
   }
 
   @Test

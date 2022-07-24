@@ -6,7 +6,7 @@ public enum TokenType {
   INT(true), // indicates the "int" keyword
   BOOL(true), // indicates the "bool" keyword
   STRING(true), // indicates the "string" keyword
-  FLOAT(true), // indicates the "float" keyword
+  DOUBLE(true), // indicates the "double" keyword
   LONG(true), // indicates the "long" keyword
   CHAR(true), // indicates the "char" keyword
   BYTE(true), // indicates the "byte" keyword

@@ -74,8 +74,28 @@ public class LexerTest {
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1234");
-    IntToken itt = (IntToken) token;
+    ConstToken<Integer> itt = (ConstToken<Integer>) token;
     assertThat(itt.value()).isEqualTo(1234);
+  }
+
+  @Test
+  public void floatToken() {
+    Lexer lexer = new Lexer("1234.5");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
+    assertThat(token.text()).isEqualTo("1234.5");
+    ConstToken<Double> itt = (ConstToken<Double>) token;
+    assertThat(itt.value()).isEqualTo(1234.5);
+  }
+
+  @Test
+  public void floatTokenJustADot() {
+    Lexer lexer = new Lexer("1234. next");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
+    assertThat(token.text()).isEqualTo("1234.0");
+    ConstToken<Double> itt = (ConstToken<Double>) token;
+    assertThat(itt.value()).isEqualTo(1234.);
   }
 
   @Test
@@ -107,7 +127,7 @@ public class LexerTest {
   @Test
   public void whiteSpace() {
     Lexer lexer = new Lexer("1\n\t 23");
-    IntToken token = (IntToken) lexer.nextToken();
+    ConstToken<Integer> token = (ConstToken<Integer>) lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
     assertThat(token.value()).isEqualTo(1);
@@ -116,7 +136,7 @@ public class LexerTest {
     assertThat(token.end().line()).isEqualTo(1);
     assertThat(token.end().column()).isEqualTo(2);
 
-    token = (IntToken) lexer.nextToken();
+    token = (ConstToken<Integer>) lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("23");
     assertThat(token.value()).isEqualTo(23);
@@ -143,7 +163,7 @@ public class LexerTest {
   public void keyword() {
     Lexer lexer =
         new Lexer(
-            "print PrintLN IF Else elif do while break continue int bool string float byte proc"
+            "print PrintLN IF Else elif do while break continue int bool string double byte proc"
                 + " return length asc chr exit and or not xor length new record");
 
     Token token = lexer.nextToken();
@@ -183,7 +203,7 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(TokenType.STRING);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.FLOAT);
+    assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.BYTE);
@@ -236,7 +256,7 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(TokenType.PRINT);
     assertThat(token.type().isKeyword()).isTrue();
 
-    IntToken intToken = (IntToken) lexer.nextToken();
+    ConstToken<Integer> intToken = (ConstToken<Integer>) lexer.nextToken();
     assertThat(intToken.type()).isEqualTo(TokenType.INT);
     assertThat(intToken.value()).isEqualTo(3);
 
