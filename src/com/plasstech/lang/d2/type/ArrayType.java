@@ -11,7 +11,7 @@ public class ArrayType implements VarType {
 
   @Override
   public String name() {
-    return String.format("%d-d ARRAY of %s", dimensions(), baseType.name());
+    return "ARRAY";
   }
 
   @Override
@@ -53,6 +53,6 @@ public class ArrayType implements VarType {
 
   @Override
   public String toString() {
-    return name();
+    return String.format("%d-d ARRAY of %s", dimensions(), baseType.name());
   }
 }

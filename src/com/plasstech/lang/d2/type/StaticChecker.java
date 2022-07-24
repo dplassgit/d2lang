@@ -4,9 +4,11 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
@@ -45,7 +47,7 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultVisitor implements Phase {
-  private static final Set<TokenType> COMPARISION_OPERATORS =
+  private static final ImmutableSet<TokenType> COMPARISION_OPERATORS =
       ImmutableSet.of(
           TokenType.AND,
           TokenType.OR,
@@ -56,7 +58,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           TokenType.GEQ,
           TokenType.NEQ);
 
-  private static final Set<TokenType> INT_OPERATORS =
+  // also works for bytes
+  private static final ImmutableSet<TokenType> INT_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -75,7 +78,20 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           TokenType.BIT_XOR,
           TokenType.BIT_AND);
 
-  private static final Set<TokenType> STRING_OPERATORS =
+  private static final ImmutableSet<TokenType> FLOAT_OPERATORS =
+      ImmutableSet.of(
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.LEQ,
+          TokenType.GEQ,
+          TokenType.NEQ,
+          TokenType.DIV,
+          TokenType.MINUS,
+          TokenType.MULT,
+          TokenType.PLUS);
+
+  private static final ImmutableSet<TokenType> STRING_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -88,10 +104,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           // , Token.Type.MOD // eventually
           );
 
-  private static final Set<TokenType> RECORD_COMPARATORS =
-      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
-
-  private static final Set<TokenType> BOOLEAN_OPERATORS =
+  private static final ImmutableSet<TokenType> BOOL_OPERATORS =
       ImmutableSet.of(
           TokenType.LT,
           TokenType.LEQ,
@@ -103,7 +116,48 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           TokenType.OR,
           TokenType.XOR);
 
-  // TODO(#14): implement EQEQ and NEQ for arrays
+  private static final Map<VarType, ImmutableSet<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
+      ImmutableMap.of(
+          VarType.INT,
+          INT_OPERATORS,
+          VarType.BOOL,
+          BOOL_OPERATORS,
+          VarType.STRING,
+          STRING_OPERATORS,
+          VarType.BYTE,
+          INT_OPERATORS,
+          VarType.FLOAT,
+          FLOAT_OPERATORS);
+
+  private static final ImmutableSet<TokenType> INT_UNARY_OPERATORS =
+      ImmutableSet.of(TokenType.MINUS, TokenType.PLUS, TokenType.BIT_NOT, TokenType.CHR);
+
+  private static final ImmutableSet<TokenType> FLOAT_UNARY_OPERATORS =
+      ImmutableSet.of(TokenType.MINUS, TokenType.PLUS);
+
+  private static final ImmutableSet<TokenType> STRING_UNARY_OPERATORS =
+      ImmutableSet.of(TokenType.LENGTH, TokenType.ASC);
+
+  private static final ImmutableSet<TokenType> BOOL_UNARY_OPERATORS =
+      ImmutableSet.of(TokenType.NOT);
+
+  private static final Map<VarType, ImmutableSet<TokenType>> UNARY_OPERATORS_BY_VARTYPE =
+      ImmutableMap.of(
+          VarType.INT,
+          INT_UNARY_OPERATORS,
+          VarType.BOOL,
+          BOOL_UNARY_OPERATORS,
+          VarType.STRING,
+          STRING_UNARY_OPERATORS,
+          VarType.BYTE,
+          INT_UNARY_OPERATORS,
+          VarType.FLOAT,
+          FLOAT_UNARY_OPERATORS);
+
+  private static final Set<TokenType> RECORD_COMPARATORS =
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
+
+  // TODO(#132): implement EQEQ and NEQ for arrays
   private static final Set<TokenType> ARRAY_OPERATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
 
@@ -245,8 +299,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
             } else if (!fieldType.compatibleWith(right.varType())) {
               throw new TypeException(
                   String.format(
-                      "field '%s' of RECORD '%s' declared as %s but RHS (%s) is %s",
-                      fieldName, record.name(), fieldType, right, right.varType()),
+                      "Field '%s' of RECORD '%s' declared as %s but expression is %s",
+                      fieldName, record.name(), fieldType, right.varType()),
                   lvalue.position());
             }
             lvalue.setVarType(fieldType);
@@ -267,12 +321,12 @@ public class StaticChecker extends DefaultVisitor implements Phase {
                 // It was already in the symbol table. Possible that it's wrong
                 throw new TypeException(
                     String.format(
-                        "variable '%s' declared as %s but RHS (%s) is %s",
-                        lvalue.name(), symbol.varType(), right, right.varType()),
+                        "Variable '%s' declared as %s but expression is %s",
+                        lvalue.name(), symbol.varType(), right.varType()),
                     lvalue.position());
               }
 
-              // TODO: if arrays, the dimensions must match.
+              // TODO: if arrays, the # of dimensions must match.
 
               symbol.setAssigned();
             }
@@ -414,23 +468,25 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     Node right = node.right();
     right.accept(this);
 
-    if (left.varType().isUnknown()) {
+    VarType leftType = left.varType();
+    if (leftType.isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", left), left.position());
     }
 
     // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
     TokenType operator = node.operator();
-    if (operator != TokenType.DOT && right.varType().isUnknown()) {
+    VarType rightType = right.varType();
+    if (operator != TokenType.DOT && rightType.isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
     if (operator == TokenType.DOT) {
-      if (!left.varType().isRecord()) {
-        // this is probably already handled, /shrug.
+      if (!leftType.isRecord()) {
         throw new TypeException(
-            String.format("Cannot apply DOT operator to %s expression", left.varType()),
+            String.format("Cannot apply DOT operator to %s expression; must be RECORD", leftType),
             left.position());
       }
+      // The parser probably won't allow this anyway
       if (!(right instanceof VariableNode)) {
         throw new TypeException(
             String.format("Invalid field reference %s (must be just field name)", right.toString()),
@@ -438,7 +494,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       }
 
       // Now get the record from the symbol table.
-      String recordName = left.varType().name();
+      String recordName = leftType.name();
       Symbol symbol = symbolTable().getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
         throw new TypeException(
@@ -460,80 +516,58 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     }
 
     // Check that they're not trying to, for example, multiply booleans
-    // TODO: CLEAN THIS UP
-    if (left.varType() == VarType.BOOL && !BOOLEAN_OPERATORS.contains(operator)) {
+    ImmutableSet<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
+    if (operators != null && !operators.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to BOOL expression", operator.name()),
+          String.format("Cannot apply %s operator to %s operand", operator, leftType),
           left.position());
     }
-    if (left.varType() == VarType.INT && !INT_OPERATORS.contains(operator)) {
+
+    if (leftType.isArray() && !ARRAY_OPERATORS.contains(operator)) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to INT expression", operator.name()),
-          left.position());
-    }
-    if (left.varType() == VarType.STRING && !STRING_OPERATORS.contains(operator)) {
-      throw new TypeException(
-          String.format("Cannot apply %s operator to STRING expression", operator.name()),
-          left.position());
-    }
-    if (left.varType().isArray() && !ARRAY_OPERATORS.contains(operator)) {
-      throw new TypeException(
-          String.format("Cannot apply %s operator to ARRAY expression", operator.name()),
-          left.position());
+          String.format("Cannot apply %s operand to ARRAY expression", operator), left.position());
     }
 
     // string[int] and array[int]
-    if (left.varType() == VarType.STRING && operator == TokenType.LBRACKET) {
-      if (right.varType() != VarType.INT) {
+    if (operator == TokenType.LBRACKET) {
+      if (rightType != VarType.INT) {
         throw new TypeException(
-            String.format("STRING index must be INT; was %s", right.varType()), right.position());
+            String.format("%s index must be INT; was %s", leftType.name(), rightType),
+            right.position());
       }
       if (right.isConstant()) {
         ConstNode<Integer> index = (ConstNode<Integer>) right;
         if (index.value() < 0) {
           throw new TypeException(
-              String.format("STRING index must be non-negative; was %d", index.value()),
+              String.format(
+                  "%s index must be non-negative; was %d", leftType.name(), index.value()),
               right.position());
         }
       }
-      node.setVarType(VarType.STRING);
-      // NOTE RETURN
-      return;
-
-    } else if (left.varType().isArray() && operator == TokenType.LBRACKET) {
-      if (right.varType() != VarType.INT) {
-        throw new TypeException(
-            String.format("ARRAY index must be INT; was %s", right.varType()), right.position());
-      }
-      if (right.isConstant()) {
-        ConstNode<Integer> index = (ConstNode<Integer>) right;
-        if (index.value() < 0) {
-          throw new TypeException(
-              String.format("ARRAY index must be non-negative; was %d", index.value()),
-              right.position());
-        }
+      if (leftType == VarType.STRING) {
+        node.setVarType(VarType.STRING);
+        // NOTE RETURN
+        return;
       }
 
-      // I hate this.
-      ArrayType arrayType = (ArrayType) left.varType();
+      // TODO: Generalize this, e.g., have a "baseType" method on VarType
+      ArrayType arrayType = (ArrayType) leftType;
       node.setVarType(arrayType.baseType());
       // NOTE RETURN
       return;
 
-    } else if (!left.varType().compatibleWith(right.varType())) {
+    } else if (!leftType.compatibleWith(rightType)) {
       throw new TypeException(
-          String.format(
-              "Type mismatch: %s is %s; %s is %s", left, left.varType(), right, right.varType()),
+          String.format("Type mismatch: %s is %s; %s is %s", left, leftType, right, rightType),
           left.position());
     }
 
-    if (((left.varType() == VarType.INT || left.varType() == VarType.STRING)
+    if (((leftType == VarType.INT || leftType == VarType.STRING)
             && COMPARISION_OPERATORS.contains(operator))
-        || ((left.varType().isRecord() || left.varType().isNull())
-            && RECORD_COMPARATORS.contains(operator))) {
+        || ((leftType.isRecord() || leftType.isNull()) && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
     } else {
-      node.setVarType(left.varType());
+      node.setVarType(leftType);
     }
   }
 
@@ -547,59 +581,46 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     Node expr = node.expr();
     expr.accept(this);
 
-    if (expr.varType().isUnknown()) {
+    VarType exprType = expr.varType();
+    if (exprType.isUnknown()) {
       throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
     }
 
     // Check that they're not trying to negate a boolean or "not" an int.
-    if (expr.varType() == VarType.BOOL && node.operator() != TokenType.NOT) {
+    ImmutableSet<TokenType> operators = UNARY_OPERATORS_BY_VARTYPE.get(exprType);
+    if (operators != null && !operators.contains(node.operator())) {
       throw new TypeException(
-          String.format("Cannot apply %s operator to BOOL expression", node.operator().name()),
-          expr.position());
+          String.format("Cannot apply %s operator to %s expression", node.operator(), exprType),
+          node.position());
     }
 
-    // General checks for each operator:
+    // Extra checks for some operators:
     switch (node.operator()) {
-      case MINUS:
-        if (expr.varType() != VarType.INT) {
-          throw new TypeException(
-              String.format("MINUS must take INT; was %s", expr.varType()), expr.position());
-        }
-        break;
-      case NOT:
-        if (expr.varType() != VarType.BOOL) {
-          throw new TypeException(
-              String.format("NOT must take BOOL; was %s", expr.varType()), expr.position());
-        }
-        break;
-      case BIT_NOT:
-        if (expr.varType() != VarType.INT) {
-          throw new TypeException(
-              String.format("! (binary not) must take INT; was %s", expr.varType()),
-              expr.position());
-        }
-        break;
       case LENGTH:
-        if (expr.varType() != VarType.STRING && !expr.varType().isArray()) {
+        if (exprType != VarType.STRING && !exprType.isArray()) {
           throw new TypeException(
-              String.format("LENGTH must take STRING or ARRAY; was %s", expr.varType()),
+              String.format(
+                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
+                  exprType),
               expr.position());
         }
         node.setVarType(VarType.INT);
         // NOTE RETURN
         return;
       case ASC:
-        if (expr.varType() != VarType.STRING) {
+        if (exprType != VarType.STRING) {
           throw new TypeException(
-              String.format("ASC must take STRING; was %s", expr.varType()), expr.position());
+              String.format("Cannot apply ASC function to %s expression; must be STRING", exprType),
+              expr.position());
         }
         node.setVarType(VarType.INT);
         // NOTE RETURN
         return;
       case CHR:
-        if (expr.varType() != VarType.INT) {
+        if (exprType != VarType.INT) {
           throw new TypeException(
-              String.format("CHR must take INT; was %s", expr.varType()), expr.position());
+              String.format("Cannot apply CHR function to %s expression; must be INT", exprType),
+              expr.position());
         }
         node.setVarType(VarType.STRING);
         // NOTE RETURN
@@ -608,7 +629,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         break;
     }
     // Output type is the same as input type, unless overridden in a "case", above.
-    node.setVarType(expr.varType());
+    node.setVarType(exprType);
   }
 
   @Override
@@ -618,7 +639,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       condition.accept(this);
       if (condition.varType() != VarType.BOOL) {
         throw new TypeException(
-            String.format("Condition for IF or ELIF must be BOOL; was %s", condition.varType()),
+            String.format(
+                "Cannot use %s expression in IF or ELIF; must be BOOL", condition.varType()),
             condition.position());
       }
       ifCase
@@ -645,7 +667,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     condition.accept(this);
     if (condition.varType() != VarType.BOOL) {
       throw new TypeException(
-          String.format("Condition for WHILE must be BOOL; was %s", condition.varType()),
+          String.format("Cannot use %s expression for WHILE; must be BOOL", condition.varType()),
           condition.position());
     }
     if (node.doStatement().isPresent()) {
@@ -850,8 +872,6 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
     /**
-     *
-     *
      * <pre>
      * If there's a top-level "return" in this block, return true
      * Else for each statement in the block:
@@ -906,8 +926,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       ExprNode expr = node.expr().get();
       expr.accept(this);
       if (expr.varType().isUnknown()) {
-        throw new TypeException(
-            String.format("Indeterminable type for RETURN statement %s", node), node.position());
+        throw new TypeException("Indeterminable type for RETURN statement", node.position());
       }
       node.setVarType(expr.varType());
     }
@@ -918,8 +937,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
     VarType actualReturnType = node.varType();
 
     if (actualReturnType.isUnknown()) {
-      throw new TypeException(
-          String.format("Indeterminable type for RETURN statement %s", node), node.position());
+      throw new TypeException("Indeterminable type for RETURN statement", node.position());
     }
 
     if (!proc.returnType().compatibleWith(actualReturnType)) {
@@ -938,12 +956,12 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       message.accept(this);
       VarType actualMessageType = message.varType();
       if (actualMessageType.isUnknown()) {
-        throw new TypeException(
-            String.format("Indeterminable type for EXIT message %s", node), node.position());
+        throw new TypeException("Indeterminable type for EXIT message", node.position());
       }
       if (message.varType() != VarType.STRING) {
         throw new TypeException(
-            String.format("EXIT message must be STRING; was %s", message.varType()),
+            String.format(
+                "Cannot use %s expression in EXIT message; must be STRING", message.varType()),
             message.position());
       }
     }

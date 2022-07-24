@@ -135,12 +135,12 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBoolConstantUnaryError() {
-    assertError("a=-true", "MINUS");
+    assertError("a=-true", "- operand");
   }
 
   @Test
   public void assignBoolUnaryError() {
-    assertError("a=true b=-a", "MINUS");
+    assertError("a=true b=-a", "- operand");
   }
 
   @Test
@@ -153,7 +153,7 @@ public class StaticCheckerTest {
   @Test
   public void lengthNotStringFailure() {
     assertError("a=length(false)", "Cannot apply LENGTH");
-    assertError("a=length(3)", "must take STRING");
+    assertError("a=length(3)", "Cannot apply LENGTH");
   }
 
   @Test
@@ -173,7 +173,7 @@ public class StaticCheckerTest {
   @Test
   public void ascError() {
     assertError("a=asc(false)", "Cannot apply ASC");
-    assertError("a=asc(3)", "must take STRING");
+    assertError("a=asc(3)", "Cannot apply ASC");
   }
 
   @Test
@@ -187,7 +187,7 @@ public class StaticCheckerTest {
   @Test
   public void chrError() {
     assertError("a=chr(false)", "Cannot apply CHR");
-    assertError("a=chr('hi')", "must take INT");
+    assertError("a=chr('hi')", "Cannot apply CHR");
   }
 
   @Test
@@ -409,7 +409,7 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayOperatorErrors(@TestParameter({"+", "-", "/", "%"}) String c) {
-    assertError(String.format("a1 = [1,2,3] %s [2,3,4]", c), "operator to ARRAY expression");
+    assertError(String.format("a1 = [1,2,3] %s [2,3,4]", c), " to ARRAY expression");
   }
 
   @Test
@@ -458,7 +458,7 @@ public class StaticCheckerTest {
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
     assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
-    assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT expression");
+    assertError("b=3 a=b[3]", "Cannot apply \\[ operator to INT operand");
   }
 
   @Test
@@ -473,8 +473,8 @@ public class StaticCheckerTest {
 
   @Test
   public void if_notBool_error() {
-    assertError("if 1 { print 2 }", "must be BOOL; was INT");
-    assertError("a=1 if a { print a }", "must be BOOL; was INT");
+    assertError("if 1 { print 2 }", "must be BOOL");
+    assertError("a=1 if a { print a }", "must be BOOL");
   }
 
   @Test
@@ -998,7 +998,7 @@ public class StaticCheckerTest {
   public void fieldGet_mismatch() {
     assertError("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i", "is INT");
     assertError("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i", "is INT");
-    assertError("ss='string' ss2=ss.i", "Cannot apply DOT operator");
+    assertError("ss='string' ss2=ss.i", "Cannot apply DOT operator to STRING");
   }
 
   @Test

@@ -56,12 +56,15 @@ import com.plasstech.lang.d2.type.VarType;
 public class Parser implements Phase {
 
   private static final ImmutableMap<TokenType, VarType> BUILTINS =
-      ImmutableMap.of(
-          TokenType.INT, VarType.INT,
-          TokenType.BOOL, VarType.BOOL,
-          TokenType.STRING, VarType.STRING,
-          TokenType.PROC, VarType.PROC,
-          TokenType.NULL, VarType.NULL);
+      ImmutableMap.<TokenType, VarType>builder()
+          .put(TokenType.INT, VarType.INT)
+          .put(TokenType.BOOL, VarType.BOOL)
+          .put(TokenType.STRING, VarType.STRING)
+          .put(TokenType.FLOAT, VarType.FLOAT)
+          .put(TokenType.BYTE, VarType.BYTE)
+          .put(TokenType.PROC, VarType.PROC)
+          .put(TokenType.NULL, VarType.NULL)
+          .build();
 
   private static final Set<TokenType> EXPRESSION_STARTS =
       ImmutableSet.of(
