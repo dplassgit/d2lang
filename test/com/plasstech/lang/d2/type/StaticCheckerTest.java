@@ -535,7 +535,7 @@ public class StaticCheckerTest {
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
     assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
-    assertError("b=3 a=b[3]", "Cannot apply \\[ operator to INT operand");
+    assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT operand");
   }
 
   @Test

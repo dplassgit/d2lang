@@ -47,17 +47,6 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultVisitor implements Phase {
-  private static final ImmutableSet<TokenType> COMPARISION_OPERATORS =
-      ImmutableSet.of(
-          TokenType.AND,
-          TokenType.OR,
-          TokenType.EQEQ,
-          TokenType.LT,
-          TokenType.GT,
-          TokenType.LEQ,
-          TokenType.GEQ,
-          TokenType.NEQ);
-
   // also works for bytes
   private static final ImmutableSet<TokenType> INT_OPERATORS =
       ImmutableSet.of(
@@ -116,18 +105,14 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           TokenType.OR,
           TokenType.XOR);
 
+  // NOTE: Does not include arrays or records.
   private static final Map<VarType, ImmutableSet<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
       ImmutableMap.of(
-          VarType.INT,
-          INT_OPERATORS,
-          VarType.BOOL,
-          BOOL_OPERATORS,
-          VarType.STRING,
-          STRING_OPERATORS,
-          VarType.BYTE,
-          INT_OPERATORS,
-          VarType.DOUBLE,
-          DOUBLE_OPERATORS);
+          VarType.INT, INT_OPERATORS,
+          VarType.BOOL, BOOL_OPERATORS,
+          VarType.STRING, STRING_OPERATORS,
+          VarType.BYTE, INT_OPERATORS,
+          VarType.DOUBLE, DOUBLE_OPERATORS);
 
   private static final ImmutableSet<TokenType> INT_UNARY_OPERATORS =
       ImmutableSet.of(TokenType.MINUS, TokenType.PLUS, TokenType.BIT_NOT, TokenType.CHR);
@@ -143,19 +128,29 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
   private static final Map<VarType, ImmutableSet<TokenType>> UNARY_OPERATORS_BY_VARTYPE =
       ImmutableMap.of(
-          VarType.INT,
-          INT_UNARY_OPERATORS,
-          VarType.BOOL,
-          BOOL_UNARY_OPERATORS,
-          VarType.STRING,
-          STRING_UNARY_OPERATORS,
-          VarType.BYTE,
-          INT_UNARY_OPERATORS,
-          VarType.DOUBLE,
-          DOUBLE_UNARY_OPERATORS);
+          VarType.INT, INT_UNARY_OPERATORS,
+          VarType.BOOL, BOOL_UNARY_OPERATORS,
+          VarType.STRING, STRING_UNARY_OPERATORS,
+          VarType.BYTE, INT_UNARY_OPERATORS,
+          VarType.DOUBLE, DOUBLE_UNARY_OPERATORS);
 
   private static final Set<TokenType> RECORD_COMPARATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
+
+  private static final ImmutableSet<TokenType> COMPARISION_OPERATORS =
+      ImmutableSet.of(
+          TokenType.AND,
+          TokenType.OR,
+          TokenType.EQEQ,
+          TokenType.LT,
+          TokenType.GT,
+          TokenType.LEQ,
+          TokenType.GEQ,
+          TokenType.NEQ);
+
+  /** VarTypes that can be compared using COMPARISON_OPERATORS */
+  private static final ImmutableSet<VarType> COMPARABLE_VARTYPES =
+      ImmutableSet.of(VarType.INT, VarType.STRING, VarType.BYTE, VarType.DOUBLE);
 
   // TODO(#132): implement EQEQ and NEQ for arrays
   private static final Set<TokenType> ARRAY_OPERATORS =
@@ -480,19 +475,15 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
 
-    if (operator == TokenType.DOT) {
-      if (!leftType.isRecord()) {
-        throw new TypeException(
-            String.format("Cannot apply DOT operator to %s expression; must be RECORD", leftType),
-            left.position());
-      }
-      // The parser probably won't allow this anyway
-      if (!(right instanceof VariableNode)) {
-        throw new TypeException(
-            String.format("Invalid field reference %s (must be just field name)", right.toString()),
-            right.position());
-      }
+    // Check that they're not trying to, for example, multiply booleans
+    ImmutableSet<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
+    if (operators != null && !operators.contains(operator)) {
+      throw new TypeException(
+          String.format("Cannot apply %s operator to %s operand", operator.name(), leftType),
+          left.position());
+    }
 
+    if (operator == TokenType.DOT) {
       // Now get the record from the symbol table.
       String recordName = leftType.name();
       Symbol symbol = symbolTable().getRecursive(recordName);
@@ -513,14 +504,6 @@ public class StaticChecker extends DefaultVisitor implements Phase {
       node.setVarType(fieldType);
       // NOTE: RETURN
       return;
-    }
-
-    // Check that they're not trying to, for example, multiply booleans
-    ImmutableSet<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
-    if (operators != null && !operators.contains(operator)) {
-      throw new TypeException(
-          String.format("Cannot apply %s operator to %s operand", operator, leftType),
-          left.position());
     }
 
     if (leftType.isArray() && !ARRAY_OPERATORS.contains(operator)) {
@@ -562,8 +545,9 @@ public class StaticChecker extends DefaultVisitor implements Phase {
           left.position());
     }
 
-    if (((leftType == VarType.INT || leftType == VarType.STRING)
-            && COMPARISION_OPERATORS.contains(operator))
+    // TODO: add arrays
+    if ((COMPARABLE_VARTYPES.contains(leftType) && COMPARISION_OPERATORS.contains(operator))
+        // || leftType.isArray && ARRAY_COMPARATORS.contains(operator)
         || ((leftType.isRecord() || leftType.isNull()) && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
     } else {
@@ -600,36 +584,23 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         if (exprType != VarType.STRING && !exprType.isArray()) {
           throw new TypeException(
               String.format(
-                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
+                  "Cannot aply LENGTH function to %s expression; must be ARRAY or STRING",
                   exprType),
               expr.position());
         }
         node.setVarType(VarType.INT);
-        // NOTE RETURN
-        return;
+        break;
       case ASC:
-        if (exprType != VarType.STRING) {
-          throw new TypeException(
-              String.format("Cannot apply ASC function to %s expression; must be STRING", exprType),
-              expr.position());
-        }
         node.setVarType(VarType.INT);
-        // NOTE RETURN
-        return;
+        break;
       case CHR:
-        if (exprType != VarType.INT) {
-          throw new TypeException(
-              String.format("Cannot apply CHR function to %s expression; must be INT", exprType),
-              expr.position());
-        }
         node.setVarType(VarType.STRING);
-        // NOTE RETURN
-        return;
+        break;
       default:
+        // Output type is the same as input type, except for cases, above.
+        node.setVarType(exprType);
         break;
     }
-    // Output type is the same as input type, unless overridden in a "case", above.
-    node.setVarType(exprType);
   }
 
   @Override
@@ -872,6 +843,8 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
     /**
+     *
+     *
      * <pre>
      * If there's a top-level "return" in this block, return true
      * Else for each statement in the block:
