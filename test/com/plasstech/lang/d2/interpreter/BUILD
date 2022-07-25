@@ -13,6 +13,7 @@ gen_java_tests(name="SmallTests",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/type",
         "@maven//:com_google_truth_truth",
+        "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:junit_junit",
     ],
     runtime_deps=[

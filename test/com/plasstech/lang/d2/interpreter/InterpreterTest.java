@@ -3,9 +3,13 @@ package com.plasstech.lang.d2.interpreter;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
 
+@RunWith(TestParameterInjector.class)
 public class InterpreterTest {
   @Test
   public void stringTest() {
@@ -347,6 +351,57 @@ public class InterpreterTest {
   @Test
   public void allocArray() {
     execute("a:int[2] print a[0]");
+  }
+
+  @Test
+  public void doubleUnary() throws Exception {
+    execute("a=3.0 b=-a print b", false);
+    execute("a=3.0 b=-a print b", true);
+  }
+
+  @Test
+  public void doubleBinOps(
+      @TestParameter({"+", "-", "*", "/"}) String op,
+      @TestParameter({"1234.5", "-234567.8"}) double first,
+      @TestParameter({"-1234.5", "234567.8"}) double second)
+      throws Exception {
+    execute(
+        String.format(
+            "a=%f b=%f c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
+            first, second, op, op, op, op),
+        false);
+  }
+
+  @Test
+  public void doubleCompOps(
+      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
+      @TestParameter({"0.0", "-1234.5", "34567.8"}) double second)
+      throws Exception {
+    execute(
+        String.format(
+            "      a=%f b=%f " //
+                + "c=a %s b print c " //
+                + "d=b %s a print d",
+            first, second, op, op),
+        false);
+  }
+
+  @Test
+  public void rounding() throws Exception {
+    Environment environment = execute("f=6.0 k=4./(5.+(4.-5.*f)) print k", false);
+    assertThat(environment.getValue("f")).isEqualTo(6.0);
+    assertThat(environment.getValue("k")).isEqualTo(4. / (5. + (4. - 5. * 6.)));
+  }
+
+  @Test
+  public void addToItself() throws Exception {
+    execute("a=3.1 a=a+10.1 print a", false);
+  }
+
+  @Test
+  public void assignDouble() throws Exception {
+    execute("a=3.4 b=a print b print a", false);
   }
 
   private Environment execute(String program, boolean optimize) {
