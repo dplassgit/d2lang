@@ -16,36 +16,20 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.VarType;
 
-/*
- * what should the output of this class be?
- *
- * map string -> string entry
- * where a string entry is:
- *    synthetic name
- *    AND:
- *      string
- *      OR
- *      other string entry plus offset
- * what's "name"? how will the code generator know what to use where?
- * thoughts:
- *  * codegen asks the string finder for a list of data entries  < easy
- *  * for each string codegen asks the string finder -- based on the constant - which name to reference
- */
+class DoubleFinder extends DefaultOpcodeVisitor {
+  private final DoubleTable doubleTable = new DoubleTable();
 
-class StringFinder extends DefaultOpcodeVisitor {
-  private final StringTable stringTable = new StringTable();
-
-  public StringTable execute(ImmutableList<Op> code) {
+  public DoubleTable execute(ImmutableList<Op> code) {
     for (Op opcode : code) {
       opcode.accept(this);
     }
-    return stringTable;
+    return doubleTable;
   }
 
   private void addEntry(Operand operand) {
-    if (operand.isConstant() && operand.type() == VarType.STRING) {
-      ConstantOperand<String> constOp = (ConstantOperand<String>) operand;
-      stringTable.addEntry(constOp.value());
+    if (operand.isConstant() && operand.type() == VarType.DOUBLE) {
+      ConstantOperand<Double> constOp = (ConstantOperand<Double>) operand;
+      doubleTable.addEntry(constOp.value());
     }
   }
 
