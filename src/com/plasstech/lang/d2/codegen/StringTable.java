@@ -26,16 +26,12 @@ class StringTable extends ConstTable<String> {
 
   @Override
   void add(String value) {
-    addEntry(value);
+    orderedEntries.clear();
+    values.add(value);
   }
 
   @Override
   List<? extends ConstEntry<String>> entries() {
-    return orderedEntries();
-  }
-
-  // Return the entries in lexicographic order
-  List<StringEntry> orderedEntries() {
     regenerateEntries();
     return orderedEntries;
   }
@@ -69,13 +65,6 @@ class StringTable extends ConstTable<String> {
         entries.put(entry.value(), entry);
       }
     }
-  }
-
-  /** @deprecated use add instead. */
-  @Deprecated
-  void addEntry(String value) {
-    orderedEntries.clear();
-    values.add(value);
   }
 
   private String generateName(String value) {

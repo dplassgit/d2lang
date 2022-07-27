@@ -16,10 +16,13 @@ public class Resolver implements RegistersInterface {
   private final Registers registers;
   private final StringTable stringTable;
   private final Emitter emitter;
+  private final DoubleTable doubleTable;
 
-  public Resolver(Registers registers, StringTable stringTable, Emitter emitter) {
+  public Resolver(
+      Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter emitter) {
     this.registers = registers;
     this.stringTable = stringTable;
+    this.doubleTable = doubleTable;
     this.emitter = emitter;
   }
 
@@ -41,6 +44,11 @@ public class Resolver implements RegistersInterface {
         // look it up in the string table.
         ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
         ConstEntry<String> entry = stringTable.lookup(stringConst.value());
+        return entry.name();
+      } else if (operand.type() == VarType.DOUBLE) {
+        // look it up in the string table.
+        ConstantOperand<Double> doubleConst = (ConstantOperand<Double>) operand;
+        ConstEntry<Double> entry = doubleTable.lookup(doubleConst.value());
         return entry.name();
       } else if (operand.type().isNull()) {
         return "0";

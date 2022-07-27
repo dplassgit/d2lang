@@ -89,10 +89,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private NullPointerCheckGenerator npeCheckGenerator;
   private ArrayCodeGenerator arrayGenerator;
 
+  private DoubleTable doubleTable;
+
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
-    resolver = new Resolver(registers, stringTable, emitter);
+    doubleTable = new DoubleFinder().execute(input.lastIlCode());
+    resolver = new Resolver(registers, stringTable, doubleTable, emitter);
     callGenerator = new CallGenerator(resolver, emitter);
     recordGenerator = new RecordGenerator(resolver, input.symbolTable(), emitter);
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
@@ -123,7 +126,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emitter.addData(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
       }
     }
-    for (StringEntry entry : stringTable.orderedEntries()) {
+    for (ConstEntry<String> entry : stringTable.entries()) {
+      emitter.addData(entry.dataEntry());
+    }
+    for (ConstEntry<Double> entry : doubleTable.entries()) {
       emitter.addData(entry.dataEntry());
     }
 
@@ -381,7 +387,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss", operator, leftType);
+          fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else if (leftType == VarType.BOOL) {
@@ -407,7 +413,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss", operator, leftType);
+          fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else if (leftType == VarType.INT) {
@@ -492,7 +498,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss", operator, leftType);
+          fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else if (leftType.isArray()) {
@@ -508,12 +514,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss yet", operator, leftType);
+          fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
-    } else {
+    } else if (leftType.isRecord()) {
       recordGenerator.generate(op);
+    } else {
+      fail("Cannot do %s on %ss (yet?)", operator, leftType);
     }
+
     if (tempReg != null) {
       registers.deallocate(tempReg);
     }

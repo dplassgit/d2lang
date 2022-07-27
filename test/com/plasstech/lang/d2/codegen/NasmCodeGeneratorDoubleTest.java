@@ -8,14 +8,21 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-@Ignore("Nasm code generation not implemented for doubles yet ")
 public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
+
   @Test
+  public void assignDouble() throws Exception {
+    execute("a=3.4", "assignDouble");
+  }
+
+  @Test
+  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void doubleUnary() throws Exception {
     execute("a=3.0 b=-a print b", "doubleUnary");
   }
 
   @Test
+  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void doubleBinOps(
       @TestParameter({"+", "-", "*", "/"}) String op,
       @TestParameter({"1234.5", "-234567.8"}) double first,
@@ -29,6 +36,7 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void doubleCompOps(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
       @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
@@ -109,12 +117,14 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   */
 
   @Test
+  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void addToItself() throws Exception {
     execute("a=3.1 a=a+10.1 print a", "addToItself");
   }
 
   @Test
-  public void assignDouble() throws Exception {
+  @Ignore("Nasm code generation not implemented for doubles yet ")
+  public void printDouble() throws Exception {
     execute("a=3.4 b=a print b print a", "assignDouble");
   }
 }
