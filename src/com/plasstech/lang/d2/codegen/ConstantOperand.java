@@ -25,6 +25,10 @@ public class ConstantOperand<T> implements Operand {
     return new ConstantOperand<Integer>(value, VarType.INT);
   }
 
+  public static Operand of(double value) {
+    return new ConstantOperand<Double>(value, VarType.DOUBLE);
+  }
+
   public static ConstantOperand<Boolean> of(boolean value) {
     if (value) {
       return TRUE;

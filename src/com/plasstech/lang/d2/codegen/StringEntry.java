@@ -1,27 +1,13 @@
 package com.plasstech.lang.d2.codegen;
 
-abstract class StringEntry {
-
-  private final String name;
-  private final String value;
-
+/** Represents a string constant in the data section of the nasm file. */
+abstract class StringEntry extends ConstEntry<String> {
   StringEntry(String name, String value) {
-    this.name = name;
-    this.value = value;
+    super(name, value);
   }
-
-  abstract String dataEntry();
 
   @Override
   public String toString() {
     return dataEntry();
-  }
-
-  String name() {
-    return name;
-  }
-
-  String value() {
-    return value;
   }
 }

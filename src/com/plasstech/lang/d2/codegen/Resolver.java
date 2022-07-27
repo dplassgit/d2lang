@@ -40,7 +40,7 @@ public class Resolver implements RegistersInterface {
       } else if (operand.type() == VarType.STRING) {
         // look it up in the string table.
         ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
-        StringEntry entry = stringTable.lookup(stringConst.value());
+        ConstEntry<String> entry = stringTable.lookup(stringConst.value());
         return entry.name();
       } else if (operand.type().isNull()) {
         return "0";

@@ -10,7 +10,7 @@ public class StringTableTest {
   @Test
   public void addEntry_one() {
     table.addEntry("constant");
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");
     assertThat(entry).isInstanceOf(StringConstant.class);
     assertThat(table.size()).isEqualTo(1);
@@ -33,12 +33,12 @@ public class StringTableTest {
   @Test
   public void addEntry_twoUnrelated() {
     table.addEntry("constant");
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");
     assertThat(entry).isInstanceOf(StringConstant.class);
 
     table.addEntry("different");
-    StringEntry entry2 = table.lookup("different");
+    ConstEntry<String> entry2 = table.lookup("different");
     assertThat(entry2.value()).isEqualTo("different");
     assertThat(entry2).isInstanceOf(StringConstant.class);
   }
@@ -46,7 +46,7 @@ public class StringTableTest {
   @Test
   public void addEntry_twoRelated() {
     table.addEntry("constant");
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");
     assertThat(entry).isInstanceOf(StringConstant.class);
 
@@ -61,12 +61,12 @@ public class StringTableTest {
   @Test
   public void addEntry_twoRelatedReverse() {
     table.addEntry("constant");
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");
     assertThat(entry).isInstanceOf(StringConstant.class);
 
     table.addEntry("unconstant");
-    StringEntry entry2 = table.lookup("unconstant");
+    ConstEntry<String> entry2 = table.lookup("unconstant");
     assertThat(entry2.value()).isEqualTo("unconstant");
     assertThat(entry2).isInstanceOf(StringConstant.class);
 
@@ -81,7 +81,7 @@ public class StringTableTest {
     table.addEntry("t");
     table.addEntry("tant");
 
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     RelativeStringConstant entry3 = (RelativeStringConstant) table.lookup("t");
     assertThat(entry3.value()).isEqualTo("t");
     assertThat(entry3.offset()).isEqualTo(7);
@@ -98,13 +98,13 @@ public class StringTableTest {
     table.addEntry("differently");
     table.addEntry("different from");
 
-    StringEntry entry = table.lookup("constant");
+    ConstEntry<String> entry = table.lookup("constant");
     assertThat(entry.value()).isEqualTo("constant");
-    StringEntry entry2 = table.lookup("tant");
+    ConstEntry<String> entry2 = table.lookup("tant");
     assertThat(entry2.value()).isEqualTo("tant");
-    StringEntry entry3 = table.lookup("t");
+    ConstEntry<String> entry3 = table.lookup("t");
     assertThat(entry3.value()).isEqualTo("t");
-    StringEntry entry4 = table.lookup("different");
+    ConstEntry<String> entry4 = table.lookup("different");
     assertThat(entry4.value()).isEqualTo("different");
   }
 
@@ -116,13 +116,13 @@ public class StringTableTest {
     table.addEntry("ant");
 
     System.err.println(table.orderedEntries());
-    StringEntry entry = table.lookup("tant");
+    ConstEntry<String> entry = table.lookup("tant");
     assertThat(entry.value()).isEqualTo("tant");
-    StringEntry entry2 = table.lookup("t, ant");
+    ConstEntry<String> entry2 = table.lookup("t, ant");
     assertThat(entry2.value()).isEqualTo("t, ant");
-    StringEntry entry3 = table.lookup("t,ant");
+    ConstEntry<String> entry3 = table.lookup("t,ant");
     assertThat(entry3.value()).isEqualTo("t,ant");
-    StringEntry entry4 = table.lookup("ant");
+    ConstEntry<String> entry4 = table.lookup("ant");
     assertThat(entry4.value()).isEqualTo("ant");
   }
 }

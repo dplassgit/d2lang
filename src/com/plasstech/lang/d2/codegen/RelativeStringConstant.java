@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+/** Represents a string constant that is defined relative to another string constant. */
 class RelativeStringConstant extends StringEntry {
 
   private final int offset;

@@ -1,16 +1,26 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
-class DoubleTable {
-  private final Map<Double, String> entries = new HashMap<>();
+/** Stores a table of DoubleEntry values, mapped by... double value. */
+class DoubleTable extends ConstTable<Double> {
+  private final Map<Double, DoubleEntry> entries = new HashMap<>();
   private int index;
 
-  void addEntry(double value) {
-    entries.put(value, generateName(value));
+  @Override
+  void add(Double value) {
+    Preconditions.checkNotNull(value, "Double value cannot be null");
+    entries.put(value, new DoubleEntry(generateName(value), value));
+  }
+
+  @Override
+  List<? extends ConstEntry<Double>> entries() {
+    return ImmutableList.copyOf(entries.values());
   }
 
   private String generateName(double value) {
@@ -27,7 +37,8 @@ class DoubleTable {
     return String.format("DOUBLE_%s_%d", sanitizedNameValue, index++);
   }
 
-  String lookup(double value) {
+  @Override
+  ConstEntry<Double> lookup(Double value) {
     Preconditions.checkState(
         entries.containsKey(value), "Does not contain value %s: %s", value, entries);
     return entries.get(value);

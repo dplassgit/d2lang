@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 
+/** Represents an absolute string constant in the data section of the nasm file. */
 class StringConstant extends StringEntry {
   private static final Map<Character, Integer> ESCAPES =
       ImmutableMap.of(

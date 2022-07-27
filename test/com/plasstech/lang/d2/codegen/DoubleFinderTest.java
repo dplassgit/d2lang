@@ -15,51 +15,55 @@ public class DoubleFinderTest {
   public void noCode() {
     ImmutableList<Op> ops = ImmutableList.of();
     DoubleTable table = df.execute(ops);
-    assertThat(table.orderedEntries()).isEmpty();
+    assertThat(table.entries()).isEmpty();
   }
 
   @Test
-  public void noStrings() {
+  public void noDoubles() {
     ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(true)));
     DoubleTable table = df.execute(ops);
-    assertThat(table.orderedEntries()).isEmpty();
+    assertThat(table.entries()).isEmpty();
   }
 
   @Test
-  public void oneString() {
-    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of("hi")));
+  public void oneDouble() {
+    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(3.14)));
     DoubleTable table = df.execute(ops);
-    assertThat(table.orderedEntries()).hasSize(1);
+    assertThat(table.entries()).hasSize(1);
   }
 
   @Test
-  public void twoNonOverlappingStrings() {
+  public void twoDoubles() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("there")));
+            new Transfer(null, ConstantOperand.of(3.14)),
+            new Transfer(null, ConstantOperand.of(5.1)));
     DoubleTable table = df.execute(ops);
-    assertThat(table.orderedEntries()).hasSize(2);
+    assertThat(table.entries()).hasSize(2);
   }
 
   @Test
-  public void twoOverlappingStrings() {
+  public void twoDoublesAndOthers() {
     ImmutableList<Op> ops =
         ImmutableList.of(
+            new Transfer(null, ConstantOperand.of(3.14)),
             new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("ohhi")));
+            new Transfer(null, ConstantOperand.of(3)),
+            new Transfer(null, ConstantOperand.of(true)),
+            new Transfer(null, ConstantOperand.of(5.1)));
     DoubleTable table = df.execute(ops);
-    // Still has size 2, though one references the other.
-    assertThat(table.orderedEntries()).hasSize(2);
+    assertThat(table.entries()).hasSize(2);
   }
 
   @Test
-  public void twoIdenticalStrings() {
+  public void twoIdenticalDoubles() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("hi")));
+            new Transfer(null, ConstantOperand.of(3.14)),
+            new Transfer(null, ConstantOperand.of(3.14)));
     DoubleTable table = df.execute(ops);
-    assertThat(table.orderedEntries()).hasSize(1);
+    assertThat(table.entries()).hasSize(1);
+    ConstEntry<Double> entry = table.lookup(3.14);
+    assertThat(entry.value()).isEqualTo(3.14);
   }
 }
