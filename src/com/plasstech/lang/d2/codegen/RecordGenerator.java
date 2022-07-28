@@ -49,7 +49,7 @@ class RecordGenerator {
     npeCheckGenerator.generateNullPointerCheck(op, op.recordLocation());
 
     String recordLoc = resolver.resolve(op.recordLocation());
-    Register calcReg = resolver.allocate();
+    Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
     emitter.emit(
         "mov %s, %s  ; put record location in register for calculations", calcReg, recordLoc);
@@ -75,7 +75,7 @@ class RecordGenerator {
       emitter.emit("mov %s [%s], %s  ; store it!", size, calcReg, sourceName);
     } else {
       // need an indirection, ugh.
-      Register indirectReg = resolver.allocate();
+      Register indirectReg = resolver.allocate(VarType.INT);
       emitter.emit("; allocated %s for calculations", indirectReg);
       emitter.emit(
           "mov %s %s, %s  ; get value to store",
@@ -94,7 +94,7 @@ class RecordGenerator {
         break;
       case EQEQ:
       case NEQ:
-        Register tempReg = resolver.allocate();
+        Register tempReg = resolver.allocate(VarType.INT);
         String leftName = resolver.resolve(op.left());
         String rightName = resolver.resolve(op.right());
         String destName = resolver.resolve(op.destination());
@@ -120,7 +120,7 @@ class RecordGenerator {
     RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(type.name());
 
     String recordLoc = resolver.resolve(op.left());
-    Register calcReg = resolver.allocate();
+    Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
     emitter.emit(
         "mov %s, %s  ; put record location in register for calculations", calcReg, recordLoc);
@@ -153,7 +153,7 @@ class RecordGenerator {
       emitter.emit("mov %s %s, [%s]  ; store it!", size, destName, calcReg);
     } else {
       // need an indirection, ugh.
-      Register indirectReg = resolver.allocate();
+      Register indirectReg = resolver.allocate(VarType.INT);
       emitter.emit("; allocated %s for calculations", indirectReg);
       emitter.emit(
           "mov %s %s, %s  ; get value to get",

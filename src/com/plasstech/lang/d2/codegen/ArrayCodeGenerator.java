@@ -7,6 +7,7 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.VarType;
 
 /** Generates nasm code for array manipulation. */
 class ArrayCodeGenerator {
@@ -94,7 +95,7 @@ class ArrayCodeGenerator {
     Register numEntriesReg = null;
     if (!(resolver.isInAnyRegister(numEntriesLoc) || numEntriesLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
-      numEntriesReg = resolver.allocate();
+      numEntriesReg = resolver.allocate(VarType.INT);
       emitter.emit(
           "; numEntriesLoc (%s) is not in a register; putting it into %s",
           numEntriesLoc, numEntriesReg);
@@ -118,7 +119,7 @@ class ArrayCodeGenerator {
       emitter.emit("mov %s, [%s + 1]  ; get length from first dimension", destName, sourceName);
     } else {
       // if source is not a register we have to allocate a register first
-      Register tempReg = resolver.allocate();
+      Register tempReg = resolver.allocate(VarType.INT);
       emitter.emit("mov %s, %s  ; get array location into reg", tempReg, sourceName);
       emitter.emit("mov %s, [%s + 1]  ; get length from first dimension", destName, tempReg);
       resolver.deallocate(tempReg);
@@ -139,7 +140,7 @@ class ArrayCodeGenerator {
     Register sourceReg = null;
     if (!(resolver.isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
-      sourceReg = resolver.allocate();
+      sourceReg = resolver.allocate(VarType.INT);
       emitter.emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
       String sourceRegisterSized = sourceReg.sizeByType(arrayType.baseType());
       emitter.emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
@@ -174,7 +175,7 @@ class ArrayCodeGenerator {
       String arrayLoc,
       boolean arrayLiteral,
       Position position) {
-    Register lengthReg = resolver.allocate();
+    Register lengthReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated %s for calculations", lengthReg);
     if (indexLoc.isConstant()) {
       // if index is constant, can skip some of this calculation.

@@ -10,6 +10,7 @@ LOCATION_SRCS = [
 
 REGISTERS_SRCS = [
   "IntRegister.java",
+  "MmxRegister.java",
   "Registers.java",
   "Register.java",
   "RegistersInterface.java",

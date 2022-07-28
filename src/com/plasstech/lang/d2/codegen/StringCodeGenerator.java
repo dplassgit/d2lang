@@ -131,7 +131,7 @@ class StringCodeGenerator {
         emitter.emit("mov %s, %s", destName, stringName);
       } else {
         // both are not in registers - use one to transfer.
-        Register tempReg = registers.allocate();
+        Register tempReg = registers.allocate(VarType.INT);
         emitter.emit("; index is 0, neither in a register; allocated %s", tempReg);
         emitter.emit("mov %s, %s", tempReg, stringName);
         emitter.emit("mov %s, %s", destName, tempReg);
@@ -144,7 +144,7 @@ class StringCodeGenerator {
         emitter.emit("mov %s, %s", destReg.sizeByType(index.type()), indexName);
         emitter.emit("add %s, %s", destReg, stringName);
       } else {
-        Register tempReg = registers.allocate();
+        Register tempReg = registers.allocate(VarType.INT);
         emitter.emit("; dest not in reg; allocated %s as tempReg", tempReg);
         emitter.emit("mov %s, %s", tempReg.sizeByType(index.type()), indexName);
         emitter.emit("add %s, %s", tempReg, stringName);
@@ -164,9 +164,9 @@ class StringCodeGenerator {
     // 2. copy the location to the dest
     emitter.emit("mov %s, RAX  ; destination from rax", destName);
 
-    Register indexReg = registers.allocate();
+    Register indexReg = registers.allocate(VarType.INT);
     emitter.emit("; allocated indexReg to %s", indexReg);
-    Register charReg = registers.allocate();
+    Register charReg = registers.allocate(VarType.INT);
     emitter.emit("; allocated charReg to %s", charReg);
     // 3. get the string
     emitter.emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
@@ -195,12 +195,12 @@ class StringCodeGenerator {
     npeCheckGenerator.generateNullPointerCheck(op, right);
 
     // 1. get left length
-    Register leftLengthReg = registers.allocate();
+    Register leftLengthReg = registers.allocate(VarType.INT);
     emitter.emit0("");
     emitter.emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
     // 2. get right length
-    Register rightLengthReg = registers.allocate();
+    Register rightLengthReg = registers.allocate(VarType.INT);
     // TODO: if leftLengthReg is volatile, push it first (?!)
     emitter.emit0("");
     emitter.emit("; Get right length into %s:", rightLengthReg);
@@ -327,7 +327,7 @@ class StringCodeGenerator {
       emitter.emit("mov %s, RAX  ; copy string location from RAX", destName);
     }
 
-    Register charReg = registers.allocate();
+    Register charReg = registers.allocate(VarType.INT);
     // 3. get source char as character
     emitter.emit(
         "mov DWORD %s, %s  ; get the character int into %s", charReg.name32(), sourceName, charReg);

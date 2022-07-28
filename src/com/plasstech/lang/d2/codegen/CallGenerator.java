@@ -33,7 +33,7 @@ class CallGenerator {
         Register sourceReg = resolver.toRegister(op.actuals().get(j));
         if (reg == sourceReg) {
           // it means we're being copied to a later register.
-          Register alias = resolver.allocate();
+          Register alias = resolver.allocate(VarType.INT);
           sourceToAlias.put(reg, alias);
           emitter.emit("mov %s, %s  ; stash in alias", alias, reg);
           break;

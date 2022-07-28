@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.type.VarType;
 
 public class Registers implements RegistersInterface {
   // these are the USED registers
@@ -17,7 +18,17 @@ public class Registers implements RegistersInterface {
   }
 
   @Override
-  public Register allocate() {
+  public Register allocate(VarType varType) {
+    if (varType == VarType.DOUBLE) {
+      // find one to return
+      for (Register r : MmxRegister.values()) {
+        if (!used.contains(r)) {
+          used.add(r);
+          return r;
+        }
+      }
+      throw new D2RuntimeException("IllegalStateException", null, "No MMX registers left");
+    }
     // find one to return
     for (Register r : IntRegister.values()) {
       if (!used.contains(r)) {

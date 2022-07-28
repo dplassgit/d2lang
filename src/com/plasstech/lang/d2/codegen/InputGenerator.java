@@ -37,7 +37,7 @@ class InputGenerator {
     emitter.emit("mov RDX, %d; allocate 1mb", ONE_MB);
     emitter.emit("mov RCX, 1");
     emitter.emitExternCall("calloc");
-    Register tempReg = resolver.allocate();
+    Register tempReg = resolver.allocate(operand.type());
     emitter.emit("; allocated %s as temp reg", tempReg);
     // TODO: this register might be munged by subsequent calls...
     emitter.emit("mov %s, RAX", tempReg.name64());

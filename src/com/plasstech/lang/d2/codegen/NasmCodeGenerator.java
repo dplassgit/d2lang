@@ -207,7 +207,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       } else {
         // move from sourceLoc to temp
         // then from temp to dest
-        Register tempReg = registers.allocate();
+        Register tempReg = registers.allocate(VarType.INT);
         String tempName = tempReg.sizeByType(op.source().type());
         // TODO: this can be short-circuited too if dest is a register
         emit("mov %s, %s", tempName, sourceLoc);
@@ -226,7 +226,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // go right from source to dest
         emit("mov %s %s, %s", size, destLoc, sourceLoc);
       } else {
-        Register tempReg = registers.allocate();
+        Register tempReg = registers.allocate(VarType.INT);
         String tempName = tempReg.sizeByType(op.source().type());
         emit("mov %s %s, %s", size, tempName, sourceLoc);
         emit("mov %s %s, %s", size, destLoc, tempName);
@@ -348,7 +348,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = registers.allocate();
+          tempReg = registers.allocate(VarType.INT);
           emit("mov BYTE %s, %s ; compare setup", tempReg.name8(), leftName);
           emit("cmp %s, %s", tempReg.name8(), rightName);
           emit("%s %s ; bool compare %s", BINARY_OPCODE.get(operator), destName, operator);
@@ -384,7 +384,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             Register rightReg = null;
             VarType rightType = op.right().type();
             if (resolver.isInRegister(op.right(), RCX)) {
-              rightReg = resolver.allocate();
+              rightReg = resolver.allocate(VarType.INT);
               Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, rightType);
               emit(
                   "mov %s, %s  ; saving right to a different register",
@@ -393,7 +393,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             }
             Register destReg = null;
             if (resolver.isInRegister(op.destination(), RCX)) {
-              destReg = resolver.allocate();
+              destReg = resolver.allocate(VarType.INT);
               Location destOp =
                   new RegisterLocation(op.destination().name(), destReg, op.destination().type());
               emit("mov %s, %s  ; saving dest to a different register", destReg, destName);
@@ -428,7 +428,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = registers.allocate();
+          tempReg = registers.allocate(VarType.INT);
           emit("mov %s %s, %s ; int compare setup", size, tempReg.name32(), leftName);
           emit("cmp %s, %s", tempReg.name32(), rightName);
           emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
@@ -505,7 +505,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
-    Register temp = registers.allocate();
+    Register temp = registers.allocate(VarType.INT);
     if (!leftName.equals(RAX.name32())) { // TODO: don't use .equals
       emit("mov EAX, %s  ; numerator", leftName);
     } else {
@@ -590,7 +590,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         npeCheckGenerator.generateNullPointerCheck(op, source);
         // move from sourceLoc to temp
         // then from temp to dest
-        Register tempReg = registers.allocate();
+        Register tempReg = registers.allocate(VarType.INT);
         // Just read one byte
         if (source.isConstant()) {
           emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8(), sourceName);

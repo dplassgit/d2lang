@@ -1,0 +1,42 @@
+package com.plasstech.lang.d2.codegen;
+
+import com.plasstech.lang.d2.type.VarType;
+
+public enum MmxRegister implements Register {
+  XMM0,
+  XMM1,
+  XMM2,
+  XMM3,
+  XMM4,
+  XMM5,
+  XMM6,
+  XMM7,
+  XMM8,
+  XMM9,
+  XMM10,
+  XMM11,
+  XMM12,
+  XMM13,
+  XMM14,
+  XMM15;
+
+  @Override
+  public String name8() {
+    throw new UnsupportedOperationException("Cannot get name8 of mmx");
+  }
+
+  @Override
+  public String name32() {
+    throw new UnsupportedOperationException("Cannot get name16 of mmx");
+  }
+
+  @Override
+  public String name64() {
+    return name();
+  }
+
+  @Override
+  public String sizeByType(VarType type) {
+    return name();
+  }
+}

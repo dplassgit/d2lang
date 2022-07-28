@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.type.VarType;
 
 public class RegisterStateTest {
 
@@ -19,14 +20,14 @@ public class RegisterStateTest {
 
   @Test
   public void condPushSomethingAllocatedDontCare() {
-    registers.allocate();
+    registers.allocate(VarType.INT);
     // emitter is null, but since we don't care about RBX it shouldn't care.
     RegisterState.condPush(null, registers, ImmutableList.of());
   }
 
   @Test
   public void condPushSomethingAllocated() {
-    Register register = registers.allocate();
+    Register register = registers.allocate(VarType.INT);
     assertThat(register).isEqualTo(IntRegister.RBX);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
@@ -35,7 +36,7 @@ public class RegisterStateTest {
 
   @Test
   public void condPopOne() {
-    Register register = registers.allocate();
+    Register register = registers.allocate(VarType.INT);
     assertThat(register).isEqualTo(IntRegister.RBX);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, ImmutableList.of(register));

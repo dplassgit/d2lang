@@ -72,7 +72,7 @@ public class Resolver implements RegistersInterface {
     switch (location.storage()) {
       case TEMP:
         // TODO: deal with out-of-registers
-        reg = registers.allocate();
+        reg = registers.allocate(VarType.INT);
         aliases.put(location.name(), reg);
         emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
@@ -99,18 +99,6 @@ public class Resolver implements RegistersInterface {
       return null;
     }
     return reg.sizeByType(varType);
-  }
-
-  /** Allocate and return a register. */
-  @Override
-  public Register allocate() {
-    return registers.allocate();
-  }
-
-  /** Deallocate the given register. */
-  @Override
-  public void deallocate(Register register) {
-    registers.deallocate(register);
   }
 
   /** If the operand is a temp and was allocated, deallocate its register. */
@@ -176,13 +164,25 @@ public class Resolver implements RegistersInterface {
     return String.format("_%s_%d", prefix, id++);
   }
 
-  @Override
-  public boolean isAllocated(Register r) {
-    return registers.isAllocated(r);
-  }
-
+  /** Allocate and return a register. */
   @Override
   public Register reserve(Register r) {
     return registers.reserve(r);
+  }
+
+  @Override
+  public Register allocate(VarType varType) {
+    return registers.allocate(varType);
+  }
+
+  /** Deallocate the given register. */
+  @Override
+  public void deallocate(Register register) {
+    registers.deallocate(register);
+  }
+
+  @Override
+  public boolean isAllocated(Register r) {
+    return registers.isAllocated(r);
   }
 }
