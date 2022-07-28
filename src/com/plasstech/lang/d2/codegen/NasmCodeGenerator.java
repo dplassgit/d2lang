@@ -71,12 +71,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final String DIV_BY_ZERO_ERR =
       "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
 
-  private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
-  private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
-  private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
-  private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
-  private static final String CONST_NULL = "CONST_NULL: db \"null\", 0";
-
   private final List<String> prelude = new ArrayList<>();
   private final Registers registers = new Registers();
   private final Emitter emitter = new ListEmitter();
@@ -88,6 +82,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private StringCodeGenerator stringGenerator;
   private NullPointerCheckGenerator npeCheckGenerator;
   private ArrayCodeGenerator arrayGenerator;
+  private InputGenerator inputGenerator;
+  private PrintGenerator printGenerator;
 
   private DoubleTable doubleTable;
 
@@ -101,6 +97,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
     stringGenerator = new StringCodeGenerator(resolver, emitter);
     arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
+    inputGenerator = new InputGenerator(resolver, registers, emitter);
+    printGenerator = new PrintGenerator(resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -256,73 +254,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(SysCall op) {
     Operand arg = op.arg();
+    String argVal = resolver.resolve(arg);
     // need to preserve used registers!
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
-        String argVal = resolver.resolve(arg);
-        if (arg.type() == VarType.INT) {
-          // move with sign extend. intentionally set rdx first, in case the arg is in ecx
-          emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
-          emitter.addData(PRINTF_NUMBER_FMT);
-          emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
-          emitter.emitExternCall("printf");
-        } else if (arg.type() == VarType.BOOL) {
-          if (argVal.equals("1")) {
-            emitter.addData(CONST_TRUE);
-            emit("mov RCX, CONST_TRUE");
-          } else if (argVal.equals("0")) {
-            emitter.addData(CONST_FALSE);
-            emit("mov RCX, CONST_FALSE");
-          } else {
-            // translate dynamically from 0/1 to false/true
-            // Intentionally do the comp first, in case the arg is in dl or cl
-            emit("cmp BYTE %s, 1", argVal);
-            emitter.addData(CONST_FALSE);
-            emit("mov RCX, CONST_FALSE");
-            emitter.addData(CONST_TRUE);
-            emit("mov RDX, CONST_TRUE");
-            // Conditional move
-            emit("cmovz RCX, RDX");
-          }
-          emitter.emitExternCall("printf");
-        } else if (arg.type() == VarType.STRING) {
-          // String
-          if (op.call() == SysCall.Call.MESSAGE) {
-            // Intentionally set rdx first in case the arg is in rcx
-            if (!resolver.isInRegister(arg, RDX)) {
-              // arg is not in rdx yet
-              emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
-            }
-            emitter.addData(EXIT_MSG);
-            emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
-          } else if (!resolver.isInRegister(arg, RCX)) {
-            // arg is not in rcx yet
-            emit("mov RCX, %s  ; String to print", argVal);
-          }
-          if (!arg.isConstant()) {
-            // if null, print null
-            emit("cmp QWORD RCX, 0");
-            String notNullLabel = resolver.nextLabel("not_null");
-            emit("jne _%s", notNullLabel);
-            emitter.addData(CONST_NULL);
-            emit("mov RCX, CONST_NULL  ; constant 'null'");
-            emit0("_%s:", notNullLabel);
-          }
-          emitter.emitExternCall("printf");
-        } else if (arg.type() == VarType.NULL) {
-          emitter.addData(CONST_NULL);
-          emit("mov RCX, CONST_NULL  ; constant 'null'");
-          emitter.emitExternCall("printf");
-        } else {
-          fail("Cannot print %ss yet", arg.type());
-        }
+        printGenerator.generate(op);
         break;
       case INPUT:
-        InputGenerator generator = new InputGenerator(resolver, registers, emitter);
-        generator.generate(arg);
+        inputGenerator.generate(arg);
         break;
       default:
         fail("Cannot generate %s yet", op);
