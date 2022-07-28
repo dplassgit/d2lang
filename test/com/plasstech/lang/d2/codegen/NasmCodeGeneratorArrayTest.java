@@ -161,9 +161,11 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     // If it's not optimized, the size constant won't be propagated.
     assumeTrue(optimize);
     assertGenerateError(
-        "f:proc() {size=-3 x:string[size] print length(x)} f()", "must be positive; was -3");
+        "f:proc() {size=-3 x:string[size] print length(x)} f()",
+        "ARRAY size must be positive; was -3");
     assertGenerateError(
-        "f:proc() {size=-3 x:string[size-size] print length(x)} f()", "must be positive; was 0");
+        "f:proc() {size=-3 x:string[size-size] print length(x)} f()",
+        "ARRAY size must be positive; was 0");
   }
 
   @Test
@@ -184,7 +186,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     assumeTrue(optimize);
     assertGenerateError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "must be non-negative; was -3");
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
@@ -194,7 +196,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
         "arraySetIndexLocalNegative_error",
-        "must be non-negative; was -3");
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
@@ -211,7 +213,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     // see next test for assumeFalse(optimize)
     assumeTrue(optimize);
     assertGenerateError(
-        "f:proc() {y=-3 x:string[1] print x[y]} f()", "must be non-negative; was -3");
+        "f:proc() {y=-3 x:string[1] print x[y]} f()", "ARRAY index must be non-negative; was -3");
   }
 
   @Test
