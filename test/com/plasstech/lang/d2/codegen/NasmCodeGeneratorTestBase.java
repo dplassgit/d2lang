@@ -159,7 +159,7 @@ public class NasmCodeGeneratorTestBase {
             "\n", state.lastIlCode().stream().map(Op::toString).collect(toImmutableList())));
     state = new NasmCodeGenerator().execute(state);
     assertThat(state.error()).isTrue();
-    assertThat(state.errorMessage()).contains(error);
+    assertThat(state.errorMessage()).matches(error);
   }
 
   public void assertRuntimeError(String sourceCode, String filename, String error)

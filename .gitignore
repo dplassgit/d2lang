@@ -4,12 +4,6 @@
 # Log file
 *.log
 
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
 # Package Files #
 *.war
 *.nar
@@ -34,8 +28,10 @@ bazel-out
 bazel-testlogs
 .apt_generated/
 
-# Forgotten files
+# Temp files that we will probably never check in.
 *.c
+*.i
+*.o
 *.s
 *.asm
 *.obj

@@ -317,7 +317,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov RCX, CONST_NULL  ; constant 'null'");
           emitter.emitExternCall("printf");
         } else {
-          fail("Cannot print %s yet", arg);
+          fail("Cannot print %ss yet", arg.type());
         }
         break;
       case INPUT:

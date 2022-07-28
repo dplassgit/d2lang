@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
+import static org.junit.Assume.assumeTrue;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -16,39 +17,42 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Nasm code generation not implemented for doubles yet ")
-  public void doubleUnary() throws Exception {
-    execute("a=3.0 b=-a print b", "doubleUnary");
+  public void printDoubleConstant() throws Exception {
+    assumeTrue(optimize);
+    execute("print 3.4", "printDoubleConstant");
   }
 
   @Test
-  @Ignore("Nasm code generation not implemented for doubles yet ")
+  public void doubleUnary() throws Exception {
+    assertGenerateError("a=3.0 b=-a print b", "Cannot.*DOUBLEs.*$");
+  }
+
+  @Test
   public void doubleBinOps(
       @TestParameter({"+", "-", "*", "/"}) String op,
       @TestParameter({"1234.5", "-234567.8"}) double first,
       @TestParameter({"-1234.5", "234567.8"}) double second)
       throws Exception {
-    execute(
+    assertGenerateError(
         String.format(
             "a=%f b=%f c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
             first, second, op, op, op, op),
-        "doubleBinOps");
+        "Cannot do .*DOUBLEs.*$");
   }
 
   @Test
-  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void doubleCompOps(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
       @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
       @TestParameter({"0.0", "-1234.5", "34567.8"}) double second)
       throws Exception {
-    execute(
+    assertGenerateError(
         String.format(
             "      a=%f b=%f " //
                 + "c=a %s b print c " //
                 + "d=b %s a print d",
             first, second, op, op),
-        "doubleCompOps");
+        "Cannot do .*DOUBLEs.*$");
   }
 
   /*  @Test
@@ -117,14 +121,12 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   */
 
   @Test
-  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void addToItself() throws Exception {
-    execute("a=3.1 a=a+10.1 print a", "addToItself");
+    assertGenerateError("a=3.1 a=a+10.1 print a", "Cannot do .*DOUBLEs.*$");
   }
 
   @Test
-  @Ignore("Nasm code generation not implemented for doubles yet ")
   public void printDouble() throws Exception {
-    execute("a=3.4 b=a print b print a", "assignDouble");
+    assertGenerateError("a=3.4 b=a print b print a", "Cannot.*DOUBLEs.*$");
   }
 }
