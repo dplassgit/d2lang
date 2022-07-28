@@ -99,8 +99,8 @@ class RecordGenerator {
         String rightName = resolver.resolve(op.right());
         String destName = resolver.resolve(op.destination());
 
-        emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64, leftName);
-        emitter.emit("cmp %s, %s", tempReg.name64, rightName);
+        emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64(), leftName);
+        emitter.emit("cmp %s, %s", tempReg.name64(), rightName);
         emitter.emit(
             "%s %s  ; QWORD compare %s", BINARY_OPCODE.get(op.operator()), destName, op.operator());
         resolver.deallocate(tempReg);

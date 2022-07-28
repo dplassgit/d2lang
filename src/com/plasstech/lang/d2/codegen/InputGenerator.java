@@ -1,9 +1,9 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.R8;
-import static com.plasstech.lang.d2.codegen.Register.R9;
-import static com.plasstech.lang.d2.codegen.Register.RCX;
-import static com.plasstech.lang.d2.codegen.Register.RDX;
+import static com.plasstech.lang.d2.codegen.IntRegister.R8;
+import static com.plasstech.lang.d2.codegen.IntRegister.R9;
+import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.google.common.collect.ImmutableList;
 
@@ -40,13 +40,13 @@ class InputGenerator {
     Register tempReg = resolver.allocate();
     emitter.emit("; allocated %s as temp reg", tempReg);
     // TODO: this register might be munged by subsequent calls...
-    emitter.emit("mov %s, RAX", tempReg.name64);
+    emitter.emit("mov %s, RAX", tempReg.name64());
 
     // 3. _read up to 1mb
     emitter.emit0("");
     emitter.emit("; int _read(int fd, void *buffer, count size)");
     emitter.emit("mov RCX, 0  ; 0=stdio");
-    emitter.emit("mov RDX, %s  ; destination", tempReg.name64);
+    emitter.emit("mov RDX, %s  ; destination", tempReg.name64());
     emitter.emit("mov R8, %d; count", ONE_MB);
     emitter.emitExternCall("_read");
 
@@ -68,13 +68,13 @@ class InputGenerator {
     emitter.emit0("");
     emitter.emit("; memcpy(dest, source, size)");
     emitter.emit("mov RCX, %s  ; dest", destLoc);
-    emitter.emit("mov RDX, %s  ; source", tempReg.name64);
+    emitter.emit("mov RDX, %s  ; source", tempReg.name64());
     emitter.emit("pop R8  ; size, was pushed before as RDX");
     emitter.emitExternCall("memcpy");
 
     // 8. deallocate the original
     emitter.emit("; deallocate the original 1mb buffer");
-    emitter.emit("mov RCX, %s", tempReg.name64);
+    emitter.emit("mov RCX, %s", tempReg.name64());
     emitter.emitExternCall("free");
     resolver.deallocate(tempReg);
     state.condPop();

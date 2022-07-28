@@ -19,7 +19,7 @@ public class Registers implements RegistersInterface {
   @Override
   public Register allocate() {
     // find one to return
-    for (Register r : Register.values()) {
+    for (Register r : IntRegister.values()) {
       if (!used.contains(r)) {
         used.add(r);
         return r;

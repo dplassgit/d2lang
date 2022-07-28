@@ -1,12 +1,12 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.R10;
-import static com.plasstech.lang.d2.codegen.Register.R11;
-import static com.plasstech.lang.d2.codegen.Register.R8;
-import static com.plasstech.lang.d2.codegen.Register.R9;
-import static com.plasstech.lang.d2.codegen.Register.RAX;
-import static com.plasstech.lang.d2.codegen.Register.RCX;
-import static com.plasstech.lang.d2.codegen.Register.RDX;
+import static com.plasstech.lang.d2.codegen.IntRegister.R10;
+import static com.plasstech.lang.d2.codegen.IntRegister.R11;
+import static com.plasstech.lang.d2.codegen.IntRegister.R8;
+import static com.plasstech.lang.d2.codegen.IntRegister.R9;
+import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import java.util.Map;
 
@@ -172,13 +172,14 @@ class StringCodeGenerator {
     emitter.emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
     // 4. get the index
     emitter.emit(
-        "mov %s, %s  ; put index value into %s", indexReg.name32, indexName, indexReg.name32);
+        "mov %s, %s  ; put index value into %s", indexReg.name32(), indexName, indexReg.name32());
     // 5. get the actual character
     emitter.emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
     registers.deallocate(indexReg);
     emitter.emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
-    emitter.emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
+    emitter.emit(
+        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());
     registers.deallocate(charReg);
     emitter.emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
@@ -207,25 +208,25 @@ class StringCodeGenerator {
         new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
     emitter.emit0("");
     emitter.emit(
-        "add %s, %s  ; Total new string length", leftLengthReg.name32, rightLengthReg.name32);
-    emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32);
+        "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
+    emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32());
     emitter.emit("; deallocating right length %s", rightLengthReg);
     registers.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
     emitter.emit0("");
-    emitter.emit("; Allocate string of length %s", leftLengthReg.name32);
+    emitter.emit("; Allocate string of length %s", leftLengthReg.name32());
 
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
-    emitter.emit("mov ECX, %s", leftLengthReg.name32);
+    emitter.emit("mov ECX, %s", leftLengthReg.name32());
     // change to calloc?
     emitter.emitExternCall("malloc");
     emitter.emit("; deallocating leftlength %s", leftLengthReg);
     registers.deallocate(leftLengthReg);
     // 4. put string into dest
     registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
-    if (!dest.equals(RAX.name64)) {
+    if (!dest.equals(RAX.name64())) {
       emitter.emit("mov %s, RAX  ; destination from rax", dest);
     }
 
@@ -234,7 +235,7 @@ class StringCodeGenerator {
     registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
     String leftName = resolver.resolve(left);
     emitter.emit("; strcpy from %s to %s", leftName, dest);
-    if (resolver.isInRegister(left, RCX) && dest.equals(RDX.name64)) {
+    if (resolver.isInRegister(left, RCX) && dest.equals(RDX.name64())) {
       // just swap rdx & rcx
       emitter.emit("; left wants to be in rcx dest in rdx, just swap");
       emitter.emit("xchg RDX, RCX");
@@ -254,7 +255,7 @@ class StringCodeGenerator {
     registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
     String rightName = resolver.resolve(right);
     emitter.emit("; strcat from %s to %s", rightName, dest);
-    if (resolver.isInRegister(right, RCX) && dest.equals(RDX.name64)) {
+    if (resolver.isInRegister(right, RCX) && dest.equals(RDX.name64())) {
       // just swap rdx & rcx
       emitter.emit("; right wants to be in rcx dest in rdx, just swap");
       emitter.emit("xchg RDX, RCX");
@@ -322,15 +323,17 @@ class StringCodeGenerator {
     emitter.emitExternCall("malloc");
     registerState.condPop();
     // 2. set destName to allocated string
-    if (!destName.equals(RAX.name64)) {
+    if (!destName.equals(RAX.name64())) {
       emitter.emit("mov %s, RAX  ; copy string location from RAX", destName);
     }
 
     Register charReg = registers.allocate();
     // 3. get source char as character
-    emitter.emit("mov DWORD %s, %s  ; get the character int into %s", charReg.name32, sourceName, charReg);
+    emitter.emit(
+        "mov DWORD %s, %s  ; get the character int into %s", charReg.name32(), sourceName, charReg);
     // 4. write source char in first location
-    emitter.emit("mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8);
+    emitter.emit(
+        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());
     // 5. clear second location.
     emitter.emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
     raxState.condPop();

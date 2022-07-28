@@ -27,7 +27,7 @@ public class RegisterStateTest {
   @Test
   public void condPushSomethingAllocated() {
     Register register = registers.allocate();
-    assertThat(register).isEqualTo(Register.RBX);
+    assertThat(register).isEqualTo(IntRegister.RBX);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
     assertThat(emitter.all()).containsExactly("  push RBX", "; hi");
@@ -36,7 +36,7 @@ public class RegisterStateTest {
   @Test
   public void condPopOne() {
     Register register = registers.allocate();
-    assertThat(register).isEqualTo(Register.RBX);
+    assertThat(register).isEqualTo(IntRegister.RBX);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
@@ -47,10 +47,11 @@ public class RegisterStateTest {
   @Test
   public void condPopMultiple() {
     // intentionally different order
-    registers.reserve(Register.RDX);
-    registers.reserve(Register.RCX);
+    registers.reserve(IntRegister.RDX);
+    registers.reserve(IntRegister.RCX);
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RCX, Register.RDX));
+        RegisterState.condPush(
+            emitter, registers, ImmutableList.of(IntRegister.RCX, IntRegister.RDX));
     emitter.emit0("; hi");
     registerState.condPop();
     assertThat(emitter.all())
@@ -59,24 +60,25 @@ public class RegisterStateTest {
 
   @Test
   public void pushed() {
-    registers.reserve(Register.RDX);
+    registers.reserve(IntRegister.RDX);
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RDX));
-    assertThat(registerState.pushed(Register.RDX)).isTrue();
-    assertThat(registerState.pushed(Register.RAX)).isFalse();
+        RegisterState.condPush(emitter, registers, ImmutableList.of(IntRegister.RDX));
+    assertThat(registerState.pushed(IntRegister.RDX)).isTrue();
+    assertThat(registerState.pushed(IntRegister.RAX)).isFalse();
   }
 
   @Test
   public void manualPop() {
-    registers.reserve(Register.RDX);
-    registers.reserve(Register.RCX);
+    registers.reserve(IntRegister.RDX);
+    registers.reserve(IntRegister.RCX);
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.RDX, Register.RCX));
-    registerState.condPop(Register.RCX);
+        RegisterState.condPush(
+            emitter, registers, ImmutableList.of(IntRegister.RDX, IntRegister.RCX));
+    registerState.condPop(IntRegister.RCX);
     assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX");
-    assertThat(registerState.pushed(Register.RCX)).isFalse();
+    assertThat(registerState.pushed(IntRegister.RCX)).isFalse();
     registerState.condPop();
-    assertThat(registerState.pushed(Register.RDX)).isFalse();
+    assertThat(registerState.pushed(IntRegister.RDX)).isFalse();
     assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX", "  pop RDX");
   }
 }

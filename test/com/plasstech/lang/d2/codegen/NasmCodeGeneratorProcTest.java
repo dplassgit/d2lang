@@ -116,22 +116,22 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     Parameter param1 = proc.parameters().get(0);
     assertThat(param1.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register1 = (RegisterLocation) param1.location();
-    assertThat(register1.register()).isEqualTo(Register.RCX);
+    assertThat(register1.register()).isEqualTo(IntRegister.RCX);
 
     Parameter param2 = proc.parameters().get(1);
     assertThat(param2.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register2 = (RegisterLocation) param2.location();
-    assertThat(register2.register()).isEqualTo(Register.RDX);
+    assertThat(register2.register()).isEqualTo(IntRegister.RDX);
 
     Parameter param3 = proc.parameters().get(2);
     assertThat(param3.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register3 = (RegisterLocation) param3.location();
-    assertThat(register3.register()).isEqualTo(Register.R8);
+    assertThat(register3.register()).isEqualTo(IntRegister.R8);
 
     Parameter param4 = proc.parameters().get(3);
     assertThat(param4.location()).isInstanceOf(RegisterLocation.class);
     RegisterLocation register4 = (RegisterLocation) param4.location();
-    assertThat(register4.register()).isEqualTo(Register.R9);
+    assertThat(register4.register()).isEqualTo(IntRegister.R9);
   }
   
   @Test

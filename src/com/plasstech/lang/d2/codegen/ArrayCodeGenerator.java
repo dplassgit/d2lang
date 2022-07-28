@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.R8;
+import static com.plasstech.lang.d2.codegen.IntRegister.R8;
 
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
@@ -37,7 +37,7 @@ class ArrayCodeGenerator {
     // 1. calculate # of bytes to allocate:
     //    size * entrySize +
     //    1 byte (# of dimensions) + 4 * # dimensions
-    Register allocSizeBytesRegister = Register.RDX;
+    Register allocSizeBytesRegister = IntRegister.RDX;
     emitter.emit("; allocated RDX (hard-coded) for calculations");
     int dimensions = op.arrayType().dimensions();
     int entrySize = op.arrayType().baseType().size();
@@ -73,15 +73,15 @@ class ArrayCodeGenerator {
 
       emitter.emitLabel(continueLabel);
       emitter.emit(
-          "mov %s, %s  ; number of entries", allocSizeBytesRegister.name32, numEntriesLocName);
+          "mov %s, %s  ; number of entries", allocSizeBytesRegister.name32(), numEntriesLocName);
 
       if (entrySize > 1) {
         emitter.emit(
-            "imul %s, %s ; total size of entries", allocSizeBytesRegister.name32, entrySize);
+            "imul %s, %s ; total size of entries", allocSizeBytesRegister.name32(), entrySize);
       }
       emitter.emit(
           "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
-          allocSizeBytesRegister.name32, 1 + 4 * dimensions, dimensions);
+          allocSizeBytesRegister.name32(), 1 + 4 * dimensions, dimensions);
     }
 
     emitter.emit("mov RCX, 1  ; # of 'entries' for calloc");
@@ -98,8 +98,8 @@ class ArrayCodeGenerator {
       emitter.emit(
           "; numEntriesLoc (%s) is not in a register; putting it into %s",
           numEntriesLoc, numEntriesReg);
-      emitter.emit("mov DWORD %s, %s", numEntriesReg.name32, numEntriesLocName);
-      numEntriesLocName = numEntriesReg.name32;
+      emitter.emit("mov DWORD %s, %s", numEntriesReg.name32(), numEntriesLocName);
+      numEntriesLocName = numEntriesReg.name32();
     }
     // TODO: iterate over dimensions.
     emitter.emit("mov DWORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
@@ -197,14 +197,14 @@ class ArrayCodeGenerator {
         // this gets the size in the register
         emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
         // 2. compare - NOTE SWAPPED ARGS
-        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32, index);
+        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32(), index);
         // 3. if good, continue
         String continueLabel = resolver.nextLabel("good_array_index");
         emitter.emit("jg _%s", continueLabel);
 
         emitter.emit0("\n  ; no good. print error and stop");
         emitter.addData(ARRAY_INDEX_OOB_ERR);
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32);
+        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32());
         emitter.emit("mov R9d, %s  ; index", index);
         emitter.emit("mov EDX, %s  ; line number", position.line());
         emitter.emit("mov RCX, ARRAY_INDEX_OOB_ERR");
@@ -253,7 +253,7 @@ class ArrayCodeGenerator {
       // this gets the size in the register
       emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
       // 2. compare
-      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32);
+      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32());
       // 3. if good, continue
       continueLabel = resolver.nextLabel("continue");
       emitter.emit("jl _%s", continueLabel);
@@ -263,7 +263,7 @@ class ArrayCodeGenerator {
       if (lengthReg == R8) {
         emitter.emit("; index already in R8");
       } else {
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32);
+        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32());
       }
       emitter.emit("mov DWORD R9d, %s  ; index", indexName);
       emitter.emit("mov EDX, %s  ; line number", position.line());
@@ -275,7 +275,7 @@ class ArrayCodeGenerator {
 
       emitter.emit0("\n  ; calculate index*base size+1+dims*4");
       // index is always a dword/int because I said so.
-      emitter.emit("mov DWORD %s, %s  ; index...", lengthReg.name32, indexName);
+      emitter.emit("mov DWORD %s, %s  ; index...", lengthReg.name32(), indexName);
       emitter.emit("imul %s, %s  ; ...*base size ...", lengthReg, arrayType.baseType().size());
       emitter.emit("add %s, %d  ; ... +1+dims*4", lengthReg, 1 + arrayType.dimensions() * 4);
     }

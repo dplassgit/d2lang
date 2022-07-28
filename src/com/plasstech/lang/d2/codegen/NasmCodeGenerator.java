@@ -1,8 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.RAX;
-import static com.plasstech.lang.d2.codegen.Register.RCX;
-import static com.plasstech.lang.d2.codegen.Register.RDX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -349,8 +349,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = registers.allocate();
-          emit("mov BYTE %s, %s ; compare setup", tempReg.name8, leftName);
-          emit("cmp %s, %s", tempReg.name8, rightName);
+          emit("mov BYTE %s, %s ; compare setup", tempReg.name8(), leftName);
+          emit("cmp %s, %s", tempReg.name8(), rightName);
           emit("%s %s ; bool compare %s", BINARY_OPCODE.get(operator), destName, operator);
           break;
 
@@ -429,8 +429,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = registers.allocate();
-          emit("mov %s %s, %s ; int compare setup", size, tempReg.name32, leftName);
-          emit("cmp %s, %s", tempReg.name32, rightName);
+          emit("mov %s %s, %s ; int compare setup", size, tempReg.name32(), leftName);
+          emit("cmp %s, %s", tempReg.name32(), rightName);
           emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
           break;
 
@@ -506,20 +506,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 6. mov destName, eax
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
     Register temp = registers.allocate();
-    if (!leftName.equals(RAX.name32)) { // TODO: don't use .equals
+    if (!leftName.equals(RAX.name32())) { // TODO: don't use .equals
       emit("mov EAX, %s  ; numerator", leftName);
     } else {
       emit("; numerator already in EAX");
     }
-    emit("mov %s, %s  ; denominator", temp.name32, right);
+    emit("mov %s, %s  ; denominator", temp.name32(), right);
 
     // sign extend eax to edx
     emit("cdq  ; sign extend eax to edx");
-    emit("idiv %s  ; EAX = %s / %s", temp.name32, leftName, right);
+    emit("idiv %s  ; EAX = %s / %s", temp.name32(), leftName, right);
     registers.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
       // eax has dividend
-      if (!destName.equals(RAX.name32)) {
+      if (!destName.equals(RAX.name32())) {
         emit("mov %s, EAX  ; dividend", destName);
       } else {
         // not required if it's already supposed to be in eax
@@ -527,20 +527,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     } else if (op.operator() == TokenType.MOD) {
       // edx has remainder
-      if (!destName.equals(RDX.name32)) {
+      if (!destName.equals(RDX.name32())) {
         emit("mov %s, EDX  ; remainder", destName);
       } else {
         emit("; remainder in EDX, where we wanted it to be");
       }
     }
 
-    if (!destName.equals(RDX.name32)) {
+    if (!destName.equals(RDX.name32())) {
       registerState.condPop(RDX);
     } else {
       // pseudo pop
       emit("add RSP, 8  ; pseudo pop RDX");
     }
-    if (!destName.equals(RAX.name32)) {
+    if (!destName.equals(RAX.name32())) {
       registerState.condPop(RAX);
     } else {
       // pseudo pop
@@ -593,8 +593,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         Register tempReg = registers.allocate();
         // Just read one byte
         if (source.isConstant()) {
-          emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8, sourceName);
-          emit("mov BYTE %s, %s ; store a full int. shrug", destName, tempReg.name32);
+          emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8(), sourceName);
+          emit("mov BYTE %s, %s ; store a full int. shrug", destName, tempReg.name32());
         } else {
           // need to do two indirects
           emit("mov %s, %s  ; %s has address of string", tempReg, sourceName, tempReg);
@@ -670,7 +670,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcExit op) {
-    for (Register reg : Register.values()) {
+    // I hate this
+    for (Register reg : IntRegister.values()) {
       if (reg != RAX && registers.isAllocated(reg)) {
         emit("; deallocating %s", reg);
         registers.deallocate(reg);

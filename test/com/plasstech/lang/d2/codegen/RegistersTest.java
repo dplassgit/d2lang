@@ -12,7 +12,7 @@ public class RegistersTest {
 
   @Test
   public void allocate_all() {
-    for (Register r : Register.values()) {
+    for (Register r : IntRegister.values()) {
       assertThat(registers.allocate()).isEqualTo(r);
     }
     assertThrows(D2RuntimeException.class, () -> registers.allocate());
@@ -20,10 +20,10 @@ public class RegistersTest {
 
   @Test
   public void deallocate_one() {
-    for (int i = 0; i < Register.values().length; ++i) {
+    for (int i = 0; i < IntRegister.values().length; ++i) {
       registers.allocate();
     }
-    for (Register r : Register.values()) {
+    for (Register r : IntRegister.values()) {
       registers.deallocate(r);
     }
   }

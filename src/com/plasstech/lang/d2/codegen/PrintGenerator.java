@@ -1,7 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.Register.RCX;
-import static com.plasstech.lang.d2.codegen.Register.RDX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
+import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.type.VarType;
