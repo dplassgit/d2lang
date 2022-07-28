@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import static org.junit.Assume.assumeTrue;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,12 +24,13 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  @Ignore("Cannot transfer doubles yet")
   public void doubleUnary() throws Exception {
-    assertGenerateError("a=3.0 b=-a print b", "Cannot.*DOUBLEs.*$");
+    assertRuntimeError("a=3.0 b=-a print b", "printDoubleUnary", "warning");
   }
 
   @Test
-  public void doubleBinOps(
+  public void doubleBinOps_unimplemented(
       @TestParameter({"+", "-", "*", "/"}) String op,
       @TestParameter({"1234.5", "-234567.8"}) double first,
       @TestParameter({"-1234.5", "234567.8"}) double second)
@@ -41,7 +43,7 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void doubleCompOps(
+  public void doubleCompOps_unimplemented(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
       @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
       @TestParameter({"0.0", "-1234.5", "34567.8"}) double second)
@@ -121,12 +123,13 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   */
 
   @Test
-  public void addToItself() throws Exception {
+  public void addToItself_unimplemented() throws Exception {
     assertGenerateError("a=3.1 a=a+10.1 print a", "Cannot do .*DOUBLEs.*$");
   }
 
   @Test
+  @Ignore("Cannot transfer doubles yet")
   public void printDouble() throws Exception {
-    assertGenerateError("a=3.4 b=a print b print a", "Cannot.*DOUBLEs.*$");
+    assertRuntimeError("a=3.4 b=a print b print a", "printDouble", "size");
   }
 }

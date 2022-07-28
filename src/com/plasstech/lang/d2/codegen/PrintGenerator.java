@@ -9,7 +9,8 @@ import com.plasstech.lang.d2.type.VarType;
 /** Generates NASM code for printing things. */
 class PrintGenerator {
   private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
-  private static final String PRINTF_NUMBER_FMT = "PRINTF_NUMBER_FMT: db \"%d\", 0";
+  private static final String PRINTF_INT_FMT = "PRINTF_INT_FMT: db \"%d\", 0";
+  private static final String PRINTF_DOUBLE_FMT = "PRINTF_DOUBLE_FMT: db \"%f\", 0";
   private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
   private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
   private static final String CONST_NULL = "CONST_NULL: db \"null\", 0";
@@ -28,8 +29,8 @@ class PrintGenerator {
     if (arg.type() == VarType.INT) {
       // move with sign extend. intentionally set rdx first, in case the arg is in ecx
       emitter.emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
-      emitter.addData(PRINTF_NUMBER_FMT);
-      emitter.emit("mov RCX, PRINTF_NUMBER_FMT  ; First argument is address of pattern");
+      emitter.addData(PRINTF_INT_FMT);
+      emitter.emit("mov RCX, PRINTF_INT_FMT  ; First argument is address of pattern");
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.BOOL) {
       if (argVal.equals("1")) {
@@ -77,6 +78,18 @@ class PrintGenerator {
     } else if (arg.type() == VarType.NULL) {
       emitter.addData(CONST_NULL);
       emitter.emit("mov RCX, CONST_NULL  ; constant 'null'");
+      emitter.emitExternCall("printf");
+    } else if (arg.type() == VarType.DOUBLE) {
+      if (arg.isConstant()) {
+        // this step is only really needed if argval is a constant.
+        emitter.emit("movsd XMM0, %s", argVal);
+        emitter.emit("movq RDX, XMM0");
+      } else {
+        // argval is an xmm register or memory (?)
+        emitter.emit("movq RDX, %s", argVal);
+      }
+      emitter.addData(PRINTF_DOUBLE_FMT);
+      emitter.emit("mov RCX, PRINTF_DOUBLE_FMT  ; First argument is address of pattern");
       emitter.emitExternCall("printf");
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
