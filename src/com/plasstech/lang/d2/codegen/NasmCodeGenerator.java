@@ -218,6 +218,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       return;
     }
 
+    if (source.type() == VarType.DOUBLE) {
+      if (toReg != null || fromReg != null) {
+        // go right from source to dest
+        emit("mov %s, %s", destLoc, sourceLoc);
+      } else {
+        // move from sourceLoc to temp
+        // then from temp to dest
+        Register tempReg = registers.allocate(VarType.DOUBLE);
+        emit("movsd %s, %s", tempReg, sourceLoc);
+        emit("movq %s, %s", destLoc, tempReg);
+        registers.deallocate(tempReg);
+      }
+      resolver.deallocate(source);
+      return;
+    }
+
     String size = Size.of(op.source().type()).asmType;
     if (source.isConstant() || source.isRegister()) {
       emit("mov %s %s, %s", size, destLoc, sourceLoc);

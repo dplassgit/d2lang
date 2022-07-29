@@ -401,7 +401,8 @@ public class InterpreterTest {
 
   @Test
   public void assignDouble() throws Exception {
-    execute("a=3.4 b=a print b print a", false);
+    execute("a=3.14 b=a print b print a", false);
+    execute("a=3.24 b=a print b print a", true);
   }
 
   private Environment execute(String program, boolean optimize) {
@@ -414,6 +415,7 @@ public class InterpreterTest {
     //
     //    System.out.println("Environment:");
     //    System.out.println("------------");
+    //    Envionment env = result.environment();
     //    System.out.println(env.toString());
     //    System.out.println("------------");
     //    System.out.println("Sysout:");

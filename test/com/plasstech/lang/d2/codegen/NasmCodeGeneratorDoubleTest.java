@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static org.junit.Assume.assumeTrue;
-
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -13,20 +10,18 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
 
   @Test
-  public void assignDouble() throws Exception {
-    execute("a=3.4", "assignDouble");
+  public void assignConstant() throws Exception {
+    execute("a=3.4", "assignConstant");
   }
 
   @Test
   public void printDoubleConstant() throws Exception {
-    assumeTrue(optimize);
     execute("print 3.4", "printDoubleConstant");
   }
 
   @Test
-  @Ignore("Cannot transfer doubles yet")
-  public void doubleUnary() throws Exception {
-    assertRuntimeError("a=3.0 b=-a print b", "printDoubleUnary", "warning");
+  public void transfer() throws Exception {
+    execute("a=3.0 b=a", "transfer");
   }
 
   @Test
@@ -128,8 +123,7 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Cannot transfer doubles yet")
   public void printDouble() throws Exception {
-    assertRuntimeError("a=3.4 b=a print b print a", "printDouble", "size");
+    execute("a=3.4 b=a println b println a", "printDouble");
   }
 }

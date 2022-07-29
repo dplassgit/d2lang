@@ -15,8 +15,8 @@ public class Resolver implements RegistersInterface {
   private final Map<String, Register> aliases = new HashMap<>();
   private final Registers registers;
   private final StringTable stringTable;
-  private final Emitter emitter;
   private final DoubleTable doubleTable;
+  private final Emitter emitter;
 
   public Resolver(
       Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter emitter) {
@@ -46,10 +46,10 @@ public class Resolver implements RegistersInterface {
         ConstEntry<String> entry = stringTable.lookup(stringConst.value());
         return entry.name();
       } else if (operand.type() == VarType.DOUBLE) {
-        // look it up in the string table.
+        // look it up in the double table.
         ConstantOperand<Double> doubleConst = (ConstantOperand<Double>) operand;
         ConstEntry<Double> entry = doubleTable.lookup(doubleConst.value());
-        return entry.name();
+        return String.format("[%s]", entry.name());
       } else if (operand.type().isNull()) {
         return "0";
       }

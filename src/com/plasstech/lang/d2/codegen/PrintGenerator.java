@@ -86,7 +86,7 @@ class PrintGenerator {
         emitter.emit("movq RDX, XMM0");
       } else {
         // argval is an xmm register or memory (?)
-        emitter.emit("movq RDX, %s", argVal);
+        emitter.emit("mov RDX, %s", argVal);
       }
       emitter.addData(PRINTF_DOUBLE_FMT);
       emitter.emit("mov RCX, PRINTF_DOUBLE_FMT  ; First argument is address of pattern");

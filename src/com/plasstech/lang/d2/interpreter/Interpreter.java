@@ -478,18 +478,26 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(SysCall op) {
+    Object resolved = resolve(op.arg());
     switch (op.call()) {
       case PRINT:
-        if (interactive) {
-          System.out.print(String.valueOf(resolve(op.arg())));
+        String val;
+        if (op.arg().type() == VarType.DOUBLE) {
+          double resolvedd = (double) resolved;
+          val = String.format("%.6f", resolvedd);
+        } else {
+          val = String.valueOf(resolved);
         }
-        rootEnv.addOutput(String.valueOf(resolve(op.arg())));
+        if (interactive) {
+          System.out.print(val);
+        }
+        rootEnv.addOutput(val);
         break;
       case MESSAGE:
         if (interactive) {
-          System.err.println("ERROR: " + resolve(op.arg()));
+          System.err.println("ERROR: " + resolved);
         }
-        rootEnv.addOutput("ERROR: " + resolve(op.arg()));
+        rootEnv.addOutput("ERROR: " + resolved);
         break;
       case INPUT:
         assert (op.arg() instanceof Location);
