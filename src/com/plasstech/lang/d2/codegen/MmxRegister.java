@@ -39,4 +39,9 @@ public enum MmxRegister implements Register {
   public String sizeByType(VarType type) {
     return name();
   }
+
+  @Override
+  public void accept(RegisterVisitor visitor) {
+    visitor.visit(this);
+  }
 }

@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.VarType;
 public class RegisterStateTest {
 
   private Registers registers = new Registers();
-  Emitter emitter = new ListEmitter();
+  private Emitter emitter = new ListEmitter();
 
   @Test
   public void condPushNothingAllocated() {
@@ -32,6 +32,14 @@ public class RegisterStateTest {
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
     assertThat(emitter.all()).containsExactly("  push RBX", "; hi");
+  }
+
+  @Test
+  public void condPushDouble() {
+    Register register = registers.allocate(VarType.DOUBLE);
+    assertThat(register).isEqualTo(MmxRegister.XMM0);
+    RegisterState.condPush(emitter, registers, ImmutableList.of(register));
+    assertThat(emitter.all()).containsExactly("  sub RSP, 0x10", "  movdqu [RSP], XMM0");
   }
 
   @Test
@@ -57,6 +65,24 @@ public class RegisterStateTest {
     registerState.condPop();
     assertThat(emitter.all())
         .containsExactly("  push RCX", "  push RDX", "; hi", "  pop RDX", "  pop RCX");
+  }
+
+  @Test
+  public void condPopDouble() {
+    registers.reserve(MmxRegister.XMM1);
+    registers.reserve(IntRegister.RCX);
+    RegisterState registerState =
+        RegisterState.condPush(
+            emitter, registers, ImmutableList.of(IntRegister.RCX, MmxRegister.XMM1));
+    registerState.condPop();
+    assertThat(emitter.all())
+        .containsExactly(
+            "  push RCX",
+            "  sub RSP, 0x10",
+            "  movdqu [RSP], XMM1",
+            "  movdqu XMM1, [RSP]",
+            "  add RSP, 0x10",
+            "  pop RCX");
   }
 
   @Test

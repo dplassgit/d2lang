@@ -15,6 +15,8 @@ public interface Register {
 
   String sizeByType(VarType type);
 
+  void accept(RegisterVisitor visitor);
+
   // TODO: add MMX registers here
   public static final ImmutableList<Register> VOLATILE_REGISTERS =
       ImmutableList.of(

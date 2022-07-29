@@ -14,6 +14,7 @@ REGISTERS_SRCS = [
   "Registers.java",
   "Register.java",
   "RegistersInterface.java",
+  "RegisterVisitor.java",
 ]
 
 java_library(

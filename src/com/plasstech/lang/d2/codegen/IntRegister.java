@@ -70,4 +70,9 @@ public enum IntRegister implements Register {
   public String name64() {
     return name64;
   }
+
+  @Override
+  public void accept(RegisterVisitor visitor) {
+    visitor.visit(this);
+  }
 }
