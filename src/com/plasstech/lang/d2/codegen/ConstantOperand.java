@@ -7,6 +7,10 @@ import com.plasstech.lang.d2.type.VarType;
 public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
   public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
+  public static final ConstantOperand<Double> ZERO_DBL =
+      new ConstantOperand<Double>(0.0, VarType.DOUBLE);
+  public static final ConstantOperand<Double> ONE_DBL =
+      new ConstantOperand<Double>(1.0, VarType.DOUBLE);
   public static final ConstantOperand<Boolean> FALSE =
       new ConstantOperand<Boolean>(false, VarType.BOOL);
   public static final ConstantOperand<Boolean> TRUE =
@@ -26,6 +30,11 @@ public class ConstantOperand<T> implements Operand {
   }
 
   public static Operand of(double value) {
+    if (value == 0.0) {
+      return ZERO_DBL;
+    } else if (value == 1.0) {
+      return ONE_DBL;
+    }
     return new ConstantOperand<Double>(value, VarType.DOUBLE);
   }
 

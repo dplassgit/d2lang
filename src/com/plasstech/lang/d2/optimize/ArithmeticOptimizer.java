@@ -276,14 +276,14 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeDivide(BinOp op, Operand left, Operand right) {
-    if (right.equals(ConstantOperand.ONE)) {
+    if (right.equals(ConstantOperand.ONE) || right.equals(ConstantOperand.ONE_DBL)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
     try {
       if (optimizeArith(op.destination(), left, right, (t, u) -> t / u)) {
         return;
-      } else if (right.isConstant()) {
+      } else if (right.isConstant() && right.type() == VarType.INT) {
         int power = powerOfTwo(right);
         if (power != 0) {
           replaceCurrent(
@@ -295,7 +295,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                   op.position()));
           return;
         }
-      } else if (left.equals(right)) {
+      } else if (left.equals(right) && left.type() == VarType.INT) {
         // a/a = 1
         replaceCurrent(new Transfer(op.destination(), ConstantOperand.ONE));
         return;
@@ -350,7 +350,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
-    } else if (left.equals(right)) {
+    } else if (left.equals(right) && left.type() == VarType.INT) {
       // a - a = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
       return;
@@ -423,7 +423,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     } else if (right.equals(ConstantOperand.ONE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
-    } else if (left.isConstant()) {
+    } else if (left.isConstant() && left.type() == VarType.INT) {
       int power = powerOfTwo(left);
       if (power != 0) {
         replaceCurrent(
@@ -434,7 +434,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                 ConstantOperand.of(power),
                 op.position()));
       }
-    } else if (right.isConstant()) {
+    } else if (right.isConstant() && left.type() == VarType.INT) {
       int power = powerOfTwo(right);
       if (power != 0) {
         replaceCurrent(

@@ -82,10 +82,15 @@ class PrintGenerator {
     } else if (arg.type() == VarType.DOUBLE) {
       if (arg.isConstant()) {
         // this step is only really needed if argval is a constant.
-        emitter.emit("movsd XMM0, %s", argVal);
-        emitter.emit("movq RDX, XMM0");
+        Register tempReg = resolver.allocate(VarType.DOUBLE);
+        emitter.emit("movsd %s, %s", tempReg, argVal);
+        emitter.emit("movq RDX, %s", tempReg);
+        resolver.deallocate(tempReg);
+      } else if (resolver.isInAnyRegister(arg)) {
+        // argval is an xmm register
+        emitter.emit("movq RDX, %s", argVal);
       } else {
-        // argval is an xmm register or memory (?)
+        // arg is in memory.
         emitter.emit("mov RDX, %s", argVal);
       }
       emitter.addData(PRINTF_DOUBLE_FMT);

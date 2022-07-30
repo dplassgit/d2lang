@@ -72,7 +72,7 @@ public class Resolver implements RegistersInterface {
     switch (location.storage()) {
       case TEMP:
         // TODO: deal with out-of-registers
-        reg = registers.allocate(VarType.INT);
+        reg = registers.allocate(location.type());
         aliases.put(location.name(), reg);
         emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());

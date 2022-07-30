@@ -76,7 +76,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final Emitter emitter = new ListEmitter();
 
   private StringTable stringTable;
+  private DoubleTable doubleTable;
   private Resolver resolver;
+
   private CallGenerator callGenerator;
   private RecordGenerator recordGenerator;
   private StringCodeGenerator stringGenerator;
@@ -84,8 +86,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private ArrayCodeGenerator arrayGenerator;
   private InputGenerator inputGenerator;
   private PrintGenerator printGenerator;
-
-  private DoubleTable doubleTable;
+  private DoubleGenerator doubleGenerator;
 
   @Override
   public State execute(State input) {
@@ -99,6 +100,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
     inputGenerator = new InputGenerator(resolver, registers, emitter);
     printGenerator = new PrintGenerator(resolver, emitter);
+    doubleGenerator = new DoubleGenerator(resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -221,7 +223,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (source.type() == VarType.DOUBLE) {
       if (toReg != null || fromReg != null) {
         // go right from source to dest
-        emit("mov %s, %s", destLoc, sourceLoc);
+        if (fromReg != null) {
+          emit("movq %s, %s", destLoc, sourceLoc);
+        } else {
+          emit("mov %s, %s", destLoc, sourceLoc);
+        }
       } else {
         // move from sourceLoc to temp
         // then from temp to dest
@@ -270,7 +276,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(SysCall op) {
     Operand arg = op.arg();
-    String argVal = resolver.resolve(arg);
     // need to preserve used registers!
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
@@ -477,6 +482,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     } else if (leftType.isRecord()) {
       recordGenerator.generate(op);
+    } else if (leftType == VarType.DOUBLE) {
+      doubleGenerator.generate(op);
     } else {
       fail("Cannot do %s on %ss (yet?)", operator, leftType);
     }
