@@ -59,18 +59,18 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void doubleCompOps_unimplemented(
+  public void doubleCompOps(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
       @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
       @TestParameter({"0.0", "-1234.5", "34567.8"}) double second)
       throws Exception {
-    assertGenerateError(
+    execute(
         String.format(
             "      a=%f b=%f " //
                 + "c=a %s b println c " //
                 + "d=b %s a println d",
             first, second, op, op),
-        "Cannot do .*DOUBLEs.*$");
+        "doubleCompOps");
   }
 
   @Test

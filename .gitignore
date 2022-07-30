@@ -29,7 +29,7 @@ bazel-testlogs
 .apt_generated/
 
 # Temp files that we will probably never check in.
-*.c
+/*.c
 *.i
 *.o
 *.s

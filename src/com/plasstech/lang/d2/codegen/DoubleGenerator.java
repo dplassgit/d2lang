@@ -14,13 +14,12 @@ public class DoubleGenerator {
           .put(TokenType.MINUS, "subsd")
           .put(TokenType.MULT, "mulsd")
           .put(TokenType.DIV, "divsd")
-          // double comparisons are weird.
-          //  .put(TokenType.EQEQ, "setz")
-          //  .put(TokenType.NEQ, "setnz")
-          //  .put(TokenType.GT, "setg")
-          //  .put(TokenType.GEQ, "setge")
-          //  .put(TokenType.LT, "setl")
-          //  .put(TokenType.LEQ, "setle")
+          .put(TokenType.EQEQ, "setz")
+          .put(TokenType.NEQ, "setnz")
+          .put(TokenType.GT, "seta")
+          .put(TokenType.GEQ, "setae")
+          .put(TokenType.LT, "setb")
+          .put(TokenType.LEQ, "setbe")
           .build();
 
   private static final String DIV_BY_ZERO_ERR =
@@ -60,10 +59,9 @@ public class DoubleGenerator {
       case GEQ:
       case LT:
       case LEQ:
-        emitter.fail("Cannot do %s on %ss (yet?)", operator, leftType);
         Register tempReg = resolver.allocate(VarType.DOUBLE);
-        emitter.emit("mov %s, %s ; double  compare setup", tempReg.name(), leftName);
-        emitter.emit("cmp %s, %s", tempReg.name(), rightName);
+        emitter.emit("movsd %s, %s ; double compare setup", tempReg.name(), leftName);
+        emitter.emit("comisd %s, %s", tempReg.name(), rightName);
         emitter.emit("%s %s  ; double compare %s", BINARY_OPCODE.get(operator), destName, operator);
         resolver.deallocate(tempReg);
         break;
