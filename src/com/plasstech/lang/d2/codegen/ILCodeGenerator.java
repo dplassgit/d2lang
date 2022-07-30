@@ -439,6 +439,17 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
       case BIT_NOT:
       case NOT:
       case MINUS:
+        if (expr.varType() == VarType.DOUBLE) {
+          emit(
+              new BinOp(
+                  destination,
+                  ConstantOperand.of(0.0),
+                  TokenType.MINUS,
+                  expr.location(),
+                  node.position()));
+          return;
+        }
+        // fall through:
       case LENGTH:
       case ASC:
       case CHR:

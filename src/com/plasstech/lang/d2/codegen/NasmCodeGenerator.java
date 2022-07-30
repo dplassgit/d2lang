@@ -597,8 +597,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("setz %s  ; boolean not", destName);
         break;
       case MINUS:
-        emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
-        emit("neg %s  ; unary minus", destName);
+        if (source.type() == VarType.INT) {
+          emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
+          emit("neg %s  ; unary minus", destName);
+        } else {
+          // double
+          emitter.fail("Should not get here");
+        }
         break;
       case LENGTH:
         if (source.type() == VarType.STRING) {

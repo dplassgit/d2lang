@@ -399,6 +399,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(UnaryOp op) {
     Object rhs = resolve(op.operand());
     Object result = null;
+    // FFS use op.source.type
     if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
     } else if (rhs instanceof Double) {
@@ -458,7 +459,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (op.operator() == TokenType.PLUS) {
       return r1;
     } else if (op.operator() == TokenType.MINUS) {
-      return 0 - r1;
+      return 0.0 - r1;
     }
     throw new IllegalStateException("Unknown double unaryop " + op.operator());
   }
