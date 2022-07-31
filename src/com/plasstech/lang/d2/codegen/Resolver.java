@@ -184,11 +184,25 @@ public class Resolver implements RegistersInterface {
     return registers.isAllocated(r);
   }
 
+  public void mov(Operand source, Register dest) {
+    mov(source, new RegisterLocation("dest", dest, source.type()));
+  }
+
+  public void mov(VarType type, Register source, Register destination) {
+    mov(
+        new RegisterLocation("source", source, type),
+        new RegisterLocation("dest", destination, type));
+  }
+
+  public void mov(Register source, Location destination) {
+    mov(new RegisterLocation("source", source, destination.type()), destination);
+  }
+
   public void mov(Operand source, Operand destination) {
-    Register sourceReg = toRegister(source); // if this is *already* a register
-    Register destReg = toRegister(destination); // if this is *already* a register
-    String sourceName = resolve(source); // this may put it in a register
     String destName = resolve(destination);
+    Register destReg = toRegister(destination);
+    String sourceName = resolve(source); // this may put it in a register
+    Register sourceReg = toRegister(source); // if this is *already* a register
 
     if (source.type() == VarType.STRING || source.type().isArray()) {
       movPointer(source, sourceReg, destReg, sourceName, destName);
@@ -238,6 +252,9 @@ public class Resolver implements RegistersInterface {
   private void movDouble(
       Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
 
+    //    emitter.emit(
+    //        "; movDouble source %s sourceReg %s destReg %s sourceName %s destName %s",
+    //        source, sourceReg, destReg, sourceName, destName);
     if (destReg != null || sourceReg != null) {
       // go right from source to dest
       if (sourceReg != null) {

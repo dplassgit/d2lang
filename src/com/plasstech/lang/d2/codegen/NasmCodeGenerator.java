@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen;
 import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
+import static com.plasstech.lang.d2.codegen.MmxRegister.XMM0;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -345,7 +346,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emit("mov %s %s, %s ; shift setup", size, destName, leftName);
             emit("%s %s, %s  ; %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           } else {
-
             Register rightReg = null;
             VarType rightType = op.right().type();
             if (resolver.isInRegister(op.right(), RCX)) {
@@ -633,9 +633,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (op.returnValueLocation().isPresent()) {
       // transfer from return value to RAX
       Operand returnValue = op.returnValueLocation().get();
-      String returnValueName = resolver.resolve(returnValue);
-      emit("mov %s, %s", RAX.sizeByType(returnValue.type()), returnValueName);
-      resolver.deallocate(returnValue);
+      if (returnValue.type() == VarType.DOUBLE) {
+        resolver.mov(returnValue, XMM0);
+      } else {
+        resolver.mov(returnValue, RAX);
+      }
     }
     emit("jmp __exit_of_%s", op.procName());
   }
@@ -645,6 +647,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // I hate this
     for (Register reg : IntRegister.values()) {
       if (reg != RAX && registers.isAllocated(reg)) {
+        emit("; deallocating %s", reg);
+        registers.deallocate(reg);
+      }
+    }
+    for (Register reg : MmxRegister.values()) {
+      if (reg != XMM0 && registers.isAllocated(reg)) {
         emit("; deallocating %s", reg);
         registers.deallocate(reg);
       }
@@ -671,18 +679,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; set up actuals, mapped to RCX, RDX, etc.");
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
-    /**
-     * We ONLY have to do gymnastics when a param register needs to be copied to a LATER param
-     * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
-     */
     callGenerator.generate(op);
     emit0("\n  call _%s\n", op.procName());
     registerState.condPop();
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
-      String destName = resolver.resolve(destination);
-      Size size = Size.of(destination.type());
-      emit("mov %s %s, %s", size, destName, RAX.sizeByType(destination.type()));
+      if (destination.type() == VarType.DOUBLE) {
+        resolver.mov(XMM0, destination);
+      } else {
+        resolver.mov(RAX, destination);
+      }
     }
   }
 

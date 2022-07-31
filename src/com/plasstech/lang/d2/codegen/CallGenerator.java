@@ -26,18 +26,18 @@ class CallGenerator {
      */
     Map<Register, Register> sourceToAlias = new HashMap<>();
     for (int i = 0; i < Math.min(op.actuals().size(), 4); ++i) {
-      Location location = op.formals().get(i);
-      Register reg = Register.paramRegister(location.type(), i);
+      Location formalLocation = op.formals().get(i);
+      Register reg = Register.paramRegister(formalLocation.type(), i);
       for (int j = i + 1; j < op.actuals().size(); ++j) {
-        // this allocates a register to it, but... it shouldn't be needed here
-        resolver.resolve(op.actuals().get(j));
-        Register sourceReg = resolver.toRegister(op.actuals().get(j));
+        // this allocates a register to it, but... it shouldn't be needed here (WHY?!)
+        Operand actual = op.actuals().get(j);
+        resolver.resolve(actual);
+        Register sourceReg = resolver.toRegister(actual);
         if (reg == sourceReg) {
           // it means we're being copied to a later register.
-          Register alias = resolver.allocate(location.type());
+          Register alias = resolver.allocate(formalLocation.type());
           sourceToAlias.put(reg, alias);
-          // need to use movsd for doubles
-          emitter.emit("mov %s, %s  ; stash in alias", alias, reg);
+          resolver.mov(formalLocation.type(), reg, alias);
           break;
         }
       }
@@ -56,8 +56,7 @@ class CallGenerator {
               "; parameter #%d (formal %s) already in %s (%s)",
               index, formal.name(), actualLocation, actual);
         } else {
-          Size size = Size.of(formal.type());
-          emitter.emit("mov %s %s, %s", size, formalLocation, actualLocation);
+          resolver.mov(actual, formal);
         }
         index++;
         resolver.deallocate(actual);
@@ -82,9 +81,7 @@ class CallGenerator {
         Register formalReg = Register.paramRegister(type, i);
         if (formalReg != sourceReg) {
           // it's not already in this register.
-          emitter.emit(
-              "mov %s %s, %s  ; set %dth param",
-              size.asmType, formalReg.sizeByType(type), source, i);
+          resolver.mov(actual, formalReg);
         } else {
           emitter.emit("; %dth param already in %s", i, sourceReg);
         }

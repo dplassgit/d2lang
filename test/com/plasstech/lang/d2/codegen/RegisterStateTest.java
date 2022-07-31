@@ -37,9 +37,9 @@ public class RegisterStateTest {
   @Test
   public void condPushDouble() {
     Register register = registers.allocate(VarType.DOUBLE);
-    assertThat(register).isEqualTo(MmxRegister.XMM0);
+    assertThat(register).isEqualTo(MmxRegister.XMM4);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
-    assertThat(emitter.all()).containsExactly("  sub RSP, 0x10", "  movdqu [RSP], XMM0");
+    assertThat(emitter.all()).containsExactly("  sub RSP, 0x10", "  movdqu [RSP], XMM4");
   }
 
   @Test

@@ -3,10 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import com.plasstech.lang.d2.type.VarType;
 
 public enum MmxRegister implements Register {
-  XMM0,
-  XMM1,
-  XMM2,
-  XMM3,
   XMM4,
   XMM5,
   XMM6,
@@ -18,7 +14,12 @@ public enum MmxRegister implements Register {
   XMM12,
   XMM13,
   XMM14,
-  XMM15;
+  XMM15,
+  // XMM0-3 are args (and XMM0 is the return register) so pick them last
+  XMM3,
+  XMM2,
+  XMM1,
+  XMM0;
 
   @Override
   public String name8() {

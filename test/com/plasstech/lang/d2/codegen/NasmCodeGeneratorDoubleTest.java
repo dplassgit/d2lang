@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -120,7 +119,6 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Have not implemented double params correclty yet")
   public void allOpsLocals() throws Exception {
     execute(
         "fun:proc(a:double, b:double):double{ \n"
