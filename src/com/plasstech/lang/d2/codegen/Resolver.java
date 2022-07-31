@@ -92,7 +92,7 @@ public class Resolver implements RegistersInterface {
 
   /** Given a parameter index and type, returns a string representation of that parameter. */
   private String generateParamLocationName(int index, VarType varType) {
-    Register reg = Register.paramRegister(index);
+    Register reg = Register.paramRegister(varType, index);
     if (reg == null) {
       // TODO: implement > 4 params.
       emitter.fail("Cannot generate more than 4 params yet");
@@ -115,9 +115,7 @@ public class Resolver implements RegistersInterface {
     }
   }
 
-  /**
-   * @return the equivalent register, or null if none.
-   */
+  /** @return the equivalent register, or null if none. */
   public Register toRegister(Operand source) {
     if (source.isConstant()) {
       return null;
@@ -138,7 +136,7 @@ public class Resolver implements RegistersInterface {
         return null;
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
-        Register actualReg = Register.paramRegister(paramLoc.index());
+        Register actualReg = Register.paramRegister(paramLoc.type(), paramLoc.index());
         return actualReg;
       case LOCAL:
         return null;
@@ -184,5 +182,77 @@ public class Resolver implements RegistersInterface {
   @Override
   public boolean isAllocated(Register r) {
     return registers.isAllocated(r);
+  }
+
+  public void mov(Operand source, Operand destination) {
+    Register sourceReg = toRegister(source); // if this is *already* a register
+    Register destReg = toRegister(destination); // if this is *already* a register
+    String sourceName = resolve(source); // this may put it in a register
+    String destName = resolve(destination);
+
+    if (source.type() == VarType.STRING || source.type().isArray()) {
+      movPointer(source, sourceReg, destReg, sourceName, destName);
+    } else if (source.type() == VarType.DOUBLE) {
+      movDouble(source, sourceReg, destReg, sourceName, destName);
+    } else {
+      movInt(source, sourceReg, destReg, sourceName, destName);
+    }
+    deallocate(source);
+  }
+
+  private void movInt(
+      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+
+    String size = Size.of(source.type()).asmType;
+    if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
+      emitter.emit("mov %s %s, %s", size, destName, sourceName);
+    } else {
+      // two memory locations; use an intermediary
+      Register tempReg = registers.allocate(VarType.INT);
+      String tempName = tempReg.sizeByType(source.type());
+      emitter.emit("mov %s %s, %s", size, tempName, sourceName);
+      emitter.emit("mov %s %s, %s", size, destName, tempName);
+      registers.deallocate(tempReg);
+    }
+  }
+
+  private void movPointer(
+      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+    if (destReg != null || sourceReg != null) {
+      // go right from source to dest
+      emitter.emit("mov %s, %s", destName, sourceName);
+    } else {
+      // move from sourceLoc to temp
+      // then from temp to dest
+      Register tempReg = registers.allocate(VarType.INT);
+      emitter.emit("; allocated temp %s", tempReg);
+      String tempName = tempReg.sizeByType(source.type());
+      // TODO: this can be short-circuited too if dest is a register
+      emitter.emit("mov %s, %s", tempName, sourceName);
+      emitter.emit("mov %s, %s", destName, tempName);
+      registers.deallocate(tempReg);
+      emitter.emit("; deallocated temp %s", tempReg);
+    }
+  }
+
+  private void movDouble(
+      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+
+    if (destReg != null || sourceReg != null) {
+      // go right from source to dest
+      if (sourceReg != null) {
+        emitter.emit("movq %s, %s", destName, sourceName);
+      } else {
+        emitter.emit("movsd %s, %s", destName, sourceName);
+      }
+    } else {
+      // move from sourceLoc to tempReg then from tempReg to dest
+      Register tempReg = registers.allocate(VarType.DOUBLE);
+      emitter.emit("; allocated temp %s", tempReg);
+      emitter.emit("movsd %s, %s", tempReg, sourceName);
+      emitter.emit("movq %s, %s", destName, tempReg);
+      registers.deallocate(tempReg);
+      emitter.emit("; deallocated temp %s", tempReg);
+    }
   }
 }

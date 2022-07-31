@@ -198,63 +198,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Operand source = op.source();
     Location destination = op.destination();
 
-    Register fromReg = resolver.toRegister(source); // if this is *already* a register
-    Register toReg = resolver.toRegister(destination); // if this is *already* a register
-    String destLoc = resolver.resolve(destination);
-    String sourceLoc = resolver.resolve(source);
-    if (source.type() == VarType.STRING || source.type().isArray()) {
-      if (toReg != null || fromReg != null) {
-        // go right from source to dest
-        emit("mov %s, %s", destLoc, sourceLoc);
-      } else {
-        // move from sourceLoc to temp
-        // then from temp to dest
-        Register tempReg = registers.allocate(VarType.INT);
-        String tempName = tempReg.sizeByType(op.source().type());
-        // TODO: this can be short-circuited too if dest is a register
-        emit("mov %s, %s", tempName, sourceLoc);
-        emit("mov %s, %s", destLoc, tempName);
-        registers.deallocate(tempReg);
-      }
-      resolver.deallocate(source);
-      return;
-    }
-
-    if (source.type() == VarType.DOUBLE) {
-      if (toReg != null || fromReg != null) {
-        // go right from source to dest
-        if (fromReg != null) {
-          emit("movq %s, %s", destLoc, sourceLoc);
-        } else {
-          emit("mov %s, %s", destLoc, sourceLoc);
-        }
-      } else {
-        // move from sourceLoc to temp
-        // then from temp to dest
-        Register tempReg = registers.allocate(VarType.DOUBLE);
-        emit("movsd %s, %s", tempReg, sourceLoc);
-        emit("movq %s, %s", destLoc, tempReg);
-        registers.deallocate(tempReg);
-      }
-      resolver.deallocate(source);
-      return;
-    }
-
-    String size = Size.of(op.source().type()).asmType;
-    if (source.isConstant() || source.isRegister()) {
-      emit("mov %s %s, %s", size, destLoc, sourceLoc);
-    } else {
-      if (toReg != null || fromReg != null) {
-        // go right from source to dest
-        emit("mov %s %s, %s", size, destLoc, sourceLoc);
-      } else {
-        Register tempReg = registers.allocate(VarType.INT);
-        String tempName = tempReg.sizeByType(op.source().type());
-        emit("mov %s %s, %s", size, tempName, sourceLoc);
-        emit("mov %s %s, %s", size, destLoc, tempName);
-        registers.deallocate(tempReg);
-      }
-    }
+    resolver.mov(source, destination);
     resolver.deallocate(source);
   }
 
@@ -651,7 +595,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // I hate this. the param should already know its location, as a ParamLocation
     for (Parameter formal : op.formals()) {
       Location location;
-      Register reg = Register.paramRegister(i);
+      Register reg = Register.paramRegister(formal.varType(), i);
       if (reg != null) {
         location = new RegisterLocation(formal.name(), reg, formal.varType());
         registers.reserve(reg);

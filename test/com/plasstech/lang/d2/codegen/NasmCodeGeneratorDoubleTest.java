@@ -120,7 +120,7 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Params not done yet")
+  @Ignore("Have not implemented double params correclty yet")
   public void allOpsLocals() throws Exception {
     execute(
         "fun:proc(a:double, b:double):double{ \n"

@@ -25,16 +25,18 @@ class CallGenerator {
      * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
      */
     Map<Register, Register> sourceToAlias = new HashMap<>();
-    for (int i = 0; i < Math.min(op.actuals().size(), Register.INT_PARAM_REGISTERS.size()); ++i) {
-      Register reg = Register.INT_PARAM_REGISTERS.get(i);
+    for (int i = 0; i < Math.min(op.actuals().size(), 4); ++i) {
+      Location location = op.formals().get(i);
+      Register reg = Register.paramRegister(location.type(), i);
       for (int j = i + 1; j < op.actuals().size(); ++j) {
         // this allocates a register to it, but... it shouldn't be needed here
         resolver.resolve(op.actuals().get(j));
         Register sourceReg = resolver.toRegister(op.actuals().get(j));
         if (reg == sourceReg) {
           // it means we're being copied to a later register.
-          Register alias = resolver.allocate(VarType.INT);
+          Register alias = resolver.allocate(location.type());
           sourceToAlias.put(reg, alias);
+          // need to use movsd for doubles
           emitter.emit("mov %s, %s  ; stash in alias", alias, reg);
           break;
         }
@@ -77,7 +79,7 @@ class CallGenerator {
           }
           source = sourceReg.sizeByType(actual.type());
         }
-        Register formalReg = Register.INT_PARAM_REGISTERS.get(i);
+        Register formalReg = Register.paramRegister(type, i);
         if (formalReg != sourceReg) {
           // it's not already in this register.
           emitter.emit(
