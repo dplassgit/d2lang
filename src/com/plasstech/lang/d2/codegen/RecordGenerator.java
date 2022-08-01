@@ -72,7 +72,15 @@ class RecordGenerator {
     // 4. mov register, source - take heed of size of RHS
     Size size = Size.of(source.type());
     if (source.isConstant() || resolver.isInAnyRegister(source)) {
-      emitter.emit("mov %s [%s], %s  ; store it!", size, calcReg, sourceName);
+      if (source.type() != VarType.DOUBLE) {
+        emitter.emit("mov %s [%s], %s  ; store it!", size, calcReg, sourceName);
+      } else {
+        // use an intermediate register
+        Register tempMmx = resolver.allocate(VarType.DOUBLE);
+        resolver.mov(source, tempMmx);
+        emitter.emit("movq [%s], %s", calcReg, tempMmx);
+        resolver.deallocate(tempMmx);
+      }
     } else {
       // need an indirection, ugh.
       Register indirectReg = resolver.allocate(VarType.INT);

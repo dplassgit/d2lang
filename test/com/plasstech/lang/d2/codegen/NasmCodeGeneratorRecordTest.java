@@ -30,6 +30,27 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void setDoubleFieldConstant() throws Exception {
+    execute("rt: record{d:double s:string} x=new rt x.d=3.0", "setDoubleFieldConstant");
+  }
+
+  @Test
+  public void setDoubleField() throws Exception {
+    execute("rt: record{d:double s:string} dd=3.0 x=new rt x.d=dd", "setDoubleField");
+  }
+
+  @Test
+  public void setDoubleFieldParam() throws Exception {
+    execute(
+        "      rt: record{d:double s:string} "
+            + "f: proc(dd:double): rt {"
+            + "  x=new rt x.d=dd return x"
+            + "} "
+            + "f(3.0)",
+        "setDoubleFieldParam");
+  }
+
+  @Test
   public void setFieldInProc() throws Exception {
     execute(
         "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return i} print f()",
@@ -106,7 +127,6 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   public void nullCheck() throws Exception {
     assertRuntimeError(
         "      rt: record {s:string i:int} \r\n"
-            //
             + " a:rt \r\n "
             + "a=null \r\n"
             + "println a.s",
