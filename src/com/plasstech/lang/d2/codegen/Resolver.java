@@ -165,18 +165,22 @@ public class Resolver implements RegistersInterface {
   /** Allocate and return a register. */
   @Override
   public Register reserve(Register r) {
+    emitter.emit("; reserving %s", r);
     return registers.reserve(r);
   }
 
   @Override
   public Register allocate(VarType varType) {
-    return registers.allocate(varType);
+    Register r = registers.allocate(varType);
+    emitter.emit("; allocating %s of type %s", r, varType);
+    return r;
   }
 
   /** Deallocate the given register. */
   @Override
-  public void deallocate(Register register) {
-    registers.deallocate(register);
+  public void deallocate(Register r) {
+    emitter.emit("; deallocating %s", r);
+    registers.deallocate(r);
   }
 
   @Override
@@ -211,7 +215,6 @@ public class Resolver implements RegistersInterface {
     } else {
       movInt(source, sourceReg, destReg, sourceName, destName);
     }
-    deallocate(source);
   }
 
   private void movInt(

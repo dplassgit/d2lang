@@ -292,7 +292,7 @@ class StringCodeGenerator {
     if (resolver.isInRegister(destination, RCX)) {
       // pseudo pop
       emitter.emit("; pseudo-pop; destination was already %s", destination);
-      if (raxRcxState.pushed(RCX)) {
+      if (raxRcxState.wasPushed(RCX)) {
         emitter.emit("add RSP, 8");
       }
     } else {
@@ -301,7 +301,7 @@ class StringCodeGenerator {
     if (resolver.isInRegister(destination, RAX)) {
       // pseudo pop; eax already has the length.
       emitter.emit("; pseudo-pop; destination was already %s", destination);
-      if (raxRcxState.pushed(RAX)) {
+      if (raxRcxState.wasPushed(RAX)) {
         emitter.emit("add RSP, 8");
       }
     } else {

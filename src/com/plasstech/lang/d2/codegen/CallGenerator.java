@@ -37,6 +37,7 @@ class CallGenerator {
           // it means we're being copied to a later register.
           Register alias = resolver.allocate(formalLocation.type());
           sourceToAlias.put(reg, alias);
+          emitter.emit("; aliasing %s to %s", reg, alias);
           resolver.mov(formalLocation.type(), reg, alias);
           break;
         }
@@ -59,15 +60,12 @@ class CallGenerator {
           resolver.mov(actual, formal);
         }
         index++;
-        resolver.deallocate(actual);
       }
     } else {
       emitter.emit("; at least one conflict; doing complicated case");
       for (int i = 0; i < op.actuals().size(); ++i) {
         Operand actual = op.actuals().get(i);
         VarType type = actual.type();
-        Size size = Size.of(actual.type());
-        String source = resolver.resolve(actual);
         Register sourceReg = resolver.toRegister(actual);
         if (sourceReg != null) {
           // it's in a register. See if it's aliased
@@ -76,12 +74,11 @@ class CallGenerator {
             // overwrite; the original register may not be in the aliases, which is fine.
             sourceReg = alias;
           }
-          source = sourceReg.sizeByType(actual.type());
         }
         Register formalReg = Register.paramRegister(type, i);
         if (formalReg != sourceReg) {
           // it's not already in this register.
-          resolver.mov(actual, formalReg);
+          resolver.mov(type, sourceReg, formalReg);
         } else {
           emitter.emit("; %dth param already in %s", i, sourceReg);
         }
@@ -93,10 +90,6 @@ class CallGenerator {
           resolver.deallocate(pair.getValue());
         }
       }
-    }
-    for (int i = 0; i < op.actuals().size(); ++i) {
-      Operand actual = op.actuals().get(i);
-      resolver.deallocate(actual);
     }
   }
 }

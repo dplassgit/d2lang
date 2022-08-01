@@ -3,12 +3,18 @@ package com.plasstech.lang.d2.codegen;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class RegisterState {
   private final List<Register> registersPushed;
   private final Emitter emitter;
   private final RegisterVisitor popVisitor = new PopVisitor();
+  private final RegisterVisitor pushVisitor = new PushVisitor();
+
+  public RegisterState(Emitter emitter) {
+    this(emitter, ImmutableList.of());
+  }
 
   private RegisterState(Emitter emitter, List<Register> pushed) {
     this.emitter = emitter;
@@ -28,32 +34,41 @@ public class RegisterState {
   }
 
   private void pushAll() {
-    RegisterVisitor pushVisitor = new PushVisitor();
-    for (Register r : registersPushed) {
-      r.accept(pushVisitor);
+    if (registersPushed.size() > 0) {
+      emitter.emit("; pushing allocated registers");
+      for (Register r : registersPushed) {
+        r.accept(pushVisitor);
+      }
     }
   }
 
-  public boolean pushed(Register r) {
+  public boolean wasPushed(Register r) {
     return registersPushed.contains(r);
   }
 
   public void condPop(Register r) {
-    if (pushed(r)) {
+    if (wasPushed(r)) {
       pop(r);
     }
     registersPushed.remove(r);
   }
 
   public void condPop() {
-    for (Register r : Lists.reverse(registersPushed)) {
-      pop(r);
+    if (registersPushed.size() > 0) {
+      emitter.emit("; popping allocated registers");
+      for (Register r : Lists.reverse(registersPushed)) {
+        pop(r);
+      }
+      registersPushed.clear();
     }
-    registersPushed.clear();
   }
 
-  private void pop(Register r) {
+  public void pop(Register r) {
     r.accept(popVisitor);
+  }
+
+  public void push(Register r) {
+    r.accept(pushVisitor);
   }
 
   private class PushVisitor implements RegisterVisitor {
@@ -79,6 +94,18 @@ public class RegisterState {
     public void visit(MmxRegister r) {
       emitter.emit("movdqu %s, [RSP]", r.name64());
       emitter.emit("add RSP, 0x10");
+    }
+  }
+
+  public void push(ImmutableList<Register> registers) {
+    for (Register r : registers) {
+      push(r);
+    }
+  }
+
+  public void pop(ImmutableList<Register> registers) {
+    for (Register r : registers) {
+      pop(r);
     }
   }
 }

@@ -73,7 +73,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
 
   private final List<String> prelude = new ArrayList<>();
-  private final Registers registers = new Registers();
   private final Emitter emitter = new ListEmitter();
 
   private StringTable stringTable;
@@ -93,6 +92,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
+    Registers registers = new Registers();
     resolver = new Resolver(registers, stringTable, doubleTable, emitter);
     callGenerator = new CallGenerator(resolver, emitter);
     recordGenerator = new RecordGenerator(resolver, input.symbolTable(), emitter);
@@ -314,7 +314,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = registers.allocate(VarType.INT);
+          tempReg = resolver.allocate(VarType.INT);
           emit("mov BYTE %s, %s ; compare setup", tempReg.name8(), leftName);
           emit("cmp %s, %s", tempReg.name8(), rightName);
           emit("%s %s ; bool compare %s", BINARY_OPCODE.get(operator), destName, operator);
@@ -393,7 +393,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = registers.allocate(VarType.INT);
+          tempReg = resolver.allocate(VarType.INT);
           emit("mov %s %s, %s ; int compare setup", size, tempReg.name32(), leftName);
           emit("cmp %s, %s", tempReg.name32(), rightName);
           emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
@@ -416,7 +416,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               arrayGenerator.generateArrayIndex(
                   op.right(), arrayType, leftName, false, op.position());
           emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
-          registers.deallocate(fullIndex);
+          resolver.deallocate(fullIndex);
           emit("; deallocating %s", fullIndex);
           break;
 
@@ -433,7 +433,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     if (tempReg != null) {
-      registers.deallocate(tempReg);
+      resolver.deallocate(tempReg);
     }
     if (!op.left().type().isArray()) {
       // don't deallocate yet so that array literal assignments work.
@@ -472,7 +472,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
-    Register temp = registers.allocate(VarType.INT);
+    Register temp = resolver.allocate(VarType.INT);
     if (!leftName.equals(RAX.name32())) { // TODO: don't use .equals
       emit("mov EAX, %s  ; numerator", leftName);
     } else {
@@ -483,7 +483,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // sign extend eax to edx
     emit("cdq  ; sign extend eax to edx");
     emit("idiv %s  ; EAX = %s / %s", temp.name32(), leftName, right);
-    registers.deallocate(temp);
+    resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
       // eax has dividend
       if (!destName.equals(RAX.name32())) {
@@ -562,7 +562,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         npeCheckGenerator.generateNullPointerCheck(op, source);
         // move from sourceLoc to temp
         // then from temp to dest
-        Register tempReg = registers.allocate(VarType.INT);
+        Register tempReg = resolver.allocate(VarType.INT);
         // Just read one byte
         if (source.isConstant()) {
           emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8(), sourceName);
@@ -573,7 +573,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
         }
         emit("and %s, 0x000000ff", destName);
-        registers.deallocate(tempReg);
+        resolver.deallocate(tempReg);
         break;
       case CHR:
         stringGenerator.generateChr(sourceName, destName);
@@ -598,11 +598,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       Register reg = Register.paramRegister(formal.varType(), i);
       if (reg != null) {
         location = new RegisterLocation(formal.name(), reg, formal.varType());
-        registers.reserve(reg);
+        resolver.reserve(reg);
       } else {
+        // TODO: implement this
         // use the vartype to decide how much space to allocate
         // location = new StackLocation(formal.name(), -i * 8, formal.varType());
-        // TODO: implement this
         fail("Cannot generate more than 4 params yet");
         return;
       }
@@ -618,13 +618,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov RBP, RSP");
       emit("sub RSP, %d", op.localBytes());
     }
-    emit("push RBX");
-    emit("push R12");
-    emit("push R13");
-    emit("push R14");
-    emit("push R15");
-    emit("push RDI");
-    emit("push RSI");
+    RegisterState rs = new RegisterState(emitter);
+    rs.push(Register.NONVOLATILE_REGISTERS);
   }
 
   @Override
@@ -638,6 +633,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       } else {
         resolver.mov(returnValue, RAX);
       }
+      resolver.deallocate(returnValue);
     }
     emit("jmp __exit_of_%s", op.procName());
   }
@@ -646,27 +642,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(ProcExit op) {
     // I hate this
     for (Register reg : IntRegister.values()) {
-      if (reg != RAX && registers.isAllocated(reg)) {
-        emit("; deallocating %s", reg);
-        registers.deallocate(reg);
+      if (reg != RAX && resolver.isAllocated(reg)) {
+        resolver.deallocate(reg);
       }
     }
     for (Register reg : MmxRegister.values()) {
-      if (reg != XMM0 && registers.isAllocated(reg)) {
-        emit("; deallocating %s", reg);
-        registers.deallocate(reg);
+      if (resolver.isAllocated(reg)) {
+        resolver.deallocate(reg);
       }
     }
 
     emit0("__exit_of_%s:", op.procName());
     // restore registers
-    emit("pop RSI");
-    emit("pop RDI");
-    emit("pop R15");
-    emit("pop R14");
-    emit("pop R13");
-    emit("pop R12");
-    emit("pop RBX");
+    RegisterState rs = new RegisterState(emitter);
+    rs.pop(Register.NONVOLATILE_REGISTERS.reverse());
     if (op.localBytes() > 0) {
       // this adjusts rbp, rsp
       emit("leave");
@@ -676,25 +665,45 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Call op) {
-    emit("; set up actuals, mapped to RCX, RDX, etc.");
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
+    emit("; set up actuals");
     callGenerator.generate(op);
-    emit0("\n  call _%s\n", op.procName());
-    registerState.condPop();
+    emit("\n  call _%s\n", op.procName());
+    Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
+      if (destination.type() == VarType.DOUBLE && resolver.isAllocated(XMM0)) {
+        // it will be overwritten. let's stash it
+        tempReg = resolver.allocate(VarType.DOUBLE);
+        emit("; temporarily putting xmm0 in %s", tempReg);
+        resolver.mov(VarType.DOUBLE, XMM0, tempReg);
+      }
+    }
+    registerState.condPop();
+    if (op.destination().isPresent()) {
+      emit("; get return value");
+      Location destination = op.destination().get();
       if (destination.type() == VarType.DOUBLE) {
-        resolver.mov(XMM0, destination);
+        if (tempReg == null) {
+          resolver.mov(XMM0, destination);
+        } else {
+          resolver.mov(tempReg, destination);
+          resolver.deallocate(tempReg);
+        }
       } else {
         resolver.mov(RAX, destination);
       }
+    }
+    for (int i = 0; i < op.actuals().size(); ++i) {
+      Operand actual = op.actuals().get(i);
+      resolver.deallocate(actual);
     }
   }
 
   /** Conditionally push all allocated registers in the list */
   private RegisterState condPush(ImmutableList<Register> registerList) {
-    return RegisterState.condPush(emitter, registers, registerList);
+    return RegisterState.condPush(emitter, resolver, registerList);
   }
 
   private void emit(String format, Object... values) {
