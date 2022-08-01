@@ -148,6 +148,19 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void allOpsLocalsMixed() throws Exception {
+    execute(
+        "      allOpsLocals:proc(a:int, b:double, c:int, d:double):double { \n"
+            + "   e=5.0 f=6\n"
+            + "   g=a+a*c+(a+c)*f-(c+a)/f+(c-a)*f  \n"
+            + "   b=e+e*b+(b+d)*d-(e+d)/e+(e-d)*b  \n"
+            + "   return b \n"
+            + "} \n"
+            + "print allOpsLocals(1, 2.0, 3, 4.0)",
+        "allOpsLocals");
+  }
+
+  @Test
   public void recursion() throws Exception {
     execute(
         "      reverseRecursive: proc(s: string): string {"
