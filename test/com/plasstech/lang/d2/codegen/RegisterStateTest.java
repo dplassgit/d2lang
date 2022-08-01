@@ -31,7 +31,7 @@ public class RegisterStateTest {
     assertThat(register).isEqualTo(IntRegister.RBX);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
-    assertThat(emitter.all()).containsExactly("  push RBX", "; hi");
+    assertThat(emitter.all()).containsAtLeast("  push RBX", "; hi");
   }
 
   @Test
@@ -39,7 +39,7 @@ public class RegisterStateTest {
     Register register = registers.allocate(VarType.DOUBLE);
     assertThat(register).isEqualTo(MmxRegister.XMM4);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
-    assertThat(emitter.all()).containsExactly("  sub RSP, 0x10", "  movdqu [RSP], XMM4");
+    assertThat(emitter.all()).containsAtLeast("  sub RSP, 0x10", "  movdqu [RSP], XMM4").inOrder();
   }
 
   @Test
@@ -50,7 +50,7 @@ public class RegisterStateTest {
         RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     emitter.emit0("; hi");
     registerState.condPop();
-    assertThat(emitter.all()).containsExactly("  push RBX", "; hi", "  pop RBX");
+    assertThat(emitter.all()).containsAtLeast("  push RBX", "; hi", "  pop RBX").inOrder();
   }
 
   @Test
@@ -64,7 +64,8 @@ public class RegisterStateTest {
     emitter.emit0("; hi");
     registerState.condPop();
     assertThat(emitter.all())
-        .containsExactly("  push RCX", "  push RDX", "; hi", "  pop RDX", "  pop RCX");
+        .containsAtLeast("  push RCX", "  push RDX", "; hi", "  pop RDX", "  pop RCX")
+        .inOrder();
   }
 
   @Test
@@ -76,13 +77,14 @@ public class RegisterStateTest {
             emitter, registers, ImmutableList.of(IntRegister.RCX, MmxRegister.XMM1));
     registerState.condPop();
     assertThat(emitter.all())
-        .containsExactly(
+        .containsAtLeast(
             "  push RCX",
             "  sub RSP, 0x10",
             "  movdqu [RSP], XMM1",
             "  movdqu XMM1, [RSP]",
             "  add RSP, 0x10",
-            "  pop RCX");
+            "  pop RCX")
+        .inOrder();
   }
 
   @Test
@@ -102,10 +104,12 @@ public class RegisterStateTest {
         RegisterState.condPush(
             emitter, registers, ImmutableList.of(IntRegister.RDX, IntRegister.RCX));
     registerState.condPop(IntRegister.RCX);
-    assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX");
+    assertThat(emitter.all()).containsAtLeast("  push RDX", "  push RCX", "  pop RCX").inOrder();
     assertThat(registerState.wasPushed(IntRegister.RCX)).isFalse();
     registerState.condPop();
     assertThat(registerState.wasPushed(IntRegister.RDX)).isFalse();
-    assertThat(emitter.all()).containsExactly("  push RCX", "  push RDX", "  pop RCX", "  pop RDX");
+    assertThat(emitter.all())
+        .containsAtLeast("  push RDX", "  push RCX", "  pop RCX", "  pop RDX")
+        .inOrder();
   }
 }
