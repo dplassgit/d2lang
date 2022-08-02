@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,14 +15,14 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   // TODO: test print
 
   @Test
-  public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool"}) String type)
+  public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool", "double"}) String type)
       throws Exception {
-    execute(String.format("x:%s[%d]", type, type.length()), "arrayDeclConstantSize");
+    execute(String.format("x:%s[%d]", type, type.length()), "arrayDeclConstantSize" + type);
   }
 
   @Test
-  public void arrayDeclConstantSizeInProc(@TestParameter({"string", "int", "bool"}) String type)
-      throws Exception {
+  public void arrayDeclConstantSizeInProc(
+      @TestParameter({"string", "int", "bool", "double"}) String type) throws Exception {
     execute(
         String.format(
             "      p:proc(): %s {" //
@@ -52,11 +53,12 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
       @TestParameter({
             /*"string", */
             "int",
-            "bool"
+            "bool",
+            "double"
           })
           String type)
       throws Exception {
-    execute(String.format("x:%s[2] print x[0]", type), "arrayGet");
+    execute(String.format("x:%s[2] print x[0]", type), "arrayGet" + type);
   }
 
   @Test
@@ -64,7 +66,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
       @TestParameter({
             /*"string", */
             "int",
-            "bool"
+            "bool",
+            "double"
           })
           String type)
       throws Exception {
@@ -95,13 +98,30 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void arraySetDouble() throws Exception {
+    execute("x:double[2] x[1]=2.0 println x[1]", "arraySetDouble");
+  }
+
+  @Test
   public void arraySetIntFromGlobal() throws Exception {
     execute("g=2 x:int[2] x[1]=g println x[1]", "arraySetInt");
   }
 
   @Test
+  public void arraySetDoubleFromGlobal() throws Exception {
+    execute("g=2.0 x:double[2] x[1]=g println x[1]", "arraySetDoubleFromGlobal");
+  }
+
+  @Test
   public void arraySetIntProc() throws Exception {
     execute("f:proc(i:int) {x:int[2] x[i]=i+2 println x[i]} f(0) f(1)", "arraySetIntProc");
+  }
+
+  @Test
+  public void arraySetDoubleProc() throws Exception {
+    execute(
+        "f:proc(d:double) {x:double[2] x[1]=d+1.0 println x[1]} f(0.0) f(1.0)",
+        "arraySetDoubleProc");
   }
 
   @Test
@@ -236,6 +256,12 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayLiteral() throws Exception {
     execute("x=[1,2,3] print x[0]", "arrayLiteral");
+  }
+
+  @Test
+  @Ignore("Not implemented yet")
+  public void arrayDoubleLiteral() throws Exception {
+    execute("x=[1.0,2.0,3.0] print x[0]", "arrayDoubleLiteral");
   }
 
   @Test

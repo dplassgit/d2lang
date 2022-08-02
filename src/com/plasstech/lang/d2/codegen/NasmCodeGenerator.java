@@ -415,9 +415,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           Register fullIndex =
               arrayGenerator.generateArrayIndex(
                   op.right(), arrayType, leftName, false, op.position());
-          emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
+          if (arrayType.baseType() == VarType.DOUBLE) {
+            emit("movq %s, [%s]", destName, fullIndex);
+          } else {
+            emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
+          }
           resolver.deallocate(fullIndex);
-          emit("; deallocating %s", fullIndex);
           break;
 
         default:

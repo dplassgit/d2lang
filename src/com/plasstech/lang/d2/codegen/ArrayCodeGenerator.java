@@ -136,14 +136,15 @@ class ArrayCodeGenerator {
     Operand sourceLoc = op.source();
     String sourceName = resolver.resolve(sourceLoc);
     ArrayType arrayType = op.arrayType();
-    String baseTypeSize = Size.of(arrayType.baseType()).asmType;
+    VarType baseType = arrayType.baseType();
+    String baseTypeSize = Size.of(baseType).asmType;
     Register sourceReg = null;
     if (!(resolver.isInAnyRegister(sourceLoc) || sourceLoc.isConstant())) {
       // not a constant and not in a registers; put it in a register
-      sourceReg = resolver.allocate(VarType.INT);
+      sourceReg = resolver.allocate(baseType);
       emitter.emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
-      String sourceRegisterSized = sourceReg.sizeByType(arrayType.baseType());
-      emitter.emit("mov %s %s, %s", baseTypeSize, sourceRegisterSized, sourceName);
+      String sourceRegisterSized = sourceReg.sizeByType(baseType);
+      resolver.mov(sourceLoc, sourceReg);
       sourceName = sourceRegisterSized;
     }
 
@@ -153,14 +154,23 @@ class ArrayCodeGenerator {
     Register fullIndex =
         generateArrayIndex(
             indexLoc, arrayType, resolver.resolve(op.array()), op.isArrayLiteral(), op.position());
-    emitter.emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
+    if (baseType == VarType.DOUBLE) {
+      // may need an intermediary
+      if (sourceReg != null || resolver.isInAnyRegister(sourceLoc)) {
+      } else {
+        sourceReg = resolver.allocate(baseType);
+        resolver.mov(sourceLoc, sourceReg);
+        String sourceRegisterSized = sourceReg.sizeByType(baseType);
+        sourceName = sourceRegisterSized;
+      }
+      emitter.emit("movq [%s], %s  ; store it!", fullIndex, sourceName);
+    } else {
+      emitter.emit("mov %s [%s], %s  ; store it!", baseTypeSize, fullIndex, sourceName);
+    }
     if (sourceReg != null) {
-      emitter.emit("; deallocating %s", sourceReg);
       resolver.deallocate(sourceReg);
     }
     resolver.deallocate(fullIndex);
-    emitter.emit("; deallocating %s", fullIndex);
-
     resolver.deallocate(sourceLoc);
     resolver.deallocate(indexLoc);
   }
