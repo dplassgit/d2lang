@@ -82,9 +82,55 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void getFieldDouble() throws Exception {
+    execute("rt: record{d:double s:string} x=new rt x.d=3.0 print x.d", "getFieldDouble");
+  }
+
+  @Test
   public void getFieldInProc() throws Exception {
     execute(
         "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return x.i} print f()",
+        "getFieldInProc");
+  }
+
+  @Test
+  public void getFieldDoubleInProc() throws Exception {
+    execute(
+        "      rt: record{s:string d:double} "
+            + "f:proc(dd:double):double {"
+            + "  x=new rt "
+            + "  x.d=dd "
+            + "  return x.d"
+            + "}"
+            + "print f(3.0)",
+        "getFieldInProc");
+  }
+
+  @Test
+  public void getFieldDoubleInProcToLocal() throws Exception {
+    execute(
+        "      rt: record{s:string d:double} "
+            + "f:proc(dd:double):double {"
+            + "  x=new rt "
+            + "  x.d=dd "
+            + "  loc=x.d"
+            + "  return loc"
+            + "}"
+            + "print f(3.0)",
+        "getFieldInProc");
+  }
+
+  @Test
+  public void getFieldDoubleInProcToArg() throws Exception {
+    execute(
+        "      rt: record{s:string d:double} "
+            + "f:proc(dd:double):double {"
+            + "  x=new rt "
+            + "  x.d=dd "
+            + "  dd=x.d"
+            + "  return dd"
+            + "}"
+            + "print f(3.0)",
         "getFieldInProc");
   }
 
