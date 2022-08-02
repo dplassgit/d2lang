@@ -30,11 +30,13 @@ public class ArithmeticOptimizerTest {
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
   private static final TempLocation TEMP3 = new TempLocation("temp3", VarType.STRING);
+  private static final TempLocation DBL1 = new TempLocation("temp1", VarType.DOUBLE);
 
   // TODO: write more "simple" tests like this.
   @Test
   public void varPlusVarInts() {
-    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP2, TokenType.PLUS, TEMP2, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP1, TEMP2, TokenType.PLUS, TEMP2, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -48,8 +50,72 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void varPlusVarDouble() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                DBL1, ConstantOperand.ONE_DBL, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.of(2.0));
+  }
+
+  @Test
+  public void varMinusVarDouble() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                DBL1, ConstantOperand.ONE_DBL, TokenType.MINUS, ConstantOperand.ONE_DBL, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.ZERO_DBL);
+  }
+
+  @Test
+  public void varMultVarDouble() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                DBL1, ConstantOperand.ONE_DBL, TokenType.MULT, ConstantOperand.ONE_DBL, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.ONE_DBL);
+  }
+
+  @Test
+  public void varDivVarDouble() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(DBL1, ConstantOperand.ONE_DBL, TokenType.DIV, ConstantOperand.ONE_DBL, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.ONE_DBL);
+  }
+
+  @Test
   public void varPlusVarStrings() {
-    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP3, TokenType.PLUS, TEMP3, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP1, TEMP3, TokenType.PLUS, TEMP3, null));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
@@ -89,11 +155,29 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void compareDuoublesGt() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(DBL1, ConstantOperand.ONE_DBL, TokenType.GT, ConstantOperand.ZERO_DBL, null),
+            new BinOp(DBL1, ConstantOperand.ZERO_DBL, TokenType.GT, ConstantOperand.ONE_DBL, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.TRUE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.FALSE);
+  }
+
+  @Test
   public void compareStringsLeq() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(TEMP1, ConstantOperand.of("b"), TokenType.LEQ, ConstantOperand.of("a"), null),
-            new BinOp(TEMP1, ConstantOperand.of("a"), TokenType.LEQ, ConstantOperand.of("b"), null));
+            new BinOp(
+                TEMP1, ConstantOperand.of("a"), TokenType.LEQ, ConstantOperand.of("b"), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
