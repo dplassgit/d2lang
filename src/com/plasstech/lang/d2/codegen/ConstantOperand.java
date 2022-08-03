@@ -15,8 +15,13 @@ public class ConstantOperand<T> implements Operand {
       new ConstantOperand<Boolean>(false, VarType.BOOL);
   public static final ConstantOperand<Boolean> TRUE =
       new ConstantOperand<Boolean>(true, VarType.BOOL);
+  public static final ConstantOperand<String> EMPTY_STRING =
+      new ConstantOperand<String>("", VarType.STRING);
 
   public static ConstantOperand<String> of(String value) {
+    if (value.isEmpty()) {
+      return EMPTY_STRING;
+    }
     return new ConstantOperand<String>(value, VarType.STRING);
   }
 

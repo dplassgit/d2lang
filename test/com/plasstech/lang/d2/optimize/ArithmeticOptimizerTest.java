@@ -121,6 +121,30 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void varPlusEmptyStringRight() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, TEMP3, TokenType.PLUS, ConstantOperand.EMPTY_STRING, null));
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(TEMP3);
+  }
+
+  @Test
+  public void varPlusEmptyStringLeft() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, ConstantOperand.EMPTY_STRING, TokenType.PLUS, TEMP3, null));
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(TEMP3);
+  }
+
+  @Test
   public void compareIntsLeq() {
     ImmutableList<Op> program =
         ImmutableList.of(

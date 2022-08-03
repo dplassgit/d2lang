@@ -28,49 +28,36 @@ class ArithmeticOptimizer extends LineOptimizer {
     Operand operand = opcode.operand();
     switch (opcode.operator()) {
       case LENGTH:
-        if (operand.isConstant()) {
-          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
-          Object value = constant.value();
-          if (value instanceof String) {
-            String valueString = (String) value;
-            replaceCurrent(
-                new Transfer(opcode.destination(), ConstantOperand.of(valueString.length())));
-          } else if (value.getClass().isArray()) {
-            Object[] array = (Object[]) value;
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(array.length)));
-          }
+        if (operand.isConstant() && operand.type() == VarType.STRING) {
+          ConstantOperand<String> constant = (ConstantOperand<String>) operand;
+          String value = constant.value();
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(value.length())));
         }
         return;
       case NOT:
-        if (operand.isConstant()) {
-          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
-          Object value = constant.value();
-          if (value instanceof Boolean) {
-            boolean valueBoolean = (Boolean) value;
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(!valueBoolean)));
-          }
+        if (operand.isConstant() && operand.type() == VarType.BOOL) {
+          ConstantOperand<Boolean> constant = (ConstantOperand<Boolean>) operand;
+          boolean valueBoolean = constant.value();
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(!valueBoolean)));
         }
         return;
       case BIT_NOT:
-        if (operand.isConstant()) {
-          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
-          Object value = constant.value();
-          if (value instanceof Integer) {
-            Integer valueInt = (Integer) value;
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~valueInt)));
-          }
+        if (operand.isConstant() && operand.type() == VarType.INT) {
+          ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
+          int value = constant.value();
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~value)));
         }
         return;
       case MINUS:
         if (operand.isConstant()) {
-          ConstantOperand<?> constant = (ConstantOperand<?>) operand;
-          Object value = constant.value();
-          if (value instanceof Integer) {
-            int valueInt = (Integer) value;
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-valueInt)));
-          } else if (value instanceof Double) {
-            double valueInt = (double) value;
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-valueInt)));
+          if (operand.type() == VarType.INT) {
+            ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
+            int value = constant.value();
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-value)));
+          } else if (operand.type() == VarType.DOUBLE) {
+            ConstantOperand<Double> constant = (ConstantOperand<Double>) operand;
+            double value = constant.value();
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-value)));
           }
         }
         return;
@@ -184,18 +171,14 @@ class ArithmeticOptimizer extends LineOptimizer {
       case LBRACKET:
         // Replace "abc"[0] with "a".
         // Only works for constant strings and constant int indexes (modulo constant propagation!)
-        if (left.isConstant() && right.isConstant()) {
-          ConstantOperand<?> constant = (ConstantOperand<?>) left;
-          Object value = constant.value();
-          if (value instanceof String) {
-            ConstantOperand<Integer> indexOperand = (ConstantOperand<Integer>) right;
-            int index = indexOperand.value();
-            String valueString = (String) value;
-            replaceCurrent(
-                new Transfer(
-                    op.destination(),
-                    ConstantOperand.of(String.valueOf(valueString.charAt(index)))));
-          }
+        if (left.isConstant() && right.isConstant() && left.type() == VarType.STRING) {
+          ConstantOperand<String> constant = (ConstantOperand<String>) left;
+          String value = constant.value();
+          ConstantOperand<Integer> indexOperand = (ConstantOperand<Integer>) right;
+          int index = indexOperand.value();
+          replaceCurrent(
+              new Transfer(
+                  op.destination(), ConstantOperand.of(String.valueOf(value.charAt(index)))));
         }
         return;
 
@@ -215,7 +198,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
-    } 
+    }
     if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
@@ -237,7 +220,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     ConstantOperand<?> operand = (ConstantOperand<?>) arg;
-    if (operand.value() instanceof String) {
+    if (operand.type() == VarType.STRING) {
       return;
     }
     if (operand.value() == null) {
@@ -351,7 +334,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     // Replace foo - -32 with foo + 32
     if (right.isConstant()) {
       ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-      if (rightConstant.value() instanceof Integer) {
+      if (rightConstant.type() == VarType.INT) {
         int rightval = (int) rightConstant.value();
         if (rightval < 0) {
           replaceCurrent(
@@ -361,8 +344,10 @@ class ArithmeticOptimizer extends LineOptimizer {
                   TokenType.PLUS,
                   ConstantOperand.of(-rightval),
                   op.position()));
+          return;
         }
-      } else if (rightConstant.value() instanceof Double) {
+      }
+      if (rightConstant.type() == VarType.DOUBLE) {
         double rightval = (double) rightConstant.value();
         if (rightval < 0) {
           replaceCurrent(
@@ -372,6 +357,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                   TokenType.PLUS,
                   ConstantOperand.of(-rightval),
                   op.position()));
+          return;
         }
       }
     }
@@ -411,8 +397,8 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       }
       // Strings
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      if (leftConstant.value() instanceof String) {
+      if (left.type() == VarType.STRING) {
+        ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
         @SuppressWarnings("unchecked")
         ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
         replaceCurrent(
@@ -422,6 +408,24 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       }
     }
+
+    // Replace a+"" with a
+    if (left.type() == VarType.STRING) {
+      if (left.isConstant()) {
+        ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
+        if (leftConstant.value().isEmpty()) {
+          replaceCurrent(new Transfer(op.destination(), right));
+          return;
+        }
+      } else if (right.isConstant()) {
+        ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
+        if (rightConstant.value().isEmpty()) {
+          replaceCurrent(new Transfer(op.destination(), left));
+          return;
+        }
+      }
+    }
+
     // Replace foo + -32 with foo - 32
     if (right.isConstant() && right.type() == VarType.INT) {
       ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
@@ -634,38 +638,33 @@ class ArithmeticOptimizer extends LineOptimizer {
   private boolean optimizeArith(
       Location destination, Operand left, Operand right, BinaryOperator<Integer> fun) {
 
-    if (left.isConstant() && right.isConstant()) {
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      if (leftConstant.value() instanceof Integer) {
-        ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-        int leftval = (int) leftConstant.value();
-        int rightval = (int) rightConstant.value();
-        replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
-        return true;
-      }
+    if (left.isConstant() && right.isConstant() && left.type() == VarType.INT) {
+      ConstantOperand<Integer> leftConstant = (ConstantOperand<Integer>) left;
+      ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
+      int leftval = leftConstant.value();
+      int rightval = rightConstant.value();
+      replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
+      return true;
     }
     return false;
   }
 
   /**
    * If both operands are constant doubles, apply the given function to those booleans and replace
-   * the opcode with the new constant. E.g.,  t=3.14*2.0 becomes t=6.28
+   * the opcode with the new constant. E.g., t=3.14*2.0 becomes t=6.28
    *
    * @return true if both operands are double constants.
    */
   private boolean optimizeDoubleArith(
       Location destination, Operand left, Operand right, BinaryOperator<Double> fun) {
 
-    // TODO: use left.varType() == VarType.DOUBLE instead of the instanceof
-    if (left.isConstant() && right.isConstant()) {
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      if (leftConstant.value() instanceof Double) {
-        ConstantOperand<Double> rightConstant = (ConstantOperand<Double>) right;
-        double leftval = (double) leftConstant.value();
-        double rightval = rightConstant.value();
-        replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
-        return true;
-      }
+    if (left.isConstant() && right.isConstant() && left.type() == VarType.DOUBLE) {
+      ConstantOperand<Double> leftConstant = (ConstantOperand<Double>) left;
+      ConstantOperand<Double> rightConstant = (ConstantOperand<Double>) right;
+      double leftval = leftConstant.value();
+      double rightval = rightConstant.value();
+      replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
+      return true;
     }
     return false;
   }
