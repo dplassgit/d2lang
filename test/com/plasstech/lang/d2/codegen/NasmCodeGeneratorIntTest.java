@@ -173,4 +173,19 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
             + "}\r\n",
         "bug32");
   }
+
+  @Test
+  public void divisionByZeroGlobal() throws Exception {
+    assertRuntimeError("a=0 b=1/a", "divByZero", "Division by 0");
+  }
+
+  @Test
+  public void divisionByZeroLocal() throws Exception {
+    if (optimize) {
+      assertGenerateError("f:proc:int {a=0 b=1/a return b} f()", "Division by 0");
+    } else {
+      assertRuntimeError(
+          "f:proc:int {a=0 b=1/a return b} f()", "divisionByZeroLocal", "Division by 0");
+    }
+  }
 }

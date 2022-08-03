@@ -284,6 +284,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     try {
+      if (right.equals(ConstantOperand.ZERO_DBL) || right.equals(ConstantOperand.ZERO)) {
+        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      }
       if (optimizeArith(op.destination(), left, right, (t, u) -> t / u)) {
         return;
       }

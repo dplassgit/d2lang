@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -22,8 +23,8 @@ public class DoubleGenerator {
           .put(TokenType.LEQ, "setbe")
           .build();
 
-  private static final String DIV_BY_ZERO_ERR =
-      "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
+  private static final String ZERO_DBL_NAME = "ZERO_DBL";
+  private static final String ZERO_DATA = new DoubleEntry(ZERO_DBL_NAME, 0.0).dataEntry();
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -47,7 +48,7 @@ public class DoubleGenerator {
       case DIV:
         emitter.emit("movsd %s, %s ; double setup", destName, leftName);
         if (operator == TokenType.DIV) {
-          // TODO: div by 0 check
+          generateDivByZero(op);
         }
         emitter.emit(
             "%s %s, %s ; double %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
@@ -69,6 +70,36 @@ public class DoubleGenerator {
       default:
         emitter.fail("Cannot do %s on %ss (yet?)", operator, leftType);
         break;
+    }
+  }
+
+  private void generateDivByZero(BinOp op) {
+    Operand rightOperand = op.right();
+    if (rightOperand.isConstant()) {
+      ConstantOperand<Double> rightConstOperand = (ConstantOperand<Double>) rightOperand;
+      double rightValue = rightConstOperand.value();
+      if (rightValue == 0) {
+        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      }
+    } else {
+      Register zeroReg = resolver.allocate(VarType.DOUBLE);
+      emitter.addData(ZERO_DATA);
+      emitter.emit("movsd %s, [%s]", zeroReg, ZERO_DBL_NAME);
+      String right = resolver.resolve(rightOperand);
+      // NOTE: register needs to be on the left.
+      emitter.emit("comisd %s, %s  ; detect division by zero", zeroReg, right);
+      resolver.deallocate(zeroReg);
+      String continueLabel = resolver.nextLabel("not_div_by_zero");
+      emitter.emit("jne _%s", continueLabel);
+
+      emitter.emit0("\n  ; division by zero. print error and stop");
+      emitter.addData(Messages.DIV_BY_ZERO_ERR);
+      emitter.emit("mov EDX, %d  ; line number", op.position().line());
+      emitter.emit("mov RCX, DIV_BY_ZERO_ERR");
+      emitter.emitExternCall("printf");
+      emitter.emitExit(-1);
+
+      emitter.emitLabel(continueLabel);
     }
   }
 }

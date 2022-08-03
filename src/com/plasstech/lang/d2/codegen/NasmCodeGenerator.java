@@ -69,9 +69,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.LEQ, "setle") // for both intand boolean
           .build();
 
-  private static final String DIV_BY_ZERO_ERR =
-      "DIV_BY_ZERO_ERR: db \"Arithmentic error at line %d: Division by 0\", 10, 0";
-
   private final List<String> prelude = new ArrayList<>();
   private final Emitter emitter = new ListEmitter();
 
@@ -460,7 +457,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("jne _%s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
-      emitter.addData(DIV_BY_ZERO_ERR);
+      emitter.addData(Messages.DIV_BY_ZERO_ERR);
       emit("mov EDX, %d  ; line number", op.position().line());
       emit("mov RCX, DIV_BY_ZERO_ERR");
       emitter.emitExternCall("printf");
