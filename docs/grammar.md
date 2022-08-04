@@ -8,6 +8,9 @@ program -> statements main?
 
 statements -> statement* 
 statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'CONTINUE' | return_stmt | procedure_call | exit
+// reserved, but not implemented:
+// FOR <variable> IN <array>
+// DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXTERN, EXPORT
 
 main -> 'MAIN' mainarg? '{' statements '}'
 mainarg -> '(' variable ')' // not implemented yet
@@ -25,7 +28,8 @@ while -> 'WHILE' expr do? '{' statements '}'
 do -> 'DO' statement
 
 declaration -> variable ':' type | variable ':' 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}'
+type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE'
+// reserved, but not implemented: BYTE, CHAR, LONG
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
@@ -53,22 +57,25 @@ booland -> compare (('AND' | '&') compare)*
 compare -> shift (relop shift)*
 relop -> '==' '!=' '>' '<' '>=' '<='
 
-shift -> addsub (('<<' | '>>') unary)*
+shift -> addsub (('<<' | '>>') addsub)*
 
 addsub -> muldiv (('+' | '-') muldiv)*
 
 muldiv -> unary (('*' | '/' | '%') unary)*
 
-unary -> composite | ('!' | '-' | '+') unary | 'new' variable_name | unary_fn '(' expr ')'
+unary -> ('!' | '-' | '+' | 'NOT') unary |  unary_fn '(' expr ')' | 'NEW' variable | composite
 unary_fn -> 'ASC' | 'CHR' | 'LENGTH'
 
-composite -> atom ('[' expr ']')? | atom ('.' variable_name)?
+// note: it's actually more complicated than this
+composite -> atom ('[' expr ']') | atom ('.' atom)*
 
 atom ->   int_constant
+        | double_constant
 	| boolean_constant
 	| string_constant
-	| variable_name
-  | variable_name '(' comma-separated-expressions ')'
+	| 'NULL'
+        | variable
+        | variable '(' comma-separated-expressions ')'
 	| '(' expr ')'
 	| '[' comma-separated-expressions ']'
 	| 'INPUT'
