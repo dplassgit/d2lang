@@ -76,11 +76,15 @@ class CallGenerator {
           }
         }
         Register formalReg = Register.paramRegister(type, i);
-        if (formalReg != sourceReg) {
-          // it's not already in this register.
-          resolver.mov(type, sourceReg, formalReg);
+        if (sourceReg != null) {
+          if (formalReg != sourceReg) {
+            // it's not already in this register.
+            resolver.mov(type, sourceReg, formalReg);
+          } else {
+            emitter.emit("; %dth param already in %s", i, sourceReg);
+          }
         } else {
-          emitter.emit("; %dth param already in %s", i, sourceReg);
+          resolver.mov(actual, formalReg);
         }
       }
 

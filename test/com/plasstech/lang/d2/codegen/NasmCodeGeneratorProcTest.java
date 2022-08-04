@@ -91,6 +91,19 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
         "bug102ParamMunge");
   }
 
+  @Test
+  public void bug102Redux() throws Exception {
+    execute(
+        "makeSymbol: proc(it: int, start: int): int {\r"
+            + "  return makeToken(3, start, start)\r"
+            + "} \r"
+            + "makeToken:proc(type:int, start:int, end:int): int {\r"
+            + "  return start\r"
+            + "} \r"
+            + "println makeSymbol(1,2)\r",
+        "bug102Redux");
+  }
+
   private static final String FOUR_PARAM_PROC =
       "  procParamFirst4Locations:proc(p3:bool, p4: string, p1: int, p2: int) { "
           + "  print p2 println p1 print p2 println p1 print p3 print p4 \n"
