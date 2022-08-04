@@ -223,42 +223,43 @@ public class StaticChecker extends DefaultVisitor implements Phase {
   }
 
   @Override
+  public void visit(ArrayLiteralNode node) {
+    // Make sure all element types are the same.
+    ArrayType arrayType = node.arrayType();
+    VarType baseType = arrayType.baseType();
+    int i = 0;
+    for (ExprNode element : node.elements()) {
+      element.accept(this);
+      if (element.varType().isUnknown()) {
+        throw new TypeException(
+            String.format("Indeterminable type for %s", element), element.position());
+      }
+
+      // this may fail for records, bleah.
+      if (element.varType() != baseType) {
+        throw new TypeException(
+            String.format(
+                "Inconsistent type in array literal; expected %s but element %d was %s",
+                baseType, i, element.varType()),
+            element.position());
+      }
+      i++;
+    }
+  }
+
+  @Override
   public void visit(AssignmentNode node) {
     // Make sure that the left = right
 
     Node right = node.expr();
     right.accept(this);
     if (right.varType().isUnknown()) {
-      // TODO: Can we infer anything form this?
+      // TODO: Can we infer anything from this?
       throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
     }
     if (right.varType() == VarType.VOID) {
       throw new TypeException(
           String.format("Cannot assign value of VOID expression %s", right), right.position());
-    }
-    if (right instanceof ArrayLiteralNode) {
-      // Make sure all element types are the same.
-      ArrayLiteralNode arrayLiteral = (ArrayLiteralNode) right;
-      ArrayType arrayType = arrayLiteral.arrayType();
-      VarType baseType = arrayType.baseType();
-      int i = 0;
-      for (ExprNode element : arrayLiteral.elements()) {
-        element.accept(this);
-        if (element.varType().isUnknown()) {
-          throw new TypeException(
-              String.format("Indeterminable type for %s", element), element.position());
-        }
-
-        // this may fail for records, bleah.
-        if (element.varType() != baseType) {
-          throw new TypeException(
-              String.format(
-                  "Inconsistent type in array literal; expected %s but element %d was %s",
-                  baseType, i, element.varType()),
-              element.position());
-        }
-        i++;
-      }
     }
 
     LValueNode lvalue = node.lvalue();
@@ -843,8 +844,6 @@ public class StaticChecker extends DefaultVisitor implements Phase {
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
     /**
-     *
-     *
      * <pre>
      * If there's a top-level "return" in this block, return true
      * Else for each statement in the block:

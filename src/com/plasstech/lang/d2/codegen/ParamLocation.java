@@ -22,7 +22,7 @@ public class ParamLocation extends Location {
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof ParamLocation)) {
+    if (obj == null || !(obj instanceof ParamLocation)) {
       return false;
     }
     ParamLocation that = (ParamLocation) obj;

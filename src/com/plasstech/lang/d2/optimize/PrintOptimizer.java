@@ -37,9 +37,7 @@ public class PrintOptimizer extends LineOptimizer {
         return false;
       }
       Operand operand = sysCall.arg();
-      if (operand.isConstant()) {
-        return operand.type() == VarType.STRING;
-      }
+      return operand.isConstant() && operand.type() == VarType.STRING;
     }
     return false;
   }

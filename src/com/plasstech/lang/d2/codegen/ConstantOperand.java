@@ -77,13 +77,13 @@ public class ConstantOperand<T> implements Operand {
   public String toString() {
     if (value == null) {
       return "__null";
-    } else if (value instanceof String) {
+    } else if (type() == VarType.STRING) {
       String valueString = value.toString();
       if (valueString.length() > 40) {
         valueString = valueString.substring(0, 40) + "...";
       }
       return String.format("\"%s\"", valueString);
-    } else if (value.getClass().isArray()) {
+    } else if (type().isArray()) {
       Object[] valArray = (Object[]) value;
       return String.format("[%s]", Joiner.on(", ").join(valArray));
     } else {
