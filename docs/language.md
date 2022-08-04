@@ -159,9 +159,7 @@ The "constructor" builds an empty object. Deal with it.
 Also `null` is a thing.
 
 
-## Future thoughts:
-
-### Arrays
+## Arrays
 
 Everything is like strings
 
@@ -176,7 +174,7 @@ Length: `array.length` like Java? This will require some parsing finesse.
 
 Winner: `length(array)`
 
-#### Declaration explorations
+### Declaration explorations
 
 This actually declares and allocates the array.
 
@@ -191,19 +189,19 @@ keywords:int[3] // winner because multidimensional arrays.
 
 Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated. We allow the size at declaration time.
 
-#### Multi-dimensional
+### Multi-dimensional (not implemented yet)
 
 ```
 keywords:int[1,2]
 ```
 
-#### Constants
+### Constants
 
 ```
 keywords=[1,2,3,4]
 numbers=[1,2,functioncall(), a]
 ```
 
-#### Allocating 
+### Allocating 
 
 There's no separation between allocation and declaration of arrays.
