@@ -16,24 +16,7 @@ public interface VarType {
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");
   VarType NULL = new NullType();
-
-  VarType UNKNOWN =
-      new VarType() {
-        @Override
-        public String name() {
-          return "UNKNOWN";
-        }
-
-        @Override
-        public int size() {
-          throw new IllegalStateException("Should not try to get size of UNKNOWN");
-        }
-
-        @Override
-        public String toString() {
-          return name();
-        }
-      };
+  VarType UNKNOWN = new UnknownType();
 
   /**
    * @return a name that uniquely describes this type. For example, "string",

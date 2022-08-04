@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.Objects;
+
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
@@ -92,22 +94,21 @@ public class ConstantOperand<T> implements Operand {
   }
 
   @Override
-  public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof ConstantOperand)) {
+  public SymbolStorage storage() {
+    return SymbolStorage.IMMEDIATE;
+  }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof ConstantOperand)) {
       return false;
     }
 
-    ConstantOperand<?> that = (ConstantOperand<?>) obj;
-    return this.value().equals(that.value());
+    return this.hashCode() == that.hashCode();
   }
 
   @Override
   public int hashCode() {
-    return value.hashCode();
-  }
-
-  @Override
-  public SymbolStorage storage() {
-    return SymbolStorage.IMMEDIATE;
+    return Objects.hash(type(), value());
   }
 }

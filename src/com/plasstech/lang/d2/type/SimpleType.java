@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.Objects;
+
 /** Simple (primitive) type: int, bool, string, void. */
 public class SimpleType implements VarType {
   private final String name;
@@ -30,16 +32,15 @@ public class SimpleType implements VarType {
   }
 
   @Override
-  public boolean equals(Object thatObject) {
-    if (thatObject == null || !(thatObject instanceof SimpleType)) {
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof SimpleType)) {
       return false;
     }
-    SimpleType that = (SimpleType) thatObject;
-    return this.name().equals(that.name());
+    return this.hashCode() == that.hashCode();
   }
 
   @Override
   public int hashCode() {
-    return 31 * name().hashCode() + 7;
+    return Objects.hash(getClass().getName(), name(), size);
   }
 }

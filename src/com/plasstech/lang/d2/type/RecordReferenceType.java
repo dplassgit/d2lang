@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.Objects;
+
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType implements VarType {
   private final String name;
@@ -33,8 +35,7 @@ public class RecordReferenceType implements VarType {
     if (obj == null || !(obj instanceof RecordReferenceType)) {
       return false;
     }
-    RecordReferenceType that = (RecordReferenceType) obj;
-    return this.name.equals(that.name);
+    return this.hashCode() == obj.hashCode();
   }
 
   @Override
@@ -44,6 +45,6 @@ public class RecordReferenceType implements VarType {
 
   @Override
   public int hashCode() {
-    return 17 + 37 * name.hashCode();
+    return Objects.hash(name(), size()) + 7;
   }
 }

@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.Objects;
+
 public class ArrayType implements VarType {
   private final VarType baseType;
   private final int dimensions;
@@ -38,17 +40,16 @@ public class ArrayType implements VarType {
   }
 
   @Override
-  public boolean equals(Object thatObject) {
-    if (thatObject == null || !(thatObject instanceof ArrayType)) {
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof ArrayType)) {
       return false;
     }
-    ArrayType that = (ArrayType) thatObject;
-    return this.dimensions() == that.dimensions() && this.baseType.equals(that.baseType);
+    return this.hashCode() == that.hashCode();
   }
   
   @Override
   public int hashCode() {
-    return 23 * name().hashCode() + 7;
+    return Objects.hash(name(), dimensions(), baseType());
   }
 
   @Override
