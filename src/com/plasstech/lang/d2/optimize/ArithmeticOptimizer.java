@@ -605,14 +605,19 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.test(leftval, rightval))));
       return true;
     }
+    // TODO: for <= or >= we can use Objects.equal to optimize.
     return false;
   }
 
   /**
    * If both operands are constants, apply the given function to the constants and replace the
-   * opcode with result. E.g., t='a'=='b' becomes t=false
+   * opcode with result. E.g., t='a'=='b' becomes t=false.
    *
-   * @return true if both operands are constants.
+   * If both operands are not constants, apply the == function and if they pass, replace the
+   * opcode with true. E.g., t=a == a becomes t=true. This does not work for t=a!=b because it
+   * still has to compare at runtime the values of a and b are the same or not.
+   *
+   * @return true if both objects are constants or they passes fun.test
    */
   private boolean optimizeEq(
       Location destination, Operand left, Operand right, BiPredicate<Object, Object> fun) {
@@ -625,7 +630,15 @@ class ArithmeticOptimizer extends LineOptimizer {
               destination,
               ConstantOperand.of(fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
+    } 
+    // Both are not constants, but they still may reference the same object (or equivalent)
+    // TODO: is this even possible?! based on the way temps are generated, it may not be possible...
+    if (left.equals(right) && fun.test(this, this)) { // heh, cheap way to test that the function is==
+      // replace t=a==b with t=true, only for equals
+      replaceCurrent(new Transfer(destination, ConstantOperand.TRUE));
+      return true;
     }
+      
     return false;
   }
 
