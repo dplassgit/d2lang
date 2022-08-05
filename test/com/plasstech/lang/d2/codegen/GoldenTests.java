@@ -23,7 +23,7 @@ import com.plasstech.lang.d2.testing.TestUtils;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
-public class GoldenTests {
+public class GoldenTests extends NasmCodeGeneratorTestBase {
 
   @Test
   public void lexerInDLexerInDGlobals() throws IOException {
@@ -76,7 +76,7 @@ public class GoldenTests {
 
   @Test
   public void runAllSamples(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
-      throws IOException {
+      throws Exception {
     if (System.getenv("TEST_SRCDIR") == null) {
       testFromFile(file.getAbsolutePath());
     } else {
@@ -129,9 +129,9 @@ public class GoldenTests {
     System.out.println();
   }
 
-  private void testFromFile(String path) throws IOException {
+  private void testFromFile(String path) throws Exception {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
-    TestUtils.optimizeAssertSameVariables(text);
+    execute(text, "golden");
   }
 }

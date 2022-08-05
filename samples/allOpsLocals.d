@@ -10,14 +10,10 @@ f1:proc(a:double, b:double): double {
   k=z+4.0/(5.0+(4.0-5.0*-f)) print 'k: ' println k
   k=0.0+-d/(5.0+(4.0-5.0*f)) print 'k: ' println k
   g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print 'g: ' println g
-   h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) print 'h: ' println h
+  h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) print 'h: ' println h
   j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) print 'j: ' println j
-  aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+7.0/11.0)+(7.0-11.0*13.0))*2.0)/b)
-  print 'aa: ' println aa
-  return aa
-} 
-f2:proc(a:double, b:double):double { 
-  return f1(b, a)
-} 
-println f1(2.0, 1.0)
+  aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+8.0/11.0)+(7.0-11.0*13.0))*2.0)/b) println aa
+  return aa 
+}
+f2:proc(a:double, b:double):double { return f1(b, a) } 
 println f2(1.0, 2.0)
