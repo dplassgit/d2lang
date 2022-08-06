@@ -8,6 +8,7 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE_DBL;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO_DBL;
+import static com.plasstech.lang.d2.optimize.OptimizerAsserts.assertTransferFrom;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,7 +22,6 @@ import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
-import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -31,7 +31,7 @@ import com.plasstech.lang.d2.type.VarType;
 public class ArithmeticOptimizerTest {
   private static final Operand TWO_DBL = ConstantOperand.of(2.0);
   private final Optimizer optimizer = new ArithmeticOptimizer(2);
-  private final ILOptimizer OPTIMIZERS =
+  private final Optimizer OPTIMIZERS =
       new ILOptimizer(
               ImmutableList.of(optimizer, new ConstantPropagationOptimizer(0), new NopOptimizer()))
           .setDebugLevel(2);
@@ -327,7 +327,4 @@ public class ArithmeticOptimizerTest {
         String.format("a=%s %s %s", left, operator, right), OPTIMIZERS);
   }
 
-  private void assertTransferFrom(Op op, Operand expectedSource) {
-    assertThat(((Transfer) op).source()).isEqualTo(expectedSource);
-  }
 }
