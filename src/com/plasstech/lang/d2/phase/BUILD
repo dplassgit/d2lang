@@ -12,9 +12,12 @@ java_library(
 
 java_library(
     name = "state",
-    srcs = ["State.java"],
+    srcs = [
+        "State.java", 
+    ],
     deps = [
         ":auto", 
+        ":errors",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
@@ -33,6 +36,18 @@ java_library(
     srcs = ["Phase.java"],
     deps = [
         ":state", 
+    ],
+    visibility=["//visibility:public"],
+)
+
+java_library(
+    name = "errors",
+    srcs = [
+        "Errors.java",
+    ],
+    deps = [
+        "//src/com/plasstech/lang/d2/common",
+        "@maven//:com_google_guava_guava",
     ],
     visibility=["//visibility:public"],
 )

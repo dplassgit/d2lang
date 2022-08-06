@@ -1,8 +1,11 @@
 package com.plasstech.lang.d2.phase;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import javax.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -25,12 +28,20 @@ public abstract class State {
   public abstract D2RuntimeException exception();
 
   public boolean error() {
-    return exception() != null;
+    return exception() != null || (errors() != null && errors().hasErrors());
   }
+
+  @Nullable
+  public abstract Errors errors();
 
   public String errorMessage() {
     assert error();
+    if (exception() != null) {
     return exception().getMessage();
+    } else {
+      return Joiner.on('\n')
+          .join(errors().errors().stream().map(e -> e.getMessage()).collect(toImmutableList()));
+    }
   }
 
   @Nullable
@@ -90,6 +101,8 @@ public abstract class State {
 
     public abstract Builder setAsmCode(ImmutableList<String> asmCode);
 
+    public abstract Builder setErrors(Errors errors);
+
     public abstract State build();
   }
 
@@ -111,7 +124,7 @@ public abstract class State {
 
   public State addTypecheckResult(TypeCheckResult result) {
     if (result.isError()) {
-      return toBuilder().setException(result.exception()).build();
+      return toBuilder().setErrors(result.errors()).build();
     }
     return toBuilder().setTypeCheckResult(result).build();
   }

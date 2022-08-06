@@ -1210,6 +1210,9 @@ public class StaticCheckerTest {
     }
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
+    if (state.error()) {
+      System.err.println(state.errorMessage());
+    }
     return state;
   }
 }

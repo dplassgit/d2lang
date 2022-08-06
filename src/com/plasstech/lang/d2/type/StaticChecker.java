@@ -41,6 +41,7 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.Errors;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
@@ -159,6 +160,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   private Stack<ProcSymbol> procedures = new Stack<>();
   private Set<ProcSymbol> needsReturn = new HashSet<>();
+  private final Errors errors = new Errors();
 
   public StaticChecker(Node root) {
     this.root = root;
@@ -195,12 +197,17 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       root.accept(this);
       if (!procedures.isEmpty()) {
         ProcSymbol top = procedures.peek();
-        throw new TypeException(
-            String.format("Still in PROC '%s'. (This should never happen)", top), top.position());
+        errors.add(
+            new TypeException(
+                String.format("Still in PROC '%s'. (This should never happen)", top),
+                top.position()));
+      }
+      if (errors.hasErrors()) {
+        return new TypeCheckResult(errors);
       }
       return new TypeCheckResult(symbolTable);
     } catch (D2RuntimeException e) {
-      return new TypeCheckResult(e);
+      return new TypeCheckResult(errors);
     }
   }
 
@@ -216,7 +223,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     Node expr = node.expr();
     expr.accept(this);
     if (expr.varType().isUnknown()) {
-      throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
+      errors.add(
+          new TypeException(String.format("Indeterminable type for %s", expr), expr.position()));
     }
   }
 
@@ -229,17 +237,19 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     for (ExprNode element : node.elements()) {
       element.accept(this);
       if (element.varType().isUnknown()) {
-        throw new TypeException(
-            String.format("Indeterminable type for %s", element), element.position());
+        errors.add(
+            new TypeException(
+                String.format("Indeterminable type for %s", element), element.position()));
       }
 
       // this may fail for records, bleah.
       if (element.varType() != baseType) {
-        throw new TypeException(
-            String.format(
-                "Inconsistent type in array literal; expected %s but element %d was %s",
-                baseType, i, element.varType()),
-            element.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Inconsistent type in array literal; expected %s but element %d was %s",
+                    baseType, i, element.varType()),
+                element.position()));
       }
       i++;
     }
@@ -253,11 +263,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     right.accept(this);
     if (right.varType().isUnknown()) {
       // TODO: Can we infer anything from this?
-      throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
+      errors.add(
+          new TypeException(String.format("Indeterminable type for %s", right), right.position()));
+      return;
     }
     if (right.varType() == VarType.VOID) {
-      throw new TypeException(
-          String.format("Cannot assign value of VOID expression %s", right), right.position());
+      errors.add(
+          new TypeException(
+              String.format("Cannot assign value of VOID expression %s", right), right.position()));
+      return;
     }
 
     LValueNode lvalue = node.lvalue();
@@ -268,16 +282,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             // Get the record from the symbol table.
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
             if (variableSymbol == null || !variableSymbol.varType().isRecord()) {
-              throw new TypeException(
-                  String.format("Cannot set field of '%s'; not a known RECORD", lvalue.name()),
-                  lvalue.position());
+              errors.add(
+                  new TypeException(
+                      String.format("Cannot set field of '%s'; not a known RECORD", lvalue.name()),
+                      lvalue.position()));
+              return;
             }
 
             Symbol recordSymbol = symbolTable().getRecursive(variableSymbol.varType().name());
             if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
-              throw new TypeException(
-                  String.format("Cannot apply DOT operator to %s expression", fsn.varType()),
-                  fsn.position());
+              errors.add(
+                  new TypeException(
+                      String.format("Cannot apply DOT operator to %s expression", fsn.varType()),
+                      fsn.position()));
+              return;
             }
 
             RecordSymbol record = (RecordSymbol) recordSymbol;
@@ -285,17 +303,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             String fieldName = fsn.fieldName();
             VarType fieldType = record.fieldType(fieldName);
             if (fieldType == VarType.UNKNOWN) {
-              throw new TypeException(
-                  String.format(
-                      "Unknown field '%s' referenced in RECORD type '%s'",
-                      fieldName, record.name()),
-                  fsn.position());
+              errors.add(
+                  new TypeException(
+                      String.format(
+                          "Unknown field '%s' referenced in RECORD type '%s'",
+                          fieldName, record.name()),
+                      fsn.position()));
+              return;
             } else if (!fieldType.compatibleWith(right.varType())) {
-              throw new TypeException(
-                  String.format(
-                      "Field '%s' of RECORD '%s' declared as %s but expression is %s",
-                      fieldName, record.name(), fieldType, right.varType()),
-                  lvalue.position());
+              errors.add(
+                  new TypeException(
+                      String.format(
+                          "Field '%s' of RECORD '%s' declared as %s but expression is %s",
+                          fieldName, record.name(), fieldType, right.varType()),
+                      lvalue.position()));
             }
             lvalue.setVarType(fieldType);
           }
@@ -313,11 +334,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 symbol.setVarType(right.varType());
               } else if (!symbol.varType().compatibleWith(right.varType())) {
                 // It was already in the symbol table. Possible that it's wrong
-                throw new TypeException(
-                    String.format(
-                        "Variable '%s' declared as %s but expression is %s",
-                        lvalue.name(), symbol.varType(), right.varType()),
-                    lvalue.position());
+                errors.add(
+                    new TypeException(
+                        String.format(
+                            "Variable '%s' declared as %s but expression is %s",
+                            lvalue.name(), symbol.varType(), right.varType()),
+                        lvalue.position()));
               }
 
               // TODO(#38): if arrays, the # of dimensions must match.
@@ -334,15 +356,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             String variableName = asn.variableName();
             Symbol symbol = symbolTable().getRecursive(variableName);
             if (symbol == null) {
-              throw new TypeException(
-                  String.format("unknown ARRAY variable '%s'", variableName), lvalue.position());
+              errors.add(
+                  new TypeException(
+                      String.format("unknown ARRAY variable '%s'", variableName),
+                      lvalue.position()));
+              return;
             }
             if (!symbol.varType().isArray()) {
-              throw new TypeException(
-                  String.format(
-                      "variable '%s' must be of type ARRAY; was %s",
-                      variableName, symbol.varType()),
-                  lvalue.position());
+              errors.add(
+                  new TypeException(
+                      String.format(
+                          "variable '%s' must be of type ARRAY; was %s",
+                          variableName, symbol.varType()),
+                      lvalue.position()));
+              return;
             }
             asn.setVarType(symbol.varType());
 
@@ -351,16 +378,19 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             indexNode.accept(StaticChecker.this);
             VarType indexType = indexNode.varType();
             if (indexType != VarType.INT) {
-              throw new TypeException(
-                  String.format("ARRAY index must be INT; was %s", indexType),
-                  indexNode.position());
+              errors.add(
+                  new TypeException(
+                      String.format("ARRAY index must be INT; was %s", indexType),
+                      indexNode.position()));
+              return;
             }
             if (indexNode.isConstant()) {
               ConstNode<Integer> index = (ConstNode<Integer>) indexNode;
               if (index.value() < 0) {
-                throw new TypeException(
-                    String.format("ARRAY index must be non-negative; was %d", index.value()),
-                    indexNode.position());
+                errors.add(
+                    new TypeException(
+                        String.format("ARRAY index must be non-negative; was %d", index.value()),
+                        indexNode.position()));
               }
             }
 
@@ -371,11 +401,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             }
             // 3. rhs must match lhs
             if (!arrayType.baseType().compatibleWith(right.varType())) {
-              throw new TypeException(
-                  String.format(
-                      "ARRAY '%s' declared as %s but RHS (%s) is %s",
-                      variableName, arrayType.baseType(), right, right.varType()),
-                  lvalue.position());
+              errors.add(
+                  new TypeException(
+                      String.format(
+                          "ARRAY '%s' declared as %s but RHS (%s) is %s",
+                          variableName, arrayType.baseType(), right, right.varType()),
+                      lvalue.position()));
             }
           }
         });
@@ -396,8 +427,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           // Globals can be referenced inside a proc without being assigned.
         } else if (!symbolTable().isAssigned(node.name())) {
           // can't use it
-          throw new TypeException(
-              String.format("Variable '%s' used before assignment", node.name()), node.position());
+          errors.add(
+              new TypeException(
+                  String.format("Variable '%s' used before assignment", node.name()),
+                  node.position()));
         }
         node.setVarType(existingType);
       }
@@ -409,44 +442,48 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     // 1. make sure the function is really a function
     Symbol maybeProc = symbolTable().getRecursive(node.procName());
     if (maybeProc == null || maybeProc.varType() != VarType.PROC) {
-      throw new TypeException(
-          String.format("PROC '%s' is unknown", node.procName()), node.position());
+      errors.add(
+          new TypeException(
+              String.format("PROC '%s' is unknown", node.procName()), node.position()));
+      return;
     }
     // 2. make sure the arg length is right.
     ProcSymbol proc = (ProcSymbol) maybeProc;
     if (proc.parameters().size() != node.actuals().size()) {
-      throw new TypeException(
-          String.format(
-              "Wrong number of arguments to PROC '%s': found %d, expected %d",
-              node.procName(), node.actuals().size(), proc.parameters().size()),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Wrong number of arguments to PROC '%s': found %d, expected %d",
+                  node.procName(), node.actuals().size(), proc.parameters().size()),
+              node.position()));
     }
     // 3. eval parameter expressions.
     node.actuals().forEach(actual -> actual.accept(this));
 
     // 4. for each param, if param type is unknown, set it from the expr if possible
-    for (int i = 0; i < node.actuals().size(); ++i) {
+    for (int i = 0; i < Math.min(proc.parameters().size(), node.actuals().size()); ++i) {
       Parameter formal = proc.parameters().get(i);
       ExprNode actual = node.actuals().get(i);
       if (formal.varType().isUnknown()) {
         if (actual.varType().isUnknown()) {
-          // wah.
-          throw new TypeException(
-              String.format(
-                  "Indeterminable type for parameter '%s' of PROC '%s'",
-                  formal.name(), proc.name()),
-              node.position());
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Indeterminable type for parameter '%s' of PROC '%s'",
+                      formal.name(), proc.name()),
+                  node.position()));
         } else {
           formal.setVarType(actual.varType());
         }
       }
       // 5. make sure expr types == param types
       if (!formal.varType().compatibleWith(actual.varType())) {
-        throw new TypeException(
-            String.format(
-                "Type mismatch for parameter '%s' to PROC '%s': found %s, expected %s",
-                formal.name(), proc.name(), actual.varType(), formal.varType()),
-            node.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Type mismatch for parameter '%s' to PROC '%s': found %s, expected %s",
+                    formal.name(), proc.name(), actual.varType(), formal.varType()),
+                node.position()));
       }
     }
     // 6. set the type of the expression to the return type of the node
@@ -464,22 +501,26 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     VarType leftType = left.varType();
     if (leftType.isUnknown()) {
-      throw new TypeException(String.format("Indeterminable type for %s", left), left.position());
+      errors.add(
+          new TypeException(String.format("Indeterminable type for %s", left), left.position()));
     }
 
     // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
     TokenType operator = node.operator();
     VarType rightType = right.varType();
     if (operator != TokenType.DOT && rightType.isUnknown()) {
-      throw new TypeException(String.format("Indeterminable type for %s", right), right.position());
+      errors.add(
+          new TypeException(String.format("Indeterminable type for %s", right), right.position()));
     }
 
     // Check that they're not trying to, for example, multiply booleans
     ImmutableSet<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
     if (operators != null && !operators.contains(operator)) {
-      throw new TypeException(
-          String.format("Cannot apply %s operator to %s operand", operator.name(), leftType),
-          left.position());
+      errors.add(
+          new TypeException(
+              String.format("Cannot apply %s operator to %s operand", operator.name(), leftType),
+              left.position()));
+      return;
     }
 
     if (operator == TokenType.DOT) {
@@ -487,8 +528,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       String recordName = leftType.name();
       Symbol symbol = symbolTable().getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
-        throw new TypeException(
-            String.format("Unknown RECORD type '%s'", recordName), left.position());
+        errors.add(
+            new TypeException(
+                String.format("Unknown RECORD type '%s'", recordName), left.position()));
+        return;
       }
       if (!(right instanceof VariableNode)) {
         throw new TypeException(
@@ -501,10 +544,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       RecordSymbol recordSymbol = (RecordSymbol) symbol;
       VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
-        throw new TypeException(
-            String.format(
-                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordName),
-            right.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordSymbol),
+                right.position()));
+        return;
       }
       node.setVarType(fieldType);
       // NOTE: RETURN
@@ -512,24 +557,30 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     if (leftType.isArray() && !ARRAY_OPERATORS.contains(operator)) {
-      throw new TypeException(
-          String.format("Cannot apply %s operand to ARRAY expression", operator), left.position());
+      errors.add(
+          new TypeException(
+              String.format("Cannot apply %s operand to ARRAY expression", operator),
+              left.position()));
+      return;
     }
 
     // string[int] and array[int]
     if (operator == TokenType.LBRACKET) {
       if (rightType != VarType.INT) {
-        throw new TypeException(
-            String.format("%s index must be INT; was %s", leftType.name(), rightType),
-            right.position());
+        errors.add(
+            new TypeException(
+                String.format("%s index must be INT; was %s", leftType.name(), rightType),
+                right.position()));
+        return;
       }
       if (right.isConstant()) {
         ConstNode<Integer> index = (ConstNode<Integer>) right;
         if (index.value() < 0) {
-          throw new TypeException(
-              String.format(
-                  "%s index must be non-negative; was %d", leftType.name(), index.value()),
-              right.position());
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "%s index must be non-negative; was %d", leftType.name(), index.value()),
+                  right.position()));
         }
       }
       if (leftType == VarType.STRING) {
@@ -545,9 +596,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
 
     } else if (!leftType.compatibleWith(rightType)) {
-      throw new TypeException(
-          String.format("Type mismatch: %s is %s; %s is %s", left, leftType, right, rightType),
-          left.position());
+      errors.add(
+          new TypeException(
+              String.format("Type mismatch: %s is %s; %s is %s", left, leftType, right, rightType),
+              left.position()));
     }
 
     // TODO: add arrays
@@ -572,26 +624,29 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     VarType exprType = expr.varType();
     if (exprType.isUnknown()) {
-      throw new TypeException(String.format("Indeterminable type for %s", expr), expr.position());
+      errors.add(
+          new TypeException(String.format("Indeterminable type for %s", expr), expr.position()));
     }
 
     // Check that they're not trying to negate a boolean or "not" an int.
     ImmutableSet<TokenType> operators = UNARY_OPERATORS_BY_VARTYPE.get(exprType);
     if (operators != null && !operators.contains(node.operator())) {
-      throw new TypeException(
-          String.format("Cannot apply %s operator to %s expression", node.operator(), exprType),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format("Cannot apply %s operator to %s expression", node.operator(), exprType),
+              node.position()));
     }
 
     // Extra checks for some operators:
     switch (node.operator()) {
       case LENGTH:
         if (exprType != VarType.STRING && !exprType.isArray()) {
-          throw new TypeException(
-              String.format(
-                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
-                  exprType),
-              expr.position());
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Cannot aply LENGTH function to %s expression; must be ARRAY or STRING",
+                      exprType),
+                  expr.position()));
         }
         node.setVarType(VarType.INT);
         break;
@@ -614,10 +669,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       Node condition = ifCase.condition();
       condition.accept(this);
       if (condition.varType() != VarType.BOOL) {
-        throw new TypeException(
-            String.format(
-                "Cannot use %s expression in IF or ELIF; must be BOOL", condition.varType()),
-            condition.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot use %s expression in IF or ELIF; must be BOOL", condition.varType()),
+                condition.position()));
       }
       ifCase
           .block()
@@ -642,9 +698,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     Node condition = node.condition();
     condition.accept(this);
     if (condition.varType() != VarType.BOOL) {
-      throw new TypeException(
-          String.format("Cannot use %s expression for WHILE; must be BOOL", condition.varType()),
-          condition.position());
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Cannot use %s expression for WHILE; must be BOOL", condition.varType()),
+              condition.position()));
     }
     if (node.doStatement().isPresent()) {
       node.doStatement().get().accept(this);
@@ -663,11 +721,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     // Don't go up to the parent symbol table; this allows scoping
     VarType existingType = symbolTable().lookup(node.name(), false);
     if (!existingType.isUnknown()) {
-      throw new TypeException(
-          String.format(
-              "Variable '%s' already declared as %s, cannot be redeclared as %s",
-              node.name(), existingType.name(), node.varType()),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Variable '%s' already declared as %s, cannot be redeclared as %s",
+                  node.name(), existingType.name(), node.varType()),
+              node.position()));
+      return;
     }
     // gotta make sure it exists
     validatePossibleRecordType(node.name(), node.varType(), node.position());
@@ -680,9 +740,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       String recordName = ((RecordReferenceType) type).name();
       Symbol symbol = symbolTable().getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
-        throw new TypeException(
-            String.format("Cannot declare '%s' as unknown RECORD '%s'", name, recordName),
-            position);
+        errors.add(
+            new TypeException(
+                String.format("Cannot declare '%s' as unknown RECORD '%s'", name, recordName),
+                position));
       }
       return symbol;
     }
@@ -693,33 +754,41 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   public void visit(ArrayDeclarationNode node) {
     VarType existingType = symbolTable().lookup(node.name(), false);
     if (!existingType.isUnknown()) {
-      throw new TypeException(
-          String.format(
-              "Variable '%s' already declared as %s, cannot be redeclared as %s",
-              node.name(), existingType.name(), node.varType()),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Variable '%s' already declared as %s, cannot be redeclared as %s",
+                  node.name(), existingType.name(), node.varType()),
+              node.position()));
+      return;
     }
 
     // Make sure size type is int
     ExprNode arraySizeExpr = node.sizeExpr();
     arraySizeExpr.accept(this);
     if (arraySizeExpr.varType().isUnknown()) {
-      throw new TypeException(
-          "Indeterminable type for ARRAY size; must be INT", arraySizeExpr.position());
+      errors.add(
+          new TypeException(
+              "Indeterminable type for ARRAY size; must be INT", arraySizeExpr.position()));
+      return;
     }
     if (arraySizeExpr.varType() != VarType.INT) {
-      throw new TypeException(
-          String.format("ARRAY size must be INT; was %s", arraySizeExpr.varType()),
-          arraySizeExpr.position());
+      errors.add(
+          new TypeException(
+              String.format("ARRAY size must be INT; was %s", arraySizeExpr.varType()),
+              arraySizeExpr.position()));
+      return;
     }
     if (arraySizeExpr.isConstant()) {
       ConstNode<Integer> size = (ConstNode<Integer>) arraySizeExpr;
       if (size.value() <= 0) {
         // Peephole optimization
-        throw new D2RuntimeException(
-            String.format("ARRAY size must be positive; was %d", size.value()),
-            arraySizeExpr.position(),
-            "Invalid value");
+        errors.add(
+            new D2RuntimeException(
+                String.format("ARRAY size must be positive; was %d", size.value()),
+                arraySizeExpr.position(),
+                "Invalid value"));
+        return;
       }
     }
 
@@ -748,8 +817,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         String recordTypeName = rrt.name();
         Symbol putativeRecordSymbol = symbolTable().getRecursive(recordTypeName);
         if (putativeRecordSymbol == null) {
-          throw new TypeException(
-              String.format("Unknown RECORD type '%s'", recordTypeName), field.position());
+          errors.add(
+              new TypeException(
+                  String.format("Unknown RECORD type '%s'", recordTypeName), field.position()));
         }
       }
     }
@@ -783,9 +853,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       SymTab child = symbolTable().spawn();
       procSymbol.setSymTab(child);
     } else if (sym.varType() != VarType.PROC) {
-      throw new TypeException(
-          String.format("Cannot define PROC '%s' with the same name as a global", node.name()),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format("Cannot define PROC '%s' with the same name as a global", node.name()),
+              node.position()));
     } else {
       procSymbol = (ProcSymbol) sym;
     }
@@ -812,11 +883,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       VarType type = symbolTable().get(param.name()).varType();
       validatePossibleRecordType(param.name(), type, node.position());
       if (type.isUnknown()) {
-        throw new TypeException(
-            String.format(
-                "Could not determine type of formal parameter '%s' of PROC '%s'",
-                param.name(), node.name()),
-            node.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Could not determine type of formal parameter '%s' of PROC '%s'",
+                    param.name(), node.name()),
+                node.position()));
       }
     }
 
@@ -824,13 +896,17 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (node.returnType() != VarType.VOID) {
       if (needsReturn.contains(procSymbol)) {
         // no return statement seen.
-        throw new TypeException(
-            String.format("No RETURN statement for PROC '%s'", node.name()), node.position());
+        errors.add(
+            new TypeException(
+                String.format("No RETURN statement for PROC '%s'", node.name()), node.position()));
+        return;
       }
       if (!checkAllPathsHaveReturn(node)) {
-        throw new TypeException(
-            String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
-            node.position());
+        errors.add(
+            new TypeException(
+                String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
+                node.position()));
+        return;
       }
       validatePossibleRecordType("return type", node.returnType(), node.position());
     }
@@ -891,13 +967,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(ReturnNode node) {
     if (procedures.isEmpty()) {
-      throw new TypeException("Cannot RETURN from outside a PROC", node.position());
+      errors.add(new TypeException("Cannot RETURN from outside a PROC", node.position()));
+      return;
     }
     if (node.expr().isPresent()) {
       ExprNode expr = node.expr().get();
       expr.accept(this);
       if (expr.varType().isUnknown()) {
-        throw new TypeException("Indeterminable type for RETURN statement", node.position());
+        errors.add(new TypeException("Indeterminable type for RETURN statement", node.position()));
+        return;
       }
       node.setVarType(expr.varType());
     }
@@ -908,15 +986,16 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     VarType actualReturnType = node.varType();
 
     if (actualReturnType.isUnknown()) {
-      throw new TypeException("Indeterminable type for RETURN statement", node.position());
+      errors.add(new TypeException("Indeterminable type for RETURN statement", node.position()));
     }
 
     if (!proc.returnType().compatibleWith(actualReturnType)) {
-      throw new TypeException(
-          String.format(
-              "PROC '%s' declared to return %s but returned %s",
-              proc.name(), declaredReturnType, actualReturnType),
-          node.position());
+      errors.add(
+          new TypeException(
+              String.format(
+                  "PROC '%s' declared to return %s but returned %s",
+                  proc.name(), declaredReturnType, actualReturnType),
+              node.position()));
     }
   }
 
@@ -927,13 +1006,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       message.accept(this);
       VarType actualMessageType = message.varType();
       if (actualMessageType.isUnknown()) {
-        throw new TypeException("Indeterminable type for EXIT message", node.position());
+        errors.add(new TypeException("Indeterminable type for EXIT message", node.position()));
+        return;
       }
       if (message.varType() != VarType.STRING) {
-        throw new TypeException(
-            String.format(
-                "Cannot use %s expression in EXIT message; must be STRING", message.varType()),
-            message.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot use %s expression in EXIT message; must be STRING", message.varType()),
+                message.position()));
       }
     }
     if (!procedures.isEmpty()) {
