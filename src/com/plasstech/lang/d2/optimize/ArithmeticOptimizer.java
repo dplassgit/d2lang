@@ -607,9 +607,13 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.test(leftval, rightval))));
       return true;
     }
-    if ((op.operator() == TokenType.LEQ || op.operator() == TokenType.GEQ) && left.equals(right)) {
-      // they're equal, so we can optimize it.
-      replaceCurrent(new Transfer(destination, ConstantOperand.TRUE));
+    if (left.equals(right)) {
+      // they're equal, so we can optimize it. If it's LEQ or GEQ, we pass TRUE, otherwise FALSE.
+      replaceCurrent(
+          new Transfer(
+              destination,
+              ConstantOperand.of(
+                  op.operator() == TokenType.LEQ || op.operator() == TokenType.GEQ)));
       return true;
     }
     return false;
@@ -639,11 +643,11 @@ class ArithmeticOptimizer extends LineOptimizer {
               ConstantOperand.of(fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
     }
-    // Both are not constants, but they still may reference the same object (or equivalent)
-    if (left.equals(right) && op.operator() == TokenType.EQEQ) {
-      // replace t=a==b with t=true, only for equals. Can't do it for != because it has to
-      // test at runtime.
-      replaceCurrent(new Transfer(destination, ConstantOperand.TRUE));
+    if (left.equals(right)) {
+      // replace t=a==a with t=true
+      // replace t=a!=a with t=false
+      replaceCurrent(
+          new Transfer(destination, ConstantOperand.of(op.operator() == TokenType.EQEQ)));
       return true;
     }
 
