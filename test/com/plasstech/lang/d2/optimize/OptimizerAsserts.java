@@ -6,6 +6,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 
+/** Assertions for optimizer tests. */
 public class OptimizerAsserts {
   static void assertTransferFrom(Op op, Operand expectedSource) {
     assertThat(((Transfer) op).source()).isEqualTo(expectedSource);

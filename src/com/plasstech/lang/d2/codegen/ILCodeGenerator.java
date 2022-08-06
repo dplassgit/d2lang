@@ -206,10 +206,11 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
     Node rhs = node.expr();
     Operand rhsLocation;
     if (rhs.isConstant()) {
+      // Just assign a=constant
       ConstNode<?> rhsConst = (ConstNode<?>) rhs;
       rhsLocation = toConstOperand(rhsConst);
     } else {
-      rhs.accept(ILCodeGenerator.this);
+      rhs.accept(this);
       rhsLocation = rhs.location();
     }
     LValueNode lvalue = node.lvalue();
@@ -428,36 +429,37 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(UnaryNode node) {
-    // calculate the value and put it somewhere.
-    Node expr = node.expr();
-    expr.accept(this);
+    Node rhs = node.expr();
+    rhs.accept(this);
 
+    // calculate the value and put it somewhere.
     TempLocation destination = allocateTemp(node.varType());
     node.setLocation(destination);
 
     switch (node.operator()) {
-      case BIT_NOT:
-      case NOT:
       case MINUS:
-        if (expr.varType() == VarType.DOUBLE) {
+        if (rhs.varType() == VarType.DOUBLE) {
+          // negating doubles is weird, so we just do 0-expr
           emit(
               new BinOp(
                   destination,
                   ConstantOperand.of(0.0),
                   TokenType.MINUS,
-                  expr.location(),
+                  rhs.location(),
                   node.position()));
           return;
         }
         // fall through:
+      case BIT_NOT:
+      case NOT:
       case LENGTH:
       case ASC:
       case CHR:
-        emit(new UnaryOp(destination, node.operator(), expr.location(), node.position()));
+        emit(new UnaryOp(destination, node.operator(), rhs.location(), node.position()));
         break;
       case PLUS:
-        // tiny optimization
-        emit(new Transfer(destination, expr.location()));
+        // tiny optimization - ignores the tmep.
+        node.setLocation(rhs.location());
         break;
       default:
         logger.atSevere().log("No code generated for node %s", node);
