@@ -162,6 +162,40 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void compareObjectsLeqGeq() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, TEMP2, TokenType.LEQ, TEMP2, null),
+            new BinOp(TEMP1, TEMP2, TokenType.GEQ, TEMP2, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.TRUE);
+    Transfer second = (Transfer) optimized.get(1);
+    assertThat(second.source()).isEqualTo(ConstantOperand.TRUE);
+  }
+
+  @Test
+  public void compareObjectsEq() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, TEMP2, TokenType.EQEQ, TEMP2, null),
+            new BinOp(TEMP1, TEMP2, TokenType.NEQ, TEMP2, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    Transfer first = (Transfer) optimized.get(0);
+    assertThat(first.source()).isEqualTo(ConstantOperand.TRUE);
+    Op second = optimized.get(1);
+    assertThat(second).isInstanceOf(BinOp.class);
+  }
+
+  @Test
   public void compareIntsGt() {
     ImmutableList<Op> program =
         ImmutableList.of(
@@ -179,7 +213,7 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
-  public void compareDuoublesGt() {
+  public void compareDoublesGt() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(DBL1, ConstantOperand.ONE_DBL, TokenType.GT, ConstantOperand.ZERO_DBL, null),

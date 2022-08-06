@@ -145,27 +145,27 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case EQEQ:
-        optimizeEq(op.destination(), left, right, (a, b) -> Objects.equal(a, b));
+        optimizeEq(op, (a, b) -> Objects.equal(a, b));
         return;
 
       case NEQ:
-        optimizeEq(op.destination(), left, right, (a, b) -> !Objects.equal(a, b));
+        optimizeEq(op, (a, b) -> !Objects.equal(a, b));
         return;
 
       case LEQ:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) <= 0);
+        optimizeCompare(op, (a, b) -> a.compareTo(b) <= 0);
         return;
 
       case LT:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) < 0);
+        optimizeCompare(op, (a, b) -> a.compareTo(b) < 0);
         return;
 
       case GEQ:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) >= 0);
+        optimizeCompare(op, (a, b) -> a.compareTo(b) >= 0);
         return;
 
       case GT:
-        optimizeCompare(op.destination(), left, right, (a, b) -> a.compareTo(b) > 0);
+        optimizeCompare(op, (a, b) -> a.compareTo(b) > 0);
         return;
 
       case LBRACKET:
@@ -594,8 +594,10 @@ class ArithmeticOptimizer extends LineOptimizer {
    *
    * @return true if both operands are constants.
    */
-  private boolean optimizeCompare(
-      Location destination, Operand left, Operand right, BiPredicate<Comparable, Comparable> fun) {
+  private boolean optimizeCompare(BinOp op, BiPredicate<Comparable, Comparable> fun) {
+    Location destination = op.destination();
+    Operand left = op.left();
+    Operand right = op.right();
 
     if (left.isConstant() && right.isConstant()) {
       ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
@@ -605,6 +607,11 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.test(leftval, rightval))));
       return true;
     }
+    if ((op.operator() == TokenType.LEQ || op.operator() == TokenType.GEQ) && left.equals(right)) {
+      // they're equal, so we can optimize it.
+      replaceCurrent(new Transfer(destination, ConstantOperand.TRUE));
+      return true;
+    }
     return false;
   }
 
@@ -612,10 +619,16 @@ class ArithmeticOptimizer extends LineOptimizer {
    * If both operands are constants, apply the given function to the constants and replace the
    * opcode with result. E.g., t='a'=='b' becomes t=false
    *
-   * @return true if both operands are constants.
+   * <p>If both operands are not constants, apply the == function and if they pass, replace the
+   * opcode with true. E.g., t=a==a becomes t=true. This does not work for t=a!=b because it still
+   * has to compare at runtime the values of a and b are the same or not.
+   *
+   * @return true if both objects are constants or they pass fun.test
    */
-  private boolean optimizeEq(
-      Location destination, Operand left, Operand right, BiPredicate<Object, Object> fun) {
+  private boolean optimizeEq(BinOp op, BiPredicate<Object, Object> fun) {
+    Location destination = op.destination();
+    Operand left = op.left();
+    Operand right = op.right();
 
     if (left.isConstant() && right.isConstant()) {
       ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
@@ -626,6 +639,14 @@ class ArithmeticOptimizer extends LineOptimizer {
               ConstantOperand.of(fun.test(leftConstant.value(), rightConstant.value()))));
       return true;
     }
+    // Both are not constants, but they still may reference the same object (or equivalent)
+    if (left.equals(right) && op.operator() == TokenType.EQEQ) {
+      // replace t=a==b with t=true, only for equals. Can't do it for != because it has to
+      // test at runtime.
+      replaceCurrent(new Transfer(destination, ConstantOperand.TRUE));
+      return true;
+    }
+
     return false;
   }
 
