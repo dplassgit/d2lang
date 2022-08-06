@@ -30,12 +30,12 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 class ConstantPropagationOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  // Map from temp name to constant value
-  private final Map<String, ConstantOperand<?>> tempConstants = new HashMap<>();
-  // Map from stack to constant
-  private final Map<String, ConstantOperand<?>> stackConstants = new HashMap<>();
+  // Map from temp name to its source value
+  private final Map<String, Operand> tempAssignments = new HashMap<>();
+  // Map from stack to source
+  private final Map<String, Operand> stackAssignments = new HashMap<>();
   // TODO: Map from global to constant
-  // private final Map<String, ConstantOperand<?>> globalConstants = new HashMap<>();
+  // private final Map<String, Operand> globalConstants = new HashMap<>();
 
   ConstantPropagationOptimizer(int debugLevel) {
     super(debugLevel);
@@ -43,28 +43,28 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   protected void preProcess() {
-    tempConstants.clear();
-    stackConstants.clear();
+    tempAssignments.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(Inc op) {
-    ConstantOperand<?> replacement = findReplacementConstant(op.target());
-    if (replacement != null) {
-      int value = (int) replacement.value();
-      // why stack constants and not tempconstants?!
-      stackConstants.put(op.target().name(), ConstantOperand.of(value + 1));
+    Operand replacement = findReplacement(op.target());
+    if (replacement != null && replacement.isConstant()) {
+      ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
+      int value = replacmentConst.value();
+      stackAssignments.put(op.target().name(), ConstantOperand.of(value + 1));
       logger.at(loggingLevel).log("Incremented stackConstant %s to %d", op.target(), value + 1);
     }
   }
 
   @Override
   public void visit(Dec op) {
-    ConstantOperand<?> replacement = findReplacementConstant(op.target());
-    if (replacement != null) {
-      int value = (int) replacement.value();
-      // why stack constants and not tempconstants?!
-      stackConstants.put(op.target().name(), ConstantOperand.of(value - 1));
+    Operand replacement = findReplacement(op.target());
+    if (replacement != null && replacement.isConstant()) {
+      ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
+      int value = replacmentConst.value();
+      stackAssignments.put(op.target().name(), ConstantOperand.of(value + 1));
       logger.at(loggingLevel).log("Decremented stackConstant %s to %d", op.target(), value - 1);
     }
   }
@@ -72,25 +72,25 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(ProcEntry op) {
     // start of scope.
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(ProcExit op) {
     // end of scope.
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(Label op) {
-    // a label means potentially a loop and we can't rely on stack values anymore.
-    stackConstants.clear();
+    // a label means potentially a loop and we can't rely on values anymore.
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(Goto op) {
     // a goto means potentially a loop and we can't rely on stack values anymore.
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
@@ -100,22 +100,30 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (dest instanceof StackLocation) {
       // We're changing the value of a stack variable; remove any old setting
-      stackConstants.remove(dest.name());
+      stackAssignments.remove(dest.name());
     }
 
-    if (dest instanceof TempLocation && source.isConstant()) {
-      // TODO: easy case: temps are never overwritten. -- ORLY?
-      // in inline remapper it often overwrites temps which used to be locals.
-      logger.at(loggingLevel).log("Potentially replacing temp %s with %s", dest.name(), source);
-      tempConstants.put(dest.name(), (ConstantOperand<?>) source);
+    if (dest instanceof TempLocation) {
+      // temp = 1 or temp=a or temp=temp
+
+      Operand replacement = findReplacement(source);
+      if (replacement != null) {
+        // the source was already replaced - use it instead.
+        logger.at(loggingLevel).log(
+            "Potentially replacing temp %s with %s", dest.name(), replacement);
+        tempAssignments.put(dest.name(), replacement);
+      } else {
+        logger.at(loggingLevel).log("Potentially replacing temp %s with %s", dest.name(), source);
+        tempAssignments.put(dest.name(), source);
+      }
       deleteCurrent();
-    } else if (dest instanceof StackLocation && source.isConstant()) {
-      // save it, for now.
+    } else if (dest instanceof StackLocation && !(source instanceof TempLocation)) {
+      // Do not propagate temps, because temps can only be read once.
       logger.at(loggingLevel).log(
           "Potentially replacing local/param %s with %s", dest.name(), source);
-      stackConstants.put(dest.name(), (ConstantOperand<?>) source);
+      stackAssignments.put(dest.name(), source);
     } else if (!source.isConstant()) {
-      ConstantOperand<?> replacement = findReplacementConstant(source);
+      Operand replacement = findReplacement(source);
       if (replacement != null) {
         replaceCurrent(new Transfer(dest, replacement));
       }
@@ -125,7 +133,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(UnaryOp op) {
     Operand operand = op.operand();
-    ConstantOperand<?> replacement = findReplacementConstant(operand);
+    Operand replacement = findReplacement(operand);
     if (replacement != null) {
       replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement, op.position()));
     }
@@ -134,7 +142,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(ArrayAlloc op) {
     Operand operand = op.sizeLocation();
-    ConstantOperand<?> replacement = findReplacementConstant(operand);
+    Operand replacement = findReplacement(operand);
     if (replacement != null) {
       replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement, null));
     }
@@ -143,18 +151,18 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(IfOp op) {
     Operand operand = op.condition();
-    ConstantOperand<?> replacement = findReplacementConstant(operand);
+    Operand replacement = findReplacement(operand);
     if (replacement != null) {
       replaceCurrent(new IfOp(replacement, op.destination()));
     }
     // Going into an if, we can't rely on the value of the constant anymore, maybe.
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(SysCall op) {
     Operand operand = op.arg();
-    ConstantOperand<?> replacement = findReplacementConstant(operand);
+    Operand replacement = findReplacement(operand);
     if (replacement != null) {
       replaceCurrent(new SysCall(op.call(), replacement));
     }
@@ -166,7 +174,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     ImmutableList.Builder<Operand> replacementParams = ImmutableList.builder();
     boolean changed = false;
     for (Operand actual : actualParams) {
-      ConstantOperand<?> replacement = findReplacementConstant(actual);
+      Operand replacement = findReplacement(actual);
       if (replacement != null) {
         changed = true;
         replacementParams.add(replacement);
@@ -180,30 +188,30 @@ class ConstantPropagationOptimizer extends LineOptimizer {
           new Call(op.destination(), op.procName(), replacementParams.build(), op.formals()));
     }
 
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(Return op) {
     if (op.returnValueLocation().isPresent()) {
       Operand returnValue = op.returnValueLocation().get();
-      ConstantOperand<?> replacement = findReplacementConstant(returnValue);
+      Operand replacement = findReplacement(returnValue);
       if (replacement != null) {
         replaceCurrent(new Return(op.procName(), replacement));
       }
     }
-    stackConstants.clear();
+    stackAssignments.clear();
   }
 
   @Override
   public void visit(BinOp op) {
     Operand left = op.left();
-    ConstantOperand<?> replacement = findReplacementConstant(left);
+    Operand replacement = findReplacement(left);
     if (replacement != null) {
       left = replacement;
     }
     Operand right = op.right();
-    replacement = findReplacementConstant(right);
+    replacement = findReplacement(right);
     if (replacement != null) {
       right = replacement;
     }
@@ -215,12 +223,12 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(ArraySet op) {
     Operand index = op.index();
-    ConstantOperand<?> replacement = findReplacementConstant(index);
+    Operand replacement = findReplacement(index);
     if (replacement != null) {
       index = replacement;
     }
     Operand source = op.source();
-    replacement = findReplacementConstant(source);
+    replacement = findReplacement(source);
     if (replacement != null) {
       source = replacement;
     }
@@ -234,32 +242,29 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(FieldSetOp op) {
     Operand source = op.source();
-    ConstantOperand<?> replacement = findReplacementConstant(source);
+    Operand replacement = findReplacement(source);
     if (replacement != null) {
-      source = replacement;
-    }
-    if (source != op.source()) {
       replaceCurrent(
           new FieldSetOp(
-              op.recordLocation(), op.recordSymbol(), op.field(), source, op.position()));
+              op.recordLocation(), op.recordSymbol(), op.field(), replacement, op.position()));
     }
   }
 
-  private ConstantOperand<?> findReplacementConstant(Operand operand) {
+  private Operand findReplacement(Operand operand) {
     if (operand.isConstant()) {
       return null;
     }
     if (operand instanceof TempLocation) {
       // look it up
       TempLocation sourceTemp = (TempLocation) operand;
-      if (tempConstants.get(sourceTemp.name()) != null) {
-        return tempConstants.get(sourceTemp.name());
+      if (tempAssignments.get(sourceTemp.name()) != null) {
+        return tempAssignments.get(sourceTemp.name());
       }
     } else if (operand instanceof StackLocation) {
       // look it up
       StackLocation sourceTemp = (StackLocation) operand;
-      if (stackConstants.get(sourceTemp.name()) != null) {
-        return stackConstants.get(sourceTemp.name());
+      if (stackAssignments.get(sourceTemp.name()) != null) {
+        return stackAssignments.get(sourceTemp.name());
       }
     }
     return null;
