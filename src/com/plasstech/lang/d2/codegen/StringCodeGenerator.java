@@ -25,7 +25,8 @@ class StringCodeGenerator {
       "STRING_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: STRING index must be non-negative; was %d\", 10, 0";
   private static final String STRING_INDEX_OOB_ERR =
       "STRING_INDEX_OOB_ERR: db \"Invalid index error at line %d: STRING index out of bounds (length %d); was %d\", 10, 0";
-  private static final Map<TokenType, String> BINARY_OPCODE =
+
+  private static final Map<TokenType, String> COMPARISION_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.EQEQ, "setz")
           .put(TokenType.NEQ, "setnz")
@@ -96,7 +97,7 @@ class StringCodeGenerator {
     }
     emitter.emitExternCall("strcmp");
     emitter.emit("cmp RAX, 0");
-    emitter.emit("%s %s  ; string %s", BINARY_OPCODE.get(operator), destName, operator);
+    emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
     registerState.condPop();
   }
 
@@ -155,6 +156,22 @@ class StringCodeGenerator {
     }
     emitter.emitExternCall("strlen");
     registerState.condPop();
+    // Make sure index isn't >= length
+    emitter.emit("cmp EAX, %s", indexName);
+    String goodIndex = resolver.nextLabel("good_string_index");
+    emitter.emit("jg _%s", goodIndex);
+
+    // else bad
+    emitter.emit("; index out of bounds");
+    emitter.addData(STRING_INDEX_OOB_ERR);
+    emitter.emit("mov R9d, %s  ; index", indexName);
+    emitter.emit("mov EDX, %s  ; line number", op.position().line());
+    emitter.emit("mov R8d, EAX  ; length ");
+    emitter.emit("mov RCX, STRING_INDEX_OOB_ERR");
+    emitter.emitExternCall("printf");
+    emitter.emitExit(-1);
+
+    emitter.emitLabel(goodIndex);
     emitter.emit("dec RAX");
     if (!indexName.equals("0")) {
       // if index is 0, we're comparing to 0, and the ZF is set by dec.
@@ -168,18 +185,10 @@ class StringCodeGenerator {
     emitter.emit("; %s = %s[%s]", destName, stringName, indexName);
     if (indexName.equals("0")) {
       // Simplest case - first character of 1-character string
-      if (resolver.isInAnyRegister(destination) || resolver.isInAnyRegister(stringOperand)) {
-        emitter.emit("; index is 0, at least one is in a register - easiest case");
-        emitter.emit("mov %s, %s", destName, stringName);
-      } else {
-        // both are not in registers - use one to transfer.
-        Register tempReg = registers.allocate(VarType.INT);
-        emitter.emit("; index is 0, neither in a register; allocated %s", tempReg);
-        emitter.emit("mov %s, %s", tempReg, stringName);
-        emitter.emit("mov %s, %s", destName, tempReg);
-        registers.deallocate(tempReg);
-      }
+      resolver.mov(stringOperand, destination);
     } else {
+      // At runtime, we're getting the last character of the given string. We don't know the
+      // length at compile time though.
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
         emitter.emit("; dest in %s", destReg);

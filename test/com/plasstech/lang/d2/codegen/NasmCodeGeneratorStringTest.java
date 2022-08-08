@@ -23,10 +23,32 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void oneCharStringIndex0() throws Exception {
+    execute("a='x' b=a[0] println b", "oneCharStringIndex0");
+    execute("f:proc(a:string) {b=a[0] println b} f('a')", "oneCharStringIndexProc0");
+  }
+
+  @Test
+  public void twoCharStringIndex1() throws Exception {
+    execute("a='xy' b=a[1] println b", "twoCharStringIndex1");
+    execute("f:proc(a:string) {b=a[1] println b} f('xy')", "twoCharStringIndexProc1");
+  }
+
+  @Test
   public void negativeIndexCompileTime() throws Exception {
     assertGenerateError("s='hello' print s[-2]", "STRING index must be non-negative; was -2");
     assertGenerateError(
         "f:proc() {s='hello' print s[-3]} f()", "STRING index must be non-negative; was -3");
+  }
+
+  @Test
+  public void oobeIndex() throws Exception {
+    if (optimize) {
+      assertGenerateError(
+          "f:proc() {s='hello' print s[10]} f()", "STRING index out of bounds.*was 10");
+    } else {
+      assertRuntimeError("f:proc() {s='hello' print s[10]} f()", "oobeIndex", "STRING");
+    }
   }
 
   @Test

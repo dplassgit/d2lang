@@ -182,6 +182,13 @@ class ArithmeticOptimizer extends LineOptimizer {
                 op.position(),
                 "String index");
           }
+          if (index > value.length()) {
+            throw new D2RuntimeException(
+                String.format(
+                    "STRING index out of bounds (length %d); was %d", value.length(), index),
+                op.position(),
+                "String index");
+          }
           replaceCurrent(
               new Transfer(
                   op.destination(), ConstantOperand.of(String.valueOf(value.charAt(index)))));
