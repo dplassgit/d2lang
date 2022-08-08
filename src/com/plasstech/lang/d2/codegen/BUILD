@@ -3,6 +3,7 @@ LOCATION_SRCS = [
   "Location.java",
   "MemoryAddress.java",
   "Operand.java",
+  "ParamLocation.java",
   "RegisterLocation.java",
   "StackLocation.java",
   "TempLocation.java",

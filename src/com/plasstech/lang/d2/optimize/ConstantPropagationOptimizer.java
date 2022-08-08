@@ -8,6 +8,7 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
@@ -98,7 +99,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand source = op.source();
     Location dest = op.destination();
 
-    if (dest instanceof StackLocation) {
+    if (dest instanceof StackLocation || dest instanceof ParamLocation) {
       // We're changing the value of a stack variable; remove any old setting
       stackAssignments.remove(dest.name());
     }
@@ -119,7 +120,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
         tempAssignments.put(dest.name(), source);
         deleteCurrent();
       }
-    } else if (dest instanceof StackLocation && !(source instanceof TempLocation)) {
+    } else if ((dest instanceof StackLocation || dest instanceof ParamLocation)
+        && !(source instanceof TempLocation)) {
       // Do not propagate temps, because temps can only be read once.
       logger.at(loggingLevel).log(
           "Potentially replacing local/param %s with %s", dest.name(), source);
@@ -262,9 +264,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       if (tempAssignments.get(sourceTemp.name()) != null) {
         return tempAssignments.get(sourceTemp.name());
       }
-    } else if (operand instanceof StackLocation) {
+    } else if (operand instanceof StackLocation || operand instanceof ParamLocation) {
       // look it up
-      StackLocation sourceTemp = (StackLocation) operand;
+      Location sourceTemp = (Location) operand;
       if (stackAssignments.get(sourceTemp.name()) != null) {
         return stackAssignments.get(sourceTemp.name());
       }
