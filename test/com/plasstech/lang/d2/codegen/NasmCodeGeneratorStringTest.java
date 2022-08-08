@@ -43,12 +43,18 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void oobeIndex() throws Exception {
+    String sourceCode = "f:proc() {s='hello' print s[10]} f()";
     if (optimize) {
-      assertGenerateError(
-          "f:proc() {s='hello' print s[10]} f()", "STRING index out of bounds.*was 10");
+      assertGenerateError(sourceCode, "STRING index out of bounds.*was 10");
     } else {
-      assertRuntimeError("f:proc() {s='hello' print s[10]} f()", "oobeIndex", "STRING");
+      assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds (length 5); was 10");
     }
+  }
+
+  @Test
+  public void oobeIndexVariable() throws Exception {
+    String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
+    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds (length 5); was 10");
   }
 
   @Test
