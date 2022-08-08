@@ -245,6 +245,7 @@ class ArrayCodeGenerator {
       // print error and stop.
       emitter.emit0("\n  ; negative. no good. print error and stop");
       emitter.addData(ARRAY_INDEX_NEGATIVE_ERR);
+      // TODO: Pretty sure this is wrong
       if (lengthReg == R8) {
         emitter.emit("; index already in R8");
       } else {

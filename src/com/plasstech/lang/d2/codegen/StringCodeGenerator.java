@@ -12,13 +12,19 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generate nasm code for string operations. */
 class StringCodeGenerator {
 
+  private static final String STRING_INDEX_NEGATIVE_ERR =
+      "STRING_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: STRING index must be non-negative; was %d\", 10, 0";
+  private static final String STRING_INDEX_OOB_ERR =
+      "STRING_INDEX_OOB_ERR: db \"Invalid index error at line %d: STRING index out of bounds (length %d); was %d\", 10, 0";
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.EQEQ, "setz")
@@ -95,15 +101,50 @@ class StringCodeGenerator {
   }
 
   /** generate dest = stringOperand[index] */
-  void generateStringIndex(Op op, Location destination, Operand stringOperand, Operand index) {
+  void generateStringIndex(BinOp op) {
+    Operand stringOperand = op.left();
 
     npeCheckGenerator.generateNullPointerCheck(op, stringOperand);
 
     String stringName = resolver.resolve(stringOperand);
+    Operand index = op.right();
     String indexName = resolver.resolve(index);
+    Location destination = op.destination();
     String destName = resolver.resolve(destination);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+
+    // Issue #94: Check index to be >= 0 and < length
+    if (index.isConstant()) {
+      // if index is constant, can skip some of this calculation.
+      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) index;
+      int indexValue = indexConst.value();
+      if (indexValue < 0) {
+        throw new D2RuntimeException(
+            String.format("STRING index must be non-negative; was %d", indexValue),
+            op.position(),
+            "Invalid index");
+      }
+    } else {
+      // TODO: make this an asm function instead of inlining each time?
+      emitter.emit("; make sure index is >= 0");
+      // Validate index part 1
+      emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
+      // Note, three underscores
+      String continueLabel = resolver.nextLabel("continue");
+      emitter.emit("jge _%s", continueLabel);
+
+      // print error and stop.
+      emitter.emit0("\n  ; negative. no good. print error and stop");
+      emitter.addData(STRING_INDEX_NEGATIVE_ERR);
+      emitter.emit("mov RCX, STRING_INDEX_NEGATIVE_ERR");
+      emitter.emit("mov RDX, %d  ; line number", op.position().line());
+      emitter.emit("mov R8d, %s  ; index", indexName);
+      emitter.emitExternCall("printf");
+      emitter.emitExit(-1);
+
+      emitter.emitLabel(continueLabel);
+    }
 
     // Issue #112:
     // if indexname == stringname's length-1, just return stringname-1
@@ -120,9 +161,10 @@ class StringCodeGenerator {
       emitter.emit(
           "cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
     }
-    String allocateLabel = resolver.nextLabel("allocate_1_char_string");
+    String allocateLabel = resolver.nextLabel("allocate_2_char_string");
     emitter.emit("jne _%s", allocateLabel);
 
+    // At runtime, if we got here, we're getting the last character of the given string.
     emitter.emit("; %s = %s[%s]", destName, stringName, indexName);
     if (indexName.equals("0")) {
       // Simplest case - first character of 1-character string
@@ -155,6 +197,7 @@ class StringCodeGenerator {
     String afterLabel = resolver.nextLabel("after_string_index");
     emitter.emit("jmp _%s", afterLabel);
 
+    // At runtime, when we get here, we need to copy the single source character to a new string.
     // 1. allocate a new 2-char string
     emitter.emitLabel(allocateLabel);
     registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
@@ -185,7 +228,7 @@ class StringCodeGenerator {
     // 7. clear the 2nd location
     emitter.emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
 
-    //  * after:
+    // jump destination for skipping the allocation step
     emitter.emitLabel(afterLabel);
   }
 

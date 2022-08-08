@@ -16,12 +16,36 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void index(
-      @TestParameter({"world", "hello this is a very long string"}) String value,
-      @TestParameter({"1", "4"}) int index)
-      throws Exception {
+  public void index(@TestParameter({"1", "4"}) int index) throws Exception {
+    String value = "value";
     execute(
         String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index), "index");
+  }
+
+  @Test
+  public void negativeIndexCompileTime() throws Exception {
+    assertGenerateError("s='hello' print s[-2]", "STRING index must be non-negative; was -2");
+    assertGenerateError(
+        "f:proc() {s='hello' print s[-3]} f()", "STRING index must be non-negative; was -3");
+  }
+
+  @Test
+  public void negativeIndexRunTimeLocal() throws Exception {
+    String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
+    if (optimize) {
+      assertGenerateError(sourceCode, "STRING index must be non-negative; was -2");
+    } else {
+      assertRuntimeError(
+          sourceCode, "negativeIndexRunTime", "STRING index must be non-negative; was -2");
+    }
+  }
+
+  @Test
+  public void negativeIndexRunTimeGlobal() throws Exception {
+    String sourceCode = "i=-2 s='hello' print s[i]";
+    // because globals aren't propagated (yet), it must be a runtime error.
+    assertRuntimeError(
+        sourceCode, "negativeIndexRunTime", "STRING index must be non-negative; was -2");
   }
 
   @Test
@@ -39,10 +63,8 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void constantStringIndex(
-      @TestParameter({"world", "hello this is a very long string"}) String value,
-      @TestParameter({"1", "4"}) int index)
-      throws Exception {
+  public void constantStringIndex(@TestParameter({"1", "4"}) int index) throws Exception {
+    String value = "value";
     execute(
         String.format("i=%d b='%s'[i] print b c='%s'[%d] print c", index, value, value, index),
         "constantStringIndex");
@@ -148,7 +170,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "println x + x[0]",
         "concat");
   }
-  
+
   @Test
   public void concatInProc() throws Exception {
     execute(

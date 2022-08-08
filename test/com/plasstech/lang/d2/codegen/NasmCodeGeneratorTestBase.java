@@ -137,13 +137,15 @@ public class NasmCodeGeneratorTestBase {
     Parser parser = new Parser(lexer);
     state = parser.execute(state);
     if (state.error()) {
-      throw state.exception();
+      assertThat(state.errorMessage()).matches(error);
+      return;
     }
 
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
     if (state.error()) {
-      throw state.exception();
+      assertThat(state.errorMessage()).matches(error);
+      return;
     }
 
     ILCodeGenerator codegen = new ILCodeGenerator();
@@ -186,6 +188,9 @@ public class NasmCodeGeneratorTestBase {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer();
       state = optimizer.execute(state);
+      if (state.error()) {
+        throw state.exception();
+      }
     }
 
     state = new NasmCodeGenerator().execute(state);

@@ -181,11 +181,11 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void divisionByZeroLocal() throws Exception {
+    String sourceCode = "f:proc:int {a=0 b=1/a return b} f()";
     if (optimize) {
-      assertGenerateError("f:proc:int {a=0 b=1/a return b} f()", "Division by 0");
+      assertGenerateError(sourceCode, "Division by 0");
     } else {
-      assertRuntimeError(
-          "f:proc:int {a=0 b=1/a return b} f()", "divisionByZeroLocal", "Division by 0");
+      assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
     }
   }
 }

@@ -280,7 +280,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           stringGenerator.generateStringAdd(op, destName, op.left(), op.right());
           break;
         case LBRACKET:
-          stringGenerator.generateStringIndex(op, op.destination(), op.left(), op.right());
+          stringGenerator.generateStringIndex(op);
           break;
         case EQEQ:
         case NEQ:

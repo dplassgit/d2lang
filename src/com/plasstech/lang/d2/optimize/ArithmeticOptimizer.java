@@ -176,6 +176,12 @@ class ArithmeticOptimizer extends LineOptimizer {
           String value = constant.value();
           ConstantOperand<Integer> indexOperand = (ConstantOperand<Integer>) right;
           int index = indexOperand.value();
+          if (index < 0) {
+            throw new D2RuntimeException(
+                String.format("STRING index must be non-negative; was %d", index),
+                op.position(),
+                "String index");
+          }
           replaceCurrent(
               new Transfer(
                   op.destination(), ConstantOperand.of(String.valueOf(value.charAt(index)))));
