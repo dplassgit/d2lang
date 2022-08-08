@@ -110,13 +110,15 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       if (replacement != null) {
         // the source was already replaced - use it instead.
         logger.at(loggingLevel).log(
-            "Potentially replacing temp %s with %s", dest.name(), replacement);
+            "Potentially replacing temp %s with const %s", dest.name(), replacement);
         tempAssignments.put(dest.name(), replacement);
-      } else {
-        logger.at(loggingLevel).log("Potentially replacing temp %s with %s", dest.name(), source);
+        deleteCurrent();
+      } else if (!(source instanceof TempLocation)) {
+        // don't propagate temps
+        logger.at(loggingLevel).log("Potentially replacing temp %s with value %s", dest.name(), source);
         tempAssignments.put(dest.name(), source);
+        deleteCurrent();
       }
-      deleteCurrent();
     } else if (dest instanceof StackLocation && !(source instanceof TempLocation)) {
       // Do not propagate temps, because temps can only be read once.
       logger.at(loggingLevel).log(
