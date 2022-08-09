@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
-import static com.plasstech.lang.d2.codegen.MmxRegister.XMM0;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -625,13 +624,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Return op) {
     // we can't just "ret" here because there's cleanup we need to do first.
     if (op.returnValueLocation().isPresent()) {
-      // transfer from return value to RAX
+      // transfer from return value to XMM0/RAX
       Operand returnValue = op.returnValueLocation().get();
-      if (returnValue.type() == VarType.DOUBLE) {
-        resolver.mov(returnValue, XMM0);
-      } else {
-        resolver.mov(returnValue, RAX);
-      }
+      resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
       resolver.deallocate(returnValue);
     }
     emit("jmp __exit_of_%s", op.procName());
@@ -672,26 +667,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
-      if (destination.type() == VarType.DOUBLE && resolver.isAllocated(XMM0)) {
-        // it will be overwritten. let's stash it
-        tempReg = resolver.allocate(VarType.DOUBLE);
-        emit("; temporarily putting xmm0 in %s", tempReg);
-        resolver.mov(VarType.DOUBLE, XMM0, tempReg);
+      Register returnReg = Registers.returnRegister(destination.type());
+      if (resolver.isAllocated(returnReg)) {
+        // it will be overwritten. let's stash it in a temp reg
+        tempReg = resolver.allocate(destination.type());
+        emit("; temporarily putting %s in %s", returnReg, tempReg);
+        resolver.mov(destination.type(), returnReg, tempReg);
       }
     }
     registerState.condPop();
     if (op.destination().isPresent()) {
       emit("; get return value");
       Location destination = op.destination().get();
-      if (destination.type() == VarType.DOUBLE) {
-        if (tempReg == null) {
-          resolver.mov(XMM0, destination);
-        } else {
-          resolver.mov(tempReg, destination);
-          resolver.deallocate(tempReg);
-        }
+      Register returnReg = Registers.returnRegister(destination.type());
+      if (tempReg == null) {
+        // Didn't have to stash it, just copy.
+        resolver.mov(returnReg, destination);
       } else {
-        resolver.mov(RAX, destination);
+        resolver.mov(tempReg, destination);
+        resolver.deallocate(tempReg);
       }
     }
     for (int i = 0; i < op.actuals().size(); ++i) {

@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
+import static com.plasstech.lang.d2.codegen.MmxRegister.XMM0;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -52,5 +55,13 @@ public class Registers implements RegistersInterface {
     Preconditions.checkState(
         used.contains(r), String.format("Register %s not allocated in register bank", r.name()));
     used.remove(r);
+  }
+
+  public static Register returnRegister(VarType type) {
+    if (type == VarType.DOUBLE) {
+      return XMM0;
+    } else {
+      return RAX;
+    }
   }
 }
