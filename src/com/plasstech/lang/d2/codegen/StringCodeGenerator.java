@@ -49,10 +49,19 @@ class StringCodeGenerator {
   }
 
   /** Generate destName = left operator right */
-  void generateStringCompare(
-      String destName, Operand left, Operand right, TokenType operator) {
+  void generateStringCompare(BinOp op, String destName) {
 
-    // TODO: if the operator is == or != we can short-circuit the call to strcmp if one is null
+    Operand left = op.left();
+    Operand right = op.right();
+    TokenType operator = op.operator();
+
+    if (operator != TokenType.EQEQ && operator != TokenType.NEQ) {
+      // do not allow comparing nulls
+      npeCheckGenerator.generateNullPointerCheck(op, left);
+      npeCheckGenerator.generateNullPointerCheck(op, right);
+    } else {
+      // TODO: if the operator is == or != we can short-circuit the call to strcmp if one is null
+    }
 
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);

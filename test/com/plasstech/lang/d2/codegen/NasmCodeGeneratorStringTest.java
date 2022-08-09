@@ -141,6 +141,18 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void compOpsNull(@TestParameter({"<", "<=", ">=", ">"}) String op) throws Exception {
+    assertRuntimeError(
+        String.format("a='abc' c=a %s null", op), "compOpsNull", "Null pointer error");
+    //    assertRuntimeError(
+    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
+    assertRuntimeError(
+        String.format("a='abc' b=null c=a %s b", op), "compOpsNull", "Null pointer error");
+    assertRuntimeError(
+        String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNull", "Null pointer error");
+  }
+
+  @Test
   public void compOpsThreeParams(@TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op)
       throws Exception {
     execute(

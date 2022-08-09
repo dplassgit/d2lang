@@ -287,7 +287,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          stringGenerator.generateStringCompare(destName, op.left(), op.right(), operator);
+          stringGenerator.generateStringCompare(op, destName);
           break;
 
         default:
