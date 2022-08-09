@@ -438,18 +438,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
     switch (node.operator()) {
       case MINUS:
-        if (rhs.varType() == VarType.DOUBLE) {
-          // negating doubles is weird, so we just do 0-expr
-          emit(
-              new BinOp(
-                  destination,
-                  ConstantOperand.of(0.0),
-                  TokenType.MINUS,
-                  rhs.location(),
-                  node.position()));
-          return;
-        }
-        // fall through:
       case BIT_NOT:
       case NOT:
       case LENGTH:

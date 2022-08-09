@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
@@ -25,6 +26,9 @@ public class DoubleGenerator {
 
   private static final String ZERO_DBL_NAME = "ZERO_DBL";
   private static final String ZERO_DATA = new DoubleEntry(ZERO_DBL_NAME, 0.0).dataEntry();
+  private static final String MINUS_ONE_DBL_NAME = "MINUS_ONE_DBL";
+  private static final String MINUS_ONE_DATA =
+      new DoubleEntry(MINUS_ONE_DBL_NAME, -1.0).dataEntry();
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -100,6 +104,26 @@ public class DoubleGenerator {
       emitter.emitExit(-1);
 
       emitter.emitLabel(continueLabel);
+    }
+  }
+
+  void generate(UnaryOp op, String sourceName) {
+    if (op.operator() == TokenType.MINUS) {
+      emitter.addData(MINUS_ONE_DATA);
+      Location destination = op.destination();
+      if (resolver.isInAnyRegister(destination)) {
+        Register destReg = resolver.toRegister(destination);
+        emitter.emit("movsd %s, [%s]", destReg, MINUS_ONE_DBL_NAME);
+        emitter.emit("mulsd %s, %s", destReg, sourceName);
+      } else {
+        Register tempReg = resolver.allocate(VarType.DOUBLE);
+        emitter.emit("movsd %s, [%s]", tempReg, MINUS_ONE_DBL_NAME);
+        emitter.emit("mulsd %s, %s", tempReg, sourceName);
+        resolver.mov(tempReg, destination);
+        resolver.deallocate(tempReg);
+      }
+    } else {
+      emitter.fail("Cannot generate %s on doubles", op.operator());
     }
   }
 }

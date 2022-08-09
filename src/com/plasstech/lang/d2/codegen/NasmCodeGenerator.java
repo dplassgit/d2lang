@@ -545,8 +545,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
           emit("neg %s  ; unary minus", destName);
         } else {
-          // double
-          emitter.fail("Should not get here");
+          doubleGenerator.generate(op, sourceName);
         }
         break;
       case LENGTH:

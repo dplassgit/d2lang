@@ -15,6 +15,21 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void negate() throws Exception {
+    execute("a=3.1 b=-a println b", "negate");
+  }
+
+  @Test
+  public void negateParam() throws Exception {
+    execute("f:proc(a:double) { b=-a println b} f(1.2)", "negateParam");
+  }
+
+  @Test
+  public void negateLocal() throws Exception {
+    execute("f:proc(a:double) { b=a+1.0 c=-b d=--c println d} f(1.2)", "negateLocal");
+  }
+
+  @Test
   public void printDoubleConstant() throws Exception {
     execute("print 3.4", "printDoubleConstant");
   }
@@ -42,11 +57,6 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   @Test
   public void doubleAdd() throws Exception {
     execute("a=3.14 b=2.0 c=a+b println c", "doubleAdd");
-  }
-
-  @Test
-  public void negate() throws Exception {
-    execute("a=3.1 b=-a println b", "negate");
   }
 
   @Test
