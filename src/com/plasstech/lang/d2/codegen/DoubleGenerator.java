@@ -26,9 +26,6 @@ public class DoubleGenerator {
 
   private static final String ZERO_DBL_NAME = "ZERO_DBL";
   private static final String ZERO_DATA = new DoubleEntry(ZERO_DBL_NAME, 0.0).dataEntry();
-  private static final String MINUS_ONE_DBL_NAME = "MINUS_ONE_DBL";
-  private static final String MINUS_ONE_DATA =
-      new DoubleEntry(MINUS_ONE_DBL_NAME, -1.0).dataEntry();
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -109,16 +106,16 @@ public class DoubleGenerator {
 
   void generate(UnaryOp op, String sourceName) {
     if (op.operator() == TokenType.MINUS) {
-      emitter.addData(MINUS_ONE_DATA);
+      emitter.addData(ZERO_DATA);
       Location destination = op.destination();
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
-        emitter.emit("movsd %s, [%s]", destReg, MINUS_ONE_DBL_NAME);
-        emitter.emit("mulsd %s, %s", destReg, sourceName);
+        emitter.emit("movsd %s, [%s]", destReg, ZERO_DBL_NAME);
+        emitter.emit("subsd %s, %s", destReg, sourceName);
       } else {
         Register tempReg = resolver.allocate(VarType.DOUBLE);
-        emitter.emit("movsd %s, [%s]", tempReg, MINUS_ONE_DBL_NAME);
-        emitter.emit("mulsd %s, %s", tempReg, sourceName);
+        emitter.emit("movsd %s, [%s]", tempReg, ZERO_DBL_NAME);
+        emitter.emit("subsd %s, %s", tempReg, sourceName);
         resolver.mov(tempReg, destination);
         resolver.deallocate(tempReg);
       }
