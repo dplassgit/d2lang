@@ -153,6 +153,35 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void lengthNullLocal() throws Exception {
+    if (optimize) {
+      assertGenerateError("f:proc {a='hello' a=null println length(a)} f()", ".*NULL expression.*");
+    } else {
+      assertRuntimeError(
+          "f:proc {a='hello' a=null println length(a)} f()", "length", "Null pointer error");
+    }
+  }
+
+  @Test
+  public void lengthNullGlobal() throws Exception {
+    assertRuntimeError("a='hello' a=null println length(a)", "length", "Null pointer error");
+  }
+
+  @Test
+  public void constStringLength(
+      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
+  }
+
+  @Test
+  public void stringLength(
+      @TestParameter({"", "s", "hello", "hello this is a very long string"}) String value)
+      throws Exception {
+    execute(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value), "stringLength");
+  }
+
+  @Test
   public void compOpsThreeParams(@TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op)
       throws Exception {
     execute(

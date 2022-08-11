@@ -549,15 +549,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case LENGTH:
         if (source.type() == VarType.STRING) {
-          stringGenerator.generateStringLength(destination, source);
+          stringGenerator.generateStringLength(op.position(), destination, source);
         } else if (source.type().isArray()) {
           arrayGenerator.generateArrayLength(destination, source);
         } else {
-          fail("Cannot generate length of %s", source.type());
+          throw new D2RuntimeException(
+              String.format(
+                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
+                  source.type()),
+              op.position(),
+              "Null pointer");
         }
         break;
       case ASC:
-        npeCheckGenerator.generateNullPointerCheck(op, source);
+        npeCheckGenerator.generateNullPointerCheck(op.position(), source);
         // move from sourceLoc to temp
         // then from temp to dest
         Register tempReg = resolver.allocate(VarType.INT);

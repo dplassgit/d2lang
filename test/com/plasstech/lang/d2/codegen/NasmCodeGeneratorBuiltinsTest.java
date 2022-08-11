@@ -66,20 +66,6 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void constStringLength(
-      @TestParameter({"s", "hello", "hello this is a very long string"}) String value)
-      throws Exception {
-    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
-  }
-
-  @Test
-  public void stringLength(
-      @TestParameter({"", "s", "hello", "hello this is a very long string"}) String value)
-      throws Exception {
-    execute(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value), "stringLength");
-  }
-  
-  @Test
   public void asc(@TestParameter({"s", "hello", "hello this is a very long string"}) String value)
       throws Exception {
     execute(String.format("a='%s' b=asc(a) print b", value), "asc");

@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -57,8 +58,8 @@ class StringCodeGenerator {
 
     if (operator != TokenType.EQEQ && operator != TokenType.NEQ) {
       // do not allow comparing nulls
-      npeCheckGenerator.generateNullPointerCheck(op, left);
-      npeCheckGenerator.generateNullPointerCheck(op, right);
+      npeCheckGenerator.generateNullPointerCheck(op.position(), left);
+      npeCheckGenerator.generateNullPointerCheck(op.position(), right);
     } else {
       // TODO: if the operator is == or != we can short-circuit the call to strcmp if one is null
     }
@@ -114,7 +115,7 @@ class StringCodeGenerator {
   void generateStringIndex(BinOp op) {
     Operand stringOperand = op.left();
 
-    npeCheckGenerator.generateNullPointerCheck(op, stringOperand);
+    npeCheckGenerator.generateNullPointerCheck(op.position(), stringOperand);
 
     String stringName = resolver.resolve(stringOperand);
     Operand index = op.right();
@@ -252,21 +253,23 @@ class StringCodeGenerator {
 
   /** Generate dest = leftOperand + rightOperand */
   void generateStringAdd(Op op, String dest, Operand left, Operand right) {
-    npeCheckGenerator.generateNullPointerCheck(op, left);
-    npeCheckGenerator.generateNullPointerCheck(op, right);
+    Position position = op.position();
+    npeCheckGenerator.generateNullPointerCheck(position, left);
+    npeCheckGenerator.generateNullPointerCheck(position, right);
 
     // 1. get left length
     Register leftLengthReg = registers.allocate(VarType.INT);
     emitter.emit0("");
     emitter.emit("; Get left length into %s:", leftLengthReg);
-    generateStringLength(new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
+    generateStringLength(
+        position, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
     // 2. get right length
     Register rightLengthReg = registers.allocate(VarType.INT);
     // TODO: if leftLengthReg is volatile, push it first (?!)
     emitter.emit0("");
     emitter.emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
-        new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
+        position, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
     emitter.emit0("");
     emitter.emit(
         "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
@@ -333,7 +336,8 @@ class StringCodeGenerator {
   }
 
   /** Generate destination = length(source) */
-  void generateStringLength(Location destination, Operand source) {
+  void generateStringLength(Position position, Location destination, Operand source) {
+    npeCheckGenerator.generateNullPointerCheck(position, source);
     // We're doing something special with RAX & RCX
     RegisterState raxRcxState =
         RegisterState.condPush(emitter, registers, ImmutableList.of(RAX, RCX));

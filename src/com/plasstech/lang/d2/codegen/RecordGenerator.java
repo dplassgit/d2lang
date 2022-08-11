@@ -46,7 +46,7 @@ class RecordGenerator {
 
   /** Generate nasm code to set a field value: record.field = source */
   void generate(FieldSetOp op) {
-    npeCheckGenerator.generateNullPointerCheck(op, op.recordLocation());
+    npeCheckGenerator.generateNullPointerCheck(op.position(), op.recordLocation());
 
     String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate(VarType.INT);
@@ -121,7 +121,7 @@ class RecordGenerator {
   }
 
   private void generateDot(BinOp op) {
-    npeCheckGenerator.generateNullPointerCheck(op, op.left());
+    npeCheckGenerator.generateNullPointerCheck(op.position(), op.left());
 
     Operand record = op.left();
     VarType type = record.type();

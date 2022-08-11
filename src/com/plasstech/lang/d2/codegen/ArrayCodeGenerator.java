@@ -130,7 +130,7 @@ class ArrayCodeGenerator {
   void generateArraySet(ArraySet op) {
     if (!op.isArrayLiteral()) {
       // array literals are by definition never null.
-      npeCheckGenerator.generateNullPointerCheck(op, op.array());
+      npeCheckGenerator.generateNullPointerCheck(op.position(), op.array());
     }
 
     Operand sourceLoc = op.source();

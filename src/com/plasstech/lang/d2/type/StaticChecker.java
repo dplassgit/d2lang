@@ -585,7 +585,7 @@ public class StaticChecker extends DefaultVisitor implements Phase {
         if (exprType != VarType.STRING && !exprType.isArray()) {
           throw new TypeException(
               String.format(
-                  "Cannot aply LENGTH function to %s expression; must be ARRAY or STRING",
+                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
                   exprType),
               expr.position());
         }
