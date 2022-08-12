@@ -118,8 +118,8 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     execute(
         String.format(
             "      a='%s' b='%s' " //
-                + "c=a %s b print c " //
-                + "d=b %s a print d",
+                + "c=a %s b println c " //
+                + "// d=b %s a // println d",
             first, second, op, op),
         "compOpsGlobals");
   }
@@ -150,6 +150,24 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
         String.format("a='abc' b=null c=a %s b", op), "compOpsNull", "Null pointer error");
     assertRuntimeError(
         String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNull", "Null pointer error");
+  }
+
+  @Test
+  public void equalityOpsNull(@TestParameter({"==", "!="}) String op) throws Exception {
+    execute(String.format("a='abc' c=a %s null", op), "equalityOpsNull");
+    //    assertRuntimeError(
+    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
+    execute(String.format("a='abc' b=null c=a %s b", op), "equalityOpsNull");
+    execute(String.format("a='abc' b:string b=null c=b %s a", op), "equalityOpsNull");
+  }
+
+  @Test
+  public void equalityOpsNull2(@TestParameter({"==", "!="}) String op) throws Exception {
+    execute(String.format("a='abc' c=a %s null", op), "equalityOpsNull");
+    //    assertRuntimeError(
+    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
+    execute(String.format("a='abc' a=null b=null c=a %s b", op), "equalityOpsNull");
+    execute(String.format("a='abc' b:string b=null c=b %s a", op), "equalityOpsNull");
   }
 
   @Test

@@ -56,14 +56,62 @@ class StringCodeGenerator {
     Operand right = op.right();
     TokenType operator = op.operator();
 
+    String endLabel = null;
+    String nonNullStrcmp = null;
     if (operator != TokenType.EQEQ && operator != TokenType.NEQ) {
       // do not allow comparing nulls
       npeCheckGenerator.generateNullPointerCheck(op.position(), left);
       npeCheckGenerator.generateNullPointerCheck(op.position(), right);
     } else {
-      // TODO: if the operator is == or != we can short-circuit the call to strcmp if one is null
+      endLabel = resolver.nextLabel("strcmp_short_circuit");
+      Register tempReg = resolver.allocate(VarType.STRING);
+      String leftName = resolver.resolve(op.left());
+      String rightName = resolver.resolve(op.right());
+      // TODO this can be simpler
+      emitter.emit("; if they're identical we can stop now");
+      emitter.emit("mov QWORD %s, %s ; string compare setup", tempReg.name64(), leftName);
+      emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
+      resolver.deallocate(tempReg);
+      String nextTest = resolver.nextLabel("next_strcmp_test");
+      emitter.emit("jne _%s", nextTest);
+
+      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
+      emitter.emit("jmp _%s", endLabel);
+
+      emitter.emit("; not identical; test for null");
+      emitter.emitLabel(nextTest);
+      // if left == null: return op == NEQ
+      nextTest = resolver.nextLabel("next_strcmp_test");
+      if (leftName.equals("0")) {
+        emitter.emit("; left is literal null");
+        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+        emitter.emit("jmp _%s", endLabel);
+      } else if (!left.isConstant()) {
+        emitter.emit("cmp QWORD %s, 0", leftName);
+        emitter.emit("jne _%s", nextTest);
+        emitter.emit("; left is null, right is not");
+        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+        emitter.emit("jmp _%s", endLabel);
+      }
+      emitter.emit("; left is not null, test right");
+      emitter.emitLabel(nextTest);
+      // if right == null: return op == NEQ
+      if (rightName.equals("0")) {
+        emitter.emit("; right is literal null");
+        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+        emitter.emit("jmp _%s", endLabel);
+      } else if (!right.isConstant()) {
+        emitter.emit("cmp QWORD %s, 0", rightName);
+        nonNullStrcmp = resolver.nextLabel("non_null_strcmp");
+        emitter.emit("jne _%s", nonNullStrcmp);
+        emitter.emit("; right is null, left is not");
+        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+        emitter.emit("jmp _%s", endLabel);
+      }
     }
 
+    emitter.emit("; left and right both not null");
+    emitter.emitLabel(nonNullStrcmp);
     RegisterState registerState =
         RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
 
@@ -109,6 +157,8 @@ class StringCodeGenerator {
     emitter.emit("cmp RAX, 0");
     emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
     registerState.condPop();
+
+    emitter.emitLabel(endLabel);
   }
 
   /** generate dest = stringOperand[index] */
