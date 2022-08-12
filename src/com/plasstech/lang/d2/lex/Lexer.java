@@ -273,6 +273,11 @@ public class Lexer {
     boolean escape = false;
     // Take all characters until the closing tick/quote
     while ((cc != openingChar || escape) && cc != 0) {
+      if (cc == '\n') {
+        line++;
+        col = 0;
+      }
+
       if (!escape) {
         escape = (cc == '\\');
         if (!escape) {
