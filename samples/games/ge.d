@@ -19,9 +19,27 @@ IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 /////////////////////////////////////////////////////////
 // CONSTANTS
 /////////////////////////////////////////////////////////
-NAMES=["Galactica", "Moonsweep", "Ootsi", "Farside", "Sparta", "Proyc", "Novena", "Drassa2", 
-  "Kgolta", "Eventide", "Javiny", "Viejo", "Llythll", "Utopia", "Yang-tzu", "Zoe", "Twyrx", 
-  "Harkon", "Bok", "Alhambra"]
+NAMES=["Galactica", 
+  "Alhambra",
+  "Bok", 
+  "Drassa2",
+  "Eventide", 
+  "Farside", 
+  "Harkon", 
+  "Javiny", 
+  "Kgolta", 
+  "Llythll", 
+  "Moonsweep", 
+  "Novena", 
+  "Ootsi", 
+  "Proyc", 
+  "Sparta", 
+  "Twyrx",
+  "Utopia", 
+  "Viejo", 
+  "Yang-tzu", 
+  "Zoe"
+]
 NUM_PLANETS=20
 
 
@@ -158,7 +176,7 @@ max:proc(a:int,b:int):int {
   if (a>b) { return a } return b
 }
 
-RANDOM_MOD=65535 
+RANDOM_MOD=65535
 // get a random number from 0 to range
 random:proc(range:int):int {
   return (next_random() * range)/RANDOM_MOD
@@ -199,7 +217,7 @@ trim:proc(s:string):string {
     c = s[i]
     if c != '\n' { r = r + chr(toUpper(asc(c))) }
   }
-  return r 
+  return r
 }
 
 toString: proc(i: int): string {
@@ -215,8 +233,8 @@ toString: proc(i: int): string {
 
 format_date:proc(d:int):string {
   year = d/100
-  days = d%100             
-  result = toString(year) + "." 
+  days = d%100
+  result = toString(year) + "."
   if days < 10 {result = result + "0"}
   result = result + toString(days)
   return result
@@ -267,7 +285,7 @@ help: proc {
   println 
 "
 MAP: Show the map near where the fleet is.
-*NEAr: show nearby planets (?)
+*NEAr: Show info about nearby planets
 *STAtus: Show where the fleet is, # of planets in each category, info about current planet
 *INFo: get info about a planet, its distance, and estimated fuel & time to get there
 *GALactica: get info about Galactica
@@ -301,7 +319,7 @@ execute:proc(command:string) {
     print "Fleet is at: " println fleet.location.name
     map(fleet.location)
   } elif command=="HEL" {
-    help() 
+    help()
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
   }
