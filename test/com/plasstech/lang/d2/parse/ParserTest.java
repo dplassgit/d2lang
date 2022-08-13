@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -985,8 +984,6 @@ public class ParserTest {
   public void arrayDeclError() {
     assertParseError("a:int[3", "expected ]");
     assertParseError("a:int[3 4]", "expected ]");
-    // This is now a record reference declaration so the bracket is an error.
-    assertParseError("a:hello[3]", "expected start of statement");
   }
 
   @Test
@@ -1301,6 +1298,12 @@ public class ParserTest {
     assertThat(right.value()).isNull();
   }
 
+  @Test
+  public void arrayOfRecord() {
+    Node node = parseStatements("r:record{a:string} rs:r[2]");
+    System.err.println(node);
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();
@@ -1310,9 +1313,7 @@ public class ParserTest {
     Lexer lexer = new Lexer(expression);
     Parser parser = new Parser(lexer);
     State output = parser.execute(State.create());
-    if (output.error()) {
-      fail(output.errorMessage());
-    }
+    output.throwOnError();
     return output.programNode();
   }
 

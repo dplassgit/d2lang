@@ -349,9 +349,14 @@ public class Parser implements Phase {
       }
     } else if (token.type() == TokenType.VARIABLE) {
       Token typeToken = advance(); // eat the variable type record reference
-      // TODO: allow arrays of records!
-      return new DeclarationNode(
-          varToken.text(), new RecordReferenceType(typeToken.text()), varToken.start());
+
+      RecordReferenceType recordReference = new RecordReferenceType(typeToken.text());
+      if (token.type() == TokenType.LBRACKET) {
+        // Array of records!
+        return arrayDecl(varToken, recordReference);
+      } else {
+        return new DeclarationNode(varToken.text(), recordReference, varToken.start());
+      }
     }
     throw new ParseException(
         String.format(

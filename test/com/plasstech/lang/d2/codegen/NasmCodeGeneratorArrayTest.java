@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.codegen;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -259,9 +258,32 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Not implemented yet")
   public void arrayDoubleLiteral() throws Exception {
-    execute("x=[1.0,2.0,3.0] print x[0]", "arrayDoubleLiteral");
+    execute("x=[1.0,2.0,3.0] println x[0]", "arrayDoubleLiteral");
+  }
+
+  @Test
+  public void arrayOfRecord() throws Exception {
+    execute(
+        "r:record{a:string} \r\n"
+            + "rs:r[2]\r\n"
+            + "rs[1] = new r\r\n"
+            + "tr = rs[1]\r\n"
+            + "tr.a='hi'\r\n"
+            + "println \"Should be hi\"\r\n"
+            + "// println rs[1].a // will this work? no\r\n"
+            + "println tr.a\r\n"
+            + "\r\n"
+            + "println \"Should be null\"\r\n"
+            + "if rs[0] == null {\r\n"
+            + "  println \"null\"\r\n"
+            + "}\r\n"
+            + "\r\n"
+            + "println \"Should be not null\"\r\n"
+            + "if rs[1] != null {\r\n"
+            + "  println \"not null\"\r\n"
+            + "}\r\n",
+        "arrayOfRecord");
   }
 
   @Test

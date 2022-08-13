@@ -1099,6 +1099,32 @@ public class StaticCheckerTest {
     assertError("r1:record{s:string} var1=new r1 var1.s=0", "is INT");
   }
 
+  @Test
+  public void arrayOfRecord() {
+    checkProgram(
+        "      r:record{a:string} rs:r[2]"
+            + "tr = new r "
+            + "rs[0] = tr "
+            + "tr.a='hi' "
+            + "println tr.a");
+  }
+
+  @Test
+  public void arrayOfRecordError() {
+    assertError(
+        "      r:record{a:string} " //
+            + "ar:r[2] "
+            + "ai:int[2] "
+            + "ar=ai",
+        "ARRAY of r but expression is");
+    assertError(
+        "      r:record{a:string} " //
+            + "ar:r[2] "
+            + "ai:int[2] "
+            + "ai=ar",
+        "ARRAY of INT but expression is");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

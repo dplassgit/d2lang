@@ -3,8 +3,10 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -145,15 +147,26 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Arrays.setAll(strings, (index) -> "");
       setValue(op.destination(), strings);
     } else {
-      throw new IllegalStateException("Cannot allocate array of type " + baseType);
+      List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
+      for (int i = 0; i < sizeVal; ++i) {
+        // not sure if this is right, shrug.
+        records.add(null);
+      }
+      setValue(op.destination(), records);
     }
   }
 
   @Override
   public void visit(ArraySet op) {
     int index = (Integer) resolve(op.index());
-    Object[] arrayValue = (Object[]) resolve(op.array());
-    arrayValue[index] = resolve(op.source());
+    Object array = resolve(op.array());
+    if (array instanceof Object[]) {
+      Object[] arrayValue = (Object[]) array;
+      arrayValue[index] = resolve(op.source());
+    } else {
+      List<Object> arrayList = (List<Object>) array;
+      arrayList.set(index, resolve(op.source()));
+    }
   }
 
   @Override
@@ -217,6 +230,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitBinOpNulls(op, left, right);
     } else if (left.getClass().isArray() && right instanceof Integer) {
       result = visitArrayBinOp(op, (Object[]) left, (Integer) right);
+    } else if (left instanceof ArrayList && right instanceof Integer) {
+      result = visitRecordArrayBinOp(op, left, (Integer) right);
     } else {
       throw new IllegalStateException(
           String.format("Not sure what to do with %s; left %s right %s", op, left, right));
@@ -246,6 +261,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
     @SuppressWarnings("unchecked")
     Map<String, Object> leftAsMap = (Map<String, Object>) left;
     return leftAsMap.get(right);
+  }
+
+  private Object visitRecordArrayBinOp(BinOp op, Object left, int right) {
+    if (op.operator() == TokenType.LBRACKET) {
+      List array = (List) left;
+      return array.get(right);
+    }
+    throw new IllegalStateException("Unknown array/int binop " + op.operator());
   }
 
   private Object visitArrayBinOp(BinOp op, Object[] left, int right) {
