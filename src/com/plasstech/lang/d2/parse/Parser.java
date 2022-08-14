@@ -88,7 +88,7 @@ public class Parser implements Phase {
           TokenType.NULL,
           TokenType.NEW);
 
-  private static Set<TokenType> UNARY_KEYWORDS =
+  private static Set<TokenType> BUILTIN_UNARY_KEYWORDS =
       ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
 
   private final Lexer lexer;
@@ -659,18 +659,25 @@ public class Parser implements Phase {
         || token.type() == TokenType.BIT_NOT
         || token.type() == TokenType.NOT) {
       advance();
-      ExprNode expr = unary(); // should this be expr? unary? atom?
+      ExprNode expr = unary();
 
-      if (unaryToken.type() == TokenType.NOT) {
-        // try to optimize 'not (a==b)' to 'a != b'
+      if (unaryToken.type() == TokenType.NOT || unaryToken.type() == TokenType.BIT_NOT) {
         if (expr instanceof BinOpNode) {
-          BinOpNode binOp = (BinOpNode) expr;
-          TokenType newOperator = NOTTED_OPS.get(binOp.operator());
+          // optimize 'not (a==b)' to 'a!=b'
+          BinOpNode child = (BinOpNode) expr;
+          TokenType newOperator = NOTTED_OPS.get(child.operator());
           if (newOperator == null) {
-            newOperator = NOTTED_OPS.inverse().get(binOp.operator());
+            newOperator = NOTTED_OPS.inverse().get(child.operator());
           }
           if (newOperator != null) {
-            return new BinOpNode(binOp.left(), newOperator, binOp.right());
+            return new BinOpNode(child.left(), newOperator, child.right());
+          }
+        } else if (expr instanceof UnaryNode) {
+          // optimize 'not not x' to 'x'
+          UnaryNode child = (UnaryNode) expr;
+          TokenType secondOp = child.operator();
+          if (secondOp == unaryToken.type()) {
+            return child.expr();
           }
         }
       }
@@ -729,7 +736,7 @@ public class Parser implements Phase {
   }
 
   private static boolean isUnaryKeyword(Token token) {
-    return UNARY_KEYWORDS.contains(token.type());
+    return BUILTIN_UNARY_KEYWORDS.contains(token.type());
   }
 
   /**
