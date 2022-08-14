@@ -66,25 +66,25 @@ PlanetType: record {
   population:double   // in millions
   status:int     // 1=occupied, 2=empire, 0=independent
   status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
-//  assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money
-//  prod_ratio:int[5]   // ratio of each type of asset production
+  assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money
+  prod_ratio:int[5]   // ratio of each type of asset production
   civ_level:int    // primitive, limited, advanced, etc.
   troops:int    // # of troops on surface, or # of occupation troops
   fighters:int     // # of fighters in orbit, or # of occupation fighters
   sats_orbit:int    // # of satellites in orbit
   sats_enroute:int  // # of satellites en route
-//  sats_arrive[MAX_SATS]:int  // arrival date (in DAYS) of each satellite
-//  prices:int[2]    // food, fuel (note can only buy if status=empire)
+  sats_arrive:int[3]  // arrival date (in DAYS) of each satellite
+  prices:int[2]    // food, fuel (note can only buy if status=empire)
   occupied_on:int    // date (years) planet was occupied
 }
 
 FleetType: record {
   location:PlanetType  // pointer to planet struct in global array
-//  assets:int[5]    // amount of each type on hand: food, fuel, parts, troops, money
+  assets:int[5]    // amount of each type on hand: food, fuel, parts, troops, money
   etrans:int    // empty transports â€” WHERE ARE FULL TRANSPORTS?!
   fighters:int     // # of fighters
   satellites:int   // in inventory
-//  carriers[2]:int   // # of food, fuel carriers; they carry 1000 units each
+  carriers:int[2]   // # of food, fuel carriers; they carry 1000 units each
 }
 
 GameInfoType: record {
