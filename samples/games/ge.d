@@ -11,36 +11,43 @@
 
 // These are both for assets and production ratios
 FOOD=0 FUEL=1 PARTS=2 TROOPS=3 MONEY=4
+
 INDEPENDENT=0 OCCUPIED=1 EMPIRE=2
+STATUSES=["Independent", "Occupied", "Empire"]
+
 PRIMITIVE=0 LIMITED=1 ADVANCED=2 SUPERIOR=3
+CIV_LEVELS=["Primitive", "Limited", "Advanced", "Superior"]
+
 IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 
 
 /////////////////////////////////////////////////////////
 // CONSTANTS
 /////////////////////////////////////////////////////////
-NAMES=["Galactica", 
+NAMES=[
+  "Galactica",
   "Alhambra",
-  "Bok", 
+  "Bok",
   "Drassa2",
-  "Eventide", 
-  "Farside", 
-  "Harkon", 
-  "Javiny", 
-  "Kgolta", 
-  "Llythll", 
-  "Moonsweep", 
-  "Novena", 
-  "Ootsi", 
-  "Proyc", 
-  "Sparta", 
+  "Eventide",
+  "Farside",
+  "Harkon",
+  "Javiny",
+  "Kgolta",
+  "Llythll",
+  "Moonsweep",
+  "Novena",
+  "Ootsi",
+  "Proyc",
+  "Sparta",
   "Twyrx",
-  "Utopia", 
-  "Viejo", 
-  "Yang-tzu", 
+  "Utopia",
+  "Viejo",
+  "Yang-tzu",
   "Zoe"
 ]
 NUM_PLANETS=20
+SIZE=50
 
 
 /////////////////////////////////////////////////////////
@@ -50,7 +57,6 @@ NUM_PLANETS=20
 planets: PlanetType[NUM_PLANETS]
 gameinfo: GameInfoType
 fleet: FleetType
-SIZE=50
 galmap:int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 
 
@@ -59,36 +65,36 @@ galmap:int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 /////////////////////////////////////////////////////////
 
 PlanetType: record {
-  id:int
   name:string
   abbrev:string    // first letter of planet
-  x:int y:int    // location (0-50)
   population:double   // in millions
-  status:int     // 1=occupied, 2=empire, 0=independent
-  status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
-  assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money
+  assets:double[5]  // amount of each type on hand: food, fuel, parts, troops, money
   prod_ratio:int[5]   // ratio of each type of asset production
-  civ_level:int    // primitive, limited, advanced, etc.
-  troops:int    // # of troops on surface, or # of occupation troops
-  fighters:int     // # of fighters in orbit, or # of occupation fighters
+  prices:int[2]    // food, fuel (note can only buy if status=empire)
+  sats_arrive:int[3]  // arrival date (in DAYS) of each satellite
   sats_orbit:int    // # of satellites in orbit
   sats_enroute:int  // # of satellites en route
-  sats_arrive:int[3]  // arrival date (in DAYS) of each satellite
-  prices:int[2]    // food, fuel (note can only buy if status=empire)
+  id:int
+  x:int y:int    // location (0-50)
+  civ_level:int    // primitive, limited, advanced, etc.
+  status:int     // 1=occupied, 2=empire, 0=independent
+  status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
+  troops:int    // # of troops on surface, or # of occupation troops
+  fighters:int     // # of fighters in orbit, or # of occupation fighters
   occupied_on:int    // date (years) planet was occupied
 }
 
 FleetType: record {
   location:PlanetType  // pointer to planet struct in global array
-  assets:int[5]    // amount of each type on hand: food, fuel, parts, troops, money
-  etrans:int    // empty transports â€” WHERE ARE FULL TRANSPORTS?!
+  assets:double[5]    // amount of each type on hand: food, fuel, parts, troops, money
+  carriers:int[2]   // # of food, fuel carriers; they carry 1000 units each
+  etrans:int    // empty transports. WHERE ARE FULL TRANSPORTS?!
   fighters:int     // # of fighters
   satellites:int   // in inventory
-  carriers:int[2]   // # of food, fuel carriers; they carry 1000 units each
 }
 
 GameInfoType: record {
-  date:int  // days since start. 100 days per â€œyearâ€�
+  date:int  // days since start. 100 days per "year"
   level:int  // difficulty level
   status:int
   num_empire:int
@@ -104,31 +110,136 @@ GameInfoType: record {
 initPlanets:proc {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = new PlanetType
+
     name = NAMES[i]
     p.name = name
-    p.abbrev = name[0]  // will this work? no.
+    p.abbrev = name[0]
+
+    // 1. assign location randomly on grid
     p.x = random(SIZE)
     p.y = random(SIZE)
+
     if (i != 0) {
-      p.status = INDEPENDENT
-      p.civ_level = random(4)
+      // 2. assign population based on level
+      // the higher the level the more pop!!!!
+      // min is 16, max is 100 to start
       p.population = 16.0 + tod(random(840))/10.0 + 3.0 * tod(random(10*gameinfo.level))/10.0
+
+      // 3. assign civ level: 0-3
+      // DBP based on level: the higher the level the more superior & advanced planets
+      p.civ_level = random(4)
+
+      // 4. set status as independent
+      p.status = INDEPENDENT
+
+      // THIS CRASHES AT RUNTIME WTH?
+      // is it a volatile error? Or is it overwriting the assets? Or ?
+      // by removing some fields, this is no longer crashing
+      // maybe it's an alignment issue?
+      // looks like it's an alignment issue. reordering the fields makes the problem go away.
+      // print "p.assets 2d: " println p.assets
+
+      prod_ratio = p.prod_ratio
+      if p.civ_level == PRIMITIVE {
+				// if primitive, base is 33 (min 16)
+				prod_ratio[FOOD] = 34
+				prod_ratio[MONEY] = 33
+				prod_ratio[TROOPS] = 33
+      } elif p.civ_level == LIMITED {
+				// if limited base is 25 (min 12)
+				prod_ratio[FOOD] = 25
+				prod_ratio[MONEY] = 25
+				prod_ratio[TROOPS] = 25
+				prod_ratio[FUEL] = 25
+      } else { // advanced, superior
+				// else base is 20	 (min 10)
+				prod_ratio[FOOD] = 20
+				prod_ratio[MONEY] = 20
+				prod_ratio[PARTS] = 20
+				prod_ratio[TROOPS] = 20
+				prod_ratio[FUEL] = 20
+
+        p.fighters = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
+      }
+
+      // 7. set troops, fighters based on level & civ_type (no fighters if <ADVANCED)
+      p.troops = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
+
     } else {
       // Galactica
-      p.civ_level = ADVANCED
-      p.status = EMPIRE
+	    // 2. assign population based on level/ the higher the level the lower the pop
       p.population = 35.0+10.0*(10.0-tod(gameinfo.level*10)/10.0)+tod(random(50))/10.0
+
+	    // 3. set civ level to advanced
+      p.civ_level = ADVANCED
+
+      // 4. set status = empire
+      p.status = EMPIRE
+
+      // 5. set all percentages=20
+      prod_ratio = p.prod_ratio
+      prod_ratio[FOOD] = 20
+      prod_ratio[MONEY] = 20
+      prod_ratio[PARTS] = 20
+      prod_ratio[TROOPS] = 20
+      prod_ratio[FUEL] = 20
+
+      // 6. set satellites=3; this way the 'display planet'
       // code doesn't have to special-case galactica!
       p.sats_orbit = 3
+      // fun fact, galactica starts with 0 troops and 0 fighters (!)
     }
-    // TODO: set up the assets, prod ratios, prices
+
+    // 8. set food price, fuel price based on level
+    // dbp the higher the level the higher the price (until the price goes down (!))
+    // plus random factor
+    prices = p.prices
+    prices[FOOD] = 7
+    prices[FUEL] = 5
+
+    // 9. set initial assets based on level
+    // DBP RANDOMIZE
+    // food 3.3973x2-75.85x+432.41
+    // money 27.268x2-635.19x+3799
+    // parts 4.4802x2-97.611x+541.88
+    // men 1.2727x2 - 26.198x + 143.58
+    // fuel 1.7437x2 - 40.969x + 247.21
+
+    // food	-53.7*level+405.5
+    // food 3.3973x2-75.85x+432.41
+    // BUG: if this line is commented out, we get a NPE on the line assets[FOOD]. WTH?
+    // EVEN THOUGH we already set p.assets up on line 108! WTH?!
+    assets = p.assets
+    // print "assets: " println assets
+    leveld = tod(gameinfo.level)
+    assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)  // npe
+
+    //money	-457.4*level+3583
+    // money 27.268x2-635.19x+3799
+    assets[MONEY] = abc(27.268, -635.19, 3799.0, leveld)
+
+    // if < advanced, no parts
+    if (p.civ_level >= ADVANCED) {
+      // planet->assets[PARTS] = ax_b(level, -68, 506)
+      // parts 4.4802x2-97.611x+541.88
+      assets[PARTS] = abc(4.4802, -97.611, 541.88, leveld)
+    }
+
+    //TROOPS		-17.9x + 133.5
+    // men 1.2727x2 - 26.198x + 143.58
+    assets[TROOPS] = abc(1.2727, -26.198, 143.58, leveld)
+
+    // if primitive, no fuel
+    if (p.civ_level > PRIMITIVE) {
+      //fuel	-29.6x + 233.4
+      // fuel 1.7437x2 - 40.969x + 247.21
+      assets[FUEL] = abc(1.7437, -40.969, 247.21, leveld)
+    }
 
     // set galmap[x,y] to planet name letter
     galmap[p.x+SIZE*p.y] = asc(p.abbrev)
-    print "Planet[" print i print "] is " print name
-    print " (" print p.x print ", " print p.y print ") population " print p.population
-    print " civ_level: " println p.civ_level
     planets[i] = p
+    // print "assets again: " println assets
   }
 }
 
@@ -136,6 +247,8 @@ initFleet:proc {
   fleet = new FleetType
   fleet.location = planets[0]
   // todo: set up fleet.assets
+
+  // Empty transports. Unclear where filled transports are...
   fleet.etrans = ax_b(gameinfo.level, -10, 110)
   fleet.fighters = fleet.etrans + 100
   fleet.satellites = 11 - gameinfo.level/2
@@ -163,27 +276,26 @@ tod: proc(i:int):double {
   return d
 }
 
+// a*x+b
+ax_b:proc(x:int, a:int, b:int):int { return a*x+b }
 
-ax_b:proc(x:int, a:int, b:int):int {
-  return a*x+b
+// a*x*x+b*x+c
+abc:proc(a:double, b:double, c:double, x:double):double {
+  return a*x*x+b*x+c
 }
 
-min:proc(a:int, b:int):int {
-  if a < b { return a } return b
-}
-
-max:proc(a:int,b:int):int {
-  if (a>b) { return a } return b
-}
+min:proc(a:int, b:int):int { if a < b { return a } return b  }
+max:proc(a:int,b:int):int { if a > b { return a } return b }
 
 RANDOM_MOD=65535
-// get a random number from 0 to range
+
+// Get a random number from 0 to 'range' exclusive
 random:proc(range:int):int {
   return (next_random() * range)/RANDOM_MOD
 }
 
 last_rand:int
-// returns a random number from 0 to RANDOM_MOD
+// returns a random number from 0 to RANDOM_MOD (exclusive)
 next_random:proc:int {
   // m=modulus, a=multiplier, c=increment
   a=75 c=74
@@ -198,7 +310,7 @@ next_random:proc:int {
 
 calculate_game_status:proc:int {
   if gameinfo.status != IN_PROGRESS {return gameinfo.status}
-  if gameinfo.date > (5000*100) {
+  if gameinfo.date > (4100*100) {
     return LOST
   } else {
     // todo: when all are empire: WON
@@ -207,7 +319,7 @@ calculate_game_status:proc:int {
 }
 
 toUpper:proc(s:int):int {
-  if s >= asc('a') and s <= asc('z') { return s - (asc('a')-asc('A')) }
+  if s >= asc('a') and s <= asc('z') { return s - (asc('a') - asc('A')) }
   return s
 }
 
@@ -251,11 +363,24 @@ sleep:proc(days:int) {
   // TODO: in sleep if a planet changes status, update the map
 }
 
+cheat:proc() {
+  i = 0 while i < NUM_PLANETS do i = i + 1 {
+    p = planets[i]
+    // FUUUUU it's munging the name
+    print "Planet[" print i print "]: " print p.name
+    print " @(" print p.x print ", " print p.y print "), population " print p.population
+    print " civ_level: " print CIV_LEVELS[p.civ_level] print " status: " println p.status
+    print " assets: " println p.assets
+    print " troops: " print p.troops print " fighters: " print p.fighters
+    print " prices: " println p.prices
+  }
+}
+
 // Shows the galaxy around the given planet.
 map:proc(planet:PlanetType) {
   left_top_x = max(0, planet.x-12)
   left_top_y = max(0, planet.y-12)
-  // TODO: left_top_x,y cannot be within 24 of the size
+  // left_top_x,y cannot be within 24 of the size
   left_top_x = min(left_top_x, SIZE-24)
   left_top_y = min(left_top_y, SIZE-24)
   //print "at " print left_top_x print ", " println left_top_y
@@ -282,7 +407,7 @@ map:proc(planet:PlanetType) {
 }
 
 help: proc {
-  println 
+  println
 "
 MAP: Show the map near where the fleet is.
 *NEAr: Show info about nearby planets
@@ -311,13 +436,10 @@ execute:proc(command:string) {
   if command=='QUI' {
     gameinfo.status=QUIT
   } elif command=="MAP" {
-    //i = 0 while i < NUM_PLANETS do i = i + 1 {
-      //p = planets[i]
-      //print "NEAR " println p.name
-      //map(p)
-    //}
     print "Fleet is at: " println fleet.location.name
     map(fleet.location)
+  } elif command=="CHE" {
+    cheat()
   } elif command=="HEL" {
     help()
   } else {
@@ -355,7 +477,7 @@ main {
 
   // TODO: ask for seed
   seed=1337
-  print "Random seed is " println seed
+  // print "Random seed is " println seed
   last_rand=seed
 
   help()

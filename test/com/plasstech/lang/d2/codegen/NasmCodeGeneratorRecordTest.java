@@ -213,8 +213,57 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void setArrayField() throws Exception {
+    execute("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar", "setArrayField");
+  }
+
+  @Test
+  public void setArrayOfDoubleField() throws Exception {
     execute(
-        "rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar",
-        "setArrayFieldLiteral");
+        "  rt: record {\r\n"
+            + "   id:int\r\n"
+            + "   name:string\r\n"
+            + "   abbrev:string    // first letter of planet\r\n"
+            + "   x:int y:int    // location (0-50)\r\n"
+            + "   population:double   // in millions\r\n"
+            + "   status:int     // 1=occupied, 2=empire, 0=independent\r\n"
+            + "   status_changed:bool  // 1 if status just changed, 0 if not. WHY?!\r\n"
+            + "   assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money\r\n"
+            + "   prod_ratio:int[5]   // ratio of each type of asset production\r\n"
+            + "   civ_level:int    // primitive, limited, advanced, etc.\r\n"
+            + "   troops:int    // # of troops on surface, or # of occupation troops\r\n"
+            + "   fighters:int     // # of fighters in orbit, or # of occupation fighters\r\n"
+            + "   sats_orbit:int    // # of satellites in orbit\r\n"
+            + "   sats_enroute:int  // # of satellites en route\r\n"
+            + "   sats_arrive:int[3]  // arrival date (in DAYS) of each satellite\r\n"
+            + "   prices:int[2]    // food, fuel (note can only buy if status=empire)\r\n"
+            + "   occupied_on:int    // date (years) planet was occupied\r\n"
+            + " }\r\n"
+            + "f:proc {"
+            + "  p=new rt "
+            + "  name='hello' p.name=name p.abbrev=name[0]"
+            + "  p.x=5 p.y=6 "
+            + "  p.population = 12.0 "
+            + "  p.civ_level = 2 "
+            + "  p.status=1"
+            + "  pr = p.prod_ratio "
+            + "  pr[0] = 23 "
+            + "  pr[1] = 23 "
+            + "  pr[2] = 23 "
+            + "  pr[3] = 23 "
+            + "  pr[4] = 23 "
+            + "  p.fighters=56 p.troops=17 "
+            + "  pc = p.prices "
+            + "  pc[0] = 5 "
+            + "  pc[1] = 7 "
+            + "  ar=p.assets "
+            + "  ar[0]=4.0 "
+            + "  ar[1]=41.0 "
+            + "  ar[2]=42.0 "
+            + "  ar[3]=43.0 "
+            + "  ar[4]=44.0 "
+            + "  print ar"
+            + "}"
+            + " f()",
+        "setArrayOfDoubleField");
   }
 }
