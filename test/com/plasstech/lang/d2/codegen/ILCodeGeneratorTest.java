@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -148,6 +149,12 @@ public class ILCodeGeneratorTest {
         "rec: record {f:string i:int}\n" //
             + "r = new rec\n" //
             + "r.f = 'hi'"));
+  }
+
+  @Test
+  public void recordWithArray() {
+    List<Op> program = generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
+    System.err.println(Joiner.on('\n').join(program));
   }
 
   private List<Op> generateProgram(String program) {

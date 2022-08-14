@@ -15,7 +15,7 @@ public class ArrayLiteralNode extends AbstractNode implements ExprNode {
   public ArrayLiteralNode(Position position, List<ExprNode> elements, VarType baseType) {
     super(position);
     this.elements = elements;
-    this.arrayType = new ArrayType(baseType);
+    this.arrayType = new ArrayType(baseType, 1);
     setVarType(arrayType);
   }
 

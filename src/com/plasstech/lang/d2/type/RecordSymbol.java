@@ -1,9 +1,17 @@
 package com.plasstech.lang.d2.type;
 
-import java.util.Collection;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import java.util.Collection;
+import java.util.List;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
+import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
 /** Represents a symbol in the symbol table for a record type definition. */
@@ -38,6 +46,32 @@ public class RecordSymbol extends AbstractSymbol {
     }
   }
 
+  public class ArrayField extends Field {
+    private final VarType baseType;
+    private final ImmutableList<Integer> sizes;
+    private final ArrayType arrayType;
+
+    public ArrayField(String name, ArrayType arrayType, int offset, List<Integer> sizes) {
+      super(name, arrayType, offset);
+      this.arrayType = arrayType;
+      this.baseType = arrayType.baseType();
+      this.sizes = ImmutableList.copyOf(sizes);
+    }
+
+    @Override
+    public ArrayType type() {
+      return arrayType;
+    }
+
+    public ImmutableList<Integer> sizes() {
+      return sizes;
+    }
+
+    public VarType baseType() {
+      return baseType;
+    }
+  }
+
   private final ImmutableMap<String, Field> fields;
   private int allocatedSize;
 
@@ -49,7 +83,22 @@ public class RecordSymbol extends AbstractSymbol {
     ImmutableMap.Builder<String, Field> fieldBuilder = ImmutableMap.builder();
     allocatedSize = 0;
     for (DeclarationNode decl : node.fields()) {
-      fieldBuilder.put(decl.name(), new Field(decl.name(), decl.varType(), allocatedSize));
+      Field field;
+      if (decl.varType().isArray()) {
+        ArrayType arrayType = (ArrayType) decl.varType();
+        ArrayDeclarationNode anode = (ArrayDeclarationNode) decl;
+        ExprNode size = anode.sizeExpr();
+        ConstNode<Integer> constSize = (ConstNode<Integer>) size;
+        field =
+            new ArrayField(
+                decl.name(),
+                arrayType,
+                allocatedSize,
+                ImmutableList.of(constSize.value()));
+      } else {
+        field = new Field(decl.name(), decl.varType(), allocatedSize);
+      }
+      fieldBuilder.put(decl.name(), field);
       allocatedSize += decl.varType().size();
     }
     fields = fieldBuilder.build();
@@ -88,5 +137,26 @@ public class RecordSymbol extends AbstractSymbol {
 
   public Field getField(String fieldName) {
     return fields.get(fieldName);
+  }
+
+  public ArrayField getArrayField(String fieldName) {
+    Field field = fields.get(fieldName);
+    Preconditions.checkNotNull(field, "Cannot find field name %s", fieldName);
+    if (field.type.isArray() && field instanceof ArrayField) {
+      return (ArrayField) field;
+    }
+    throw new IllegalStateException("Requested ArrayField for non-array field " + fieldName);
+  }
+
+  public ImmutableList<ArrayField> arrayFields() {
+    return fields
+        .values()
+        .stream()
+        .filter(f -> f.type().isArray())
+        .map(
+            f -> {
+              return (ArrayField) f;
+            })
+        .collect(toImmutableList());
   }
 }

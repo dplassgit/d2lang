@@ -41,6 +41,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
+import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
@@ -130,30 +131,36 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(ArrayAlloc op) {
     int sizeVal = (Integer) resolve(op.sizeLocation());
     VarType baseType = op.arrayType().baseType();
+    Object emptyArray = createEmptyArray(baseType, sizeVal);
+    setValue(op.destination(), emptyArray);
+  }
+
+  private static Object[] createEmptyArray(VarType baseType, int sizeVal) {
     if (baseType == VarType.BOOL) {
       Boolean[] booleans = new Boolean[sizeVal];
       Arrays.setAll(booleans, (index) -> false);
-      setValue(op.destination(), booleans);
+      return booleans;
     } else if (baseType == VarType.INT) {
       Integer[] integers = new Integer[sizeVal];
       Arrays.setAll(integers, (index) -> 0);
-      setValue(op.destination(), integers);
+      return integers;
     } else if (baseType == VarType.DOUBLE) {
       Double[] doubles = new Double[sizeVal];
       Arrays.setAll(doubles, (index) -> 0.0);
-      setValue(op.destination(), doubles);
+      return doubles;
     } else if (baseType == VarType.STRING) {
       String[] strings = new String[sizeVal];
       Arrays.setAll(strings, (index) -> "");
-      setValue(op.destination(), strings);
-    } else {
-      List<Map<String, Object>> records = new ArrayList<Map<String, Object>>();
+      return strings;
+    } else if (baseType.isRecord()) {
+      // Cannot make array of map
+      Object[] records = new Object[sizeVal];
       for (int i = 0; i < sizeVal; ++i) {
-        // not sure if this is right, shrug.
-        records.add(null);
+        records[i] = null;
       }
-      setValue(op.destination(), records);
+      return records;
     }
+    throw new IllegalStateException("Cannot create array of " + baseType);
   }
 
   @Override
@@ -438,7 +445,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     setValue(op.destination(), result);
   }
 
-  private Object visitUnaryArray(UnaryOp op, Object[] rhs) {
+  private static Object visitUnaryArray(UnaryOp op, Object[] rhs) {
     switch (op.operator()) {
       case LENGTH:
         return rhs.length;
@@ -447,7 +454,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  private Object visitUnaryString(UnaryOp op, String rhs) {
+  private static Object visitUnaryString(UnaryOp op, String rhs) {
     switch (op.operator()) {
       case LENGTH:
         return rhs.length();
@@ -458,11 +465,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  private Object visitUnaryInt(UnaryOp op, Object rhs) {
+  private static Object visitUnaryInt(UnaryOp op, Object rhs) {
     if (op.operator() == TokenType.NOT) {
-      return rhs == Boolean.FALSE;
+      return rhs.equals(Boolean.FALSE);
     }
-    int r1 = (Integer) rhs;
+    int r1 = (int) rhs;
     switch (op.operator()) {
       case PLUS:
         return r1;
@@ -477,8 +484,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  private Object visitUnaryDouble(UnaryOp op, Object rhs) {
-    double r1 = (Double) rhs;
+  private static Object visitUnaryDouble(UnaryOp op, Object rhs) {
+    double r1 = (double) rhs;
     if (op.operator() == TokenType.PLUS) {
       return r1;
     } else if (op.operator() == TokenType.MINUS) {
@@ -611,20 +618,30 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(AllocateOp op) {
-    // THIS IS WEIRD I AM NOT SURE IT IS RIGHT
     Map<String, Object> recordAsMap = new HashMap<>();
-    recordAsMap.put("__recordType", op.record());
-    // Is this even needed?
     for (String fieldName : op.record().fieldNames()) {
       VarType type = op.record().fieldType(fieldName);
-      if (type == VarType.INT) {
+      if (type == VarType.INT || type == VarType.BYTE) {
         recordAsMap.put(fieldName, 0);
       } else if (type == VarType.STRING) {
         recordAsMap.put(fieldName, null);
       } else if (type == VarType.BOOL) {
         recordAsMap.put(fieldName, false);
+      } else if (type == VarType.DOUBLE) {
+        recordAsMap.put(fieldName, 0.0);
+      } else if (type.isArray()) {
+        ArrayField arrayField = op.record().getArrayField(fieldName);
+        // TODO(#38) support multidimensional arrays
+        int size = arrayField.sizes().get(0);
+        Object[] emptyArray = createEmptyArray(arrayField.baseType(), size);
+        recordAsMap.put(fieldName, emptyArray);
+      } else if (type.isRecord()) {
+        // it's cool, leave as null
+        recordAsMap.put(fieldName, null);
+      } else {
+        // ???
+        throw new IllegalStateException("Cannot initialize field of type " + type);
       }
-      // ???
     }
     setValue(op.destination(), recordAsMap);
   }

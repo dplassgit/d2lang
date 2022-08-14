@@ -386,13 +386,14 @@ public class Parser implements Phase {
   }
 
   /** declaration -> '[' expr ']' */
-  private DeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
+  private ArrayDeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
     /** while... (dimensions) */
     expect(TokenType.LBRACKET);
     advance();
     // The size can be variable.
     ExprNode arraySize = expr();
-    ArrayType arrayType = new ArrayType(baseVarType);
+    // TODO(#38): support multidimensional arrays
+    ArrayType arrayType = new ArrayType(baseVarType, 1);
     expect(TokenType.RBRACKET);
     advance();
 
@@ -451,7 +452,8 @@ public class Parser implements Phase {
         advance();
         expect(TokenType.RBRACKET);
         advance();
-        return new ArrayType(paramType);
+        // TODO(#38): Support multidimensional arrays
+        return new ArrayType(paramType, 1);
       }
       return paramType;
     }

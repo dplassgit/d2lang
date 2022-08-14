@@ -852,6 +852,14 @@ public class StaticCheckerTest {
         "r: record{i:int f:int f:bool i:int b:bool}",
         "Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
     assertError("r: record{f:dne}", "Unknown RECORD type 'dne'");
+    assertError(
+        "s=3 r:record{a:string[s]} anr=new r print anr.a",
+        "ARRAYs in RECORDs must have constant size");
+    assertError(
+        "r:record{a:string[1+1]} anr=new r print anr.a",
+        "ARRAYs in RECORDs must have constant size");
+    assertError(
+        "r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]", "INT but expression is STRING");
   }
 
   @Test

@@ -102,7 +102,7 @@ class ArrayCodeGenerator {
       emitter.emit("mov DWORD %s, %s", numEntriesReg.name32(), numEntriesLocName);
       numEntriesLocName = numEntriesReg.name32();
     }
-    // TODO: iterate over dimensions.
+    // TODO(#38): iterate over dimensions.
     emitter.emit("mov DWORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
     if (numEntriesReg != null) {
       emitter.emit("; deallocating numEntriesLoc from %s", numEntriesReg);

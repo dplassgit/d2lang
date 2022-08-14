@@ -204,4 +204,17 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "println c!=b ",
         "compare");
   }
+
+  @Test
+  public void setArrayFieldLiteral() throws Exception {
+    execute(
+        "rt: record{d:double ar:int[3]} x=new rt x.ar=[1,2,3] print x.ar", "setArrayFieldLiteral");
+  }
+
+  @Test
+  public void setArrayField() throws Exception {
+    execute(
+        "rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar",
+        "setArrayFieldLiteral");
+  }
 }

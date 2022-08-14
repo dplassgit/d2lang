@@ -6,8 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
@@ -38,6 +40,13 @@ class RecordGatherer extends DefaultVisitor {
             String.format(
                 "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name()),
             field.position());
+      } else if (field instanceof ArrayDeclarationNode) {
+        ArrayDeclarationNode anode = (ArrayDeclarationNode) field;
+        // TODO(#38) support multidimensional arrays
+        ExprNode sizeNode = anode.sizeExpr();
+        if (!sizeNode.isConstant()) {
+          throw new TypeException("ARRAYs in RECORDs must have constant size", sizeNode.position());
+        }
       }
     }
 

@@ -9,6 +9,7 @@ public class ArrayDeclarationNode extends DeclarationNode {
   private final ExprNode sizeExpr;
   private final ArrayType arrayType;
 
+  // TODO(#38): support multidimensonal arrays
   public ArrayDeclarationNode(
       String varName, ArrayType type, Position position, ExprNode sizeExpr) {
     super(varName, type, position);

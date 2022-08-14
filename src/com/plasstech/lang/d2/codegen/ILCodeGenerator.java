@@ -62,6 +62,7 @@ import com.plasstech.lang.d2.type.LocalSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
+import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -282,8 +283,6 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
   @Override
   public void visit(ArrayDeclarationNode node) {
     node.sizeExpr().accept(this);
-    // Symbol symbol = symbolTable().getRecursive(node.name());
-    // TODO: put the symbol somewhere?
     Location dest = lookupLocation(node.name());
     node.setLocation(dest);
     emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location(), node.position()));
@@ -291,19 +290,25 @@ public class ILCodeGenerator extends DefaultVisitor implements Phase {
 
   @Override
   public void visit(NewNode node) {
-    Symbol symbol = symbolTable().getRecursive(node.recordName());
-    if (!(symbol instanceof RecordSymbol)) {
-      // this should never happen - should be caught by typechecker
-      throw new D2RuntimeException(
-          String.format("Cannot call NEW on non-record type %s at %s", symbol, node),
-          node.position(),
-          "Type");
-    }
+    RecordSymbol symbol = (RecordSymbol) symbolTable().getRecursive(node.recordName());
     //    MemoryAddress location = allocateMemory(symbol.varType());
     // TODO: this is causing issues with inline optimizer, not surprisngly...
-    TempLocation location = allocateTemp(symbol.varType());
-    node.setLocation(location);
-    emit(new AllocateOp(location, (RecordSymbol) symbol));
+    TempLocation recordLocation = allocateTemp(symbol.varType());
+    node.setLocation(recordLocation);
+    emit(new AllocateOp(recordLocation, symbol));
+
+    // Generate array allocation node for each array field
+    List<ArrayField> arrayFields = symbol.arrayFields();
+    for (ArrayField af : arrayFields) {
+      ArrayType at = af.type();
+      // 1. allocate a new array to a temp
+      TempLocation fieldTemp = allocateTemp(at);
+      // TODO(#38): Support multidimensional arrays
+      int size = af.sizes().get(0);
+      emit(new ArrayAlloc(fieldTemp, at, ConstantOperand.of(size), node.position()));
+      // 2. set the field to the temp
+      emit(new FieldSetOp(recordLocation, symbol, af.name(), fieldTemp, node.position()));
+    }
   }
 
   private Location lookupLocation(String name) {

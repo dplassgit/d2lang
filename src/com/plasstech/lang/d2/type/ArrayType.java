@@ -6,9 +6,9 @@ public class ArrayType implements VarType {
   private final VarType baseType;
   private final int dimensions;
 
-  public ArrayType(VarType baseType /*, int dimensions*/) {
+  public ArrayType(VarType baseType, int dimensions) {
     this.baseType = baseType;
-    this.dimensions = 1;
+    this.dimensions = dimensions;
   }
 
   @Override

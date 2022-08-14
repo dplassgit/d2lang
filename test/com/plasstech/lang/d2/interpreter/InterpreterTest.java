@@ -308,6 +308,19 @@ public class InterpreterTest {
   }
 
   @Test
+  public void arrayInRecord() {
+    Environment env =
+        execute(
+            "      r: record { i: int a:double[2]}\n"
+                + "an_r = new r \n"
+                + "da = an_r.a \n"
+                + "da[1] = 2.0 "
+                + "e=da[1] \n"
+                + "println da ");
+    assertThat(env.getValue("e")).isEqualTo(2.0);
+  }
+
+  @Test
   public void recordNullField() {
     Environment env =
         execute(

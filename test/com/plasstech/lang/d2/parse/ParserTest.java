@@ -1300,8 +1300,12 @@ public class ParserTest {
 
   @Test
   public void arrayOfRecord() {
-    Node node = parseStatements("r:record{a:string} rs:r[2]");
-    System.err.println(node);
+    parseStatements("r:record{a:string} rs:r[2]");
+  }
+
+  @Test
+  public void arrayINRecord() {
+    parseStatements("r:record{a:string[1]} anr=new r print anr.a");
   }
 
   private BlockNode parseStatements(String expression) {
