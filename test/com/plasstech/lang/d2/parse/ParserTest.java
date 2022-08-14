@@ -268,7 +268,25 @@ public class ParserTest {
   }
 
   @Test
-  public void unaryNot() {
+  public void unaryBoolNotSwaps() {
+    BlockNode root = parseStatements("a=NOT (a==b)");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    BinOpNode binOpNode = (BinOpNode) node.expr();
+    assertThat(binOpNode.operator()).isEqualTo(TokenType.NEQ);
+
+    System.err.println(parseStatements("a=NOT (a!=b)"));
+    System.err.println(parseStatements("a=NOT (a>b)")); // <=
+    System.err.println(parseStatements("a=NOT (a<b)"));
+    // is this right? a<=b 3<=4 4<=4
+    // a>=b
+    System.err.println(parseStatements("a=NOT (a<=b)"));
+  }
+
+  @Test
+  public void unaryBitNot() {
     BlockNode root = parseStatements("a=!b");
     assertThat(root.statements()).hasSize(1);
 

@@ -8,6 +8,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -644,6 +646,12 @@ public class Parser implements Phase {
     return left;
   }
 
+  private static final BiMap<TokenType, TokenType> NOTTED_OPS =
+      ImmutableBiMap.of(
+          TokenType.EQEQ, TokenType.NEQ,
+          TokenType.LT, TokenType.GEQ,
+          TokenType.GT, TokenType.LEQ);
+
   private ExprNode unary() {
     Token unaryToken = token;
     if (token.type() == TokenType.MINUS
@@ -652,6 +660,20 @@ public class Parser implements Phase {
         || token.type() == TokenType.NOT) {
       advance();
       ExprNode expr = unary(); // should this be expr? unary? atom?
+
+      if (unaryToken.type() == TokenType.NOT) {
+        // try to optimize 'not (a==b)' to 'a != b'
+        if (expr instanceof BinOpNode) {
+          BinOpNode binOp = (BinOpNode) expr;
+          TokenType newOperator = NOTTED_OPS.get(binOp.operator());
+          if (newOperator == null) {
+            newOperator = NOTTED_OPS.inverse().get(binOp.operator());
+          }
+          if (newOperator != null) {
+            return new BinOpNode(binOp.left(), newOperator, binOp.right());
+          }
+        }
+      }
 
       if (expr.varType() == VarType.INT) {
         // We can simplify now
