@@ -49,6 +49,35 @@ NAMES=[
   "Yang-tzu",
   "Zoe"
 ]
+// given a letter from a-z, return the index into the planet array.
+IDS=[
+  1, // "Alhambra",
+  2, // "Bok",
+  -1, // c
+  3, // "Drassa2",
+  4, // "Eventide",
+  5, // "Farside",
+  0, // "Galactica",
+  6, // "Harkon",
+  -1, // i
+  7, // "Javiny",
+  8, // "Kgolta",
+  9, // "Llythll",
+  10, // "Moonsweep",
+  11, // "Novena",
+  12, // "Ootsi",
+  13, // "Proyc",
+  -1, // q
+  -1, // r
+  14, // "Sparta",
+  15, // "Twyrx",
+  16, // "Utopia",
+  17, // "Viejo",
+  -1, // w
+  -1, // x
+  18, // "Yang-tzu",
+  19  // "Zoe"
+]
 NUM_PLANETS=20
 SIZE=50
 
@@ -114,23 +143,28 @@ GameInfoType: record {
 initPlanets:proc {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = new PlanetType
+    planets[i] = p
 
-    name = NAMES[i]
-    p.name = name
-    p.abbrev = name[0]
+//    name = 
+    p.name = NAMES[i]
+    p.abbrev = p.name[0]
 
     // 1. assign location randomly on grid
     p.x = random(SIZE)
     p.y = random(SIZE)
 
+    // set galmap[x,y] to planet name letter
+    galmap[p.x+SIZE*p.y] = asc(p.abbrev)
+
+    // TODO: Randomize all of these +/- level*2 %
     if (i != 0) {
       // 2. assign population based on level
-      // the higher the level the more pop!!!!
+      // the higher the level the more pop
       // min is 16, max is 100 to start
       p.population = 16.0 + tod(random(840))/10.0 + 3.0 * tod(random(10*gameinfo.level))/10.0
 
       // 3. assign civ level: 0-3
-      // DBP based on level: the higher the level the more superior & advanced planets
+      // TODO: the higher the level the more superior & advanced planets
       p.civ_level = random(4)
 
       // 4. set status as independent
@@ -188,14 +222,14 @@ initPlanets:proc {
     }
 
     // 8. set food price, fuel price based on level
-    // dbp the higher the level the higher the price (until the price goes down (!))
+    // TODO: the higher the level the higher the price (until the price goes down (!))
     // plus random factor
     prices = p.prices
     prices[FOOD] = 7
     prices[FUEL] = 5
 
     // 9. set initial assets based on level
-    // DBP RANDOMIZE
+    // TODO: RANDOMIZE
     // food 3.3973x2-75.85x+432.41
     // money 27.268x2-635.19x+3799
     // parts 4.4802x2-97.611x+541.88
@@ -206,7 +240,7 @@ initPlanets:proc {
     // food 3.3973x2-75.85x+432.41
     assets = p.assets
     leveld = tod(gameinfo.level)
-    assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)  // npe
+    assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)
 
     // money -457.4*level+3583
     // money 27.268x2-635.19x+3799
@@ -229,10 +263,6 @@ initPlanets:proc {
       // fuel 1.7437x2 - 40.969x + 247.21
       assets[FUEL] = abc(1.7437, -40.969, 247.21, leveld)
     }
-
-    // set galmap[x,y] to planet name letter
-    galmap[p.x+SIZE*p.y] = asc(p.abbrev)
-    planets[i] = p
   }
 }
 
@@ -243,15 +273,12 @@ initFleet:proc {
   // TODO: RANDOMIZE
 
   // initialize based on level
-  // money = -150*level+2650;
-  assets = fleet.assets
   leveld = tod(gameinfo.level)
-  // assets[MONEY] = ax_b(gameinfo.level, -150, 2650)
+  assets = fleet.assets
+  // money = -150*level+2650;
   assets[MONEY] = abc(0.0, -150.0, 2650.0, leveld)
 
   // troops=10*(11-level)=110-10*level;
-  // assets[TROOPS] = ax_b(gameinfo.level, -10, 110)
-  // need to round this
   assets[TROOPS] = abc(0.0, -10.0, 110.0, leveld)
 
   // freighters=(-3*level+43)/8;
@@ -262,8 +289,8 @@ initFleet:proc {
   carriers[FUEL]=(77-6*gameinfo.level)/16
 
   // food=freighters*1000-7000*(level-1)/256;
-  food_amt = carriers[FOOD]*1000-(7000*(gameinfo.level-1))/256
-  assets[FOOD] = tod(food_amt)
+  foods_amt = carriers[FOOD]*1000-(7000*(gameinfo.level-1))/256 // a find foods amount
+  assets[FOOD] = tod(foods_amt)
 
   // fuel=fuel_ships*1000-7000*(level-1)/256;
   fuel_amt = carriers[FUEL]*1000-(7000*(gameinfo.level-1))/256
@@ -341,16 +368,17 @@ calculate_game_status:proc:int {
   }
 }
 
-toUpper:proc(s:int):int {
-  if s >= asc('a') and s <= asc('z') { return s - (asc('a') - asc('A')) }
-  return s
+toUpper:proc(ss:string):string{
+  s = asc(ss)
+  if s >= asc('a') and s <= asc('z') { return chr(s - (asc('a') - asc('A'))) }
+  return ss
 }
 
 trim:proc(s:string):string {
   r = ''
   i = 0 while i < min(length(s), 3) do i = i + 1 {
     c = s[i]
-    if c != '\n' { r = r + chr(toUpper(asc(c))) }
+    if c != '\n' { r = r + toUpper(c) }
   }
   return r
 }
@@ -389,12 +417,42 @@ sleep:proc(days:int) {
 cheat:proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
-    print "Planet[" print i print "]: " print p.name
-    print " @(" print p.x print ", " print p.y print "), population " print p.population
-    print " civ_level: " print CIV_LEVELS[p.civ_level] print " status: " println STATUSES[p.status]
+    print "Planet[" print i print "]: "
+    showPlanet(p, true)
+  }
+}
+
+showPlanet:proc(p:PlanetType, cheat:bool) {
+  print p.name
+  if (cheat) {
+    print " (" print p.x print ", " print p.y print ")"
+  }
+  print " status: " println STATUSES[p.status]
+  
+  // 2. if satellites > 0 draw civ level;
+  // 3. If  satellites > 1 draw population;
+  // 4. b. if status=empire, make assets[ visible, troops, fighters & sats invisible;
+  //    c.
+  //       i. if status=occupied or indep, make assets[ invisible, fighters troops sats status visible;
+  //       ii. if satellites > 2 draw troops, fighters, sats;
+
+  if cheat or p.sats_orbit> 0 {
+    print " civ_level: " print CIV_LEVELS[p.civ_level]
+  }
+  if cheat or p.sats_orbit > 1 { 
+    print " population " print p.population
+  }
+  if cheat or p.status == EMPIRE {
     print " assets: " println p.assets
+  }
+  if cheat or (p.status != EMPIRE and p.sats_orbit > 2) {
     print " troops: " print p.troops print " fighters: " print p.fighters
+  }
+  if cheat {
     print " prices: " println p.prices
+  }
+  if cheat or p.status != EMPIRE {
+    print " sats: " print p.sats_orbit print " (" print p.sats_enroute println " enroute)"
   }
 }
 
@@ -442,6 +500,22 @@ map:proc(planet:PlanetType) {
   println "+"
 }
 
+info:proc(s:string) {
+  first = asc(toUpper(s))-asc('A')
+  if first < 0 or first >= NUM_PLANETS {
+    print "Unknown planet" println s
+    return
+  }
+  // print info about the given planet
+  index = IDS[first]
+  if index == -1 {
+    print "Unknown planet" println s
+  } else {
+    p = planets[index]
+    showPlanet(p, false)
+  }
+}
+
 help: proc {
   println
 "
@@ -469,7 +543,7 @@ QUIt
 "
 }
 
-execute:proc(command:string) {
+execute:proc(command:string, full_command:string) {
   if command=='QUI' {
     gameinfo.status=QUIT
   } elif command=="MAP" {
@@ -481,6 +555,12 @@ execute:proc(command:string) {
     cheat()
   } elif command=="HEL" {
     help()
+  } elif command=="INF" {
+    if length(full_command) < 5 {
+      println "Must give planet name for INFO, e.g., 'INFO Galactica'"
+    } else {
+      info(full_command[5])
+    }    
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
   }
@@ -492,10 +572,10 @@ mainLoop: proc {
   while gameinfo.status==IN_PROGRESS {
     print "\nToday is " println format_date(gameinfo.date)
     println "Your command:"
-    command = input
-    command=trim(command)
+    full_command = input
+    command=trim(full_command)
     println "\n-----------------------------"
-    execute(command)
+    execute(command, full_command)
     println "\n-----------------------------"
     sleep(10)
     gameinfo.status = calculate_game_status() // Calc if won or lost
