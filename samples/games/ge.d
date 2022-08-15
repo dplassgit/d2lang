@@ -65,6 +65,11 @@ galmap:int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 /////////////////////////////////////////////////////////
 
 PlanetType: record {
+  id:int
+  x:int y:int    // location (0-50)
+  civ_level:int    // primitive, limited, advanced, etc.
+  status:int     // 1=occupied, 2=empire, 0=independent
+  status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
   name:string
   abbrev:string    // first letter of planet
   population:double   // in millions
@@ -74,11 +79,6 @@ PlanetType: record {
   sats_arrive:int[3]  // arrival date (in DAYS) of each satellite
   sats_orbit:int    // # of satellites in orbit
   sats_enroute:int  // # of satellites en route
-  id:int
-  x:int y:int    // location (0-50)
-  civ_level:int    // primitive, limited, advanced, etc.
-  status:int     // 1=occupied, 2=empire, 0=independent
-  status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
   troops:int    // # of troops on surface, or # of occupation troops
   fighters:int     // # of fighters in orbit, or # of occupation fighters
   occupied_on:int    // date (years) planet was occupied
@@ -131,13 +131,6 @@ initPlanets:proc {
 
       // 4. set status as independent
       p.status = INDEPENDENT
-
-      // THIS CRASHES AT RUNTIME WTH?
-      // is it a volatile error? Or is it overwriting the assets? Or ?
-      // by removing some fields, this is no longer crashing
-      // maybe it's an alignment issue?
-      // looks like it's an alignment issue. reordering the fields makes the problem go away.
-      // print "p.assets 2d: " println p.assets
 
       prod_ratio = p.prod_ratio
       if p.civ_level == PRIMITIVE {
@@ -207,10 +200,7 @@ initPlanets:proc {
 
     // food	-53.7*level+405.5
     // food 3.3973x2-75.85x+432.41
-    // BUG: if this line is commented out, we get a NPE on the line assets[FOOD]. WTH?
-    // EVEN THOUGH we already set p.assets up on line 108! WTH?!
     assets = p.assets
-    // print "assets: " println assets
     leveld = tod(gameinfo.level)
     assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)  // npe
 
@@ -239,7 +229,6 @@ initPlanets:proc {
     // set galmap[x,y] to planet name letter
     galmap[p.x+SIZE*p.y] = asc(p.abbrev)
     planets[i] = p
-    // print "assets again: " println assets
   }
 }
 
@@ -248,7 +237,7 @@ initFleet:proc {
   fleet.location = planets[0]
   // todo: set up fleet.assets
 
-  // Empty transports. Unclear where filled transports are...
+  // Empty transports. "Filled" transports = assets[TROOPS]
   fleet.etrans = ax_b(gameinfo.level, -10, 110)
   fleet.fighters = fleet.etrans + 100
   fleet.satellites = 11 - gameinfo.level/2
@@ -369,7 +358,7 @@ cheat:proc() {
     // FUUUUU it's munging the name
     print "Planet[" print i print "]: " print p.name
     print " @(" print p.x print ", " print p.y print "), population " print p.population
-    print " civ_level: " print CIV_LEVELS[p.civ_level] print " status: " println p.status
+    print " civ_level: " print CIV_LEVELS[p.civ_level] print " status: " println STATUSES[p.status]
     print " assets: " println p.assets
     print " troops: " print p.troops print " fighters: " print p.fighters
     print " prices: " println p.prices
