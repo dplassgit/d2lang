@@ -500,16 +500,24 @@ map:proc(planet:PlanetType) {
   println "+"
 }
 
-info:proc(s:string) {
-  first = asc(toUpper(s))-asc('A')
-  if first < 0 or first >= NUM_PLANETS {
-    print "Unknown planet" println s
+info:proc(first:int) {
+  if not (first >= 0 and first <= 26) {
+    // see if we can hack it
+    if first >= asc('a')-65 and first <= asc('z')-65 {
+      // lower case
+      first = first - 32
+    }
+  }
+  
+  if first < 0 or first > 26 {
+    println "Unknown planet"
     return
   }
   // print info about the given planet
   index = IDS[first]
   if index == -1 {
-    print "Unknown planet" println s
+    println "Unknown planet"
+    return
   } else {
     p = planets[index]
     showPlanet(p, false)
@@ -523,8 +531,8 @@ MAP: Show the map near where the fleet is.
 *NEAr: Show info about nearby planets
 FLEet: Show info about the fleet
 *STAtus: Show where the fleet is, # of planets in each category, info about current planet
-*INFo: get info about a planet, its distance, and estimated fuel & time to get there
-*GALactica: get info about Galactica
+INFo: get info about a planet, its distance, and estimated fuel & time to get there
+GALactica: get info about Galactica
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
 *DRAft troops (only on empire planets)
@@ -555,11 +563,13 @@ execute:proc(command:string, full_command:string) {
     cheat()
   } elif command=="HEL" {
     help()
+  } elif command=="GAL" {
+    info(6)
   } elif command=="INF" {
-    if length(full_command) < 5 {
+    if length(full_command) < 6 {
       println "Must give planet name for INFO, e.g., 'INFO Galactica'"
     } else {
-      info(full_command[5])
+      info(asc(full_command[5])-65)
     }    
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
