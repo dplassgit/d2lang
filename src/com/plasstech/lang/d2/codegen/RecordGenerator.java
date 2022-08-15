@@ -83,13 +83,16 @@ class RecordGenerator {
       }
     } else {
       // need an indirection, ugh.
-      Register indirectReg = resolver.allocate(VarType.INT);
-      emitter.emit("; allocated %s for calculations", indirectReg);
+      // NOTE: this is VarType.INT because it's anything but a double. Not sure what happens
+      // if source is a double in memory...
+      Register tempReg = resolver.allocate(VarType.INT);
+      emitter.emit("; allocated %s for calculations", tempReg);
       emitter.emit(
           "mov %s %s, %s  ; get value to store",
-          size, indirectReg.sizeByType(source.type()), sourceName);
-      emitter.emit("mov [%s], %s  ; store it!", calcReg, indirectReg);
-      resolver.deallocate(indirectReg);
+          size, tempReg.sizeByType(source.type()), sourceName);
+      emitter.emit(
+          "mov %s [%s], %s  ; store it!", size, calcReg, tempReg.sizeByType(source.type()));
+      resolver.deallocate(tempReg);
     }
     resolver.deallocate(source);
     resolver.deallocate(calcReg);
