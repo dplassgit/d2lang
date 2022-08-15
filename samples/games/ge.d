@@ -12,12 +12,15 @@
 // These are both for assets and production ratios
 FOOD=0 FUEL=1 PARTS=2 TROOPS=3 MONEY=4
 
+ASSET_TYPE=["Food", "Fuel", "Parts", "Troops", "Money"]
+
 INDEPENDENT=0 OCCUPIED=1 EMPIRE=2
 STATUSES=["Independent", "Occupied", "Empire"]
 
 PRIMITIVE=0 LIMITED=1 ADVANCED=2 SUPERIOR=3
 CIV_LEVELS=["Primitive", "Limited", "Advanced", "Superior"]
 
+// Game status
 IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 
 
@@ -88,7 +91,7 @@ FleetType: record {
   location:PlanetType  // pointer to planet struct in global array
   assets:double[5]    // amount of each type on hand: food, fuel, parts, troops, money
   carriers:int[2]   // # of food, fuel carriers; they carry 1000 units each
-  etrans:int    // empty transports. WHERE ARE FULL TRANSPORTS?!
+  etrans:int    // empty transports (full transports = assets[TROOPS])
   fighters:int     // # of fighters
   satellites:int   // in inventory
 }
@@ -96,7 +99,8 @@ FleetType: record {
 GameInfoType: record {
   date:int  // days since start. 100 days per "year"
   level:int  // difficulty level
-  status:int
+  status:int   // in progress, lost, won
+
   num_empire:int
   num_independent:int
   num_occupied:int
@@ -134,23 +138,23 @@ initPlanets:proc {
 
       prod_ratio = p.prod_ratio
       if p.civ_level == PRIMITIVE {
-				// if primitive, base is 33 (min 16)
-				prod_ratio[FOOD] = 34
-				prod_ratio[MONEY] = 33
-				prod_ratio[TROOPS] = 33
+        // if primitive, base is 33 (min 16)
+        prod_ratio[FOOD] = 34
+        prod_ratio[MONEY] = 33
+        prod_ratio[TROOPS] = 33
       } elif p.civ_level == LIMITED {
-				// if limited base is 25 (min 12)
-				prod_ratio[FOOD] = 25
-				prod_ratio[MONEY] = 25
-				prod_ratio[TROOPS] = 25
-				prod_ratio[FUEL] = 25
+        // if limited base is 25 (min 12)
+        prod_ratio[FOOD] = 25
+        prod_ratio[MONEY] = 25
+        prod_ratio[TROOPS] = 25
+        prod_ratio[FUEL] = 25
       } else { // advanced, superior
-				// else base is 20	 (min 10)
-				prod_ratio[FOOD] = 20
-				prod_ratio[MONEY] = 20
-				prod_ratio[PARTS] = 20
-				prod_ratio[TROOPS] = 20
-				prod_ratio[FUEL] = 20
+        // else base is 20 (min 10)
+        prod_ratio[FOOD] = 20
+        prod_ratio[MONEY] = 20
+        prod_ratio[PARTS] = 20
+        prod_ratio[TROOPS] = 20
+        prod_ratio[FUEL] = 20
 
         p.fighters = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
       }
@@ -160,10 +164,10 @@ initPlanets:proc {
 
     } else {
       // Galactica
-	    // 2. assign population based on level/ the higher the level the lower the pop
+      // 2. assign population based on level/ the higher the level the lower the pop
       p.population = 35.0+10.0*(10.0-tod(gameinfo.level*10)/10.0)+tod(random(50))/10.0
 
-	    // 3. set civ level to advanced
+      // 3. set civ level to advanced
       p.civ_level = ADVANCED
 
       // 4. set status = empire
@@ -198,13 +202,13 @@ initPlanets:proc {
     // men 1.2727x2 - 26.198x + 143.58
     // fuel 1.7437x2 - 40.969x + 247.21
 
-    // food	-53.7*level+405.5
+    // food -53.7*level+405.5
     // food 3.3973x2-75.85x+432.41
     assets = p.assets
     leveld = tod(gameinfo.level)
     assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)  // npe
 
-    //money	-457.4*level+3583
+    // money -457.4*level+3583
     // money 27.268x2-635.19x+3799
     assets[MONEY] = abc(27.268, -635.19, 3799.0, leveld)
 
@@ -215,13 +219,13 @@ initPlanets:proc {
       assets[PARTS] = abc(4.4802, -97.611, 541.88, leveld)
     }
 
-    //TROOPS		-17.9x + 133.5
-    // men 1.2727x2 - 26.198x + 143.58
+    // TROOPS -17.9x + 133.5
+    // troops 1.2727x2 - 26.198x + 143.58
     assets[TROOPS] = abc(1.2727, -26.198, 143.58, leveld)
 
     // if primitive, no fuel
     if (p.civ_level > PRIMITIVE) {
-      //fuel	-29.6x + 233.4
+      // fuel -29.6x + 233.4
       // fuel 1.7437x2 - 40.969x + 247.21
       assets[FUEL] = abc(1.7437, -40.969, 247.21, leveld)
     }
@@ -235,10 +239,39 @@ initPlanets:proc {
 initFleet:proc {
   fleet = new FleetType
   fleet.location = planets[0]
-  // todo: set up fleet.assets
+
+  // TODO: RANDOMIZE
+
+  // initialize based on level
+  // money = -150*level+2650;
+  assets = fleet.assets
+  leveld = tod(gameinfo.level)
+  // assets[MONEY] = ax_b(gameinfo.level, -150, 2650)
+  assets[MONEY] = abc(0.0, -150.0, 2650.0, leveld)
+
+  // troops=10*(11-level)=110-10*level;
+  // assets[TROOPS] = ax_b(gameinfo.level, -10, 110)
+  // need to round this
+  assets[TROOPS] = abc(0.0, -10.0, 110.0, leveld)
+
+  // freighters=(-3*level+43)/8;
+  carriers = fleet.carriers
+  carriers[FOOD]=(43-3*gameinfo.level)/8
+
+  // fuel_ships=(-6*level+77)/16;
+  carriers[FUEL]=(77-6*gameinfo.level)/16
+
+  // food=freighters*1000-7000*(level-1)/256;
+  food_amt = carriers[FOOD]*1000-(7000*(gameinfo.level-1))/256
+  assets[FOOD] = tod(food_amt)
+
+  // fuel=fuel_ships*1000-7000*(level-1)/256;
+  fuel_amt = carriers[FUEL]*1000-(7000*(gameinfo.level-1))/256
+  assets[FUEL] = tod(fuel_amt)
 
   // Empty transports. "Filled" transports = assets[TROOPS]
   fleet.etrans = ax_b(gameinfo.level, -10, 110)
+
   fleet.fighters = fleet.etrans + 100
   fleet.satellites = 11 - gameinfo.level/2
 }
@@ -248,7 +281,7 @@ initFleet:proc {
 // MATHS
 /////////////////////////////////////////////////////////
 
-ds=[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0]
+DS=[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0]
 
 // int to double.
 tod: proc(i:int):double {
@@ -258,7 +291,7 @@ tod: proc(i:int):double {
   while i > 0 {
     last = i%10
     // I hate this, lol
-    d = d*10.0 + ds[last]
+    d = d * 10.0 + DS[last]
     i = i / 10
   }
   if neg {d = -d}
@@ -273,8 +306,9 @@ abc:proc(a:double, b:double, c:double, x:double):double {
   return a*x*x+b*x+c
 }
 
-min:proc(a:int, b:int):int { if a < b { return a } return b  }
+min:proc(a:int, b:int):int { if a < b { return a } return b }
 max:proc(a:int,b:int):int { if a > b { return a } return b }
+
 
 RANDOM_MOD=65535
 
@@ -355,7 +389,6 @@ sleep:proc(days:int) {
 cheat:proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
-    // FUUUUU it's munging the name
     print "Planet[" print i print "]: " print p.name
     print " @(" print p.x print ", " print p.y print "), population " print p.population
     print " civ_level: " print CIV_LEVELS[p.civ_level] print " status: " println STATUSES[p.status]
@@ -363,6 +396,20 @@ cheat:proc() {
     print " troops: " print p.troops print " fighters: " print p.fighters
     print " prices: " println p.prices
   }
+}
+
+// Shows info about the fleet
+showFleet:proc(fleet:FleetType) {
+  print "Fleet is at: " println fleet.location.name
+  println "Assets: "
+  i = 0 while i < 5 do i = i + 1 {
+    print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
+  }
+  print "Food carriers: " println fleet.carriers[0]
+  print "Fuel carriers: " println fleet.carriers[1]
+  print "Empty transports: " println fleet.etrans
+  print "Fighters: " println fleet.fighters
+  print "Satellites: " println fleet.satellites
 }
 
 // Shows the galaxy around the given planet.
@@ -400,6 +447,7 @@ help: proc {
 "
 MAP: Show the map near where the fleet is.
 *NEAr: Show info about nearby planets
+FLEet: Show info about the fleet
 *STAtus: Show where the fleet is, # of planets in each category, info about current planet
 *INFo: get info about a planet, its distance, and estimated fuel & time to get there
 *GALactica: get info about Galactica
@@ -427,6 +475,8 @@ execute:proc(command:string) {
   } elif command=="MAP" {
     print "Fleet is at: " println fleet.location.name
     map(fleet.location)
+  } elif command=="FLE" {
+    showFleet(fleet)
   } elif command=="CHE" {
     cheat()
   } elif command=="HEL" {
@@ -440,11 +490,13 @@ execute:proc(command:string) {
 mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
-    print "Today is " println format_date(gameinfo.date)
+    print "\nToday is " println format_date(gameinfo.date)
     println "Your command:"
     command = input
     command=trim(command)
+    println "\n-----------------------------"
     execute(command)
+    println "\n-----------------------------"
     sleep(10)
     gameinfo.status = calculate_game_status() // Calc if won or lost
   }
