@@ -477,6 +477,13 @@ calc_food_needed:proc(dist:double): double {
 
 sleep:proc(days:int) {
   gameinfo.date = gameinfo.date + days
+  i = 1 while i < NUM_PLANETS do i = i + 1 {
+    p = planets[i]
+    if p.sats_enroute > 0 {
+      p.sats_enroute = p.sats_enroute - 1
+      p.sats_orbit = p.sats_orbit + 1
+    }
+  }
   // TODO: in sleep if a planet changes status, update the map
 }
 
@@ -584,11 +591,27 @@ map:proc(planet:PlanetType) {
 
 // print info about the given planet
 info:proc(p:PlanetType) {
-  if p == null {
-    println "Unknown planet"
-  } else {
-    showPlanet(p, false)
+  showPlanet(p, false)
+}
+
+sat:proc(p:PlanetType) {
+  if p.status == EMPIRE {
+    println "Don't need to send satellites to an empire planet!"
+    return
   }
+  if p.sats_orbit + p.sats_enroute == 3 {
+    print "Already sent 3 satellites to " println p.name
+    return
+  }
+  if fleet.satellites == 0 {
+    println "No satellites in inventory!"
+    return
+  }
+  fleet.satellites = fleet.satellites - 1
+  p.sats_enroute = p.sats_enroute + 1
+  // TODO: get estimated arrival date
+  //  p.sats_arrive[sat] = gameinfo.date + gameinfo.level*the_distance + 10*random(gameinfo.level);
+  println "Sent! Estimated arrival: TBD"
 }
 
 help: proc {
@@ -598,7 +621,7 @@ MAP: Show the map near the given planet
 FLEet: Show info about the fleet
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
-*SATellites: Send satellites to non-empire planets
+SATellites: Send satellites to non-empire planets
 *TRAvel to another planet (if have enough fuel), time elapses
 *ATTack the planet where the fleet is. (Only on non-empire planets)
 *CONstruct ships (only on empire planets)
@@ -642,7 +665,22 @@ execute:proc(command:string, full_command:string) {
       println "Must give planet name for INFO, e.g., 'INFO Galactica'"
     } else {
       p = find_planet(full_command[5])
-      info(p)
+      if p == null {
+        println "Unknown planet"
+      } else {
+        info(p)
+      }
+    }
+  } elif command=="SAT" {
+    if length(full_command) < 5 {
+      println "Must give planet name for SAT, e.g., 'INFO Ootsi'"
+    } else {
+      p = find_planet(full_command[4])
+      if p == null {
+        println "Unknown planet"
+      } else {
+        sat(p)
+      }
     }
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
