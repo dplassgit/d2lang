@@ -145,7 +145,7 @@ initPlanets:proc {
     p = new PlanetType
     planets[i] = p
 
-//    name = 
+//    name =
     p.name = NAMES[i]
     p.abbrev = p.name[0]
 
@@ -325,6 +325,20 @@ tod: proc(i:int):double {
   return d
 }
 
+toi: proc(d:double):double {
+  neg = false
+  if i < 0 {neg = true i = -i}
+  d=0.0
+  while i > 0 {
+    last = i%10
+    // I hate this, lol
+    d = d * 10.0 + DS[last]
+    i = i / 10
+  }
+  if neg {d = -d}
+  return d
+}
+
 // a*x+b
 ax_b:proc(x:int, a:int, b:int):int { return a*x+b }
 
@@ -335,6 +349,34 @@ abc:proc(a:double, b:double, c:double, x:double):double {
 
 min:proc(a:int, b:int):int { if a < b { return a } return b }
 max:proc(a:int,b:int):int { if a > b { return a } return b }
+
+abs:proc(x:double):double {
+  if x < 0.0 { return -x}
+  return x
+}
+
+sqrt:proc(d:double):double {
+  guess = d/4.0
+  x100 = 1.0/100000.0
+  iters=0
+  while (abs(guess*guess-d) > (x100)) {
+    xguess = d/guess
+    guess = (guess + xguess)/2.0
+    iters = iters + 1
+    if iters > 100 {
+      break
+    }
+  }
+
+  return guess
+}
+
+calc_distance:proc(p1:PlanetType, p2:PlanetType): double {
+  xd = tod(p1.x-p2.x)
+  yd = tod(p1.y-p2.y)
+  dist = xd*xd+yd*yd
+  return sqrt(dist)
+}
 
 
 RANDOM_MOD=65535
@@ -371,7 +413,7 @@ calculate_game_status:proc:int {
 toUpper:proc(ss:string):string{
   s = asc(ss)
   if s >= asc('a') and s <= asc('z') { return chr(s - (asc('a') - asc('A'))) }
-  return ss
+  return ss[0]
 }
 
 trim:proc(s:string):string {
@@ -410,64 +452,88 @@ format_date:proc(d:int):string {
 
 sleep:proc(days:int) {
   gameinfo.date = gameinfo.date + days
-  print "Sleeping for " print days println " days"
   // TODO: in sleep if a planet changes status, update the map
 }
 
 cheat:proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
+    println "----------------------------------------------------------"
     print "Planet[" print i print "]: "
     showPlanet(p, true)
   }
 }
 
 showPlanet:proc(p:PlanetType, cheat:bool) {
-  print p.name
+  print "PLANET INFO:  "
+  sats = p.sats_orbit
+  if cheat or fleet.location == p {
+    // if the fleet is here, it's as if we've sent 3 sats
+    sats = 3
+  }
+  println p.name
   if (cheat) {
     print " (" print p.x print ", " print p.y print ")"
   }
-  print " status: " println STATUSES[p.status]
-  
+  print "Status: " println STATUSES[p.status]
+
   // 2. if satellites > 0 draw civ level;
-  // 3. If  satellites > 1 draw population;
+  // 3. If satellites > 1 draw population;
   // 4. b. if status=empire, make assets[ visible, troops, fighters & sats invisible;
   //    c.
   //       i. if status=occupied or indep, make assets[ invisible, fighters troops sats status visible;
   //       ii. if satellites > 2 draw troops, fighters, sats;
 
-  if cheat or p.sats_orbit> 0 {
-    print " civ_level: " print CIV_LEVELS[p.civ_level]
+  if sats > 0 {
+    print "Civ_level: " print CIV_LEVELS[p.civ_level]
   }
-  if cheat or p.sats_orbit > 1 { 
-    print " population " print p.population
+  if sats > 1 {
+    print " population: " print p.population
   }
   if cheat or p.status == EMPIRE {
-    print " assets: " println p.assets
+    print " assets:     " println p.assets
   }
-  if cheat or (p.status != EMPIRE and p.sats_orbit > 2) {
-    print " troops: " print p.troops print " fighters: " print p.fighters
+  if cheat or (p.status != EMPIRE and sats > 2) {
+    print " troops:     " print p.troops print " fighters: " print p.fighters
   }
   if cheat {
-    print " prices: " println p.prices
+    print " prices:     " println p.prices
   }
   if cheat or p.status != EMPIRE {
-    print " sats: " print p.sats_orbit print " (" print p.sats_enroute println " enroute)"
+    print " sats:       " print p.sats_orbit print " (" print p.sats_enroute println " enroute)"
   }
+
+  distance = calc_distance(fleet.location, p)
+  print "Distance:       " println distance
+  print "Estimated food: " println calc_food_needed(distance)
+  print "Estimated fuel: " println calc_fuel_needed(distance)
 }
+
+calc_fuel_needed: proc(dist:double): double {
+  food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
+  return food*dist/10.0
+}
+
+calc_food_needed:proc(dist:double): double {
+  fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
+           fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
+  return fuel*dist/10.0
+}
+
 
 // Shows info about the fleet
 showFleet:proc(fleet:FleetType) {
+  println "FLEET STATUS:"
   print "Fleet is at: " println fleet.location.name
   println "Assets: "
   i = 0 while i < 5 do i = i + 1 {
     print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
   }
-  print "Food carriers: " println fleet.carriers[0]
-  print "Fuel carriers: " println fleet.carriers[1]
+  print "Food carriers:    " println fleet.carriers[FOOD]
+  print "Fuel carriers:    " println fleet.carriers[FUEL]
   print "Empty transports: " println fleet.etrans
-  print "Fighters: " println fleet.fighters
-  print "Satellites: " println fleet.satellites
+  print "Fighters:         " println fleet.fighters
+  print "Satellites:       " println fleet.satellites
 }
 
 // Shows the galaxy around the given planet.
@@ -500,23 +566,13 @@ map:proc(planet:PlanetType) {
   println "+"
 }
 
-info:proc(first:int) {
-  if not (first >= 0 and first <= 26) {
-    // see if we can hack it
-    if first >= asc('a')-65 and first <= asc('z')-65 {
-      // lower case
-      first = first - 32
-    }
-  }
-  
-  if first < 0 or first > 26 {
-    println "Unknown planet"
-    return
-  }
-  // print info about the given planet
+// print info about the given planet
+info:proc(planet:string) {
+  planet = toUpper(planet)
+  first = asc(planet[0]) - asc('A')
   index = IDS[first]
   if index == -1 {
-    println "Unknown planet"
+    print "Unknown planet " println planet
     return
   } else {
     p = planets[index]
@@ -564,13 +620,13 @@ execute:proc(command:string, full_command:string) {
   } elif command=="HEL" {
     help()
   } elif command=="GAL" {
-    info(6)
+    info("G")
   } elif command=="INF" {
     if length(full_command) < 6 {
       println "Must give planet name for INFO, e.g., 'INFO Galactica'"
     } else {
-      info(asc(full_command[5])-65)
-    }    
+      info(full_command[5])
+    }
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
   }
@@ -581,12 +637,12 @@ mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
     print "\nToday is " println format_date(gameinfo.date)
-    println "Your command:"
+    print "Your command: "
     full_command = input
     command=trim(full_command)
-    println "\n-----------------------------"
+    println "\n----------------------------------------------------------"
     execute(command, full_command)
-    println "\n-----------------------------"
+    println "----------------------------------------------------------\n"
     sleep(10)
     gameinfo.status = calculate_game_status() // Calc if won or lost
   }
