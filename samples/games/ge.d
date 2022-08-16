@@ -325,19 +325,6 @@ tod: proc(i:int):double {
   return d
 }
 
-toi: proc(d:double):double {
-  neg = false
-  if i < 0 {neg = true i = -i}
-  d=0.0
-  while i > 0 {
-    last = i%10
-    // I hate this, lol
-    d = d * 10.0 + DS[last]
-    i = i / 10
-  }
-  if neg {d = -d}
-  return d
-}
 
 // a*x+b
 ax_b:proc(x:int, a:int, b:int):int { return a*x+b }
@@ -446,6 +433,44 @@ format_date:proc(d:int):string {
 }
 
 
+// Count the # of planets with this status
+count_planets:proc(status:int): int {
+  count=0
+  i = 0 while i < NUM_PLANETS do i = i + 1 {
+    p = planets[i]
+    if p.status == status {
+      count = count + 1
+    }
+  }
+  return count
+}
+
+find_planet:proc(planet:string): PlanetType {
+  planet = toUpper(planet)
+  first = asc(planet[0]) - asc('A')
+  if first < 0 or first > 25 {
+    return null
+  }
+  index = IDS[first]
+  if index == -1 {
+    return null
+  } else {
+    return planets[index]
+  }
+}
+
+calc_fuel_needed: proc(dist:double): double {
+  food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
+  return food*dist/10.0
+}
+
+calc_food_needed:proc(dist:double): double {
+  fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
+           fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
+  return fuel*dist/10.0
+}
+
+
 /////////////////////////////////////////////////////////
 // COMMANDS
 /////////////////////////////////////////////////////////
@@ -509,18 +534,6 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
   print "Estimated fuel: " println calc_fuel_needed(distance)
 }
 
-calc_fuel_needed: proc(dist:double): double {
-  food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
-  return food*dist/10.0
-}
-
-calc_food_needed:proc(dist:double): double {
-  fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
-           fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
-  return fuel*dist/10.0
-}
-
-
 // Shows info about the fleet
 showFleet:proc(fleet:FleetType) {
   println "FLEET STATUS:"
@@ -564,18 +577,16 @@ map:proc(planet:PlanetType) {
     print "-"
   }
   println "+"
+  print "Empire planets:   " println count_planets(EMPIRE)
+  print "Occupied planets: " println count_planets(OCCUPIED)
+  print "Indep. planets:   " println count_planets(INDEPENDENT)
 }
 
 // print info about the given planet
-info:proc(planet:string) {
-  planet = toUpper(planet)
-  first = asc(planet[0]) - asc('A')
-  index = IDS[first]
-  if index == -1 {
-    print "Unknown planet " println planet
-    return
+info:proc(p:PlanetType) {
+  if p == null {
+    println "Unknown planet"
   } else {
-    p = planets[index]
     showPlanet(p, false)
   }
 }
@@ -583,20 +594,18 @@ info:proc(planet:string) {
 help: proc {
   println
 "
-MAP: Show the map near where the fleet is.
-*NEAr: Show info about nearby planets
+MAP: Show the map near the given planet
 FLEet: Show info about the fleet
-*STAtus: Show where the fleet is, # of planets in each category, info about current planet
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
+*SATellites: Send satellites to non-empire planets
+*TRAvel to another planet (if have enough fuel), time elapses
+*ATTack the planet where the fleet is. (Only on non-empire planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
 *DRAft troops (only on empire planets)
-*TRAvel to another planet (if have enough fuel), time elapses
-*SATellites: Send sats to non-empire planets
-*ATTack the planet where the fleet is. (Only on non-empire planets)
 *SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
-*OCCupy: Set occupation fighters and toops (only on non-empire planets)
+*OCCupy: Set occupation fighters and troops (only on non-empire planets)
 *TAXes: Collect taxes (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *DECommission troops (only on empire planets)
@@ -611,8 +620,15 @@ execute:proc(command:string, full_command:string) {
   if command=='QUI' {
     gameinfo.status=QUIT
   } elif command=="MAP" {
-    print "Fleet is at: " println fleet.location.name
-    map(fleet.location)
+    if length(full_command) < 5 {
+      map(fleet.location)
+    } else {
+      p = find_planet(full_command[4])
+      if p == null {
+        p = planets[0]
+      }
+      map(p)
+    }
   } elif command=="FLE" {
     showFleet(fleet)
   } elif command=="CHE" {
@@ -620,12 +636,13 @@ execute:proc(command:string, full_command:string) {
   } elif command=="HEL" {
     help()
   } elif command=="GAL" {
-    info("G")
+    info(planets[0])
   } elif command=="INF" {
     if length(full_command) < 6 {
       println "Must give planet name for INFO, e.g., 'INFO Galactica'"
     } else {
-      info(full_command[5])
+      p = find_planet(full_command[5])
+      info(p)
     }
   } else {
     println "Don't know how to do that yet, sorry. Try HELP"
