@@ -508,13 +508,18 @@ move_sats:proc(p:PlanetType) {
 // COMMANDS
 /////////////////////////////////////////////////////////
 
-sleep:proc(days:int) {
+elapse:proc(days:int) {
   gameinfo.date = gameinfo.date + days
+
   i = 1 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
     move_sats(p)
+    // produce
+    // stockpile
+    // rebel
+    // grow
+    // update status
   }
-  // TODO: in sleep if a planet changes status, update the map
 }
 
 cheat:proc() {
@@ -527,7 +532,7 @@ cheat:proc() {
 }
 
 showPlanet:proc(p:PlanetType, cheat:bool) {
-  print "PLANET INFO:  "
+  print "PLANET INFO: "
   sats = p.sats_orbit
   if cheat or fleet.location == p {
     // if the fleet is here, it's as if we've sent 3 sats
@@ -537,7 +542,7 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
   if (cheat) {
     print " (" print p.x print ", " print p.y print ")"
   }
-  print "Status: " println STATUSES[p.status]
+  print "Status:      " println STATUSES[p.status]
 
   // 2. if satellites > 0 draw civ level;
   // 3. If satellites > 1 draw population;
@@ -547,23 +552,24 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
   //       ii. if satellites > 2 draw troops, fighters, sats;
 
   if sats > 0 {
-    print "Civ_level: " println CIV_LEVELS[p.civ_level]
+    print "Civ level:   " println CIV_LEVELS[p.civ_level]
   }
   if sats > 1 {
-    print " population: " println p.population
+    print " Population: " println p.population
   }
   if cheat or p.status == EMPIRE {
-    print " assets:     " println p.assets
+    print " Assets:     " println p.assets
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
-    print " troops:     " print p.troops print " fighters: " print p.fighters
+    print " Troops:     " println p.troops
+    print " Fighters:   " println p.fighters
   }
-  if cheat {
+  if cheat or p.status == EMPIRE {
     print " prices:     " println p.prices
   }
   if cheat or p.status != EMPIRE {
     // put the date of the next satellite arrival
-    print " sats:       " print p.sats_orbit
+    print " Sats:       " print p.sats_orbit
     if p.sats_enroute > 0 {
       print " (" print p.sats_enroute print " enroute @"
       j = 0 while j < 3 do j = j + 1 {
@@ -582,6 +588,8 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
   print "Distance:       " println distance
   print "Estimated food: " println calc_food_needed(distance)
   print "Estimated fuel: " println calc_fuel_needed(distance)
+
+  elapse(10)
 }
 
 // Shows info about the fleet
@@ -597,6 +605,8 @@ showFleet:proc(fleet:FleetType) {
   print "Empty transports: " println fleet.etrans
   print "Fighters:         " println fleet.fighters
   print "Satellites:       " println fleet.satellites
+
+  elapse(10)
 }
 
 // Shows the galaxy around the given planet.
@@ -630,6 +640,8 @@ map:proc(planet:PlanetType) {
   print "Empire planets:   " println count_planets(EMPIRE)
   print "Occupied planets: " println count_planets(OCCUPIED)
   print "Indep. planets:   " println count_planets(INDEPENDENT)
+
+  elapse(10)
 }
 
 // print info about the given planet
@@ -663,6 +675,7 @@ sat:proc(p:PlanetType) {
   sa[nsat] = when
   p.sats_enroute = p.sats_enroute + 1
   print "Sent! Estimated arrival: " println format_date(when)
+  elapse(10)
 }
 
 help: proc {
@@ -693,6 +706,28 @@ QUIt
 execute:proc(command:string, full_command:string) {
   if command=='QUI' {
     gameinfo.status=QUIT
+  } elif command == 'SLE' {
+    // sleep
+    // 1. find the space. if no space, sleep 10
+    i = 3 while i < length(full_command) do i = i + 1 {
+      if full_command[i] == ' ' {
+        if i + 1 < length(full_command) {
+          // get the next number after the space
+          nc = full_command[i+1]
+          d = asc(nc) - asc('0')
+          // get the next number
+          if d >= 0 and d <= 9 {
+            print "Sleeping for " print 10*d println " days"
+            elapse(10*d)
+            return
+          }
+        }
+      }
+    }
+    // No space, or no next number
+    println "Sleeping for 10 days"
+    elapse(10)
+
   } elif command=="MAP" {
     if length(full_command) < 5 {
       map(fleet.location)
@@ -749,7 +784,6 @@ mainLoop: proc {
     println "\n----------------------------------------------------------"
     execute(command, full_command)
     println "----------------------------------------------------------\n"
-    sleep(10)
     gameinfo.status = calculate_game_status() // Calc if won or lost
   }
   if gameinfo.status==WON { println "You won" }
