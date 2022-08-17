@@ -325,6 +325,25 @@ tod: proc(i:int):double {
   return d
 }
 
+// double to int
+toi: proc(d:double): int {
+  neg = false
+  if d < 0.0 {neg = true d = -d}
+  i = 0
+  dplace = 100000.0
+  iplace = 100000
+  while iplace > 0 {
+    while d > dplace {
+      d = d - dplace
+      i = i + iplace
+    }
+    iplace = iplace / 10
+    dplace = dplace / 10.0
+  }
+  if neg {i = -i}
+  return i
+}
+
 
 // a*x+b
 ax_b:proc(x:int, a:int, b:int):int { return a*x+b }
@@ -470,6 +489,20 @@ calc_food_needed:proc(dist:double): double {
   return fuel*dist/10.0
 }
 
+move_sats:proc(p:PlanetType) {
+  if p.sats_enroute > 0 {
+    j = 0 while j < 3 do j = j + 1 {
+      sats_arrive = p.sats_arrive
+      if sats_arrive[j] > 0 and sats_arrive[j] < gameinfo.date {
+        // it arrived!
+        print "Satellite arrived at " println p.name
+        sats_arrive[j] = 0
+        p.sats_enroute = p.sats_enroute - 1
+        p.sats_orbit = p.sats_orbit + 1
+      }
+    }
+  }
+}
 
 /////////////////////////////////////////////////////////
 // COMMANDS
@@ -479,10 +512,7 @@ sleep:proc(days:int) {
   gameinfo.date = gameinfo.date + days
   i = 1 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
-    if p.sats_enroute > 0 {
-      p.sats_enroute = p.sats_enroute - 1
-      p.sats_orbit = p.sats_orbit + 1
-    }
+    move_sats(p)
   }
   // TODO: in sleep if a planet changes status, update the map
 }
@@ -517,10 +547,10 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
   //       ii. if satellites > 2 draw troops, fighters, sats;
 
   if sats > 0 {
-    print "Civ_level: " print CIV_LEVELS[p.civ_level]
+    print "Civ_level: " println CIV_LEVELS[p.civ_level]
   }
   if sats > 1 {
-    print " population: " print p.population
+    print " population: " println p.population
   }
   if cheat or p.status == EMPIRE {
     print " assets:     " println p.assets
@@ -532,7 +562,20 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
     print " prices:     " println p.prices
   }
   if cheat or p.status != EMPIRE {
-    print " sats:       " print p.sats_orbit print " (" print p.sats_enroute println " enroute)"
+    // put the date of the next satellite arrival
+    print " sats:       " print p.sats_orbit
+    if p.sats_enroute > 0 {
+      print " (" print p.sats_enroute print " enroute @"
+      j = 0 while j < 3 do j = j + 1 {
+        if p.sats_arrive[j] > 0 {
+          print format_date(p.sats_arrive[j])
+          break
+        }
+      }
+      println ")"
+    } else {
+      println ""
+    }
   }
 
   distance = calc_distance(fleet.location, p)
@@ -608,10 +651,18 @@ sat:proc(p:PlanetType) {
     return
   }
   fleet.satellites = fleet.satellites - 1
+
+  distance = calc_distance(fleet.location, p)
+  // round distance down
+  idistance = toi(distance)
+  // this seems like a lot of days
+  when = gameinfo.date + gameinfo.level*idistance + 10*random(gameinfo.level)
+  sa = p.sats_arrive
+  // which satellite?
+  nsat = p.sats_enroute + p.sats_orbit
+  sa[nsat] = when
   p.sats_enroute = p.sats_enroute + 1
-  // TODO: get estimated arrival date
-  //  p.sats_arrive[sat] = gameinfo.date + gameinfo.level*the_distance + 10*random(gameinfo.level);
-  println "Sent! Estimated arrival: TBD"
+  print "Sent! Estimated arrival: " println format_date(when)
 }
 
 help: proc {
@@ -622,7 +673,7 @@ FLEet: Show info about the fleet
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
 SATellites: Send satellites to non-empire planets
-*TRAvel to another planet (if have enough fuel), time elapses
+*EMBark to another planet (if have enough fuel), time elapses
 *ATTack the planet where the fleet is. (Only on non-empire planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
