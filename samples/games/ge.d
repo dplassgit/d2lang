@@ -527,11 +527,11 @@ cheat:proc() {
     p = planets[i]
     println "----------------------------------------------------------"
     print "Planet[" print i print "]: "
-    showPlanet(p, true)
+    show_planet(p, true)
   }
 }
 
-showPlanet:proc(p:PlanetType, cheat:bool) {
+show_planet:proc(p:PlanetType, cheat:bool) {
   print "PLANET INFO: "
   sats = p.sats_orbit
   if cheat or fleet.location == p {
@@ -593,10 +593,8 @@ showPlanet:proc(p:PlanetType, cheat:bool) {
 }
 
 // Shows info about the fleet
-showFleet:proc(fleet:FleetType) {
-  println "FLEET STATUS:"
-  print "Fleet is at: " println fleet.location.name
-  println "Assets: "
+show_fleet:proc(fleet:FleetType) {
+  print "FLEET AT: " println fleet.location.name
   i = 0 while i < 5 do i = i + 1 {
     print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
   }
@@ -630,6 +628,7 @@ map:proc(planet:PlanetType) {
         print chr(cell)
       }
     }
+    // TODO: show information about the planet(s) on this line
     println "|"
   }
   print "+"
@@ -646,7 +645,7 @@ map:proc(planet:PlanetType) {
 
 // print info about the given planet
 info:proc(p:PlanetType) {
-  showPlanet(p, false)
+  show_planet(p, false)
 }
 
 sat:proc(p:PlanetType) {
@@ -678,6 +677,46 @@ sat:proc(p:PlanetType) {
   elapse(10)
 }
 
+
+// Embark, if we have enough fuel and food
+emb:proc(p:PlanetType) {
+  if fleet.location == p {
+    print "Already at " println p.name
+    return
+  }
+
+  distance = calc_distance(fleet.location, p)
+  food_needed = calc_food_needed(distance)
+  fuel_needed = calc_fuel_needed(distance)
+
+  // make sure we have enough food
+  fleet_assets = fleet.assets
+  if fleet_assets[FOOD] >= food_needed {
+    // make sure we have enough fuel!
+    if fleet_assets[FUEL] >= fuel_needed {
+      // ok, we have enough
+      fleet_assets[FUEL] = fleet_assets[FUEL] - fuel_needed
+
+      fleet_assets[FOOD] = fleet_assets[FOOD] - food_needed
+
+      //  3. move fleet;
+      fleet.location = p
+
+      //  4. elapse time;
+      // have to multiply distance by 10 to go from ly to years;
+      elapse(toi(distance)*10)
+      print "Fleet arrived at " println p.name
+      map(p)
+      info(p)
+    } else {
+      print "Not enough fuel to get to " print p.name print ". Need " println fuel_needed
+    }
+  } else {
+    print "Not enough food to get to " print p.name print ". Need " println food_needed
+  }
+}
+
+
 help: proc {
   println
 "
@@ -686,7 +725,7 @@ FLEet: Show info about the fleet
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
 SATellites: Send satellites to non-empire planets
-*EMBark to another planet (if have enough fuel), time elapses
+EMBark to another planet (if have enough fuel), time elapses
 *ATTack the planet where the fleet is. (Only on non-empire planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
@@ -739,7 +778,7 @@ execute:proc(command:string, full_command:string) {
       map(p)
     }
   } elif command=="FLE" {
-    showFleet(fleet)
+    show_fleet(fleet)
   } elif command=="CHE" {
     cheat()
   } elif command=="HEL" {
@@ -748,7 +787,7 @@ execute:proc(command:string, full_command:string) {
     info(planets[0])
   } elif command=="INF" {
     if length(full_command) < 6 {
-      println "Must give planet name for INFO, e.g., 'INFO Galactica'"
+      info(fleet.location)
     } else {
       p = find_planet(full_command[5])
       if p == null {
@@ -759,13 +798,24 @@ execute:proc(command:string, full_command:string) {
     }
   } elif command=="SAT" {
     if length(full_command) < 5 {
-      println "Must give planet name for SAT, e.g., 'INFO Ootsi'"
+      println "Must give planet name for SAT, e.g., 'SAT Ootsi'"
     } else {
       p = find_planet(full_command[4])
       if p == null {
         println "Unknown planet"
       } else {
         sat(p)
+      }
+    }
+  } elif command=="EMB" {
+    if length(full_command) < 5 {
+      println "Must give planet name for EMB, e.g., 'EMB Ootsi'"
+    } else {
+      p = find_planet(full_command[4])
+      if p == null {
+        println "Unknown planet"
+      } else {
+        emb(p)
       }
     }
   } else {
