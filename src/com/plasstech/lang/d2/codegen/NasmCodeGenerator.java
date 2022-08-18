@@ -668,7 +668,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit("; set up actuals");
     callGenerator.generate(op);
-    emit("\n  call _%s\n", op.procName());
+    emit("\n  call _%s\n", op.procSym().name());
     Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();

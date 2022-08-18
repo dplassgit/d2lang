@@ -6,40 +6,40 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.type.ProcSymbol;
 
 public class Call extends Op {
 
-  private final String procName;
   private final ImmutableList<Operand> actuals;
   private final Optional<Location> destination;
   private final ImmutableList<Location> formals;
+  private final ProcSymbol procSym;
 
   public Call(
       Optional<Location> destination,
-      String procName,
+      ProcSymbol procSym,
       ImmutableList<Operand> actuals,
       ImmutableList<Location> formals) {
     this.destination = destination;
-    this.procName = procName;
+    this.procSym = procSym;
     this.actuals = actuals;
     this.formals = formals;
   }
 
   public Call(
       Location destination,
-      String procName,
+      ProcSymbol procSym,
       ImmutableList<Operand> actuals,
       ImmutableList<Location> formals) {
-    this(Optional.of(destination), procName, actuals, formals);
+    this(Optional.of(destination), procSym, actuals, formals);
   }
 
-  public Call(
-      String functionToCall, ImmutableList<Operand> actuals, ImmutableList<Location> formals) {
-    this(Optional.empty(), functionToCall, actuals, formals);
+  public Call(ProcSymbol procSym, ImmutableList<Operand> actuals, ImmutableList<Location> formals) {
+    this(Optional.empty(), procSym, actuals, formals);
   }
 
-  public String procName() {
-    return procName;
+  public ProcSymbol procSym() {
+    return procSym;
   }
 
   public ImmutableList<Location> formals() {
@@ -59,9 +59,9 @@ public class Call extends Op {
   public String toString() {
     if (destination().isPresent()) {
       return String.format(
-          "%s = %s(%s);", destination().get(), procName, Joiner.on(", ").join(actuals));
+          "%s = %s(%s);", destination().get(), procSym.name(), Joiner.on(", ").join(actuals));
     } else {
-      return String.format("%s(%s);", procName, Joiner.on(", ").join(actuals));
+      return String.format("%s(%s);", procSym.name(), Joiner.on(", ").join(actuals));
     }
   }
 

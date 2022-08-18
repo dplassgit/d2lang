@@ -106,15 +106,15 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
   @Override
   public void visit(Call op) {
-    List<Op> replacement = inlineableCode.get(op.procName());
+    List<Op> replacement = inlineableCode.get(op.procSym().name());
 
     if (replacement != null) {
-      ProcEntry entry = procsByName.get(op.procName());
+      ProcEntry entry = procsByName.get(op.procSym().name());
       InlineRemapper inlineRemapper = new InlineRemapper(replacement, symbolTable);
       List<Op> remapped = inlineRemapper.remap();
       logger.at(loggingLevel).log(
           "Can inline '%s' from:\n %s\n to:\n%s",
-          op.procName(), Joiner.on('\n').join(replacement), Joiner.on('\n').join(remapped));
+          op.procSym(), Joiner.on('\n').join(replacement), Joiner.on('\n').join(remapped));
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.

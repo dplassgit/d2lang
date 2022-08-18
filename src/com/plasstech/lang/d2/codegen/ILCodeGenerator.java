@@ -654,12 +654,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     ImmutableList<Location> formals = procSymFormals(procSym);
     if (node.isStatement()) {
       // No return value
-      call = new Call(node.procName(), actuals, formals);
+      call = new Call(procSym, actuals, formals);
     } else {
       // 3. put result location into node.location
       Location location = allocateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, node.procName(), actuals, formals);
+      call = new Call(location, procSym, actuals, formals);
     }
     emit(call);
   }

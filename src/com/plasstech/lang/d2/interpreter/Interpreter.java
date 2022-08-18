@@ -569,7 +569,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
     // 3. look up each actual parameter in old environment and add to child environment as formal
     // name from symbol table
-    ProcSymbol procSymbol = (ProcSymbol) table.get(op.procName());
+    ProcSymbol procSymbol = op.procSym();
     for (int i = 0; i < op.actuals().size(); ++i) {
       Operand actualSource = op.actuals().get(i);
       Parameter formalParam = procSymbol.parameters().get(i);
