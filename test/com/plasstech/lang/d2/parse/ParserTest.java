@@ -27,6 +27,7 @@ import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
@@ -274,10 +275,20 @@ public class ParserTest {
     BinOpNode binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.NEQ);
 
-    System.err.println(parseStatements("a=NOT (a!=b)"));
-    System.err.println(parseStatements("a=NOT (a>b)"));
-    System.err.println(parseStatements("a=NOT (a<b)"));
-    System.err.println(parseStatements("a=NOT (a<=b)"));
+    root = parseStatements("a=NOT (a!=b)");
+    node = (AssignmentNode) root.statements().get(0);
+    binOpNode = (BinOpNode) node.expr();
+    assertThat(binOpNode.operator()).isEqualTo(TokenType.EQEQ);
+
+    root = parseStatements("a=NOT (a>b)");
+    node = (AssignmentNode) root.statements().get(0);
+    binOpNode = (BinOpNode) node.expr();
+    assertThat(binOpNode.operator()).isEqualTo(TokenType.LEQ);
+
+    root = parseStatements("a=NOT (a<=b)");
+    node = (AssignmentNode) root.statements().get(0);
+    binOpNode = (BinOpNode) node.expr();
+    assertThat(binOpNode.operator()).isEqualTo(TokenType.GT);
   }
 
   @Test
@@ -300,6 +311,21 @@ public class ParserTest {
 
     ExprNode expr = node.expr();
     assertThat(((UnaryNode) expr).operator()).isEqualTo(TokenType.BIT_NOT);
+  }
+
+  @Test
+  public void unaryBitNotNot() {
+    BlockNode root = parseStatements("a=!!b");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+    assertThat(expr).isInstanceOf(VariableNode.class);
+    assertThat(((VariableNode) expr).name()).isEqualTo("b");
   }
 
   @Test
@@ -345,7 +371,7 @@ public class ParserTest {
   @Test
   public void multipleUnary() {
     assertUnaryAssignConstant("a=++5", 5);
-    System.err.println(assertUnaryAssignConstant("a=+++5", 5));
+    assertUnaryAssignConstant("a=+++5", 5);
     assertUnaryAssignConstant("a=--5", 5);
     assertUnaryAssignConstant("a=-+-5", 5);
     assertUnaryAssignConstant("a=--+5", 5);
@@ -888,6 +914,39 @@ public class ParserTest {
 
     // This is allowed, but the static checker will eventually prevent it
     parseProgram("fib:proc() {return print 'hi'}");
+  }
+
+  @Test
+  public void externSimpleProc() {
+    // the simplest possible procedure
+    ProgramNode root = parseProgram("fib:extern proc");
+    ExternProcedureNode proc = (ExternProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+  }
+
+  @Test
+  public void externProcWithParam() {
+    ProgramNode root = parseProgram("fib:extern proc(param1:string)");
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.parameters()).hasSize(1);
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.STRING);
+  }
+
+  @Test
+  public void externFullProc() {
+    ProgramNode root = parseProgram("fib:extern proc(typed:int, nontyped) : string");
+
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.STRING);
+    assertThat(proc.parameters()).hasSize(2);
+    assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.INT);
+    assertThat(proc.parameters().get(1).varType()).isUnknown();
+    assertThat(proc.block().statements()).hasSize(0);
   }
 
   @Test

@@ -32,6 +32,7 @@ import com.plasstech.lang.d2.parse.node.ContinueNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
@@ -335,6 +336,14 @@ public class Parser implements Phase {
         return parseRecordDeclaration(varToken);
       }
 
+      if (declaredType == TokenType.EXTERN) {
+        // extern proc
+        advance(); // eat the extern
+        expect(TokenType.PROC);
+        advance(); // eat the proc
+        return externDecl(varToken);
+      }
+
       VarType varType = BUILTINS.get(declaredType);
       if (varType != null) {
         advance(); // int, string, bool, proc
@@ -411,6 +420,16 @@ public class Parser implements Phase {
     }
     BlockNode statements = block();
     return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
+  }
+
+  private DeclarationNode externDecl(Token varToken) {
+    List<Parameter> params = formalParams();
+
+    VarType returnType = VarType.VOID;
+    if (token.type() == TokenType.COLON) {
+      returnType = parseVarType();
+    }
+    return new ExternProcedureNode(varToken.text(), params, returnType, varToken.start());
   }
 
   private List<Parameter> formalParams() {
