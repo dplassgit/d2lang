@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
-import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
@@ -17,7 +17,7 @@ import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
  * Finds record definitions in the parse tree and adds them to the given symbol table. 
  * This is useful for forward referneces to record types.
  */
-class RecordGatherer extends DefaultVisitor {
+class RecordGatherer extends DefaultNodeVisitor {
   private final SymTab symbolTable;
 
   public RecordGatherer(SymTab symbolTable) {

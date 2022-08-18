@@ -22,7 +22,7 @@ import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
-import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
@@ -46,7 +46,7 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
-public class StaticChecker extends DefaultVisitor implements Phase {
+public class StaticChecker extends DefaultNodeVisitor implements Phase {
   // also works for bytes
   private static final ImmutableSet<TokenType> INT_OPERATORS =
       ImmutableSet.of(

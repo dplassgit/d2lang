@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.plasstech.lang.d2.parse.node.DefaultVisitor;
+import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 
@@ -14,7 +14,7 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
  * "Gathers" all procedure definitions in the (global) symbol table, so you can make
  * forward-references.
  */
-class ProcGatherer extends DefaultVisitor {
+class ProcGatherer extends DefaultNodeVisitor {
   private final SymTab symbolTable;
 
   public ProcGatherer(SymTab symbolTable) {

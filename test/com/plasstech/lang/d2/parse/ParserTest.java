@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.parse;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import java.util.List;
 
@@ -946,7 +947,7 @@ public class ParserTest {
     assertThat(proc.parameters()).hasSize(2);
     assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.INT);
     assertThat(proc.parameters().get(1).varType()).isUnknown();
-    assertThat(proc.block().statements()).hasSize(0);
+    assertThrows(IllegalStateException.class, () -> proc.block());
   }
 
   @Test

@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.parse.node;
 
-public class DefaultVisitor implements NodeVisitor {
+public class DefaultNodeVisitor implements NodeVisitor {
 
   @Override
   public void visit(PrintNode node) {}
@@ -25,6 +25,9 @@ public class DefaultVisitor implements NodeVisitor {
 
   @Override
   public void visit(ProcedureNode node) {}
+
+  @Override
+  public void visit(ExternProcedureNode node) {}
 
   @Override
   public void visit(MainNode node) {}

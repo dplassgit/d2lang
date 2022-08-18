@@ -43,4 +43,6 @@ public interface NodeVisitor {
   void visit(InputNode node);
 
   void visit(NewNode node);
+
+  void visit(ExternProcedureNode node);
 }
