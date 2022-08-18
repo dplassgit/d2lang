@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
@@ -97,6 +98,20 @@ public class SymTab {
     Symbol param = new ParamSymbol(name, index).setVarType(varType).setAssigned();
     values.put(name, param);
     return param;
+  }
+
+  public ExternProcSymbol declareProc(ExternProcedureNode node) {
+    Symbol sym = getRecursive(node.name());
+    if (sym != null) {
+      throw new TypeException(
+          String.format(
+              "%s already declared as %s. Cannot be redeclared as procedure.",
+              node.name(), sym.varType()),
+          node.position());
+    }
+    ExternProcSymbol procSymbol = new ExternProcSymbol(node);
+    values.put(node.name(), procSymbol);
+    return procSymbol;
   }
 
   public ProcSymbol declareProc(ProcedureNode node) {

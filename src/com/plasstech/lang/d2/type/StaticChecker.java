@@ -1,9 +1,6 @@
 package com.plasstech.lang.d2.type;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -25,6 +22,7 @@ import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
@@ -752,29 +750,24 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   }
 
   @Override
-  public void visit(ProcedureNode node) {
-    // 1. make sure no duplicate arg names
-    List<String> paramNames =
-        node.parameters().stream().map(Parameter::name).collect(toImmutableList());
-    Set<String> duplicates = new HashSet<>();
-    Set<String> uniques = new HashSet<>();
-    for (String param : paramNames) {
-      if (uniques.contains(param)) {
-        uniques.remove(param);
-        duplicates.add(param);
-      } else {
-        uniques.add(param);
+  public void visit(ExternProcedureNode node) {
+    // make sure args all have a type
+    for (Parameter param : node.parameters()) {
+      VarType type = param.varType();
+      validatePossibleRecordType(param.name(), type, node.position());
+      if (type.isUnknown()) {
+        throw new TypeException(
+            String.format(
+                "Could not determine type of formal parameter '%s' of EXTERN PROC '%s'",
+                param.name(), node.name()),
+            node.position());
       }
     }
-    if (!duplicates.isEmpty()) {
-      throw new TypeException(
-          String.format(
-              "Duplicate formal parameter(s) '%s' declared in PROC '%s'",
-              duplicates.toString(), node.name()),
-          node.position());
-    }
+  }
 
-    // Add this procedure to the symbol table
+  @Override
+  public void visit(ProcedureNode node) {
+    // Add this procedure to the symbol table if it's a nested proc.
     Symbol sym = symbolTable().get(node.name());
     boolean innerProc = sym == null;
     ProcSymbol procSymbol = null;
@@ -791,13 +784,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       procSymbol = (ProcSymbol) sym;
     }
 
-    // 3. push current procedure onto a stack, for symbol table AND return value checking
+    // push current procedure onto a stack, for symbol table AND return value checking
     procedures.push(procSymbol);
     if (node.returnType() != VarType.VOID) {
       needsReturn.add(procSymbol);
     }
 
-    // 4. add all args to local symbol table
+    // add all args to local symbol table
     if (innerProc) {
       int i = 0;
       for (Parameter param : node.parameters()) {
@@ -805,10 +798,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
 
-    // 5. process the statements in the procedure:
+    // process the statements in the procedure:
     node.block().accept(this);
 
-    // 6. make sure args all have a type
+    // make sure args all have a type
     for (Parameter param : node.parameters()) {
       VarType type = symbolTable().get(param.name()).varType();
       validatePossibleRecordType(param.name(), type, node.position());
@@ -821,13 +814,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
 
+    // make sure that all codepaths have a return
     if (node.returnType() != VarType.VOID) {
       if (needsReturn.contains(procSymbol)) {
         // no return statement seen.
         throw new TypeException(
             String.format("No RETURN statement for PROC '%s'", node.name()), node.position());
       }
-      // make sure that all *codepaths* have a return
       if (!checkAllPathsHaveReturn(node)) {
         throw new TypeException(
             String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),

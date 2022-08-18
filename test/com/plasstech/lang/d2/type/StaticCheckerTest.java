@@ -701,6 +701,27 @@ public class StaticCheckerTest {
     assertError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
     assertError("fib:proc(a:int[]) {a[0]=3} fib(1)", "expected 1-d ARRAY of INT");
     assertError("fib:proc(a:int) {a=3} fib([1])", "found 1-d ARRAY of INT");
+    assertError("fib:proc(n1:rec){} ", "unknown RECORD 'rec'");
+  }
+
+  @Test
+  public void externProc() {
+    checkProgram("fib:extern proc()");
+    checkProgram("fib:extern proc(n:int) ");
+    checkProgram("fib:extern proc(n1:int, n2:int)");
+    checkProgram("level1:extern proc(): bool b=level1()");
+    checkProgram("fib:extern proc(a:int[]) fib([1,2,3])");
+    checkProgram("rec:record {} fib:extern proc(n1:rec)");
+  }
+
+  @Test
+  public void externProcParams_errors() {
+    assertError("fib:extern proc(n1) ", "determine type of formal parameter");
+    assertError("fib:extern proc(n1:rec) ", "unknown RECORD 'rec'");
+    assertError("fib:extern proc(a, b, a)", "Duplicate parameter");
+    assertError("fib:extern proc(n:int) fib(true)", "found BOOL, expected INT");
+    assertError("fib:extern proc(a:int[]) fib(1)", "expected 1-d ARRAY of INT");
+    assertError("fib:extern proc(a:int) fib([1])", "found 1-d ARRAY of INT");
   }
 
   @Test
