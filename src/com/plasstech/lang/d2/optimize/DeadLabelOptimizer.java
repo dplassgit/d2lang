@@ -59,6 +59,6 @@ class DeadLabelOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Call op) {
-    referencedLabels.add(op.procSym().name());
+    referencedLabels.add(op.procSym().mungedName());
   }
 }

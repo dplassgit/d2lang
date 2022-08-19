@@ -62,7 +62,7 @@ class ArrayCodeGenerator {
       // Validate array size is positive.
       emitter.emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
       String continueLabel = resolver.nextLabel("continue");
-      emitter.emit("jge _%s", continueLabel);
+      emitter.emit("jge %s", continueLabel);
 
       emitter.addData(ARRAY_SIZE_ERR);
       emitter.emit("; no good; array size is not positive");
@@ -211,7 +211,7 @@ class ArrayCodeGenerator {
         emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32(), index);
         // 3. if good, continue
         String continueLabel = resolver.nextLabel("good_array_index");
-        emitter.emit("jg _%s", continueLabel);
+        emitter.emit("jg %s", continueLabel);
 
         emitter.emit0("\n  ; no good. print error and stop");
         emitter.addData(ARRAY_INDEX_OOB_ERR);
@@ -240,7 +240,7 @@ class ArrayCodeGenerator {
       emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
       String continueLabel = resolver.nextLabel("continue");
-      emitter.emit("jge _%s", continueLabel);
+      emitter.emit("jge %s", continueLabel);
 
       // print error and stop.
       emitter.emit0("\n  ; negative. no good. print error and stop");
@@ -268,7 +268,7 @@ class ArrayCodeGenerator {
       emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32());
       // 3. if good, continue
       continueLabel = resolver.nextLabel("continue");
-      emitter.emit("jl _%s", continueLabel);
+      emitter.emit("jl %s", continueLabel);
 
       emitter.emit0("\n  ; no good. print error and stop");
       emitter.addData(ARRAY_INDEX_OOB_ERR);

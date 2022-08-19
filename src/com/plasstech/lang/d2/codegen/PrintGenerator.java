@@ -69,10 +69,10 @@ class PrintGenerator {
         // if null, print null
         emitter.emit("cmp QWORD RCX, 0");
         String notNullLabel = resolver.nextLabel("not_null");
-        emitter.emit("jne _%s", notNullLabel);
+        emitter.emit("jne %s", notNullLabel);
         emitter.addData(CONST_NULL);
         emitter.emit("mov RCX, CONST_NULL  ; constant 'null'");
-        emitter.emit0("_%s:", notNullLabel);
+        emitter.emitLabel(notNullLabel);
       }
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.NULL) {

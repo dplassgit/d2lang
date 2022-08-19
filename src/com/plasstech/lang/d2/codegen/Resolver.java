@@ -159,7 +159,7 @@ public class Resolver implements RegistersInterface {
   private static int id;
 
   public String nextLabel(String prefix) {
-    return String.format("_%s_%d", prefix, id++);
+    return String.format("__%s_%d", prefix, id++);
   }
 
   /** Allocate and return a register. */

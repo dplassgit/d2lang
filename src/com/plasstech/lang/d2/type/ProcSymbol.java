@@ -13,8 +13,11 @@ public class ProcSymbol extends AbstractSymbol {
   public ProcSymbol(ProcedureNode node) {
     super(node.name());
     this.node = node;
-    // TODO: make this into its complex type (i.e., Proc returns node.type)
     this.setVarType(VarType.PROC);
+  }
+
+  public String mungedName() {
+    return "_" + super.name();
   }
 
   @Override

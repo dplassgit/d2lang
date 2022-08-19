@@ -74,6 +74,9 @@ class StringTable extends ConstTable<String> {
       if (Character.isLetterOrDigit(c)) {
         sanitizedNameValue.append(c);
       }
+      if (sanitizedNameValue.length() > 10) {
+        break;
+      }
     }
     return String.format("CONST_%s_%d", sanitizedNameValue, index++);
   }

@@ -582,7 +582,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     envs.push(childEnv);
 
     // 5. goto destination
-    gotoLabel(procSymbol.name());
+    gotoLabel(procSymbol.mungedName());
   }
 
   @Override

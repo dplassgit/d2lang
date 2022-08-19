@@ -182,7 +182,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Goto op) {
-    emit("jmp _%s", op.label());
+    emit("jmp %s", op.label());
   }
 
   @Override
@@ -254,7 +254,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(IfOp op) {
     String condName = resolver.resolve(op.condition());
     emit("cmp BYTE %s, 0", condName);
-    emit("jne _%s", op.destination());
+    emit("jne %s", op.destination());
     resolver.deallocate(op.condition());
   }
 
@@ -453,7 +453,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       emit("cmp DWORD %s, 0  ; detect division by 0", right);
       String continueLabel = resolver.nextLabel("not_div_by_zero");
-      emit("jne _%s", continueLabel);
+      emit("jne %s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);
@@ -634,6 +634,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
       resolver.deallocate(returnValue);
     }
+    // NOTYPO
     emit("jmp __exit_of_%s", op.procName());
   }
 
@@ -668,7 +669,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit("; set up actuals");
     callGenerator.generate(op);
-    emit("\n  call _%s\n", op.procSym().name());
+    emit("\n  call %s\n", op.procSym().mungedName());
     Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();

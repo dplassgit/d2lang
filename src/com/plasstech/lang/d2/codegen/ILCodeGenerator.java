@@ -108,7 +108,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private String nextLabel(String prefix) {
     // leading underscore is an illegal character so this will never conflict.
-    return String.format("_%s_%d", prefix, ++id);
+    return String.format("__%s_%d", prefix, ++id);
   }
 
   private TempLocation allocateTemp(VarType varType) {
@@ -599,7 +599,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     emit(new Goto(afterLabel));
 
     // This is the real entry point.
-    emit(new Label(node.name()));
+    emit(new Label(procSym.mungedName()));
     SymTab symTab = procSym.symTab();
     ImmutableList<Symbol> locals =
         symTab

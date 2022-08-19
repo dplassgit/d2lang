@@ -32,7 +32,7 @@ class NullPointerCheckGenerator {
     } else if (!source.isConstant()) {
       String dest = resolver.nextLabel("not_npe");
       emitter.emit("cmp QWORD %s, 0", sourceName);
-      emitter.emit("jne _%s", dest);
+      emitter.emit("jne %s", dest);
       generateNPEMessage(position);
       emitter.emitLabel(dest);
     } else {

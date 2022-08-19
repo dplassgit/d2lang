@@ -91,7 +91,7 @@ public class DoubleGenerator {
       emitter.emit("comisd %s, %s  ; detect division by zero", zeroReg, right);
       resolver.deallocate(zeroReg);
       String continueLabel = resolver.nextLabel("not_div_by_zero");
-      emitter.emit("jne _%s", continueLabel);
+      emitter.emit("jne %s", continueLabel);
 
       emitter.emit0("\n  ; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);

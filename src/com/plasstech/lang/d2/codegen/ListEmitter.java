@@ -72,7 +72,7 @@ public class ListEmitter implements Emitter {
   @Override
   public void emitLabel(String label) {
     if (label != null) {
-      emit0("\n_%s:", label);
+      emit0("\n%s:", label);
     }
   }
 }

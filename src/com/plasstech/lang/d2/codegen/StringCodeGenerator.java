@@ -73,10 +73,10 @@ class StringCodeGenerator {
       emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
       resolver.deallocate(tempReg);
       String nextTest = resolver.nextLabel("next_strcmp_test");
-      emitter.emit("jne _%s", nextTest);
+      emitter.emit("jne %s", nextTest);
 
       emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
-      emitter.emit("jmp _%s", endLabel);
+      emitter.emit("jmp %s", endLabel);
 
       emitter.emit("; not identical; test for null");
       emitter.emitLabel(nextTest);
@@ -85,13 +85,13 @@ class StringCodeGenerator {
       if (leftName.equals("0")) {
         emitter.emit("; left is literal null");
         emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp _%s", endLabel);
+        emitter.emit("jmp %s", endLabel);
       } else if (!left.isConstant()) {
         emitter.emit("cmp QWORD %s, 0", leftName);
-        emitter.emit("jne _%s", nextTest);
+        emitter.emit("jne %s", nextTest);
         emitter.emit("; left is null, right is not");
         emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp _%s", endLabel);
+        emitter.emit("jmp %s", endLabel);
       }
       emitter.emit("; left is not null, test right");
       emitter.emitLabel(nextTest);
@@ -99,14 +99,14 @@ class StringCodeGenerator {
       if (rightName.equals("0")) {
         emitter.emit("; right is literal null");
         emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp _%s", endLabel);
+        emitter.emit("jmp %s", endLabel);
       } else if (!right.isConstant()) {
         emitter.emit("cmp QWORD %s, 0", rightName);
         nonNullStrcmp = resolver.nextLabel("non_null_strcmp");
-        emitter.emit("jne _%s", nonNullStrcmp);
+        emitter.emit("jne %s", nonNullStrcmp);
         emitter.emit("; right is null, left is not");
         emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp _%s", endLabel);
+        emitter.emit("jmp %s", endLabel);
       }
     }
 
@@ -193,7 +193,7 @@ class StringCodeGenerator {
       emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
       String continueLabel = resolver.nextLabel("continue");
-      emitter.emit("jge _%s", continueLabel);
+      emitter.emit("jge %s", continueLabel);
 
       // print error and stop.
       emitter.emit0("\n  ; negative. no good. print error and stop");
@@ -219,7 +219,7 @@ class StringCodeGenerator {
     // Make sure index isn't >= length
     emitter.emit("cmp EAX, %s", indexName);
     String goodIndex = resolver.nextLabel("good_string_index");
-    emitter.emit("jg _%s", goodIndex);
+    emitter.emit("jg %s", goodIndex);
 
     // else bad
     emitter.emit("; index out of bounds");
@@ -239,7 +239,7 @@ class StringCodeGenerator {
           "cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
     }
     String allocateLabel = resolver.nextLabel("allocate_2_char_string");
-    emitter.emit("jne _%s", allocateLabel);
+    emitter.emit("jne %s", allocateLabel);
 
     // At runtime, if we got here, we're getting the last character of the given string.
     emitter.emit("; %s = %s[%s]", destName, stringName, indexName);
@@ -264,7 +264,7 @@ class StringCodeGenerator {
       }
     }
     String afterLabel = resolver.nextLabel("after_string_index");
-    emitter.emit("jmp _%s", afterLabel);
+    emitter.emit("jmp %s", afterLabel);
 
     // At runtime, when we get here, we need to copy the single source character to a new string.
     // 1. allocate a new 2-char string
