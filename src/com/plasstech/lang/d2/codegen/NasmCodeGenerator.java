@@ -38,6 +38,7 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.ExternProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -107,14 +108,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     prelude.add("; To execute:");
     // -Ox = optimize
-    prelude.add(
-        String.format("; nasm -fwin64 -Ox %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
+    prelude.add(String.format("; nasm -fwin64 %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
 
     prelude.add("global main\n");
 
-    // 1. emit all globals
-    // 2. emit all string constants
     SymTab globals = input.symbolTable();
+    // 1. emit all globals
+    for (ExternProcSymbol extern : globals.externProcs()) {
+      emitter.addExtern(extern.mungedName());
+    }
+
+    // 2. emit all string constants
     for (Map.Entry<String, Symbol> entry : globals.variables().entrySet()) {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {

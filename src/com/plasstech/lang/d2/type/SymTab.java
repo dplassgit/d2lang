@@ -1,10 +1,13 @@
 package com.plasstech.lang.d2.type;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -78,6 +81,19 @@ public class SymTab {
             .stream()
             .filter(e -> e.getValue().isVariable())
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
+  }
+
+  public ImmutableList<ExternProcSymbol> externProcs() {
+    return values
+        .entrySet()
+        .stream()
+        .map(e -> e.getValue())
+        .filter(e -> e.getClass().equals(ExternProcSymbol.class))
+        .map(
+            e -> {
+              return (ExternProcSymbol) e;
+            })
+        .collect(toImmutableList());
   }
 
   public Symbol declareTemp(String name, VarType varType) {
