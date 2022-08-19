@@ -72,7 +72,7 @@ public class Resolver implements RegistersInterface {
     switch (location.storage()) {
       case TEMP:
         // TODO: deal with out-of-registers
-        reg = registers.allocate(location.type());
+        reg = allocate(location.type());
         aliases.put(location.name(), reg);
         emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
@@ -225,11 +225,11 @@ public class Resolver implements RegistersInterface {
       emitter.emit("mov %s %s, %s", size, destName, sourceName);
     } else {
       // two memory locations; use an intermediary
-      Register tempReg = registers.allocate(VarType.INT);
+      Register tempReg = allocate(VarType.INT);
       String tempName = tempReg.sizeByType(source.type());
       emitter.emit("mov %s %s, %s", size, tempName, sourceName);
       emitter.emit("mov %s %s, %s", size, destName, tempName);
-      registers.deallocate(tempReg);
+      deallocate(tempReg);
     }
   }
 
@@ -241,13 +241,13 @@ public class Resolver implements RegistersInterface {
     } else {
       // move from sourceLoc to temp
       // then from temp to dest
-      Register tempReg = registers.allocate(VarType.INT);
+      Register tempReg = allocate(VarType.INT);
       emitter.emit("; allocated temp %s", tempReg);
       String tempName = tempReg.sizeByType(source.type());
       // TODO: this can be short-circuited too if dest is a register
       emitter.emit("mov %s, %s", tempName, sourceName);
       emitter.emit("mov %s, %s", destName, tempName);
-      registers.deallocate(tempReg);
+      deallocate(tempReg);
       emitter.emit("; deallocated temp %s", tempReg);
     }
   }
@@ -267,11 +267,11 @@ public class Resolver implements RegistersInterface {
       }
     } else {
       // move from sourceLoc to tempReg then from tempReg to dest
-      Register tempReg = registers.allocate(VarType.DOUBLE);
+      Register tempReg = allocate(VarType.DOUBLE);
       emitter.emit("; allocated temp %s", tempReg);
       emitter.emit("movsd %s, %s", tempReg, sourceName);
       emitter.emit("movq %s, %s", destName, tempReg);
-      registers.deallocate(tempReg);
+      deallocate(tempReg);
       emitter.emit("; deallocated temp %s", tempReg);
     }
   }
