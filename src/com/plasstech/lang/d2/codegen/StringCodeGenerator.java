@@ -39,12 +39,10 @@ class StringCodeGenerator {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final RegistersInterface registers;
   private final NullPointerCheckGenerator npeCheckGenerator;
 
   public StringCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
-    this.registers = resolver;
     this.emitter = emitter;
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
@@ -113,7 +111,7 @@ class StringCodeGenerator {
     emitter.emit("; left and right both not null");
     emitter.emitLabel(nonNullStrcmp);
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
 
     emitter.emit(
         "; strcmp: %s = %s %s %s",
@@ -173,7 +171,7 @@ class StringCodeGenerator {
     Location destination = op.destination();
     String destName = resolver.resolve(destination);
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
 
     // Issue #94: Check index to be >= 0 and < length
     if (index.isConstant()) {
@@ -255,12 +253,12 @@ class StringCodeGenerator {
         emitter.emit("mov %s, %s", destReg.sizeByType(index.type()), indexName);
         emitter.emit("add %s, %s", destReg, stringName);
       } else {
-        Register tempReg = registers.allocate(VarType.INT);
+        Register tempReg = resolver.allocate(VarType.INT);
         emitter.emit("; dest not in reg; allocated %s as tempReg", tempReg);
         emitter.emit("mov %s, %s", tempReg.sizeByType(index.type()), indexName);
         emitter.emit("add %s, %s", tempReg, stringName);
         emitter.emit("mov %s, %s", destName, tempReg);
-        registers.deallocate(tempReg);
+        resolver.deallocate(tempReg);
       }
     }
     String afterLabel = resolver.nextLabel("after_string_index");
@@ -269,16 +267,16 @@ class StringCodeGenerator {
     // At runtime, when we get here, we need to copy the single source character to a new string.
     // 1. allocate a new 2-char string
     emitter.emitLabel(allocateLabel);
-    registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+    registerState = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     emitter.emit("mov RCX, 2");
     emitter.emitExternCall("malloc");
     registerState.condPop();
     // 2. copy the location to the dest
     emitter.emit("mov %s, RAX  ; destination from rax", destName);
 
-    Register indexReg = registers.allocate(VarType.INT);
+    Register indexReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated indexReg to %s", indexReg);
-    Register charReg = registers.allocate(VarType.INT);
+    Register charReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated charReg to %s", charReg);
     // 3. get the string
     emitter.emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
@@ -287,12 +285,12 @@ class StringCodeGenerator {
         "mov %s, %s  ; put index value into %s", indexReg.name32(), indexName, indexReg.name32());
     // 5. get the actual character
     emitter.emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
-    registers.deallocate(indexReg);
+    resolver.deallocate(indexReg);
     emitter.emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
     emitter.emit(
         "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());
-    registers.deallocate(charReg);
+    resolver.deallocate(charReg);
     emitter.emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
     emitter.emit("mov BYTE [RAX + 1], 0  ; clear the 2nd location");
@@ -308,13 +306,13 @@ class StringCodeGenerator {
     npeCheckGenerator.generateNullPointerCheck(position, right);
 
     // 1. get left length
-    Register leftLengthReg = registers.allocate(VarType.INT);
+    Register leftLengthReg = resolver.allocate(VarType.INT);
     emitter.emit0("");
     emitter.emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
         position, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
     // 2. get right length
-    Register rightLengthReg = registers.allocate(VarType.INT);
+    Register rightLengthReg = resolver.allocate(VarType.INT);
     // TODO: if leftLengthReg is volatile, push it first (?!)
     emitter.emit0("");
     emitter.emit("; Get right length into %s:", rightLengthReg);
@@ -325,19 +323,19 @@ class StringCodeGenerator {
         "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
     emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32());
     emitter.emit("; deallocating right length %s", rightLengthReg);
-    registers.deallocate(rightLengthReg);
+    resolver.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
     emitter.emit0("");
     emitter.emit("; Allocate string of length %s", leftLengthReg.name32());
 
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     emitter.emit("mov ECX, %s", leftLengthReg.name32());
     // change to calloc?
     emitter.emitExternCall("malloc");
     emitter.emit("; deallocating leftlength %s", leftLengthReg);
-    registers.deallocate(leftLengthReg);
+    resolver.deallocate(leftLengthReg);
     // 4. put string into dest
     registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
     if (!dest.equals(RAX.name64())) {
@@ -346,7 +344,7 @@ class StringCodeGenerator {
 
     // 5. strcpy from left to dest
     emitter.emit0("");
-    registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+    registerState = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     String leftName = resolver.resolve(left);
     emitter.emit("; strcpy from %s to %s", leftName, dest);
     if (resolver.isInRegister(left, RCX) && dest.equals(RDX.name64())) {
@@ -366,7 +364,7 @@ class StringCodeGenerator {
 
     // 6. strcat dest, right
     emitter.emit0("");
-    registerState = RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+    registerState = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     String rightName = resolver.resolve(right);
     emitter.emit("; strcat from %s to %s", rightName, dest);
     if (resolver.isInRegister(right, RCX) && dest.equals(RDX.name64())) {
@@ -390,9 +388,9 @@ class StringCodeGenerator {
     npeCheckGenerator.generateNullPointerCheck(position, source);
     // We're doing something special with RAX & RCX
     RegisterState raxRcxState =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(RAX, RCX));
+        RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX, RCX));
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(RDX, R8, R9, R10, R11));
+        RegisterState.condPush(emitter, resolver, ImmutableList.of(RDX, R8, R9, R10, R11));
 
     String sourceName = resolver.resolve(source);
     String destinationName = resolver.resolve(destination);
@@ -429,9 +427,9 @@ class StringCodeGenerator {
   /** Generate destName = chr(sourceName), where sourceName is a number */
   void generateChr(String sourceName, String destName) {
     // realistically, nothing is ever kept in RAX because it's the return value register...
-    RegisterState raxState = RegisterState.condPush(emitter, registers, ImmutableList.of(RAX));
+    RegisterState raxState = RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX));
     RegisterState registerState =
-        RegisterState.condPush(emitter, registers, Register.VOLATILE_REGISTERS);
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
 
     // 1. allocate a new 2-char string
     emitter.emit("mov RCX, 2");
@@ -442,7 +440,7 @@ class StringCodeGenerator {
       emitter.emit("mov %s, RAX  ; copy string location from RAX", destName);
     }
 
-    Register charReg = registers.allocate(VarType.INT);
+    Register charReg = resolver.allocate(VarType.INT);
     // 3. get source char as character
     emitter.emit(
         "mov DWORD %s, %s  ; get the character int into %s", charReg.name32(), sourceName, charReg);
@@ -452,6 +450,6 @@ class StringCodeGenerator {
     // 5. clear second location.
     emitter.emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
     raxState.condPop();
-    registers.deallocate(charReg);
+    resolver.deallocate(charReg);
   }
 }
