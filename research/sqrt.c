@@ -2,7 +2,8 @@
 #include <math.h>
 
 double mysqrt(double d) {
-  return sqrt(d);
+  double e=d;
+  return sqrt(e);
 }
 void main() {
   double d = 10.0;

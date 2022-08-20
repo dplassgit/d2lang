@@ -361,27 +361,18 @@ abs:proc(x:double):double {
   return x
 }
 
-sqrt:proc(d:double):double {
-  guess = d/4.0
-  x100 = 1.0/100000.0
-  iters=0
-  while (abs(guess*guess-d) > (x100)) {
-    xguess = d/guess
-    guess = (guess + xguess)/2.0
-    iters = iters + 1
-    if iters > 100 {
-      break
-    }
-  }
+sqrt:extern proc(d:double):double
 
-  return guess
-}
-
+xd:double
 calc_distance:proc(p1:PlanetType, p2:PlanetType): double {
   xd = tod(p1.x-p2.x)
   yd = tod(p1.y-p2.y)
   dist = xd*xd+yd*yd
-  return sqrt(dist)
+  print "square of dist = " println dist
+  print "sqrt of dist = " println sqrt(dist)
+  xd=sqrt(dist)
+ return xd
+//  return sqrt(dist)
 }
 
 
@@ -583,7 +574,7 @@ show_planet:proc(p:PlanetType, cheat:bool) {
       println ""
     }
   }
-
+  
   distance = calc_distance(fleet.location, p)
   print "Distance:       " println distance
   print "Estimated food: " println calc_food_needed(distance)
@@ -778,10 +769,13 @@ execute:proc(command:string, full_command:string) {
       map(p)
     }
   } elif command=="FLE" {
+    println "Fhowing fleet"
     show_fleet(fleet)
   } elif command=="CHE" {
+    println "Fhowing cheat"
     cheat()
   } elif command=="HEL" {
+    println "Fhowing hel"
     help()
   } elif command=="GAL" {
     info(planets[0])
@@ -824,11 +818,13 @@ execute:proc(command:string, full_command:string) {
 }
 
 
+
 mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
     print "\nToday is " println format_date(gameinfo.date)
     print "Your command: "
+
     full_command = input
     command=trim(full_command)
     println "\n----------------------------------------------------------"
@@ -860,6 +856,9 @@ main {
   help()
   initPlanets()
   initFleet()
+
+//  info(planets[12])
+ // execute("INF", "INFO o")
   mainLoop()
 }
 

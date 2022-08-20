@@ -34,13 +34,6 @@ public interface Register {
 
   public static final ImmutableList<Register> NONVOLATILE_REGISTERS =
       ImmutableList.of(
-          IntRegister.RBX,
-          IntRegister.R12,
-          IntRegister.R13,
-          IntRegister.R14,
-          IntRegister.R15,
-          IntRegister.RDI,
-          IntRegister.RSI,
           MmxRegister.XMM6,
           MmxRegister.XMM7,
           MmxRegister.XMM8,
@@ -50,7 +43,14 @@ public interface Register {
           MmxRegister.XMM12,
           MmxRegister.XMM13,
           MmxRegister.XMM14,
-          MmxRegister.XMM15);
+          MmxRegister.XMM15,
+          IntRegister.RBX,
+          IntRegister.R12,
+          IntRegister.R13,
+          IntRegister.R14,
+          IntRegister.R15,
+          IntRegister.RDI,
+          IntRegister.RSI);
 
   public static final ImmutableList<Register> INT_PARAM_REGISTERS =
       ImmutableList.of(IntRegister.RCX, IntRegister.RDX, IntRegister.R8, IntRegister.R9);

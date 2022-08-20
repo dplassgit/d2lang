@@ -618,8 +618,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (op.localBytes() > 0) {
       emit("push RBP");
       emit("mov RBP, RSP");
-      emit("sub RSP, %d", op.localBytes());
+      // this may over-allocate, but /shrug.
+      int bytes = 16 * (op.localBytes() / 16 + 1);
+      bytes = op.localBytes();
+      emit("sub RSP, %d", bytes);
     }
+    // MUST PUSH XMMs FIRST
     RegisterState rs = new RegisterState(emitter);
     rs.push(Register.NONVOLATILE_REGISTERS);
   }
@@ -670,7 +674,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     callGenerator.generate(op);
     ProcSymbol procSym = op.procSym();
     if (procSym.isExtern()) {
-      emitter.emitExternCall(op.procSym().name());
+      emitter.addExtern(op.procSym().name());
+            emitter.emitExternCall(op.procSym().name());
     } else {
       emit("\n  call %s\n", op.procSym().mungedName());
     }

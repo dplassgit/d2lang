@@ -99,5 +99,6 @@ class PrintGenerator {
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
     }
+    emitter.emitExternCall("_flushall");
   }
 }
