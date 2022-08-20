@@ -52,4 +52,8 @@ public class ProcSymbol extends AbstractSymbol {
   public Position position() {
     return node.position();
   }
+
+  public boolean isExtern() {
+    return false;
+  }
 }

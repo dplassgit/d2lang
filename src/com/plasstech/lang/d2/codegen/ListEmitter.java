@@ -47,9 +47,9 @@ public class ListEmitter implements Emitter {
   @Override
   public void emitExternCall(String call) {
     addExtern(call);
-    emit("sub RSP, 0x20");
+    emit("sub RSP, 0x28");
     emit("call %s", call);
-    emit("add RSP, 0x20");
+    emit("add RSP, 0x28");
   }
 
   @Override

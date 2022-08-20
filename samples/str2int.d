@@ -11,8 +11,14 @@ str2int: proc(s: string): int {
   return val
 }
 
+atoi: extern proc(s:string):int
+
 main {
   println "Should be 314159:"
   pi = str2int("314" + "159 ")
+  println pi
+
+  println "Should also be 314159:"
+  pi = atoi(" 314" + "159 ")
   println pi
 }

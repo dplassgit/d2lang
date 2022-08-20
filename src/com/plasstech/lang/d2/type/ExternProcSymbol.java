@@ -29,4 +29,9 @@ public class ExternProcSymbol extends ProcSymbol {
     // yeah I know this is a violation of LSP
     throw new IllegalStateException("Should not try to get symbol table of EXTERN PROC");
   }
+
+  @Override
+  public boolean isExtern() {
+    return true;
+  }
 }

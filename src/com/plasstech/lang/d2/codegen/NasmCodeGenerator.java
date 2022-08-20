@@ -38,7 +38,7 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
-import com.plasstech.lang.d2.type.ExternProcSymbol;
+import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -113,12 +113,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     prelude.add("global main\n");
 
     SymTab globals = input.symbolTable();
-    // 1. emit all globals
-    for (ExternProcSymbol extern : globals.externProcs()) {
-      emitter.addExtern(extern.mungedName());
-    }
-
-    // 2. emit all string constants
+    // emit all string constants
     for (Map.Entry<String, Symbol> entry : globals.variables().entrySet()) {
       Symbol symbol = entry.getValue();
       if (symbol.storage() == SymbolStorage.GLOBAL) {
@@ -673,7 +668,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     emit("; set up actuals");
     callGenerator.generate(op);
-    emit("\n  call %s\n", op.procSym().mungedName());
+    ProcSymbol procSym = op.procSym();
+    if (procSym.isExtern()) {
+      emitter.emitExternCall(op.procSym().name());
+    } else {
+      emit("\n  call %s\n", op.procSym().mungedName());
+    }
     Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();
