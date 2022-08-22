@@ -764,13 +764,10 @@ execute:proc(command:string, full_command:string) {
       map(p)
     }
   } elif command=="FLE" {
-    println "Fhowing fleet"
     show_fleet(fleet)
   } elif command=="CHE" {
-    println "Fhowing cheat"
     cheat()
   } elif command=="HEL" {
-    println "Fhowing hel"
     help()
   } elif command=="GAL" {
     info(planets[0])
@@ -808,7 +805,7 @@ execute:proc(command:string, full_command:string) {
       }
     }
   } else {
-    print "Don't know how to do " print full_command print " yet, sorry. Try HELP"
+    println "Don't know how to do that, sorry. Try HELP"
   }
 }
 
