@@ -620,7 +620,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("mov RBP, RSP");
       // this may over-allocate, but /shrug.
       int bytes = 16 * (op.localBytes() / 16 + 1);
-      bytes = op.localBytes();
       emit("sub RSP, %d", bytes);
     }
     // MUST PUSH XMMs FIRST
@@ -674,10 +673,21 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     callGenerator.generate(op);
     ProcSymbol procSym = op.procSym();
     if (procSym.isExtern()) {
-      emitter.addExtern(op.procSym().name());
-            emitter.emitExternCall(op.procSym().name());
+      String alignedLabel = resolver.nextLabel("aligned");
+      String afterLabel = resolver.nextLabel("afterExternCall");
+      String externName = procSym.name();
+      emitter.addExtern(externName);
+      emitter.emit("test rsp, 8");
+      emitter.emit("je %s ; not a multiple of 8, it's aligned", alignedLabel);
+      emitter.emit("sub RSP, 0x28");
+      emitter.emit("call %s", externName);
+      emitter.emit("add RSP, 0x28");
+      emitter.emit("jmp %s", afterLabel);
+      emitter.emitLabel(alignedLabel);
+      emitter.emitExternCall(externName);
+      emitter.emitLabel(afterLabel);
     } else {
-      emit("\n  call %s\n", op.procSym().mungedName());
+      emit("call %s", procSym.mungedName());
     }
     Register tempReg = null;
     if (op.destination().isPresent()) {

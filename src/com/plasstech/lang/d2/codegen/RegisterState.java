@@ -80,7 +80,6 @@ public class RegisterState {
     @Override
     public void visit(MmxRegister r) {
       emitter.emit("sub RSP, 0x10"); // 16 bytes, to store the whole 128 bits
-      //      emitter.emit("movdqu [RSP], %s", r.name());
       emitter.emit("movq [RSP], %s", r.name());
     }
   }
@@ -93,7 +92,6 @@ public class RegisterState {
 
     @Override
     public void visit(MmxRegister r) {
-      //      emitter.emit("movdqu %s, [RSP]", r.name64());
       emitter.emit("movq %s, [RSP]", r.name64());
       emitter.emit("add RSP, 0x10");
     }

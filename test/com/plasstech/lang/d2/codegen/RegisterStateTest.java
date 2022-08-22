@@ -39,7 +39,7 @@ public class RegisterStateTest {
     Register register = registers.allocate(VarType.DOUBLE);
     assertThat(register).isEqualTo(MmxRegister.XMM4);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
-    assertThat(emitter.all()).containsAtLeast("  sub RSP, 0x10", "  movdqu [RSP], XMM4").inOrder();
+    assertThat(emitter.all()).containsAtLeast("  sub RSP, 0x10", "  movq [RSP], XMM4").inOrder();
   }
 
   @Test
@@ -80,8 +80,8 @@ public class RegisterStateTest {
         .containsAtLeast(
             "  push RCX",
             "  sub RSP, 0x10",
-            "  movdqu [RSP], XMM1",
-            "  movdqu XMM1, [RSP]",
+            "  movq [RSP], XMM1",
+            "  movq XMM1, [RSP]",
             "  add RSP, 0x10",
             "  pop RCX")
         .inOrder();

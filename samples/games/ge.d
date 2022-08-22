@@ -363,16 +363,11 @@ abs:proc(x:double):double {
 
 sqrt:extern proc(d:double):double
 
-xd:double
 calc_distance:proc(p1:PlanetType, p2:PlanetType): double {
   xd = tod(p1.x-p2.x)
   yd = tod(p1.y-p2.y)
   dist = xd*xd+yd*yd
-  print "square of dist = " println dist
-  print "sqrt of dist = " println sqrt(dist)
-  xd=sqrt(dist)
- return xd
-//  return sqrt(dist)
+  return sqrt(dist)
 }
 
 
@@ -813,7 +808,7 @@ execute:proc(command:string, full_command:string) {
       }
     }
   } else {
-    println "Don't know how to do that yet, sorry. Try HELP"
+    print "Don't know how to do " print full_command print " yet, sorry. Try HELP"
   }
 }
 
@@ -856,9 +851,6 @@ main {
   help()
   initPlanets()
   initFleet()
-
-//  info(planets[12])
- // execute("INF", "INFO o")
   mainLoop()
 }
 

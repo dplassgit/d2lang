@@ -1,6 +1,6 @@
 sqrt: extern proc(d:double):double
 
-// this seems to work
+// fails.
 asqrt: proc(d:double):double {
   return sqrt(d)
 }
