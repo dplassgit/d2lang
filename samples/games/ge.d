@@ -89,7 +89,7 @@ SIZE=50
 planets: PlanetType[NUM_PLANETS]
 gameinfo: GameInfoType
 fleet: FleetType
-galmap:int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
+galmap: int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 
 
 /////////////////////////////////////////////////////////
@@ -97,42 +97,42 @@ galmap:int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 /////////////////////////////////////////////////////////
 
 PlanetType: record {
-  id:int
-  x:int y:int    // location (0-50)
-  civ_level:int    // primitive, limited, advanced, etc.
-  status:int     // 1=occupied, 2=empire, 0=independent
-  status_changed:bool  // 1 if status just changed, 0 if not. WHY?!
-  name:string
-  abbrev:string    // first letter of planet
-  population:double   // in millions
-  assets:double[5]  // amount of each type on hand: food, fuel, parts, troops, money
-  prod_ratio:int[5]   // ratio of each type of asset production
-  prices:int[2]    // food, fuel (note can only buy if status=empire)
-  sats_arrive:int[3]  // arrival date (in DAYS) of each satellite
-  sats_orbit:int    // # of satellites in orbit
-  sats_enroute:int  // # of satellites en route
-  troops:int    // # of troops on surface, or # of occupation troops
-  fighters:int     // # of fighters in orbit, or # of occupation fighters
-  occupied_on:int    // date (years) planet was occupied
+  id: int
+  x: int y: int    // location (0-50)
+  civ_level: int    // primitive, limited, advanced, etc.
+  status: int     // 1=occupied, 2=empire, 0=independent
+  status_changed: bool  // 1 if status just changed, 0 if not. WHY?!
+  name: string
+  abbrev: string    // first letter of planet
+  population: double   // in millions
+  assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money
+  prod_ratio: int[5]   // ratio of each type of asset production
+  prices: int[2]    // food, fuel (note can only buy if status=empire)
+  sats_arrive: int[3]  // arrival date (in DAYS) of each satellite
+  sats_orbit: int    // # of satellites in orbit
+  sats_enroute: int  // # of satellites en route
+  troops: int    // # of troops on surface, or # of occupation troops
+  fighters: int     // # of fighters in orbit, or # of occupation fighters
+  occupied_on: int    // date (years) planet was occupied
 }
 
 FleetType: record {
-  location:PlanetType  // pointer to planet struct in global array
-  assets:double[5]    // amount of each type on hand: food, fuel, parts, troops, money
-  carriers:int[2]   // # of food, fuel carriers; they carry 1000 units each
-  etrans:int    // empty transports (full transports = assets[TROOPS])
-  fighters:int     // # of fighters
-  satellites:int   // in inventory
+  location: PlanetType  // pointer to planet struct in global array
+  assets: double[5]    // amount of each type on hand: food, fuel, parts, troops, money
+  carriers: int[2]   // # of food, fuel carriers; they carry 1000 units each
+  etrans: int    // empty transports (full transports = assets[TROOPS])
+  fighters: int     // # of fighters
+  satellites: int   // in inventory
 }
 
 GameInfoType: record {
-  date:int  // days since start. 100 days per "year"
-  level:int  // difficulty level
-  status:int   // in progress, lost, won
+  date: int  // days since start. 100 days per "year"
+  level: int  // difficulty level
+  status: int   // in progress, lost, won
 
-  num_empire:int
-  num_independent:int
-  num_occupied:int
+  num_empire: int
+  num_independent: int
+  num_occupied: int
 }
 
 
@@ -140,12 +140,11 @@ GameInfoType: record {
 // INITIALIZERS
 /////////////////////////////////////////////////////////
 
-initPlanets:proc {
+initPlanets: proc {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = new PlanetType
     planets[i] = p
 
-//    name =
     p.name = NAMES[i]
     p.abbrev = p.name[0]
 
@@ -153,11 +152,11 @@ initPlanets:proc {
     p.x = random(SIZE)
     p.y = random(SIZE)
 
-    // set galmap[x,y] to planet name letter
+    // set galmap[x, y] to planet name letter
     galmap[p.x+SIZE*p.y] = asc(p.abbrev)
 
     // TODO: Randomize all of these +/- level*2 %
-    if (i != 0) {
+    if i != 0 {
       // 2. assign population based on level
       // the higher the level the more pop
       // min is 16, max is 100 to start
@@ -266,7 +265,7 @@ initPlanets:proc {
   }
 }
 
-initFleet:proc {
+initFleet: proc {
   fleet = new FleetType
   fleet.location = planets[0]
 
@@ -308,10 +307,10 @@ initFleet:proc {
 // MATHS
 /////////////////////////////////////////////////////////
 
-DS=[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0]
+DS=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
 
 // int to double.
-tod: proc(i:int):double {
+tod: proc(i: int): double {
   neg = false
   if i < 0 {neg = true i = -i}
   d=0.0
@@ -326,61 +325,43 @@ tod: proc(i:int):double {
 }
 
 // double to int
-toi: proc(d:double): int {
-  neg = false
-  if d < 0.0 {neg = true d = -d}
-  i = 0
-  dplace = 100000.0
-  iplace = 100000
-  while iplace > 0 {
-    while d > dplace {
-      d = d - dplace
-      i = i + iplace
-    }
-    iplace = iplace / 10
-    dplace = dplace / 10.0
-  }
-  if neg {i = -i}
-  return i
+lround: extern proc(x: double): int
+
+toi: proc(d: double): int {
+  return lround(d)
 }
 
-
 // a*x+b
-ax_b:proc(x:int, a:int, b:int):int { return a*x+b }
+ax_b: proc(x: int, a: int, b: int): int { return a*x+b }
 
 // a*x*x+b*x+c
-abc:proc(a:double, b:double, c:double, x:double):double {
+abc: proc(a: double, b: double, c: double, x: double): double {
   return a*x*x+b*x+c
 }
 
-min:proc(a:int, b:int):int { if a < b { return a } return b }
-max:proc(a:int,b:int):int { if a > b { return a } return b }
+min: proc(a: int, b: int): int { if a < b { return a } return b }
+max: proc(a: int, b: int): int { if a > b { return a } return b }
 
-abs:proc(x:double):double {
-  if x < 0.0 { return -x}
-  return x
-}
+sqrt: extern proc(d: double): double
 
-sqrt:extern proc(d:double):double
-
-calc_distance:proc(p1:PlanetType, p2:PlanetType): double {
+calc_distance: proc(p1: PlanetType, p2: PlanetType): double {
   xd = tod(p1.x-p2.x)
   yd = tod(p1.y-p2.y)
   dist = xd*xd+yd*yd
   return sqrt(dist)
 }
 
-
+// TOOD: use rand()
 RANDOM_MOD=65535
 
 // Get a random number from 0 to 'range' exclusive
-random:proc(range:int):int {
+random: proc(range: int): int {
   return (next_random() * range)/RANDOM_MOD
 }
 
-last_rand:int
+last_rand: int
 // returns a random number from 0 to RANDOM_MOD (exclusive)
-next_random:proc:int {
+next_random: proc: int {
   // m=modulus, a=multiplier, c=increment
   a=75 c=74
   last_rand = ((last_rand * a) + c) % RANDOM_MOD
@@ -392,7 +373,7 @@ next_random:proc:int {
 // UTILITIES
 /////////////////////////////////////////////////////////
 
-calculate_game_status:proc:int {
+calculate_game_status: proc: int {
   if gameinfo.status != IN_PROGRESS {return gameinfo.status}
   if gameinfo.date > (4100*100) {
     return LOST
@@ -402,13 +383,13 @@ calculate_game_status:proc:int {
   }
 }
 
-toUpper:proc(ss:string):string{
+toUpper: proc(ss: string): string {
   s = asc(ss)
   if s >= asc('a') and s <= asc('z') { return chr(s - (asc('a') - asc('A'))) }
   return ss[0]
 }
 
-trim:proc(s:string):string {
+trim: proc(s: string): string {
   r = ''
   i = 0 while i < min(length(s), 3) do i = i + 1 {
     c = s[i]
@@ -428,7 +409,7 @@ toString: proc(i: int): string {
   return val
 }
 
-format_date:proc(d:int):string {
+format_date: proc(d: int): string {
   year = d/100
   days = d%100
   result = toString(year) + "."
@@ -439,7 +420,7 @@ format_date:proc(d:int):string {
 
 
 // Count the # of planets with this status
-count_planets:proc(status:int): int {
+count_planets: proc(status: int): int {
   count=0
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
@@ -450,7 +431,7 @@ count_planets:proc(status:int): int {
   return count
 }
 
-find_planet:proc(planet:string): PlanetType {
+find_planet: proc(planet: string): PlanetType {
   planet = toUpper(planet)
   first = asc(planet[0]) - asc('A')
   if first < 0 or first > 25 {
@@ -464,18 +445,18 @@ find_planet:proc(planet:string): PlanetType {
   }
 }
 
-calc_fuel_needed: proc(dist:double): double {
+calc_fuel_needed: proc(dist: double): double {
   food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
-  return food*dist/10.0
+  return food * dist / 10.0
 }
 
-calc_food_needed:proc(dist:double): double {
+calc_food_needed: proc(dist: double): double {
   fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
-           fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
-  return fuel*dist/10.0
+         fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
+  return fuel * dist / 10.0
 }
 
-move_sats:proc(p:PlanetType) {
+move_sats: proc(p: PlanetType) {
   if p.sats_enroute > 0 {
     j = 0 while j < 3 do j = j + 1 {
       sats_arrive = p.sats_arrive
@@ -490,11 +471,12 @@ move_sats:proc(p:PlanetType) {
   }
 }
 
+
 /////////////////////////////////////////////////////////
 // COMMANDS
 /////////////////////////////////////////////////////////
 
-elapse:proc(days:int) {
+elapse: proc(days: int) {
   gameinfo.date = gameinfo.date + days
 
   i = 1 while i < NUM_PLANETS do i = i + 1 {
@@ -508,7 +490,7 @@ elapse:proc(days:int) {
   }
 }
 
-cheat:proc() {
+cheat: proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
     println "----------------------------------------------------------"
@@ -517,7 +499,8 @@ cheat:proc() {
   }
 }
 
-show_planet:proc(p:PlanetType, cheat:bool) {
+
+show_planet: proc(p: PlanetType, cheat: bool) {
   print "PLANET INFO: "
   sats = p.sats_orbit
   if cheat or fleet.location == p {
@@ -569,7 +552,7 @@ show_planet:proc(p:PlanetType, cheat:bool) {
       println ""
     }
   }
-  
+
   distance = calc_distance(fleet.location, p)
   print "Distance:       " println distance
   print "Estimated food: " println calc_food_needed(distance)
@@ -579,7 +562,7 @@ show_planet:proc(p:PlanetType, cheat:bool) {
 }
 
 // Shows info about the fleet
-show_fleet:proc(fleet:FleetType) {
+show_fleet: proc(fleet: FleetType) {
   print "FLEET AT: " println fleet.location.name
   i = 0 while i < 5 do i = i + 1 {
     print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
@@ -594,10 +577,10 @@ show_fleet:proc(fleet:FleetType) {
 }
 
 // Shows the galaxy around the given planet.
-map:proc(planet:PlanetType) {
+map: proc(planet: PlanetType) {
   left_top_x = max(0, planet.x-12)
   left_top_y = max(0, planet.y-12)
-  // left_top_x,y cannot be within 24 of the size
+  // left_top_x, y cannot be within 24 of the size
   left_top_x = min(left_top_x, SIZE-24)
   left_top_y = min(left_top_y, SIZE-24)
   //print "at " print left_top_x print ", " println left_top_y
@@ -630,11 +613,11 @@ map:proc(planet:PlanetType) {
 }
 
 // print info about the given planet
-info:proc(p:PlanetType) {
+info: proc(p: PlanetType) {
   show_planet(p, false)
 }
 
-sat:proc(p:PlanetType) {
+sat: proc(p: PlanetType) {
   if p.status == EMPIRE {
     println "Don't need to send satellites to an empire planet!"
     return
@@ -665,7 +648,7 @@ sat:proc(p:PlanetType) {
 
 
 // Embark, if we have enough fuel and food
-emb:proc(p:PlanetType) {
+emb: proc(p: PlanetType) {
   if fleet.location == p {
     print "Already at " println p.name
     return
@@ -728,7 +711,7 @@ QUIt
 "
 }
 
-execute:proc(command:string, full_command:string) {
+execute: proc(command: string, full_command: string) {
   if command=='QUI' {
     gameinfo.status=QUIT
   } elif command == 'SLE' {
@@ -810,7 +793,6 @@ execute:proc(command:string, full_command:string) {
 }
 
 
-
 mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
@@ -840,7 +822,7 @@ main {
   gameinfo.level = 5
   print "Difficulty level is " println gameinfo.level
 
-  // TODO: ask for seed
+  // TODO: use time: extern proc(ignored: int): int for seed
   seed=1337
   // print "Random seed is " println seed
   last_rand=seed
