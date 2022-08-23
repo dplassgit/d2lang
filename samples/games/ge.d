@@ -461,11 +461,16 @@ calc_food_needed: proc(dist: double): double {
 }
 
 move_sats: proc(p: PlanetType) {
+  first = true
   if p.sats_enroute > 0 {
     j = 0 while j < 3 do j = j + 1 {
       sats_arrive = p.sats_arrive
       if sats_arrive[j] > 0 and sats_arrive[j] < gameinfo.date {
         // it arrived!
+        if first {
+          println ""
+          first = false
+        }
         print "Satellite arrived at " println p.name
         sats_arrive[j] = 0
         p.sats_enroute = p.sats_enroute - 1
@@ -580,32 +585,32 @@ show_fleet: proc(fleet: FleetType) {
   elapse(10)
 }
 
-// Shows the galaxy around the given planet.
+// Shows the galaxy around the given planet in a 24x12 window
 map: proc(planet: PlanetType) {
-  left_top_x = max(0, planet.x-12)
+  left_top_x = max(0, planet.x-24)
   left_top_y = max(0, planet.y-12)
   // left_top_x, y cannot be within 24 of the size
-  left_top_x = min(left_top_x, SIZE-24)
+  left_top_x = min(left_top_x, SIZE-48)
   left_top_y = min(left_top_y, SIZE-24)
   //print "at " print left_top_x print ", " println left_top_y
   print "+"
-  x = 0 while x < 24 do x = x + 1 {
+  x = 0 while x < 48 do x = x + 1 {
     print "-"
   }
   println "+"
   y = 0 while y < 24 do y = y + 1 {
     print "|"
-    x = 0 while x < 24 do x = x + 1 {
+    x = 0 while x < 48 do x = x + 1 {
       cell = galmap[x + left_top_x+ SIZE*(y+left_top_y)]
       if cell == 0 {print " "} else {
         print chr(cell)
       }
     }
-    // TODO: show information about the planet(s) on this line
     println "|"
+    // TODO: show information about the planet(s) on this line
   }
   print "+"
-  x = 0 while x < 24 do x = x + 1 {
+  x = 0 while x < 48 do x = x + 1 {
     print "-"
   }
   println "+"
@@ -694,13 +699,13 @@ attack: proc(location: PlanetType) {
     println "Cannot attack an EMPIRE planet."
     return
   }
-  print "Attacking " println location.name
+  print "Attacking " println location.name println ""
   battle_location=LAND
   if location.civ_level >= ADVANCED {
-    println "Space battle commencing:"
+    println "Space battle commencing..."
     battle_location=SPACE
   } else {
-    println "Land battle commencing:"
+    println "Land battle commencing..."
   }
   running = true
   iters = 0
@@ -762,9 +767,8 @@ attack: proc(location: PlanetType) {
       // TODO: delay a little bit, for dramatic effect
 
     } elif us >= 0 and them == 0 {
-      // if we're doing space battle, show the 'land battle' button
       if (battle_location == SPACE) {
-        println "\nSpace battle won! Proceeding to land battle!"
+        println "\nSpace battle won! Proceeding to land battle...\n"
         battle_location = LAND
       } else {
         println "\nLand battle won!"
