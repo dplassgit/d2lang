@@ -23,6 +23,7 @@ CIV_LEVELS=["Primitive", "Limited", "Advanced", "Superior"]
 // Game status
 IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 
+SPACE = 0 LAND = 1
 
 /////////////////////////////////////////////////////////
 // CONSTANTS
@@ -314,15 +315,18 @@ tod: proc(i: int): double {
   neg = false
   if i < 0 {neg = true i = -i}
   d=0.0
+  place = 1.0
   while i > 0 {
     last = i%10
-    // I hate this, lol
-    d = d * 10.0 + DS[last]
+    // I hate this
+    d = d + place * DS[last]
+    place = place * 10.0
     i = i / 10
   }
-  if neg {d = -d}
+  if neg {return -d}
   return d
 }
+
 
 // double to int
 lround: extern proc(x: double): int
@@ -685,6 +689,98 @@ emb: proc(p: PlanetType) {
   }
 }
 
+attack: proc(location: PlanetType) {
+  if location.status == EMPIRE {
+    println "Cannot attack an EMPIRE planet."
+    return
+  }
+  print "Attacking " println location.name
+  battle_location=LAND
+  if location.civ_level >= ADVANCED {
+    println "Space battle commencing:"
+    battle_location=SPACE
+  } else {
+    println "Land battle commencing:"
+  }
+  running = true
+  iters = 0
+  casualties = 0.0
+  while running {
+    if battle_location == SPACE {
+      us = fleet.fighters
+      them = location.fighters
+    } else {
+      us = lround(fleet.assets[TROOPS])
+      them = location.troops
+    }
+
+    effective_them = them
+    // superior fights 50% better!
+    // advanced fights the same
+    // limited fights 75% as well
+    // primitive fights half as well
+    // so adjust the 'effective' size of their fleet.
+
+    if location.civ_level == SUPERIOR { effective_them = 3*them/2 }
+    elif location.civ_level == LIMITED { effective_them = 3*them/4 }
+    elif location.civ_level == PRIMITIVE { effective_them = them/2 }
+
+    if us > 0 and them > 0 {
+      // probability of each one-on one-battle of being won by empire is
+      // # of empire ships/(# of empire ships+# of enemy ships)
+      // use 'effective_them' to determine probability
+      // but just 'them' every where else
+      prob = (10000*us)/(100*(us + effective_them))
+
+      if (prob > random(100)) {
+        // then we win!
+        them = them - 1
+      } else {
+        // then we lose
+        us = us - 1
+      }
+      casualties = casualties + 1.0
+
+      // update the number in memory
+      if battle_location == SPACE {
+        fleet.fighters = us
+        location.fighters = them
+      } else {
+        a = fleet.assets
+        a[TROOPS] = tod(us)
+        location.troops = them
+      }
+
+      // draw the #s
+      if (iters%10) == 0 {
+        print "Empire forces: " print us
+        print ". Enemy forces: " print them
+        print ". Winning probability: " print prob println "%"
+      }
+
+      // TODO: every few iterations, ask if the user wants to continue.
+      // TODO: delay a little bit, for dramatic effect
+
+    } elif us >= 0 and them == 0 {
+      // if we're doing space battle, show the 'land battle' button
+      if (battle_location == SPACE) {
+        println "\nSpace battle won! Proceeding to land battle!"
+        battle_location = LAND
+      } else {
+        println "\nLand battle won!"
+        break
+      }
+    } elif us == 0 {
+      println "\nYou lost."
+      break
+    }
+    iters = iters + 1
+  }
+  if (casualties > 0.0) {
+    elapse(lround(casualties/10.0+100.0))
+  }
+}
+
 
 help: proc {
   println
@@ -695,7 +791,7 @@ INFo: get info about a planet, its distance, and estimated fuel & time to get th
 GALactica: get info about Galactica
 SATellites: Send satellites to non-empire planets
 EMBark to another planet (if have enough fuel), time elapses
-*ATTack the planet where the fleet is. (Only on non-empire planets)
+ATTack the planet where the fleet is. (Only on non-empire planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
 *DRAft troops (only on empire planets)
@@ -752,6 +848,8 @@ execute: proc(command: string, full_command: string) {
     cheat()
   } elif command=="HEL" {
     help()
+  } elif command=="ATT" {
+    attack(fleet.location)
   } elif command=="GAL" {
     info(planets[0])
   } elif command=="INF" {
