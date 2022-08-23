@@ -120,6 +120,73 @@ public class NasmCodeGeneratorTestBase {
     assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }
 
+  public void assertCompiledOutput(String sourceCode, String filename, String expectedOutput)
+      throws Exception {
+    String sourceFilename = filename + "_opt_" + String.valueOf(optimize);
+
+    State state = State.create(sourceCode).build();
+    state = state.addFilename(sourceFilename);
+
+    Lexer lexer = new Lexer(state.sourceCode());
+    Parser parser = new Parser(lexer);
+    state = parser.execute(state);
+    state.throwOnError();
+
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    state.throwOnError();
+
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
+    state.throwOnError();
+    if (optimize) {
+      // Runs all the optimizers.
+      ILOptimizer optimizer = new ILOptimizer();
+      state = optimizer.execute(state);
+      state.throwOnError();
+    }
+    state = new NasmCodeGenerator().execute(state);
+
+    String asmCode = Joiner.on('\n').join(state.asmCode());
+    System.err.println(asmCode);
+    state.throwOnError();
+
+    File file = new File(dir, filename + ".asm");
+    if (file.exists()) {
+      file.delete();
+    }
+    file.createNewFile();
+
+    CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
+    charSink.writeLines(state.asmCode());
+
+    ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
+    pb.directory(dir);
+    Process process = pb.start();
+    process.waitFor();
+    assertNoProcessError(process, "nasm", 0);
+
+    File obj = new File(dir, filename + ".obj");
+    File exe = new File(dir, filename);
+    pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
+    pb.directory(dir);
+    process = pb.start();
+    process.waitFor();
+    assertNoProcessError(process, "Linking", 0);
+
+    pb = new ProcessBuilder(exe.getAbsolutePath());
+    pb.directory(dir);
+    process = pb.start();
+    process.waitFor();
+    InputStream stream = process.getInputStream();
+    assertNoProcessError(process, "Executable", 0);
+
+    String compiledOutput = new String(ByteStreams.toByteArray(stream));
+
+    // the compiler converts \n to \r\n, so we have to do the same.
+    assertThat(compiledOutput).isEqualTo(expectedOutput);
+  }
+
   private void assertNoProcessError(Process process, String name, int exitCode) throws IOException {
     if (process.exitValue() != exitCode) {
       InputStream stream = process.getErrorStream();

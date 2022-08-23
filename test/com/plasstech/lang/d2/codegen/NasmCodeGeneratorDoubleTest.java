@@ -166,4 +166,34 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
           "f:proc:double{a=0.0 b=1.0/a return b} f()", "divisionByZeroLocal", "Division by 0");
     }
   }
+
+  @Test
+  public void stackAlignment() throws Exception {
+    String sqrt =
+        "      sqrt: extern proc(d:double):double "
+            + "asqrt: proc(d:double):double {return sqrt(d)} "
+            + "bsqrt: proc(d:double):double {f=sqrt(d) return f} "
+            + "csqrt: proc(d:double):double {e=d f=sqrt(e) return f} "
+            + "dd:double dsqrt: proc(d:double):double {dd=sqrt(d) return dd} "
+            + "print 'aextern Should be 153.045745: ' println asqrt(23423.0) "
+            + "print 'bextern Should be 153.045745: ' println bsqrt(23423.0) "
+            + "print 'cextern Should be 153.045745: ' println csqrt(23423.0) "
+            + "print 'dextern Should be 153.045745: ' println dsqrt(23423.0) ";
+    assertCompiledOutput(
+        sqrt,
+        "sqrt",
+        "aextern Should be 153.045745: 153.045745\r\n"
+            + "bextern Should be 153.045745: 153.045745\r\n"
+            + "cextern Should be 153.045745: 153.045745\r\n"
+            + "dextern Should be 153.045745: 153.045745\r\n");
+  }
+
+  @Test
+  public void stackAlignment2() throws Exception {
+    String sqrt =
+        "      sqrt: extern proc(d:double):double "
+            + "bsqrt: proc(a:bool, d:double):double {b=a f=sqrt(d) return f} "
+            + "print 'bextern Should be 153.045745: ' println bsqrt(false, 23423.0) ";
+    assertCompiledOutput(sqrt, "sqrt", "bextern Should be 153.045745: 153.045745\r\n");
+  }
 }
