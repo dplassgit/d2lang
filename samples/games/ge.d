@@ -4,6 +4,10 @@
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 
+atoi: extern proc(s:string):int
+lround: extern proc(x: double): int
+sqrt: extern proc(d: double): double
+
 
 /////////////////////////////////////////////////////////
 // ENUMERATIONS
@@ -328,7 +332,6 @@ tod: proc(i: int): double {
 
 
 // double to int
-lround: extern proc(x: double): int
 
 toi: proc(d: double): int {
   return lround(d)
@@ -345,7 +348,6 @@ abc: proc(a: double, b: double, c: double, x: double): double {
 min: proc(a: int, b: int): int { if a < b { return a } return b }
 max: proc(a: int, b: int): int { if a > b { return a } return b }
 
-sqrt: extern proc(d: double): double
 
 calc_distance: proc(p1: PlanetType, p2: PlanetType): double {
   xd = tod(p1.x-p2.x)
@@ -492,6 +494,66 @@ rebel: proc(p: PlanetType, days: double) {
   }
 }
 
+
+maybe_join_empire: proc(planet: PlanetType) {
+  if planet.troops > 0 and
+    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or planet.civ_level < ADVANCED) {
+
+    // troops & fighters are > 0
+    // (if limited/primitive the fighters can be 0...)
+    years_since = (gameinfo.date - planet.occupied_on)/100
+    if (years_since > random(4 * gameinfo.level)) {
+      print planet.name println " joined the empire!"
+
+      // and planet has been occupied for random(4*level)
+      // years, it joins the empire;
+      set_status(planet, EMPIRE)
+
+      // reset all assets, sorry dude (REALLY?!)
+      planet.troops = 0
+      planet.fighters = 0
+      a = planet.assets
+      i = 0 while i < 5 do i = i + 1 {
+        a[i] = a[i] / 2.0
+      }
+
+      planet.sats_orbit = 3
+      planet.sats_enroute = 0
+    }
+  }
+}
+
+
+adjust_planet_counts: proc(status:int, direction: int) {
+  if status == INDEPENDENT {
+    gameinfo.num_independent = gameinfo.num_independent + direction
+  } elif status == OCCUPIED {
+    gameinfo.num_occupied = gameinfo.num_occupied + direction
+  } else {
+    gameinfo.num_empire = gameinfo.num_empire + direction
+  }
+}
+
+set_status: proc(p: PlanetType, new_status: int) {
+  if p.status != new_status {
+    adjust_planet_counts(new_status, +1)
+    adjust_planet_counts(p.status, -1)
+    p.status = new_status
+  }
+}
+
+
+// TODO(bug#155): we can't write fleet.assets[TROOPS] = fleet.assets[TROOPS] + 1.0
+add_assets:proc(assets:double[], index: int, amount:double): double {
+  // don't let it go negative
+  assets[index] = assets[index] + amount
+  if assets[index] < 0.5 {
+    assets[index] = 0.0
+  }
+  return assets[index]
+}
+
+
 /////////////////////////////////////////////////////////
 // COMMANDS
 /////////////////////////////////////////////////////////
@@ -521,51 +583,6 @@ elapse: proc(days: int) {
   }
 }
 
-maybe_join_empire: proc(planet: PlanetType) {
-  if planet.troops > 0 and
-    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or planet.civ_level < ADVANCED) {
-
-    // troops & fighters are > 0
-    // (if limited/primitive the fighters can be 0...)
-    years_since = (gameinfo.date - planet.occupied_on)/100
-    if (years_since > random(4 * gameinfo.level)) {
-      print planet.name println " joined the empire!"
-
-      // and planet has been occupied for random(4*level)
-      // years, it joins the empire;
-      set_status(planet, EMPIRE)
-
-      // reset all assets, sorry dude (REALLY?!)
-      planet.troops = 0
-      planet.fighters = 0
-      i = 0 while i < 5 do i = i + 1 {
-        a = planet.assets
-        a[i] = a[i] / 2.0
-      }
-
-      planet.sats_orbit = 3
-      planet.sats_enroute = 0
-    }
-  }
-}
-
-adjust_planet_counts: proc(status:int, direction: int) {
-  if status == INDEPENDENT {
-    gameinfo.num_independent = gameinfo.num_independent + direction
-  } elif status == OCCUPIED {
-    gameinfo.num_occupied = gameinfo.num_occupied + direction
-  } else {
-    gameinfo.num_empire = gameinfo.num_empire + direction
-  }
-}
-
-set_status: proc(p: PlanetType, new_status: int) {
-  if p.status != new_status {
-    adjust_planet_counts(new_status, +1)
-    adjust_planet_counts(p.status, -1)
-    p.status = new_status
-  }
-}
 
 cheat: proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
@@ -767,7 +784,6 @@ emb: proc(p: PlanetType) {
   }
 }
 
-atoi: extern proc(s:string):int
 
 occupy: proc(location: PlanetType, should_elapse: bool) {
   if location.status != OCCUPIED {
@@ -964,27 +980,96 @@ tax:proc(planet:PlanetType) {
     println "Cannot collect taxes on non-empire planet"
     return
   }
-    // 2. get planetary money
-    money = planet.assets[MONEY]
-    if money > 0.0 {
-      print "Collecting $" print money print " from " println planet.name
-      // if planetary money =0, don't do anything!;
-      // 3. add planetary money to fleet money
-      add_assets(fleet.assets, MONEY, money)
+  // 2. get planetary money
+  money = planet.assets[MONEY]
+  if money > 0.0 {
+    print "Collecting $" print money print " from " println planet.name
+    // if planetary money =0, don't do anything!;
+    // 3. add planetary money to fleet money
+    add_assets(fleet.assets, MONEY, money)
 
-      // 4. set planetary money to 0.
-      add_assets(planet.assets, MONEY, -money)
+    // 4. set planetary money to 0.
+    add_assets(planet.assets, MONEY, -money)
 
-      // 5. update statuses;
-      elapse(10)
+    // 5. update statuses;
+    elapse(10)
   }
 }
 
-// TODO(bug#155): we can't write fleet.assets[TROOPS] = ...
-add_assets:proc(assets:double[], index: int, amount:double): double {
-  assets[index] = assets[index] + amount
-  return assets[index]
+buy:proc(planet:PlanetType) {
+  if planet.status != EMPIRE {
+    println "Cannot buy materials on non-empire planet"
+    return
+  }
+
+  // 1. buy food
+  buy_one_type(fleet, FOOD)
+
+  // 2. if appropriate, buy fuel.
+  if planet.civ_level >= LIMITED {
+    buy_one_type(fleet, FUEL)
+  }
 }
+
+buy_one_type: proc(fleet:FleetType, index:int) {
+  planet = fleet.location
+  available = lround(planet.assets[index])
+  if available > 0 {
+    carry = lround(tod(fleet.carriers[index] * 1000) - fleet.assets[index])
+    afford = lround(fleet.assets[MONEY] / tod(planet.prices[index]))
+
+    while true {
+      // TODO(bug #142): Use % syntax
+      print planet.name print " has " print available print " " print ASSET_TYPE[index] println " units to buy."
+      print "You can afford " print afford println " units."
+      print "You can carry " print carry println " units."
+      print "How many units to purchase (number or 'max')? "
+      samount = input
+      trimmed = trim(samount)
+      if trimmed == 'max' or trimmed == 'MAX' {
+        famount = min(available, min(afford, carry))
+        print "Buying max: " println famount
+      } else {
+        famount = atoi(samount)
+      }
+      if famount == 0 {
+        break
+      }
+      if famount > available {
+        println "Can't buy that much. Try again."
+      } elif famount > carry {
+        println "Can't carry that much. Try again."
+      } elif famount > afford {
+        println "Can't afford that much. Try again."
+      } elif famount < 0 {
+        println "You're killing me smalls."
+      } elif famount > 0 {
+        print "\nA fine " print ASSET_TYPE[index] print "s amount: " println famount
+        print "This cost: " println famount * planet.prices[index]
+        println ""
+        buy_transaction(fleet, index, famount)
+        elapse(25)
+        break
+      }
+      println ""
+    }
+  } else {
+    print "None " print ASSET_TYPE[index] print " available for purchase at " println planet.name
+  }
+}
+
+buy_transaction: proc(fleet: FleetType, index:int, amount:int) {
+  planet = fleet.location
+  //   a. increase fleet assets by value
+  add_assets(fleet.assets, index, tod(amount))
+  //   b. decrease assets by value
+  add_assets(planet.assets, index, -tod(amount))
+  // note, do not increase money of planet, otherwise we can just collect taxes and it would be free...
+  //   c. decrease money (!)
+  add_assets(fleet.assets, MONEY, tod(-amount* planet.prices[index]))
+}
+
+
 
 help: proc {
   println
@@ -1000,8 +1085,8 @@ ATTack the planet where the fleet is. (only on independent planets)
 OCCupy: Set occupation fighters and troops (only on occupied planets)
 DRAft troops (only on empire planets)
 TAXes: Collect taxes (only on empire planets)
+BUY food, fuel (only on empire planets)
 *CONstruct ships (only on empire planets)
-*BUY food, fuel (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *DECommission troops (only on empire planets)
 *SCRap ships (only on empire planets)
@@ -1062,6 +1147,8 @@ execute: proc(command: string, full_command: string) {
     tax(fleet.location)
   } elif command=="GAL" {
     info(planets[0])
+  } elif command=="BUY" {
+    buy(fleet.location)
   } elif command=="INF" {
     if length(full_command) < 6 {
       info(fleet.location)
