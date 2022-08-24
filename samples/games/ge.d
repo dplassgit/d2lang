@@ -7,7 +7,7 @@
 atoi: extern proc(s:string):int
 lround: extern proc(x: double): int
 sqrt: extern proc(d: double): double
-
+time: extern proc(ignored: int): int
 
 /////////////////////////////////////////////////////////
 // ENUMERATIONS
@@ -1218,9 +1218,9 @@ main {
   gameinfo.leveld = tod(gameinfo.level)
   print "Difficulty level is " println gameinfo.level
 
-  // TODO: use time: extern proc(ignored: int): int for seed
-  seed=1337
-  // print "Random seed is " println seed
+  seed=time(0)
+  seed = 1661383298
+  print "Random seed is " println seed
   last_rand=seed
 
   help()
