@@ -448,15 +448,15 @@ find_planet: proc(planet: string): PlanetType {
   }
 }
 
-calc_fuel_needed: proc(dist: double): double {
+calc_food_needed: proc(dist: double): double {
   food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
-  return food * dist / 10.0
+  return (food * dist) / 10.0
 }
 
-calc_food_needed: proc(dist: double): double {
+calc_fuel_needed: proc(dist: double): double {
   fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
          fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
-  return fuel * dist / 10.0
+  return (fuel * dist) / 10.0
 }
 
 move_sats: proc(p: PlanetType) {
@@ -827,8 +827,8 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
 }
 
 attack: proc(location: PlanetType) {
-  if location.status == EMPIRE {
-    println "Cannot attack an EMPIRE planet."
+  if location.status != INDEPENDENT {
+    println "Can only attack an independent planet."
     return
   }
   print "Attacking " println location.name println ""
@@ -923,6 +923,41 @@ attack: proc(location: PlanetType) {
   }
 }
 
+draft: proc(location: PlanetType) {
+  if location.status != EMPIRE{
+    println "Can only draft on an empire planet."
+    return
+  }
+
+  print location.name print " has " print location.assets[TROOPS] println " available."
+  print "The fleet has room for " print fleet.etrans println " additional troops."
+  draftees = 0
+  while true {
+    print "How many troops to draft? "
+    dstring = input
+    draftees = atoi(dstring)
+    if draftees < 0 or draftees > fleet.etrans or tod(draftees) > location.assets[TROOPS] {
+      println "Out of range, try again."
+    } else {
+      break
+    }
+  }
+  if draftees > 0 {
+    // a. decrease etrans by value;
+    fleet.etrans = fleet.etrans - draftees
+    // b. increase troops by value;
+    a = fleet.assets  // this is getting old.
+    ddraftees = tod(draftees)
+    a[TROOPS] = a[TROOPS] + ddraftees
+    // c. decrease men by value;
+    a = location.assets
+    a[TROOPS] = a[TROOPS] - ddraftees
+  }
+
+  elapse(50)
+}
+
+
 
 help: proc {
   println
@@ -935,10 +970,10 @@ SATellites: Send satellites to non-empire planets
 EMBark to another planet (if have enough fuel)
 ATTack the planet where the fleet is. (only on independent planets)
 OCCupy: Set occupation fighters and troops (only on occupied planets)
+DRAft troops (only on empire planets)
+SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
-*DRAft troops (only on empire planets)
-*SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
 *TAXes: Collect taxes (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *DECommission troops (only on empire planets)
@@ -994,6 +1029,8 @@ execute: proc(command: string, full_command: string) {
     attack(fleet.location)
   } elif command=="OCC" {
     occupy(fleet.location, true)
+  } elif command=="DRA" {
+    draft(fleet.location)
   } elif command=="GAL" {
     info(planets[0])
   } elif command=="INF" {
