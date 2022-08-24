@@ -129,6 +129,7 @@ FleetType: record {
 GameInfoType: record {
   date: int  // days since start. 100 days per "year"
   level: int  // difficulty level
+  leveld: double // level, as a double
   status: int   // in progress, lost, won
 
   num_empire: int
@@ -199,7 +200,7 @@ initPlanets: proc {
     } else {
       // Galactica
       // 2. assign population based on level/ the higher the level the lower the pop
-      p.population = 35.0+10.0*(10.0-tod(gameinfo.level*10)/10.0)+tod(random(50))/10.0
+      p.population = 35.0+10.0*(10.0-gameinfo.leveld)+tod(random(50))/10.0
 
       // 3. set civ level to advanced
       p.civ_level = ADVANCED
@@ -239,29 +240,28 @@ initPlanets: proc {
     // food -53.7*level+405.5
     // food 3.3973x2-75.85x+432.41
     assets = p.assets
-    leveld = tod(gameinfo.level)
-    assets[FOOD] = abc(3.3973, -75.85, 432.41, leveld)
+    assets[FOOD] = abc(3.3973, -75.85, 432.41, gameinfo.leveld)
 
     // money -457.4*level+3583
     // money 27.268x2-635.19x+3799
-    assets[MONEY] = abc(27.268, -635.19, 3799.0, leveld)
+    assets[MONEY] = abc(27.268, -635.19, 3799.0, gameinfo.leveld)
 
     // if < advanced, no parts
     if (p.civ_level >= ADVANCED) {
       // planet->assets[PARTS] = ax_b(level, -68, 506)
       // parts 4.4802x2-97.611x+541.88
-      assets[PARTS] = abc(4.4802, -97.611, 541.88, leveld)
+      assets[PARTS] = abc(4.4802, -97.611, 541.88, gameinfo.leveld)
     }
 
     // TROOPS -17.9x + 133.5
     // troops 1.2727x2 - 26.198x + 143.58
-    assets[TROOPS] = abc(1.2727, -26.198, 143.58, leveld)
+    assets[TROOPS] = abc(1.2727, -26.198, 143.58, gameinfo.leveld)
 
     // if primitive, no fuel
     if (p.civ_level > PRIMITIVE) {
       // fuel -29.6x + 233.4
       // fuel 1.7437x2 - 40.969x + 247.21
-      assets[FUEL] = abc(1.7437, -40.969, 247.21, leveld)
+      assets[FUEL] = abc(1.7437, -40.969, 247.21, gameinfo.leveld)
     }
   }
 }
@@ -273,13 +273,12 @@ initFleet: proc {
   // TODO: RANDOMIZE
 
   // initialize based on level
-  leveld = tod(gameinfo.level)
   assets = fleet.assets
   // money = -150*level+2650;
-  assets[MONEY] = abc(0.0, -150.0, 2650.0, leveld)
+  assets[MONEY] = abc(0.0, -150.0, 2650.0, gameinfo.leveld)
 
   // troops=10*(11-level)=110-10*level;
-  assets[TROOPS] = abc(0.0, -10.0, 110.0, leveld)
+  assets[TROOPS] = abc(0.0, -10.0, 110.0, gameinfo.leveld)
 
   // freighters=(-3*level+43)/8;
   carriers = fleet.carriers
@@ -408,7 +407,7 @@ toString: proc(i: int): string {
   }
   val = ''
   while i > 0 do i = i / 10 {
-    val = chr((i % 10) +asc('0')) + val
+    val = chr((i % 10) + asc('0')) + val
   }
   return val
 }
@@ -480,6 +479,18 @@ move_sats: proc(p: PlanetType) {
   }
 }
 
+// Assumes planet is occupied
+rebel: proc(p: PlanetType, days: double) {
+  if (p.troops > 0) {
+    attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.troops)
+    // can't go negative
+    p.troops = max(p.troops - lround(attrition + 0.5), 0)
+  }
+  if (p.fighters > 0) {
+    attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.fighters)
+    p.fighters = max(p.fighters - lround(attrition + 0.5), 0)
+  }
+}
 
 /////////////////////////////////////////////////////////
 // COMMANDS
@@ -494,8 +505,65 @@ elapse: proc(days: int) {
     // produce
     // stockpile
     // rebel
+    if p.status == OCCUPIED {
+      rebel(p, tod(days))
+    }
     // grow
+
     // update status
+    if p.status == OCCUPIED and p.troops == 0 and p.fighters == 0 {
+      print p.name println " went independent again!"
+      // back to independent
+      set_status(p, INDEPENDENT)
+    } elif p.status == OCCUPIED {
+      maybe_join_empire(p)
+    }
+  }
+}
+
+maybe_join_empire: proc(planet: PlanetType) {
+  if planet.troops > 0 and
+    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or planet.civ_level < ADVANCED) {
+
+    // troops & fighters are > 0
+    // (if limited/primitive the fighters can be 0...)
+    years_since = (gameinfo.date - planet.occupied_on)/100
+    if (years_since > random(4 * gameinfo.level)) {
+      print planet.name println " joined the empire!"
+
+      // and planet has been occupied for random(4*level)
+      // years, it joins the empire;
+      set_status(planet, EMPIRE)
+
+      // reset all assets, sorry dude (REALLY?!)
+      planet.troops = 0
+      planet.fighters = 0
+      i = 0 while i < 5 do i = i + 1 {
+        a = planet.assets
+        a[i] = a[i] / 2.0
+      }
+
+      planet.sats_orbit = 3
+      planet.sats_enroute = 0
+    }
+  }
+}
+
+adjust_counts: proc(status:int, direction: int) {
+  if status == INDEPENDENT {
+    gameinfo.num_independent = gameinfo.num_independent + direction
+  } elif status == OCCUPIED {
+    gameinfo.num_occupied = gameinfo.num_occupied + direction
+  } else {
+    gameinfo.num_empire = gameinfo.num_empire + direction
+  }
+}
+
+set_status: proc(p: PlanetType, new_status: int) {
+  if p.status != new_status {
+    adjust_counts(new_status, +1)
+    adjust_counts(p.status, -1)
+    p.status = new_status
   }
 }
 
@@ -694,6 +762,70 @@ emb: proc(p: PlanetType) {
   }
 }
 
+atoi: extern proc(s:string):int
+
+occupy: proc(location: PlanetType, should_elapse: bool) {
+  if location.status != OCCUPIED {
+    println "Cannot occupy an independent or empire planet."
+    return
+  }
+
+  print location.name println " occupation status:\n"
+  if location.civ_level >= ADVANCED {
+    print "Fighters: " println location.fighters
+    print "Troops:   " println location.troops
+
+    fighters = 0
+    while true {
+      // get fighters
+      print "How many fighters to deploy? (there are " print fleet.fighters println " available): "
+      fstring = input
+      fighters = atoi(fstring)
+      if fighters < 0 or fighters > fleet.fighters {
+        println "Out of range, try again."
+      } else {
+        break
+      }
+    }
+    location.fighters = location.fighters + fighters
+    fleet.fighters = fleet.fighters - fighters
+  } else {
+    print "Troops: " println location.troops
+  }
+
+  // get troops
+  troops = 0
+  while true {
+    print "How many troops to deploy? (there are " print lround(fleet.assets[TROOPS]) println " available): "
+    tstring = input
+    troops = atoi(tstring)
+    if troops < 0 or troops > lround(fleet.assets[TROOPS]) {
+      println "Out of range, try again."
+    } else {
+      break
+    }
+  }
+  location.troops = location.troops + troops
+  a = fleet.assets
+  a[TROOPS] = a[TROOPS] - tod(troops)
+  // we now have more empty transports. I think this was a bug in the old c code
+  fleet.etrans = fleet.etrans + troops
+
+  if troops > 0 or fighters > 0 {
+    print "Updated " print location.name println " occupation status:\n"
+    if location.civ_level >= ADVANCED {
+      print "Fighters: " println location.fighters
+      print "Troops:   " println location.troops
+    } else {
+      print "Troops: " println location.troops
+    }
+  }
+
+  if should_elapse {
+    elapse(50)
+  }
+}
+
 attack: proc(location: PlanetType) {
   if location.status == EMPIRE {
     println "Cannot attack an EMPIRE planet."
@@ -772,6 +904,11 @@ attack: proc(location: PlanetType) {
         battle_location = LAND
       } else {
         println "\nLand battle won!"
+
+        // should this be after the "elapse"?
+        location.occupied_on = gameinfo.date
+        set_status(location, OCCUPIED)
+        occupy(location, false)
         break
       }
     } elif us == 0 {
@@ -780,6 +917,7 @@ attack: proc(location: PlanetType) {
     }
     iters = iters + 1
   }
+
   if (casualties > 0.0) {
     elapse(lround(casualties/10.0+100.0))
   }
@@ -794,13 +932,13 @@ FLEet: Show info about the fleet
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
 SATellites: Send satellites to non-empire planets
-EMBark to another planet (if have enough fuel), time elapses
-ATTack the planet where the fleet is. (Only on non-empire planets)
+EMBark to another planet (if have enough fuel)
+ATTack the planet where the fleet is. (only on independent planets)
+OCCupy: Set occupation fighters and troops (only on occupied planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
 *DRAft troops (only on empire planets)
 *SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
-*OCCupy: Set occupation fighters and troops (only on non-empire planets)
 *TAXes: Collect taxes (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *DECommission troops (only on empire planets)
@@ -854,6 +992,8 @@ execute: proc(command: string, full_command: string) {
     help()
   } elif command=="ATT" {
     attack(fleet.location)
+  } elif command=="OCC" {
+    occupy(fleet.location, true)
   } elif command=="GAL" {
     info(planets[0])
   } elif command=="INF" {
@@ -922,6 +1062,7 @@ main {
 
   // TODO: Ask for difficulty level
   gameinfo.level = 5
+  gameinfo.leveld = tod(gameinfo.level)
   print "Difficulty level is " println gameinfo.level
 
   // TODO: use time: extern proc(ignored: int): int for seed
