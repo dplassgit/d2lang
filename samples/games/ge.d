@@ -549,7 +549,7 @@ maybe_join_empire: proc(planet: PlanetType) {
   }
 }
 
-adjust_counts: proc(status:int, direction: int) {
+adjust_planet_counts: proc(status:int, direction: int) {
   if status == INDEPENDENT {
     gameinfo.num_independent = gameinfo.num_independent + direction
   } elif status == OCCUPIED {
@@ -561,8 +561,8 @@ adjust_counts: proc(status:int, direction: int) {
 
 set_status: proc(p: PlanetType, new_status: int) {
   if p.status != new_status {
-    adjust_counts(new_status, +1)
-    adjust_counts(p.status, -1)
+    adjust_planet_counts(new_status, +1)
+    adjust_planet_counts(p.status, -1)
     p.status = new_status
   }
 }
@@ -604,14 +604,19 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     print " Population: " println p.population
   }
   if cheat or p.status == EMPIRE {
-    print " Assets:     " println p.assets
+    println " Assets:     "
+    print "   Food:   " println p.assets[FOOD]
+    print "   Fuel:   " println p.assets[FUEL]
+    print "   Parts:  " println p.assets[PARTS]
+    print "   Troops: " println p.assets[TROOPS]
+    print "   Money:  " println p.assets[MONEY]
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
     print " Troops:     " println p.troops
     print " Fighters:   " println p.fighters
   }
   if cheat or p.status == EMPIRE {
-    print " prices:     " println p.prices
+    print " Prices:     " println p.prices
   }
   if cheat or p.status != EMPIRE {
     // put the date of the next satellite arrival
@@ -806,8 +811,7 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
     }
   }
   location.troops = location.troops + troops
-  a = fleet.assets
-  a[TROOPS] = a[TROOPS] - tod(troops)
+  add_assets(fleet.assets, TROOPS, -tod(troops))
   // we now have more empty transports. I think this was a bug in the old c code
   fleet.etrans = fleet.etrans + troops
 
@@ -946,24 +950,48 @@ draft: proc(location: PlanetType) {
     // a. decrease etrans by value;
     fleet.etrans = fleet.etrans - draftees
     // b. increase troops by value;
-    a = fleet.assets  // this is getting old.
     ddraftees = tod(draftees)
-    a[TROOPS] = a[TROOPS] + ddraftees
+    add_assets(fleet.assets, TROOPS, ddraftees)
     // c. decrease men by value;
-    a = location.assets
-    a[TROOPS] = a[TROOPS] - ddraftees
+    add_assets(location.assets, TROOPS, -ddraftees)
   }
 
   elapse(50)
 }
 
+tax:proc(planet:PlanetType) {
+  if planet.status != EMPIRE {
+    println "Cannot collect taxes on non-empire planet"
+    return
+  }
+    // 2. get planetary money
+    money = planet.assets[MONEY]
+    if money > 0.0 {
+      print "Collecting $" print money print " from " println planet.name
+      // if planetary money =0, don't do anything!;
+      // 3. add planetary money to fleet money
+      add_assets(fleet.assets, MONEY, money)
 
+      // 4. set planetary money to 0.
+      add_assets(planet.assets, MONEY, -money)
+
+      // 5. update statuses;
+      elapse(10)
+  }
+}
+
+// TODO(bug#155): we can't write fleet.assets[TROOPS] = ...
+add_assets:proc(assets:double[], index: int, amount:double): double {
+  assets[index] = assets[index] + amount
+  return assets[index]
+}
 
 help: proc {
   println
 "
 MAP: Show the map near the given planet
 FLEet: Show info about the fleet
+SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
 INFo: get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: get info about Galactica
 SATellites: Send satellites to non-empire planets
@@ -971,10 +999,9 @@ EMBark to another planet (if have enough fuel)
 ATTack the planet where the fleet is. (only on independent planets)
 OCCupy: Set occupation fighters and troops (only on occupied planets)
 DRAft troops (only on empire planets)
-SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
+TAXes: Collect taxes (only on empire planets)
 *CONstruct ships (only on empire planets)
 *BUY food, fuel (only on empire planets)
-*TAXes: Collect taxes (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *DECommission troops (only on empire planets)
 *SCRap ships (only on empire planets)
@@ -1031,6 +1058,8 @@ execute: proc(command: string, full_command: string) {
     occupy(fleet.location, true)
   } elif command=="DRA" {
     draft(fleet.location)
+  } elif command=="TAX" {
+    tax(fleet.location)
   } elif command=="GAL" {
     info(planets[0])
   } elif command=="INF" {
