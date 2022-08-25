@@ -15,7 +15,7 @@ public class Inc extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s++;", target.toString());
+    return String.format("%s++", target.toString());
   }
 
   @Override

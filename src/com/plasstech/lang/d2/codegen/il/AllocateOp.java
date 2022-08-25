@@ -27,6 +27,6 @@ public class AllocateOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s = NEW RECORD %s;", destination, record.name());
+    return String.format("%s = NEW RECORD %s", destination, record.name());
   }
 }

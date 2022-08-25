@@ -32,7 +32,7 @@ public class UnaryOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s = %s %s;", destination, operator, operand);
+    return String.format("%s = %s %s", destination, operator, operand);
   }
 
   @Override

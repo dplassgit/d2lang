@@ -136,9 +136,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // need to escape this!
         String opcodeString = opcode.toString();
         String escaped = ESCAPER.escape(opcodeString);
-        emit0("\n  ; START %s", escaped);
+        emit0("");
+        emit("; GENERATE: %s", escaped);
         opcode.accept(this);
-        emit("; END %s", escaped);
       }
     } catch (D2RuntimeException e) {
       ImmutableList<String> allCode =
@@ -669,7 +669,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Call op) {
     RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
 
-    emit("; set up actuals");
     callGenerator.generate(op);
     ProcSymbol procSym = op.procSym();
     if (procSym.isExtern()) {

@@ -25,8 +25,8 @@ public class Return extends Op {
 
   @Override
   public String toString() {
-    return String.format("return %s;",
-            returnValueLocation.isPresent() ? returnValueLocation.get().toString() : "");
+    return String.format(
+        "return %s", returnValueLocation.isPresent() ? returnValueLocation.get().toString() : "");
   }
 
   @Override

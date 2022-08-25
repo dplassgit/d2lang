@@ -20,6 +20,9 @@ class CallGenerator {
 
   /** Generate nasm code for the given call */
   public void generate(Call op) {
+    if (op.actuals().size() == 0) {
+      return;
+    }
     /**
      * We ONLY have to do gymnastics when a param register needs to be copied to a LATER param
      * register, e.g., RCX needs to be in RDX or RDX needs to be in R9

@@ -35,7 +35,6 @@ public class RegisterState {
 
   private void pushAll() {
     if (registersPushed.size() > 0) {
-      emitter.emit("; pushing allocated registers");
       for (Register r : registersPushed) {
         r.accept(pushVisitor);
       }
@@ -55,7 +54,6 @@ public class RegisterState {
 
   public void condPop() {
     if (registersPushed.size() > 0) {
-      emitter.emit("; popping allocated registers");
       for (Register r : Lists.reverse(registersPushed)) {
         pop(r);
       }

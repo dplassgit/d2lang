@@ -30,11 +30,11 @@ public class SysCall extends Op {
   public String toString() {
     switch (call) {
       case PRINT:
-        return String.format("printf(\"%%s\", %s);", ESCAPER.escape(arg.toString()));
+        return String.format("printf(\"%%s\", %s)", ESCAPER.escape(arg.toString()));
       case MESSAGE:
-        return String.format("printf(\"ERROR: %%s\", %s);", ESCAPER.escape(arg.toString()));
+        return String.format("printf(\"ERROR: %%s\", %s)", ESCAPER.escape(arg.toString()));
       case INPUT:
-        return String.format("%s=_read();", arg);
+        return String.format("%s=_read()", arg);
       default:
         throw new IllegalArgumentException("Unknown syscall: " + call);
     }

@@ -23,7 +23,7 @@ public class Transfer extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s = %s;", destination.toString(), ESCAPER.escape(source.toString()));
+    return String.format("%s = %s", destination.toString(), ESCAPER.escape(source.toString()));
   }
 
   @Override

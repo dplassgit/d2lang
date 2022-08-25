@@ -38,7 +38,6 @@ public class ArrayAlloc extends Op {
 
   @Override
   public String toString() {
-    return String.format(
-        "%s = new array of %s[size: %s]", destination, arrayType.baseType(), sizeLocation);
+    return String.format("%s = new %s[size: %s]", destination, arrayType.baseType(), sizeLocation);
   }
 }

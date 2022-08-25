@@ -43,7 +43,7 @@ public class ArraySet extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s[%s] = %s;", array, index, source);
+    return String.format("%s[%s] = %s", array, index, source);
   }
 
   public ArrayType arrayType() {

@@ -59,9 +59,9 @@ public class Call extends Op {
   public String toString() {
     if (destination().isPresent()) {
       return String.format(
-          "%s = %s(%s);", destination().get(), procSym.name(), Joiner.on(", ").join(actuals));
+          "%s = %s(%s)", destination().get(), procSym.name(), Joiner.on(", ").join(actuals));
     } else {
-      return String.format("%s(%s);", procSym.name(), Joiner.on(", ").join(actuals));
+      return String.format("%s(%s)", procSym.name(), Joiner.on(", ").join(actuals));
     }
   }
 

@@ -12,7 +12,7 @@ public class ProcExit extends Op {
 
   @Override
   public String toString() {
-    return "} // end " + procName();
+    return "end " + procName();
   }
 
   @Override

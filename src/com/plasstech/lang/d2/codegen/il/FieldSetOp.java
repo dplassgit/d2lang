@@ -32,7 +32,7 @@ public class FieldSetOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s.%s = %s; // type: %s", record, field, source, recordSymbol);
+    return String.format("%s.%s = %s; // type: %s", record, field, source, recordSymbol.name());
   }
 
   /** Location of the record in memory. */
