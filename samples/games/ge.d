@@ -6,6 +6,7 @@
 
 atoi: extern proc(s:string):int
 lround: extern proc(x: double): int
+round: extern proc(x: double): double
 sqrt: extern proc(d: double): double
 time: extern proc(ignored: int): int
 
@@ -14,9 +15,9 @@ time: extern proc(ignored: int): int
 /////////////////////////////////////////////////////////
 
 // These are both for assets and production ratios
-FOOD=0 FUEL=1 PARTS=2 TROOPS=3 MONEY=4
+FOOD=0 FUEL=1 PARTS=2 DRAFTEES=3 MONEY=4
 
-ASSET_TYPE=["Food", "Fuel", "Parts", "Troops", "Money"]
+ASSET_TYPE=["Food", "Fuel", "Parts", "Draftee", "Money"]
 
 INDEPENDENT=0 OCCUPIED=1 EMPIRE=2
 STATUSES=["Independent", "Occupied", "Empire"]
@@ -111,8 +112,7 @@ PlanetType: record {
   occupied_on: int     // date planet was occupied
   population: double   // in millions
 
-  // TODO: think about removing TROOPS and just use PlanetType.troops
-  assets: double[5]    // amount of each type on hand: food, fuel, parts, troops, money
+  assets: double[5]    // amount of each type on hand: food, fuel, parts, draftees, money
   prod_ratio: int[5]   // ratio of each type of asset production
   prices: int[2]       // food, fuel (note can only buy if status=empire)
 
@@ -126,12 +126,12 @@ PlanetType: record {
 
 FleetType: record {
   location: PlanetType  // pointer to planet struct
-  assets: double[5]     // amount of each type on hand: food, fuel, parts, troops, money
+  assets: double[5]     // amount of each type on hand: food, fuel, parts, draftees (SKIP), money
   carriers: int[2]      // # of food, fuel carriers; they carry 1000 units each
-  etrans: int           // empty transports (full transports = assets[TROOPS])
+  etrans: int           // empty transports (full transports = troops)
   satellites: int       // in inventory
 
-  // TODO: think about removing TROOPS and have troops: int
+  troops: int
   fighters: int         // # of fighters
 }
 
@@ -185,19 +185,19 @@ initPlanets: proc {
         // if primitive, base is 33 (min 16)
         prod_ratio[FOOD] = 34
         prod_ratio[MONEY] = 33
-        prod_ratio[TROOPS] = 33
+        prod_ratio[DRAFTEES] = 33
       } elif p.civ_level == LIMITED {
         // if limited base is 25 (min 12)
         prod_ratio[FOOD] = 25
         prod_ratio[MONEY] = 25
-        prod_ratio[TROOPS] = 25
+        prod_ratio[DRAFTEES] = 25
         prod_ratio[FUEL] = 25
       } else { // advanced, superior
         // else base is 20 (min 10)
         prod_ratio[FOOD] = 20
         prod_ratio[MONEY] = 20
         prod_ratio[PARTS] = 20
-        prod_ratio[TROOPS] = 20
+        prod_ratio[DRAFTEES] = 20
         prod_ratio[FUEL] = 20
 
         p.fighters = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
@@ -222,7 +222,7 @@ initPlanets: proc {
       prod_ratio[FOOD] = 20
       prod_ratio[MONEY] = 20
       prod_ratio[PARTS] = 20
-      prod_ratio[TROOPS] = 20
+      prod_ratio[DRAFTEES] = 20
       prod_ratio[FUEL] = 20
 
       // 6. set satellites=3; this way the 'display planet'
@@ -262,10 +262,10 @@ initPlanets: proc {
       assets[PARTS] = abc(4.4802, -97.611, 541.88, gameinfo.leveld)
     }
 
-    // TROOPS -17.9x + 133.5
+    // DRAFTEES/TROOPS -17.9x + 133.5
     // troops 1.2727x2 - 26.198x + 143.58
-    // round up to nearest int
-    assets[TROOPS] = tod(lround(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5))
+    // round up to nearest double
+    assets[DRAFTEES] = round(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5)
 
     // if primitive, no fuel
     if (p.civ_level > PRIMITIVE) {
@@ -288,7 +288,7 @@ initFleet: proc {
   assets[MONEY] = abc(0.0, -150.0, 2650.0, gameinfo.leveld)
 
   // troops=10*(11-level)=110-10*level;
-  assets[TROOPS] = abc(0.0, -10.0, 110.0, gameinfo.leveld)
+  fleet.troops = toi(abc(0.0, -10.0, 110.0, gameinfo.leveld) + 0.5)
 
   // freighters=(-3*level+43)/8;
   carriers = fleet.carriers
@@ -305,7 +305,7 @@ initFleet: proc {
   fuel_amt = carriers[FUEL]*1000-(7000*(gameinfo.level-1))/256
   assets[FUEL] = tod(fuel_amt)
 
-  // Empty transports. "Filled" transports = assets[TROOPS]
+  // Empty transports. "Filled" transports = troops
   fleet.etrans = ax_b(gameinfo.level, -10, 110)
 
   fleet.fighters = fleet.etrans + 100
@@ -454,14 +454,14 @@ find_planet: proc(planet: string): PlanetType {
 }
 
 calc_food_needed: proc(dist: double): double {
-  food = fleet.assets[TROOPS] * 5.0 + tod(fleet.fighters)
-  return (food * dist) / 10.0
+  food = fleet.troops * 5 + fleet.fighters
+  return tod(food) * dist / 10.0
 }
 
 calc_fuel_needed: proc(dist: double): double {
-  fuel=fleet.assets[TROOPS] + tod(fleet.etrans + fleet.fighters +
-         fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites)
-  return (fuel * dist) / 10.0
+  fuel = fleet.troops + fleet.etrans + fleet.fighters +
+         fleet.carriers[FUEL] + fleet.carriers[FOOD] + fleet.satellites
+  return tod(fuel) * dist / 10.0
 }
 
 move_sats: proc(p: PlanetType) {
@@ -490,8 +490,6 @@ rebel: proc(p: PlanetType, days: double) {
     attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.troops)
     // can't go negative
     p.troops = max(p.troops - lround(attrition + 0.5), 0)
-    assets = p.assets
-    assets[TROOPS] = tod(p.troops)
   }
   if (p.fighters > 0) {
     attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.fighters)
@@ -521,6 +519,7 @@ maybe_join_empire: proc(planet: PlanetType) {
       i = 0 while i < 5 do i = i + 1 {
         a[i] = a[i] / 2.0
       }
+      a[DRAFTEES] = round(a[DRAFTEES])
 
       planet.sats_orbit = 3
       planet.sats_enroute = 0
@@ -548,7 +547,7 @@ set_status: proc(p: PlanetType, new_status: int) {
 }
 
 
-// TODO(bug#155): we can't write fleet.assets[TROOPS] = fleet.assets[TROOPS] + 1.0
+// TODO(bug#155): we can't write fleet.assets[DRAFTEES] = fleet.assets[DRAFTEES] + 1.0
 add_assets:proc(assets:double[], index: int, amount:double): double {
   // don't let it go negative
   assets[index] = assets[index] + amount
@@ -582,6 +581,12 @@ elapse: proc(days: int) {
       print p.name println " went independent again!"
       // back to independent
       set_status(p, INDEPENDENT)
+
+      // draft half the draftees
+      p.troops = toi(p.assets[DRAFTEES] / 2.0)
+      add_assets(p.assets, DRAFTEES, -tod(p.troops))
+
+      // TODO: make some fighters
     } elif p.status == OCCUPIED {
       maybe_join_empire(p)
     }
@@ -602,14 +607,15 @@ cheat: proc() {
 show_planet: proc(p: PlanetType, cheat: bool) {
   print "PLANET INFO: "
   sats = p.sats_orbit
-  if cheat or fleet.location == p {
+  if cheat or fleet.location == p or p.status == OCCUPIED {
     // if the fleet is here, it's as if we've sent 3 sats
     sats = 3
   }
-  println p.name
+  print p.name
   if (cheat) {
-    print " (" print p.x print ", " print p.y print ")"
+    print " (" print p.x print ", " print p.y println ")"
   }
+  println ""
   print "Status:      " println STATUSES[p.status]
 
   // 2. if satellites > 0 draw civ level;
@@ -627,11 +633,11 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   }
   if cheat or p.status == EMPIRE {
     println " Assets:     "
-    print "   Food:   " println p.assets[FOOD]
-    print "   Fuel:   " println p.assets[FUEL]
-    print "   Parts:  " println p.assets[PARTS]
-    print "   Troops: " println p.assets[TROOPS]
-    print "   Money:  " println p.assets[MONEY]
+    print "   Food:     " println p.assets[FOOD]
+    print "   Fuel:     " println p.assets[FUEL]
+    print "   Parts:    " println p.assets[PARTS]
+    print "   Draftees: " println p.assets[DRAFTEES]
+    print "   Money:    " println p.assets[MONEY]
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
     print " Troops:     " println p.troops
@@ -669,11 +675,14 @@ show_planet: proc(p: PlanetType, cheat: bool) {
 show_fleet: proc(fleet: FleetType) {
   print "FLEET AT: " println fleet.location.name
   i = 0 while i < 5 do i = i + 1 {
-    print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
+    if i != DRAFTEES {
+      print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
+    }
   }
   print "Food carriers:    " println fleet.carriers[FOOD]
   print "Fuel carriers:    " println fleet.carriers[FUEL]
   print "Empty transports: " println fleet.etrans
+  print "Troops:           " println fleet.troops
   print "Fighters:         " println fleet.fighters
   print "Satellites:       " println fleet.satellites
 
@@ -821,17 +830,17 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
   // get troops
   troops = 0
   while true {
-    print "How many troops to deploy? (there are " print lround(fleet.assets[TROOPS]) println " available): "
+    print "How many troops to deploy? (there are " print fleet.troops println " available): "
     tstring = input
     troops = atoi(tstring)
-    if troops < 0 or troops > lround(fleet.assets[TROOPS]) {
+    if troops < 0 or troops > fleet.troops {
       println "Out of range, try again."
     } else {
       break
     }
   }
   location.troops = location.troops + troops
-  add_assets(fleet.assets, TROOPS, -tod(troops))
+  fleet.troops = fleet.troops - troops
   // we now have more empty transports. I think this was a bug in the old c code
   fleet.etrans = fleet.etrans + troops
 
@@ -871,7 +880,7 @@ attack: proc(location: PlanetType) {
       us = fleet.fighters
       them = location.fighters
     } else {
-      us = lround(fleet.assets[TROOPS])
+      us = fleet.troops
       them = location.troops
     }
 
@@ -907,8 +916,7 @@ attack: proc(location: PlanetType) {
         fleet.fighters = us
         location.fighters = them
       } else {
-        a = fleet.assets
-        a[TROOPS] = tod(us)
+        fleet.troops = us
         location.troops = them
       }
 
@@ -953,14 +961,14 @@ draft: proc(location: PlanetType) {
     return
   }
 
-  print location.name print " has " print location.assets[TROOPS] println " available."
+  print location.name print " has " print location.assets[DRAFTEES] println " available."
   print "The fleet has room for " print fleet.etrans println " additional troops."
   draftees = 0
   while true {
     print "How many troops to draft? "
     dstring = input
     draftees = atoi(dstring)
-    if draftees < 0 or draftees > fleet.etrans or tod(draftees) > location.assets[TROOPS] {
+    if draftees < 0 or draftees > fleet.etrans or tod(draftees) > location.assets[DRAFTEES] {
       println "Out of range, try again."
     } else {
       break
@@ -970,10 +978,9 @@ draft: proc(location: PlanetType) {
     // a. decrease etrans by value;
     fleet.etrans = fleet.etrans - draftees
     // b. increase troops by value;
-    ddraftees = tod(draftees)
-    add_assets(fleet.assets, TROOPS, ddraftees)
-    // c. decrease men by value;
-    add_assets(location.assets, TROOPS, -ddraftees)
+    fleet.troops = fleet.troops + draftees
+    // c. decrease draftees on planet by value;
+    add_assets(location.assets, DRAFTEES, -tod(draftees))
   }
 
   elapse(50)
@@ -981,13 +988,13 @@ draft: proc(location: PlanetType) {
 
 
 decommission: proc(location: PlanetType) {
-  print "The fleet has " print toi(fleet.assets[TROOPS]) println " troops."
+  print "The fleet has " print fleet.troops println " troops."
   discharged = 0
   while true {
     print "How many troops to decommission? "
     dstring = input
     discharged = atoi(dstring)
-    if discharged < 0 or discharged > toi(fleet.assets[TROOPS]) {
+    if discharged < 0 or discharged > fleet.troops {
       println "Out of range, try again."
     } else {
       break
@@ -995,13 +1002,14 @@ decommission: proc(location: PlanetType) {
   }
   if discharged > 0 {
     print "Decommissioning " print discharged println " troops."
-    add_assets(fleet.assets, TROOPS, tod(-discharged))
+    // we now have more empty transports. I think this was a bug in the old c code
     fleet.etrans = fleet.etrans + discharged
+    fleet.troops = fleet.troops - discharged
     if (fleet.location.status == EMPIRE) {
       // we get half of them back
       re_uppers = toi(tod(discharged)/2.0)
       print re_uppers println " will be available for drafting later."
-      add_assets(fleet.location.assets, TROOPS, -tod(re_uppers))
+      add_assets(fleet.location.assets, DRAFTEES, -tod(re_uppers))
     }
   }
 
