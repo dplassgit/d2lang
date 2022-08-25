@@ -103,40 +103,46 @@ galmap: int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
 
 PlanetType: record {
   id: int
-  x: int y: int    // location (0-50)
-  civ_level: int    // primitive, limited, advanced, etc.
-  status: int     // 1=occupied, 2=empire, 0=independent
-  status_changed: bool  // 1 if status just changed, 0 if not. WHY?!
   name: string
-  abbrev: string    // first letter of planet
+  x: int y: int        // location (0-50)
+
+  status: int          // occupied, empire, independent
+  civ_level: int       // primitive, limited, advanced, etc.
+  occupied_on: int     // date planet was occupied
   population: double   // in millions
-  assets: double[5]  // amount of each type on hand: food, fuel, parts, troops, money
+
+  // TODO: think about removing TROOPS and just use PlanetType.troops
+  assets: double[5]    // amount of each type on hand: food, fuel, parts, troops, money
   prod_ratio: int[5]   // ratio of each type of asset production
-  prices: int[2]    // food, fuel (note can only buy if status=empire)
+  prices: int[2]       // food, fuel (note can only buy if status=empire)
+
   sats_arrive: int[3]  // arrival date (in DAYS) of each satellite
-  sats_orbit: int    // # of satellites in orbit
-  sats_enroute: int  // # of satellites en route
-  troops: int    // # of troops on surface, or # of occupation troops
-  fighters: int     // # of fighters in orbit, or # of occupation fighters
-  occupied_on: int    // date (years) planet was occupied
+  sats_orbit: int      // # of satellites in orbit
+  sats_enroute: int    // # of satellites en route
+
+  troops: int          // # of troops on surface, or # of occupation troops
+  fighters: int        // # of fighters in orbit, or # of occupation fighters
 }
 
 FleetType: record {
-  location: PlanetType  // pointer to planet struct in global array
-  assets: double[5]    // amount of each type on hand: food, fuel, parts, troops, money
-  carriers: int[2]   // # of food, fuel carriers; they carry 1000 units each
-  etrans: int    // empty transports (full transports = assets[TROOPS])
-  fighters: int     // # of fighters
-  satellites: int   // in inventory
+  location: PlanetType  // pointer to planet struct
+  assets: double[5]     // amount of each type on hand: food, fuel, parts, troops, money
+  carriers: int[2]      // # of food, fuel carriers; they carry 1000 units each
+  etrans: int           // empty transports (full transports = assets[TROOPS])
+  satellites: int       // in inventory
+
+  // TODO: think about removing TROOPS and have troops: int
+  fighters: int         // # of fighters
 }
 
 GameInfoType: record {
-  date: int  // days since start. 100 days per "year"
-  level: int  // difficulty level
-  leveld: double // level, as a double
-  status: int   // in progress, lost, won
+  date: int       // days since start. 100 days per "year"
+  level: int      // difficulty level
+  leveld: double  // level, as a double
+  status: int     // in progress, lost, won
 
-  num_empire: int
+  // num_planets: int[3]   // # independent, occupied, empire
+  num_empire: int       // # of empire, independent, occupied
   num_independent: int
   num_occupied: int
 }
@@ -152,14 +158,13 @@ initPlanets: proc {
     planets[i] = p
 
     p.name = NAMES[i]
-    p.abbrev = p.name[0]
 
     // 1. assign location randomly on grid
     p.x = random(SIZE)
     p.y = random(SIZE)
 
     // set galmap[x, y] to planet name letter
-    galmap[p.x+SIZE*p.y] = asc(p.abbrev)
+    galmap[p.x+SIZE*p.y] = asc(p.name)
 
     // TODO: Randomize all of these +/- level*2 %
     if i != 0 {
@@ -259,7 +264,8 @@ initPlanets: proc {
 
     // TROOPS -17.9x + 133.5
     // troops 1.2727x2 - 26.198x + 143.58
-    assets[TROOPS] = abc(1.2727, -26.198, 143.58, gameinfo.leveld)
+    // round up to nearest int
+    assets[TROOPS] = tod(lround(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5))
 
     // if primitive, no fuel
     if (p.civ_level > PRIMITIVE) {
@@ -274,7 +280,7 @@ initFleet: proc {
   fleet = new FleetType
   fleet.location = planets[0]
 
-  // TODO: RANDOMIZE
+  // TODO: RANDOMIZE +/- 1% * level
 
   // initialize based on level
   assets = fleet.assets
@@ -292,7 +298,7 @@ initFleet: proc {
   carriers[FUEL]=(77-6*gameinfo.level)/16
 
   // food=freighters*1000-7000*(level-1)/256;
-  foods_amt = carriers[FOOD]*1000-(7000*(gameinfo.level-1))/256 // a find foods amount
+  foods_amt = carriers[FOOD]*1000-(7000*(gameinfo.level-1))/256 // a fine foods amount
   assets[FOOD] = tod(foods_amt)
 
   // fuel=fuel_ships*1000-7000*(level-1)/256;
@@ -332,7 +338,6 @@ tod: proc(i: int): double {
 
 
 // double to int
-
 toi: proc(d: double): int {
   return lround(d)
 }
@@ -379,13 +384,11 @@ next_random: proc: int {
 /////////////////////////////////////////////////////////
 
 calculate_game_status: proc: int {
-  if gameinfo.status != IN_PROGRESS {return gameinfo.status}
-  if gameinfo.date > (4100*100) {
-    return LOST
-  } else {
-    // todo: when all are empire: WON
-    return IN_PROGRESS
-  }
+  if gameinfo.num_empire == 20 { return WON }
+  // quit
+  if gameinfo.status != IN_PROGRESS { return gameinfo.status }
+  if gameinfo.date > (4100*100) { return LOST }
+  return IN_PROGRESS
 }
 
 toUpper: proc(ss: string): string {
@@ -487,6 +490,8 @@ rebel: proc(p: PlanetType, days: double) {
     attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.troops)
     // can't go negative
     p.troops = max(p.troops - lround(attrition + 0.5), 0)
+    assets = p.assets
+    assets[TROOPS] = tod(p.troops)
   }
   if (p.fighters > 0) {
     attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.fighters)
@@ -732,9 +737,8 @@ sat: proc(p: PlanetType) {
   fleet.satellites = fleet.satellites - 1
 
   distance = calc_distance(fleet.location, p)
-  // round distance down
-  idistance = toi(distance)
-  // this seems like a lot of days
+  // round distance up
+  idistance = toi(distance+0.5)
   when = gameinfo.date + gameinfo.level*idistance + 10*random(gameinfo.level)
   sa = p.sats_arrive
   // which satellite?
@@ -747,7 +751,7 @@ sat: proc(p: PlanetType) {
 
 
 // Embark, if we have enough fuel and food
-emb: proc(p: PlanetType) {
+embark: proc(p: PlanetType) {
   if fleet.location == p {
     print "Already at " println p.name
     return
@@ -975,6 +979,36 @@ draft: proc(location: PlanetType) {
   elapse(50)
 }
 
+
+decommission: proc(location: PlanetType) {
+  print "The fleet has " print toi(fleet.assets[TROOPS]) println " troops."
+  discharged = 0
+  while true {
+    print "How many troops to decommission? "
+    dstring = input
+    discharged = atoi(dstring)
+    if discharged < 0 or discharged > toi(fleet.assets[TROOPS]) {
+      println "Out of range, try again."
+    } else {
+      break
+    }
+  }
+  if discharged > 0 {
+    print "Decommissioning " print discharged println " troops."
+    add_assets(fleet.assets, TROOPS, tod(-discharged))
+    fleet.etrans = fleet.etrans + discharged
+    if (fleet.location.status == EMPIRE) {
+      // we get half of them back
+      re_uppers = toi(tod(discharged)/2.0)
+      print re_uppers println " will be available for drafting later."
+      add_assets(fleet.location.assets, TROOPS, -tod(re_uppers))
+    }
+  }
+
+  elapse(50)
+}
+
+
 tax:proc(planet:PlanetType) {
   if planet.status != EMPIRE {
     println "Cannot collect taxes on non-empire planet"
@@ -1086,9 +1120,9 @@ OCCupy: Set occupation fighters and troops (only on occupied planets)
 DRAft troops (only on empire planets)
 TAXes: Collect taxes (only on empire planets)
 BUY food, fuel (only on empire planets)
+DECommission troops (only on empire planets)
 *CONstruct ships (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
-*DECommission troops (only on empire planets)
 *SCRap ships (only on empire planets)
 QUIt
 
@@ -1143,6 +1177,8 @@ execute: proc(command: string, full_command: string) {
     occupy(fleet.location, true)
   } elif command=="DRA" {
     draft(fleet.location)
+  } elif command=="DEC" {
+    decommission(fleet.location)
   } elif command=="TAX" {
     tax(fleet.location)
   } elif command=="GAL" {
@@ -1179,7 +1215,7 @@ execute: proc(command: string, full_command: string) {
       if p == null {
         println "Unknown planet"
       } else {
-        emb(p)
+        embark(p)
       }
     }
   } else {
@@ -1201,8 +1237,8 @@ mainLoop: proc {
     println "----------------------------------------------------------\n"
     gameinfo.status = calculate_game_status() // Calc if won or lost
   }
-  if gameinfo.status==WON { println "You won" }
-  if gameinfo.status==LOST { println "You lost" }
+  if gameinfo.status==WON { println "You won!" }
+  if gameinfo.status==LOST { println "You lost!" }
   if gameinfo.status==QUIT { println "You quit" }
 }
 
