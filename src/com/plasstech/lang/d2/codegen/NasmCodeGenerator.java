@@ -614,7 +614,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     // Save nonvolatile registers:
-    emit("; entry to %s", op.name());
     if (op.localBytes() > 0) {
       emit("push RBP");
       emit("mov RBP, RSP");
@@ -701,7 +700,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     registerState.condPop();
     if (op.destination().isPresent()) {
-      emit("; get return value");
       Location destination = op.destination().get();
       Register returnReg = Registers.returnRegister(destination.type());
       if (tempReg == null) {

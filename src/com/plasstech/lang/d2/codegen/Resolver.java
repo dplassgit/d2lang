@@ -171,15 +171,12 @@ public class Resolver implements RegistersInterface {
 
   @Override
   public Register allocate(VarType varType) {
-    Register r = registers.allocate(varType);
-    emitter.emit("; allocating %s of type %s", r, varType);
-    return r;
+    return registers.allocate(varType);
   }
 
   /** Deallocate the given register. */
   @Override
   public void deallocate(Register r) {
-    emitter.emit("; deallocating %s", r);
     registers.deallocate(r);
   }
 
