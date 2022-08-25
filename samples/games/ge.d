@@ -112,7 +112,7 @@ PlanetType: record {
   occupied_on: int     // date planet was occupied
   population: double   // in millions
 
-  assets: double[5]    // amount of each type on hand: food, fuel, parts, draftees, money
+  assets: double[5]    // amount of each type on hand: food, fuel, parts, draftable, money
   prod_ratio: int[5]   // ratio of each type of asset production
   prices: int[2]       // food, fuel (note can only buy if status=empire)
 
@@ -126,12 +126,12 @@ PlanetType: record {
 
 FleetType: record {
   location: PlanetType  // pointer to planet struct
-  assets: double[5]     // amount of each type on hand: food, fuel, parts, draftees (SKIP), money
+  assets: double[5]     // amount of each type on hand: food, fuel, parts, draftable (SKIP), money
   carriers: int[2]      // # of food, fuel carriers; they carry 1000 units each
   etrans: int           // empty transports (full transports = troops)
   satellites: int       // in inventory
 
-  troops: int
+  troops: int           // # troops
   fighters: int         // # of fighters
 }
 
@@ -506,7 +506,9 @@ maybe_join_empire: proc(planet: PlanetType) {
     // (if limited/primitive the fighters can be 0...)
     years_since = (gameinfo.date - planet.occupied_on)/100
     if years_since > random(4 * gameinfo.level) {
-      print planet.name println " joined the empire!"
+      println "\n=============== NEWS FLASH ===============\n"
+      print planet.name println " joined the empire!!!"
+      println "\n=============== NEWS FLASH ===============\n"
 
       // and planet has been occupied for random(4*level)
       // years, it joins the empire;
@@ -584,7 +586,9 @@ elapse: proc(days: int) {
     grow(p, days)
 
     // TODO: produce
-    // TODO: stockpile
+    if p.status == INDEPENDENT {
+      // TODO: build_army
+    }
 
     if p.status == OCCUPIED {
       rebel(p, tod(days))
@@ -592,11 +596,15 @@ elapse: proc(days: int) {
 
     // update status
     if p.status == OCCUPIED and p.troops == 0 and p.fighters == 0 {
-      print p.name println " went independent again!"
+      println "\n=============== NEWS FLASH ===============\n"
+      print p.name println " rebelled and is independent again!"
+      println "\n=============== NEWS FLASH ===============\n"
+
       // back to independent
       set_status(p, INDEPENDENT)
 
-      // draft half the draftees
+      // TODO: this will be moved to "build_rebellion" eventually
+      // draft half the draftable people
       p.troops = toi(p.assets[DRAFTABLE] / 2.0)
       add_assets(p.assets, DRAFTABLE, -tod(p.troops))
 
@@ -647,11 +655,11 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   }
   if cheat or p.status == EMPIRE {
     println " Assets:     "
-    print "   Food:     " println p.assets[FOOD]
-    print "   Fuel:     " println p.assets[FUEL]
-    print "   Parts:    " println p.assets[PARTS]
-    print "   Draftees: " println p.assets[DRAFTABLE]
-    print "   Money:    " println p.assets[MONEY]
+    print "   Food:      " println p.assets[FOOD]
+    print "   Fuel:      " println p.assets[FUEL]
+    print "   Parts:     " println p.assets[PARTS]
+    print "   Draftable: " println p.assets[DRAFTABLE]
+    print "   Money:     " println p.assets[MONEY]
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
     print " Troops:     " println p.troops
@@ -677,10 +685,13 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     }
   }
 
-  distance = calc_distance(fleet.location, p)
-  print "Distance:       " println distance
-  print "Estimated food: " println calc_food_needed(distance)
-  print "Estimated fuel: " println calc_fuel_needed(distance)
+  if fleet.location != p {
+    distance = calc_distance(fleet.location, p)
+    print "Distance:        " print distance println " ly"
+    print "Est travel time: " print distance * 10.0 println " days"
+    print "Estimated food:  " println calc_food_needed(distance)
+    print "Estimated fuel:  " println calc_fuel_needed(distance)
+  }
 
   elapse(10)
 }
@@ -790,18 +801,21 @@ embark: proc(p: PlanetType) {
     // make sure we have enough fuel!
     if fleet_assets[FUEL] >= fuel_needed {
       // ok, we have enough
+      // TODO: randomly take +/- 1%
       fleet_assets[FUEL] = fleet_assets[FUEL] - fuel_needed
-
       fleet_assets[FOOD] = fleet_assets[FOOD] - food_needed
 
-      //  3. move fleet;
+      // 3. move fleet;
       fleet.location = p
 
-      //  4. elapse time;
-      // have to multiply distance by 10 to go from ly to years;
+      // 4. elapse time;
+      // multiply distance by 10 to go from ly to years;
+      // TODO: randomly take +/1 1%
+      // distance * (0.99 + tod(random(2))/100.0)
       elapse(toi(distance)*10)
-      print "Fleet arrived at " println p.name
-      map(p)
+      println "\n=============== NEWS FLASH ===============\n"
+      print "The Imperial Fleet arrived at " print p.name print " @ " println format_date(gameinfo.date)
+      println "\n=============== NEWS FLASH ===============\n"
       info(p)
     } else {
       print "Not enough fuel to get to " print p.name print ". Need " println fuel_needed
@@ -993,7 +1007,7 @@ draft: proc(location: PlanetType) {
     fleet.etrans = fleet.etrans - draftees
     // b. increase troops by value;
     fleet.troops = fleet.troops + draftees
-    // c. decrease draftees on planet by value;
+    // c. decrease draftable on planet by value;
     add_assets(location.assets, DRAFTABLE, -tod(draftees))
   }
 
