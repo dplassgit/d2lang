@@ -114,12 +114,14 @@ PlanetType: record {
 
   assets: double[5]    // amount of each type on hand: food, fuel, parts, draftable, money
   prod_ratio: int[5]   // ratio of each type of asset production
+  // TODO: maybe these should be doubles
   prices: int[2]       // food, fuel (note can only buy if status=empire)
 
   sats_arrive: int[3]  // arrival date (in DAYS) of each satellite
   sats_orbit: int      // # of satellites in orbit
   sats_enroute: int    // # of satellites en route
 
+  // TODO: maybe these should be doubles
   troops: int          // # of troops on surface, or # of occupation troops
   fighters: int        // # of fighters in orbit, or # of occupation fighters
 }
@@ -131,6 +133,7 @@ FleetType: record {
   etrans: int           // empty transports (full transports = troops)
   satellites: int       // in inventory
 
+  // TODO: Maybe these should be doubles
   troops: int           // # troops
   fighters: int         // # of fighters
 }
@@ -232,11 +235,11 @@ initPlanets: proc {
     }
 
     // 8. set food price, fuel price based on level
-    // TODO: the higher the level the higher the price (until the price goes down (!))
-    // plus random factor
+    // TODO: prices go up and down with the market,
+    // TODO: start with random factor
     prices = p.prices
-    prices[FOOD] = 7
-    prices[FUEL] = 5
+    prices[FOOD] = toi(4.5+gameinfo.leveld/2.0)
+    prices[FUEL] = toi(2.5+gameinfo.leveld/2.0)
 
     // 9. set initial assets based on level
     // TODO: RANDOMIZE
@@ -265,6 +268,7 @@ initPlanets: proc {
     // DRAFTABLE/TROOPS -17.9x + 133.5
     // troops 1.2727x2 - 26.198x + 143.58
     // round up to nearest double
+    // this should be based on population, no?
     assets[DRAFTABLE] = round(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5)
 
     // if primitive, no fuel
@@ -567,9 +571,82 @@ add_assets:proc(assets:double[], index: int, amount:double): double {
 // = 0.01 * (level / 100) * population per year
 // = 0.01 * (level / 100) * population * days/100
 // = (0.01 / (100*100)) * level * population * days
-grow:proc (p: PlanetType, days: int) {
+grow: proc(p: PlanetType, days: int) {
   increase = (0.01 / (100.0*100.0)) * gameinfo.leveld * tod(days) * p.population
   p.population = p.population + increase
+}
+
+
+build_army: proc(p: PlanetType, days: int) {
+  assets = p.assets
+  draftees= 0.005 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
+  if (draftees >= 0.5) {
+    idraftees = lround(draftees + 0.5)
+    p.troops = p.troops + idraftees
+    assets[DRAFTABLE] = assets[DRAFTABLE] - tod(idraftees)
+  }
+}
+
+
+// Buy one type of product at fleet's planet.
+buy_one_type: proc(fleet:FleetType, index: int): bool {
+  planet = fleet.location
+  available = lround(planet.assets[index])
+  if available > 0 {
+    carry = lround(tod(fleet.carriers[index] * 1000) - fleet.assets[index])
+    afford = lround(fleet.assets[MONEY] / tod(planet.prices[index]))
+
+    while true {
+      // TODO(bug #142): Use % syntax
+      print planet.name print " has " print available print " " print ASSET_TYPE[index] println " units to buy."
+      print "You can afford " print afford println " units."
+      print "You can carry " print carry println " units."
+      print "How many units to purchase (number or 'max')? "
+      samount = input
+      trimmed = trim(samount)
+      if trimmed == 'max' or trimmed == 'MAX' {
+        famount = min(available, min(afford, carry))
+        print "Buying max: " println famount
+      } else {
+        famount = atoi(samount)
+      }
+      if famount == 0 {
+        break
+      }
+      if famount > available {
+        println "Can't buy that much. Try again."
+      } elif famount > carry {
+        println "Can't carry that much. Try again."
+      } elif famount > afford {
+        println "Can't afford that much. Try again."
+      } elif famount < 0 {
+        println "You're killing me smalls."
+      } elif famount > 0 {
+        print "\nA fine " print ASSET_TYPE[index] print "s amount: " println famount
+        print "This cost: " println famount * planet.prices[index]
+        println ""
+        buy_transaction(fleet, index, famount)
+        elapse(25)
+        return true
+      }
+      println ""
+    }
+  } else {
+    print "None " print ASSET_TYPE[index] print " available for purchase at " println planet.name
+  }
+  return false
+}
+
+// Complete the buy transaction by updating amounts of the fleet and planet.
+buy_transaction: proc(fleet: FleetType, index: int, amount: int) {
+  planet = fleet.location
+  //   a. increase fleet assets by value
+  add_assets(fleet.assets, index, tod(amount))
+  //   b. decrease assets by value
+  add_assets(planet.assets, index, -tod(amount))
+  // note, do not increase money of planet, otherwise we can just collect taxes and it would be free...
+  //   c. decrease money (!) - this may have been a bug in the .asm
+  add_assets(fleet.assets, MONEY, tod(-amount* planet.prices[index]))
 }
 
 
@@ -582,12 +659,15 @@ elapse: proc(days: int) {
 
   i = 1 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
-    move_sats(p)
+    if p.status != EMPIRE {
+      move_sats(p)
+    }
     grow(p, days)
 
     // TODO: produce
+
     if p.status == INDEPENDENT {
-      // TODO: build_army
+      build_army(p, days)
     }
 
     if p.status == OCCUPIED {
@@ -692,8 +772,6 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     print "Estimated food:  " println calc_food_needed(distance)
     print "Estimated fuel:  " println calc_fuel_needed(distance)
   }
-
-  elapse(10)
 }
 
 // Shows info about the fleet
@@ -753,6 +831,7 @@ map: proc(planet: PlanetType) {
 // print info about the given planet
 info: proc(p: PlanetType) {
   show_planet(p, false)
+  elapse(10)
 }
 
 sat: proc(p: PlanetType) {
@@ -813,10 +892,12 @@ embark: proc(p: PlanetType) {
       // TODO: randomly take +/1 1%
       // distance * (0.99 + tod(random(2))/100.0)
       elapse(toi(distance)*10)
+
       println "\n=============== NEWS FLASH ===============\n"
       print "The Imperial Fleet arrived at " print p.name print " @ " println format_date(gameinfo.date)
       println "\n=============== NEWS FLASH ===============\n"
-      info(p)
+
+      show_planet(p, false)
     } else {
       print "Not enough fuel to get to " print p.name print ". Need " println fuel_needed
     }
@@ -980,6 +1061,8 @@ attack: proc(location: PlanetType) {
 
   if (casualties > 0.0) {
     elapse(lround(casualties/10.0+100.0))
+  } else {
+    elapse(10)
   }
 }
 
@@ -1009,9 +1092,11 @@ draft: proc(location: PlanetType) {
     fleet.troops = fleet.troops + draftees
     // c. decrease draftable on planet by value;
     add_assets(location.assets, DRAFTABLE, -tod(draftees))
-  }
 
-  elapse(50)
+    elapse(50)
+  } else {
+    elapse(10)
+  }
 }
 
 
@@ -1039,9 +1124,10 @@ decommission: proc(location: PlanetType) {
       print re_uppers println " will be available for drafting later."
       add_assets(fleet.location.assets, DRAFTABLE, -tod(re_uppers))
     }
+    elapse(50)
+  } else {
+    elapse(10)
   }
-
-  elapse(50)
 }
 
 
@@ -1061,9 +1147,9 @@ tax:proc(planet:PlanetType) {
     // 4. set planetary money to 0.
     add_assets(planet.assets, MONEY, -money)
 
-    // 5. update statuses;
-    elapse(10)
   }
+  // 5. update statuses;
+  elapse(10)
 }
 
 buy:proc(planet:PlanetType) {
@@ -1073,72 +1159,16 @@ buy:proc(planet:PlanetType) {
   }
 
   // 1. buy food
-  buy_one_type(fleet, FOOD)
+  bought = buy_one_type(fleet, FOOD)
 
   // 2. if appropriate, buy fuel.
   if planet.civ_level >= LIMITED {
-    buy_one_type(fleet, FUEL)
+    bought = bought or buy_one_type(fleet, FUEL)
+  }
+  if not bought {
+    elapse(10)
   }
 }
-
-buy_one_type: proc(fleet:FleetType, index:int) {
-  planet = fleet.location
-  available = lround(planet.assets[index])
-  if available > 0 {
-    carry = lround(tod(fleet.carriers[index] * 1000) - fleet.assets[index])
-    afford = lround(fleet.assets[MONEY] / tod(planet.prices[index]))
-
-    while true {
-      // TODO(bug #142): Use % syntax
-      print planet.name print " has " print available print " " print ASSET_TYPE[index] println " units to buy."
-      print "You can afford " print afford println " units."
-      print "You can carry " print carry println " units."
-      print "How many units to purchase (number or 'max')? "
-      samount = input
-      trimmed = trim(samount)
-      if trimmed == 'max' or trimmed == 'MAX' {
-        famount = min(available, min(afford, carry))
-        print "Buying max: " println famount
-      } else {
-        famount = atoi(samount)
-      }
-      if famount == 0 {
-        break
-      }
-      if famount > available {
-        println "Can't buy that much. Try again."
-      } elif famount > carry {
-        println "Can't carry that much. Try again."
-      } elif famount > afford {
-        println "Can't afford that much. Try again."
-      } elif famount < 0 {
-        println "You're killing me smalls."
-      } elif famount > 0 {
-        print "\nA fine " print ASSET_TYPE[index] print "s amount: " println famount
-        print "This cost: " println famount * planet.prices[index]
-        println ""
-        buy_transaction(fleet, index, famount)
-        elapse(25)
-        break
-      }
-      println ""
-    }
-  } else {
-    print "None " print ASSET_TYPE[index] print " available for purchase at " println planet.name
-  }
-}
-
-buy_transaction: proc(fleet: FleetType, index:int, amount:int) {
-  planet = fleet.location
-  //   a. increase fleet assets by value
-  add_assets(fleet.assets, index, tod(amount))
-  //   b. decrease assets by value
-  add_assets(planet.assets, index, -tod(amount))
-  // note, do not increase money of planet, otherwise we can just collect taxes and it would be free...
-  //   c. decrease money (!)
-  add_assets(fleet.assets, MONEY, tod(-amount* planet.prices[index]))
-}
-
 
 
 help: proc {
@@ -1264,7 +1294,7 @@ mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
     print "\nToday is " println format_date(gameinfo.date)
-    print "Your command: "
+    print "\nYour command: "
 
     full_command = input
     command=trim(full_command)
