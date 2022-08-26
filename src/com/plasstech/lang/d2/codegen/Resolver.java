@@ -225,7 +225,10 @@ public class Resolver implements RegistersInterface {
         emitter.emit("mov %s %s, %s", size, destName, sourceName);
       }
     } else {
-      // two memory locations; use an intermediary
+
+      // Memory to memory:
+      // Move from sourceName to tempReg, then from tempReg to destName
+
       Register tempReg = allocate(VarType.INT);
       String tempName = tempReg.sizeByType(source.type());
       emitter.emit("mov %s %s, %s", size, tempName, sourceName);
@@ -244,13 +247,16 @@ public class Resolver implements RegistersInterface {
         emitter.emit("mov %s, %s", destName, sourceName);
       }
     } else {
-      // move from sourceName to temp
-      // then from temp to destName
+
+      // Memory to memory:
+      // Move from sourceName to tempReg, then from tempReg to destName
+
       Register tempReg = allocate(VarType.INT);
       emitter.emit("; allocated temp %s", tempReg);
-      String tempName = tempReg.sizeByType(source.type());
-      emitter.emit("mov %s, %s", tempName, sourceName);
-      emitter.emit("mov %s, %s", destName, tempName);
+      // TODO: This is probably not needed, since we're talking pointers here
+      String tempRegName = tempReg.sizeByType(source.type());
+      emitter.emit("mov %s, %s", tempRegName, sourceName);
+      emitter.emit("mov %s, %s", destName, tempRegName);
       deallocate(tempReg);
       emitter.emit("; deallocated temp %s", tempReg);
     }
@@ -263,25 +269,38 @@ public class Resolver implements RegistersInterface {
       ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source;
       double sourceDub = doubleOp.value();
       if (sourceDub == 0.0) {
+        // Constant zero to register
         emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);
         return;
       }
     }
+
     if (destReg != null || sourceReg != null) {
-      // go right from source to dest
-      if (sourceReg != null) {
-        emitter.emit("movq %s, %s", destName, sourceName);
-      } else {
+      // To or from a register. The other may be a register or memory,
+      // so we can go right from source to dest.
+      if (sourceReg == null) {
+        // source is not a register (it's memory)
         emitter.emit("movsd %s, %s", destName, sourceName);
+      } else {
+        // source is a register - either int or MMX register
+        emitter.emit("movq %s, %s", destName, sourceName);
       }
-    } else {
-      // move from sourceName tempReg, then from tempReg to destName
-      Register tempReg = allocate(VarType.DOUBLE);
-      emitter.emit("; allocated temp %s", tempReg);
-      emitter.emit("movsd %s, %s", tempReg, sourceName);
-      emitter.emit("movq %s, %s", destName, tempReg);
-      deallocate(tempReg);
-      emitter.emit("; deallocated temp %s", tempReg);
+      return;
     }
+
+    // Memory to memory.
+    // Move from sourceName to tempReg, then from tempReg to destName
+    Register tempReg = allocate(VarType.DOUBLE);
+    emitter.emit("; allocated temp %s", tempReg);
+    // whoa, this works.
+    mov(source, tempReg);
+    movDouble(
+        new RegisterLocation("tempReg", tempReg, VarType.DOUBLE),
+        tempReg,
+        null,
+        tempReg.name64(),
+        destName);
+    deallocate(tempReg);
+    emitter.emit("; deallocated temp %s", tempReg);
   }
 }

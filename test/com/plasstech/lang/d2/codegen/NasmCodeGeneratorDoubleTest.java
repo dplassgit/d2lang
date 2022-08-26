@@ -196,4 +196,29 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
             + "print 'bextern Should be 153.045745: ' println bsqrt(false, 23423.0) ";
     assertCompiledOutput(sqrt, "sqrt", "bextern Should be 153.045745: 153.045745\r\n");
   }
+
+  @Test
+  public void constantZero() throws Exception {
+    String tod =
+        "DS=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]\r\n"
+            + "\r\n"
+            + "// int to double.\r\n"
+            + "tod: proc(i: int): double {\r\n"
+            + "  neg = false\r\n"
+            + "  if i < 0 {neg = true i = -i}\r\n"
+            + "  d=0.0\r\n"
+            + "  place = 1.0\r\n"
+            + "  while i > 0 {\r\n"
+            + "    last = i%10\r\n"
+            + "    d = d + place * DS[last]\r\n"
+            + "    place = place * 10.0\r\n"
+            + "    i = i / 10\r\n"
+            + "  }\r\n"
+            + "  if neg {return -d}\r\n"
+            + "  return d\r\n"
+            + "}\r\n"
+            + "print \"Should be 2.0:\" println tod(2)\r\n"
+            + "print \"Should be 0.0:\" println tod(0)\r\n";
+    execute(tod, "tod");
+  }
 }
