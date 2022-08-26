@@ -11,11 +11,11 @@ LOCATION_SRCS = [
 
 REGISTERS_SRCS = [
   "IntRegister.java",
-  "MmxRegister.java",
   "Registers.java",
   "Register.java",
   "RegistersInterface.java",
   "RegisterVisitor.java",
+  "XmmRegister.java",
 ]
 
 java_library(
