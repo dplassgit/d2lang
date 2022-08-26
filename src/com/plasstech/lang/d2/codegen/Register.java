@@ -25,25 +25,25 @@ public interface Register {
           IntRegister.R9,
           IntRegister.R10,
           IntRegister.R11,
-          MmxRegister.XMM0,
-          MmxRegister.XMM1,
-          MmxRegister.XMM2,
-          MmxRegister.XMM3,
-          MmxRegister.XMM4,
-          MmxRegister.XMM5);
+          XmmRegister.XMM0,
+          XmmRegister.XMM1,
+          XmmRegister.XMM2,
+          XmmRegister.XMM3,
+          XmmRegister.XMM4,
+          XmmRegister.XMM5);
 
   public static final ImmutableList<Register> NONVOLATILE_REGISTERS =
       ImmutableList.of(
-          MmxRegister.XMM6,
-          MmxRegister.XMM7,
-          MmxRegister.XMM8,
-          MmxRegister.XMM9,
-          MmxRegister.XMM10,
-          MmxRegister.XMM11,
-          MmxRegister.XMM12,
-          MmxRegister.XMM13,
-          MmxRegister.XMM14,
-          MmxRegister.XMM15,
+          XmmRegister.XMM6,
+          XmmRegister.XMM7,
+          XmmRegister.XMM8,
+          XmmRegister.XMM9,
+          XmmRegister.XMM10,
+          XmmRegister.XMM11,
+          XmmRegister.XMM12,
+          XmmRegister.XMM13,
+          XmmRegister.XMM14,
+          XmmRegister.XMM15,
           IntRegister.RBX,
           IntRegister.R12,
           IntRegister.R13,
@@ -55,15 +55,15 @@ public interface Register {
   public static final ImmutableList<Register> INT_PARAM_REGISTERS =
       ImmutableList.of(IntRegister.RCX, IntRegister.RDX, IntRegister.R8, IntRegister.R9);
 
-  public static final ImmutableList<Register> MMX_PARAM_REGISTERS =
-      ImmutableList.of(MmxRegister.XMM0, MmxRegister.XMM1, MmxRegister.XMM2, MmxRegister.XMM3);
+  public static final ImmutableList<Register> XMM_PARAM_REGISTERS =
+      ImmutableList.of(XmmRegister.XMM0, XmmRegister.XMM1, XmmRegister.XMM2, XmmRegister.XMM3);
 
   static Register paramRegister(VarType type, int index) {
     if (index > 3) {
       return null;
     }
     if (type == VarType.DOUBLE) {
-      return MMX_PARAM_REGISTERS.get(index);
+      return XMM_PARAM_REGISTERS.get(index);
     }
     return INT_PARAM_REGISTERS.get(index);
   }

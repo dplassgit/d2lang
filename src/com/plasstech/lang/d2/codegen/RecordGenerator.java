@@ -76,10 +76,10 @@ class RecordGenerator {
         emitter.emit("mov %s [%s], %s  ; store it!", size, calcReg, sourceName);
       } else {
         // use an intermediate register
-        Register tempMmx = resolver.allocate(VarType.DOUBLE);
-        resolver.mov(source, tempMmx);
-        emitter.emit("movq [%s], %s", calcReg, tempMmx);
-        resolver.deallocate(tempMmx);
+        Register tempXmm = resolver.allocate(VarType.DOUBLE);
+        resolver.mov(source, tempXmm);
+        emitter.emit("movq [%s], %s", calcReg, tempXmm);
+        resolver.deallocate(tempXmm);
       }
     } else {
       // need an indirection, ugh.

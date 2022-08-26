@@ -282,7 +282,7 @@ public class Resolver implements RegistersInterface {
         // source is not a register (it's memory)
         emitter.emit("movsd %s, %s", destName, sourceName);
       } else {
-        // source is a register - either int or MMX register
+        // source is a register - either int or XMM register
         emitter.emit("movq %s, %s", destName, sourceName);
       }
       return;

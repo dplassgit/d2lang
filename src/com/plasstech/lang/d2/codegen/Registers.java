@@ -1,7 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
-import static com.plasstech.lang.d2.codegen.MmxRegister.XMM0;
+import static com.plasstech.lang.d2.codegen.XmmRegister.XMM0;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,13 +24,13 @@ public class Registers implements RegistersInterface {
   public Register allocate(VarType varType) {
     if (varType == VarType.DOUBLE) {
       // find one to return
-      for (Register r : MmxRegister.values()) {
+      for (Register r : XmmRegister.values()) {
         if (!used.contains(r)) {
           used.add(r);
           return r;
         }
       }
-      throw new D2RuntimeException("IllegalStateException", null, "No MMX registers left");
+      throw new D2RuntimeException("IllegalStateException", null, "No XMM registers left");
     }
     // find one to return
     for (Register r : IntRegister.values()) {

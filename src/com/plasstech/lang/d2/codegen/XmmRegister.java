@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.VarType;
 
-public enum MmxRegister implements Register {
+public enum XmmRegister implements Register {
   XMM4,
   XMM5,
   XMM6,
@@ -23,12 +23,12 @@ public enum MmxRegister implements Register {
 
   @Override
   public String name8() {
-    throw new UnsupportedOperationException("Cannot get name8 of mmx");
+    throw new UnsupportedOperationException("Cannot get name8 of xmm register");
   }
 
   @Override
   public String name32() {
-    throw new UnsupportedOperationException("Cannot get name16 of mmx");
+    throw new UnsupportedOperationException("Cannot get name16 of xmm register");
   }
 
   @Override

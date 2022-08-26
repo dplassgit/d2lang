@@ -647,7 +647,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         resolver.deallocate(reg);
       }
     }
-    for (Register reg : MmxRegister.values()) {
+    for (Register reg : XmmRegister.values()) {
       if (resolver.isAllocated(reg)) {
         resolver.deallocate(reg);
       }

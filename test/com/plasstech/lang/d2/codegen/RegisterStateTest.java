@@ -37,7 +37,7 @@ public class RegisterStateTest {
   @Test
   public void condPushDouble() {
     Register register = registers.allocate(VarType.DOUBLE);
-    assertThat(register).isEqualTo(MmxRegister.XMM4);
+    assertThat(register).isEqualTo(XmmRegister.XMM4);
     RegisterState.condPush(emitter, registers, ImmutableList.of(register));
     assertThat(emitter.all()).containsAtLeast("  sub RSP, 0x10", "  movq [RSP], XMM4").inOrder();
   }
@@ -70,11 +70,11 @@ public class RegisterStateTest {
 
   @Test
   public void condPopDouble() {
-    registers.reserve(MmxRegister.XMM1);
+    registers.reserve(XmmRegister.XMM1);
     registers.reserve(IntRegister.RCX);
     RegisterState registerState =
         RegisterState.condPush(
-            emitter, registers, ImmutableList.of(IntRegister.RCX, MmxRegister.XMM1));
+            emitter, registers, ImmutableList.of(IntRegister.RCX, XmmRegister.XMM1));
     registerState.condPop();
     assertThat(emitter.all())
         .containsAtLeast(
