@@ -219,7 +219,11 @@ public class Resolver implements RegistersInterface {
 
     String size = Size.of(source.type()).asmType;
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
-      emitter.emit("mov %s %s, %s", size, destName, sourceName);
+      if (source.isConstant() && sourceName.equals("0") && destReg != null) {
+        emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
+      } else {
+        emitter.emit("mov %s %s, %s", size, destName, sourceName);
+      }
     } else {
       // two memory locations; use an intermediary
       Register tempReg = allocate(VarType.INT);
@@ -233,15 +237,18 @@ public class Resolver implements RegistersInterface {
   private void movPointer(
       Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
     if (destReg != null || sourceReg != null) {
-      // go right from source to dest
-      emitter.emit("mov %s, %s", destName, sourceName);
+      if (source.isConstant() && sourceName.equals("0") && destReg != null) {
+        emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
+      } else {
+        // go right from source to dest
+        emitter.emit("mov %s, %s", destName, sourceName);
+      }
     } else {
-      // move from sourceLoc to temp
-      // then from temp to dest
+      // move from sourceName to temp
+      // then from temp to destName
       Register tempReg = allocate(VarType.INT);
       emitter.emit("; allocated temp %s", tempReg);
       String tempName = tempReg.sizeByType(source.type());
-      // TODO: this can be short-circuited too if dest is a register
       emitter.emit("mov %s, %s", tempName, sourceName);
       emitter.emit("mov %s, %s", destName, tempName);
       deallocate(tempReg);
@@ -252,9 +259,14 @@ public class Resolver implements RegistersInterface {
   private void movDouble(
       Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
 
-    //    emitter.emit(
-    //        "; movDouble source %s sourceReg %s destReg %s sourceName %s destName %s",
-    //        source, sourceReg, destReg, sourceName, destName);
+    if (source.isConstant() && destReg != null) {
+      ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source;
+      double sourceDub = doubleOp.value();
+      if (sourceDub == 0.0) {
+        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);
+        return;
+      }
+    }
     if (destReg != null || sourceReg != null) {
       // go right from source to dest
       if (sourceReg != null) {
@@ -263,7 +275,7 @@ public class Resolver implements RegistersInterface {
         emitter.emit("movsd %s, %s", destName, sourceName);
       }
     } else {
-      // move from sourceLoc to tempReg then from tempReg to dest
+      // move from sourceName tempReg, then from tempReg to destName
       Register tempReg = allocate(VarType.DOUBLE);
       emitter.emit("; allocated temp %s", tempReg);
       emitter.emit("movsd %s, %s", tempReg, sourceName);
