@@ -55,6 +55,7 @@ NAMES=[
   "Yang-tzu",
   "Zoe"
 ]
+
 // given a letter from a-z, return the index into the planet array.
 IDS=[
   1, // "Alhambra",
@@ -114,7 +115,7 @@ PlanetType: record {
 
   assets: double[5]    // amount of each type on hand: food, fuel, parts, draftable, money
   prod_ratio: int[5]   // ratio of each type of asset production
-  // TODO: maybe these should be doubles
+  // TODO: these should be doubles
   prices: int[2]       // food, fuel (note can only buy if status=empire)
 
   sats_arrive: int[3]  // arrival date (in DAYS) of each satellite
@@ -148,6 +149,8 @@ GameInfoType: record {
   num_empire: int       // # of empire, independent, occupied
   num_independent: int
   num_occupied: int
+
+  debug: bool  // why didn't I think of this before?
 }
 
 
@@ -504,28 +507,29 @@ rebel: proc(p: PlanetType, days: double) {
 
 maybe_join_empire: proc(planet: PlanetType) {
   if planet.troops > 0 and
-    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or planet.civ_level < ADVANCED) {
+    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or
+      planet.civ_level < ADVANCED) {
 
     // troops & fighters are > 0
     // (if limited/primitive the fighters can be 0...)
     years_since = (gameinfo.date - planet.occupied_on)/100
     if years_since > random(4 * gameinfo.level) {
+      // and planet has been occupied for random(4*level)
+      // years, it joins the empire;
       println "\n=============== NEWS FLASH ===============\n"
       print planet.name println " joined the empire!!!"
       println "\n=============== NEWS FLASH ===============\n"
 
-      // and planet has been occupied for random(4*level)
-      // years, it joins the empire;
       set_status(planet, EMPIRE)
 
       // reset all assets
       planet.troops = 0
       planet.fighters = 0
-      a = planet.assets
+      assets = planet.assets
       i = 0 while i < 5 do i = i + 1 {
-        a[i] = a[i] / 2.0
+        assets[i] = assets[i] / 2.0
       }
-      a[DRAFTABLE] = round(a[DRAFTABLE])
+      assets[DRAFTABLE] = round(assets[DRAFTABLE])
 
       planet.sats_orbit = 3
       planet.sats_enroute = 0
@@ -534,7 +538,7 @@ maybe_join_empire: proc(planet: PlanetType) {
 }
 
 
-adjust_planet_counts: proc(status:int, direction: int) {
+adjust_planet_counts: proc(status: int, direction: int) {
   if status == INDEPENDENT {
     gameinfo.num_independent = gameinfo.num_independent + direction
   } elif status == OCCUPIED {
@@ -554,9 +558,9 @@ set_status: proc(p: PlanetType, new_status: int) {
 
 
 // TODO(bug#155): we can't write fleet.assets[DRAFTABLE] = fleet.assets[DRAFTABLE] + 1.0
-add_assets:proc(assets:double[], index: int, amount:double): double {
-  // don't let it go negative
+add_assets: proc(assets: double[], index: int, amount: double): double {
   assets[index] = assets[index] + amount
+  // don't let it go negative
   if assets[index] < 0.5 {
     assets[index] = 0.0
   }
@@ -577,14 +581,22 @@ grow: proc(p: PlanetType, days: int) {
 }
 
 
-build_army: proc(p: PlanetType, days: int) {
+// This used to be called "stockpile" and wasn't dependent on days
+build_defenses: proc(p: PlanetType, days: int) {
   assets = p.assets
+  // this is messed up because if you only sleep a short time it will
+  // never wind up adding any draftees because p.troops is int...
   draftees= 0.005 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
   if (draftees >= 0.5) {
     idraftees = lround(draftees + 0.5)
+    if gameinfo.debug and p == fleet.location {
+      print "Adding " print idraftees print " to army at " println p.name
+    }
     p.troops = p.troops + idraftees
     assets[DRAFTABLE] = assets[DRAFTABLE] - tod(idraftees)
   }
+
+  // TODO: build fighters from parts
 }
 
 
@@ -649,6 +661,45 @@ buy_transaction: proc(fleet: FleetType, index: int, amount: int) {
   add_assets(fleet.assets, MONEY, tod(-amount* planet.prices[index]))
 }
 
+GROWTH_FACTORS =
+    // food, fuel, parts, draftable, money
+    [ 0.4, 0.0, 0.0, 0.2, 4.2,  // prim
+      0.7, 0.4, 0.0, 0.3, 6.3,  // lim
+      0.8, 0.5, 1.0, 0.3, 7.0,  // adv
+      0.8, 0.5, 2.0, 0.3, 7.0]  // sup
+
+// minimum factors for each level
+MINIMUM_RATIOS =
+    // food, fuel, parts, draftable, money
+    [ 0.16, 0.0,  0.0,  0.16, 0.16, // prim
+      0.12, 0.12, 0.12, 0.12, 0.0,  // lim
+      0.10, 0.10, 0.10, 0.10, 0.10, // adv
+      0.10, 0.10, 0.10, 0.10, 0.10] // sup
+
+produce: proc(planet:PlanetType, days:int) {
+  ddays = tod(days)
+  // TODO: this seems like a LOT. maybe it should be less? or based on level?
+  total_production = (ddays / 100.0) * (4.0 * planet.population - 58.0)
+  if gameinfo.debug and planet == fleet.location {
+    print "Total production for " + planet.name + " is "  println total_production
+  }
+
+  // increase each asset type. if prod ratio == min, the increase is zero.
+  assets = planet.assets
+  index = 0 while index < 5 do index = index + 1 {
+    if planet.prod_ratio[index] > 0 {
+      gf = GROWTH_FACTORS[planet.civ_level * 5 + index]
+      mr = MINIMUM_RATIOS[planet.civ_level * 5 + index]
+      pr = tod(planet.prod_ratio[index]) / 100.0
+      increase = total_production * gf * (pr - mr)
+      if gameinfo.debug and planet == fleet.location {
+          print "Increasing " + ASSET_TYPE[index] + " by " println increase
+      }
+      add_assets(assets, index, increase)
+    }
+  }
+}
+
 
 /////////////////////////////////////////////////////////
 // COMMANDS
@@ -657,40 +708,41 @@ buy_transaction: proc(fleet: FleetType, index: int, amount: int) {
 elapse: proc(days: int) {
   gameinfo.date = gameinfo.date + days
 
-  i = 1 while i < NUM_PLANETS do i = i + 1 {
+  i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
     if p.status != EMPIRE {
       move_sats(p)
     }
     grow(p, days)
-
-    // TODO: produce
+    produce(p, days)
 
     if p.status == INDEPENDENT {
-      build_army(p, days)
+      build_defenses(p, days)
     }
 
     if p.status == OCCUPIED {
       rebel(p, tod(days))
-    }
 
-    // update status
-    if p.status == OCCUPIED and p.troops == 0 and p.fighters == 0 {
-      println "\n=============== NEWS FLASH ===============\n"
-      print p.name println " rebelled and is independent again!"
-      println "\n=============== NEWS FLASH ===============\n"
+      if p.troops == 0 and p.fighters == 0 {
+        println "\n=============== NEWS FLASH ===============\n"
+        print p.name println " rebelled and is independent again!"
+        println "\n=============== NEWS FLASH ===============\n"
 
-      // back to independent
-      set_status(p, INDEPENDENT)
+        // back to independent
+        set_status(p, INDEPENDENT)
 
-      // TODO: this will be moved to "build_rebellion" eventually
-      // draft half the draftable people
-      p.troops = toi(p.assets[DRAFTABLE] / 2.0)
-      add_assets(p.assets, DRAFTABLE, -tod(p.troops))
+        // TODO: this will be moved to "build_rebellion" eventually
+        // draft half the draftable people
+        p.troops = toi(p.assets[DRAFTABLE] / 2.0)
+        if gameinfo.debug {
+          print p.name + " re-established their army with " print p.troops println " troops"
+        }
+        add_assets(p.assets, DRAFTABLE, -tod(p.troops))
 
-      // TODO: make some fighters
-    } elif p.status == OCCUPIED {
-      maybe_join_empire(p)
+        // TODO: make some fighters
+      } else {
+        maybe_join_empire(p)
+      }
     }
   }
 }
@@ -1025,6 +1077,8 @@ attack: proc(location: PlanetType) {
         fleet.fighters = us
         location.fighters = them
       } else {
+        // Note, if we lose, the # of empty transports doesn't go down, this is
+        // by design.
         fleet.troops = us
         location.troops = them
       }
@@ -1042,6 +1096,8 @@ attack: proc(location: PlanetType) {
     } elif us >= 0 and them == 0 {
       if (battle_location == SPACE) {
         println "\nSpace battle won! Proceeding to land battle...\n"
+        // wow this doesn't have any discernable delay...
+        // j = 0 while j < 1000000 do j = j + 1 {}
         battle_location = LAND
       } else {
         println "\nLand battle won!"
@@ -1139,7 +1195,7 @@ tax:proc(planet:PlanetType) {
   // 2. get planetary money
   money = planet.assets[MONEY]
   if money > 0.0 {
-    print "Collecting $" print money print " from " println planet.name
+    print "Collecting " print money print " from " println planet.name
     // if planetary money =0, don't do anything!;
     // 3. add planetary money to fleet money
     add_assets(fleet.assets, MONEY, money)
@@ -1251,6 +1307,9 @@ execute: proc(command: string, full_command: string) {
     info(planets[0])
   } elif command=="BUY" {
     buy(fleet.location)
+  } elif command=="DEB" {
+    gameinfo.debug = not gameinfo.debug
+    print "Debugging now: " println gameinfo.debug
   } elif command=="INF" {
     if length(full_command) < 6 {
       info(fleet.location)
