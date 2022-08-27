@@ -47,7 +47,9 @@ public class DoubleGenerator {
       case MINUS:
       case MULT:
       case DIV:
-        emitter.emit("movsd %s, %s ; double setup", destName, leftName);
+        if (!destName.equals(leftName)) {
+          emitter.emit("movsd %s, %s ; double setup", destName, leftName);
+        }
         if (operator == TokenType.DIV) {
           generateDivByZero(op);
         }

@@ -50,4 +50,11 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
             "f:proc{a=%s b=%s c=a %s b print c d=b %s a print d} f()", boola, boolb, op, op),
         "boolBinOpProc" + boola + boolb);
   }
+
+  @Test
+  public void boolAnd() throws Exception {
+    execute(
+        "f:proc(a:int, b:int):bool {if a+b > b-a or a<a-b { return true} return false} f(1,2)",
+        "boolAnd");
+  }
 }

@@ -6,7 +6,6 @@ import static com.plasstech.lang.d2.codegen.XmmRegister.XMM0;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -52,8 +51,10 @@ public class Registers implements RegistersInterface {
     if (r == null) {
       return;
     }
-    Preconditions.checkState(
-        used.contains(r), String.format("Register %s not allocated in register bank", r.name()));
+    if (!used.contains(r)) {
+      throw new D2RuntimeException(
+          String.format("Register %s not allocated in register bank", r.name()), null, "CodeGen");
+    }
     used.remove(r);
   }
 

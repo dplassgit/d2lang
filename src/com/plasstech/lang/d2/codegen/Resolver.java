@@ -222,7 +222,11 @@ public class Resolver implements RegistersInterface {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
         emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
       } else {
-        emitter.emit("mov %s %s, %s", size, destName, sourceName);
+        if (sourceReg == destReg && sourceReg != null && destReg != null) {
+          emitter.emit("; skipping mov %s %s, %s", size, destName, sourceName);
+        } else {
+          emitter.emit("mov %s %s, %s", size, destName, sourceName);
+        }
       }
     } else {
 
@@ -282,8 +286,12 @@ public class Resolver implements RegistersInterface {
         // source is not a register (it's memory)
         emitter.emit("movsd %s, %s", destName, sourceName);
       } else {
-        // source is a register - either int or XMM register
-        emitter.emit("movq %s, %s", destName, sourceName);
+        if (destReg == sourceReg) {
+          emitter.emit("; source and dest are both %s", destReg);
+        } else {
+          // source is a register - either int or XMM register
+          emitter.emit("movq %s, %s", destName, sourceName);
+        }
       }
       return;
     }
@@ -302,5 +310,14 @@ public class Resolver implements RegistersInterface {
         destName);
     deallocate(tempReg);
     emitter.emit("; deallocated temp %s", tempReg);
+  }
+
+  public void addAlias(Location newAlias, Operand oldAlias) {
+    Register reg = aliases.get(oldAlias.toString());
+    if (reg == null) {
+      throw new IllegalStateException("No alias for temp " + oldAlias);
+    }
+    emitter.emit("; aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
+    aliases.put(newAlias.name(), reg);
   }
 }
