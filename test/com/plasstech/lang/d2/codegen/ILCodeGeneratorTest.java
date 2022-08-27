@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
@@ -141,6 +143,20 @@ public class ILCodeGeneratorTest {
   @Test
   public void stringLength() {
     generateProgram("a=length('hi')");
+  }
+
+  @Test
+  public void printTwo() {
+    List<Op> program = generateProgram("print 'a'+'b'");
+    assertThat(
+            program
+                .stream()
+                .filter(
+                    op -> {
+                      return op instanceof SysCall;
+                    })
+                .count())
+        .isEqualTo(2);
   }
 
   @Test
