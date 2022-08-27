@@ -535,7 +535,7 @@ move_sats: proc(p: PlanetType) {
           println ""
           first = false
         }
-        print "Satellite arrived at " println p.name
+        println "Satellite arrived at " + p.name
         sats_arrive[j] = 0
         p.sats_enroute = p.sats_enroute - 1
         p.sats_orbit = p.sats_orbit + 1
@@ -570,7 +570,7 @@ maybe_join_empire: proc(planet: PlanetType) {
       // and planet has been occupied for random(4*level)
       // years, it joins the empire;
       println "\n=============== NEWS FLASH ===============\n"
-      print planet.name println " joined the empire!!!"
+      println planet.name + " joined the empire!!!"
       println "\n=============== NEWS FLASH ===============\n"
 
       set_status(planet, EMPIRE)
@@ -643,7 +643,7 @@ build_defenses: proc(p: PlanetType, days: int) {
   if (draftees >= 0.5) {
     idraftees = lround(draftees + 0.5)
     if gameinfo.debug and p == fleet.location {
-      print "Adding " print idraftees print " to army at " println p.name
+      print "Adding " print idraftees println " to army at " + p.name
     }
     p.troops = p.troops + idraftees
     assets[DRAFTABLE] = assets[DRAFTABLE] - tod(idraftees)
@@ -663,7 +663,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
 
     while true {
       // TODO(bug #142): Use % syntax
-      print planet.name print " has " print available print " " print ASSET_TYPE[index] println " units to buy."
+      print planet.name + " has " print available println " " + ASSET_TYPE[index] + " units to buy."
       print "You can afford " print afford println " units."
       print "You can carry " print carry println " units."
       print "How many units to purchase (number or 'max')? "
@@ -687,7 +687,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
       } elif famount < 0 {
         println "You're killing me smalls."
       } elif famount > 0 {
-        print "\nA fine " print ASSET_TYPE[index] print "s amount: " println famount
+        print "\nA fine " + ASSET_TYPE[index] + "s amount: " println famount
         print "This cost: " println famount * planet.prices[index]
         println ""
         buy_transaction(fleet, index, famount)
@@ -697,7 +697,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
       println ""
     }
   } else {
-    print "None " print ASSET_TYPE[index] print " available for purchase at " println planet.name
+    println "None " + ASSET_TYPE[index] + " available for purchase at " + planet.name
   }
   return false
 }
@@ -778,7 +778,7 @@ elapse: proc(days: int) {
 
       if p.troops == 0 and p.fighters == 0 {
         println "\n=============== NEWS FLASH ===============\n"
-        print p.name println " rebelled and is independent again!"
+        println p.name + " rebelled and is independent again!"
         println "\n=============== NEWS FLASH ===============\n"
 
         // back to independent
@@ -833,7 +833,7 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   //       ii. if satellites > 2 draw troops, fighters, sats;
 
   if sats > 0 {
-    print "Civ level:   " println CIV_LEVELS[p.civ_level]
+    println "Civ level:   " + CIV_LEVELS[p.civ_level]
   }
   if sats > 1 {
     print " Population: " println p.population
@@ -884,7 +884,7 @@ show_fleet: proc(fleet: FleetType) {
   print "FLEET AT: " println fleet.location.name
   i = 0 while i < 5 do i = i + 1 {
     if i != DRAFTABLE {
-      print " " print ASSET_TYPE[i] print ": " println fleet.assets[i]
+      print " " + ASSET_TYPE[i] + ": " println fleet.assets[i]
     }
   }
   print "Food carriers:    " println fleet.carriers[FOOD]
@@ -945,7 +945,7 @@ sat: proc(p: PlanetType) {
     return
   }
   if p.sats_orbit + p.sats_enroute == 3 {
-    print "Already sent 3 satellites to " println p.name
+    println "Already sent 3 satellites to " + p.name
     return
   }
   if fleet.satellites == 0 {
@@ -971,7 +971,7 @@ sat: proc(p: PlanetType) {
 // Embark, if we have enough fuel and food
 embark: proc(p: PlanetType) {
   if fleet.location == p {
-    print "Already at " println p.name
+    println "Already at " + p.name
     return
   }
 
@@ -999,15 +999,15 @@ embark: proc(p: PlanetType) {
       elapse(toi(distance)*10)
 
       println "\n=============== NEWS FLASH ===============\n"
-      print "The Imperial Fleet arrived at " print p.name print " @ " println format_date(gameinfo.date)
+      println "The Imperial Fleet arrived at " + p.name + " @ " + format_date(gameinfo.date)
       println "\n=============== NEWS FLASH ===============\n"
 
       show_planet(p, false)
     } else {
-      print "Not enough fuel to get to " print p.name print ". Need " println fuel_needed
+      print "Not enough fuel to get to " + p.name + ". Need " println fuel_needed
     }
   } else {
-    print "Not enough food to get to " print p.name print ". Need " println food_needed
+    print "Not enough food to get to " + p.name + ". Need " println food_needed
   }
 }
 
@@ -1018,7 +1018,7 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
     return
   }
 
-  print location.name println " occupation status:\n"
+  println location.name + " occupation status:\n"
   if location.civ_level >= ADVANCED {
     print "Fighters: " println location.fighters
     print "Troops:   " println location.troops
@@ -1059,7 +1059,7 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
   fleet.etrans = fleet.etrans + troops
 
   if troops > 0 or fighters > 0 {
-    print "Updated " print location.name println " occupation status:\n"
+    println "Updated " + location.name + " occupation status:\n"
     if location.civ_level >= ADVANCED {
       print "Fighters: " println location.fighters
       print "Troops:   " println location.troops
@@ -1078,7 +1078,7 @@ attack: proc(location: PlanetType) {
     println "Can only attack an independent planet."
     return
   }
-  print "Attacking " println location.name println ""
+  println "Attacking " + location.name + "\n"
   battle_location=LAND
   if location.civ_level >= ADVANCED {
     println "Space battle commencing..."
@@ -1181,7 +1181,7 @@ draft: proc(location: PlanetType) {
     return
   }
 
-  print location.name print " has " print location.assets[DRAFTABLE] println " available."
+  print location.name + " has " print location.assets[DRAFTABLE] println " available."
   print "The fleet has room for " print fleet.etrans println " additional troops."
   draftees = 0
   while true {
@@ -1248,7 +1248,7 @@ tax:proc(planet:PlanetType) {
   // 2. get planetary money
   money = planet.assets[MONEY]
   if money > 0.0 {
-    print "Collecting " print money print " from " println planet.name
+    print "Collecting " print money println " from " + planet.name
     // if planetary money =0, don't do anything!;
     // 3. add planetary money to fleet money
     add_assets(fleet.assets, MONEY, money)
@@ -1405,7 +1405,7 @@ execute: proc(command: string, full_command: string) {
 mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
-    print "\nToday is " println format_date(gameinfo.date)
+    println "\nToday is " + format_date(gameinfo.date)
     print "\nYour command: "
 
     full_command = input
