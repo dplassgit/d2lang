@@ -30,6 +30,11 @@ IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 
 SPACE = 0 LAND = 1
 
+// Ship types for resources
+FOOD_IDX=FOOD FUEL_IDX=FUEL FIGHTER_IDX=2 TRANSPORTS_IDX=3 SATS_IDX=4
+RESOURCE_TYPE=["Food carriers", "Fuel carriers", "Fighers", "Transports", "Satellites"]
+
+
 /////////////////////////////////////////////////////////
 // CONSTANTS
 /////////////////////////////////////////////////////////
@@ -97,7 +102,7 @@ planets: PlanetType[NUM_PLANETS]
 gameinfo: GameInfoType
 fleet: FleetType
 galmap: int[SIZE*SIZE]    // 0=no planet, else the ascii of the planet
-
+shipresources: ResourceType[5]
 
 /////////////////////////////////////////////////////////
 // TYPES
@@ -153,6 +158,10 @@ GameInfoType: record {
   debug: bool  // why didn't I think of this before?
 }
 
+ResourceType: record {
+  parts: int
+  money: int
+}
 
 /////////////////////////////////////////////////////////
 // INITIALIZERS
@@ -317,6 +326,50 @@ initFleet: proc {
 
   fleet.fighters = fleet.etrans + 100
   fleet.satellites = 11 - gameinfo.level/2
+
+  init_costs(gameinfo.level)
+}
+
+init_costs: proc(level: int) {
+  set_ship_cost(level, FOOD_IDX)
+  set_ship_cost(level, FUEL_IDX)
+  set_ship_cost(level, FIGHTER_IDX)
+  set_ship_cost(level, TRANSPORTS_IDX)
+  set_ship_cost(level, SATS_IDX)
+}
+
+// coefficients to calculate # parts needed to build each type
+//  parts[shiptype] = (partsa * level + partsb) / 10
+PARTS_COEFFS = [
+     131, 2130, // food
+     56, 4004 , // fuel
+     4, 157 , // fighters
+     3, 41 , //  transports
+     35, 1025] // sats
+
+//  money[shiptype] = (moneya * level + moneyb) / 10
+MONEY_COEFFS = [
+     80, 1600, // food
+     120, 2400, // fuel
+     6, 92, // fighters
+     3, 41, //  transports
+     40, 800] // sats
+
+set_ship_cost:proc(level:int, shiptype:int) {
+  resource = new ResourceType
+  shipresources[shiptype] = resource
+
+  partsa = PARTS_COEFFS[shiptype * 2]
+  partsb = PARTS_COEFFS[shiptype * 2 + 1]
+  moneya = MONEY_COEFFS[shiptype * 2]
+  moneyb = MONEY_COEFFS[shiptype * 2 + 1]
+
+  resource.parts = (partsa * level + partsb) / 10
+  resource.money = (moneya * level + moneyb) / 10
+  if gameinfo.debug {
+    print "resource[" print shiptype print "].parts=" println resource.parts
+    print "resource[" print shiptype print "].money=" println resource.money
+  }
 }
 
 
