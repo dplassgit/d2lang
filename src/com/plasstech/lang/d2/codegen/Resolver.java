@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.VarType;
  * Resolves temp and other variables and keeps track if they're in registers or not. TODO: rename
  * this to something better.
  */
-public class Resolver implements RegistersInterface {
+class Resolver implements RegistersInterface {
   // map from name to register
   private final Map<String, Register> aliases = new HashMap<>();
   private final Registers registers;
@@ -18,8 +18,7 @@ public class Resolver implements RegistersInterface {
   private final DoubleTable doubleTable;
   private final Emitter emitter;
 
-  public Resolver(
-      Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter emitter) {
+  Resolver(Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter emitter) {
     this.registers = registers;
     this.stringTable = stringTable;
     this.doubleTable = doubleTable;
@@ -30,7 +29,7 @@ public class Resolver implements RegistersInterface {
    * Given an operand returns a string representation of where it can be accessed. It also allocates
    * a register for a temp if it's not already allocated.
    */
-  public String resolve(Operand operand) {
+  String resolve(Operand operand) {
     if (operand.isConstant()) {
       if (operand.type() == VarType.INT || operand.type() == VarType.BYTE) {
         return operand.toString();
@@ -102,7 +101,7 @@ public class Resolver implements RegistersInterface {
   }
 
   /** If the operand is a temp and was allocated, deallocate its register. */
-  public void deallocate(Operand operand) {
+  void deallocate(Operand operand) {
     if (operand.storage() == SymbolStorage.TEMP) {
       // now that we used the temp, unallocate it
       String operandName = operand.toString();
@@ -116,7 +115,7 @@ public class Resolver implements RegistersInterface {
   }
 
   /** @return the equivalent register, or null if none. */
-  public Register toRegister(Operand source) {
+  Register toRegister(Operand source) {
     if (source.isConstant()) {
       return null;
     }
@@ -147,18 +146,18 @@ public class Resolver implements RegistersInterface {
   }
 
   /** Returns true if the given operand is in any register. */
-  public boolean isInAnyRegister(Operand arg) {
+  boolean isInAnyRegister(Operand arg) {
     return toRegister(arg) != null;
   }
 
   /** Returns true if the given operand is in the given register. */
-  public boolean isInRegister(Operand arg, Register register) {
+  boolean isInRegister(Operand arg, Register register) {
     return toRegister(arg) == register;
   }
 
   private static int id;
 
-  public String nextLabel(String prefix) {
+  String nextLabel(String prefix) {
     return String.format("__%s_%d", prefix, id++);
   }
 
@@ -185,21 +184,21 @@ public class Resolver implements RegistersInterface {
     return registers.isAllocated(r);
   }
 
-  public void mov(Operand source, Register dest) {
+  void mov(Operand source, Register dest) {
     mov(source, new RegisterLocation("dest", dest, source.type()));
   }
 
-  public void mov(VarType type, Register source, Register destination) {
+  void mov(VarType type, Register source, Register destination) {
     mov(
         new RegisterLocation("source", source, type),
         new RegisterLocation("dest", destination, type));
   }
 
-  public void mov(Register source, Location destination) {
+  void mov(Register source, Location destination) {
     mov(new RegisterLocation("source", source, destination.type()), destination);
   }
 
-  public void mov(Operand source, Operand destination) {
+  void mov(Operand source, Operand destination) {
     String destName = resolve(destination);
     Register destReg = toRegister(destination);
     String sourceName = resolve(source); // this may put it in a register
@@ -312,7 +311,7 @@ public class Resolver implements RegistersInterface {
     emitter.emit("; deallocated temp %s", tempReg);
   }
 
-  public void addAlias(Location newAlias, Operand oldAlias) {
+  void addAlias(Location newAlias, Operand oldAlias) {
     Register reg = aliases.get(oldAlias.toString());
     if (reg == null) {
       throw new IllegalStateException("No alias for temp " + oldAlias);

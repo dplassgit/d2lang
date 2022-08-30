@@ -9,7 +9,7 @@ import java.util.Set;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.VarType;
 
-public class Registers implements RegistersInterface {
+class Registers implements RegistersInterface {
   // these are the USED registers
   private final Set<Register> used = new HashSet<>();
 

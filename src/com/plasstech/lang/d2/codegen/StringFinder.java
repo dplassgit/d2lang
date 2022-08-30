@@ -27,7 +27,7 @@ import com.plasstech.lang.d2.type.VarType;
  */
 class StringFinder {
 
-  public StringTable execute(ImmutableList<Op> code) {
+  StringTable execute(ImmutableList<Op> code) {
     StringTable stringTable = new StringTable();
     ConstFinder<String> constFinder =
         new ConstFinder<String>(stringTable, vt -> vt == VarType.STRING);

@@ -24,7 +24,7 @@ class RecordGenerator {
 
   private final NullPointerCheckGenerator npeCheckGenerator;
 
-  public RecordGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
+  RecordGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
     this.resolver = resolver;
     this.symTab = symTab;
     this.emitter = emitter;

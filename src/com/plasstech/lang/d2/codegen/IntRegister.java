@@ -2,8 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.VarType;
 
-public enum IntRegister implements Register {
-
+enum IntRegister implements Register {
   RBX("RBX", "EBX", "BX", "BL"),
   // R4/RSP - not used as GP register
   // R5/RBP - not used as GP register

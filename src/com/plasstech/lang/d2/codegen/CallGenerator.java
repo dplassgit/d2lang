@@ -19,7 +19,7 @@ class CallGenerator {
   }
 
   /** Generate nasm code for the given call */
-  public void generate(Call op) {
+  void generate(Call op) {
     if (op.actuals().size() == 0) {
       return;
     }

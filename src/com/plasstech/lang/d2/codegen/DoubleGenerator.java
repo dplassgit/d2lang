@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
-public class DoubleGenerator {
+class DoubleGenerator {
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.PLUS, "addsd")
@@ -35,7 +35,7 @@ public class DoubleGenerator {
     this.emitter = emitter;
   }
 
-  public void generate(BinOp op) {
+  void generate(BinOp op) {
     TokenType operator = op.operator();
     String leftName = resolver.resolve(op.left());
     VarType leftType = op.left().type();

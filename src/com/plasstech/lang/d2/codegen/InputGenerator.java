@@ -13,7 +13,7 @@ class InputGenerator {
   private final Registers registers;
   private final Emitter emitter;
 
-  public InputGenerator(Resolver resolver, Registers registers, Emitter emitter) {
+  InputGenerator(Resolver resolver, Registers registers, Emitter emitter) {
     this.resolver = resolver;
     this.registers = registers;
     this.emitter = emitter;

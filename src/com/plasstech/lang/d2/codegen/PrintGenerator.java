@@ -18,7 +18,7 @@ class PrintGenerator {
   private final Resolver resolver;
   private final Emitter emitter;
 
-  public PrintGenerator(Resolver resolver, Emitter emitter) {
+  PrintGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }

@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import com.plasstech.lang.d2.type.VarType;
 
-public enum XmmRegister implements Register {
+enum XmmRegister implements Register {
   XMM4,
   XMM5,
   XMM6,

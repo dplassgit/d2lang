@@ -15,8 +15,8 @@ enum Size {
   _32BITS("DWORD", "dd"),
   _64BITS("QWORD", "dq");
 
-  public final String asmType;
-  public final String dataSizeName;
+  final String asmType;
+  final String dataSizeName;
 
   Size(String asmName, String dataSizeName) {
     this.asmType = asmName;

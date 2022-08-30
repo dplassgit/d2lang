@@ -8,7 +8,7 @@ class NullPointerCheckGenerator {
   private final Resolver resolver;
   private final Emitter emitter;
 
-  public NullPointerCheckGenerator(Resolver resolver, Emitter emitter) {
+  NullPointerCheckGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }
