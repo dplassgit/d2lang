@@ -789,7 +789,7 @@ construct_one_type: proc(fleet:FleetType, index: int): bool {
         println "You're killing me smalls."
       } elif famount > 0 {
         cost = famount * res.money
-        print "Constructing " print famount print " " + RESOURCE_TYPE[index] + "s for " print cost println " credits each."
+        print "Constructing " print famount print " " + RESOURCE_TYPE[index] + "s for " print cost println " credits."
         construct_transaction(fleet, index, famount)
         elapse(100)
         return true
@@ -803,7 +803,7 @@ construct_one_type: proc(fleet:FleetType, index: int): bool {
 }
 
 
-// Complete the constructiontransaction by updating amounts of the fleet and planet.
+// Complete the construction transaction by updating amounts of the fleet and planet.
 construct_transaction: proc(fleet: FleetType, shiptype: int, count: int) {
   planet = fleet.location
   res = shipresources[shiptype]
@@ -828,7 +828,7 @@ construct_transaction: proc(fleet: FleetType, shiptype: int, count: int) {
   } elif shiptype == SATS_IDX {
     fleet.satellites = fleet.satellites + count
   } else {
-    exit "Unknown ship type" + tostring(shiptype)
+    exit "Unknown ship type" + toString(shiptype)
   }
 }
 
@@ -985,10 +985,10 @@ show_fleet: proc(fleet: FleetType) {
 
 // Shows the galaxy around the given planet in a 24x12 window
 map: proc(planet: PlanetType) {
-  left_top_x = max(0, planet.x-24)
+  left_top_x = max(0, planet.x-12)
   left_top_y = max(0, planet.y-12)
   // left_top_x, y cannot be within 24 of the size
-  left_top_x = min(left_top_x, SIZE-48)
+  left_top_x = min(left_top_x, SIZE-24)
   left_top_y = min(left_top_y, SIZE-24)
   //print "at " print left_top_x print ", " println left_top_y
   print "+"
@@ -998,10 +998,25 @@ map: proc(planet: PlanetType) {
   println "+"
   y = 0 while y < 24 do y = y + 1 {
     print "|"
-    x = 0 while x < 48 do x = x + 1 {
+    x = 0 while x < 24 do x = x + 1 {
       cell = galmap[x + left_top_x+ SIZE*(y+left_top_y)]
-      if cell == 0 {print " "} else {
-        print chr(cell)
+      if cell == 0 {print "  "} else {
+        planet_initial = chr(cell)
+        print planet_initial
+        // find planet of this character
+        planet = find_planet(planet_initial)
+        if planet.status == EMPIRE {
+          print "e"
+        } elif planet.status == OCCUPIED {
+          print "o"
+        } else {
+          // independent
+          if planet.sats_orbit > 0 {
+            print planet.sats_orbit
+          } else {
+            print "i"
+          }
+        }
       }
     }
     println "|"
