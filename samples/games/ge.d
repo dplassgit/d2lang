@@ -34,13 +34,16 @@ IN_PROGRESS=0 WON=1 LOST=-1 QUIT=-2
 SPACE = 0 LAND = 1
 
 // Ship types for resources
-FOOD_IDX=FOOD FUEL_IDX=FUEL FIGHTER_IDX=2 TRANSPORTS_IDX=3 SATS_IDX=4
-RESOURCE_TYPE=["Food carriers", "Fuel carriers", "Fighers", "Transports", "Satellites"]
+FOOD_IDX=FOOD FUEL_IDX=FUEL FIGHTERS_IDX=2 TRANSPORTS_IDX=3 SATS_IDX=4
+RESOURCE_TYPE=["Food carrier", "Fuel carrier", "Fighter", "Transport", "Satellite"]
 
 
 /////////////////////////////////////////////////////////
 // CONSTANTS
 /////////////////////////////////////////////////////////
+
+DAYS_PER_LY = 25.0
+
 NAMES=[
   "Galactica",
   "Alhambra",
@@ -162,6 +165,7 @@ GameInfoType: record {
 }
 
 ResourceType: record {
+  // should these be doubles?
   parts: int
   money: int
 }
@@ -336,7 +340,7 @@ initFleet: proc {
 init_costs: proc(level: int) {
   set_ship_cost(level, FOOD_IDX)
   set_ship_cost(level, FUEL_IDX)
-  set_ship_cost(level, FIGHTER_IDX)
+  set_ship_cost(level, FIGHTERS_IDX)
   set_ship_cost(level, TRANSPORTS_IDX)
   set_ship_cost(level, SATS_IDX)
 }
@@ -345,9 +349,9 @@ init_costs: proc(level: int) {
 //  parts[shiptype] = (partsa * level + partsb) / 10
 PARTS_COEFFS = [
      131, 2130, // food
-     56, 4004 , // fuel
-     4, 157 , // fighters
-     3, 41 , //  transports
+     56, 4004, // fuel
+     4, 157, // fighters
+     3, 41, //  transports
      35, 1025] // sats
 
 //  money[shiptype] = (moneya * level + moneyb) / 10
@@ -632,7 +636,8 @@ build_defenses: proc(p: PlanetType, days: int) {
   assets = p.assets
   // this is messed up because if you only sleep a short time it will
   // never wind up adding any draftees because p.troops is int...
-  draftees= 0.005 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
+
+  draftees = 0.001 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
   if (draftees >= 0.5) {
     idraftees = lround(draftees + 0.5)
     if gameinfo.debug and p == fleet.location {
@@ -747,11 +752,96 @@ produce: proc(planet:PlanetType, days:int) {
 }
 
 
+construct_one_type: proc(fleet:FleetType, index: int): bool {
+  planet = fleet.location
+  available = lround(planet.assets[PARTS])
+  if available > 0 {
+    res = shipresources[index]
+    can_build = available / res.parts
+    afford = lround(fleet.assets[MONEY] / tod(res.money))
+    if can_build == 0 or afford == 0 {
+      println "Not enough parts or cannot afford any " + RESOURCE_TYPE[index] + "s. :-(\n"
+      return false
+    }
+
+    while true {
+      print "\n" + planet.name + " has " print available println " parts."
+      // TODO(bug #142): Use % syntax
+      print "This can build " print can_build println " " + RESOURCE_TYPE[index] + "s."
+      print "You can afford " print afford println " units."
+      print "How many " + RESOURCE_TYPE[index] + "s to construct (number or 'max')? "
+      samount = input
+      trimmed = trim(samount)
+      if trimmed == 'max' or trimmed == 'MAX' or trimmed == 'all' or trimmed == 'ALL' {
+        famount = min(can_build, afford)
+        print "Building max: " println famount
+      } else {
+        famount = atoi(samount)
+      }
+      if famount == 0 {
+        break
+      }
+      if famount > can_build {
+        println "Can't build that much. Try again."
+      } elif famount > afford {
+        println "Can't afford that much. Try again."
+      } elif famount < 0 {
+        println "You're killing me smalls."
+      } elif famount > 0 {
+        cost = famount * res.money
+        print "Constructing " print famount print " " + RESOURCE_TYPE[index] + "s for " print cost println " credits each."
+        construct_transaction(fleet, index, famount)
+        elapse(100)
+        return true
+      }
+      println "\n"
+    }
+  } else {
+    println "No parts available for construction at " + planet.name
+  }
+  return false
+}
+
+
+// Complete the constructiontransaction by updating amounts of the fleet and planet.
+construct_transaction: proc(fleet: FleetType, shiptype: int, count: int) {
+  planet = fleet.location
+  res = shipresources[shiptype]
+  total_cost = res.money * count
+  total_parts = res.parts * count
+
+  // decrease money of fleet
+  add_assets(fleet.assets, MONEY, -tod(total_cost))
+  // decrease parts on planet
+  add_assets(planet.assets, PARTS, -tod(total_parts))
+  // increase # of ships of this type
+  if shiptype == FOOD {
+    // increase # of food carriers
+    car = fleet.carriers
+    car[FOOD] = car[FOOD] + count
+  } elif shiptype == FUEL {
+    // increase # of fuel carriers
+    car = fleet.carriers
+    car[FOOD] = car[FUEL] + count
+  } elif shiptype == FIGHTERS_IDX {
+    fleet.fighters = fleet.fighters + count
+  } elif shiptype == TRANSPORTS_IDX {
+    fleet.etrans = fleet.etrans + count
+  } elif shiptype == SATS_IDX {
+    fleet.satellites = fleet.satellites + count
+  }
+}
+
+
+
 /////////////////////////////////////////////////////////
 // COMMANDS
 /////////////////////////////////////////////////////////
 
 elapse: proc(days: int) {
+  if gameinfo.debug {
+    print "Sleeping for " print days println " days"
+  }
   gameinfo.date = gameinfo.date + days
 
   i = 0 while i < NUM_PLANETS do i = i + 1 {
@@ -869,7 +959,7 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   if fleet.location != p {
     distance = calc_distance(fleet.location, p)
     print "Distance:        " print distance println " ly"
-    print "Est travel time: " print distance * 10.0 println " days"
+    print "Est travel time: " print distance * DAYS_PER_LY println " days"
     print "Estimated food:  " println calc_food_needed(distance)
     print "Estimated fuel:  " println calc_fuel_needed(distance)
   }
@@ -990,10 +1080,12 @@ embark: proc(p: PlanetType) {
       fleet.location = p
 
       // 4. elapse time;
-      // multiply distance by 10 to go from ly to years;
-      // TODO: randomly take +/1 1%
-      // distance * (0.99 + tod(random(2))/100.0)
-      elapse(toi(distance)*10)
+      // multiply distance by 100 to go from ly to years;
+      // randomly take +/- 2%
+      distance = distance * (0.98 + tod(random(4))/100.0)
+      // NOTE: in the c version it was 10, which seems too short,
+      // but in asm it was 100, which seems too long.
+      elapse(toi(distance * DAYS_PER_LY))
 
       println "\n=============== NEWS FLASH ===============\n"
       println "The Imperial Fleet arrived at " + p.name + " @ " + format_date(gameinfo.date)
@@ -1173,6 +1265,7 @@ attack: proc(location: PlanetType) {
   }
 }
 
+
 draft: proc(location: PlanetType) {
   if location.status != EMPIRE{
     println "Can only draft on an empire planet."
@@ -1259,6 +1352,7 @@ tax:proc(planet:PlanetType) {
   elapse(10)
 }
 
+
 buy:proc(planet:PlanetType) {
   if planet.status != EMPIRE {
     println "Cannot buy materials on non-empire planet"
@@ -1278,6 +1372,18 @@ buy:proc(planet:PlanetType) {
 }
 
 
+construct_ships:proc(planet:PlanetType) {
+  if planet.status != EMPIRE {
+    println "Cannot construct ships on non-empire planet"
+    return
+  }
+
+  // for each ship type do something similar to the buy dialog
+  i = 0 while i < 5 do i = i + 1 {
+    construct_one_type(fleet, i)
+  }
+}
+
 help: proc {
   println
 "
@@ -1294,7 +1400,7 @@ DRAft troops (only on empire planets)
 TAXes: Collect taxes (only on empire planets)
 BUY food, fuel (only on empire planets)
 DECommission troops (only on empire planets)
-*CONstruct ships (only on empire planets)
+CONstruct ships (only on empire planets)
 *PROduction ratios: update production ratios (only on empire planets)
 *SCRap ships (only on empire planets)
 QUIt
@@ -1358,6 +1464,8 @@ execute: proc(command: string, full_command: string) {
     info(planets[0])
   } elif command=="BUY" {
     buy(fleet.location)
+  } elif command=="CON" {
+    construct_ships(fleet.location)
   } elif command=="DEB" {
     gameinfo.debug = not gameinfo.debug
     print "Debugging now: " println gameinfo.debug
@@ -1430,8 +1538,8 @@ main {
   gameinfo.leveld = tod(gameinfo.level)
   print "Difficulty level is " println gameinfo.level
 
-  seed=time(0)
-  seed = 1661383298
+  seed = time(0)
+//  seed = 1661383298
   print "Random seed is " println seed
   srand(seed)
 
