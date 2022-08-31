@@ -4,11 +4,14 @@
 /////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////
 
-atoi: extern proc(s:string):int
+atoi: extern proc(s:string): int
 lround: extern proc(x: double): int
 round: extern proc(x: double): double
 sqrt: extern proc(d: double): double
 time: extern proc(ignored: int): int
+srand: extern proc(seed: int)
+rand: extern proc(): int
+
 
 /////////////////////////////////////////////////////////
 // ENUMERATIONS
@@ -181,7 +184,6 @@ initPlanets: proc {
     // set galmap[x, y] to planet name letter
     galmap[p.x+SIZE*p.y] = asc(p.name)
 
-    // TODO: Randomize all of these +/- level*2 %
     if i != 0 {
       // 2. assign population based on level
       // the higher the level the more pop
@@ -247,14 +249,14 @@ initPlanets: proc {
     }
 
     // 8. set food price, fuel price based on level
-    // TODO: prices go up and down with the market,
+    // TODO: prices go up and down with the market
     // TODO: start with random factor
     prices = p.prices
     prices[FOOD] = toi(4.5+gameinfo.leveld/2.0)
     prices[FUEL] = toi(2.5+gameinfo.leveld/2.0)
 
     // 9. set initial assets based on level
-    // TODO: RANDOMIZE
+    // WEIRD that these are not related to population at all
     // food 3.3973x2-75.85x+432.41
     // money 27.268x2-635.19x+3799
     // parts 4.4802x2-97.611x+541.88
@@ -264,30 +266,31 @@ initPlanets: proc {
     // food -53.7*level+405.5
     // food 3.3973x2-75.85x+432.41
     assets = p.assets
-    assets[FOOD] = abc(3.3973, -75.85, 432.41, gameinfo.leveld)
+    // 100 +/- 10
+    assets[FOOD] = abc(3.3973, -75.85, 432.41, gameinfo.leveld) * (0.90 + tod(random(20))/100.0)
 
     // money -457.4*level+3583
     // money 27.268x2-635.19x+3799
-    assets[MONEY] = abc(27.268, -635.19, 3799.0, gameinfo.leveld)
+    assets[MONEY] = abc(27.268, -635.19, 3799.0, gameinfo.leveld) * (0.90 + tod(random(20))/100.0)
 
     // if < advanced, no parts
     if (p.civ_level >= ADVANCED) {
       // planet->assets[PARTS] = ax_b(level, -68, 506)
       // parts 4.4802x2-97.611x+541.88
-      assets[PARTS] = abc(4.4802, -97.611, 541.88, gameinfo.leveld)
+      assets[PARTS] = abc(4.4802, -97.611, 541.88, gameinfo.leveld) * (0.90 + tod(random(20))/100.0)
     }
 
     // DRAFTABLE/TROOPS -17.9x + 133.5
     // troops 1.2727x2 - 26.198x + 143.58
     // round up to nearest double
     // this should be based on population, no?
-    assets[DRAFTABLE] = round(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5)
+    assets[DRAFTABLE] = round(abc(1.2727, -26.198, 143.58, gameinfo.leveld) + 0.5) * (0.90 + tod(random(20))/100.0)
 
     // if primitive, no fuel
     if (p.civ_level > PRIMITIVE) {
       // fuel -29.6x + 233.4
       // fuel 1.7437x2 - 40.969x + 247.21
-      assets[FUEL] = abc(1.7437, -40.969, 247.21, gameinfo.leveld)
+      assets[FUEL] = abc(1.7437, -40.969, 247.21, gameinfo.leveld) * (0.90 + tod(random(20))/100.0)
     }
   }
 }
@@ -374,7 +377,7 @@ set_ship_cost:proc(level:int, shiptype:int) {
 
 
 /////////////////////////////////////////////////////////
-// MATHS
+// MATHS [sic]
 /////////////////////////////////////////////////////////
 
 DS=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
@@ -386,7 +389,7 @@ tod: proc(i: int): double {
   d=0.0
   place = 1.0
   while i > 0 {
-    last = i%10
+    last = i % 10
     // I hate this
     d = d + place * DS[last]
     place = place * 10.0
@@ -396,11 +399,8 @@ tod: proc(i: int): double {
   return d
 }
 
-
 // double to int
-toi: proc(d: double): int {
-  return lround(d)
-}
+toi: proc(d: double): int { return lround(d) }
 
 // a*x+b
 ax_b: proc(x: int, a: int, b: int): int { return a*x+b }
@@ -421,21 +421,15 @@ calc_distance: proc(p1: PlanetType, p2: PlanetType): double {
   return sqrt(dist)
 }
 
-// TOOD: use rand()
-RANDOM_MOD=65535
+RAND_MAX = 32767
 
 // Get a random number from 0 to 'range' exclusive
 random: proc(range: int): int {
-  return (next_random() * range)/RANDOM_MOD
-}
-
-last_rand: int
-// returns a random number from 0 to RANDOM_MOD (exclusive)
-next_random: proc: int {
-  // m=modulus, a=multiplier, c=increment
-  a=75 c=74
-  last_rand = ((last_rand * a) + c) % RANDOM_MOD
-  return last_rand
+  r = (rand() * range)/RAND_MAX
+  if gameinfo.debug {
+    print "rand(" print range print ")=" println r
+  }
+  return r
 }
 
 
@@ -445,7 +439,6 @@ next_random: proc: int {
 
 calculate_game_status: proc: int {
   if gameinfo.num_empire == 20 { return WON }
-  // quit
   if gameinfo.status != IN_PROGRESS { return gameinfo.status }
   if gameinfo.date > (5000*100) { return LOST }
   return IN_PROGRESS
@@ -669,7 +662,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
       print "How many units to purchase (number or 'max')? "
       samount = input
       trimmed = trim(samount)
-      if trimmed == 'max' or trimmed == 'MAX' {
+      if trimmed == 'max' or trimmed == 'MAX' or trimmed == 'all' or trimmed == 'ALL' {
         famount = min(available, min(afford, carry))
         print "Buying max: " println famount
       } else {
@@ -694,7 +687,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
         elapse(25)
         return true
       }
-      println ""
+      println "\n"
     }
   } else {
     println "None " + ASSET_TYPE[index] + " available for purchase at " + planet.name
@@ -836,7 +829,8 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     println "Civ level:   " + CIV_LEVELS[p.civ_level]
   }
   if sats > 1 {
-    print " Population: " println p.population
+    // TODO: round to nearest tenth, and also if > 1000 say billion
+    print " Population: " print p.population println " million"
   }
   if cheat or p.status == EMPIRE {
     println " Assets:     "
@@ -848,7 +842,9 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
     print " Troops:     " println p.troops
-    print " Fighters:   " println p.fighters
+    if p.civ_level >= ADVANCED {
+      print " Fighters:   " println p.fighters
+    }
   }
   if cheat or p.status == EMPIRE {
     print " Prices:     " println p.prices
@@ -883,7 +879,7 @@ show_planet: proc(p: PlanetType, cheat: bool) {
 show_fleet: proc(fleet: FleetType) {
   print "FLEET AT: " println fleet.location.name
   i = 0 while i < 5 do i = i + 1 {
-    if i != DRAFTABLE {
+    if i != DRAFTABLE and i != PARTS {
       print " " + ASSET_TYPE[i] + ": " println fleet.assets[i]
     }
   }
@@ -926,6 +922,7 @@ map: proc(planet: PlanetType) {
     print "-"
   }
   println "+"
+  print "FLEET IS AT: " println fleet.location.name
   print "Empire planets:   " println count_planets(EMPIRE)
   print "Occupied planets: " println count_planets(OCCUPIED)
   print "Indep. planets:   " println count_planets(INDEPENDENT)
@@ -1002,6 +999,7 @@ embark: proc(p: PlanetType) {
       println "The Imperial Fleet arrived at " + p.name + " @ " + format_date(gameinfo.date)
       println "\n=============== NEWS FLASH ===============\n"
 
+      map(p)
       show_planet(p, false)
     } else {
       print "Not enough fuel to get to " + p.name + ". Need " println fuel_needed
@@ -1153,7 +1151,7 @@ attack: proc(location: PlanetType) {
         // j = 0 while j < 1000000 do j = j + 1 {}
         battle_location = LAND
       } else {
-        println "\nLand battle won!"
+        println "\nLand battle won!\n"
 
         // should this be after the "elapse"?
         location.occupied_on = gameinfo.date
@@ -1248,7 +1246,7 @@ tax:proc(planet:PlanetType) {
   // 2. get planetary money
   money = planet.assets[MONEY]
   if money > 0.0 {
-    print "Collecting " print money println " from " + planet.name
+    print "Collecting " print money println " creds from " + planet.name
     // if planetary money =0, don't do anything!;
     // 3. add planetary money to fleet money
     add_assets(fleet.assets, MONEY, money)
@@ -1435,7 +1433,7 @@ main {
   seed=time(0)
   seed = 1661383298
   print "Random seed is " println seed
-  last_rand=seed
+  srand(seed)
 
   help()
   initPlanets()
