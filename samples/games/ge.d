@@ -814,21 +814,21 @@ construct_transaction: proc(fleet: FleetType, shiptype: int, count: int) {
   add_assets(fleet.assets, MONEY, -tod(total_cost))
   // decrease parts on planet
   add_assets(planet.assets, PARTS, -tod(total_parts))
+
+  carriers = fleet.carriers
   // increase # of ships of this type
   if shiptype == FOOD {
-    // increase # of food carriers
-    car = fleet.carriers
-    car[FOOD] = car[FOOD] + count
+    carriers[FOOD] = carriers[FOOD] + count
   } elif shiptype == FUEL {
-    // increase # of fuel carriers
-    car = fleet.carriers
-    car[FOOD] = car[FUEL] + count
+    carriers[FUEL] = carriers[FUEL] + count
   } elif shiptype == FIGHTERS_IDX {
     fleet.fighters = fleet.fighters + count
   } elif shiptype == TRANSPORTS_IDX {
     fleet.etrans = fleet.etrans + count
   } elif shiptype == SATS_IDX {
     fleet.satellites = fleet.satellites + count
+  } else {
+    exit "Unknown ship type" + tostring(shiptype)
   }
 }
 
