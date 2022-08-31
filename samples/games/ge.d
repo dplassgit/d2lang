@@ -640,14 +640,27 @@ build_defenses: proc(p: PlanetType, days: int) {
   draftees = 0.001 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
   if (draftees >= 0.5) {
     idraftees = lround(draftees + 0.5)
-    if gameinfo.debug and p == fleet.location {
+    if gameinfo.debug { // and p == fleet.location {
       print "Adding " print idraftees println " to army at " + p.name
     }
     p.troops = p.troops + idraftees
     assets[DRAFTABLE] = assets[DRAFTABLE] - tod(idraftees)
   }
 
-  // TODO: build fighters from parts
+  if p.civ_level >= ADVANCED {
+    // build fighters from parts. ignore money because why not.
+    res = shipresources[FIGHTERS_IDX]
+    maxfighters = assets[PARTS] / tod(res.parts)
+    fighters = 0.001 * gameinfo.leveld * (tod(days)/100.0) * maxfighters
+    if fighters > 0.5 {
+      ifighters = lround(fighters + 0.5)
+      if gameinfo.debug { // and p == fleet.location {
+        print "Adding " print ifighters println " fighters at " + p.name
+      }
+      p.fighters = p.fighters + ifighters
+      assets[PARTS] = assets[PARTS] - tod(ifighters * res.parts)
+    }
+  }
 }
 
 
@@ -867,15 +880,20 @@ elapse: proc(days: int) {
         // back to independent
         set_status(p, INDEPENDENT)
 
-        // TODO: this will be moved to "build_rebellion" eventually
         // draft half the draftable people
-        p.troops = toi(p.assets[DRAFTABLE] / 2.0)
+        p.troops = toi(p.assets[DRAFTABLE]) / 2
         if gameinfo.debug {
           print p.name + " re-established their army with " print p.troops println " troops"
         }
         add_assets(p.assets, DRAFTABLE, -tod(p.troops))
 
-        // TODO: make some fighters
+        // make some fighters
+        if (p.civ_level >= ADVANCED) {
+          res = shipresources[FIGHTERS_IDX]
+          parts = res.parts
+          p.fighters = toi(p.assets[PARTS] / tod(parts)) / 2
+          add_assets(p.assets, PARTS, -tod(p.fighters * parts))
+        }
       } else {
         maybe_join_empire(p)
       }
@@ -1554,7 +1572,7 @@ main {
   print "Difficulty level is " println gameinfo.level
 
   seed = time(0)
-//  seed = 1661383298
+  seed = 1661383298
   print "Random seed is " println seed
   srand(seed)
 
