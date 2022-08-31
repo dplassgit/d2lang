@@ -133,9 +133,8 @@ PlanetType: record {
   sats_orbit: int      // # of satellites in orbit
   sats_enroute: int    // # of satellites en route
 
-  // TODO: maybe these should be doubles
-  troops: int          // # of troops on surface, or # of occupation troops
-  fighters: int        // # of fighters in orbit, or # of occupation fighters
+  troops: double       // # of troops on surface, or # of occupation troops
+  fighters: double     // # of fighters in orbit, or # of occupation fighters
 }
 
 FleetType: record {
@@ -145,7 +144,6 @@ FleetType: record {
   etrans: int           // empty transports (full transports = troops)
   satellites: int       // in inventory
 
-  // TODO: Maybe these should be doubles
   troops: int           // # troops
   fighters: int         // # of fighters
 }
@@ -221,11 +219,11 @@ initPlanets: proc {
         prod_ratio[DRAFTABLE] = 20
         prod_ratio[FUEL] = 20
 
-        p.fighters = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
+        p.fighters = tod((random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10)
       }
 
       // 7. set troops, fighters based on level & civ_type (no fighters if <ADVANCED)
-      p.troops = (random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10
+      p.troops = tod((random(400)+10)*(p.civ_level+1)/10 + 2*random(10*gameinfo.level)/10)
 
     } else {
       // Galactica
@@ -429,11 +427,7 @@ RAND_MAX = 32767
 
 // Get a random number from 0 to 'range' exclusive
 random: proc(range: int): int {
-  r = (rand() * range)/RAND_MAX
-  if gameinfo.debug {
-    print "rand(" print range print ")=" println r
-  }
-  return r
+  return (rand() * range)/RAND_MAX
 }
 
 
@@ -543,21 +537,33 @@ move_sats: proc(p: PlanetType) {
 
 // Assumes planet is occupied
 rebel: proc(p: PlanetType, days: double) {
-  if (p.troops > 0) {
-    attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.troops)
+  if (p.troops > 0.0) {
+    attrition = 0.1 * gameinfo.leveld * (days/100.0) * p.troops
+    if gameinfo.debug {
+      print p.name + " occupation attritioned by " print attrition println " troops"
+    }
     // can't go negative
-    p.troops = max(p.troops - lround(attrition + 0.5), 0)
+    p.troops = p.troops - attrition
+    if p.troops < 0.0 {
+      p.troops = 0.0
+    }
   }
-  if (p.fighters > 0) {
-    attrition = 0.01 * gameinfo.leveld * (days/100.0) * tod(p.fighters)
-    p.fighters = max(p.fighters - lround(attrition + 0.5), 0)
+  if (p.fighters > 0.0) {
+    attrition = 0.1 * gameinfo.leveld * (days/100.0) * p.fighters
+    if gameinfo.debug {
+      print p.name + " occupation attritioned by " print attrition println " fighters"
+    }
+    p.fighters = p.fighters - attrition
+    if p.fighters < 0.0 {
+      p.fighters = 0.0
+    }
   }
 }
 
 
 maybe_join_empire: proc(planet: PlanetType) {
-  if planet.troops > 0 and
-    ((planet.civ_level >= ADVANCED and planet.fighters > 0) or
+  if planet.troops > 0.0 and
+    ((planet.civ_level >= ADVANCED and planet.fighters > 0.0) or
       planet.civ_level < ADVANCED) {
 
     // troops & fighters are > 0
@@ -573,8 +579,8 @@ maybe_join_empire: proc(planet: PlanetType) {
       set_status(planet, EMPIRE)
 
       // reset all assets
-      planet.troops = 0
-      planet.fighters = 0
+      planet.troops = 0.0
+      planet.fighters = 0.0
       assets = planet.assets
       i = 0 while i < 5 do i = i + 1 {
         assets[i] = assets[i] / 2.0
@@ -634,32 +640,24 @@ grow: proc(p: PlanetType, days: int) {
 // This used to be called "stockpile" and wasn't dependent on days
 build_defenses: proc(p: PlanetType, days: int) {
   assets = p.assets
-  // this is messed up because if you only sleep a short time it will
-  // never wind up adding any draftees because p.troops is int...
 
   draftees = 0.001 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
-  if (draftees >= 0.5) {
-    idraftees = lround(draftees + 0.5)
-    if gameinfo.debug { // and p == fleet.location {
-      print "Adding " print idraftees println " to army at " + p.name
-    }
-    p.troops = p.troops + idraftees
-    assets[DRAFTABLE] = assets[DRAFTABLE] - tod(idraftees)
+  if gameinfo.debug { // and p == fleet.location {
+    print "Adding " print draftees println " to army at " + p.name
   }
+  p.troops = p.troops + draftees
+  assets[DRAFTABLE] = assets[DRAFTABLE] - draftees
 
   if p.civ_level >= ADVANCED {
     // build fighters from parts. ignore money because why not.
     res = shipresources[FIGHTERS_IDX]
     maxfighters = assets[PARTS] / tod(res.parts)
     fighters = 0.001 * gameinfo.leveld * (tod(days)/100.0) * maxfighters
-    if fighters > 0.5 {
-      ifighters = lround(fighters + 0.5)
-      if gameinfo.debug { // and p == fleet.location {
-        print "Adding " print ifighters println " fighters at " + p.name
-      }
-      p.fighters = p.fighters + ifighters
-      assets[PARTS] = assets[PARTS] - tod(ifighters * res.parts)
+    if gameinfo.debug { // and p == fleet.location {
+      print "Adding " print fighters println " fighters at " + p.name
     }
+    p.fighters = p.fighters + fighters
+    assets[PARTS] = assets[PARTS] - fighters * tod(res.parts)
   }
 }
 
@@ -872,7 +870,7 @@ elapse: proc(days: int) {
     if p.status == OCCUPIED {
       rebel(p, tod(days))
 
-      if p.troops == 0 and p.fighters == 0 {
+      if p.troops < 1.0 and p.fighters < 1.0 {
         println "\n=============== NEWS FLASH ===============\n"
         println p.name + " rebelled and is independent again!"
         println "\n=============== NEWS FLASH ===============\n"
@@ -881,18 +879,18 @@ elapse: proc(days: int) {
         set_status(p, INDEPENDENT)
 
         // draft half the draftable people
-        p.troops = toi(p.assets[DRAFTABLE]) / 2
+        p.troops = p.assets[DRAFTABLE] / 2.0
         if gameinfo.debug {
           print p.name + " re-established their army with " print p.troops println " troops"
         }
-        add_assets(p.assets, DRAFTABLE, -tod(p.troops))
+        add_assets(p.assets, DRAFTABLE, -p.troops)
 
         // make some fighters
         if (p.civ_level >= ADVANCED) {
           res = shipresources[FIGHTERS_IDX]
           parts = res.parts
-          p.fighters = toi(p.assets[PARTS] / tod(parts)) / 2
-          add_assets(p.assets, PARTS, -tod(p.fighters * parts))
+          p.fighters = p.assets[PARTS] / (tod(parts) * 2.0)
+          add_assets(p.assets, PARTS, -p.fighters * tod(parts))
         }
       } else {
         maybe_join_empire(p)
@@ -949,9 +947,9 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     print "   Money:     " println p.assets[MONEY]
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
-    print " Troops:     " println p.troops
+    print " Troops:     " println lround(p.troops)
     if p.civ_level >= ADVANCED {
-      print " Fighters:   " println p.fighters
+      print " Fighters:   " println lround(p.fighters)
     }
   }
   if cheat or p.status == EMPIRE {
@@ -1143,8 +1141,8 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
 
   println location.name + " occupation status:\n"
   if location.civ_level >= ADVANCED {
-    print "Fighters: " println location.fighters
-    print "Troops:   " println location.troops
+    print "Fighters: " println lround(location.fighters)
+    print "Troops:   " println lround(location.troops)
 
     fighters = 0
     while true {
@@ -1158,10 +1156,10 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
         break
       }
     }
-    location.fighters = location.fighters + fighters
+    location.fighters = location.fighters + tod(fighters)
     fleet.fighters = fleet.fighters - fighters
   } else {
-    print "Troops: " println location.troops
+    print "Troops: " println lround(location.troops)
   }
 
   // get troops
@@ -1176,7 +1174,7 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
       break
     }
   }
-  location.troops = location.troops + troops
+  location.troops = location.troops + tod(troops)
   fleet.troops = fleet.troops - troops
   // we now have more empty transports. I think this was a bug in the old c code
   fleet.etrans = fleet.etrans + troops
@@ -1184,10 +1182,10 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
   if troops > 0 or fighters > 0 {
     println "Updated " + location.name + " occupation status:\n"
     if location.civ_level >= ADVANCED {
-      print "Fighters: " println location.fighters
-      print "Troops:   " println location.troops
+      print "Fighters: " println lround(location.fighters)
+      print "Troops:   " println lround(location.troops)
     } else {
-      print "Troops: " println location.troops
+      print "Troops: " println lround(location.troops)
     }
   }
 
@@ -1215,10 +1213,10 @@ attack: proc(location: PlanetType) {
   while running {
     if battle_location == SPACE {
       us = fleet.fighters
-      them = location.fighters
+      them = lround(location.fighters)
     } else {
       us = fleet.troops
-      them = location.troops
+      them = lround(location.troops)
     }
 
     effective_them = them
@@ -1251,16 +1249,16 @@ attack: proc(location: PlanetType) {
       // update the number in memory
       if battle_location == SPACE {
         fleet.fighters = us
-        location.fighters = them
+        location.fighters = tod(them)
       } else {
         // Note, if we lose, the # of empty transports doesn't go down, this is
         // by design.
         fleet.troops = us
-        location.troops = them
+        location.troops = tod(them)
       }
 
       // draw the #s
-      if (iters%10) == 0 {
+      if (iters % 10) == 0 {
         print "Empire forces: " print us
         print ". Enemy forces: " print them
         print ". Winning probability: " print prob println "%"
@@ -1292,7 +1290,7 @@ attack: proc(location: PlanetType) {
   }
 
   if (casualties > 0.0) {
-    elapse(lround(casualties/10.0+100.0))
+    elapse(lround(casualties/10.0 + 100.0))
   } else {
     elapse(10)
   }
