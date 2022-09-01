@@ -762,7 +762,7 @@ public class Parser implements Phase {
    * Parse an (optional) composite dereference.
    *
    * <pre>
-   * composite dereference -> atom ('[' expr ']') | atom ('.' expr)
+   * composite dereference -> (atom ('[' expr ']') | ('.' atom)) *
    * <p>here -> nextRule (tokentype nextRule)*
    * </pre>
    */

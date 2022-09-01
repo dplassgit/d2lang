@@ -1402,6 +1402,8 @@ public class ParserTest {
     parseStatements("bam = foo.bar[3].bar.baz[4].qux");
     // this passes now (!). bug #158
     parseStatements("bam = foo[3+a].bar.baz[f()].qux");
+    // this parses but shouldn't pass static checking
+    parseStatements("bam = foo.3");
   }
 
   private BlockNode parseStatements(String expression) {

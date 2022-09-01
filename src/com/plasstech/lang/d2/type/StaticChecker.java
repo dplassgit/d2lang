@@ -490,14 +490,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         throw new TypeException(
             String.format("Unknown RECORD type '%s'", recordName), left.position());
       }
-      RecordSymbol recordSymbol = (RecordSymbol) symbol;
+      if (!(right instanceof VariableNode)) {
+        throw new TypeException(
+            String.format(
+                "Invalid field '%s' referenced in RECORD type '%s'", right.toString(), recordName),
+            right.position());
+      }
       // make sure RHS is a field in record
       String fieldName = ((VariableNode) right).name();
+      RecordSymbol recordSymbol = (RecordSymbol) symbol;
       VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
         throw new TypeException(
             String.format(
-                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordSymbol),
+                "Unknown field '%s' referenced in RECORD type '%s'", fieldName, recordName),
             right.position());
       }
       node.setVarType(fieldType);

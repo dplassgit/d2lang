@@ -1166,6 +1166,15 @@ public class StaticCheckerTest {
     assertThat(symtab.lookup("bam")).isEqualTo(VarType.STRING);
   }
 
+  @Test
+  public void invalidFieldName() {
+    assertError("r1:record{field:string} foo=new r1 bam = foo.3", "Invalid field");
+    assertError("r1:record{field:string} foo=new r1 bam = foo.'hi'", "Invalid field");
+    assertError("r1:record{field:string} foo=new r1 bam = foo.'field'", "Invalid field");
+    assertError("r1:record{field:string} foo=new r1 bam = foo.true", "Invalid field");
+    assertError("r1:record{field:string} foo=new r1 f='field' bam = foo.f", "Unknown field");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

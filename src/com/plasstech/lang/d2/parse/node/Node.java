@@ -15,15 +15,6 @@ public interface Node {
 
   void setVarType(VarType varType);
 
-  default boolean isError() {
-    return false;
-  }
-
-  /** Message in case of error */
-  default String message() {
-    return "";
-  }
-
   /** Position of this node in the input text. */
   Position position();
 
