@@ -538,7 +538,7 @@ move_sats: proc(p: PlanetType) {
 // Assumes planet is occupied
 rebel: proc(p: PlanetType, days: double) {
   if (p.troops > 0.0) {
-    attrition = 0.1 * gameinfo.leveld * (days/100.0) * p.troops
+    attrition = 0.05 * gameinfo.leveld * (days/100.0) * p.troops
     if gameinfo.debug {
       print p.name + " occupation attritioned by " print attrition println " troops"
     }
@@ -549,7 +549,7 @@ rebel: proc(p: PlanetType, days: double) {
     }
   }
   if (p.fighters > 0.0) {
-    attrition = 0.1 * gameinfo.leveld * (days/100.0) * p.fighters
+    attrition = 0.05 * gameinfo.leveld * (days/100.0) * p.fighters
     if gameinfo.debug {
       print p.name + " occupation attritioned by " print attrition println " fighters"
     }
@@ -573,7 +573,7 @@ maybe_join_empire: proc(planet: PlanetType) {
       // and planet has been occupied for random(4*level)
       // years, it joins the empire;
       println "\n=============== NEWS FLASH ===============\n"
-      println planet.name + " joined the empire!!!"
+      println planet.name + " joined the Empire!!!"
       println "\n=============== NEWS FLASH ===============\n"
 
       set_status(planet, EMPIRE)
@@ -1059,7 +1059,7 @@ info: proc(p: PlanetType) {
 
 sat: proc(p: PlanetType) {
   if p.status == EMPIRE {
-    println "Don't need to send satellites to an empire planet!"
+    println "Don't need to send satellites to an Empire planet"
     return
   }
   if p.sats_orbit + p.sats_enroute == 3 {
@@ -1135,7 +1135,7 @@ embark: proc(p: PlanetType) {
 
 occupy: proc(location: PlanetType, should_elapse: bool) {
   if location.status != OCCUPIED {
-    println "Cannot occupy an independent or empire planet."
+    println "Cannot occupy a non-occupied planet."
     return
   }
 
@@ -1299,11 +1299,11 @@ attack: proc(location: PlanetType) {
 
 draft: proc(location: PlanetType) {
   if location.status != EMPIRE{
-    println "Can only draft on an empire planet."
+    println "Cannot draft on non-Empire planet."
     return
   }
 
-  print location.name + " has " print location.assets[DRAFTABLE] println " available."
+  print location.name + " has " print lround(location.assets[DRAFTABLE]) println " available."
   print "The fleet has room for " print fleet.etrans println " additional troops."
   draftees = 0
   while true {
@@ -1364,7 +1364,7 @@ decommission: proc(location: PlanetType) {
 
 tax:proc(planet:PlanetType) {
   if planet.status != EMPIRE {
-    println "Cannot collect taxes on non-empire planet"
+    println "Cannot collect taxes on non-Empire planet"
     return
   }
   // 2. get planetary money
@@ -1386,7 +1386,7 @@ tax:proc(planet:PlanetType) {
 
 buy:proc(planet:PlanetType) {
   if planet.status != EMPIRE {
-    println "Cannot buy materials on non-empire planet"
+    println "Cannot buy materials on non-Empire planet"
     return
   }
 
@@ -1405,7 +1405,7 @@ buy:proc(planet:PlanetType) {
 
 construct_ships:proc(planet:PlanetType) {
   if planet.status != EMPIRE {
-    println "Cannot construct ships on non-empire planet"
+    println "Cannot construct ships on non-Empire planet"
     return
   }
 
@@ -1421,19 +1421,19 @@ help: proc {
 MAP: Show the map near the given planet
 FLEet: Show info about the fleet
 SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
-INFo: get info about a planet, its distance, and estimated fuel & time to get there
-GALactica: get info about Galactica
-SATellites: Send satellites to non-empire planets
+INFo: Get info about a planet, its distance, and estimated fuel & time to get there
+GALactica: Get info about Galactica
+SATellites: Send satellites to non-Empire planets
 EMBark to another planet (if have enough fuel)
 ATTack the planet where the fleet is. (only on independent planets)
-OCCupy: Set occupation fighters and troops (only on occupied planets)
-DRAft troops (only on empire planets)
-TAXes: Collect taxes (only on empire planets)
-BUY food, fuel (only on empire planets)
-DECommission troops (only on empire planets)
-CONstruct ships (only on empire planets)
-*PROduction ratios: update production ratios (only on empire planets)
-*SCRap ships (only on empire planets)
+OCCupy: Set occupation fighters and troops. (only on occupied planets)
+DRAft troops (only on Empire planets)
+TAXes: Collect taxes (only on Empire planets)
+BUY food, fuel (only on Empire planets)
+DECommission troops (only on Empire planets)
+CONstruct ships (only on Empire planets)
+*PROduction ratios: update production ratios (only on Empire planets)
+*SCRap ships (only on Empire planets)
 QUIt
 
 *=not implemented yet
@@ -1570,7 +1570,7 @@ main {
   print "Difficulty level is " println gameinfo.level
 
   seed = time(0)
-  seed = 1661383298
+//  seed = 1661383298
   print "Random seed is " println seed
   srand(seed)
 
