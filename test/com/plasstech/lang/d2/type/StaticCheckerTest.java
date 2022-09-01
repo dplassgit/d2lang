@@ -1154,6 +1154,18 @@ public class StaticCheckerTest {
         "ARRAY of INT but expression is");
   }
 
+  @Test
+  public void advancedRValue() {
+    SymTab symtab =
+        checkProgram(
+            "      r1:record{bar:r2} r2:record{baz:r3[1]} r3:record{qux:string}"
+                + " foo:r1[3]"
+                + " a=4"
+                + " f:proc:int{return 1}"
+                + " bam = foo[3+a].bar.baz[f()].qux");
+    assertThat(symtab.lookup("bam")).isEqualTo(VarType.STRING);
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

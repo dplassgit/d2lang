@@ -769,27 +769,20 @@ public class Parser implements Phase {
   private ExprNode compositeDereference() {
     ExprNode left = atom();
 
-    // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
-    if (token.type() == TokenType.LBRACKET) {
+    while (token.type() == TokenType.DOT || token.type() == TokenType.LBRACKET) {
+      TokenType operator = token.type();
       advance();
-      ExprNode index = expr();
-      expect(TokenType.RBRACKET);
-      advance();
-
-      left = new BinOpNode(left, TokenType.LBRACKET, index);
-    } else if (token.type() == TokenType.DOT) {
-
-      while (token.type() == TokenType.DOT || token.type() == TokenType.LBRACKET) {
-        TokenType operator = token.type();
+      ExprNode right;
+      // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
+      if (operator == TokenType.LBRACKET) {
+        right = expr();
+        expect(TokenType.RBRACKET);
         advance();
-        // this is restrictive but I'm too dumb to figure out how to make it left-associative
-        ExprNode right = atom();
-        if (operator == TokenType.LBRACKET) {
-          expect(TokenType.RBRACKET);
-          advance();
-        }
-        left = new BinOpNode(left, operator, right);
+      } else {
+        // dot operator.
+        right = atom();
       }
+      left = new BinOpNode(left, operator, right);
     }
 
     return left;

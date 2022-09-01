@@ -233,4 +233,24 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "f()",
         "setArrayOfDoubleField_bug159");
   }
+
+  @Test
+  public void advancedRValue_bug158() throws Exception {
+    execute(
+        "      r1:record{bar:r2} r2:record{baz:r3[2]} r3:record{qux:string}"
+            + " foo:r1[8]"
+            + " foo7 = new r1"
+            + " foo[7] = foo7"
+            + " ar2 = new r2"
+            + " foo7.bar = ar2"
+            + " x=ar2.baz"
+            + " ar3=new r3"
+            + " ar3.qux='hi'"
+            + " x[1]=ar3"
+            + " a=4"
+            + " f:proc:int{return 1}"
+            + " bam = foo[3+a].bar.baz[f()].qux"
+            + " if bam != 'hi' { exit 'fail, actual ' + bam} ",
+        "advancedRValue_bug158");
+  }
 }

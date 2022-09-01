@@ -1390,6 +1390,20 @@ public class ParserTest {
     parseStatements("r:record{a:string[1]} anr=new r print anr.a");
   }
 
+  @Test
+  @Ignore
+  public void advancedLValue() {
+    // this still fails. bug #155
+    parseStatements("foo[3].bar.baz[4].qux = 3");
+  }
+
+  @Test
+  public void advancedRValue() {
+    parseStatements("bam = foo.bar[3].bar.baz[4].qux");
+    // this passes now (!). bug #158
+    parseStatements("bam = foo[3+a].bar.baz[f()].qux");
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();
