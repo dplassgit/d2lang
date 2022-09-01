@@ -641,23 +641,23 @@ grow: proc(p: PlanetType, days: int) {
 build_defenses: proc(p: PlanetType, days: int) {
   assets = p.assets
 
-  draftees = 0.001 * gameinfo.leveld * (tod(days)/100.0) * assets[DRAFTABLE]
+  draftees = 0.001 * gameinfo.leveld * (tod(days)/100.0) * p.assets[DRAFTABLE]
   if gameinfo.debug { // and p == fleet.location {
     print "Adding " print draftees println " to army at " + p.name
   }
   p.troops = p.troops + draftees
-  assets[DRAFTABLE] = assets[DRAFTABLE] - draftees
+  assets[DRAFTABLE] = p.assets[DRAFTABLE] - draftees
 
   if p.civ_level >= ADVANCED {
     // build fighters from parts. ignore money because why not.
     res = shipresources[FIGHTERS_IDX]
-    maxfighters = assets[PARTS] / tod(res.parts)
+    maxfighters = p.assets[PARTS] / tod(res.parts)
     fighters = 0.001 * gameinfo.leveld * (tod(days)/100.0) * maxfighters
     if gameinfo.debug { // and p == fleet.location {
       print "Adding " print fighters println " fighters at " + p.name
     }
     p.fighters = p.fighters + fighters
-    assets[PARTS] = assets[PARTS] - fighters * tod(res.parts)
+    assets[PARTS] = p.assets[PARTS] - fighters * tod(res.parts)
   }
 }
 
@@ -747,7 +747,6 @@ produce: proc(planet:PlanetType, days:int) {
   }
 
   // increase each asset type. if prod ratio == min, the increase is zero.
-  assets = planet.assets
   index = 0 while index < 5 do index = index + 1 {
     if planet.prod_ratio[index] > 0 {
       gf = GROWTH_FACTORS[planet.civ_level * 5 + index]
@@ -757,19 +756,18 @@ produce: proc(planet:PlanetType, days:int) {
       if gameinfo.debug and planet == fleet.location {
           print "Increasing " + ASSET_TYPE[index] + " by " println increase
       }
-      add_assets(assets, index, increase)
+      add_assets(planet.assets, index, increase)
     }
   }
 }
 
 
-construct_one_type: proc(fleet:FleetType, index: int): bool {
+construct_one_type: proc(fleet: FleetType, index: int): bool {
   planet = fleet.location
   available = lround(planet.assets[PARTS])
   if available > 0 {
-    res = shipresources[index]
-    can_build = available / res.parts
-    afford = lround(fleet.assets[MONEY] / tod(res.money))
+    can_build = available / shipresources[index].parts
+    afford = lround(fleet.assets[MONEY] / tod(shipresources[index].money))
     if can_build == 0 or afford == 0 {
       println "Not enough parts or cannot afford any " + RESOURCE_TYPE[index] + "s. :-(\n"
       return false
@@ -799,7 +797,7 @@ construct_one_type: proc(fleet:FleetType, index: int): bool {
       } elif famount < 0 {
         println "You're killing me smalls."
       } elif famount > 0 {
-        cost = famount * res.money
+        cost = famount * shipresources[index].money
         print "Constructing " print famount print " " + RESOURCE_TYPE[index] + "s for " print cost println " credits."
         construct_transaction(fleet, index, famount)
         elapse(100)
@@ -817,9 +815,8 @@ construct_one_type: proc(fleet:FleetType, index: int): bool {
 // Complete the construction transaction by updating amounts of the fleet and planet.
 construct_transaction: proc(fleet: FleetType, shiptype: int, count: int) {
   planet = fleet.location
-  res = shipresources[shiptype]
-  total_cost = res.money * count
-  total_parts = res.parts * count
+  total_cost = shipresources[shiptype].money * count
+  total_parts = shipresources[shiptype].parts * count
 
   // decrease money of fleet
   add_assets(fleet.assets, MONEY, -tod(total_cost))
@@ -887,8 +884,7 @@ elapse: proc(days: int) {
 
         // make some fighters
         if (p.civ_level >= ADVANCED) {
-          res = shipresources[FIGHTERS_IDX]
-          parts = res.parts
+          parts = shipresources[FIGHTERS_IDX].parts
           p.fighters = p.assets[PARTS] / (tod(parts) * 2.0)
           add_assets(p.assets, PARTS, -p.fighters * tod(parts))
         }
@@ -947,9 +943,17 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     print "   Money:     " println p.assets[MONEY]
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
-    print " Troops:     " println lround(p.troops)
-    if p.civ_level >= ADVANCED {
-      print " Fighters:   " println lround(p.fighters)
+    if not cheat {
+      print " Troops:     " println lround(p.troops)
+      if p.civ_level >= ADVANCED {
+        print " Fighters:   " println lround(p.fighters)
+      }
+    } else {
+      print " Troops:     " println p.troops
+      if p.civ_level >= ADVANCED {
+        print " Fighters:   " println p.fighters
+      }
+      
     }
   }
   if cheat or p.status == EMPIRE {
@@ -1570,7 +1574,7 @@ main {
   print "Difficulty level is " println gameinfo.level
 
   seed = time(0)
-//  seed = 1661383298
+  seed = 1661383298
   print "Random seed is " println seed
   srand(seed)
 
