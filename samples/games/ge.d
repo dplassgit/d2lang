@@ -900,25 +900,35 @@ cheat: proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
     p = planets[i]
     println "----------------------------------------------------------"
-    print "Planet[" print i print "]: "
     show_planet(p, true)
   }
 }
 
 
 show_planet: proc(p: PlanetType, cheat: bool) {
-  print "PLANET INFO: "
+  j = 0 while j < 14 do j = j + 1 {
+    if gameinfo.debug {
+      print j print ": "
+    }
+    show_planet_line(p, cheat, j)
+  }
+}
+
+show_planet_line: proc(p: PlanetType, cheat: bool, j: int): bool {
   sats = p.sats_orbit
   if cheat or fleet.location == p or p.status == OCCUPIED {
     // if the fleet is here, it's as if we've sent 3 sats
     sats = 3
   }
-  print p.name
-  if (cheat) {
-    print " (" print p.x print ", " print p.y println ")"
+  if j == 0 {
+    print "PLANET INFO: "
+    print p.name
+    if (cheat) {
+      print " (" print p.x print ", " print p.y println ") "
+    }
+    println " (" + STATUSES[p.status] + ")"
+    return true
   }
-  println ""
-  print "Status:      " println STATUSES[p.status]
 
   // 2. if satellites > 0 draw civ level;
   // 3. If satellites > 1 draw population;
@@ -927,39 +937,63 @@ show_planet: proc(p: PlanetType, cheat: bool) {
   //       i. if status=occupied or indep, make assets invisible, fighters troops sats status visible;
   //       ii. if satellites > 2 draw troops, fighters, sats;
 
-  if sats > 0 {
+  if j == 1 and sats > 0 {
     println "Civ level:   " + CIV_LEVELS[p.civ_level]
+    return true
   }
-  if sats > 1 {
+  if j == 2 and sats > 1 {
     // TODO: round to nearest tenth, and also if > 1000 say billion
     print " Population: " print p.population println " million"
+    return true
   }
   if cheat or p.status == EMPIRE {
-    println " Assets:     "
-    print "   Food:      " println p.assets[FOOD]
-    print "   Fuel:      " println p.assets[FUEL]
-    print "   Parts:     " println p.assets[PARTS]
-    print "   Draftable: " println p.assets[DRAFTABLE]
-    print "   Money:     " println p.assets[MONEY]
+    if j == 3 {
+      print "   Food:      " println p.assets[FOOD]
+      return true
+    }
+    if j == 4 {
+      print "   Fuel:      " println p.assets[FUEL]
+      return true
+    }
+    if j == 5 {
+      print "   Parts:     " println p.assets[PARTS]
+      return true
+    }
+    if j == 6 {
+      print "   Draftable: " println p.assets[DRAFTABLE]
+      return true
+    }
+    if j == 7 {
+      print "   Money:     " println p.assets[MONEY]
+      return true
+    }
   }
   if cheat or (p.status != EMPIRE and sats > 2) {
     if not cheat {
-      print " Troops:     " println lround(p.troops)
-      if p.civ_level >= ADVANCED {
+      if j == 8 {
+        print " Troops:     " println lround(p.troops)
+        return true
+      }
+      if j == 9 and p.civ_level >= ADVANCED {
         print " Fighters:   " println lround(p.fighters)
+        return true
       }
     } else {
-      print " Troops:     " println p.troops
-      if p.civ_level >= ADVANCED {
-        print " Fighters:   " println p.fighters
+      if j == 8 {
+        print " Troops:     " println p.troops
+        return true
       }
-      
+      if j== 9 and p.civ_level >= ADVANCED {
+        print " Fighters:   " println p.fighters
+        return true
+      }
     }
   }
-  if cheat or p.status == EMPIRE {
+  if j == 8 and (cheat or p.status == EMPIRE) {
     print " Prices:     " println p.prices
+    return true
   }
-  if cheat or p.status != EMPIRE {
+  if j == 9 and (cheat or p.status != EMPIRE) {
     // put the date of the next satellite arrival
     print " Sats:       " print p.sats_orbit
     if p.sats_enroute > 0 {
@@ -974,80 +1008,150 @@ show_planet: proc(p: PlanetType, cheat: bool) {
     } else {
       println ""
     }
+    return true
   }
 
   if fleet.location != p {
     distance = calc_distance(fleet.location, p)
-    print "Distance:        " print distance println " ly"
-    print "Est travel time: " print distance * DAYS_PER_LY println " days"
-    print "Estimated food:  " println calc_food_needed(distance)
-    print "Estimated fuel:  " println calc_fuel_needed(distance)
+    if j == 10 {
+      print "Distance:        " print distance println " ly"
+      return true
+    }
+    if j == 11 {
+      print "Est travel time: " print distance * DAYS_PER_LY println " days"
+      return true
+    }
+    if j == 12 {
+      print "Estimated food:  " println calc_food_needed(distance)
+      return true
+    }
+    if j == 13 {
+      print "Estimated fuel:  " println calc_fuel_needed(distance)
+      return true
+    }
   }
+  return false
 }
+
 
 // Shows info about the fleet
 show_fleet: proc(fleet: FleetType) {
-  print "FLEET AT: " println fleet.location.name
+  j = 0 while j < 10 do j = j + 1 {
+    show_fleet_line(fleet, j)
+  }
+  elapse(10)
+}
+
+show_fleet_line: proc(fleet: FleetType, j:int) {
+  if j == 0 {
+    println "FLEET ORBITING: " + fleet.location.name
+    return
+  }
+  k = 1
   i = 0 while i < 5 do i = i + 1 {
-    if i != DRAFTABLE and i != PARTS {
+    if i != DRAFTABLE and i != PARTS and j == k {
       print " " + ASSET_TYPE[i] + ": " println fleet.assets[i]
+      return
+    }
+    if i != DRAFTABLE and i != PARTS {
+      k = k + 1
     }
   }
-  print "Food carriers:    " println fleet.carriers[FOOD]
-  print "Fuel carriers:    " println fleet.carriers[FUEL]
-  print "Empty transports: " println fleet.etrans
-  print "Troops:           " println fleet.troops
-  print "Fighters:         " println fleet.fighters
-  print "Satellites:       " println fleet.satellites
-
-  elapse(10)
+  if j == 4 {
+    print "Food carriers:    " println fleet.carriers[FOOD]
+    return
+  }
+  if j == 5 {
+    print "Fuel carriers:    " println fleet.carriers[FUEL]
+    return
+  }
+  if j == 6 {
+    print "Empty transports: " println fleet.etrans
+    return
+  }
+  if j == 7 {
+    print "Troops:           " println fleet.troops
+    return
+  }
+  if j == 8 {
+    print "Fighters:         " println fleet.fighters
+    return
+  }
+  if j == 9 {
+    print "Satellites:       " println fleet.satellites
+    return
+  }
 }
 
 // Shows the galaxy around the given planet in a 24x12 window
 map: proc(planet: PlanetType) {
-  left_top_x = max(0, planet.x-12)
-  left_top_y = max(0, planet.y-12)
+  left_top_x = max(0, planet.x - 12)
+  left_top_y = max(0, planet.y - 12)
   // left_top_x, y cannot be within 24 of the size
-  left_top_x = min(left_top_x, SIZE-24)
-  left_top_y = min(left_top_y, SIZE-24)
-  //print "at " print left_top_x print ", " println left_top_y
+  left_top_x = min(left_top_x, SIZE - 24)
+  left_top_y = min(left_top_y, SIZE - 24)
   print "+"
   x = 0 while x < 48 do x = x + 1 {
     print "-"
   }
   println "+"
+  pl = 0  // planet line
   y = 0 while y < 24 do y = y + 1 {
     print "|"
     x = 0 while x < 24 do x = x + 1 {
-      cell = galmap[x + left_top_x+ SIZE*(y+left_top_y)]
-      if cell == 0 {print "  "} else {
+      cell = galmap[x + left_top_x + SIZE * (y + left_top_y)]
+      if cell == 0 {
+        print "  "
+      } else {
         planet_initial = chr(cell)
         print planet_initial
         // find planet of this character
-        planet = find_planet(planet_initial)
-        if planet.status == EMPIRE {
+        charplanet = find_planet(planet_initial)
+        if charplanet.status == EMPIRE {
           print "e"
-        } elif planet.status == OCCUPIED {
+        } elif charplanet.status == OCCUPIED {
           print "o"
         } else {
           // independent
-          if planet.sats_orbit > 0 {
-            print planet.sats_orbit
+          if charplanet.sats_orbit > 0 {
+            print charplanet.sats_orbit
           } else {
             print "i"
           }
         }
       }
     }
-    println "|"
-    // TODO: show information about the planet(s) on this line
+    print "| "
+    if y < 10 {
+      show_fleet_line(fleet, y)
+    } else {
+      if y == 10 {
+        println ""
+      } else {
+        // show a planet line.
+        printed = show_planet_line(planet, false, pl)
+        if printed {
+          pl = pl + 1
+        } else {
+          while not printed and pl < 14 {
+            // it printed a line.
+            pl = pl + 1
+            printed = show_planet_line(planet, false, pl)
+          }
+          if not printed {
+            println ""
+          } else {
+            pl = pl + 1
+          }
+        }
+      }
+    }
   }
   print "+"
   x = 0 while x < 48 do x = x + 1 {
     print "-"
   }
   println "+"
-  print "FLEET IS AT: " println fleet.location.name
   print "Empire planets:   " println count_planets(EMPIRE)
   print "Occupied planets: " println count_planets(OCCUPIED)
   print "Indep. planets:   " println count_planets(INDEPENDENT)
@@ -1063,7 +1167,7 @@ info: proc(p: PlanetType) {
 
 sat: proc(p: PlanetType) {
   if p.status == EMPIRE {
-    println "Don't need to send satellites to an Empire planet"
+    println "Cannot send satellites to an Empire planet"
     return
   }
   if p.sats_orbit + p.sats_enroute == 3 {
@@ -1127,7 +1231,6 @@ embark: proc(p: PlanetType) {
       println "\n=============== NEWS FLASH ===============\n"
 
       map(p)
-      show_planet(p, false)
     } else {
       print "Not enough fuel to get to " + p.name + ". Need " println fuel_needed
     }
