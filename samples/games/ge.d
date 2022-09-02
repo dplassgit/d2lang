@@ -7,6 +7,7 @@
 atoi: extern proc(s:string): int
 lround: extern proc(x: double): int
 round: extern proc(x: double): double
+trunc: extern proc(x: double): double
 sqrt: extern proc(d: double): double
 time: extern proc(ignored: int): int
 srand: extern proc(seed: int)
@@ -402,7 +403,8 @@ tod: proc(i: int): double {
 }
 
 // double to int
-toi: proc(d: double): int { return lround(d) }
+// do not round, truncate.
+toi: proc(d: double): int { return lround(trunc(d)) }
 
 // a*x+b
 ax_b: proc(x: int, a: int, b: int): int { return a*x+b }
@@ -898,9 +900,8 @@ elapse: proc(days: int) {
 
 cheat: proc() {
   i = 0 while i < NUM_PLANETS do i = i + 1 {
-    p = planets[i]
     println "----------------------------------------------------------"
-    show_planet(p, true)
+    show_planet(planets[i], true)
   }
 }
 
@@ -1035,13 +1036,6 @@ show_planet_line: proc(p: PlanetType, cheat: bool, j: int): bool {
 
 
 // Shows info about the fleet
-show_fleet: proc(fleet: FleetType) {
-  j = 0 while j < 10 do j = j + 1 {
-    show_fleet_line(fleet, j)
-  }
-  elapse(10)
-}
-
 show_fleet_line: proc(fleet: FleetType, j:int) {
   if j == 0 {
     println "FLEET ORBITING: " + fleet.location.name
@@ -1094,7 +1088,7 @@ map: proc(planet: PlanetType) {
   x = 0 while x < 48 do x = x + 1 {
     print "-"
   }
-  println "+"
+  println "+" + " Date: " + format_date(gameinfo.date)
   pl = 0  // planet line
   y = 0 while y < 24 do y = y + 1 {
     print "|"
@@ -1152,17 +1146,9 @@ map: proc(planet: PlanetType) {
     print "-"
   }
   println "+"
-  print "Empire planets:   " println count_planets(EMPIRE)
-  print "Occupied planets: " println count_planets(OCCUPIED)
-  print "Indep. planets:   " println count_planets(INDEPENDENT)
-
-  elapse(10)
-}
-
-// print info about the given planet
-info: proc(p: PlanetType) {
-  show_planet(p, false)
-  elapse(10)
+  print "Empire: " print count_planets(EMPIRE)
+  print "  Occupied: " print count_planets(OCCUPIED)
+  print "  Indep: " println count_planets(INDEPENDENT)
 }
 
 sat: proc(p: PlanetType) {
@@ -1189,7 +1175,9 @@ sat: proc(p: PlanetType) {
   nsat = p.sats_enroute + p.sats_orbit
   sa[nsat] = when
   p.sats_enroute = p.sats_enroute + 1
-  print "Sent! Estimated arrival: " println format_date(when)
+
+  print "\nSent! Estimated arrival: " println format_date(when)
+
   elapse(10)
 }
 
@@ -1224,7 +1212,7 @@ embark: proc(p: PlanetType) {
       distance = distance * (0.98 + tod(random(4))/100.0)
       // NOTE: in the c version it was 10, which seems too short,
       // but in asm it was 100, which seems too long.
-      elapse(toi(distance * DAYS_PER_LY))
+      elapse(toi(distance * DAYS_PER_LY) - 10)
 
       println "\n=============== NEWS FLASH ===============\n"
       println "The Imperial Fleet arrived at " + p.name + " @ " + format_date(gameinfo.date)
@@ -1410,12 +1398,17 @@ draft: proc(location: PlanetType) {
     return
   }
 
-  print location.name + " has " print lround(location.assets[DRAFTABLE]) println " available."
+  print location.name + " has " print toi(location.assets[DRAFTABLE]) println " available."
   print "The fleet has room for " print fleet.etrans println " additional troops."
   draftees = 0
   while true {
     print "How many troops to draft? "
     dstring = input
+    trimmed = trim(dstring)
+    if trimmed == 'max' or trimmed == 'MAX' or trimmed == 'all' or trimmed == 'ALL' {
+      draftees = min(fleet.etrans, toi(location.assets[DRAFTABLE]))
+      break
+    }
     draftees = atoi(dstring)
     if draftees < 0 or draftees > fleet.etrans or tod(draftees) > location.assets[DRAFTABLE] {
       println "Out of range, try again."
@@ -1424,6 +1417,7 @@ draft: proc(location: PlanetType) {
     }
   }
   if draftees > 0 {
+    print draftees println " were conscripted."
     // a. decrease etrans by value;
     fleet.etrans = fleet.etrans - draftees
     // b. increase troops by value;
@@ -1526,9 +1520,7 @@ help: proc {
   println
 "
 MAP: Show the map near the given planet
-FLEet: Show info about the fleet
 SLEep: Time elapses, Each planet produces resources, Occupied planets rebel and/or join, Satellites arrive at destination
-INFo: Get info about a planet, its distance, and estimated fuel & time to get there
 GALactica: Get info about Galactica
 SATellites: Send satellites to non-Empire planets
 EMBark to another planet (if have enough fuel)
@@ -1561,18 +1553,20 @@ execute: proc(command: string, full_command: string) {
           d = asc(nc) - asc('0')
           // get the next number
           if d >= 0 and d <= 9 {
-            print "Sleeping for " print 10*d println " days"
+            print "\nSleeping for " print 10*d println " days"
             elapse(10*d)
+            map(fleet.location)
             return
           }
         }
       }
     }
     // No space, or no next number
-    println "Sleeping for 10 days"
+    println "\nSleeping for 10 days"
     elapse(10)
+    map(fleet.location)
 
-  } elif command=="MAP" {
+  } elif command=="MAP" or command=="INF" or command=='FLE' {
     if length(full_command) < 5 {
       map(fleet.location)
     } else {
@@ -1580,44 +1574,37 @@ execute: proc(command: string, full_command: string) {
       if p == null {
         p = planets[0]
       }
+      elapse(10)
       map(p)
     }
-  } elif command=="FLE" {
-    show_fleet(fleet)
   } elif command=="CHE" {
     cheat()
   } elif command=="HEL" {
     help()
   } elif command=="ATT" {
     attack(fleet.location)
+    map(fleet.location)
   } elif command=="OCC" {
     occupy(fleet.location, true)
+    map(fleet.location)
   } elif command=="DRA" {
     draft(fleet.location)
+    map(fleet.location)
   } elif command=="DEC" {
     decommission(fleet.location)
+    map(fleet.location)
   } elif command=="TAX" {
     tax(fleet.location)
+    map(fleet.location)
   } elif command=="GAL" {
-    info(planets[0])
+    elapse(10)
+    map(planets[0])
   } elif command=="BUY" {
     buy(fleet.location)
+    map(fleet.location)
   } elif command=="CON" {
     construct_ships(fleet.location)
-  } elif command=="DEB" {
-    gameinfo.debug = not gameinfo.debug
-    print "Debugging now: " println gameinfo.debug
-  } elif command=="INF" {
-    if length(full_command) < 6 {
-      info(fleet.location)
-    } else {
-      p = find_planet(full_command[5])
-      if p == null {
-        println "Unknown planet"
-      } else {
-        info(p)
-      }
-    }
+    map(fleet.location)
   } elif command=="SAT" {
     if length(full_command) < 5 {
       println "Must give planet name for SAT, e.g., 'SAT Ootsi'"
@@ -1629,6 +1616,7 @@ execute: proc(command: string, full_command: string) {
         sat(p)
       }
     }
+    map(p)
   } elif command=="EMB" {
     if length(full_command) < 5 {
       println "Must give planet name for EMB, e.g., 'EMB Ootsi'"
@@ -1640,6 +1628,9 @@ execute: proc(command: string, full_command: string) {
         embark(p)
       }
     }
+  } elif command=="DEB" {
+    gameinfo.debug = not gameinfo.debug
+    print "Debugging now: " println gameinfo.debug
   } else {
     println "Don't know how to do that, sorry. Try HELP"
   }
@@ -1649,14 +1640,11 @@ execute: proc(command: string, full_command: string) {
 mainLoop: proc {
   gameinfo.status = IN_PROGRESS
   while gameinfo.status==IN_PROGRESS {
-    println "\nToday is " + format_date(gameinfo.date)
     print "\nYour command: "
 
     full_command = input
     command=trim(full_command)
-    println "\n----------------------------------------------------------"
     execute(command, full_command)
-    println "----------------------------------------------------------\n"
     gameinfo.status = calculate_game_status() // Calc if won or lost
   }
   if gameinfo.status==WON { println "You won!" }
@@ -1684,6 +1672,7 @@ main {
   help()
   initPlanets()
   initFleet()
+  map(planets[0])
   mainLoop()
 }
 
