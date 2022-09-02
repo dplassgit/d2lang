@@ -1540,6 +1540,16 @@ QUIt
 }
 
 execute: proc(command: string, full_command: string) {
+  if length(command) == 1 {
+    // show the planet.
+    p = find_planet(command)
+    if p == null {
+      p = planets[0]
+    }
+    elapse(10)
+    map(p)
+    return
+  }
   if command=='QUI' {
     gameinfo.status=QUIT
   } elif command == 'SLE' {
@@ -1614,9 +1624,11 @@ execute: proc(command: string, full_command: string) {
         println "Unknown planet"
       } else {
         sat(p)
+        map(p)
       }
     }
-    map(p)
+    // OOH bug:
+    // map(p) - p might be null because it's out of scope. what are scopes in d?
   } elif command=="EMB" {
     if length(full_command) < 5 {
       println "Must give planet name for EMB, e.g., 'EMB Ootsi'"
