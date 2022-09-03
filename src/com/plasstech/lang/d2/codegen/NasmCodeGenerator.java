@@ -348,6 +348,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case BIT_OR:
         case BIT_XOR:
           if (!reuse) {
+            // TODO(bug#170): Use resolver.mov
             emit("mov %s %s, %s ; int setup", size, destName, leftName);
           }
           emit("%s %s, %s ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
@@ -360,10 +361,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             // easy. left << right or left >> right
             // TODO this will fail if dest and left are in memory
             if (!reuse) {
+              // TODO(bug#170): Use resolver.mov
               emit("mov %s %s, %s ; shift setup", size, destName, leftName);
             }
             emit("%s %s, %s  ; %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           } else {
+            // TODO: Use resolver.mov, it might be able to do all this automagically.
             Register rightReg = null;
             VarType rightType = op.right().type();
             if (resolver.isInRegister(op.right(), RCX)) {

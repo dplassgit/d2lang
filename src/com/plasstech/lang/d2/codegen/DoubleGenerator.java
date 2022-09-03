@@ -24,9 +24,6 @@ class DoubleGenerator {
           .put(TokenType.LEQ, "setbe")
           .build();
 
-  private static final String ZERO_DBL_NAME = "ZERO_DBL";
-  private static final String ZERO_DATA = new DoubleEntry(ZERO_DBL_NAME, 0.0).dataEntry();
-
   private final Resolver resolver;
   private final Emitter emitter;
 
@@ -86,8 +83,7 @@ class DoubleGenerator {
       }
     } else {
       Register zeroReg = resolver.allocate(VarType.DOUBLE);
-      emitter.addData(ZERO_DATA);
-      emitter.emit("movsd %s, [%s]", zeroReg, ZERO_DBL_NAME);
+      emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", zeroReg, zeroReg);
       String right = resolver.resolve(rightOperand);
       // NOTE: register needs to be on the left.
       emitter.emit("comisd %s, %s  ; detect division by zero", zeroReg, right);
@@ -108,15 +104,14 @@ class DoubleGenerator {
 
   void generate(UnaryOp op, String sourceName) {
     if (op.operator() == TokenType.MINUS) {
-      emitter.addData(ZERO_DATA);
       Location destination = op.destination();
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
-        emitter.emit("movsd %s, [%s]", destReg, ZERO_DBL_NAME);
+        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);
         emitter.emit("subsd %s, %s", destReg, sourceName);
       } else {
         Register tempReg = resolver.allocate(VarType.DOUBLE);
-        emitter.emit("movsd %s, [%s]", tempReg, ZERO_DBL_NAME);
+        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", tempReg, tempReg);
         emitter.emit("subsd %s, %s", tempReg, sourceName);
         resolver.mov(tempReg, destination);
         resolver.deallocate(tempReg);

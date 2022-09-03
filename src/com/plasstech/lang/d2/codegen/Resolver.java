@@ -224,6 +224,8 @@ class Resolver implements RegistersInterface {
         if (sourceReg == destReg && sourceReg != null && destReg != null) {
           emitter.emit("; skipping mov %s %s, %s", size, destName, sourceName);
         } else {
+          // this sometimes generates MOV DWORD EAX, EBX which is weird
+          // and MOV DWORD EAX, 10
           emitter.emit("mov %s %s, %s", size, destName, sourceName);
         }
       }

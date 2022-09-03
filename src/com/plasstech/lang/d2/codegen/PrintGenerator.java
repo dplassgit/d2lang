@@ -28,9 +28,9 @@ class PrintGenerator {
     String argVal = resolver.resolve(arg);
     if (arg.type() == VarType.INT) {
       // move with sign extend. intentionally set rdx first, in case the arg is in ecx
-      emitter.emit("movsx RDX, DWORD %s  ; Second argument is parameter", argVal);
+      emitter.emit("movsx RDX, DWORD %s  ; parameter", argVal);
       emitter.addData(PRINTF_INT_FMT);
-      emitter.emit("mov RCX, PRINTF_INT_FMT  ; First argument is address of pattern");
+      emitter.emit("mov RCX, PRINTF_INT_FMT  ; pattern");
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.BOOL) {
       if (argVal.equals("1")) {
@@ -57,13 +57,13 @@ class PrintGenerator {
         // Intentionally set rdx first in case the arg is in rcx
         if (!resolver.isInRegister(arg, RDX)) {
           // arg is not in rdx yet
-          emitter.emit("mov RDX, %s  ; Second argument is parameter/string to print", argVal);
+          emitter.emit("mov RDX, %s  ; string to print", argVal);
         }
         emitter.addData(EXIT_MSG);
-        emitter.emit("mov RCX, EXIT_MSG  ; First argument is address of pattern");
+        emitter.emit("mov RCX, EXIT_MSG  ; pattern");
       } else if (!resolver.isInRegister(arg, RCX)) {
         // arg is not in rcx yet
-        emitter.emit("mov RCX, %s  ; String to print", argVal);
+        emitter.emit("mov RCX, %s", argVal);
       }
       if (!arg.isConstant()) {
         // if null, print null
@@ -94,7 +94,7 @@ class PrintGenerator {
         emitter.emit("mov RDX, %s", argVal);
       }
       emitter.addData(PRINTF_DOUBLE_FMT);
-      emitter.emit("mov RCX, PRINTF_DOUBLE_FMT  ; First argument is address of pattern");
+      emitter.emit("mov RCX, PRINTF_DOUBLE_FMT  ; address of pattern");
       emitter.emitExternCall("printf");
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
