@@ -2,7 +2,13 @@ package com.plasstech.lang.d2.type;
 
 /** The type of an expression or variable. */
 public interface VarType {
+  VarType BOOL = new SimpleType("BOOL", 1);
+  VarType BYTE = new SimpleType("BYTE", 1);
+  VarType DOUBLE = new SimpleType("DOUBLE", 8);
   VarType INT = new SimpleType("INT", 4);
+  VarType LONG = new SimpleType("LONG", 8);
+  VarType NULL = new NullType();
+  VarType PROC = new SimpleType("PROC");
   VarType STRING =
       new SimpleType("STRING", 8) {
         @Override
@@ -10,14 +16,8 @@ public interface VarType {
           return super.compatibleWith(that) || that == NULL;
         }
       };
-  VarType BOOL = new SimpleType("BOOL", 1);
-  VarType BYTE = new SimpleType("BYTE", 1);
-  VarType LONG = new SimpleType("LONG", 8);
-  VarType DOUBLE = new SimpleType("DOUBLE", 8);
-  VarType VOID = new SimpleType("VOID");
-  VarType PROC = new SimpleType("PROC");
-  VarType NULL = new NullType();
   VarType UNKNOWN = new UnknownType();
+  VarType VOID = new SimpleType("VOID");
 
   /**
    * @return a name that uniquely describes this type. For example, "string",

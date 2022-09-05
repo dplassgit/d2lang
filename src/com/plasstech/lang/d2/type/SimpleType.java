@@ -3,15 +3,15 @@ package com.plasstech.lang.d2.type;
 import java.util.Objects;
 
 /** Simple (primitive) type: int, bool, string, void. */
-public class SimpleType implements VarType {
+class SimpleType implements VarType {
   private final String name;
   private final int size;
 
-  public SimpleType(String name) {
+  SimpleType(String name) {
     this(name, 0);
   }
 
-  public SimpleType(String name, int size) {
+  SimpleType(String name, int size) {
     this.name = name;
     this.size = size;
   }

@@ -60,37 +60,37 @@ public class Parser implements Phase {
 
   private static final ImmutableMap<TokenType, VarType> BUILTINS =
       ImmutableMap.<TokenType, VarType>builder()
-          .put(TokenType.INT, VarType.INT)
           .put(TokenType.BOOL, VarType.BOOL)
-          .put(TokenType.STRING, VarType.STRING)
-          .put(TokenType.DOUBLE, VarType.DOUBLE)
           .put(TokenType.BYTE, VarType.BYTE)
+          .put(TokenType.DOUBLE, VarType.DOUBLE)
+          .put(TokenType.INT, VarType.INT)
           .put(TokenType.LONG, VarType.LONG)
-          .put(TokenType.PROC, VarType.PROC)
           .put(TokenType.NULL, VarType.NULL)
+          .put(TokenType.PROC, VarType.PROC)
+          .put(TokenType.STRING, VarType.STRING)
           .build();
 
   private static final Set<TokenType> EXPRESSION_STARTS =
       ImmutableSet.of(
-          TokenType.VARIABLE,
+          TokenType.ASC,
+          TokenType.BIT_NOT,
+          TokenType.BOOL,
+          TokenType.BYTE,
+          TokenType.CHR,
+          TokenType.DOUBLE,
+          TokenType.FALSE,
+          TokenType.INT,
+          TokenType.LENGTH,
+          TokenType.LONG,
           TokenType.LPAREN,
           TokenType.MINUS,
-          TokenType.PLUS,
+          TokenType.NEW,
           TokenType.NOT,
-          TokenType.BIT_NOT,
-          TokenType.INT,
-          TokenType.DOUBLE,
-          TokenType.BYTE,
-          TokenType.LONG,
-          TokenType.STRING,
-          TokenType.BOOL,
-          TokenType.TRUE,
-          TokenType.FALSE,
-          TokenType.LENGTH,
-          TokenType.ASC,
-          TokenType.CHR,
           TokenType.NULL,
-          TokenType.NEW);
+          TokenType.PLUS,
+          TokenType.STRING,
+          TokenType.TRUE,
+          TokenType.VARIABLE);
 
   private static Set<TokenType> BUILTIN_UNARY_KEYWORDS =
       ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);

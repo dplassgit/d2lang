@@ -3,7 +3,7 @@ package com.plasstech.lang.d2.type;
 import java.util.Objects;
 
 /** Represents the one and only UNKNOWN type. */
-class UnknownType implements VarType {
+final class UnknownType implements VarType {
   @Override
   public String name() {
     return "UNKNOWN";
