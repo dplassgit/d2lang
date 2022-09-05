@@ -163,8 +163,8 @@ public class LexerTest {
   public void keyword() {
     Lexer lexer =
         new Lexer(
-            "print PrintLN IF Else elif do while break continue int bool string double byte proc"
-                + " return length asc chr exit and or not xor length new record");
+            "print PrintLN IF Else elif do while break continue int bool string double byte long "
+                + " proc return length asc chr exit and or not xor length new record");
 
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.PRINT);
@@ -207,6 +207,9 @@ public class LexerTest {
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.type().isKeyword()).isTrue();
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.LONG);
     assertThat(token.type().isKeyword()).isTrue();
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.PROC);
