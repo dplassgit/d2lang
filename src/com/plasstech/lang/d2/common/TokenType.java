@@ -20,6 +20,7 @@ public enum TokenType {
   ELIF(true),
   MAIN(true),
   PROC(true),
+  EXTERN(true), // reference an externally defined symbol
   RETURN(true),
   WHILE(true),
   DO(true),
@@ -77,7 +78,6 @@ public enum TokenType {
   PRIVATE(true), // for primitive classes
   LOAD(true), // load a file, maybe including binary type
   SAVE(true), // save a file
-  EXTERN(true), // reference an externally defined symbol
   EXPORT(true), // expose a symbol to externally
   EOF;
 

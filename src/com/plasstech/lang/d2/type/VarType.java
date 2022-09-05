@@ -12,6 +12,7 @@ public interface VarType {
       };
   VarType BOOL = new SimpleType("BOOL", 1);
   VarType BYTE = new SimpleType("BYTE", 1);
+  VarType LONG = new SimpleType("LONG", 8);
   VarType DOUBLE = new SimpleType("DOUBLE", 8);
   VarType VOID = new SimpleType("VOID");
   VarType PROC = new SimpleType("PROC");

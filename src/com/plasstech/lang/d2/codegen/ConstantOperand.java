@@ -9,6 +9,10 @@ import com.plasstech.lang.d2.type.VarType;
 public class ConstantOperand<T> implements Operand {
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
   public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
+  public static final ConstantOperand<Byte> ZERO_BYTE =
+      new ConstantOperand<Byte>((byte) 0, VarType.BYTE);
+  public static final ConstantOperand<Byte> ONE_BYTE =
+      new ConstantOperand<Byte>((byte) 1, VarType.BYTE);
   public static final ConstantOperand<Double> ZERO_DBL =
       new ConstantOperand<Double>(0.0, VarType.DOUBLE);
   public static final ConstantOperand<Double> ONE_DBL =
@@ -34,6 +38,10 @@ public class ConstantOperand<T> implements Operand {
       return ONE;
     }
     return new ConstantOperand<Integer>(value, VarType.INT);
+  }
+
+  public static ConstantOperand<Byte> of(byte value) {
+    return new ConstantOperand<Byte>(value, VarType.BYTE);
   }
 
   public static Operand of(double value) {

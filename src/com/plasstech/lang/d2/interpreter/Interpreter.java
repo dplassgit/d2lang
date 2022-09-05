@@ -144,6 +144,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Integer[] integers = new Integer[sizeVal];
       Arrays.setAll(integers, (index) -> 0);
       return integers;
+    } else if (baseType == VarType.BYTE) {
+      Byte[] bytes = new Byte[sizeVal];
+      Arrays.setAll(bytes, (index) -> 0);
+      return bytes;
     } else if (baseType == VarType.DOUBLE) {
       Double[] doubles = new Double[sizeVal];
       Arrays.setAll(doubles, (index) -> 0.0);

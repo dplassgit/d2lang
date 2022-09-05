@@ -65,6 +65,7 @@ public class Parser implements Phase {
           .put(TokenType.STRING, VarType.STRING)
           .put(TokenType.DOUBLE, VarType.DOUBLE)
           .put(TokenType.BYTE, VarType.BYTE)
+          .put(TokenType.LONG, VarType.LONG)
           .put(TokenType.PROC, VarType.PROC)
           .put(TokenType.NULL, VarType.NULL)
           .build();
@@ -792,8 +793,8 @@ public class Parser implements Phase {
    * Parse an atom: a literal, variable or parenthesized expression.
    *
    * <pre>
-   * atom -> int | true | false | string | null | variable | procedureCall | '(' expr ')' |
-   *    '[' arrayLiteral ']'
+   * atom -> int | double | byte | true | false | string | null | variable | procedureCall |
+   *     '(' expr ')' | '[' arrayLiteral ']'
    * </pre>
    */
   private ExprNode atom() {
@@ -805,6 +806,10 @@ public class Parser implements Phase {
       ConstToken<Double> dt = (ConstToken<Double>) token;
       advance();
       return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
+    } else if (token.type() == TokenType.BYTE) {
+      ConstToken<Byte> bt = (ConstToken<Byte>) token;
+      advance();
+      return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
     } else if (token.type() == TokenType.TRUE || token.type() == TokenType.FALSE) {
       Token bt = token;
       advance();
