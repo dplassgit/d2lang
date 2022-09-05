@@ -11,6 +11,11 @@ public class ConstToken<T> extends Token {
     this.value = value;
   }
 
+  public ConstToken(TokenType type, T value, String text, Position start, Position end) {
+    super(type, start, end, text);
+    this.value = value;
+  }
+
   public T value() {
     return value;
   }

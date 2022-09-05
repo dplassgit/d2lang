@@ -99,6 +99,35 @@ public class Lexer {
 
   private Token makeNumber(Position start) {
     StringBuilder sb = new StringBuilder();
+    // This is non-standard but I don't care. It's my language and you can suck it.
+    // 0y7f means a byte (in hex)
+    if (cc == '0') {
+      sb.append(cc);
+      advance(); // eat the '0'
+      if (cc == 'y') {
+        advance(); // eat the 'y'
+        // byte constant. clear the stringbuilder.
+        sb = new StringBuilder();
+        while (Character.isDigit(cc) || (cc >= 'A' && cc <= 'F') || (cc >= 'a' && cc <= 'f')) {
+          sb.append(cc);
+          advance();
+        }
+        if (sb.length() == 0) {
+          throw new ScannerException("Invalid byte constant", start);
+        }
+        if (sb.length() > 2) {
+          throw new ScannerException(String.format("Byte constant too big 0y%s", sb), start);
+        }
+        try {
+          Position end = new Position(line, col);
+          // Cannot use Byte.parseByte because it rejects "some" values, huh.
+          int value = Integer.parseInt(sb.toString(), 16);
+          return new ConstToken<Byte>(TokenType.BYTE, (byte) value, sb.toString(), start, end);
+        } catch (Exception e) {
+          throw new ScannerException(String.format("Byte constant out of range 0y%s", sb), start);
+        }
+      }
+    }
     while (Character.isDigit(cc)) {
       sb.append(cc);
       advance();
@@ -116,7 +145,7 @@ public class Lexer {
         double value = Double.parseDouble(sb.toString());
         return new ConstToken<Double>(TokenType.DOUBLE, value, start, end);
       } catch (Exception e) {
-        throw new ScannerException(String.format("Double too big %s", sb), start);
+        throw new ScannerException(String.format("Double constant too big %s", sb), start);
       }
     }
     try {
@@ -124,7 +153,7 @@ public class Lexer {
       int value = Integer.parseInt(sb.toString());
       return new ConstToken<Integer>(TokenType.INT, value, start, end);
     } catch (Exception e) {
-      throw new ScannerException(String.format("Int too big %s", sb), start);
+      throw new ScannerException(String.format("Integer constant too big %s", sb), start);
     }
   }
 

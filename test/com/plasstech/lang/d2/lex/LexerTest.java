@@ -79,7 +79,51 @@ public class LexerTest {
   }
 
   @Test
-  public void floatToken() {
+  public void byteConstant() {
+    Lexer lexer = new Lexer("0y3F");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.text()).isEqualTo("3F");
+    ConstToken<Byte> itt = (ConstToken<Byte>) token;
+    assertThat(itt.value()).isEqualTo((byte) 0x3F);
+  }
+
+  @Test
+  public void byteConstantOneDigit() {
+    Lexer lexer = new Lexer("0y3 f");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.text()).isEqualTo("3");
+    ConstToken<Byte> itt = (ConstToken<Byte>) token;
+    assertThat(itt.value()).isEqualTo(3);
+  }
+
+  @Test
+  public void tooBigByte() {
+    Lexer lexer = new Lexer("0y1234567890123");
+    ScannerException exception = assertThrows(ScannerException.class, () -> lexer.nextToken());
+    assertThat(exception).hasMessageThat().contains("Byte constant too big");
+  }
+
+  @Test
+  public void tooShortByte() {
+    Lexer lexer = new Lexer("0y 123");
+    ScannerException exception = assertThrows(ScannerException.class, () -> lexer.nextToken());
+    assertThat(exception).hasMessageThat().contains("Invalid byte constant");
+  }
+
+  @Test
+  public void caseInsensitiveByteConstant() {
+    Lexer lexer = new Lexer("0yeA");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.text()).isEqualTo("eA");
+    ConstToken<Byte> itt = (ConstToken<Byte>) token;
+    assertThat(itt.value()).isEqualTo((byte) 0xea);
+  }
+
+  @Test
+  public void doubleToken() {
     Lexer lexer = new Lexer("1234.5");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
@@ -89,7 +133,7 @@ public class LexerTest {
   }
 
   @Test
-  public void floatTokenJustADot() {
+  public void doubleTokenJustADot() {
     Lexer lexer = new Lexer("1234. next");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
