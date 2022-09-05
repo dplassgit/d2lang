@@ -759,30 +759,41 @@ public class ParserTest {
     BlockNode root = parseStatements("a:bool");
 
     List<StatementNode> statements = root.statements();
-    assertThat(statements).hasSize(1);
-
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
-    assertThat(declarationNode.name()).isEqualTo("a");
     assertThat(declarationNode.varType()).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void declString() {
     BlockNode root = parseStatements("a:string");
-
     List<StatementNode> statements = root.statements();
-    assertThat(statements).hasSize(1);
-
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
-    assertThat(declarationNode.name()).isEqualTo("a");
     assertThat(declarationNode.varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
+  public void declByte() {
+    BlockNode root = parseStatements("a:byte");
+
+    List<StatementNode> statements = root.statements();
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.varType()).isEqualTo(VarType.BYTE);
+  }
+
+  @Test
+  public void declLong() {
+    BlockNode root = parseStatements("a:long");
+
+    List<StatementNode> statements = root.statements();
+    DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
+    assertThat(declarationNode.varType()).isEqualTo(VarType.LONG);
+  }
+
+  @Test
   public void declarationError() {
-    assertParseError("a:", "expected INT, BOOL");
-    assertParseError("a::", "expected INT, BOOL");
-    assertParseError("a:print", "expected INT, BOOL");
+    assertParseError("a:", "expected built-in");
+    assertParseError("a::", "expected built-in");
+    assertParseError("a:print", "expected built-in");
   }
 
   @Test
@@ -820,9 +831,9 @@ public class ParserTest {
   @Test
   public void procErrors() {
     assertParseError("fib:proc(a:int b) {}", "expected )");
-    assertParseError("fib:proc(a:proc, b) {}", "expected INT");
-    assertParseError("fib:proc(a:, b) {}", "expected INT");
-    assertParseError("fib:proc(a:) {}", "expected INT");
+    assertParseError("fib:proc(a:proc, b) {}", "expected built-in");
+    assertParseError("fib:proc(a:, b) {}", "expected built-in");
+    assertParseError("fib:proc(a:) {}", "expected built-in");
     assertParseError("fib:proc(a {}", "expected )");
     assertParseError("fib:proc(a:int, ) {}", "expected VARIABLE");
     assertParseError("fib:proc(a:int) print a", "expected {");
@@ -874,6 +885,22 @@ public class ParserTest {
     assertThat(proc.parameters()).hasSize(1);
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
     assertThat(proc.parameters().get(0).varType()).hasArrayBaseType(VarType.INT);
+  }
+
+  @Test
+  public void procWithByteParam() {
+    ProgramNode root = parseProgram("f:proc(param1:byte) {}");
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.BYTE);
+  }
+
+  @Test
+  public void procWithLongParam() {
+    ProgramNode root = parseProgram("f:proc(param1:long) {}");
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
+    assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.LONG);
   }
 
   @Test

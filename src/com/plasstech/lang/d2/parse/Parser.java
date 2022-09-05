@@ -80,6 +80,8 @@ public class Parser implements Phase {
           TokenType.BIT_NOT,
           TokenType.INT,
           TokenType.DOUBLE,
+          TokenType.BYTE,
+          TokenType.LONG,
           TokenType.STRING,
           TokenType.BOOL,
           TokenType.TRUE,
@@ -372,8 +374,7 @@ public class Parser implements Phase {
     }
     throw new ParseException(
         String.format(
-            "Unexpected '%s' in declaration; expected INT, BOOL, STRING, PROC or RECORD",
-            token.text()),
+            "Unexpected '%s' in declaration; expected built-in type, PROC or RECORD", token.text()),
         token.start());
   }
 
@@ -452,8 +453,8 @@ public class Parser implements Phase {
   }
 
   /**
-   * Parses colon followed by var type. Works for INT, BOOL, STRING, record. Does NOT work for
-   * arrays or procs yet.
+   * Parses colon followed by var type. Works for built-in types, record. Does NOT work for proc
+   * params.
    */
   private VarType parseVarType() {
     expect(TokenType.COLON);
@@ -480,7 +481,7 @@ public class Parser implements Phase {
       return paramType;
     }
     throw new ParseException(
-        String.format("Unexpected '%s'; expected INT, BOOL, STRING or record type", token.text()),
+        String.format("Unexpected '%s'; expected built-in or record type", token.text()),
         token.start());
   }
 
