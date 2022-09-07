@@ -238,14 +238,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Dec op) {
     String target = resolver.resolve(op.target());
-    emit("dec DWORD %s", target);
+    emit("dec %s", target);
     resolver.deallocate(op.target());
   }
 
   @Override
   public void visit(Inc op) {
     String target = resolver.resolve(op.target());
-    emit("inc DWORD %s", target);
+    emit("inc %s", target);
     resolver.deallocate(op.target());
   }
 
@@ -270,9 +270,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (op.left() instanceof TempLocation
         && op.right() instanceof TempLocation
         && op.destination() instanceof TempLocation
-        && (op.left().type() == VarType.INT
-            || op.left().type() == VarType.BOOL
-            || op.left().type() == VarType.DOUBLE)
+        && (op.left().type() == VarType.BOOL
+            || op.left().type() == VarType.BYTE
+            || op.left().type() == VarType.DOUBLE
+            || op.left().type() == VarType.INT)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now
         && (op.left().type().equals(op.destination().type()))) {
@@ -338,18 +339,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
-    } else if (leftType == VarType.INT) {
+    } else if (leftType == VarType.INT || leftType == VarType.BYTE) {
       String size = Size.of(leftType).asmType;
       switch (operator) {
-        case PLUS:
-        case MINUS:
-        case MULT:
         case BIT_AND:
         case BIT_OR:
         case BIT_XOR:
+        case MINUS:
+        case MULT:
+        case PLUS:
           if (!reuse) {
             // TODO(bug#170): Use resolver.mov
-            emit("mov %s %s, %s ; int setup", size, destName, leftName);
+            emit(
+                "mov %s %s, %s ; %s setup",
+                size, destName, leftName, leftType.toString().toLowerCase());
           }
           emit("%s %s, %s ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
           break;
@@ -508,6 +511,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // sign extend eax to edx
     emit("cdq  ; sign extend eax to edx");
+    // this may fail for byte
     emit("idiv %s  ; EAX = %s / %s", temp.name32(), leftName, rightName);
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
@@ -565,7 +569,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("setz %s  ; boolean not", destName);
         break;
       case MINUS:
-        if (source.type() == VarType.INT) {
+        if (source.type() == VarType.INT || source.type() == VarType.BYTE) {
           emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
           emit("neg %s  ; unary minus", destName);
         } else {

@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.type.VarType;
  */
 enum Size {
   _1BYTE("BYTE", "db"),
+  _16BYTE("WORD", "dw"),
   _32BITS("DWORD", "dd"),
   _64BITS("QWORD", "dq");
 
@@ -29,7 +30,7 @@ enum Size {
   }
 
   private static Map<Integer, Size> BYTES_TO_SIZE =
-      ImmutableMap.of(1, _1BYTE, 4, _32BITS, 8, _64BITS);
+      ImmutableMap.of(1, _1BYTE, 2, _16BYTE, 4, _32BITS, 8, _64BITS);
 
   static Size of(VarType type) {
     int bytes = type.size();

@@ -3,7 +3,7 @@ package com.plasstech.lang.d2.type;
 /** The type of an expression or variable. */
 public interface VarType {
   VarType BOOL = new SimpleType("BOOL", 1);
-  VarType BYTE = new SimpleType("BYTE", 1);
+  VarType BYTE = new SimpleType("BYTE", 2);
   VarType DOUBLE = new SimpleType("DOUBLE", 8);
   VarType INT = new SimpleType("INT", 4);
   VarType LONG = new SimpleType("LONG", 8);

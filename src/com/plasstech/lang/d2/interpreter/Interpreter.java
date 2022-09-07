@@ -42,7 +42,6 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -53,7 +52,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private final State state;
   private final ImmutableList<Op> code;
-  private final SymTab table;
   private final boolean interactive;
 
   private final Environment rootEnv = new Environment();
@@ -69,7 +67,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public Interpreter(State state, boolean interactive) {
     this.state = state;
     this.code = state.lastIlCode();
-    this.table = state.symbolTable();
     this.interactive = interactive;
     envs.push(rootEnv);
   }
@@ -229,6 +226,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
       result = visitIntBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof Byte && right instanceof Byte) {
+      result = visitByteBinOp(op, (Byte) left, (Byte) right);
     } else if (left instanceof Double && right instanceof Double) {
       result = visitDoubleBinOp(op, (Double) left, (Double) right);
     } else if (left instanceof Boolean && right instanceof Boolean) {
@@ -357,6 +356,45 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
+  private Object visitByteBinOp(BinOp op, byte left, byte right) {
+    switch (op.operator()) {
+      case DIV:
+        return (byte) (left / right);
+      case EQEQ:
+        return left == right;
+      case GEQ:
+        return left >= right;
+      case GT:
+        return left > right;
+      case LEQ:
+        return left <= right;
+      case LT:
+        return left < right;
+      case MINUS:
+        return (byte) (left - right);
+      case MOD:
+        return (byte) (left % right);
+      case MULT:
+        return (byte) (left * right);
+      case NEQ:
+        return left != right;
+      case PLUS:
+        return (byte) (left + right);
+      case SHIFT_LEFT:
+        return (byte) (left << right);
+      case SHIFT_RIGHT:
+        return (byte) (left >> right);
+      case BIT_AND:
+        return (byte) (left & right);
+      case BIT_OR:
+        return (byte) (left | right);
+      case BIT_XOR:
+        return (byte) (left ^ right);
+      default:
+        throw new IllegalStateException("Unknown byte binop " + op.operator());
+    }
+  }
+
   private Object visitDoubleBinOp(BinOp op, double left, double right) {
     switch (op.operator()) {
       case DIV:
@@ -413,8 +451,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(Inc op) {
     Object target = resolve(op.target());
     int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
+    if (target instanceof Integer) {
+      previous = (int) target;
+    } else {
+      previous = (byte) target;
     }
     setValue(op.target(), previous + 1);
   }
@@ -423,8 +463,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(Dec op) {
     Object target = resolve(op.target());
     int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
+    if (target instanceof Integer) {
+      previous = (int) target;
+    } else {
+      previous = (byte) target;
     }
     setValue(op.target(), previous - 1);
   }
@@ -434,7 +476,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object rhs = resolve(op.operand());
     Object result = null;
     // FFS use op.source.type
-    if (rhs instanceof Boolean || rhs instanceof Integer) {
+    if (rhs instanceof Boolean || rhs instanceof Integer || rhs instanceof Byte) {
       result = visitUnaryInt(op, rhs);
     } else if (rhs instanceof Double) {
       result = visitUnaryDouble(op, rhs);
@@ -473,7 +515,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (op.operator() == TokenType.NOT) {
       return rhs.equals(Boolean.FALSE);
     }
-    int r1 = (int) rhs;
+    int r1;
+    if (rhs instanceof Integer) {
+      r1 = (int) rhs;
+    } else {
+      r1 = (byte) rhs;
+    }
     switch (op.operator()) {
       case PLUS:
         return r1;

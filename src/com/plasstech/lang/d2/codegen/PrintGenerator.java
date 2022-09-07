@@ -26,9 +26,11 @@ class PrintGenerator {
   void generate(SysCall op) {
     Operand arg = op.arg();
     String argVal = resolver.resolve(arg);
-    if (arg.type() == VarType.INT) {
+    if (arg.type() == VarType.INT || arg.type() == VarType.BYTE) {
+      // TODO: print bytes with 0y prefix?
       // move with sign extend. intentionally set rdx first, in case the arg is in ecx
-      emitter.emit("movsx RDX, DWORD %s  ; parameter", argVal);
+      Size size = Size.of(arg.type());
+      emitter.emit("movsx RDX, %s %s  ; parameter", size.asmType, argVal);
       emitter.addData(PRINTF_INT_FMT);
       emitter.emit("mov RCX, PRINTF_INT_FMT  ; pattern");
       emitter.emitExternCall("printf");
