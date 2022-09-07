@@ -143,7 +143,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       return integers;
     } else if (baseType == VarType.BYTE) {
       Byte[] bytes = new Byte[sizeVal];
-      Arrays.setAll(bytes, (index) -> 0);
+      Arrays.setAll(bytes, (index) -> (byte) 0);
       return bytes;
     } else if (baseType == VarType.DOUBLE) {
       Double[] doubles = new Double[sizeVal];

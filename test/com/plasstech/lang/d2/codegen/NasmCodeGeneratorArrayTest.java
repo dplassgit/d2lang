@@ -21,7 +21,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayDeclConstantSizeInProc(
-      @TestParameter({"string", "int", "bool", "double"}) String type) throws Exception {
+      @TestParameter({"string", "int", "bool", "double", "byte"}) String type) throws Exception {
     execute(
         String.format(
             "      p:proc(): %s {" //
@@ -29,7 +29,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
                 + "}" //
                 + "p()",
             type, type, type.length()),
-        "arrayDeclConstantSizeInProc");
+        "arrayDeclConstantSizeInProc" + type);
   }
 
   @Test
@@ -53,7 +53,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             /*"string", */
             "int",
             "bool",
-            "double"
+            "double",
+            "byte"
           })
           String type)
       throws Exception {
@@ -66,7 +67,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             /*"string", */
             "int",
             "bool",
-            "double"
+            "double",
+            "byte"
           })
           String type)
       throws Exception {
@@ -97,13 +99,23 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void arraySetByte() throws Exception {
+    execute("x:byte[2] x[1]=0y2 println x[1]", "arraySetByte");
+  }
+
+  @Test
   public void arraySetDouble() throws Exception {
     execute("x:double[2] x[1]=2.0 println x[1]", "arraySetDouble");
   }
 
   @Test
   public void arraySetIntFromGlobal() throws Exception {
-    execute("g=2 x:int[2] x[1]=g println x[1]", "arraySetInt");
+    execute("g=2 x:int[2] x[1]=g println x[1]", "arraySetIntFromGlobal");
+  }
+
+  @Test
+  public void arraySetByteFromGlobal() throws Exception {
+    execute("g=0y2 x:byte[2] x[1]=g println x[1]", "arraySetByteFromGlobal");
   }
 
   @Test
@@ -137,7 +149,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayLengthConstantSize() throws Exception {
-    execute("x:int[4] print 'Should be 4' println length(x)", "arrayLengthConstantSize");
+    execute("x:int[4] print 'Should be 4' println length(x)", "arrayLengthConstantSizeInt");
+    execute("x:byte[4] print 'Should be 4' println length(x)", "arrayLengthConstantSizeByte");
   }
 
   @Test
@@ -173,6 +186,16 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             + " }"
             + " arrayParam([1,2])",
         "arrayParam");
+  }
+
+  @Test
+  public void byteArrayParam() throws Exception {
+    execute(
+        "       arrayParam:proc(arr:byte[]) {"
+            + "   println 'Should print 2' print arr[1]"
+            + " }"
+            + " arrayParam([0y1, 0y2])",
+        "byteArrayParam");
   }
 
   @Test
