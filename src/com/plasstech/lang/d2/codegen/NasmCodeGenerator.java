@@ -137,7 +137,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String opcodeString = opcode.toString();
         String escaped = ESCAPER.escape(opcodeString);
         emit0("");
-        emit("; GENERATE: %s", escaped);
+        emit("; SOURCE: %s", escaped);
         opcode.accept(this);
       }
     } catch (D2RuntimeException e) {
@@ -238,14 +238,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Dec op) {
     String target = resolver.resolve(op.target());
-    emit("dec %s", target);
+    String size = Size.of(op.target().type()).asmType;
+    emit("dec %s %s", size, target);
     resolver.deallocate(op.target());
   }
 
   @Override
   public void visit(Inc op) {
     String target = resolver.resolve(op.target());
-    emit("inc %s", target);
+    String size = Size.of(op.target().type()).asmType;
+    emit("inc %s %s", size, target);
     resolver.deallocate(op.target());
   }
 
@@ -317,10 +319,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case OR:
         case XOR:
           if (!reuse) {
-            emit("mov BYTE %s, %s ; boolean setup", destName, leftName);
+            emit("mov BYTE %s, %s", destName, leftName);
           }
-          emit(
-              "%s %s, %s ; boolean %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightName);
           break;
 
         case EQEQ:
@@ -330,9 +331,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = resolver.allocate(VarType.INT);
-          emit("mov BYTE %s, %s ; compare setup", tempReg.name8(), leftName);
+          emit("mov BYTE %s, %s", tempReg.name8(), leftName);
           emit("cmp %s, %s", tempReg.name8(), rightName);
-          emit("%s %s ; bool compare %s", BINARY_OPCODE.get(operator), destName, operator);
+          emit("%s %s", BINARY_OPCODE.get(operator), destName);
           break;
 
         default:
@@ -342,19 +343,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else if (leftType == VarType.INT || leftType == VarType.BYTE) {
       String size = Size.of(leftType).asmType;
       switch (operator) {
+        case MULT:
+          if (leftType == VarType.BYTE) {
+            // have to do something different
+            fail("Cannot generate %s for BYTE yet", op);
+            break;
+          }
         case BIT_AND:
         case BIT_OR:
         case BIT_XOR:
         case MINUS:
-        case MULT:
         case PLUS:
           if (!reuse) {
             // TODO(bug#170): Use resolver.mov
-            emit(
-                "mov %s %s, %s ; %s setup",
-                size, destName, leftName, leftType.toString().toLowerCase());
+            emit("mov %s %s, %s", size, destName, leftName);
           }
-          emit("%s %s, %s ; int %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightName);
           break;
 
         case SHIFT_LEFT:
@@ -419,13 +423,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case LT:
         case LEQ:
           tempReg = resolver.allocate(VarType.INT);
-          emit("mov %s %s, %s ; int compare setup", size, tempReg.name32(), leftName);
-          emit("cmp %s, %s", tempReg.name32(), rightName);
-          emit("%s %s  ; int compare %s", BINARY_OPCODE.get(operator), destName, operator);
+          String tempRegName = tempReg.sizeByType(leftType);
+          emit("mov %s %s, %s", size, tempRegName, leftName);
+          emit("cmp %s, %s", tempRegName, rightName);
+          emit("%s %s", BINARY_OPCODE.get(operator), destName);
           break;
 
         case DIV:
         case MOD:
+          if (leftType == VarType.BYTE) {
+            // have to do something different
+            fail("Cannot generate %s for BYTE yet", op);
+            break;
+          }
           generateDivMod(op, dest);
           break;
 

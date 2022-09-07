@@ -49,10 +49,7 @@ enum IntRegister implements Register {
   public String sizeByType(VarType type) {
     if (type == VarType.INT) {
       return name32;
-    } else if (type == VarType.BYTE) {
-      // cannot do most math with 8 bit registers so we use the 16 bit versions (?)
-      return name16;
-    } else if (type == VarType.BOOL) {
+    } else if (type == VarType.BYTE || type == VarType.BOOL) {
       return name8;
     }
     return name64;

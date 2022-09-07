@@ -15,29 +15,28 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void byteBinOps(
-      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
-      @TestParameter({"34", "-23"}) int first,
-      @TestParameter({"12", "-23"}) int second)
+      //          @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
+      @TestParameter({"+", "-", "&", "|", "^"}) String op,
+      @TestParameter({"0y34", "0yf3"}) String first,
+      @TestParameter({"0y12", "0ye3"}) String second)
       throws Exception {
     execute(
         String.format(
-            "a=%d b=%d c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
+            "a=%s b=%s c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
             first, second, op, op, op, op),
         "intBinOps");
   }
 
   @Test
-  @Ignore
-  public void intCompOps(
+  public void byteCompOps(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
-      @TestParameter({"0", "1234", "-34567"}) int first,
-      @TestParameter({"0", "1234", "-34567"}) int second)
+      @TestParameter({"0y0", "0y34", "0yf7"}) String first,
+      @TestParameter({"0y0", "0y34", "0yf7"}) String second)
       throws Exception {
     execute(
         String.format(
-            "      a=%d b=%d " //
+            "      a=%s b=%s " //
                 + "c=a %s b print c " //
                 + "d=b %s a print d",
             first, second, op, op),
