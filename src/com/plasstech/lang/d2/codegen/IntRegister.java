@@ -61,6 +61,11 @@ enum IntRegister implements Register {
   }
 
   @Override
+  public String name16() {
+    return name16;
+  }
+
+  @Override
   public String name32() {
     return name32;
   }

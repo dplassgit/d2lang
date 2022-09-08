@@ -17,7 +17,7 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   @Test
   public void byteBinOps(
       //          @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
-      @TestParameter({"+", "-", "&", "|", "^"}) String op,
+      @TestParameter({"+", "-", "*", "&", "|", "^"}) String op,
       @TestParameter({"0y34", "0yf3"}) String first,
       @TestParameter({"0y12", "0ye3"}) String second)
       throws Exception {
@@ -25,7 +25,24 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
         String.format(
             "a=%s b=%s c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
             first, second, op, op, op, op),
-        "intBinOps");
+        "byteBinOps");
+  }
+
+  @Test
+  public void byteMul() throws Exception {
+    execute("a=0y3e b=0y2 c=a * b print c", "byteMul1");
+    execute("f:proc {a=0y3e b=0y2 c=a * b print c} f()", "byteMul2");
+    execute("f:proc(a:byte, b:byte) {c=a * b print c} f(0y3e, 0y2)", "byteMul3");
+    execute("b=0y2 f:proc(a:byte) {c=a * b print c} f(0y3e)", "byteMul4");
+  }
+
+  @Test
+  @Ignore
+  public void byteDiv() throws Exception {
+    execute("a=0y3e b=0y2 c=a / b print c", "byteDiv1");
+    //    execute("f:proc {a=0y3e b=0y2 c=a / b print c} f()", "byteDiv2");
+    //    execute("f:proc(a:byte, b:byte) {c=a / b print c} f(0y3e, 0y2)", "byteDiv3");
+    //    execute("b=0y2 f:proc(a:byte) {c=a / b print c} f(0y3e)", "byteDiv4");
   }
 
   @Test
@@ -40,20 +57,21 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
                 + "c=a %s b print c " //
                 + "d=b %s a print d",
             first, second, op, op),
-        "intCompOps");
+        "byteCompOps");
   }
 
   @Test
   public void shiftOps(@TestParameter({"<<", ">>"}) String op) throws Exception {
     execute(
-        String.format("a=0y23 b=0y4 c=a %s b print c a=0yF4 d=b %s a print d", op, op), "shiftOps");
+        String.format("a=0y23 b=0y4 c=a %s b print c a=0yF4 d=b %s a print d", op, op),
+        "byteShiftOps");
   }
 
   @Test
   public void shiftConstant(@TestParameter({"<<", ">>"}) String op) throws Exception {
     execute(
         String.format("a=0y23 c=a %s 0y4 print c a=0yF4 d=a %s 0y4 print d", op, op),
-        "shiftConstant");
+        "byteShiftConstant");
   }
 
   @Test
@@ -61,7 +79,7 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
     execute(
         String.format(
             "f:proc(a:byte) {b=0y4 a=b %s a println a a=a %s b println a} f(0y2)", op, op),
-        "shiftOps");
+        "byteShiftOpsProc");
   }
 
   @Test
