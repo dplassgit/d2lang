@@ -47,6 +47,12 @@ class ArithmeticOptimizer extends LineOptimizer {
           int value = constant.value();
           replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~value)));
         }
+        if (operand.isConstant() && operand.type() == VarType.BYTE) {
+          ConstantOperand<Byte> constant = (ConstantOperand<Byte>) operand;
+          byte value = constant.value();
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~value)));
+        }
+
         return;
       case MINUS:
         if (operand.isConstant()) {
@@ -57,6 +63,10 @@ class ArithmeticOptimizer extends LineOptimizer {
           } else if (operand.type() == VarType.DOUBLE) {
             ConstantOperand<Double> constant = (ConstantOperand<Double>) operand;
             double value = constant.value();
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-value)));
+          } else if (operand.type() == VarType.BYTE) {
+            ConstantOperand<Byte> constant = (ConstantOperand<Byte>) operand;
+            byte value = constant.value();
             replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-value)));
           }
         }
@@ -129,7 +139,9 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case BIT_XOR:
-        optimizeArith(op.destination(), left, right, (t, u) -> t ^ u);
+        if (!optimizeArith(op.destination(), left, right, (t, u) -> t ^ u)) {
+          optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t ^ u));
+        }
         return;
 
       case AND:
@@ -206,13 +218,17 @@ class ArithmeticOptimizer extends LineOptimizer {
       // Two constants.
       return;
     }
+    if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t | u))) {
+      // Two constants.
+      return;
+    }
     // Anything | 0 = the thing
-    if (left.equals(ConstantOperand.ZERO)) {
+    if (left.equals(ConstantOperand.ZERO) || left.equals(ConstantOperand.ZERO_BYTE)) {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
     }
-    if (right.equals(ConstantOperand.ZERO)) {
+    if (right.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO_BYTE)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
@@ -249,15 +265,30 @@ class ArithmeticOptimizer extends LineOptimizer {
       // Two constants.
       return;
     }
+    if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t & u))) {
+      // Two constants.
+      return;
+    }
+
     // Anything & 0 = 0
     if (left.equals(ConstantOperand.ZERO)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
       return;
     }
+    if (left.equals(ConstantOperand.ZERO_BYTE)) {
+      // replace with destination = 0y0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
+      return;
+    }
     if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      return;
+    }
+    if (right.equals(ConstantOperand.ZERO_BYTE)) {
+      // replace with destination = 0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
       return;
     }
     if (left.equals(right)) {
@@ -271,26 +302,39 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
       return;
     }
+    if (right.equals(ConstantOperand.ONE_BYTE)) {
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
+      return;
+    }
     try {
       optimizeArith(op.destination(), left, right, (t, u) -> t % u);
+      optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t % u));
+
     } catch (ArithmeticException e) {
       logger.atWarning().log("Cannot optimize mod zero!");
     }
   }
 
   private void optimizeDivide(BinOp op, Operand left, Operand right) {
-    if (right.equals(ConstantOperand.ONE) || right.equals(ConstantOperand.ONE_DBL)) {
+    if (right.equals(ConstantOperand.ONE)
+        || right.equals(ConstantOperand.ONE_DBL)
+        || right.equals(ConstantOperand.ONE_BYTE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
     try {
-      if (right.equals(ConstantOperand.ZERO_DBL) || right.equals(ConstantOperand.ZERO)) {
+      if (right.equals(ConstantOperand.ZERO)
+          || right.equals(ConstantOperand.ZERO_DBL)
+          || right.equals(ConstantOperand.ZERO_BYTE)) {
         throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
       }
       if (optimizeArith(op.destination(), left, right, (t, u) -> t / u)) {
         return;
       }
       if (optimizeDoubleArith(op.destination(), left, right, (t, u) -> t / u)) {
+        return;
+      }
+      if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t / u))) {
         return;
       }
       if (right.isConstant() && right.type() == VarType.INT) {
@@ -316,13 +360,18 @@ class ArithmeticOptimizer extends LineOptimizer {
         replaceCurrent(new Transfer(op.destination(), ConstantOperand.ONE_DBL));
         return;
       }
+      if (left.equals(right) && left.type() == VarType.BYTE) {
+        // a/a = 1
+        replaceCurrent(new Transfer(op.destination(), ConstantOperand.ONE_BYTE));
+        return;
+      }
     } catch (ArithmeticException e) {
       throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
     }
   }
 
   private void optimizeShiftLeft(BinOp op, Operand left, Operand right) {
-    if (right.equals(ConstantOperand.ZERO)) {
+    if (right.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO_BYTE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
@@ -330,7 +379,7 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeShiftRight(BinOp op, Operand left, Operand right) {
-    if (right.equals(ConstantOperand.ZERO)) {
+    if (right.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO_BYTE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
@@ -342,6 +391,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     if (optimizeDoubleArith(op.destination(), left, right, (t, u) -> t - u)) {
+      return;
+    }
+    if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t - u))) {
       return;
     }
     // Replace foo - -32 with foo + 32
@@ -373,15 +425,30 @@ class ArithmeticOptimizer extends LineOptimizer {
           return;
         }
       }
+      if (rightConstant.type() == VarType.BYTE) {
+        byte rightval = (byte) rightConstant.value();
+        if (rightval < 0) {
+          replaceCurrent(
+              new BinOp(
+                  op.destination(),
+                  left,
+                  TokenType.PLUS,
+                  ConstantOperand.of(-rightval),
+                  op.position()));
+          return;
+        }
+      }
     }
-    if (left.equals(ConstantOperand.ZERO)) {
+    if (left.equals(ConstantOperand.ZERO) || left.equals(ConstantOperand.ZERO_BYTE)) {
       // NOTE: NOT for Doubles.
       // Replace with destination = -right
       // This may not be any better than 0-right...
       replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right, op.position()));
       return;
     }
-    if (right.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO_DBL)) {
+    if (right.equals(ConstantOperand.ZERO)
+        || right.equals(ConstantOperand.ZERO_DBL)
+        || right.equals(ConstantOperand.ZERO_BYTE)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
@@ -396,6 +463,11 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_DBL));
       return;
     }
+    if (left.equals(right) && left.type() == VarType.BYTE) {
+      // a - a = 0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
+      return;
+    }
   }
 
   private void optimizeAdd(BinOp op, Operand left, Operand right) {
@@ -407,6 +479,10 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
       if (optimizeDoubleArith(op.destination(), left, right, (t, u) -> t + u)) {
         // Doubles.
+        return;
+      }
+      if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t + u))) {
+        // bytes
         return;
       }
       // Strings
@@ -443,6 +519,20 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (right.isConstant() && right.type() == VarType.INT) {
       ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
       int rightval = rightConstant.value();
+      if (rightval < 0) {
+        replaceCurrent(
+            new BinOp(
+                op.destination(),
+                left,
+                TokenType.MINUS,
+                ConstantOperand.of(-rightval),
+                op.position()));
+        return;
+      }
+    }
+    if (right.isConstant() && right.type() == VarType.BYTE) {
+      ConstantOperand<Byte> rightConstant = (ConstantOperand<Byte>) right;
+      byte rightval = rightConstant.value();
       if (rightval < 0) {
         replaceCurrent(
             new BinOp(
@@ -494,9 +584,8 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeDoubleArith(op.destination(), left, right, (t, u) -> t * u)) {
       return;
     }
-    if (left.equals(ConstantOperand.ZERO_DBL) || right.equals(ConstantOperand.ZERO_DBL)) {
-      // replace with destination = 0.0
-      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_DBL));
+    if (optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t * u))) {
+      // bytes
       return;
     }
     if (left.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO)) {
@@ -504,11 +593,25 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
       return;
     }
-    if (left.equals(ConstantOperand.ONE) || left.equals(ConstantOperand.ONE_DBL)) {
+    if (left.equals(ConstantOperand.ZERO_DBL) || right.equals(ConstantOperand.ZERO_DBL)) {
+      // replace with destination = 0.0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_DBL));
+      return;
+    }
+    if (left.equals(ConstantOperand.ZERO_BYTE) || right.equals(ConstantOperand.ZERO_BYTE)) {
+      // replace with destination = 0
+      replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
+      return;
+    }
+    if (left.equals(ConstantOperand.ONE)
+        || left.equals(ConstantOperand.ONE_DBL)
+        || left.equals(ConstantOperand.ONE_BYTE)) {
       replaceCurrent(new Transfer(op.destination(), op.right()));
       return;
     }
-    if (right.equals(ConstantOperand.ONE) || right.equals(ConstantOperand.ONE_DBL)) {
+    if (right.equals(ConstantOperand.ONE)
+        || right.equals(ConstantOperand.ONE_DBL)
+        || right.equals(ConstantOperand.ONE_BYTE)) {
       replaceCurrent(new Transfer(op.destination(), op.left()));
       return;
     }
@@ -668,10 +771,10 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   /**
-   * If both operands are constants, apply the given function to those numbers and replace the
+   * If both operands are constant ints, apply the given function to those numbers and replace the
    * opcode with the new constant. E.g., t=3+4 becomes t=7
    *
-   * @return true if both operands are numeric constants.
+   * @return true if both operands are int constants.
    */
   private boolean optimizeArith(
       Location destination, Operand left, Operand right, BinaryOperator<Integer> fun) {
@@ -681,6 +784,26 @@ class ArithmeticOptimizer extends LineOptimizer {
       ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
       int leftval = leftConstant.value();
       int rightval = rightConstant.value();
+      replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * If both operands are constant bytes, apply the given function to those numbers and replace the
+   * opcode with the new constant. E.g., t=3+4 becomes t=7
+   *
+   * @return true if both operands are byte constants.
+   */
+  private boolean optimizeByteArith(
+      Location destination, Operand left, Operand right, BinaryOperator<Byte> fun) {
+
+    if (left.isConstant() && right.isConstant() && left.type() == VarType.BYTE) {
+      ConstantOperand<Byte> leftConstant = (ConstantOperand<Byte>) left;
+      ConstantOperand<Byte> rightConstant = (ConstantOperand<Byte>) right;
+      byte leftval = leftConstant.value();
+      byte rightval = rightConstant.value();
       replaceCurrent(new Transfer(destination, ConstantOperand.of(fun.apply(leftval, rightval))));
       return true;
     }
