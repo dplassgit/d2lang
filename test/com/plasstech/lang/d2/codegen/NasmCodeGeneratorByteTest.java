@@ -16,14 +16,17 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void byteBinOps(
-      //          @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
-      @TestParameter({"+", "-", "*", "&", "|", "^"}) String op,
+      //      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
+      @TestParameter({"/"}) String op,
       @TestParameter({"0y34", "0yf3"}) String first,
       @TestParameter({"0y12", "0ye3"}) String second)
       throws Exception {
     execute(
         String.format(
-            "a=%s b=%s c=a %s b print c d=b %s a print d e=a %s a print e f=b %s b print f",
+            "      a=%s b=%s c=a %s b println c "
+                + "d=b %s a println d "
+                + "e=a %s a println e "
+                + "f=b %s b println f",
             first, second, op, op, op, op),
         "byteBinOps");
   }
@@ -37,12 +40,23 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
-  public void byteDiv() throws Exception {
+  public void byteDivGlobals() throws Exception {
     execute("a=0y3e b=0y2 c=a / b print c", "byteDiv1");
-    //    execute("f:proc {a=0y3e b=0y2 c=a / b print c} f()", "byteDiv2");
-    //    execute("f:proc(a:byte, b:byte) {c=a / b print c} f(0y3e, 0y2)", "byteDiv3");
-    //    execute("b=0y2 f:proc(a:byte) {c=a / b print c} f(0y3e)", "byteDiv4");
+  }
+
+  @Test
+  public void byteDivLocals() throws Exception {
+    execute("f:proc {a=0y3e b=0y2 c=a / b print c} f()", "byteDiv2");
+  }
+
+  @Test
+  public void byteDivParams() throws Exception {
+    execute("f:proc(a:byte, b:byte) {c=a / b print c} f(0y3e, 0yf2)", "byteDiv3");
+  }
+
+  @Test
+  public void byteDivGlobalAndParam() throws Exception {
+    execute("b=0yf2 f:proc(a:byte) {c=a / b print c} f(0y3e)", "byteDiv4");
   }
 
   @Test

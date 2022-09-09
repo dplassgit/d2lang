@@ -455,12 +455,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
         case DIV:
         case MOD:
-          if (leftType == VarType.BYTE) {
-            // have to do something different
-            fail("Cannot generate %s for BYTE yet", op);
-            break;
-          }
-
           generateDivMod(op, dest);
           break;
 
@@ -541,26 +535,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
     Register temp = resolver.allocate(VarType.INT);
     String leftName = resolver.resolve(leftOperand);
-    if (!resolver.isInRegister(leftOperand, RAX)) {
-      emit("mov %s %s, %s  ; numerator", size, RAX.sizeByType(operandType), leftName);
-    } else {
-      emit("; numerator already in EAX");
+    if (leftOperand.type() != VarType.INT) {
+      // clear eax for byte
+      emit("xor EAX, EAX");
     }
-    emit("mov %s %s, %s  ; denominator", size, temp.sizeByType(operandType), rightName);
+    emit("; numerator:");
+    resolver.mov(leftOperand, RAX);
+    emit("; denominator:");
+    resolver.mov(rightOperand, temp);
 
     // sign extend eax to edx
     emit("cdq  ; sign extend eax to edx");
-    // this may fail for byte
     emit("idiv %s  ; EAX = %s / %s", temp.name32(), leftName, rightName);
+    //     emit("idiv %s  ; EAX = %s / %s", temp.sizeByType(operandType), leftName, rightName);
+
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
       // eax has dividend
-      if (!resolver.isInRegister(op.destination(), RAX)) {
-        emit("mov %s %s, %s  ; dividend", size, destName, RAX.sizeByType(operandType));
-      } else {
-        // not required if it's already supposed to be in eax
-        emit("; dividend in EAX, where we wanted it to be");
-      }
+      emit("; dividend:");
+      resolver.mov(RAX, dest);
     } else if (op.operator() == TokenType.MOD) {
       // edx has remainder
       if (!resolver.isInRegister(op.destination(), RDX)) {
@@ -576,12 +569,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // pseudo pop
       emit("add RSP, 8  ; pseudo pop RDX");
     }
-    if (!resolver.isInRegister(op.destination(), RAX)) {
-      registerState.condPop(RAX);
-    } else {
-      // pseudo pop
-      emit("add RSP, 8  ; pseudo pop RAX");
-    }
+    registerState.condPop(RAX);
   }
 
   @Override
