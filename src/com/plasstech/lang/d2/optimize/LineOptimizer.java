@@ -50,7 +50,12 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     preProcess();
     setChanged(false);
     for (ip = 0; ip < code.size(); ++ip) {
+      try {
       code.get(ip).accept(this);
+      } catch (ClassCastException e) {
+        logger.atSevere().withCause(e).log("Cannot optimize %s", code.get(ip).toString());
+        throw e;
+      }
     }
     postProcess();
     return ImmutableList.copyOf(code);

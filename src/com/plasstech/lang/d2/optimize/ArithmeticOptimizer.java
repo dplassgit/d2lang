@@ -50,7 +50,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         if (operand.isConstant() && operand.type() == VarType.BYTE) {
           ConstantOperand<Byte> constant = (ConstantOperand<Byte>) operand;
           byte value = constant.value();
-          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(~value)));
+          replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of((byte) ~value)));
         }
 
         return;
@@ -67,7 +67,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           } else if (operand.type() == VarType.BYTE) {
             ConstantOperand<Byte> constant = (ConstantOperand<Byte>) operand;
             byte value = constant.value();
-            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of(-value)));
+            replaceCurrent(new Transfer(opcode.destination(), ConstantOperand.of((byte) -value)));
           }
         }
         return;
@@ -539,7 +539,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                 op.destination(),
                 left,
                 TokenType.MINUS,
-                ConstantOperand.of(-rightval),
+                ConstantOperand.of((byte) -rightval),
                 op.position()));
         return;
       }

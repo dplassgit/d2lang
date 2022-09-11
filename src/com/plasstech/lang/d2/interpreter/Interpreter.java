@@ -244,7 +244,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitRecordArrayBinOp(op, left, (Integer) right);
     } else {
       throw new IllegalStateException(
-          String.format("Not sure what to do with %s; left %s right %s", op, left, right));
+          String.format(
+              "Not sure what to do with %s; left %s (%s) right %s (%s)",
+              op, left, left.getClass().getSimpleName(), right, right.getClass().getSimpleName()));
     }
 
     setValue(op.destination(), result);
@@ -450,25 +452,25 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Inc op) {
     Object target = resolve(op.target());
-    int previous = 0;
     if (target instanceof Integer) {
-      previous = (int) target;
+      int previous = (int) target;
+      setValue(op.target(), previous + 1);
     } else {
-      previous = (byte) target;
+      byte previous = (byte) target;
+      setValue(op.target(), (byte) (previous + 1));
     }
-    setValue(op.target(), previous + 1);
   }
 
   @Override
   public void visit(Dec op) {
     Object target = resolve(op.target());
-    int previous = 0;
     if (target instanceof Integer) {
-      previous = (int) target;
+      int previous = (int) target;
+      setValue(op.target(), previous - 1);
     } else {
-      previous = (byte) target;
+      byte previous = (byte) target;
+      setValue(op.target(), (byte) (previous - 1));
     }
-    setValue(op.target(), previous - 1);
   }
 
   @Override
@@ -476,8 +478,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object rhs = resolve(op.operand());
     Object result = null;
     // FFS use op.source.type
-    if (rhs instanceof Boolean || rhs instanceof Integer || rhs instanceof Byte) {
+    if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
+    } else if (rhs instanceof Byte) {
+      result = visitUnaryByte(op, rhs);
     } else if (rhs instanceof Double) {
       result = visitUnaryDouble(op, rhs);
     } else if (rhs instanceof String) {
@@ -489,6 +493,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
           "Unknown unary op operand " + rhs + " for op " + op.toString());
     }
     setValue(op.destination(), result);
+  }
+
+  private Object visitUnaryByte(UnaryOp op, Object rhs) {
+    byte r1 = (byte) rhs;
+    switch (op.operator()) {
+      case PLUS:
+        return r1;
+      case MINUS:
+        return (byte) -r1;
+      case BIT_NOT:
+        return (byte) ~r1;
+      default:
+        throw new IllegalStateException("Unknown byte unaryop " + op.operator());
+    }
   }
 
   private static Object visitUnaryArray(UnaryOp op, Object[] rhs) {

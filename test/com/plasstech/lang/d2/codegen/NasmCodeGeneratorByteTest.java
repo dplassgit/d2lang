@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -121,7 +120,6 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void allOpsGlobals() throws Exception {
     execute(
         "      a=0y2 "
@@ -148,26 +146,25 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void allOpsLocals() throws Exception {
     execute(
-        "fun:proc(a:int, b:int):int { \n"
-            + "b=3 "
-            + "c=-5 "
-            + "d=7 "
-            + "e=11 "
-            + "f=13 "
-            + "z=0"
+        "fun:proc(a:byte, b:byte):byte { \n"
+            + "b=0y3 "
+            + "c=0yf5 "
+            + "d=0y7 "
+            + "e=0y11 "
+            + "f=0y13 "
+            + "z=0y0"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)+a)*b)/c)-d)) print g"
-            + " k=z+4/(5+(4-5*f)) print k"
-            + " k=0+d/(5+(4-5*f)) print k"
+            + " k=z+0y4/(0y5+(0y4-0y5*f)) print k"
+            + " k=0y0+d/(0y5+(0y4-0y5*f)) print k"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g"
-            + " h=0+a+(4+3*(4-(3+4/(4+(5-e*6))))) print h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0)))))) print j"
-            + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
+            + " h=0y0+a+(0y4+0y3*(0y4-(0y3+0y4/(0y4+(0y5-e*0y6))))) print h"
+            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0y0)))))) print j"
+            + " aa=0y2+a*(0y3+(0y3+0y5*(0y7-(0y5+0y7/0y11)+(0y7-0y11*0y13))*0y2)/b) print aa"
             + "   return aa\n"
             + "} \n"
-            + "print fun(2, 3)",
+            + "print fun(0y2, 0y3)",
         "allOpsLocals");
   }
 
@@ -177,13 +174,6 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
-  public void divLoop() throws Exception {
-    execute("a=10000 while a > 0 {print a a = a / 10 }", "divLoop");
-  }
-
-  @Test
-  @Ignore
   public void divLoopByte() throws Exception {
     execute("a=100 while a > 0 {print a a = a / 3 }", "divLoopByte");
   }
@@ -199,26 +189,25 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void bug32() throws Exception {
     execute(
         "p:proc() {\r\n"
-            + "  a:int\r\n"
-            + "  a=3\r\n"
-            + "  a=-3\r\n"
-            + "  a=--3\r\n"
-            + "  a=-+-3\r\n"
-            + "  a=+3+-3\r\n"
-            + "  a=+3\r\n"
+            + "  a:byte\r\n"
+            + "  a=0y3\r\n"
+            + "  a=-0y3\r\n"
+            + "  a=--0y3\r\n"
+            + "  a=-+-0y3\r\n"
+            + "  a=+0y3+-0y3\r\n"
+            + "  a=+0y3\r\n"
             + "  b=a // 3\r\n"
-            + "  a=(3+a)*-b // (3+3)*-3 = 6*-3=-18, ruh roh.\r\n"
+            + "  a=(0y3+a)*-b // (3+3)*-3 = 6*-3=-18, ruh roh.\r\n"
             + "  b=+a\r\n"
             + "  b=-a\r\n"
             + "\r\n"
             + "  println a\r\n"
-            + "  println 3+a*-b // 3+(-18*18)\r\n"
-            + "  println (3+a)*-b\r\n"
-            + "  println 4%6\r\n"
+            + "  println 0y3+a*-b // 3+(-18*18)\r\n"
+            + "  println (0y3+a)*-b\r\n"
+            + "  println 0y4%0y6\r\n"
             + "}\r\n"
             + "main {\r\n"
             + "  p()\r\n"
