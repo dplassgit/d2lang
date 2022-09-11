@@ -507,10 +507,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String size = Size.of(operandType).asmType;
 
     if (rightOperand.isConstant()) {
+      if (rightOperand.type() == VarType.INT) {
       ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
       int rightValue = rightConstOperand.value();
       if (rightValue == 0) {
         throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      }
+      } else {
+        ConstantOperand<Byte> rightConstOperand = (ConstantOperand<Byte>) rightOperand;
+        byte rightValue = rightConstOperand.value();
+        if (rightValue == 0) {
+          throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+        }
       }
     } else {
       emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
@@ -535,31 +543,38 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
     Register temp = resolver.allocate(VarType.INT);
     String leftName = resolver.resolve(leftOperand);
-    if (leftOperand.type() != VarType.INT) {
-      // clear eax for byte
-      emit("xor EAX, EAX");
-    }
+    emit("xor RAX, RAX");
     emit("; numerator:");
     resolver.mov(leftOperand, RAX);
     emit("; denominator:");
     resolver.mov(rightOperand, temp);
 
-    // sign extend eax to edx
-    emit("cdq  ; sign extend eax to edx");
-    emit("idiv %s  ; EAX = %s / %s", temp.name32(), leftName, rightName);
-    //     emit("idiv %s  ; EAX = %s / %s", temp.sizeByType(operandType), leftName, rightName);
+    if (operandType == VarType.BYTE) {
+      emit("cbw  ; sign extend al to ax");
+    } else {
+      emit("cdq  ; sign extend eax to edx");
+    }
+    emit(
+        "idiv %s  ; %s = %s / %s",
+        temp.sizeByType(operandType), RAX.sizeByType(operandType), leftName, rightName);
 
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
-      // eax has dividend
-      emit("; dividend:");
+      // eax (or AL) has quotient
+      emit("; quotient:");
       resolver.mov(RAX, dest);
     } else if (op.operator() == TokenType.MOD) {
-      // edx has remainder
-      if (!resolver.isInRegister(op.destination(), RDX)) {
-        emit("mov %s %s, %s  ; remainder", size, destName, RDX.sizeByType(operandType));
+      if (operandType == VarType.BYTE) {
+        // remainder is in AH
+        emit("mov %s %s, AH  ; remainder", size, destName);
       } else {
-        emit("; remainder in EDX, where we wanted it to be");
+        // remainder in EDX
+        // edx has remainder
+        if (!resolver.isInRegister(op.destination(), RDX)) {
+          emit("mov %s %s, %s  ; remainder", size, destName, RDX.sizeByType(operandType));
+        } else {
+          emit("; remainder in EDX, where we wanted it to be");
+        }
       }
     }
 

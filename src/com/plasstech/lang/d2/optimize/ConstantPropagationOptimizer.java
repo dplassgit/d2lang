@@ -27,6 +27,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.VarType;
 
 class ConstantPropagationOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -51,7 +52,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(Inc op) {
     Operand replacement = findReplacement(op.target());
-    if (replacement != null && replacement.isConstant()) {
+    if (replacement != null && replacement.isConstant() && op.target().type() == VarType.INT) {
       ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
       int value = replacmentConst.value();
       stackAssignments.put(op.target().name(), ConstantOperand.of(value + 1));
@@ -62,7 +63,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   public void visit(Dec op) {
     Operand replacement = findReplacement(op.target());
-    if (replacement != null && replacement.isConstant()) {
+    if (replacement != null && replacement.isConstant() && op.target().type() == VarType.INT) {
       ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
       int value = replacmentConst.value();
       stackAssignments.put(op.target().name(), ConstantOperand.of(value + 1));

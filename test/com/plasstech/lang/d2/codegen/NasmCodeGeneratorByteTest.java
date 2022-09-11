@@ -16,8 +16,7 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void byteBinOps(
-      //      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
-      @TestParameter({"/"}) String op,
+      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
       @TestParameter({"0y34", "0yf3"}) String first,
       @TestParameter({"0y12", "0ye3"}) String second)
       throws Exception {
@@ -29,6 +28,11 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
                 + "f=b %s b println f",
             first, second, op, op, op, op),
         "byteBinOps");
+  }
+
+  @Test
+  public void byteDivByByte() throws Exception {
+    execute("a=0yf3 e= a / a println e ", "byteDivByByte");
   }
 
   @Test
@@ -46,7 +50,12 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void byteDivLocals() throws Exception {
-    execute("f:proc {a=0y3e b=0y2 c=a / b print c} f()", "byteDiv2");
+    execute("f:proc {a=0y3e b=0y0a c=a / b print c} f()", "byteDiv2");
+  }
+
+  @Test
+  public void byteDivLocalsNeg() throws Exception {
+    execute("f:proc {a=0yfe b=0y0a c=a / b print c} f()", "byteDiv2");
   }
 
   @Test
@@ -97,17 +106,16 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void tree() throws Exception {
     execute(
-        "      a=2 "
-            + "b=3 "
-            + "c=-5 "
-            + "d=7 "
-            + "e=11 "
-            + "f=13 "
-            + "g = (((a+b+c+2)*(b+c+d+1))*((c-d-e-1)/(d-e-f-2))*((e+f+a-3)*"
-            + "      (f-a-b+4)))*((a+c+e-9)/(b-d-f+11)) "
+        "      a=0y2 "
+            + "b=0y3 "
+            + "c=0yf5 "
+            + "d=0y7 "
+            + "e=0y11 "
+            + "f=0y13 "
+            + "g = (((a+b+c+0y2)*(b+c+d+0y1))*((c-d-e-0y1)/(d-e-f-0y2))*((e+f+a-0y3)*"
+            + "      (f-a-b+0y4)))*((a+c+e-0y9)/(b-d-f+0y11)) "
             + "print g",
         "tree");
   }
@@ -116,28 +124,27 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   @Ignore
   public void allOpsGlobals() throws Exception {
     execute(
-        "      a=2 "
-            + "b=3 "
-            + "c=-5 "
-            + "d=7 "
-            + "e=11 "
-            + "f=13 "
-            + "z=0"
+        "      a=0y2 "
+            + "b=0y3 "
+            + "c=0yf5 "
+            + "d=0y7 "
+            + "e=0y11 "
+            + "f=0y13 "
+            + "z=0y0"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)+a)*b)/c)-d)) print g"
-            + " k=z+4/(5+(4-5*f)) print k"
-            + " k=0+d/(5+(4-5*f)) print k"
+            + " k=z+0y4/(0y5+(0y4-0y5*f)) print k"
+            + " k=0y0+d/(0y5+(0y4-0y5*f)) print k"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g"
-            + " h=0+a+(4+3*(4-(3+4/(4+(5-e*6))))) print h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0)))))) print j"
-            + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
+            + " h=0y0+a+(0y4+0y3*(0y4-(0y3+0y4/(0y4+(0y5-e*0y6))))) print h"
+            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0y0)))))) print j"
+            + " aa=0y2+a*(0y3+(0y3+0y5*(0y7-(0y5+0y7/0y11)+(0y7-0y11*0y13))*0y2)/b) print aa"
             + "",
         "allOpsGlobal");
   }
 
   @Test
-  @Ignore
   public void rounding() throws Exception {
-    execute("f=6 k=4/(5+(4-5*f)) print k", "rounding");
+    execute("f=0y6 k=0y4/(0y5+(0y4-0y5*f)) print k", "rounding");
   }
 
   @Test
@@ -220,15 +227,13 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void divisionByZeroGlobal() throws Exception {
     assertRuntimeError("a=0y0 b=0y1/a", "divByZero", "Division by 0");
   }
 
   @Test
-  @Ignore
   public void divisionByZeroLocal() throws Exception {
-    String sourceCode = "f:proc:int {a=0y0 b=0y1/a return b} f()";
+    String sourceCode = "f:proc:byte {a=0y0 b=0y1/a return b} f()";
     if (optimize) {
       assertGenerateError(sourceCode, "Division by 0");
     } else {
