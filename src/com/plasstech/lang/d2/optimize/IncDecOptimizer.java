@@ -60,7 +60,7 @@ class IncDecOptimizer extends LineOptimizer {
     }
     ConstantOperand<?> delta = (ConstantOperand<?>) right;
     Object value = delta.value();
-    if ((value.equals(1) || value.equals(2))
+    if ((value.equals(1) || value.equals(2) || value.equals((byte) 1))
         && first.destination().equals(left)
         && second.destination().equals(third.source())
         && first.source().equals(third.destination())) {
@@ -72,11 +72,11 @@ class IncDecOptimizer extends LineOptimizer {
 
       Inc increment = new Inc(third.destination());
       Dec decrement = new Dec(third.destination());
-      if (value.equals(1)) {
-        deleteAt(ip() + 1);
-      } else {
+      if (value.equals(2)) {
         // +/- 2
         replaceAt(ip() + 1, plus ? increment : decrement);
+      } else {
+        deleteAt(ip() + 1);
       }
       replaceAt(ip() + 2, plus ? increment : decrement);
     }
@@ -116,7 +116,7 @@ class IncDecOptimizer extends LineOptimizer {
     }
     ConstantOperand<?> delta = (ConstantOperand<?>) right;
     Object value = delta.value();
-    if ((value.equals(1) || value.equals(2))
+    if ((value.equals(1) || value.equals(2) || value.equals((byte) 1))
         && first.destination().equals(second.source())
         && left.equals(second.destination())) {
 

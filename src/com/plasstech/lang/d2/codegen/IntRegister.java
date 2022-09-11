@@ -49,7 +49,7 @@ enum IntRegister implements Register {
   public String sizeByType(VarType type) {
     if (type == VarType.INT) {
       return name32;
-    } else if (type == VarType.BOOL || type == VarType.BYTE) {
+    } else if (type == VarType.BYTE || type == VarType.BOOL) {
       return name8;
     }
     return name64;
@@ -58,6 +58,11 @@ enum IntRegister implements Register {
   @Override
   public String name8() {
     return name8;
+  }
+
+  @Override
+  public String name16() {
+    return name16;
   }
 
   @Override

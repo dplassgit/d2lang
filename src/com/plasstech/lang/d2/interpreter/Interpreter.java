@@ -42,7 +42,6 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -53,7 +52,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private final State state;
   private final ImmutableList<Op> code;
-  private final SymTab table;
   private final boolean interactive;
 
   private final Environment rootEnv = new Environment();
@@ -69,7 +67,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public Interpreter(State state, boolean interactive) {
     this.state = state;
     this.code = state.lastIlCode();
-    this.table = state.symbolTable();
     this.interactive = interactive;
     envs.push(rootEnv);
   }
@@ -146,7 +143,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       return integers;
     } else if (baseType == VarType.BYTE) {
       Byte[] bytes = new Byte[sizeVal];
-      Arrays.setAll(bytes, (index) -> 0);
+      Arrays.setAll(bytes, (index) -> (byte) 0);
       return bytes;
     } else if (baseType == VarType.DOUBLE) {
       Double[] doubles = new Double[sizeVal];
@@ -229,6 +226,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
       result = visitIntBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof Byte && right instanceof Byte) {
+      result = visitByteBinOp(op, (Byte) left, (Byte) right);
     } else if (left instanceof Double && right instanceof Double) {
       result = visitDoubleBinOp(op, (Double) left, (Double) right);
     } else if (left instanceof Boolean && right instanceof Boolean) {
@@ -245,7 +244,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitRecordArrayBinOp(op, left, (Integer) right);
     } else {
       throw new IllegalStateException(
-          String.format("Not sure what to do with %s; left %s right %s", op, left, right));
+          String.format(
+              "Not sure what to do with %s; left %s (%s) right %s (%s)",
+              op, left, left.getClass().getSimpleName(), right, right.getClass().getSimpleName()));
     }
 
     setValue(op.destination(), result);
@@ -357,6 +358,45 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
+  private Object visitByteBinOp(BinOp op, byte left, byte right) {
+    switch (op.operator()) {
+      case DIV:
+        return (byte) (left / right);
+      case EQEQ:
+        return left == right;
+      case GEQ:
+        return left >= right;
+      case GT:
+        return left > right;
+      case LEQ:
+        return left <= right;
+      case LT:
+        return left < right;
+      case MINUS:
+        return (byte) (left - right);
+      case MOD:
+        return (byte) (left % right);
+      case MULT:
+        return (byte) (left * right);
+      case NEQ:
+        return left != right;
+      case PLUS:
+        return (byte) (left + right);
+      case SHIFT_LEFT:
+        return (byte) (left << right);
+      case SHIFT_RIGHT:
+        return (byte) (left >> right);
+      case BIT_AND:
+        return (byte) (left & right);
+      case BIT_OR:
+        return (byte) (left | right);
+      case BIT_XOR:
+        return (byte) (left ^ right);
+      default:
+        throw new IllegalStateException("Unknown byte binop " + op.operator());
+    }
+  }
+
   private Object visitDoubleBinOp(BinOp op, double left, double right) {
     switch (op.operator()) {
       case DIV:
@@ -412,21 +452,25 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(Inc op) {
     Object target = resolve(op.target());
-    int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
+    if (target instanceof Integer) {
+      int previous = (int) target;
+      setValue(op.target(), previous + 1);
+    } else {
+      byte previous = (byte) target;
+      setValue(op.target(), (byte) (previous + 1));
     }
-    setValue(op.target(), previous + 1);
   }
 
   @Override
   public void visit(Dec op) {
     Object target = resolve(op.target());
-    int previous = 0;
-    if (target != null) {
-      previous = (Integer) target;
+    if (target instanceof Integer) {
+      int previous = (int) target;
+      setValue(op.target(), previous - 1);
+    } else {
+      byte previous = (byte) target;
+      setValue(op.target(), (byte) (previous - 1));
     }
-    setValue(op.target(), previous - 1);
   }
 
   @Override
@@ -436,6 +480,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
     // FFS use op.source.type
     if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
+    } else if (rhs instanceof Byte) {
+      result = visitUnaryByte(op, rhs);
     } else if (rhs instanceof Double) {
       result = visitUnaryDouble(op, rhs);
     } else if (rhs instanceof String) {
@@ -447,6 +493,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
           "Unknown unary op operand " + rhs + " for op " + op.toString());
     }
     setValue(op.destination(), result);
+  }
+
+  private Object visitUnaryByte(UnaryOp op, Object rhs) {
+    byte r1 = (byte) rhs;
+    switch (op.operator()) {
+      case PLUS:
+        return r1;
+      case MINUS:
+        return (byte) -r1;
+      case BIT_NOT:
+        return (byte) ~r1;
+      default:
+        throw new IllegalStateException("Unknown byte unaryop " + op.operator());
+    }
   }
 
   private static Object visitUnaryArray(UnaryOp op, Object[] rhs) {
@@ -473,7 +533,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
     if (op.operator() == TokenType.NOT) {
       return rhs.equals(Boolean.FALSE);
     }
-    int r1 = (int) rhs;
+    int r1;
+    if (rhs instanceof Integer) {
+      r1 = (int) rhs;
+    } else {
+      r1 = (byte) rhs;
+    }
     switch (op.operator()) {
       case PLUS:
         return r1;

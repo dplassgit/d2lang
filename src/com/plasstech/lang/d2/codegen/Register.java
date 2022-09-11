@@ -7,6 +7,8 @@ public interface Register {
 
   String name8();
 
+  String name16();
+
   String name32();
 
   String name64();

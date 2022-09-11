@@ -11,6 +11,7 @@ class SimpleType implements VarType {
     this(name, 0);
   }
 
+  // size in bytes
   SimpleType(String name, int size) {
     this.name = name;
     this.size = size;

@@ -62,6 +62,7 @@ class Registers implements RegistersInterface {
     if (type == VarType.DOUBLE) {
       return XMM0;
     } else {
+      // note, it may be actually EAX or AL
       return RAX;
     }
   }
