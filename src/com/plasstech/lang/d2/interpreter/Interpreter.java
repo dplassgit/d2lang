@@ -187,7 +187,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(IfOp ifOp) {
     Object cond = resolve(ifOp.condition());
-    if (cond.equals(Boolean.TRUE)) {
+    if ((cond.equals(Boolean.TRUE) && !ifOp.isNot())
+        || (cond.equals(Boolean.FALSE) && ifOp.isNot())) {
       String dest = ifOp.destination();
       gotoLabel(dest);
       result.incBranchesTaken();

@@ -255,7 +255,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(IfOp op) {
     String condName = resolver.resolve(op.condition());
     emit("cmp BYTE %s, 0", condName);
-    emit("jne %s", op.destination());
+    if (op.isNot()) {
+      emit("je %s", op.destination());
+    } else {
+      emit("jne %s", op.destination());
+    }
     resolver.deallocate(op.condition());
   }
 
@@ -508,11 +512,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     if (rightOperand.isConstant()) {
       if (rightOperand.type() == VarType.INT) {
-      ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
-      int rightValue = rightConstOperand.value();
-      if (rightValue == 0) {
-        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
-      }
+        ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
+        int rightValue = rightConstOperand.value();
+        if (rightValue == 0) {
+          throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+        }
       } else {
         ConstantOperand<Byte> rightConstOperand = (ConstantOperand<Byte>) rightOperand;
         byte rightValue = rightConstOperand.value();

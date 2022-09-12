@@ -158,7 +158,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.condition();
     Operand replacement = findReplacement(operand);
     if (replacement != null) {
-      replaceCurrent(new IfOp(replacement, op.destination()));
+      replaceCurrent(new IfOp(replacement, op.destination(), op.isNot()));
     }
     // Going into an if, we can't rely on the value of the constant anymore, maybe.
     stackAssignments.clear();

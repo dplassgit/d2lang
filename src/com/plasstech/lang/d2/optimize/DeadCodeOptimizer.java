@@ -67,12 +67,25 @@ class DeadCodeOptimizer extends LineOptimizer {
   @Override
   public void visit(IfOp op) {
     if (op.condition().equals(ConstantOperand.TRUE) || op.condition().equals(ConstantOperand.ONE)) {
-      replaceCurrent(new Goto(op.destination()));
+      if (op.isNot()) {
+        // if not true == nop
+        deleteCurrent();
+        return;
+      } else {
+        // if true == jump unconditionally
+        replaceCurrent(new Goto(op.destination()));
+      }
     }
     if (op.condition().equals(ConstantOperand.FALSE)
         || op.condition().equals(ConstantOperand.ZERO)) {
-      deleteCurrent();
-      return;
+      if (op.isNot()) {
+        // if not false == jump unconditionally
+        replaceCurrent(new Goto(op.destination()));
+      } else {
+        // if false == nop
+        deleteCurrent();
+        return;
+      }
     }
     int nextIp = getNextMatch(Goto.class);
     if (nextIp != -1) {

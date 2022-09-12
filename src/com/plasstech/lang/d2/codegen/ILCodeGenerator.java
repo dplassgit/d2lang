@@ -160,7 +160,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       TempLocation compare = allocateTemp(VarType.BOOL);
       emit(new BinOp(compare, index, TokenType.EQEQ, length, node.position()));
       //   if equal, go to end
-      emit(new IfOp(compare, endLoopLabel));
+      emit(new IfOp(compare, endLoopLabel, false));
       TempLocation item = allocateTemp(arrayType.baseType());
       //   item = get "index"th item
       emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index, node.position()));
@@ -481,13 +481,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       Node cond = ifCase.condition();
       cond.accept(this);
 
-      TempLocation temp = allocateTemp(cond.varType());
-      // if it's not true, jump to the next block
-      // temp = !cond
-      // if temp skip to next block.
-      // TODO: I hate this, it adds too many operations.
-      emit(new UnaryOp(temp, TokenType.NOT, cond.location(), node.position()));
-      emit(new IfOp(temp, nextLabel));
+      // if !cond.location goto nextLabel
+      emit(new IfOp(cond.location(), nextLabel, true));
 
       ifCase.block().accept(this);
       // We're in a block , now jump completely after.
@@ -525,9 +520,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // Pre-check
     Node condition = node.condition();
     condition.accept(this);
-    TempLocation notCondition = allocateTemp(condition.varType());
-    emit(new UnaryOp(notCondition, TokenType.NOT, condition.location(), node.position()));
-    emit(new IfOp(notCondition, after));
+    // if not condition.location() goto after
+    emit(new IfOp(condition.location(), after, true));
 
     emit(new Label(before));
 
@@ -541,7 +535,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // post-increment test
     condition.setLocation(null);
     condition.accept(this);
-    emit(new IfOp(condition.location(), before));
+    // if condition.location() goto before
+    emit(new IfOp(condition.location(), before, false));
 
     emit(new Label(after));
     whileBreaks.pop();
