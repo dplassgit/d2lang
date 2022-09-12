@@ -534,10 +534,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
       if (!(right instanceof VariableNode)) {
-        throw new TypeException(
-            String.format(
-                "Invalid field '%s' referenced in RECORD type '%s'", right.toString(), recordName),
-            right.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Invalid field '%s' referenced in RECORD type '%s'",
+                    right.toString(), recordName),
+                right.position()));
+        return;
       }
       // make sure RHS is a field in record
       String fieldName = ((VariableNode) right).name();
@@ -832,11 +835,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       VarType type = param.varType();
       validatePossibleRecordType(param.name(), type, node.position());
       if (type.isUnknown()) {
-        throw new TypeException(
-            String.format(
-                "Could not determine type of formal parameter '%s' of EXTERN PROC '%s'",
-                param.name(), node.name()),
-            node.position());
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Could not determine type of formal parameter '%s' of EXTERN PROC '%s'",
+                    param.name(), node.name()),
+                node.position()));
       }
     }
   }

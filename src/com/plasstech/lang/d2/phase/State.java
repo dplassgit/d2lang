@@ -37,7 +37,7 @@ public abstract class State {
   public String errorMessage() {
     assert error();
     if (exception() != null) {
-    return exception().getMessage();
+      return exception().getMessage();
     } else {
       return Joiner.on('\n')
           .join(errors().errors().stream().map(e -> e.getMessage()).collect(toImmutableList()));
@@ -158,7 +158,15 @@ public abstract class State {
       if (showStackTrace) {
         throw exception();
       } else {
-        System.err.println(exception().toString());
+        if (exception() != null) {
+          System.err.println(exception().toString());
+        } else if (errors() != null && errors().hasErrors()) {
+          for (Exception e : errors().errors()) {
+            System.err.println(e.toString());
+          }
+        } else {
+          System.err.println("Internal error (errors, but actually no errors?");
+        }
         System.exit(-1);
       }
     }

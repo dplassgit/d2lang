@@ -13,7 +13,8 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 
 /**
  * "Gathers" all procedure definitions in the (global) symbol table, so you can make
- * forward-references.
+ * forward-references. Checks parameters too (otherwise we wouldn't be able to add to the symbol
+ * table.)
  */
 class ProcGatherer extends DefaultNodeVisitor {
   private final SymTab symbolTable;

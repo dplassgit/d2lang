@@ -13,9 +13,10 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
-/** 
- * Finds record definitions in the parse tree and adds them to the given symbol table. 
- * This is useful for forward referneces to record types.
+/**
+ * "Gathers" record definitions in the parse tree and adds them to the given symbol table. This
+ * allows forward references to record types. Checks for duplicate field names (otherwise we
+ * wouldn't be able to add to the symbol table.)
  */
 class RecordGatherer extends DefaultNodeVisitor {
   private final SymTab symbolTable;
