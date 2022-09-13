@@ -277,8 +277,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         && op.right() instanceof TempLocation
         && op.destination() instanceof TempLocation
         && (op.left().type() == VarType.BOOL
-            // bytes are weird because of mult and div so let's not tempt fate
-            //            || op.left().type() == VarType.BYTE
+            || op.left().type() == VarType.BYTE
             || op.left().type() == VarType.DOUBLE
             || op.left().type() == VarType.INT)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
