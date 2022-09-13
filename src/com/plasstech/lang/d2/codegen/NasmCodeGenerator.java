@@ -200,12 +200,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(AllocateOp op) {
-    recordGenerator.generate(op);
+    recordGenerator.visit(op);
   }
 
   @Override
   public void visit(FieldSetOp op) {
-    recordGenerator.generate(op);
+    recordGenerator.visit(op);
   }
 
   @Override
@@ -486,7 +486,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
       }
     } else if (leftType.isRecord()) {
-      recordGenerator.generate(op);
+      recordGenerator.visit(op);
     } else if (leftType == VarType.DOUBLE) {
       doubleGenerator.generate(op);
     } else {

@@ -760,6 +760,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return true;
     }
     if (left.equals(right)) {
+      logger.at(loggingLevel).log("Optimizing left == right (operator %s)", op.operator());
       // replace t=a==a with t=true
       // replace t=a!=a with t=false
       replaceCurrent(

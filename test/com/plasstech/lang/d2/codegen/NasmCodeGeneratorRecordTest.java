@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -181,27 +180,31 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Interpreter cannot compare records (!)")
   public void compare() throws Exception {
     execute(
         "      rt: record {s:string i:int} "
-            + "a=new rt "
-            + "b=new rt "
-            + "println 'Should be false' "
+            + "a=new rt a.s='hi' a.i=3 "
+            + "b=new rt b.s='hi' b.i=3 "
+            + "print 'a==b Should be true: ' "
             + "println a==b "
-            + "println 'Should be true' "
+            + "print 'a!=b Should be false: ' "
             + "println a!=b "
-            + "println 'Should be true' "
+            + "print 'a==a Should be true: ' "
             + "println a==a "
-            + "println 'Should be true' "
+            + "print 'b==b Should be true: ' "
             + "println b==b "
             + "c=a "
-            + "println 'Should be true' "
+            + "print 'c==a Should be true: ' "
             + "println c==a "
-            + "println 'Should be false' "
+            + "print 'c==b Should be true: ' "
             + "println c==b "
-            + "println 'Should be true' "
-            + "println c!=b ",
+            + "print 'c!=b Should be false: ' "
+            + "println c!=b "
+            + "d=new rt d.s='hi ' d.i=4 "
+            + "print 'a==d Should be false: ' "
+            + "println a==d "
+            + "print 'a!=d Should be true: ' "
+            + "println a!=d ",
         "compare");
   }
 

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -219,8 +220,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(BinOp op) {
-    Object left = resolve(op.left());
-    Object right = resolve(op.right());
+    Operand leftOperand = op.left();
+    Object left = resolve(leftOperand);
+    Operand rightOperand = op.right();
+    Object right = resolve(rightOperand);
 
     Object result;
     if (op.operator() == TokenType.DOT) {
@@ -242,7 +245,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else if (left.getClass().isArray() && right instanceof Integer) {
       result = visitArrayBinOp(op, (Object[]) left, (Integer) right);
     } else if (left instanceof ArrayList && right instanceof Integer) {
-      result = visitRecordArrayBinOp(op, left, (Integer) right);
+      result = visitLiteralArrayBinOp(op, left, (Integer) right);
+    } else if (leftOperand.type().isRecord() && rightOperand.type().isRecord()) {
+      result = visitRecordBinop(op, left, right);
     } else {
       throw new IllegalStateException(
           String.format(
@@ -251,6 +256,24 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitRecordBinop(BinOp op, Object left, Object right) {
+    switch (op.operator()) {
+      case EQEQ:
+        return Objects.equal(left, right);
+      case NEQ:
+        return !Objects.equal(left, right);
+      default:
+        throw new IllegalStateException(
+            String.format(
+                "Not sure what to do with %s; left %s (%s) right %s (%s)",
+                op,
+                left,
+                left.getClass().getSimpleName(),
+                right,
+                right.getClass().getSimpleName()));
+    }
   }
 
   private Object visitBinOpNulls(BinOp op, Object left, Object right) {
@@ -276,7 +299,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     return leftAsMap.get(right);
   }
 
-  private Object visitRecordArrayBinOp(BinOp op, Object left, int right) {
+  private Object visitLiteralArrayBinOp(BinOp op, Object left, int right) {
     if (op.operator() == TokenType.LBRACKET) {
       List array = (List) left;
       return array.get(right);
