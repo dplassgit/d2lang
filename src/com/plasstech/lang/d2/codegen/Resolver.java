@@ -216,7 +216,8 @@ class Resolver implements RegistersInterface {
   private void movInt(
       Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
 
-    String size = Size.of(source.type()).asmType;
+    VarType type = source.type();
+    String size = Size.of(type).asmType;
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
         emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
@@ -224,9 +225,12 @@ class Resolver implements RegistersInterface {
         if (sourceReg == destReg && sourceReg != null && destReg != null) {
           emitter.emit("; skipping mov %s %s, %s", size, destName, sourceName);
         } else {
-          // this sometimes generates MOV DWORD EAX, EBX which is weird
-          // and MOV DWORD EAX, 10
-          emitter.emit("mov %s %s, %s", size, destName, sourceName);
+          if (sourceReg != null && destReg != null) {
+            // Issue #170: if register to register, don't need "size"
+            emitter.emit("mov %s, %s", destReg.sizeByType(type), sourceReg.sizeByType(type));
+          } else {
+            emitter.emit("mov %s %s, %s", size, destName, sourceName);
+          }
         }
       }
     } else {
@@ -235,7 +239,7 @@ class Resolver implements RegistersInterface {
       // Move from sourceName to tempReg, then from tempReg to destName
 
       Register tempReg = allocate(VarType.INT);
-      String tempName = tempReg.sizeByType(source.type());
+      String tempName = tempReg.sizeByType(type);
       emitter.emit("mov %s %s, %s", size, tempName, sourceName);
       emitter.emit("mov %s %s, %s", size, destName, tempName);
       deallocate(tempReg);
