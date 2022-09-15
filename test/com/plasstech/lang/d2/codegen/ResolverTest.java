@@ -237,4 +237,52 @@ public class ResolverTest {
     assertThat(listEmitter).contains("mov RBX, [_s]");
     assertThat(listEmitter).contains("mov [_s2], RBX");
   }
+
+  @Test
+  public void mov_byteParamToGlobal() {
+    resolver.mov(new ParamLocation("p1", VarType.BYTE, 0), GLOBAL_BYTE2);
+    assertThat(listEmitter).contains("mov BYTE [_b2], CL");
+  }
+
+  @Test
+  public void mov_doubleParamToGlobal() {
+    resolver.mov(new ParamLocation("d1", VarType.DOUBLE, 1), GLOBAL_DOUBLE2);
+    assertThat(listEmitter).contains("movq [_d2], XMM1");
+  }
+
+  @Test
+  public void mov_intParamToGlobal() {
+    resolver.mov(new ParamLocation("i1", VarType.INT, 2), GLOBAL_INT2);
+    assertThat(listEmitter).contains("mov DWORD [_i2], R8d");
+  }
+
+  @Test
+  public void mov_stringParamToGlobal() {
+    resolver.mov(new ParamLocation("s2", VarType.STRING, 3), GLOBAL_STRING2);
+    assertThat(listEmitter).contains("mov [_s2], R9");
+  }
+
+  @Test
+  public void mov_byteLocalToGlobal() {
+    resolver.mov(new StackLocation("p1", VarType.BYTE, 4), IntRegister.RAX);
+    assertThat(listEmitter).contains("mov BYTE AL, [RBP - 4]");
+  }
+
+  @Test
+  public void mov_doubleLocalToGlobal() {
+    resolver.mov(new StackLocation("d1", VarType.DOUBLE, 8), XmmRegister.XMM0);
+    assertThat(listEmitter).contains("movsd XMM0, [RBP - 8]");
+  }
+
+  @Test
+  public void mov_intLocalToGlobal() {
+    resolver.mov(new StackLocation("i1", VarType.INT, 12), IntRegister.RAX);
+    assertThat(listEmitter).contains("mov DWORD EAX, [RBP - 12]");
+  }
+
+  @Test
+  public void mov_stringLocalToGlobal() {
+    resolver.mov(new StackLocation("s2", VarType.STRING, 16), IntRegister.RAX);
+    assertThat(listEmitter).contains("mov RAX, [RBP - 16]");
+  }
 }
