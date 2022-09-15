@@ -34,10 +34,6 @@ public class VarTypeSubject extends Subject {
   }
 
   public static VarTypeSubject assertThat(@Nullable VarType actual) {
-    return assertAbout(varTypes()).that(actual);
-  }
-
-  public static Factory<VarTypeSubject, VarType> varTypes() {
-    return VarTypeSubject::new;
+    return assertAbout(VarTypeSubject::new).that(actual);
   }
 }
