@@ -200,14 +200,19 @@ class Resolver implements RegistersInterface {
 
   void mov(Operand source, Operand destination) {
     String destName = resolve(destination);
-    Register destReg = toRegister(destination);
     String sourceName = resolve(source); // this may put it in a register
-    Register sourceReg = toRegister(source); // if this is *already* a register
+    if (sourceName.equals(destName)) {
+      // do nothing!
+      emitter.emit("; mov %s, %s is a nop", destName, sourceName);
+      return;
+    }
 
+    Register destReg = toRegister(destination);
+    Register sourceReg = toRegister(source);
     if (source.type() == VarType.STRING || source.type().isArray()) {
       movPointer(source, sourceReg, destReg, sourceName, destName);
     } else if (source.type() == VarType.DOUBLE) {
-      movDouble(source, sourceReg, destReg, sourceName, destName);
+      movDouble(source, destination, sourceReg, destReg, sourceName, destName);
     } else {
       movInt(source, sourceReg, destReg, sourceName, destName);
     }
@@ -222,22 +227,16 @@ class Resolver implements RegistersInterface {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
         emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
       } else {
-        if (sourceReg == destReg && sourceReg != null && destReg != null) {
-          emitter.emit("; skipping mov %s %s, %s", size, destName, sourceName);
+        if (sourceReg != null && destReg != null) {
+          // Issue #170: if register to register, don't need "size"
+          emitter.emit("mov %s, %s", destReg.sizeByType(type), sourceReg.sizeByType(type));
         } else {
-          if (sourceReg != null && destReg != null) {
-            // Issue #170: if register to register, don't need "size"
-            emitter.emit("mov %s, %s", destReg.sizeByType(type), sourceReg.sizeByType(type));
-          } else {
-            emitter.emit("mov %s %s, %s", size, destName, sourceName);
-          }
+          emitter.emit("mov %s %s, %s", size, destName, sourceName);
         }
       }
     } else {
-
       // Memory to memory:
       // Move from sourceName to tempReg, then from tempReg to destName
-
       Register tempReg = allocate(VarType.INT);
       String tempName = tempReg.sizeByType(type);
       emitter.emit("mov %s %s, %s", size, tempName, sourceName);
@@ -256,23 +255,24 @@ class Resolver implements RegistersInterface {
         emitter.emit("mov %s, %s", destName, sourceName);
       }
     } else {
-
       // Memory to memory:
       // Move from sourceName to tempReg, then from tempReg to destName
-
       Register tempReg = allocate(VarType.INT);
-      emitter.emit("; allocated temp %s", tempReg);
-      // TODO: This is probably not needed, since we're talking pointers here
+      // TODO: This (source.type) is probably not needed, since we're talking pointers here
       String tempRegName = tempReg.sizeByType(source.type());
       emitter.emit("mov %s, %s", tempRegName, sourceName);
       emitter.emit("mov %s, %s", destName, tempRegName);
       deallocate(tempReg);
-      emitter.emit("; deallocated temp %s", tempReg);
     }
   }
 
   private void movDouble(
-      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+      Operand source,
+      Operand destination,
+      Register sourceReg,
+      Register destReg,
+      String sourceName,
+      String destName) {
 
     if (source.isConstant() && destReg != null) {
       ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source;
@@ -291,12 +291,8 @@ class Resolver implements RegistersInterface {
         // source is not a register (it's memory)
         emitter.emit("movsd %s, %s", destName, sourceName);
       } else {
-        if (destReg == sourceReg) {
-          emitter.emit("; source and dest are both %s", destReg);
-        } else {
-          // source is a register - either int or XMM register
-          emitter.emit("movq %s, %s", destName, sourceName);
-        }
+        // source is a register - either int or XMM register
+        emitter.emit("movq %s, %s", destName, sourceName);
       }
       return;
     }
@@ -304,17 +300,10 @@ class Resolver implements RegistersInterface {
     // Memory to memory.
     // Move from sourceName to tempReg, then from tempReg to destName
     Register tempReg = allocate(VarType.DOUBLE);
-    emitter.emit("; allocated temp %s", tempReg);
     // whoa, this works.
     mov(source, tempReg);
-    movDouble(
-        new RegisterLocation("tempReg", tempReg, VarType.DOUBLE),
-        tempReg,
-        null,
-        tempReg.name64(),
-        destName);
+    mov(new RegisterLocation("tempReg", tempReg, VarType.DOUBLE), destination);
     deallocate(tempReg);
-    emitter.emit("; deallocated temp %s", tempReg);
   }
 
   void addAlias(Location newAlias, Operand oldAlias) {

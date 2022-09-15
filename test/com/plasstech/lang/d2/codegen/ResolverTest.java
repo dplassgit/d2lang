@@ -18,6 +18,16 @@ public class ResolverTest {
   private static final MemoryAddress GLOBAL_INT2 = new MemoryAddress("i2", VarType.INT);
   private static final MemoryAddress GLOBAL_STRING2 = new MemoryAddress("s2", VarType.STRING);
 
+  private static final StackLocation STACK_DOUBLE = new StackLocation("d1", VarType.DOUBLE, 8);
+  private static final StackLocation STACK_BYTE = new StackLocation("p1", VarType.BYTE, 4);
+  private static final StackLocation STACK_INT = new StackLocation("i1", VarType.INT, 12);
+  private static final StackLocation STACK_INT2 = new StackLocation("i1", VarType.INT, 4);
+  private static final StackLocation STACK_STRING = new StackLocation("s2", VarType.STRING, 16);
+
+  private static final ParamLocation PARAM_BYTE = new ParamLocation("p1", VarType.BYTE, 0);
+  private static final ParamLocation PARAM_DOUBLE = new ParamLocation("d1", VarType.DOUBLE, 1);
+  private static final ParamLocation PARAM_INT = new ParamLocation("i1", VarType.INT, 2);
+  private static final ParamLocation PARAM_STRING = new ParamLocation("s2", VarType.STRING, 3);
   private static final TempLocation TEMP_BYTE = new TempLocation("__tempb", VarType.BYTE);
   private static final TempLocation TEMP_DOUBLE = new TempLocation("__tempd", VarType.DOUBLE);
   private static final TempLocation TEMP_INT = new TempLocation("__tempi", VarType.INT);
@@ -26,6 +36,37 @@ public class ResolverTest {
   private Emitter listEmitter = new ListEmitter();
   private Registers registers = new Registers();
   private Resolver resolver = new Resolver(registers, null, null, listEmitter);
+
+  @Test
+  public void mov_regToSelf() {
+    resolver.mov(VarType.INT, IntRegister.RAX, IntRegister.RAX);
+    assertThat(listEmitter).isEmpty();
+  }
+
+  @Test
+  public void mov_tempToSelf() {
+    resolver.mov(TEMP_INT, TEMP_INT);
+    assertThat(listEmitter).isEmpty();
+  }
+
+  @Test
+  public void mov_globalToSelf() {
+    resolver.mov(GLOBAL_INT, GLOBAL_INT);
+    // Woot, this found a bug!
+    assertThat(listEmitter).isEmpty();
+  }
+
+  @Test
+  public void mov_paramToSelf() {
+    resolver.mov(PARAM_INT, PARAM_INT);
+    assertThat(listEmitter).isEmpty();
+  }
+
+  @Test
+  public void mov_stackToSelf() {
+    resolver.mov(STACK_INT, STACK_INT);
+    assertThat(listEmitter).isEmpty();
+  }
 
   @Test
   public void mov_byteRegToReg() {
@@ -52,14 +93,32 @@ public class ResolverTest {
   }
 
   @Test
+  public void mov_boolFalseToReg() {
+    resolver.mov(ConstantOperand.FALSE, IntRegister.RAX);
+    assertThat(listEmitter).containsExactly("xor RAX, RAX");
+  }
+
+  @Test
+  public void mov_boolTrueToReg() {
+    resolver.mov(ConstantOperand.TRUE, IntRegister.RAX);
+    assertThat(listEmitter).containsExactly("mov BYTE AL, 1");
+  }
+
+  @Test
+  public void mov_byte0ToReg() {
+    resolver.mov(ConstantOperand.ZERO_BYTE, IntRegister.RAX);
+    assertThat(listEmitter).containsExactly("xor RAX, RAX");
+  }
+
+  @Test
   public void mov_int0ToReg() {
     resolver.mov(ConstantOperand.ZERO, IntRegister.RAX);
     assertThat(listEmitter).containsExactly("xor RAX, RAX");
   }
 
   @Test
-  public void mov_byte0ToReg() {
-    resolver.mov(ConstantOperand.ZERO_BYTE, IntRegister.RAX);
+  public void mov_nullToReg() {
+    resolver.mov(new ConstantOperand<Void>(null, VarType.NULL), IntRegister.RAX);
     assertThat(listEmitter).containsExactly("xor RAX, RAX");
   }
 
@@ -93,7 +152,7 @@ public class ResolverTest {
 
   @Test
   public void mov_intTempToReg() {
-    registers.reserve(IntRegister.RBX);
+    resolver.reserve(IntRegister.RBX);
     resolver.mov(TEMP_INT, IntRegister.RAX);
     assertThat(listEmitter).containsExactly("mov EAX, ESI");
     assertThat(registers.isAllocated(IntRegister.RSI)).isTrue();
@@ -208,16 +267,20 @@ public class ResolverTest {
   @Test
   public void mov_byteGlobalToGlobal() {
     resolver.mov(GLOBAL_BYTE, GLOBAL_BYTE2);
-    assertThat(listEmitter).contains("mov BYTE BL, [_b]");
-    assertThat(listEmitter).contains("mov BYTE [_b2], BL");
+    assertThat(listEmitter)
+        .containsExactly(
+            "mov BYTE BL, [_b]", //
+            "mov BYTE [_b2], BL");
     assertThat(registers.isAllocated(IntRegister.RBX)).isFalse();
   }
 
   @Test
   public void mov_doubleGlobalToGlobal() {
     resolver.mov(GLOBAL_DOUBLE, GLOBAL_DOUBLE2);
-    assertThat(listEmitter).contains("movsd XMM4, [_d]");
-    assertThat(listEmitter).contains("movq [_d2], XMM4");
+    assertThat(listEmitter)
+        .containsExactly(
+            "movsd XMM4, [_d]", //
+            "movq [_d2], XMM4");
     assertThat(registers.isAllocated(XmmRegister.XMM4)).isFalse();
   }
 
@@ -225,8 +288,10 @@ public class ResolverTest {
   public void mov_intGlobalToGlobal() {
     registers.reserve(IntRegister.RBX);
     resolver.mov(GLOBAL_INT, GLOBAL_INT2);
-    assertThat(listEmitter).contains("mov DWORD ESI, [_i]");
-    assertThat(listEmitter).contains("mov DWORD [_i2], ESI");
+    assertThat(listEmitter)
+        .containsExactly(
+            "mov DWORD ESI, [_i]", //
+            "mov DWORD [_i2], ESI");
     assertThat(registers.isAllocated(IntRegister.RBX)).isTrue();
     assertThat(registers.isAllocated(IntRegister.RSI)).isFalse();
   }
@@ -234,55 +299,121 @@ public class ResolverTest {
   @Test
   public void mov_stringGlobalToGlobal() {
     resolver.mov(GLOBAL_STRING, GLOBAL_STRING2);
-    assertThat(listEmitter).contains("mov RBX, [_s]");
-    assertThat(listEmitter).contains("mov [_s2], RBX");
+    assertThat(listEmitter)
+        .containsExactly(
+            "mov RBX, [_s]", //
+            "mov [_s2], RBX");
   }
 
   @Test
   public void mov_byteParamToGlobal() {
-    resolver.mov(new ParamLocation("p1", VarType.BYTE, 0), GLOBAL_BYTE2);
-    assertThat(listEmitter).contains("mov BYTE [_b2], CL");
+    resolver.mov(PARAM_BYTE, GLOBAL_BYTE2);
+    assertThat(listEmitter).containsExactly("mov BYTE [_b2], CL");
   }
 
   @Test
   public void mov_doubleParamToGlobal() {
-    resolver.mov(new ParamLocation("d1", VarType.DOUBLE, 1), GLOBAL_DOUBLE2);
-    assertThat(listEmitter).contains("movq [_d2], XMM1");
+    resolver.mov(PARAM_DOUBLE, GLOBAL_DOUBLE2);
+    assertThat(listEmitter).containsExactly("movq [_d2], XMM1");
   }
 
   @Test
   public void mov_intParamToGlobal() {
-    resolver.mov(new ParamLocation("i1", VarType.INT, 2), GLOBAL_INT2);
-    assertThat(listEmitter).contains("mov DWORD [_i2], R8d");
+    resolver.mov(PARAM_INT, GLOBAL_INT);
+    assertThat(listEmitter).containsExactly("mov DWORD [_i], R8d");
+  }
+
+  @Test
+  public void mov_intParamToStack() {
+    resolver.mov(PARAM_INT, STACK_INT);
+    assertThat(listEmitter).containsExactly("mov DWORD [RBP - 12], R8d");
   }
 
   @Test
   public void mov_stringParamToGlobal() {
-    resolver.mov(new ParamLocation("s2", VarType.STRING, 3), GLOBAL_STRING2);
-    assertThat(listEmitter).contains("mov [_s2], R9");
+    resolver.mov(PARAM_STRING, GLOBAL_STRING2);
+    assertThat(listEmitter).containsExactly("mov [_s2], R9");
   }
 
   @Test
-  public void mov_byteLocalToGlobal() {
-    resolver.mov(new StackLocation("p1", VarType.BYTE, 4), IntRegister.RAX);
-    assertThat(listEmitter).contains("mov BYTE AL, [RBP - 4]");
+  public void mov_intGlobalToParam() {
+    resolver.mov(GLOBAL_INT, PARAM_INT);
+    assertThat(listEmitter).containsExactly("mov DWORD R8d, [_i]");
   }
 
   @Test
-  public void mov_doubleLocalToGlobal() {
-    resolver.mov(new StackLocation("d1", VarType.DOUBLE, 8), XmmRegister.XMM0);
-    assertThat(listEmitter).contains("movsd XMM0, [RBP - 8]");
+  public void mov_byteLocalToReg() {
+    resolver.mov(STACK_BYTE, IntRegister.RAX);
+    assertThat(listEmitter).containsExactly("mov BYTE AL, [RBP - 4]");
   }
 
   @Test
-  public void mov_intLocalToGlobal() {
-    resolver.mov(new StackLocation("i1", VarType.INT, 12), IntRegister.RAX);
-    assertThat(listEmitter).contains("mov DWORD EAX, [RBP - 12]");
+  public void mov_doubleLocalToReg() {
+    resolver.mov(STACK_DOUBLE, XmmRegister.XMM0);
+    assertThat(listEmitter).containsExactly("movsd XMM0, [RBP - 8]");
   }
 
   @Test
-  public void mov_stringLocalToGlobal() {
-    resolver.mov(new StackLocation("s2", VarType.STRING, 16), IntRegister.RAX);
+  public void mov_intLocalToReg() {
+    resolver.mov(STACK_INT, IntRegister.RAX);
+    assertThat(listEmitter).containsExactly("mov DWORD EAX, [RBP - 12]");
+  }
+
+  @Test
+  public void mov_localToLocal() {
+    resolver.mov(STACK_INT, STACK_INT2);
+    assertThat(listEmitter)
+        .containsExactly(
+            "mov DWORD EBX, [RBP - 12]", //
+            "mov DWORD [RBP - 4], EBX");
+  }
+
+  @Test
+  public void mov_stringLocalToReg() {
+    resolver.mov(STACK_STRING, IntRegister.RAX);
     assertThat(listEmitter).contains("mov RAX, [RBP - 16]");
+  }
+
+  @Test
+  public void resolve_byte() {
+    String value = resolver.resolve(TEMP_BYTE);
+    assertThat(value).isEqualTo("BL");
+    assertThat(resolver.isAllocated(IntRegister.RBX)).isTrue();
+
+    // Resolve it again
+    assertThat(resolver.resolve(TEMP_BYTE)).isEqualTo("BL");
+  }
+
+  @Test
+  public void resolve_int() {
+    assertThat(resolver.resolve(TEMP_INT)).isEqualTo("EBX");
+  }
+
+  @Test
+  public void resolve_double() {
+    assertThat(resolver.resolve(TEMP_DOUBLE)).isEqualTo("XMM4");
+  }
+
+  @Test
+  public void resolve_string() {
+    assertThat(resolver.resolve(TEMP_STRING)).isEqualTo("RBX");
+  }
+
+  @Test
+  public void toRegister() {
+    resolver.resolve(TEMP_BYTE);
+    assertThat(resolver.toRegister(TEMP_BYTE)).isEqualTo(IntRegister.RBX);
+  }
+
+  @Test
+  public void isInAnyRegister() {
+    resolver.resolve(TEMP_INT);
+    assertThat(resolver.isInAnyRegister(TEMP_INT)).isTrue();
+  }
+
+  @Test
+  public void isInRegister() {
+    resolver.resolve(TEMP_STRING);
+    assertThat(resolver.isInRegister(TEMP_STRING, IntRegister.RBX)).isTrue();
   }
 }
