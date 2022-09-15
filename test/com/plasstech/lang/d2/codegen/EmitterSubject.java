@@ -20,6 +20,10 @@ class EmitterSubject extends Subject {
     check("containsExactly").that(trim(actual.all())).containsExactly(line);
   }
 
+  public void contains(String line) {
+    check("containsExactly").that(trim(actual.all())).contains(line);
+  }
+
   private ImmutableList<String> trim(ImmutableList<String> all) {
     return all.stream()
         .map(
@@ -30,6 +34,7 @@ class EmitterSubject extends Subject {
               }
               return s.trim();
             })
+        .filter(s -> !s.isEmpty())
         .collect(toImmutableList());
   }
 
