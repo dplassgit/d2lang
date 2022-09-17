@@ -3,6 +3,9 @@ package com.plasstech.lang.d2.codegen;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
+import com.google.auto.value.AutoValue;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -23,6 +26,17 @@ class Resolver implements RegistersInterface {
     this.stringTable = stringTable;
     this.doubleTable = doubleTable;
     this.emitter = emitter;
+  }
+
+  /**
+   * Resolves the given operand "fully" to a ResolvedOperand object. Sets the operand, name, and
+   * register (nullably)
+   */
+  ResolvedOperand resolveFully(Operand operand) {
+    String name = resolve(operand);
+    ResolvedOperand ro = ResolvedOperand.create(operand, name);
+    ro = ro.setRegister(toRegister(operand));
+    return ro;
   }
 
   /**
@@ -199,27 +213,28 @@ class Resolver implements RegistersInterface {
   }
 
   void mov(Operand source, Operand destination) {
-    String destName = resolve(destination);
-    String sourceName = resolve(source); // this may put it in a register
-    if (sourceName.equals(destName)) {
+    ResolvedOperand destRo = resolveFully(destination);
+    ResolvedOperand sourceRo = resolveFully(source); // this may put it in a register
+    if (sourceRo.name().equals(destRo.name())) {
       // do nothing!
-      emitter.emit("; mov %s, %s is a nop", destName, sourceName);
+      emitter.emit("; mov %s, %s is a nop", destination, source);
       return;
     }
 
-    Register destReg = toRegister(destination);
-    Register sourceReg = toRegister(source);
     if (source.type() == VarType.STRING || source.type().isArray()) {
-      movPointer(source, sourceReg, destReg, sourceName, destName);
+      movPointer(sourceRo, destRo);
     } else if (source.type() == VarType.DOUBLE) {
-      movDouble(source, destination, sourceReg, destReg, sourceName, destName);
+      movDouble(sourceRo, destRo);
     } else {
-      movInt(source, sourceReg, destReg, sourceName, destName);
+      movInt(sourceRo, destRo);
     }
   }
 
-  private void movInt(
-      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+  private void movInt(ResolvedOperand source, ResolvedOperand dest) {
+    Register sourceReg = source.register();
+    Register destReg = dest.register();
+    String destName = dest.name();
+    String sourceName = source.name();
 
     VarType type = source.type();
     String size = Size.of(type).asmType;
@@ -245,8 +260,12 @@ class Resolver implements RegistersInterface {
     }
   }
 
-  private void movPointer(
-      Operand source, Register sourceReg, Register destReg, String sourceName, String destName) {
+  private void movPointer(ResolvedOperand source, ResolvedOperand dest) {
+    Register sourceReg = source.register();
+    Register destReg = dest.register();
+    String destName = dest.name();
+    String sourceName = source.name();
+
     if (destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
         emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
@@ -266,16 +285,14 @@ class Resolver implements RegistersInterface {
     }
   }
 
-  private void movDouble(
-      Operand source,
-      Operand destination,
-      Register sourceReg,
-      Register destReg,
-      String sourceName,
-      String destName) {
+  private void movDouble(ResolvedOperand source, ResolvedOperand dest) {
+    Register sourceReg = source.register();
+    Register destReg = dest.register();
+    String destName = dest.name();
+    String sourceName = source.name();
 
     if (source.isConstant() && destReg != null) {
-      ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source;
+      ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source.operand();
       double sourceDub = doubleOp.value();
       if (sourceDub == 0.0) {
         // Constant zero to register
@@ -301,8 +318,8 @@ class Resolver implements RegistersInterface {
     // Move from sourceName to tempReg, then from tempReg to destName
     Register tempReg = allocate(VarType.DOUBLE);
     // whoa, this works.
-    mov(source, tempReg);
-    mov(new RegisterLocation("tempReg", tempReg, VarType.DOUBLE), destination);
+    mov(source.operand(), tempReg);
+    mov(new RegisterLocation("tempReg", tempReg, VarType.DOUBLE), dest.operand());
     deallocate(tempReg);
   }
 
@@ -313,5 +330,62 @@ class Resolver implements RegistersInterface {
     }
     emitter.emit("; aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
     aliases.put(newAlias.name(), reg);
+  }
+
+  @AutoValue
+  abstract static class ResolvedOperand implements Operand {
+    abstract Operand operand();
+
+    abstract String name();
+
+    @Nullable
+    abstract Register register();
+
+    @Override
+    public VarType type() {
+      return operand().type();
+    }
+
+    @Override
+    public boolean isConstant() {
+      return operand().isConstant();
+    }
+
+    @Override
+    public boolean isRegister() {
+      return operand().isRegister();
+    }
+
+    @Override
+    public SymbolStorage storage() {
+      return operand().storage();
+    }
+
+    public ResolvedOperand setRegister(Register reg) {
+      if (reg == null) {
+        return this;
+      }
+      return this.toBuilder().setRegister(reg).build();
+    }
+
+    public static ResolvedOperand create(Operand operand, String name) {
+      return new AutoValue_Resolver_ResolvedOperand.Builder()
+          .setOperand(operand)
+          .setName(name)
+          .build();
+    }
+
+    public abstract Builder toBuilder();
+
+    @AutoValue.Builder
+    abstract static class Builder {
+      abstract Builder setOperand(Operand operand);
+
+      abstract Builder setName(String name);
+
+      abstract Builder setRegister(Register register);
+
+      abstract ResolvedOperand build();
+    }
   }
 }

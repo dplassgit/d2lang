@@ -35,10 +35,35 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
     execute(
         String.format(
             "      a=%d b=%d " //
-                + "c=a %s b print c " //
-                + "d=b %s a print d",
-            first, second, op, op),
+                + "c=a %s b println c " //
+                + "d=b %s a println d " //
+                + "e=a %s %d println e " //
+                + "f=%d %s b println f",
+            first, second, op, op, op, second, first, op),
         "intCompOps");
+  }
+
+  @Test
+  public void intCompOpsArgs(
+      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"1234", "-34567"}) int first,
+      @TestParameter({"0", "34567"}) int second)
+      throws Exception {
+    String program =
+        String.format(
+            "    bb:int g:bool f:proc(a:int, b:int) { " //
+                + "aa=a " //
+                + "c=a %s b println c " //
+                + "d=b %s aa println d " //
+                + "e=aa %s %d println e " //
+                + "g=%d %s aa println g " // global g
+                + "bb=b "
+                + "h=bb < 3 println h"
+                + "} "
+                + "f(%d,%d)",
+            op, op, op, first, second, op, first, second);
+    System.err.println(program);
+    execute(program, "intCompOpsArgs");
   }
 
   @Test
@@ -54,10 +79,11 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   @Test
   public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op) throws Exception {
     execute(
-        String.format("f:proc(a:int) {b=4 a=b%sa println a  a=a%sb println a} f(2)", op, op),
-        "shiftOps");
+        String.format(
+            "f:proc(a:int) {b=4 b=b %s a println a a=a%sb println a c=a<<2 print c} f(2)", op, op),
+        "shiftOpsProc");
   }
-
+  
   @Test
   public void tree() throws Exception {
     execute(

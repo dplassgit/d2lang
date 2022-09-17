@@ -12,6 +12,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.escape.Escaper;
 import com.google.common.net.PercentEscaper;
+import com.plasstech.lang.d2.codegen.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
@@ -266,23 +267,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(BinOp op) {
     // 1. get left
-    String leftName = resolver.resolve(op.left());
+    ResolvedOperand leftRo = resolver.resolveFully(op.left());
+    String leftName = leftRo.name();
     VarType leftType = op.left().type();
+
     // 2. get right
-    String rightName = resolver.resolve(op.right());
+    ResolvedOperand rightRo = resolver.resolveFully(op.right());
 
     Location dest = op.destination();
     boolean reuse = false;
     if (op.left() instanceof TempLocation
         && op.right() instanceof TempLocation
         && op.destination() instanceof TempLocation
-        && (op.left().type() == VarType.BOOL
-            || op.left().type() == VarType.BYTE
-            || op.left().type() == VarType.DOUBLE
-            || op.left().type() == VarType.INT)
+        && (leftType == VarType.BOOL
+            || leftType == VarType.BYTE
+            || leftType == VarType.DOUBLE
+            || leftType == VarType.INT)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now
-        && (op.left().type().equals(op.destination().type()))) {
+        && (leftType.equals(op.destination().type()))) {
 
       // reuse left. left = left (op) right.
       dest = (Location) op.left();
@@ -290,7 +293,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.addAlias(op.destination(), op.left());
     }
     // 3. determine dest location
-    String destName = resolver.resolve(dest);
+    ResolvedOperand destRo = resolver.resolveFully(dest);
+    String destName = destRo.name();
 
     Register tempReg = null;
 
@@ -323,9 +327,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case OR:
         case XOR:
           if (!reuse) {
-            emit("mov BYTE %s, %s", destName, leftName);
+            resolver.mov(op.left(), dest);
           }
-          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightName);
+          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
           break;
 
         case EQEQ:
@@ -334,10 +338,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = resolver.allocate(VarType.INT);
-          emit("mov BYTE %s, %s", tempReg.name8(), leftName);
-          emit("cmp %s, %s", tempReg.name8(), rightName);
-          emit("%s %s", BINARY_OPCODE.get(operator), destName);
+          tempReg = generateCmp(leftRo, rightRo, operator, destName);
           break;
 
         default:
@@ -350,27 +351,24 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case MULT:
           if (leftType == VarType.BYTE) {
             // This might be able to be simplified, but, shrug.
-            // 1. move left to a reg
-            Register leftReg = resolver.allocate(leftType);
-            resolver.mov(op.left(), leftReg);
+            // 1. move left to a (new) reg
+            tempReg = resolver.allocate(leftType);
+            resolver.mov(op.left(), tempReg);
 
-            // 2. move right to a reg
-            Register rightReg;
+            // 2. move right to a reg if it's not in one already
+            Register rightReg = rightRo.register();
             boolean rightAllocated = false;
-            if (!resolver.isInAnyRegister(op.right())) {
+            if (rightReg == null) {
               rightReg = resolver.allocate(leftType);
               resolver.mov(op.right(), rightReg);
               rightAllocated = true;
-            } else {
-              rightReg = resolver.toRegister(op.right());
             }
 
-            // 3. left = left * right
-            emit("imul %s, %s", leftReg.name16(), rightReg.name16());
+            // 3. temp = left * right
+            emit("imul %s, %s", tempReg.name16(), rightReg.name16());
 
-            // 4. mov dest, left
-            resolver.mov(leftReg, dest);
-            resolver.deallocate(leftReg);
+            // 4. mov dest, temp
+            resolver.mov(tempReg, dest);
             if (rightAllocated) {
               resolver.deallocate(rightReg);
             }
@@ -382,10 +380,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case MINUS:
         case PLUS:
           if (!reuse) {
-            // TODO(bug#170): Use resolver.mov
-            emit("mov %s %s, %s", size, destName, leftName);
+            resolver.mov(op.left(), dest);
           }
-          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightName);
+          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
           break;
 
         case SHIFT_LEFT:
@@ -395,27 +392,30 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             // easy. left << right or left >> right
             // TODO this will fail if dest and left are in memory
             if (!reuse) {
-              // TODO(bug#170): Use resolver.mov
-              emit("mov %s %s, %s ; shift setup", size, destName, leftName);
+              resolver.mov(op.left(), dest);
             }
-            emit("%s %s, %s  ; %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+            emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
           } else {
-            // TODO: Use resolver.mov, it might be able to do all this automagically.
+            // TODO: this is stupidly complex.
             Register rightReg = null;
-            VarType rightType = op.right().type();
-            if (resolver.isInRegister(op.right(), RCX)) {
+            String rightName = rightRo.name();
+            if (rightRo.register() == RCX) {
+              // Have to move it
               rightReg = resolver.allocate(VarType.INT);
-              Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, rightType);
+              Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
               emit(
                   "mov %s, %s  ; saving right to a different register",
-                  rightReg.sizeByType(rightType), rightName);
+                  rightReg.sizeByType(leftType), rightName);
+              // NOTE: rightName IS OVERWRITTEN
               rightName = resolver.resolve(rightOp);
             }
+            // TODO: maybe use tempReg for this
             Register destReg = null;
             if (resolver.isInRegister(dest, RCX)) {
               destReg = resolver.allocate(VarType.INT);
               Location destOp = new RegisterLocation(dest.name(), destReg, dest.type());
               emit("mov %s, %s  ; saving dest to a different register", destReg, destName);
+              // NOTE: destName IS OVERWRITTEN
               destName = resolver.resolve(destOp);
             }
 
@@ -425,16 +425,21 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               registerState = condPush(ImmutableList.of(RCX));
             }
             if (!reuse) {
+              // Start with dest = left. CANNOT use destRo.operand because destName might have been
+              // overwritten
               emit("mov %s %s, %s ; shift setup", size, destName, leftName);
             }
-            emit("mov %s, %s ; shift prep", RCX.sizeByType(rightType), rightName);
+            // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
+            // move right (amount to shift) to RCX
+            emit("mov %s, %s ; shift prep", RCX.sizeByType(leftType), rightName);
+            // NOTE: destName may have been overwritten
             emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
             if (rightReg != null) {
               resolver.deallocate(rightReg);
             }
             if (destReg != null) {
               // destReg was rcx, copy it out now.
-              emit("mov ECX, %s  ; copy to dest", destName);
+              resolver.mov(dest, RCX);
               resolver.deallocate(destReg);
             } else {
               // it wasn't in RCX, we already put it in the right place
@@ -449,11 +454,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = resolver.allocate(VarType.INT);
-          String tempRegName = tempReg.sizeByType(leftType);
-          emit("mov %s %s, %s", size, tempRegName, leftName);
-          emit("cmp %s, %s", tempRegName, rightName);
-          emit("%s %s", BINARY_OPCODE.get(operator), destName);
+          tempReg = generateCmp(leftRo, rightRo, operator, destName);
           break;
 
         case DIV:
@@ -495,11 +496,30 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (tempReg != null) {
       resolver.deallocate(tempReg);
     }
-    if (!op.left().type().isArray() && !reuse) {
+    if (!leftType.isArray() && !reuse) {
       // don't deallocate yet so that array literal assignments work.
       resolver.deallocate(op.left());
     }
     resolver.deallocate(op.right());
+  }
+
+  private Register generateCmp(
+      ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
+    Register tempReg = null;
+    if (leftRo.register() != null || (!leftRo.isConstant() && rightRo.isRegister())) {
+      // Can do a direct comparison: reg/imm, reg/reg, reg/mem, mem/reg
+      // TODO: can also compare mem/imm, but this path doesn't support it yet
+      emit("cmp %s, %s  ; direct comparison", leftRo.name(), rightRo.name());
+    } else {
+      // imm/imm, imm/reg, imm/mem, mem/mem, mem/imm (temporary)
+      // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the code generator
+      tempReg = resolver.allocate(VarType.INT);
+      String tempRegName = tempReg.sizeByType(leftRo.type());
+      resolver.mov(leftRo.operand(), tempReg);
+      emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
+    }
+    emit("%s %s", BINARY_OPCODE.get(operator), destName);
+    return tempReg;
   }
 
   private void generateDivMod(BinOp op, Location dest) {
@@ -539,7 +559,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     // 3. determine dest location
-    String destName = resolver.resolve(dest);
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
@@ -563,21 +582,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
-      // eax (or AL) has quotient
+      // EAX (or AL) has quotient
       emit("; quotient:");
       resolver.mov(RAX, dest);
     } else if (op.operator() == TokenType.MOD) {
       if (operandType == VarType.BYTE) {
         // remainder is in AH
+        String destName = resolver.resolve(dest);
         emit("mov %s %s, AH  ; remainder", size, destName);
       } else {
-        // remainder in EDX
-        // edx has remainder
-        if (!resolver.isInRegister(op.destination(), RDX)) {
-          emit("mov %s %s, %s  ; remainder", size, destName, RDX.sizeByType(operandType));
-        } else {
-          emit("; remainder in EDX, where we wanted it to be");
-        }
+        // remainder is in EDX
+        resolver.mov(RDX, dest);
       }
     }
 
@@ -603,7 +618,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.operator()) {
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
-        emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
+        resolver.mov(source, destination);
         emit("not %s  ; bit not", destName);
         break;
       case NOT:
@@ -615,7 +630,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case MINUS:
         if (source.type() == VarType.INT || source.type() == VarType.BYTE) {
-          emit("mov DWORD %s, %s  ; unary setup", destName, sourceName);
+          resolver.mov(source, destination);
           emit("neg %s  ; unary minus", destName);
         } else {
           doubleGenerator.generate(op, sourceName);

@@ -145,7 +145,11 @@ public abstract class State {
 
   public void throwOnError() {
     if (error()) {
+      if (exception() != null) {
       throw exception();
+      } else {
+        throw new D2RuntimeException(errorMessage(), null, "Composite");
+      }
     }
   }
 

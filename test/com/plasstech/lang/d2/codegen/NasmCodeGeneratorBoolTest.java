@@ -52,6 +52,19 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void boolBinOpProcParam(
+      @TestParameter({"==", "!=", ">"}) String op,
+      @TestParameter boolean boola,
+      @TestParameter boolean boolb)
+      throws Exception {
+    execute(
+        String.format(
+            "c:bool f:proc(a:bool, b:bool) {c=a %s b print c d=c %s a print d} f(%s, %s )",
+            op, op, boola, boolb),
+        "boolBinOpProcParam" + boola + boolb);
+  }
+
+  @Test
   public void boolAnd() throws Exception {
     execute(
         "f:proc(a:int, b:int):bool {if a+b > b-a or a<a-b { return true} return false} f(1,2)",
