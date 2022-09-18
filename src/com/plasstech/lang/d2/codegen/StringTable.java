@@ -9,7 +9,7 @@ import java.util.TreeSet;
 
 import com.google.common.base.Preconditions;
 
-class StringTable extends ConstTable<String> {
+class StringTable implements ConstTable<String> {
   private final List<StringEntry> orderedEntries = new ArrayList<>();
   // Values sorted by descending length, with hash as tiebreak
   private final Set<String> values =
@@ -25,13 +25,13 @@ class StringTable extends ConstTable<String> {
   private int index;
 
   @Override
-  void add(String value) {
+  public void add(String value) {
     orderedEntries.clear();
     values.add(value);
   }
 
   @Override
-  List<? extends ConstEntry<String>> entries() {
+  public List<? extends ConstEntry<String>> entries() {
     regenerateEntries();
     return orderedEntries;
   }
@@ -82,7 +82,7 @@ class StringTable extends ConstTable<String> {
   }
 
   @Override
-  ConstEntry<String> lookup(String value) {
+  public ConstEntry<String> lookup(String value) {
     regenerateEntries();
     Preconditions.checkState(
         entries.containsKey(value), "Does not contain value %s: %s", value, orderedEntries);

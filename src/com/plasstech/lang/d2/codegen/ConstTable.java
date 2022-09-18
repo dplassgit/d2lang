@@ -2,11 +2,11 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.List;
 
-abstract class ConstTable<T> {
+interface ConstTable<T> {
 
-  abstract void add(T value);
+  void add(T value);
 
-  abstract ConstEntry<T> lookup(T value);
+  ConstEntry<T> lookup(T value);
 
-  abstract List<? extends ConstEntry<T>> entries();
+  List<? extends ConstEntry<T>> entries();
 }
