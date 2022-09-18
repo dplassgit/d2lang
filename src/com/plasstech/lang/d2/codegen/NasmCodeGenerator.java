@@ -71,7 +71,17 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .build();
 
   private final List<String> prelude = new ArrayList<>();
-  private final Emitter emitter = new ListEmitter();
+  private final Registers registers;
+  private final Emitter emitter;
+
+  public NasmCodeGenerator() {
+    this(new ListEmitter(), new Registers());
+  }
+
+  NasmCodeGenerator(Emitter emitter, Registers registers) {
+    this.emitter = emitter;
+    this.registers = registers;
+  }
 
   private StringTable stringTable;
   private DoubleTable doubleTable;
@@ -90,7 +100,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
-    Registers registers = new Registers();
     resolver = new Resolver(registers, stringTable, doubleTable, emitter);
     callGenerator = new CallGenerator(resolver, emitter);
     recordGenerator = new RecordGenerator(resolver, input.symbolTable(), emitter);
@@ -404,7 +413,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               rightReg = resolver.allocate(VarType.INT);
               Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
               emit(
-                  "mov %s, %s  ; saving right to a different register",
+                  "mov %s, %s  ; save right to a different register",
                   rightReg.sizeByType(leftType), rightName);
               // NOTE: rightName IS OVERWRITTEN
               rightName = resolver.resolve(rightOp);
@@ -414,7 +423,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (resolver.isInRegister(dest, RCX)) {
               destReg = resolver.allocate(VarType.INT);
               Location destOp = new RegisterLocation(dest.name(), destReg, dest.type());
-              emit("mov %s, %s  ; saving dest to a different register", destReg, destName);
+              emit(
+                  "mov %s, %s  ; save dest to a different register",
+                  destReg.sizeByType(leftType), destName);
               // NOTE: destName IS OVERWRITTEN
               destName = resolver.resolve(destOp);
             }
@@ -427,11 +438,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (!reuse) {
               // Start with dest = left. CANNOT use destRo.operand because destName might have been
               // overwritten
-              emit("mov %s %s, %s ; shift setup", size, destName, leftName);
+              // MUST use "size" because it might be memory
+              emit("mov %s %s, %s ; shift setup (source)", size, destName, leftName);
             }
             // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
             // move right (amount to shift) to RCX
-            emit("mov %s, %s ; shift prep", RCX.sizeByType(leftType), rightName);
+            emit(
+                "mov %s %s, %s ; get amount to shift into rcx",
+                size, RCX.sizeByType(leftType), rightName);
             // NOTE: destName may have been overwritten
             emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
             if (rightReg != null) {

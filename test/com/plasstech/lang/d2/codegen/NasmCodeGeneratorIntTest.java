@@ -83,7 +83,12 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
             "f:proc(a:int) {b=4 b=b %s a println a a=a%sb println a c=a<<2 print c} f(2)", op, op),
         "shiftOpsProc");
   }
-  
+
+  @Test
+  public void shiftSelf() throws Exception {
+    execute("f:proc(a:int) {a=a<<a println a} f(2)", "shiftOpsProc");
+  }
+
   @Test
   public void tree() throws Exception {
     execute(

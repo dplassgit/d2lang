@@ -8,6 +8,7 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
+import com.google.common.truth.Ordered;
 import com.google.common.truth.Subject;
 
 class EmitterSubject extends Subject {
@@ -19,8 +20,8 @@ class EmitterSubject extends Subject {
     this.actual = actual;
   }
 
-  public void containsExactly(String... line) {
-    List<String> expected = asList(line);
+  public void containsExactly(String... lines) {
+    List<String> expected = asList(lines);
     check("containsExactly")
         .that(trim(actual.all()))
         .containsExactlyElementsIn(trim(expected))
@@ -28,7 +29,12 @@ class EmitterSubject extends Subject {
   }
 
   public void contains(String line) {
-    check("contains").that(trim(actual.all())).contains(trim(line));
+    containsAtLeast(line);
+  }
+
+  public Ordered containsAtLeast(String... lines) {
+    List<String> expected = asList(lines);
+    return check("contains").that(trim(actual.all())).containsAtLeastElementsIn(trim(expected));
   }
 
   public void isEmpty() {
