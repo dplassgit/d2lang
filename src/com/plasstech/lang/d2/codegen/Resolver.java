@@ -30,13 +30,11 @@ class Resolver implements RegistersInterface {
 
   /**
    * Resolves the given operand "fully" to a ResolvedOperand object. Sets the operand, name, and
-   * register (nullably)
+   * register (nullable)
    */
   ResolvedOperand resolveFully(Operand operand) {
     String name = resolve(operand);
-    ResolvedOperand ro = ResolvedOperand.create(operand, name);
-    ro = ro.setRegister(toRegister(operand));
-    return ro;
+    return ResolvedOperand.create(operand, name).setRegister(toRegister(operand));
   }
 
   /**
@@ -253,9 +251,8 @@ class Resolver implements RegistersInterface {
       // Memory to memory:
       // Move from sourceName to tempReg, then from tempReg to destName
       Register tempReg = allocate(VarType.INT);
-      String tempName = tempReg.sizeByType(type);
-      emitter.emit("mov %s %s, %s", size, tempName, sourceName);
-      emitter.emit("mov %s %s, %s", size, destName, tempName);
+      mov(source.operand(), tempReg);
+      mov(tempReg, dest.location());
       deallocate(tempReg);
     }
   }
@@ -277,10 +274,8 @@ class Resolver implements RegistersInterface {
       // Memory to memory:
       // Move from sourceName to tempReg, then from tempReg to destName
       Register tempReg = allocate(VarType.INT);
-      // TODO: This (source.type) is probably not needed, since we're talking pointers here
-      String tempRegName = tempReg.sizeByType(source.type());
-      emitter.emit("mov %s, %s", tempRegName, sourceName);
-      emitter.emit("mov %s, %s", destName, tempRegName);
+      mov(source.operand(), tempReg);
+      mov(tempReg, dest.location());
       deallocate(tempReg);
     }
   }
@@ -317,9 +312,8 @@ class Resolver implements RegistersInterface {
     // Memory to memory.
     // Move from sourceName to tempReg, then from tempReg to destName
     Register tempReg = allocate(VarType.DOUBLE);
-    // whoa, this works.
     mov(source.operand(), tempReg);
-    mov(new RegisterLocation("tempReg", tempReg, VarType.DOUBLE), dest.operand());
+    mov(tempReg, dest.location());
     deallocate(tempReg);
   }
 
@@ -335,6 +329,9 @@ class Resolver implements RegistersInterface {
   @AutoValue
   abstract static class ResolvedOperand implements Operand {
     abstract Operand operand();
+
+    @Nullable
+    abstract Location location();
 
     abstract String name();
 
@@ -369,10 +366,13 @@ class Resolver implements RegistersInterface {
     }
 
     public static ResolvedOperand create(Operand operand, String name) {
-      return new AutoValue_Resolver_ResolvedOperand.Builder()
-          .setOperand(operand)
-          .setName(name)
-          .build();
+      Builder builder =
+          new AutoValue_Resolver_ResolvedOperand.Builder().setOperand(operand).setName(name);
+      if (operand instanceof Location) {
+        // I wish this was easier
+        builder.setLocation((Location) operand);
+      }
+      return builder.build();
     }
 
     public abstract Builder toBuilder();
@@ -380,6 +380,8 @@ class Resolver implements RegistersInterface {
     @AutoValue.Builder
     abstract static class Builder {
       abstract Builder setOperand(Operand operand);
+
+      abstract Builder setLocation(Location location);
 
       abstract Builder setName(String name);
 
