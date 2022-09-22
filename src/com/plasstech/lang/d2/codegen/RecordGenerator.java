@@ -189,32 +189,16 @@ class RecordGenerator extends DefaultOpcodeVisitor {
 
     if (resolver.isInRegister(left, RDX) && resolver.isInRegister(right, RCX)) {
       emitter.emit("; no need to set up RCX, RDX for %s", operator);
+    } else if (resolver.isInRegister(left, RCX) && resolver.isInRegister(right, RDX)) {
+      emitter.emit("xchg RDX, RCX  ; swap");
+    } else if (resolver.isInRegister(right, RCX)) {
+      emitter.emit("; right is in RCX, so set RDX first.");
+      // rcx is in the right register, need to set rdx first
+      resolver.mov(right, RDX);
+      resolver.mov(left, RCX);
     } else {
-      if (resolver.isInRegister(right, RCX)) {
-        emitter.emit("; right is in RCX, so set RDX first.");
-        // rcx is in the right register, need to set rdx first
-        if (resolver.isInRegister(right, RDX)) {
-          emitter.emit("; right already in RDX");
-        } else {
-          emitter.emit("mov RDX, %s  ; Address of right record", resolver.resolve(right));
-        }
-        if (resolver.isInRegister(left, RCX)) {
-          emitter.emit("; left already in RCX");
-        } else {
-          emitter.emit("mov RCX, %s  ; Address of left record", resolver.resolve(left));
-        }
-      } else {
-        if (resolver.isInRegister(left, RCX)) {
-          emitter.emit("; left already in RCX");
-        } else {
-          emitter.emit("mov RCX, %s  ; Address of left record", resolver.resolve(left));
-        }
-        if (resolver.isInRegister(right, RDX)) {
-          emitter.emit("; right already in RDX");
-        } else {
-          emitter.emit("mov RDX, %s  ; Address of right record", resolver.resolve(right));
-        }
-      }
+      resolver.mov(left, RCX);
+      resolver.mov(right, RDX);
     }
 
     // need to set the size too!!!

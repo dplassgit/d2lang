@@ -373,11 +373,8 @@ class StringCodeGenerator {
 
     String sourceName = resolver.resolve(source);
     String destinationName = resolver.resolve(destination);
-    if (resolver.isInRegister(source, RCX)) {
-      emitter.emit("; RCX already has address of string");
-    } else {
-      resolver.mov(source, RCX);
-    }
+
+    resolver.mov(source, RCX);
     emitter.emitExternCall("strlen");
     registerState.condPop();
 

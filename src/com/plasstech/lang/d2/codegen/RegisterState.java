@@ -61,11 +61,11 @@ public class RegisterState {
     }
   }
 
-  public void pop(Register r) {
+  private void pop(Register r) {
     r.accept(popVisitor);
   }
 
-  public void push(Register r) {
+  private void push(Register r) {
     r.accept(pushVisitor);
   }
 

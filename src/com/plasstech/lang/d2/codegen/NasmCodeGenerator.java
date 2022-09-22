@@ -422,12 +422,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             Register destReg = null;
             if (resolver.isInRegister(dest, RCX)) {
               destReg = resolver.allocate(VarType.INT);
-              Location destOp = new RegisterLocation(dest.name(), destReg, dest.type());
-              emit(
-                  "mov %s, %s  ; save dest to a different register",
-                  destReg.sizeByType(leftType), destName);
+              Location destRegLocation = new RegisterLocation(dest.name(), destReg, dest.type());
+              resolver.mov(dest, destRegLocation);
               // NOTE: destName IS OVERWRITTEN
-              destName = resolver.resolve(destOp);
+              destName = resolver.resolve(destRegLocation);
             }
 
             RegisterState registerState = null;
