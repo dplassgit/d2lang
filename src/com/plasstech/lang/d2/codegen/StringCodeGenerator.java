@@ -128,27 +128,11 @@ class StringCodeGenerator {
       if (resolver.isInRegister(right, RCX)) {
         emitter.emit("; right is in RCX, so set RDX first.");
         // rcx is in the right register, need to set rdx first
-        if (resolver.isInRegister(right, RDX)) {
-          emitter.emit("; right already in RDX");
-        } else {
-          emitter.emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
-        }
-        if (resolver.isInRegister(left, RCX)) {
-          emitter.emit("; left already in RCX");
-        } else {
-          emitter.emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
-        }
+        resolver.mov(right, RDX);
+        resolver.mov(left, RCX);
       } else {
-        if (resolver.isInRegister(left, RCX)) {
-          emitter.emit("; left already in RCX");
-        } else {
-          emitter.emit("mov RCX, %s  ; Address of left string", resolver.resolve(left));
-        }
-        if (resolver.isInRegister(right, RDX)) {
-          emitter.emit("; right already in RDX");
-        } else {
-          emitter.emit("mov RDX, %s  ; Address of right string", resolver.resolve(right));
-        }
+        resolver.mov(left, RCX);
+        resolver.mov(right, RDX);
       }
     }
     emitter.emitExternCall("strcmp");
@@ -207,11 +191,7 @@ class StringCodeGenerator {
 
     // Issue #112:
     // if indexname == stringname's length-1, just return stringname-1
-    if (resolver.isInRegister(stringOperand, RCX)) {
-      emitter.emit("; string already in rcx");
-    } else {
-      emitter.emit("mov RCX, %s  ; get string", stringName);
-    }
+    resolver.mov(stringOperand, RCX);
     emitter.emitExternCall("strlen");
     registerState.condPop();
     // Make sure index isn't >= length
@@ -250,14 +230,14 @@ class StringCodeGenerator {
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
         emitter.emit("; dest in %s", destReg);
-        emitter.emit("mov %s, %s", destReg.sizeByType(index.type()), indexName);
+        resolver.mov(index, destReg);
         emitter.emit("add %s, %s", destReg, stringName);
       } else {
         Register tempReg = resolver.allocate(VarType.INT);
         emitter.emit("; dest not in reg; allocated %s as tempReg", tempReg);
-        emitter.emit("mov %s, %s", tempReg.sizeByType(index.type()), indexName);
+        resolver.mov(index, tempReg);
         emitter.emit("add %s, %s", tempReg, stringName);
-        emitter.emit("mov %s, %s", destName, tempReg);
+        resolver.mov(tempReg, destination);
         resolver.deallocate(tempReg);
       }
     }
@@ -272,17 +252,16 @@ class StringCodeGenerator {
     emitter.emitExternCall("malloc");
     registerState.condPop();
     // 2. copy the location to the dest
-    emitter.emit("mov %s, RAX  ; destination from rax", destName);
+    resolver.mov(RAX, destination);
 
     Register indexReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated indexReg to %s", indexReg);
     Register charReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated charReg to %s", charReg);
     // 3. get the string
-    emitter.emit("mov %s, %s  ; get the string into %s", charReg, stringName, charReg);
+    resolver.mov(stringOperand, charReg);
     // 4. get the index
-    emitter.emit(
-        "mov %s, %s  ; put index value into %s", indexReg.name32(), indexName, indexReg.name32());
+    resolver.mov(index, indexReg);
     // 5. get the actual character
     emitter.emit("mov %s, [%s + %s]  ; get the character", charReg, charReg, indexReg);
     resolver.deallocate(indexReg);
@@ -300,6 +279,7 @@ class StringCodeGenerator {
   }
 
   /** Generate dest = leftOperand + rightOperand */
+  // TODO: change String dest to ResolvedOperand
   void generateStringAdd(Op op, String dest, Operand left, Operand right) {
     Position position = op.position();
     npeCheckGenerator.generateNullPointerCheck(position, left);
@@ -307,7 +287,6 @@ class StringCodeGenerator {
 
     // 1. get left length
     Register leftLengthReg = resolver.allocate(VarType.INT);
-    emitter.emit0("");
     emitter.emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
         position, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
@@ -373,11 +352,11 @@ class StringCodeGenerator {
       emitter.emit("xchg RDX, RCX");
     } else if (resolver.isInRegister(right, RCX)) {
       emitter.emit("; opposite order, so that we don't munge rcx");
-      emitter.emit("mov RDX, %s", rightName);
+      resolver.mov(right, RDX);
       emitter.emit("mov RCX, %s", dest);
     } else {
       emitter.emit("mov RCX, %s", dest);
-      emitter.emit("mov RDX, %s", rightName);
+      resolver.mov(right, RDX);
     }
     emitter.emitExternCall("strcat");
     registerState.condPop();
@@ -397,7 +376,7 @@ class StringCodeGenerator {
     if (resolver.isInRegister(source, RCX)) {
       emitter.emit("; RCX already has address of string");
     } else {
-      emitter.emit("mov RCX, %s  ; Address of string", sourceName);
+      resolver.mov(source, RCX);
     }
     emitter.emitExternCall("strlen");
     registerState.condPop();
@@ -425,6 +404,7 @@ class StringCodeGenerator {
   }
 
   /** Generate destName = chr(sourceName), where sourceName is a number */
+  // TODO: change to ResolvedOperator, ResolvedOperator
   void generateChr(String sourceName, String destName) {
     // realistically, nothing is ever kept in RAX because it's the return value register...
     RegisterState raxState = RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX));

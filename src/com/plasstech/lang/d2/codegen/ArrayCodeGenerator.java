@@ -73,8 +73,7 @@ class ArrayCodeGenerator {
       emitter.emitExit(-1);
 
       emitter.emitLabel(continueLabel);
-      emitter.emit(
-          "mov %s, %s  ; number of entries", allocSizeBytesRegister.name32(), numEntriesLocName);
+      resolver.mov(numEntriesLoc, allocSizeBytesRegister);
 
       if (entrySize > 1) {
         emitter.emit(
@@ -87,8 +86,7 @@ class ArrayCodeGenerator {
 
     emitter.emit("mov RCX, 1  ; # of 'entries' for calloc");
     emitter.emitExternCall("calloc");
-    String dest = resolver.resolve(op.destination());
-    emitter.emit("mov %s, RAX  ; RAX has location of allocated memory", dest);
+    resolver.mov(IntRegister.RAX, op.destination());
     registerState.condPop();
     emitter.emit("mov BYTE [RAX], %s  ; store # of dimensions", dimensions);
 
@@ -99,7 +97,7 @@ class ArrayCodeGenerator {
       emitter.emit(
           "; numEntriesLoc (%s) is not in a register; putting it into %s",
           numEntriesLoc, numEntriesReg);
-      emitter.emit("mov DWORD %s, %s", numEntriesReg.name32(), numEntriesLocName);
+      resolver.mov(numEntriesLoc, numEntriesReg);
       numEntriesLocName = numEntriesReg.name32();
     }
     // TODO(#38): iterate over dimensions.
@@ -120,7 +118,7 @@ class ArrayCodeGenerator {
     } else {
       // if source is not a register we have to allocate a register first
       Register tempReg = resolver.allocate(VarType.INT);
-      emitter.emit("mov %s, %s  ; get array location into reg", tempReg, sourceName);
+      resolver.mov(source, tempReg);
       emitter.emit("mov %s, [%s + 1]  ; get length from first dimension", destName, tempReg);
       resolver.deallocate(tempReg);
     }
@@ -249,7 +247,8 @@ class ArrayCodeGenerator {
       if (lengthReg == R8) {
         emitter.emit("; index already in R8");
       } else {
-        emitter.emit("mov R8d, %s  ; index", indexName);
+        resolver.mov(indexLoc, IntRegister.R8);
+        //        emitter.emit("mov R8d, %s  ; index", indexName);
       }
       emitter.emit("mov RDX, %d  ; line number", position.line());
       emitter.emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
@@ -287,7 +286,7 @@ class ArrayCodeGenerator {
 
       emitter.emit0("\n  ; calculate index*base size+1+dims*4");
       // index is always a dword/int because I said so.
-      emitter.emit("mov DWORD %s, %s  ; index...", lengthReg.name32(), indexName);
+      resolver.mov(indexLoc, lengthReg);
       emitter.emit("imul %s, %s  ; ...*base size ...", lengthReg, arrayType.baseType().size());
       emitter.emit("add %s, %d  ; ... +1+dims*4", lengthReg, 1 + arrayType.dimensions() * 4);
     }

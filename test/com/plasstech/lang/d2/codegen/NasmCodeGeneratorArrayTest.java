@@ -294,7 +294,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             + "tr = rs[1]\r\n"
             + "tr.a='hi'\r\n"
             + "println \"Should be hi\"\r\n"
-            + "// println rs[1].a // will this work? no\r\n"
+            + "println rs[1].a // will this work? no\r\n"
             + "println tr.a\r\n"
             + "\r\n"
             + "println \"Should be null\"\r\n"
