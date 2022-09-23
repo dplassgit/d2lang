@@ -19,15 +19,23 @@ class Resolver implements RegistersInterface {
   private final Registers registers;
   private final StringTable stringTable;
   private final DoubleTable doubleTable;
-  private final Emitter emitter;
+  private final DelegatingEmitter emitter;
 
-  Resolver(Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter emitter) {
+  //  Resolver(Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter
+  // emitter) {
+  //    this(registers, stringTable, doubleTable, new DelegatingEmitter(emitter));
+  //  }
+
+  Resolver(
+      Registers registers,
+      StringTable stringTable,
+      DoubleTable doubleTable,
+      DelegatingEmitter emitter) {
     this.registers = registers;
     this.stringTable = stringTable;
     this.doubleTable = doubleTable;
     this.emitter = emitter;
   }
-
   /**
    * Resolves the given operand "fully" to a ResolvedOperand object. Sets the operand, name, and
    * register (nullable)

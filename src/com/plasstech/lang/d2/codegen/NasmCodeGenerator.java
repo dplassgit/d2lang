@@ -72,14 +72,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private final List<String> prelude = new ArrayList<>();
   private final Registers registers;
-  private final Emitter emitter;
+  private final DelegatingEmitter emitter;
 
   public NasmCodeGenerator() {
-    this(new ListEmitter(), new Registers());
+    this(new DelegatingEmitter(new ListEmitter()), new Registers());
   }
 
   NasmCodeGenerator(Emitter emitter, Registers registers) {
-    this.emitter = emitter;
+    this.emitter = new DelegatingEmitter(emitter);
     this.registers = registers;
   }
 
