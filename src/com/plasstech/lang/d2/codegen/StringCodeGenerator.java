@@ -283,8 +283,7 @@ class StringCodeGenerator {
 
   /** Generate dest = leftOperand + rightOperand */
   void generateStringAdd(Location destination, Operand left, Operand right, Position position) {
-    npeCheckGenerator.generateNullPointerCheck(position, left);
-    npeCheckGenerator.generateNullPointerCheck(position, right);
+    // Don't need to check for nulls, because generateStringLength will do it.
 
     // 1. get left length
     Register leftLengthReg = resolver.allocate(VarType.INT);
@@ -302,7 +301,7 @@ class StringCodeGenerator {
     emitter.emit(
         "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
     emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32());
-    emitter.emit("; deallocating right length %s", rightLengthReg);
+    emitter.emit("; deallocating right length from %s", rightLengthReg);
     resolver.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
@@ -314,7 +313,7 @@ class StringCodeGenerator {
     resolver.mov(VarType.INT, leftLengthReg, RCX);
     // change to calloc?
     emitter.emitExternCall("malloc");
-    emitter.emit("; deallocating leftlength %s", leftLengthReg);
+    emitter.emit("; deallocating left length from %s", leftLengthReg);
     resolver.deallocate(leftLengthReg);
     // 4. put string into dest
     registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
@@ -365,6 +364,14 @@ class StringCodeGenerator {
   /** Generate destination = length(source) */
   void generateStringLength(Position position, Location destination, Operand source) {
     npeCheckGenerator.generateNullPointerCheck(position, source);
+    String destinationName = resolver.resolve(destination);
+    if (source.isConstant()) {
+      // Constant string has constant length
+      ConstantOperand<String> stringConst = (ConstantOperand<String>) source;
+      String value = stringConst.value();
+      emitter.emit("mov %s, %d  ; constant string", destinationName, value.length());
+      return;
+    }
 
     // We're doing something special with RAX & RCX
     RegisterState raxRcxState =
@@ -373,7 +380,6 @@ class StringCodeGenerator {
         RegisterState.condPush(emitter, resolver, ImmutableList.of(RDX, R8, R9, R10, R11));
 
     String sourceName = resolver.resolve(source);
-    String destinationName = resolver.resolve(destination);
 
     resolver.mov(source, RCX);
     emitter.emitExternCall("strlen");
