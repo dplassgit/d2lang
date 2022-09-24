@@ -6,13 +6,13 @@ import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-public class RegisterState {
+class RegisterState {
   private final List<Register> registersPushed;
   private final Emitter emitter;
   private final RegisterVisitor popVisitor = new PopVisitor();
   private final RegisterVisitor pushVisitor = new PushVisitor();
 
-  public RegisterState(Emitter emitter) {
+  RegisterState(Emitter emitter) {
     this(emitter, ImmutableList.of());
   }
 
@@ -21,7 +21,7 @@ public class RegisterState {
     this.registersPushed = pushed;
   }
 
-  public static RegisterState condPush(
+  static RegisterState condPush(
       Emitter emitter, RegistersInterface registers, List<Register> toSaveIfAllocated) {
     List<Register> allocated =
         toSaveIfAllocated
@@ -41,11 +41,11 @@ public class RegisterState {
     }
   }
 
-  public boolean wasPushed(Register r) {
+  boolean wasPushed(Register r) {
     return registersPushed.contains(r);
   }
 
-  public void condPop(Register r) {
+  void condPop(Register r) {
     if (wasPushed(r)) {
       pop(r);
     }
@@ -61,12 +61,24 @@ public class RegisterState {
     }
   }
 
-  private void pop(Register r) {
+  void pop(Register r) {
     r.accept(popVisitor);
   }
 
-  private void push(Register r) {
+  void push(Register r) {
     r.accept(pushVisitor);
+  }
+
+  void push(ImmutableList<Register> registers) {
+    for (Register r : registers) {
+      push(r);
+    }
+  }
+
+  void pop(ImmutableList<Register> registers) {
+    for (Register r : registers) {
+      pop(r);
+    }
   }
 
   private class PushVisitor implements RegisterVisitor {
@@ -92,18 +104,6 @@ public class RegisterState {
     public void visit(XmmRegister r) {
       emitter.emit("movq %s, [RSP]", r.name64());
       emitter.emit("add RSP, 16");
-    }
-  }
-
-  public void push(ImmutableList<Register> registers) {
-    for (Register r : registers) {
-      push(r);
-    }
-  }
-
-  public void pop(ImmutableList<Register> registers) {
-    for (Register r : registers) {
-      pop(r);
     }
   }
 }

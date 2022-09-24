@@ -694,6 +694,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcEntry op) {
+    if (op.localBytes() > 0) {
+      emit("push RBP");
+      emit("mov RBP, RSP");
+      // this may over-allocate, but /shrug.
+      int bytes = 16 * (op.localBytes() / 16 + 1);
+      emit("sub RSP, %d  ; space for locals", bytes);
+    }
+    resolver.procEntry();
     // Assign locations of each parameter
     int i = 0;
     // I hate this. the param should already know its location, as a ParamLocation
@@ -714,18 +722,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // Is this even ever used?!
       formal.setLocation(location);
     }
-
-    // Save nonvolatile registers:
-    if (op.localBytes() > 0) {
-      emit("push RBP");
-      emit("mov RBP, RSP");
-      // this may over-allocate, but /shrug.
-      int bytes = 16 * (op.localBytes() / 16 + 1);
-      emit("sub RSP, %d", bytes);
-    }
-    // MUST PUSH XMMs FIRST
-    RegisterState rs = new RegisterState(emitter);
-    rs.push(Register.NONVOLATILE_REGISTERS);
   }
 
   @Override
@@ -743,7 +739,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcExit op) {
-    // I hate this
     for (Register reg : IntRegister.values()) {
       if (reg != RAX && resolver.isAllocated(reg)) {
         resolver.deallocate(reg);
@@ -756,9 +751,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     emit0("__exit_of_%s:", op.procName());
-    // restore registers
-    RegisterState rs = new RegisterState(emitter);
-    rs.pop(Register.NONVOLATILE_REGISTERS.reverse());
+    resolver.procEnd();
+
     if (op.localBytes() > 0) {
       // this adjusts rbp, rsp
       emit("leave");

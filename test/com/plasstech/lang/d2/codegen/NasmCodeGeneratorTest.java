@@ -33,7 +33,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new ParamLocation("dest", VarType.BYTE, 0);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
     assertThat(emitter)
         .containsAtLeast(
             "mov BL, CL", // save ecx (param) -> temp ebx
@@ -51,7 +51,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new ParamLocation("dest", VarType.INT, 0);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
     assertThat(emitter)
         .containsAtLeast(
             "mov EBX, ECX", // save ecx (param) -> temp ebx
@@ -70,7 +70,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -90,7 +90,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -107,7 +107,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -124,7 +124,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -141,7 +141,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -158,7 +158,7 @@ public class NasmCodeGeneratorTest {
     Location dest = new TempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
-    executeOne(shiftOp);
+    generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
@@ -168,7 +168,7 @@ public class NasmCodeGeneratorTest {
         .inOrder();
   }
 
-  private State executeOne(Op shiftOp) {
+  private State generateOne(Op shiftOp) {
     State state = State.create();
     TypeCheckResult typeCheckResult = new TypeCheckResult(new SymTab());
     state = state.addTypecheckResult(typeCheckResult);

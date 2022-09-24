@@ -21,7 +21,7 @@ interface Emitter {
 
   void emitExternCall(String call);
 
-  /** Add a data definiition, e.g., "NAME: db \"Name here\", 0" */
+  /** Add a data definition, e.g., "NAME: db \"Name here\", 0" */
   void addData(String data);
 
   ImmutableList<String> data();

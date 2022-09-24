@@ -416,4 +416,35 @@ public class ResolverTest {
     resolver.resolve(TEMP_STRING);
     assertThat(resolver.isInRegister(TEMP_STRING, IntRegister.RBX)).isTrue();
   }
+
+  @Test
+  public void procEntryEnd_noAllocations() {
+    resolver.procEntry();
+    resolver.reserve(IntRegister.RCX);
+    resolver.mov(IntRegister.RCX, STACK_INT);
+    resolver.procEnd();
+    assertThat(emitter).containsExactly("mov DWORD [RBP - 12], ECX");
+  }
+
+  @Test
+  public void procEntryProcEnd() {
+    resolver.procEntry();
+    resolver.allocate(VarType.INT); // allocates rbx
+    emitter.emit("mov RCX, 0");
+    resolver.procEnd();
+    assertThat(emitter)
+        .containsExactly(
+            "push RBX", //
+            "mov RCX, 0",
+            "pop RBX");
+  }
+
+  @Test
+  public void procEntryProcEnd_nonvolatile() {
+    resolver.procEntry();
+    resolver.reserve(IntRegister.RCX);
+    emitter.emit("mov RCX, 0");
+    resolver.procEnd();
+    assertThat(emitter).containsExactly("mov RCX, 0");
+  }
 }

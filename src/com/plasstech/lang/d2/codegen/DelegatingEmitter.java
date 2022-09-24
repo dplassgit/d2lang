@@ -14,6 +14,10 @@ public class DelegatingEmitter implements Emitter {
     return this;
   }
 
+  public Emitter getDelegate() {
+    return delegate;
+  }
+
   @Override
   public void emit0(String string, Object... values) {
     delegate.emit0(string, values);

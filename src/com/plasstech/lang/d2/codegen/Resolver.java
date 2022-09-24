@@ -1,11 +1,16 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -19,23 +24,28 @@ class Resolver implements RegistersInterface {
   private final Registers registers;
   private final StringTable stringTable;
   private final DoubleTable doubleTable;
-  private final DelegatingEmitter emitter;
 
-  //  Resolver(Registers registers, StringTable stringTable, DoubleTable doubleTable, Emitter
-  // emitter) {
-  //    this(registers, stringTable, doubleTable, new DelegatingEmitter(emitter));
-  //  }
+  private final DelegatingEmitter emitter;
+  private final Deque<Emitter> emitters = new ArrayDeque<>();
+
+  private final Set<Register> usedRegisters = new HashSet<>();
+  private boolean inProc;
 
   Resolver(
       Registers registers,
       StringTable stringTable,
       DoubleTable doubleTable,
+      // I don't love this. The alternative would have been to accept an Emitter
+      // and wrap it with our own delegating emitter, but then all the other objects would be
+      // using the wrong emitter. We need all objects to use the *same* **delegating** emitter
+      // so the resolver can modify the delegate as needed.
       DelegatingEmitter emitter) {
     this.registers = registers;
     this.stringTable = stringTable;
     this.doubleTable = doubleTable;
     this.emitter = emitter;
   }
+
   /**
    * Resolves the given operand "fully" to a ResolvedOperand object. Sets the operand, name, and
    * register (nullable)
@@ -184,13 +194,20 @@ class Resolver implements RegistersInterface {
   /** Allocate and return a register. */
   @Override
   public Register reserve(Register r) {
+    if (inProc) {
+      usedRegisters.add(r);
+    }
     emitter.emit("; reserving %s", r);
     return registers.reserve(r);
   }
 
   @Override
   public Register allocate(VarType varType) {
-    return registers.allocate(varType);
+    Register allocated = registers.allocate(varType);
+    if (inProc) {
+      usedRegisters.add(allocated);
+    }
+    return allocated;
   }
 
   /** Deallocate the given register. */
@@ -332,6 +349,47 @@ class Resolver implements RegistersInterface {
     }
     emitter.emit("; aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
     aliases.put(newAlias.name(), reg);
+  }
+
+  void procEntry() {
+    inProc = true;
+    Emitter original = emitter.getDelegate();
+    emitters.push(original);
+
+    emitter.setDelegate(new ListEmitter());
+  }
+
+  void procEnd() {
+    inProc = false;
+
+    Emitter original = emitters.pop();
+    // now, push all nonvolatile registers on the *original* emitter
+    RegisterState rs = new RegisterState(original);
+    usedRegisters.retainAll(Register.NONVOLATILE_REGISTERS);
+    ImmutableList<Register> registersToSave = ImmutableList.copyOf(usedRegisters);
+    for (Register r : registersToSave) {
+        rs.push(r);
+    }
+
+    // then copy everything from the child to the *original* emitter
+    Emitter child = emitter.getDelegate();
+    // Copy emitted lines, externs and data
+    for (String line : child.all()) {
+      original.emit0("%s", line);
+    }
+    for (String extern : child.externs()) {
+      original.addExtern(extern);
+    }
+    for (String datum : child.data()) {
+      original.addData(datum);
+    }
+    // Then pop all the registers to the *original* emitter
+    for (Register r : registersToSave.reverse()) {
+      rs.pop(r);
+    }
+
+    emitter.setDelegate(original);
+    usedRegisters.clear();
   }
 
   @AutoValue
