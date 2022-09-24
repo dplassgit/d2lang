@@ -312,10 +312,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     if (leftType == VarType.STRING) {
       switch (operator) {
         case PLUS:
-          stringGenerator.generateStringAdd(op, destName, op.left(), op.right());
+          stringGenerator.generateStringAdd(op.destination(), op.left(), op.right(), op.position());
           break;
         case LBRACKET:
-          stringGenerator.generateStringIndex(op);
+          stringGenerator.generateStringIndex(
+              op.destination(), op.left(), op.right(), op.position());
           break;
         case EQEQ:
         case NEQ:
@@ -323,7 +324,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case GEQ:
         case LT:
         case LEQ:
-          stringGenerator.generateStringCompare(op, destName);
+          stringGenerator.generateStringCompare(op);
           break;
 
         default:
@@ -680,7 +681,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         resolver.deallocate(tempReg);
         break;
       case CHR:
-        stringGenerator.generateChr(sourceName, destName);
+        stringGenerator.generateChr(op.operand(), op.destination());
         break;
       default:
         fail("Cannot generate %s yet", op);
