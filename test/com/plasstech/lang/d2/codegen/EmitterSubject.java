@@ -32,6 +32,10 @@ class EmitterSubject extends Subject {
     containsAtLeast(line);
   }
 
+  public void doesNotContain(String line) {
+    check("contains").that(trim(actual.all())).doesNotContain(trim(line));
+  }
+
   public Ordered containsAtLeast(String... lines) {
     List<String> expected = asList(lines);
     return check("contains").that(trim(actual.all())).containsAtLeastElementsIn(trim(expected));

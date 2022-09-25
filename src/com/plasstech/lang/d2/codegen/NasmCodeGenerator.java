@@ -665,20 +665,42 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
       case ASC:
         npeCheckGenerator.generateNullPointerCheck(op.position(), source);
-        // move from sourceLoc to temp
-        // then from temp to dest
-        Register tempReg = resolver.allocate(VarType.INT);
         // Just read one byte
         if (source.isConstant()) {
-          emit("mov BYTE %s, %s ; copy one byte / first character", tempReg.name8(), sourceName);
-          emit("mov BYTE %s, %s ; store a full int. shrug", destName, tempReg.name32());
+          // This can't really happen, because asc(constant) is optimized out;
+          // if we turn off optimizations, asc('hi') generates
+          // _temp1='hi' _temp2=asc(_temp1) so it's not really asc(constant)...
+          ConstantOperand<String> stringConst = (ConstantOperand<String>) source;
+          String value = stringConst.value();
+          emit("mov %s, %d ; store a full int (anded to 0xff)", destName, (value.charAt(0)) & 0xff);
         } else {
-          // need to do two indirects
-          emit("mov %s, %s  ; %s has address of string", tempReg, sourceName, tempReg);
-          emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
+
+          if (resolver.isInAnyRegister(source) && resolver.isInAnyRegister(destination)) {
+            // register to register, don't need extra temp
+            Register sourceReg = resolver.toRegister(source);
+            Register destReg = resolver.toRegister(destination);
+            emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), sourceReg);
+          } else {
+
+            // Source or dest is in memory; use a temp register.
+            // In reality only source can be in memory; destinations are
+            // typically temps which are always in registers.
+
+            Register tempReg = resolver.allocate(VarType.INT);
+            resolver.mov(source, tempReg);
+            if (resolver.isInAnyRegister(destination)) {
+              // two regs, good.
+              Register destReg = resolver.toRegister(destination);
+              emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), tempReg);
+            } else {
+              // This can't really happen, probably, because destinations
+              // are typically temps, which are stored in registers.
+              emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
+            }
+            resolver.deallocate(tempReg);
+          }
+          emit("and %s, 0xff", destName);
         }
-        emit("and %s, 0x000000ff", destName);
-        resolver.deallocate(tempReg);
         break;
       case CHR:
         stringGenerator.generateChr(op.operand(), op.destination());

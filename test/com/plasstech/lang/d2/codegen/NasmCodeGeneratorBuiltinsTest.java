@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
+import static org.junit.Assume.assumeFalse;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,11 +68,26 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void asc(@TestParameter({"s", "hello", "hello this is a very long string"}) String value)
-      throws Exception {
+  public void asc(@TestParameter({"s", "he"}) String value) throws Exception {
     execute(String.format("a='%s' b=asc(a) print b", value), "asc");
     execute(String.format("b=asc('%s') print b", value), "ascConst");
     execute(String.format("a='%s' b=a c=asc(b) print c", value), "asc2");
+  }
+
+  @Test
+  public void constantAsc() throws Exception {
+    assumeFalse(optimize);
+    execute("println asc('hi')", "constantAsc");
+  }
+
+  @Test
+  public void ascInProc() throws Exception {
+    execute("f:proc(a:string) { b=asc(a) println b} f('hi')", "ascInProc");
+  }
+
+  @Test
+  public void ascLocal() throws Exception {
+    execute("f:proc(a:string) { c=a b=asc(c) println b} f('hi')", "ascInProc");
   }
 
   @Test
