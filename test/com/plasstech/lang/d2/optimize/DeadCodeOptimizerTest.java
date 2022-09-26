@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -100,6 +101,19 @@ public class DeadCodeOptimizerTest {
   }
 
   @Test
+  public void returnThenStuffThenProcEnd() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new Return("name"), new Dec(TEMP1), new ProcExit("proc", 0));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Return.class);
+    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(ProcExit.class);
+  }
+
+  @Test
   public void returnThenStuffThenGoto() {
     ImmutableList<Op> program =
         ImmutableList.of(new Return("name"), new Dec(TEMP1), new Goto("label"));
@@ -139,6 +153,16 @@ public class DeadCodeOptimizerTest {
   @Test
   public void ifTrueEqualsGoto() {
     ImmutableList<Op> program = ImmutableList.of(new IfOp(ConstantOperand.of(true), "dest", false));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
+  }
+
+  @Test
+  public void ifOneEqualsGoto() {
+    ImmutableList<Op> program = ImmutableList.of(new IfOp(ConstantOperand.ONE, "dest", false));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
