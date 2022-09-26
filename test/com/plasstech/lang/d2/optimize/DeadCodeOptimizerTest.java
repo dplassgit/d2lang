@@ -5,11 +5,17 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
+import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -78,5 +84,96 @@ public class DeadCodeOptimizerTest {
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Dec.class);
+  }
+
+  @Test
+  public void returnThenStuffThenLabel() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new Return("name"), new Dec(TEMP1), new Label("label"));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Return.class);
+    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Label.class);
+  }
+
+  @Test
+  public void returnThenStuffThenGoto() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new Return("name"), new Dec(TEMP1), new Goto("label"));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Return.class);
+    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+  }
+
+  @Test
+  public void stopThenStuffThenLabel() {
+    ImmutableList<Op> program = ImmutableList.of(new Stop(), new Dec(TEMP1), new Label("label"));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Stop.class);
+    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Label.class);
+  }
+
+  @Test
+  public void stopThenStuffThenGoto() {
+    ImmutableList<Op> program = ImmutableList.of(new Stop(), new Dec(TEMP1), new Goto("label"));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Stop.class);
+    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+  }
+
+  @Test
+  public void ifTrueEqualsGoto() {
+    ImmutableList<Op> program = ImmutableList.of(new IfOp(ConstantOperand.of(true), "dest", false));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
+  }
+
+  @Test
+  public void ifFalseEqualsNop() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new IfOp(ConstantOperand.of(false), "dest", false));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+  }
+
+  @Test
+  public void ifNotTrueEqualsNop() {
+    ImmutableList<Op> program = ImmutableList.of(new IfOp(ConstantOperand.of(true), "dest", true));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+  }
+
+  @Test
+  public void ifNotFalseEqualsGoto() {
+    ImmutableList<Op> program = ImmutableList.of(new IfOp(ConstantOperand.of(false), "dest", true));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
   }
 }
