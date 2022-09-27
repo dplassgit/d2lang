@@ -55,6 +55,9 @@ java_library(name="var_types",
                  "UnknownType.java",
                  "VarType.java",
              ],
+             deps=[
+                 "@maven//:com_google_guava_guava",
+             ],
              visibility=["//visibility:public"],
              )
 

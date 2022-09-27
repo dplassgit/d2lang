@@ -22,6 +22,7 @@ import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -57,6 +58,29 @@ public class ArithmeticOptimizerTest {
     assertThat(first.left()).isEqualTo(TEMP2);
     assertThat(first.operator()).isEqualTo(TokenType.SHIFT_LEFT);
     assertThat(first.right()).isEqualTo(ONE);
+  }
+
+  @Test
+  public void constPlusVar_swaps() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, ConstantOperand.ONE, TokenType.PLUS, TEMP1, null),
+            new BinOp(TEMP2, ConstantOperand.ONE, TokenType.MULT, TEMP2, new Position(0, 0)));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+
+    BinOp first = (BinOp) optimized.get(0);
+    assertThat(first.left()).isEqualTo(TEMP1);
+    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
+    assertThat(first.right()).isEqualTo(ONE);
+
+    BinOp second = (BinOp) optimized.get(1);
+    assertThat(second.left()).isEqualTo(TEMP2);
+    assertThat(second.operator()).isEqualTo(TokenType.MULT);
+    assertThat(second.right()).isEqualTo(ONE);
   }
 
   @Test

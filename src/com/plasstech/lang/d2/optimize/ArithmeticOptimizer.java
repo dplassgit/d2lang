@@ -97,11 +97,42 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   @Override
+  public void visit(SysCall op) {
+    if (op.call() != SysCall.Call.PRINT) {
+      return;
+    }
+    Operand arg = op.arg();
+    if (!arg.isConstant()) {
+      return;
+    }
+    ConstantOperand<?> operand = (ConstantOperand<?>) arg;
+    if (operand.type() == VarType.STRING) {
+      return;
+    }
+    if (operand.value() == null) {
+      replaceCurrent(new SysCall(op.call(), ConstantOperand.of("null")));
+      return;
+    }
+    String asString = operand.value().toString();
+    replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
+  }
+
+  @Override
   public void visit(BinOp op) {
     Operand left = op.left();
     Operand right = op.right();
+    TokenType operator = op.operator();
 
-    switch (op.operator()) {
+    if (left.isConstant()
+        && !right.isConstant()
+        && (operator == TokenType.MULT || operator == TokenType.PLUS)
+        && VarType.isNumeric(left.type())) {
+      // swap it so the constant is on the right.
+      replaceCurrent(new BinOp(op.destination(), right, operator, left, op.position()));
+      return;
+    }
+
+    switch (operator) {
       case MULT:
         optimizeMultiply(op, left, right);
         return;
@@ -237,27 +268,6 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), left));
       return;
     }
-  }
-
-  @Override
-  public void visit(SysCall op) {
-    if (op.call() != SysCall.Call.PRINT) {
-      return;
-    }
-    Operand arg = op.arg();
-    if (!arg.isConstant()) {
-      return;
-    }
-    ConstantOperand<?> operand = (ConstantOperand<?>) arg;
-    if (operand.type() == VarType.STRING) {
-      return;
-    }
-    if (operand.value() == null) {
-      replaceCurrent(new SysCall(op.call(), ConstantOperand.of("null")));
-      return;
-    }
-    String asString = operand.value().toString();
-    replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
   }
 
   private void optimizeBitAnd(BinOp op, Operand left, Operand right) {

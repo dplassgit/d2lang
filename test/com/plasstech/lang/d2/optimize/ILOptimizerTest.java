@@ -360,4 +360,9 @@ public class ILOptimizerTest {
   public void linkedList() {
     TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST);
   }
+
+  @Test
+  public void adjacentArithmetics() {
+    TestUtils.optimizeAssertSameVariables("a=1 b=1+a+1 print b");
+  }
 }

@@ -286,7 +286,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return leftNull != rightNull;
 
       default:
-        throw new IllegalStateException("Unknown null binop " + op.operator());
+        throw new IllegalStateException("Unknown null binop " + op);
     }
   }
 

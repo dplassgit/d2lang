@@ -1,5 +1,9 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.Set;
+
+import com.google.common.collect.ImmutableSet;
+
 /** The type of an expression or variable. */
 public interface VarType {
   VarType BOOL = new SimpleType("BOOL", 1);
@@ -18,6 +22,7 @@ public interface VarType {
       };
   VarType UNKNOWN = new UnknownType();
   VarType VOID = new SimpleType("VOID");
+  Set<VarType> NUMERIC_TYPES = ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.DOUBLE);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",
@@ -46,5 +51,9 @@ public interface VarType {
 
   default boolean compatibleWith(VarType that) {
     return that == this;
+  }
+
+  static boolean isNumeric(VarType type) {
+    return NUMERIC_TYPES.contains(type);
   }
 }
