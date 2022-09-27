@@ -12,9 +12,11 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
@@ -110,6 +112,8 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public void visit(Label op) {
     // a label means potentially a loop and we can't rely on unused non-temps
+    // TODO: this is too aggressive; if a variable isn't used the rest of the procedure,
+    // it can probably be killed.
     assignments.clear();
   }
 
@@ -162,6 +166,22 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Transfer op) {
     Location dest = op.destination();
     markRead(op.source());
+    killIfReassigned(dest);
+    recordAssignment(dest);
+  }
+
+  @Override
+  public void visit(Inc op) {
+    Location dest = op.target();
+    markRead(dest);
+    killIfReassigned(dest);
+    recordAssignment(dest);
+  }
+
+  @Override
+  public void visit(Dec op) {
+    Location dest = op.target();
+    markRead(dest);
     killIfReassigned(dest);
     recordAssignment(dest);
   }
