@@ -92,6 +92,7 @@ public class AdjacentArithmeticOptimizerTest {
             new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
             new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.ONE, null));
 
+    OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
   }
 
@@ -173,5 +174,77 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(first.operator()).isEqualTo(TokenType.MINUS);
     ConstantOperand<Integer> right = (ConstantOperand<Integer>) first.right();
     assertThat(right.value()).isEqualTo(2);
+  }
+
+  @Test
+  public void divDiv() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            // should be temp3 = temp1 / 10
+            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(5), null),
+            new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(2), null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    BinOp first = (BinOp) optimized.get(0);
+    assertThat(first.destination()).isEqualTo(TEMP3);
+    assertThat(first.left()).isEqualTo(TEMP1);
+    assertThat(first.operator()).isEqualTo(TokenType.DIV);
+    ConstantOperand<Integer> right = (ConstantOperand<Integer>) first.right();
+    assertThat(right.value()).isEqualTo(10);
+  }
+
+  @Test
+  public void divMult() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            // should be temp3 = temp1 / (20/10) = temp1 / 2
+            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(20), null),
+            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    BinOp first = (BinOp) optimized.get(0);
+    assertThat(first.destination()).isEqualTo(TEMP3);
+    assertThat(first.left()).isEqualTo(TEMP1);
+    assertThat(first.operator()).isEqualTo(TokenType.DIV);
+    ConstantOperand<Integer> right = (ConstantOperand<Integer>) first.right();
+    assertThat(right.value()).isEqualTo(2);
+  }
+
+  @Test
+  public void divMultTooSmall() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            // should be temp3 = temp1 / (2/10) = temp1 / 0 behnt.
+            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(2), null),
+            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
+
+    OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isFalse();
+  }
+
+  @Test
+  public void multDiv() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            // should be temp3 = temp1 * (20/5) = temp1 * 4
+            new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.of(20), null),
+            new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(5), null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    BinOp first = (BinOp) optimized.get(0);
+    assertThat(first.destination()).isEqualTo(TEMP3);
+    assertThat(first.left()).isEqualTo(TEMP1);
+    assertThat(first.operator()).isEqualTo(TokenType.MULT);
+    ConstantOperand<Integer> right = (ConstantOperand<Integer>) first.right();
+    assertThat(right.value()).isEqualTo(4);
   }
 }

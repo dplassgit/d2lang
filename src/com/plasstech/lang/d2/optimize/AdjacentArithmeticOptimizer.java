@@ -47,8 +47,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final Set<TokenType> FIRST_OPERATORS =
       ImmutableSet.of(TokenType.PLUS, TokenType.MULT, TokenType.MINUS, TokenType.DIV);
   private static final Set<TokenType> PLUS_MINUS = ImmutableSet.of(TokenType.PLUS, TokenType.MINUS);
-  private static final Set<TokenType> MULT_DIV =
-      ImmutableSet.of(TokenType.MULT /*, TokenType.DIV*/);
+  private static final Set<TokenType> MULT_DIV = ImmutableSet.of(TokenType.MULT, TokenType.DIV);
 
   AdjacentArithmeticOptimizer(int debugLevel) {
     super(debugLevel);
@@ -114,63 +113,70 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     Number secondConst = fromConstOperand(right);
     if (left.type() == VarType.INT) {
       switch (firstOperator) {
-        case PLUS:
         case MINUS:
+        case PLUS:
           if (firstOperator == secondOperator) {
             // NOTE + for MINUS, because we're subtracting twice (e.g., -1 + -1 = -2)
             return ConstantOperand.of(firstConst.intValue() + secondConst.intValue());
           } else {
             // minus then plus:
-            // temp2=temp1+first
-            // temp3=temp2-second
-            // temp3=temp1+(first-second) (it uses PLUS)
+            // temp2=temp1+first, temp3=temp2-second
+            // =temp3=temp1+(first-second) (it uses PLUS)
             // OR plus, then minus:
-            // temp2=temp1-first
-            // temp3=temp2+second
+            // temp2=temp1-first, temp3=temp2+second
             // temp3=temp1-first+second
-            // = temp3=temp1-(first-second) (it uses MINUS)
+            // =temp3=temp1-(first-second) (it uses MINUS)
             return ConstantOperand.of(firstConst.intValue() - secondConst.intValue());
           }
+        case DIV:
         case MULT:
           if (firstOperator == secondOperator) {
+            // NOTE * for DIV too, because we're dividing twice (e.g., /5/2 = /10)
             return ConstantOperand.of(firstConst.intValue() * secondConst.intValue());
           } else {
-            return null;
+            // div, then mult
+            // temp2=temp1/first, temp3=temp2*second
+            // =temp3=(temp1/first)*second
+            // =temp3=temp/(first/second) (NOTE DIV) THIS IS BROKEN because of rounding.
+            // should be instead temp*(second/first)
+            // mult then div:
+            // temp2=temp1*first, temp3=temp2/second
+            // =temp3=(temp1*first)/second
+            // =temp3=temp*(first/second)
+            if (firstConst.intValue() < secondConst.intValue() || secondConst.intValue() == 0) {
+              logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0");
+              return null;
+            }
+            return ConstantOperand.of(firstConst.intValue() / secondConst.intValue());
           }
         default:
-          logger.at(loggingLevel).log("Cannot optimize operator yet %s", firstOperator);
-          return null;
+          break;
       }
     } else if (left.type() == VarType.DOUBLE) {
       switch (firstOperator) {
         case PLUS:
         case MINUS:
           if (firstOperator == secondOperator) {
-            // NOTE + for MINUS, because we're subtracting twice (e.g., -1 + -1 = -2)
             return ConstantOperand.of(firstConst.doubleValue() + secondConst.doubleValue());
           } else {
-            // minus then plus:
-            // temp2=temp1+first
-            // temp3=temp2-second
-            // temp3=temp1+(first-second) (it uses PLUS)
-            // OR plus, then minus:
-            // temp2=temp1-first
-            // temp3=temp2+second
-            // temp3=temp1-first+second
-            // = temp3=temp1-(first-second) (it uses MINUS)
             return ConstantOperand.of(firstConst.doubleValue() - secondConst.doubleValue());
           }
+        case DIV:
         case MULT:
           if (firstOperator == secondOperator) {
             return ConstantOperand.of(firstConst.doubleValue() * secondConst.doubleValue());
           } else {
-            return null;
+            if (secondConst.doubleValue() == 0) {
+              logger.at(loggingLevel).log("Refusing to optimize due to div by 0.0");
+              return null;
+            }
+            return ConstantOperand.of(firstConst.doubleValue() / secondConst.doubleValue());
           }
         default:
-          logger.at(loggingLevel).log("Cannot optimize operator yet %s", firstOperator);
-          return null;
+          break;
       }
     }
+    logger.at(loggingLevel).log("Cannot optimize operator yet %s", firstOperator);
     return null;
   }
 
