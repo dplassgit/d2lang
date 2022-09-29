@@ -240,15 +240,11 @@ public class NasmCodeGeneratorTestBase {
     Lexer lexer = new Lexer(state.sourceCode());
     Parser parser = new Parser(lexer);
     state = parser.execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.throwOnError();
 
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.throwOnError();
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);
@@ -256,15 +252,12 @@ public class NasmCodeGeneratorTestBase {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer();
       state = optimizer.execute(state);
-      if (state.error()) {
-        throw state.exception();
-      }
+      state.throwOnError();
     }
 
     state = new NasmCodeGenerator().execute(state);
-    if (state.error()) {
-      throw state.exception();
-    }
+    state.throwOnError();
+
     state = state.addFilename(filename);
 
     state = new NasmCodeGenerator().execute(state);

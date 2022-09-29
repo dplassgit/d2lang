@@ -290,6 +290,7 @@ class StringCodeGenerator {
     emitter.emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
         position, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
+
     // 2. get right length
     Register rightLengthReg = resolver.allocate(VarType.INT);
     // TODO: if leftLengthReg is volatile, push it first (?!)
@@ -297,7 +298,26 @@ class StringCodeGenerator {
     emitter.emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
         position, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
+
+    // Optimize at runtime for concatenating empty strings
+    String fin = resolver.nextLabel("string_add_end");
+    String testRight = resolver.nextLabel("test_right_string");
+    String justConcatenate = resolver.nextLabel("concatenate");
     emitter.emit0("");
+    emitter.emit("; short-circuit for empty left");
+    emitter.emit("cmp %s, 0", leftLengthReg.name32());
+    emitter.emit("jne %s", testRight);
+    resolver.mov(right, destination);
+    emitter.emit("jmp %s", fin);
+
+    emitter.emitLabel(testRight);
+    emitter.emit("; short-circuit for empty right");
+    emitter.emit("cmp %s, 0", rightLengthReg.name32());
+    emitter.emit("jne %s", justConcatenate);
+    resolver.mov(left, destination);
+    emitter.emit("jmp %s", fin);
+
+    emitter.emitLabel(justConcatenate);
     emitter.emit(
         "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
     emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32());
@@ -359,6 +379,7 @@ class StringCodeGenerator {
     }
     emitter.emitExternCall("strcat");
     registerState.condPop();
+    emitter.emitLabel(fin);
   }
 
   /** Generate destination = length(source) */

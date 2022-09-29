@@ -144,8 +144,6 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   public void compOpsNull(@TestParameter({"<", "<=", ">=", ">"}) String op) throws Exception {
     assertRuntimeError(
         String.format("a='abc' c=a %s null", op), "compOpsNull", "Null pointer error");
-    //    assertRuntimeError(
-    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
     assertRuntimeError(
         String.format("a='abc' b=null c=a %s b", op), "compOpsNull", "Null pointer error");
     assertRuntimeError(
@@ -155,8 +153,6 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void equalityOpsNull(@TestParameter({"==", "!="}) String op) throws Exception {
     execute(String.format("a='abc' c=a %s null", op), "equalityOpsNull");
-    //    assertRuntimeError(
-    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
     execute(String.format("a='abc' b=null c=a %s b", op), "equalityOpsNull");
     execute(String.format("a='abc' b:string b=null c=b %s a", op), "equalityOpsNull");
   }
@@ -266,6 +262,29 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "}"
             + "  tester('h ')",
         "concatInProc");
+  }
+
+  @Test
+  public void concatEmpty() throws Exception {
+    execute(
+        "      tester: proc(left:string, right:string) {"
+            + "   t=left+right println t "
+            + "} "
+            + "tester('', 'hi') "
+            + "tester('hi', '') ",
+        "concatInProc");
+  }
+
+  @Test
+  public void concatNull() throws Exception {
+    assertRuntimeError(
+        "      tester: proc(left:string, right:string) {"
+            + "   t=left+right println t "
+            + "} "
+            + "tester(null, '') "
+            + "tester('', null) ",
+        "concatNull",
+        "Null pointer error");
   }
 
   @Test

@@ -236,18 +236,19 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitDoubleBinOp(op, (Double) left, (Double) right);
     } else if (left instanceof Boolean && right instanceof Boolean) {
       result = visitBoolBinOp(op, (Boolean) left, (Boolean) right);
-    } else if (left instanceof String && right instanceof String) {
+    } else if (left instanceof String && (right instanceof String || right == null)) {
       result = visitStringBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
-    } else if (left == null || right == null) {
-      result = visitBinOpNulls(op, left, right);
-    } else if (left.getClass().isArray() && right instanceof Integer) {
+    } else if (left != null && left.getClass().isArray() && right instanceof Integer) {
       result = visitArrayBinOp(op, (Object[]) left, (Integer) right);
     } else if (left instanceof ArrayList && right instanceof Integer) {
       result = visitLiteralArrayBinOp(op, left, (Integer) right);
-    } else if (leftOperand.type().isRecord() && rightOperand.type().isRecord()) {
+    } else if (leftOperand.type().isRecord()
+        && (rightOperand.type().isRecord() || rightOperand == null)) {
       result = visitRecordBinop(op, left, right);
+    } else if (left == null || right == null) {
+      result = visitBinOpNulls(op, left, right);
     } else {
       throw new IllegalStateException(
           String.format(
