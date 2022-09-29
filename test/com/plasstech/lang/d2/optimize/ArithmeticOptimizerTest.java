@@ -8,7 +8,7 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE_DBL;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO_DBL;
-import static com.plasstech.lang.d2.optimize.OptimizerAsserts.assertTransferFrom;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,7 +93,7 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    assertTransferFrom(optimized.get(0), TWO_DBL);
+    assertThat(optimized.get(0)).isTransferredFrom(TWO_DBL);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    assertTransferFrom(optimized.get(0), ZERO_DBL);
+    assertThat(optimized.get(0)).isTransferredFrom(ZERO_DBL);
   }
 
   @Test
@@ -119,7 +119,7 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    assertTransferFrom(optimized.get(0), TWO_DBL);
+    assertThat(optimized.get(0)).isTransferredFrom(TWO_DBL);
   }
 
   @Test
@@ -134,8 +134,8 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
 
-    assertTransferFrom(optimized.get(0), TWO_DBL);
-    assertTransferFrom(optimized.get(1), ONE_DBL);
+    assertThat(optimized.get(0)).isTransferredFrom(TWO_DBL);
+    assertThat(optimized.get(1)).isTransferredFrom(ONE_DBL);
   }
 
   @Test
@@ -153,7 +153,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
 
-    assertTransferFrom(optimized.get(0), STRING_TEMP);
+    assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
   }
 
   @Test
@@ -163,7 +163,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
 
-    assertTransferFrom(optimized.get(0), STRING_TEMP);
+    assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
   }
 
   @Test
@@ -179,10 +179,10 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(4);
-    assertTransferFrom(optimized.get(0), FALSE);
-    assertTransferFrom(optimized.get(1), TRUE);
-    assertTransferFrom(optimized.get(2), TRUE);
-    assertTransferFrom(optimized.get(3), FALSE);
+    assertThat(optimized.get(0)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(1)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(2)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(3)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -196,8 +196,8 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
-    assertTransferFrom(optimized.get(0), TRUE);
-    assertTransferFrom(optimized.get(1), TRUE);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(TRUE);
   }
 
   @Test
@@ -212,8 +212,8 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     // we know that temp2 is not < or > itself
-    assertTransferFrom(optimized.get(0), FALSE);
-    assertTransferFrom(optimized.get(1), FALSE);
+    assertThat(optimized.get(0)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -227,8 +227,8 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
-    assertTransferFrom(optimized.get(0), TRUE);
-    assertTransferFrom(optimized.get(1), FALSE);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -242,8 +242,8 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
-    assertTransferFrom(optimized.get(0), TRUE);
-    assertTransferFrom(optimized.get(1), FALSE);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -259,10 +259,10 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(4);
-    assertTransferFrom(optimized.get(0), TRUE);
-    assertTransferFrom(optimized.get(1), FALSE);
-    assertTransferFrom(optimized.get(2), FALSE);
-    assertTransferFrom(optimized.get(3), TRUE);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(2)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(3)).isTransferredFrom(TRUE);
   }
 
   @Test
@@ -278,10 +278,10 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(4);
-    assertTransferFrom(optimized.get(0), FALSE);
-    assertTransferFrom(optimized.get(1), TRUE);
-    assertTransferFrom(optimized.get(2), TRUE);
-    assertTransferFrom(optimized.get(3), FALSE);
+    assertThat(optimized.get(0)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(1)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(2)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(3)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -297,10 +297,10 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(4);
-    assertTransferFrom(optimized.get(0), TRUE);
-    assertTransferFrom(optimized.get(1), FALSE);
-    assertTransferFrom(optimized.get(2), FALSE);
-    assertTransferFrom(optimized.get(3), TRUE);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(2)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(3)).isTransferredFrom(TRUE);
   }
 
   @Test
@@ -351,4 +351,15 @@ public class ArithmeticOptimizerTest {
         String.format("a=%s %s %s", left, operator, right), OPTIMIZERS);
   }
 
+  @Test
+  public void xModX() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP2, TEMP1, TokenType.MOD, TEMP1, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ZERO);
+  }
 }

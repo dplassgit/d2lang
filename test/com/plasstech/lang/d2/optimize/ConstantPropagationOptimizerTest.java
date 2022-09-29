@@ -1,7 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.plasstech.lang.d2.optimize.OptimizerAsserts.assertTransferFrom;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -36,7 +36,7 @@ public class ConstantPropagationOptimizerTest {
 
     program = OPTIMIZER.optimize(program, null);
 
-    assertTransferFrom(program.get(0), ConstantOperand.ONE);
+    assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
   }
 
   @Test
@@ -50,7 +50,7 @@ public class ConstantPropagationOptimizerTest {
 
     program = OPTIMIZER.optimize(program, null);
     assertThat(program).hasSize(2);
-    assertTransferFrom(program.get(0), ConstantOperand.ONE);
-    assertTransferFrom(program.get(1), GLOBAL_INT1);
+    assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
+    assertThat(program.get(1)).isTransferredFrom(GLOBAL_INT1);
   }
 }

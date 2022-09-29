@@ -316,6 +316,13 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
       return;
     }
+    if (left.equals(right)) {
+      if (left.type() == VarType.INT) {
+        replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO));
+      } else {
+        replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE));
+      }
+    }
     try {
       optimizeArith(op.destination(), left, right, (t, u) -> t % u);
       optimizeByteArith(op.destination(), left, right, (t, u) -> (byte) (t % u));
