@@ -47,7 +47,7 @@ import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultNodeVisitor implements Phase {
   // also works for bytes
-  private static final ImmutableSet<TokenType> INT_OPERATORS =
+  private static final Set<TokenType> INT_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -66,7 +66,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.BIT_XOR,
           TokenType.BIT_AND);
 
-  private static final ImmutableSet<TokenType> DOUBLE_OPERATORS =
+  private static final Set<TokenType> DOUBLE_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -79,7 +79,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.MULT,
           TokenType.PLUS);
 
-  private static final ImmutableSet<TokenType> STRING_OPERATORS =
+  private static final Set<TokenType> STRING_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -92,7 +92,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           // , Token.Type.MOD // eventually
           );
 
-  private static final ImmutableSet<TokenType> BOOL_OPERATORS =
+  private static final Set<TokenType> BOOL_OPERATORS =
       ImmutableSet.of(
           TokenType.LT,
           TokenType.LEQ,
@@ -104,14 +104,19 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.OR,
           TokenType.XOR);
 
+  private static final Set<TokenType> NULL_OPERATORS =
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
+
   // NOTE: Does not include arrays or records.
-  private static final Map<VarType, ImmutableSet<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
-      ImmutableMap.of(
-          VarType.INT, INT_OPERATORS,
-          VarType.BOOL, BOOL_OPERATORS,
-          VarType.STRING, STRING_OPERATORS,
-          VarType.BYTE, INT_OPERATORS,
-          VarType.DOUBLE, DOUBLE_OPERATORS);
+  private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
+      ImmutableMap.<VarType, Set<TokenType>>builder()
+          .put(VarType.INT, INT_OPERATORS)
+          .put(VarType.BOOL, BOOL_OPERATORS)
+          .put(VarType.STRING, STRING_OPERATORS)
+          .put(VarType.BYTE, INT_OPERATORS)
+          .put(VarType.DOUBLE, DOUBLE_OPERATORS)
+          .put(VarType.NULL, NULL_OPERATORS)
+          .build();
 
   private static final ImmutableSet<TokenType> INT_UNARY_OPERATORS =
       ImmutableSet.of(TokenType.MINUS, TokenType.PLUS, TokenType.BIT_NOT, TokenType.CHR);
@@ -514,11 +519,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     // Check that they're not trying to, for example, multiply booleans
-    ImmutableSet<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
+    Set<TokenType> operators = OPERATORS_BY_LEFT_VARTYPE.get(leftType);
     if (operators != null && !operators.contains(operator)) {
       errors.add(
           new TypeException(
-              String.format("Cannot apply %s operator to %s operand", operator.name(), leftType),
+              String.format("Cannot apply %s operator to %s operand", operator, leftType),
               left.position()));
       return;
     }
@@ -599,6 +604,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
 
     } else if (!leftType.compatibleWith(rightType)) {
+      // this message sucks.
       errors.add(
           new TypeException(
               String.format("Type mismatch: %s is %s; %s is %s", left, leftType, right, rightType),
@@ -630,6 +636,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(
           new TypeException(String.format("Indeterminable type for %s", expr), expr.position()));
     }
+    if (exprType.isNull()) {
+      errors.add(
+          new TypeException(
+              String.format("Cannot apply %s operator to NULL expression", node.operator()),
+              expr.position()));
+      return;
+    }
 
     // Check that they're not trying to negate a boolean or "not" an int.
     ImmutableSet<TokenType> operators = UNARY_OPERATORS_BY_VARTYPE.get(exprType);
@@ -638,6 +651,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           new TypeException(
               String.format("Cannot apply %s operator to %s expression", node.operator(), exprType),
               node.position()));
+      return;
     }
 
     // Extra checks for some operators:

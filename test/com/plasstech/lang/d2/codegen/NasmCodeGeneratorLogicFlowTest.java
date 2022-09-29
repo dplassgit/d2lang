@@ -57,4 +57,17 @@ public class NasmCodeGeneratorLogicFlowTest extends NasmCodeGeneratorTestBase {
             + "print fact",
         "fact");
   }
+
+  @Test
+  public void nullCompare() throws Exception {
+    execute(
+        "      s=''\r\n"
+            + "if null != null { println 'This should never happen'}\r\n"
+            + "if null == null { println 'null'}"
+            + "if null != s { println 'null'}\r\n"
+            + "if null == s { println 'This should never happen'}"
+            + "if s != null { println 'null'}\r\n"
+            + "if s == null { println 'This should never happen'}",
+        "nullCompare");
+  }
 }

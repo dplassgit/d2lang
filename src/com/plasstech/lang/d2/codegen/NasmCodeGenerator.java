@@ -502,6 +502,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       recordGenerator.visit(op);
     } else if (leftType == VarType.DOUBLE) {
       doubleGenerator.generate(op);
+    } else if (leftType == VarType.NULL) {
+      switch (operator) {
+        case EQEQ:
+        case NEQ:
+          tempReg = generateCmp(leftRo, rightRo, operator, destName);
+          break;
+        default:
+          fail("Cannot do %s on %ss (yet?)", operator, leftType);
+          break;
+      }
     } else {
       fail("Cannot do %s on %ss (yet?)", operator, leftType);
     }

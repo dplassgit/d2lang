@@ -535,7 +535,7 @@ public class StaticCheckerTest {
     assertError("b='hi' a=b[false]", "STRING index must be INT");
     assertError("b='hi' a='hi'[b]", "STRING index must be INT");
     assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
-    assertError("b=3 a=b[3]", "Cannot apply LBRACKET operator to INT operand");
+    assertError("b=3 a=b[3]", "Cannot apply \\[ operator to INT operand");
   }
 
   @Test
@@ -976,9 +976,21 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void compareToNull_allowed() {
+  public void nullEquality() {
     checkProgram("if null != null { print 'not null'}");
     checkProgram("if null == null { print 'not null'}");
+    checkProgram("s='' if null == s {print 'not 3'}");
+    checkProgram("s='' if s == null {print 'not 3'}");
+    checkProgram("a=[3] if null != a {print 'not 3'}");
+    checkProgram("rt:record{} r = new rt if r != null {print 'not 3'}");
+  }
+
+  @Test
+  public void nullErrors() {
+    assertError("s='' if null > s { print 'not null'}", "Cannot apply > operator to NULL operand");
+    assertError("if null < null { print 'not null'}", "Cannot apply < operator to NULL operand");
+    assertError("if not null {print 'not null'}", "Cannot apply NOT operator to NULL expression");
+    assertError("if null == 3 {print 'not 3'}", "Type mismatch.*null.*INT");
   }
 
   @Test
@@ -1104,7 +1116,7 @@ public class StaticCheckerTest {
   public void fieldGet_mismatch() {
     assertError("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i", "is INT");
     assertError("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i", "is INT");
-    assertError("ss='string' ss2=ss.i", "Cannot apply DOT operator to STRING");
+    assertError("ss='string' ss2=ss.i", "Cannot apply . operator to STRING");
   }
 
   @Test
