@@ -224,24 +224,18 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(SysCall op) {
-    Operand arg = op.arg();
-    // need to preserve used registers!
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
-        printGenerator.generate(op);
+        printGenerator.visit(op);
         break;
       case INPUT:
-        inputGenerator.generate(arg);
+        inputGenerator.visit(op);
         break;
       default:
         fail("Cannot generate %s yet", op);
         break;
     }
-    registerState.condPop();
-    resolver.deallocate(arg);
   }
 
   @Override

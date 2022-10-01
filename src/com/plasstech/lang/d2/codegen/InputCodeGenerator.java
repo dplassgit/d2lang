@@ -6,8 +6,10 @@ import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 
-class InputCodeGenerator {
+class InputCodeGenerator extends DefaultOpcodeVisitor {
   private static final int ONE_MB = 1024 * 1024;
   private final Resolver resolver;
   private final Registers registers;
@@ -26,18 +28,19 @@ class InputCodeGenerator {
    *
    * @param operand destination for the input
    */
-  void generate(Operand operand) {
-    String destLoc = resolver.resolve(operand);
+  @Override
+  public void visit(SysCall op) {
+    Operand arg = op.arg();
+    String destName = resolver.resolve(arg);
 
     RegisterState state =
         RegisterState.condPush(emitter, registers, ImmutableList.of(RCX, RDX, R8, R9));
-    emitter.emitExternCall("_flushall");
 
     // 1. calloc 1mb
     emitter.emit("mov RDX, %d; allocate 1mb", ONE_MB);
     emitter.emit("mov RCX, 1");
     emitter.emitExternCall("calloc");
-    Register tempReg = resolver.allocate(operand.type());
+    Register tempReg = resolver.allocate(arg.type());
     emitter.emit("; allocated %s as temp reg", tempReg);
     // TODO: this register might be munged by subsequent calls...
     emitter.emit("mov %s, RAX", tempReg.name64());
@@ -63,11 +66,11 @@ class InputCodeGenerator {
     emitter.emitExternCall("calloc");
 
     // 7. assign new place to destination
-    emitter.emit("mov %s, RAX  ; new buffer", destLoc);
+    emitter.emit("mov %s, RAX  ; new buffer", destName);
     // 8. copy from temp location to new location
     emitter.emit0("");
     emitter.emit("; memcpy(dest, source, size)");
-    emitter.emit("mov RCX, %s  ; dest", destLoc);
+    emitter.emit("mov RCX, %s  ; dest", destName);
     emitter.emit("mov RDX, %s  ; source", tempReg.name64());
     emitter.emit("pop R8  ; size, was pushed before as RDX");
     emitter.emitExternCall("memcpy");
@@ -77,6 +80,7 @@ class InputCodeGenerator {
     emitter.emit("mov RCX, %s", tempReg.name64());
     emitter.emitExternCall("free");
     resolver.deallocate(tempReg);
+    resolver.deallocate(arg);
     state.condPop();
   }
 }

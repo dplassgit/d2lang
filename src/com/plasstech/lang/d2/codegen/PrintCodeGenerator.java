@@ -4,11 +4,12 @@ import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.plasstech.lang.d2.codegen.Resolver.ResolvedOperand;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generates NASM code for printing things. */
-class PrintCodeGenerator {
+class PrintCodeGenerator extends DefaultOpcodeVisitor {
   private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
   private static final String PRINTF_INT_FMT = "PRINTF_INT_FMT: db \"%d\", 0";
   private static final String PRINTF_DOUBLE_FMT = "PRINTF_DOUBLE_FMT: db \"%f\", 0";
@@ -24,7 +25,11 @@ class PrintCodeGenerator {
     this.emitter = emitter;
   }
 
-  void generate(SysCall op) {
+  @Override
+  public void visit(SysCall op) {
+    RegisterState registerState =
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
+
     Operand arg = op.arg();
     ResolvedOperand argRo = resolver.resolveFully(arg);
     String argName = argRo.name();
@@ -88,10 +93,11 @@ class PrintCodeGenerator {
         emitter.emit("movq RDX, %s", tempReg);
         resolver.deallocate(tempReg);
       } else if (resolver.isInAnyRegister(arg)) {
-        // argval is an xmm register
+        // arg is an xmm register
         emitter.emit("movq RDX, %s", argName);
       } else {
-        // arg is in memory.
+        // arg is in memory. NOTE: do not use resolver.mov because it will try to use movsd which is
+        // wrong for non-registers or something like that
         emitter.emit("mov RDX, %s", argName);
       }
       emitter.addData(PRINTF_DOUBLE_FMT);
@@ -100,6 +106,7 @@ class PrintCodeGenerator {
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
     }
-    emitter.emitExternCall("_flushall");
+    registerState.condPop();
+    resolver.deallocate(arg);
   }
 }

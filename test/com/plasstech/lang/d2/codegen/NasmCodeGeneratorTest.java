@@ -10,6 +10,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
@@ -232,6 +234,46 @@ public class NasmCodeGeneratorTest {
             "mov BYTE [RBP - 8], [RBX]", // this is illegal
             "and [RBP - 8], 0xff")
         .inOrder();
+  }
+
+  @Test
+  public void printDoubleConstant() {
+    Operand doubleReg = ConstantOperand.of(123.0);
+    Op op = new SysCall(Call.PRINT, doubleReg);
+    generateOne(op);
+    assertThat(emitter)
+        .containsAtLeast(
+            "movsd XMM4, [DOUBLE_123_0_0]",
+            "movq RDX, XMM4",
+            "mov RCX, PRINTF_DOUBLE_FMT",
+            "call printf");
+  }
+
+  @Test
+  public void printDoubleGlobal() {
+    Operand doubleReg = new MemoryAddress("double", VarType.DOUBLE);
+    Op op = new SysCall(Call.PRINT, doubleReg);
+    generateOne(op);
+    assertThat(emitter)
+        .containsAtLeast("mov RDX, [_double]", "mov RCX, PRINTF_DOUBLE_FMT", "call printf");
+  }
+
+  @Test
+  public void printDoubleStack() {
+    Operand doubleReg = new StackLocation("_double", VarType.DOUBLE, 4);
+    Op op = new SysCall(Call.PRINT, doubleReg);
+    generateOne(op);
+    assertThat(emitter)
+        .containsAtLeast("mov RDX, [RBP - 4]", "mov RCX, PRINTF_DOUBLE_FMT", "call printf");
+  }
+
+  @Test
+  public void printDoubleRegister() {
+    Operand doubleReg = new RegisterLocation("__double", XmmRegister.XMM3, VarType.DOUBLE);
+    Op op = new SysCall(Call.PRINT, doubleReg);
+    generateOne(op);
+    assertThat(emitter)
+        .containsAtLeast("movq RDX, XMM3", "mov RCX, PRINTF_DOUBLE_FMT", "call printf");
   }
 
   private State generateOne(Op shiftOp) {
