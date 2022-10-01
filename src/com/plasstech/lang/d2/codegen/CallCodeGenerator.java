@@ -8,12 +8,12 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generates nasm code for calling a procedure. Figures out how to best map actuals to formals. */
-class CallGenerator {
+class CallCodeGenerator {
 
   private final Emitter emitter;
   private final Resolver resolver;
 
-  public CallGenerator(Resolver resolver, Emitter emitter) {
+  public CallCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }

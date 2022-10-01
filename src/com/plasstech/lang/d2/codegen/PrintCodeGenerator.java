@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generates NASM code for printing things. */
-class PrintGenerator {
+class PrintCodeGenerator {
   private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
   private static final String PRINTF_INT_FMT = "PRINTF_INT_FMT: db \"%d\", 0";
   private static final String PRINTF_DOUBLE_FMT = "PRINTF_DOUBLE_FMT: db \"%f\", 0";
@@ -19,7 +19,7 @@ class PrintGenerator {
   private final Resolver resolver;
   private final Emitter emitter;
 
-  PrintGenerator(Resolver resolver, Emitter emitter) {
+  PrintCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }

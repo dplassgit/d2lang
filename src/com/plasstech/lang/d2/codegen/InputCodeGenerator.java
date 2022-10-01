@@ -7,13 +7,13 @@ import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.google.common.collect.ImmutableList;
 
-class InputGenerator {
+class InputCodeGenerator {
   private static final int ONE_MB = 1024 * 1024;
   private final Resolver resolver;
   private final Registers registers;
   private final Emitter emitter;
 
-  InputGenerator(Resolver resolver, Registers registers, Emitter emitter) {
+  InputCodeGenerator(Resolver resolver, Registers registers, Emitter emitter) {
     this.resolver = resolver;
     this.registers = registers;
     this.emitter = emitter;

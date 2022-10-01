@@ -240,8 +240,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitStringBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
-    } else if (left != null && left.getClass().isArray() && right instanceof Integer) {
-      result = visitArrayBinOp(op, (Object[]) left, (Integer) right);
+    } else if (left != null && left.getClass().isArray()) {
+      result = visitArrayBinOp(op, (Object[]) left, right);
     } else if (left instanceof ArrayList && right instanceof Integer) {
       result = visitLiteralArrayBinOp(op, left, (Integer) right);
     } else if (leftOperand.type().isRecord()
@@ -308,11 +308,29 @@ public class Interpreter extends DefaultOpcodeVisitor {
     throw new IllegalStateException("Unknown array/int binop " + op.operator());
   }
 
-  private Object visitArrayBinOp(BinOp op, Object[] left, int right) {
-    if (op.operator() == TokenType.LBRACKET) {
-      return left[right];
+  private Object visitArrayBinOp(BinOp op, Object[] left, Object right) {
+    List<Object> leftList = Arrays.asList(left);
+    switch (op.operator()) {
+      case EQEQ:
+      case NEQ:
+        List<Object> rightList = Arrays.asList((Object[]) right);
+        boolean same = leftList.equals(rightList);
+        return same == (op.operator() == TokenType.EQEQ);
+
+      case LBRACKET:
+        int index = (Integer) right;
+        return left[index];
+
+      default:
+        throw new IllegalStateException(
+            String.format(
+                "Not sure what to do with %s; left %s (%s) right %s (%s)",
+                op,
+                leftList,
+                left.getClass().getSimpleName(),
+                right,
+                right.getClass().getSimpleName()));
     }
-    throw new IllegalStateException("Unknown array/int binop " + op.operator());
   }
 
   private Object visitBinOp(BinOp op, String left, Integer right) {

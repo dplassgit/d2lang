@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
-class DoubleGenerator {
+class DoubleCodeGenerator {
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.PLUS, "addsd")
@@ -27,7 +27,7 @@ class DoubleGenerator {
   private final Resolver resolver;
   private final Emitter emitter;
 
-  public DoubleGenerator(Resolver resolver, Emitter emitter) {
+  public DoubleCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
   }

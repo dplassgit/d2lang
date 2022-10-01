@@ -203,11 +203,11 @@ class Resolver implements RegistersInterface {
 
   @Override
   public Register allocate(VarType varType) {
-    Register allocated = registers.allocate(varType);
+    Register r = registers.allocate(varType);
     if (inProc) {
-      usedRegisters.add(allocated);
+      usedRegisters.add(r);
     }
-    return allocated;
+    return r;
   }
 
   /** Deallocate the given register. */

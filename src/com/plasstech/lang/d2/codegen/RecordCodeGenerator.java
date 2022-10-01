@@ -16,7 +16,7 @@ import com.plasstech.lang.d2.type.RecordSymbol.Field;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
-class RecordGenerator extends DefaultOpcodeVisitor {
+class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.of(TokenType.EQEQ, "setz", TokenType.NEQ, "setnz");
@@ -27,7 +27,7 @@ class RecordGenerator extends DefaultOpcodeVisitor {
 
   private final NullPointerCheckGenerator npeCheckGenerator;
 
-  RecordGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
+  RecordCodeGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
     this.resolver = resolver;
     this.symTab = symTab;
     this.emitter = emitter;

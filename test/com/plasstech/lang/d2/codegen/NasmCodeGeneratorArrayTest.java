@@ -13,6 +13,10 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   // TODO: test print
 
+  private static final String DASSERTS =
+      "      assertTrue:proc(b:bool) {if not b {exit 'sorry'} else {println 'true, as expected'}} "
+          + "assertFalse:proc(b:bool) {if b {exit 'sorry'}  else {println 'false, as expected'}} ";
+
   @Test
   public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool", "double"}) String type)
       throws Exception {
@@ -336,5 +340,121 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             + "    last_min = min "
             + "  }",
         "dumbsort");
+  }
+
+  @Test
+  public void compareSelf() throws Exception {
+    // the optimizer will optimize out a1==a1 and a1 != a1
+    assumeFalse(optimize);
+    execute(
+        DASSERTS //
+            + "a1=[1,2,3] "
+            + "assertTrue(a1 == a1) "
+            + "assertFalse(a1 != a1)",
+        "compare");
+  }
+
+  @Test
+  public void compareEqual() throws Exception {
+    execute(
+        DASSERTS
+            + "a1=[1,2,3] "
+            + "a2=[1,2,3] "
+            + "assertTrue(a1 == a2) "
+            + "assertFalse(a1 != a2) ",
+        "compare");
+  }
+
+  @Test
+  public void compareSameSizes() throws Exception {
+    execute(
+        DASSERTS
+            + "a1=[1,2,3] "
+            + "a2=[1,2,4] "
+            + "assertFalse(a1 == a2) "
+            + "assertTrue(a1 != a2) ",
+        "compare");
+  }
+
+  @Test
+  public void compareDifferentSizes() throws Exception {
+    execute(
+        DASSERTS
+            + "a1=[1,2,3] " //
+            + "a2=[1,2] "
+            + "assertFalse(a1 == a2) "
+            + "assertTrue(a1 != a2) ",
+        "compare");
+  }
+
+  @Test
+  public void compareDifferentSizesLocals() throws Exception {
+    execute(
+        DASSERTS
+            + "test:proc {"
+            + "  a1=[1,2,3] " //
+            + "  a2=[1,2] "
+            + "  assertFalse(a1 == a2) "
+            + "  assertTrue(a1 != a2)"
+            + "}"
+            + "test() ",
+        "compare");
+  }
+
+  @Test
+  public void compareDifferentSizesParams() throws Exception {
+    execute(
+        DASSERTS
+            + "test:proc(r1:int, r2:int, r3:int) {"
+            + "  a1=[1, 2, 3] " //
+            + "  a2=[1, 2, 3] "
+            + "  a1[0] = r1"
+            + "  assertFalse(a1 == a2) "
+            + "  assertTrue(a1 != a2)"
+            + "}"
+            + "test(2, 3, 4) ",
+        "compare");
+  }
+
+  @Test
+  public void compareParamsSame() throws Exception {
+    execute(
+        DASSERTS
+            + "test:proc(a1:int[], a2:int[]) {"
+            + "  assertTrue(a1 == a2) "
+            + "  assertFalse(a1 != a2)"
+            + "}"
+            + "a1=[1, 2, 3] " //
+            + "a2=[1, 2, 3] "
+            + "test(a1, a2) ",
+        "compare");
+  }
+
+  @Test
+  public void compareParamsNotSame() throws Exception {
+    execute(
+        DASSERTS
+            + "test:proc(a1:int[], a2:int[]) {"
+            + "  assertFalse(a1 == a2) "
+            + "  assertTrue(a1 != a2)"
+            + "}"
+            + "a1=[1, 2, 3] "
+            + "a2=[1, 4] "
+            + "test(a1, a2) ",
+        "compare");
+  }
+
+  @Test
+  public void compareParamsSameR8Conflict() throws Exception {
+    execute(
+        DASSERTS
+            + "test:proc(r1:int, a1:int[], a2:int[]) {"
+            + "  assertTrue(a1 == a2) "
+            + "  assertFalse(a1 != a2)"
+            + "}"
+            + "a1=[1, 2, 3] " //
+            + "a2=[1, 2, 3] "
+            + "test(1, a1, a2) ",
+        "compare");
   }
 }

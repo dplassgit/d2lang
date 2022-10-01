@@ -38,7 +38,6 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
@@ -87,28 +86,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private DoubleTable doubleTable;
   private Resolver resolver;
 
-  private CallGenerator callGenerator;
-  private RecordGenerator recordGenerator;
+  private CallCodeGenerator callGenerator;
+  private RecordCodeGenerator recordGenerator;
   private StringCodeGenerator stringGenerator;
   private NullPointerCheckGenerator npeCheckGenerator;
   private ArrayCodeGenerator arrayGenerator;
-  private InputGenerator inputGenerator;
-  private PrintGenerator printGenerator;
-  private DoubleGenerator doubleGenerator;
+  private InputCodeGenerator inputGenerator;
+  private PrintCodeGenerator printGenerator;
+  private DoubleCodeGenerator doubleGenerator;
 
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
     resolver = new Resolver(registers, stringTable, doubleTable, emitter);
-    callGenerator = new CallGenerator(resolver, emitter);
-    recordGenerator = new RecordGenerator(resolver, input.symbolTable(), emitter);
+    callGenerator = new CallCodeGenerator(resolver, emitter);
+    recordGenerator = new RecordCodeGenerator(resolver, input.symbolTable(), emitter);
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
     stringGenerator = new StringCodeGenerator(resolver, emitter);
     arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
-    inputGenerator = new InputGenerator(resolver, registers, emitter);
-    printGenerator = new PrintGenerator(resolver, emitter);
-    doubleGenerator = new DoubleGenerator(resolver, emitter);
+    inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
+    printGenerator = new PrintCodeGenerator(resolver, emitter);
+    doubleGenerator = new DoubleCodeGenerator(resolver, emitter);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -196,7 +195,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArraySet op) {
-    arrayGenerator.generateArraySet(op);
+    arrayGenerator.visit(op);
   }
 
   @Override
@@ -220,7 +219,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ArrayAlloc op) {
-    arrayGenerator.generate(op);
+    arrayGenerator.visit(op);
   }
 
   @Override
@@ -480,24 +479,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
       }
     } else if (leftType.isArray()) {
-      switch (operator) {
-        case LBRACKET:
-          ArrayType arrayType = (ArrayType) leftType;
-          Register fullIndex =
-              arrayGenerator.generateArrayIndex(
-                  op.right(), arrayType, leftName, false, op.position());
-          if (arrayType.baseType() == VarType.DOUBLE) {
-            emit("movq %s, [%s]", destName, fullIndex);
-          } else {
-            emit("mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
-          }
-          resolver.deallocate(fullIndex);
-          break;
-
-        default:
-          fail("Cannot do %s on %ss (yet?)", operator, leftType);
-          break;
-      }
+      arrayGenerator.visit(op);
     } else if (leftType.isRecord()) {
       recordGenerator.visit(op);
     } else if (leftType == VarType.DOUBLE) {

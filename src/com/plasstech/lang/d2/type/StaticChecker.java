@@ -160,6 +160,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private static final Set<TokenType> ARRAY_OPERATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
 
+  private static final Set<TokenType> ARRAY_COMPARATORS=
+          ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
+  
   private Node root;
   private final SymTab symbolTable = new SymTab();
 
@@ -611,9 +614,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               left.position()));
     }
 
-    // TODO: add arrays
     if ((COMPARABLE_VARTYPES.contains(leftType) && COMPARISION_OPERATORS.contains(operator))
-        // || leftType.isArray && ARRAY_COMPARATORS.contains(operator)
+        || (leftType.isArray() && ARRAY_OPERATORS.contains(operator))
         || ((leftType.isRecord() || leftType.isNull()) && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
     } else {
