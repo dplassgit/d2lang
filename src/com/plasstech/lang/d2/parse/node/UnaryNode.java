@@ -35,7 +35,7 @@ public class UnaryNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return String.format("UnaryNode: %s %s", operator.name(), expr.toString());
+    return String.format("%s %s", operator.name(), expr);
   }
 
   @Override

@@ -36,9 +36,11 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void negativeIndexCompileTime() throws Exception {
-    assertGenerateError("s='hello' print s[-2]", "STRING index must be non-negative; was -2");
     assertGenerateError(
-        "f:proc() {s='hello' print s[-3]} f()", "STRING index must be non-negative; was -3");
+        "s='hello' print s[-2]", "Index of ARRAY variable 's' must be non-negative; was -2");
+    assertGenerateError(
+        "f:proc() {s='hello' print s[-3]} f()",
+        "Index of ARRAY variable 's' must be non-negative; was -3");
   }
 
   @Test

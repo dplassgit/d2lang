@@ -218,8 +218,8 @@ public class StaticCheckerTest {
 
   @Test
   public void assignDoubleError() {
-    assertError("a=3.0 b=3 b=a", "declared as INT but expression is DOUBLE");
-    assertError("a=3 b=3.0 b=a", "declared as DOUBLE but expression is INT");
+    assertError("a=3.0 b=3 b=a", "declared type INT to DOUBLE");
+    assertError("a=3 b=3.0 b=a", "declared type DOUBLE to INT");
   }
 
   @Test
@@ -342,13 +342,13 @@ public class StaticCheckerTest {
 
   @Test
   public void assignMismatch() {
-    assertError("a=true b=3 b=a", "declared as INT");
-    assertError("a=3 b=true b=a", "declared as BOOL");
+    assertError("a=true b=3 b=a", "declared type INT to BOOL");
+    assertError("a=3 b=true b=a", "declared type BOOL to INT");
   }
 
   @Test
   public void assignAfterDeclMismatch() {
-    assertError("a:int b=true a=b", "declared as INT");
+    assertError("a:int b=true a=b", "declared type INT to BOOL");
     assertError("a:bool b=a b=3", "used before assignment");
     assertError("a=3 a:bool", "already declared as INT");
   }
@@ -364,19 +364,19 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayDeclMismatch() {
-    assertError("a:int[b]", "Indeterminable type for ARRAY size; must be INT");
-    assertError("a:int[false]", "ARRAY size must be INT; was BOOL");
-    assertError("a:int['hi']", "ARRAY size must be INT; was STRING");
-    assertError("a:string['hi']", "ARRAY size must be INT; was STRING");
-    assertError("b:proc():string {return ''} a:string[b()]", "ARRAY size must be INT; was STRING");
+    assertError("a:int[b]", "Indeterminable size for ARRAY variable 'a'; must be INT");
+    assertError("a:int[false]", "must be INT; was BOOL");
+    assertError("a:int['hi']", "must be INT; was STRING");
+    assertError("a:string['hi']", "must be INT; was STRING");
+    assertError("b:proc():string {return ''} a:string[b()]", "must be INT; was STRING");
     // this fails in an unexpected way but at least it fails.
     assertError("b:proc() {} a:string[b]", "Variable 'b' used before assignment");
   }
 
   @Test
   public void binOpMismatch(@TestParameter({"==", "!="}) String op) {
-    assertError(String.format("a=true %s 3", op), "Type mismatch");
-    assertError(String.format("a='hi' %s 3", op), "Type mismatch");
+    assertError(String.format("a=true %s 3", op), "Incompatible types for operator");
+    assertError(String.format("a='hi' %s 3", op), "Incompatible types for operator");
   }
 
   @Test
@@ -398,7 +398,7 @@ public class StaticCheckerTest {
   @Test
   public void badStringSingleCharMismatch(@TestParameter({"-", "|", "&"}) String c) {
     assertError(String.format("a='hi' %s 3", c), "Cannot apply");
-    assertError("a='hi' + 3", "Type mismatch");
+    assertError("a='hi' + 3", "Incompatible types.*STRING.*INT");
   }
 
   @Test
@@ -439,9 +439,10 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayIndexMismatch() {
-    assertError("arr=[1,2,3] b='hi' a=arr['bye']", "ARRAY index must be INT");
-    assertError("arr=[1,2,3] b='hi' a=arr[false]", "ARRAY index must be INT");
-    assertError("arr=[1,2,3] b='hi' a=arr[b]", "ARRAY index must be INT");
+    assertError(
+        "arr=[1,2,3] a=arr['bye']", "Index of ARRAY variable 'arr' must be INT; was STRING");
+    assertError("arr=[1,2,3] a=arr[false]", "must be INT; was BOOL");
+    assertError("arr=[1,2,3] b='hi' a=arr[b]", "must be INT; was STRING");
   }
 
   @Test
@@ -467,7 +468,7 @@ public class StaticCheckerTest {
     assertError("a=[1,true]", "Inconsistent type");
     assertError("b=3 a=[true,b]", "Inconsistent type");
     assertError("a=[true,b]", "Indeterminable type");
-    assertError("a:int[2] a[0]=[1,2]", "declared as INT but.*ARRAY of INT");
+    assertError("a:int[2] a[0]=[1,2]", "declared as ARRAY of INT but.*ARRAY of INT");
   }
 
   @Test
@@ -506,10 +507,10 @@ public class StaticCheckerTest {
 
   @Test
   public void arraySetTypeError() {
-    assertError("a:int[1] a[0]='hi'", "declared as INT");
-    assertError("a:bool[1] a[0]=3", "declared as BOOL");
-    assertError("a:string[1] a[0]=true", "declared as STRING");
-    assertError("a[0]=true", "unknown ARRAY variable");
+    assertError("a:int[1] a[0]='hi'", "declared as ARRAY of INT but.*STRING");
+    assertError("a:bool[1] a[0]=3", "declared as ARRAY of BOOL but.*INT");
+    assertError("a:string[1] a[0]=true", "declared as ARRAY of STRING but.*BOOL");
+    assertError("a[0]=true", "Unknown variable 'a' used as ARRAY");
     assertError("a=3 a[0]=1", "must be of type ARRAY; was INT");
   }
 
@@ -524,18 +525,18 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayGetIndexError() {
-    assertError("a:int[1] print a['hi']", "ARRAY index must be INT; was STRING");
-    assertError("a:int[1] print a[true]", "ARRAY index must be INT; was BOOL");
-    assertError("a:int[1] print a[-1]", "ARRAY index must be non-negative; was -1");
+    assertError("a:int[1] print a['hi']", "must be INT; was STRING");
+    assertError("a:int[1] print a[true]", "must be INT; was BOOL");
+    assertError("a:int[1] print a[-1]", "must be non-negative; was -1");
   }
 
   @Test
   public void stringIndex_error() {
-    assertError("b='hi' a=b['bye']", "STRING index must be INT");
-    assertError("b='hi' a=b[false]", "STRING index must be INT");
-    assertError("b='hi' a='hi'[b]", "STRING index must be INT");
-    assertError("b='hi' a='hi'[-1]", "STRING index must be non-negative; was -1");
-    assertError("b=3 a=b[3]", "Cannot apply \\[ operator to INT operand");
+    assertError("b='hi' a=b['bye']", "must be INT; was STRING");
+    assertError("b='hi' a=b[false]", "must be INT; was BOOL");
+    assertError("b='hi' a='hi'[b]", "must be INT; was STRING");
+    assertError("b='hi' a='hi'[-1]", "must be non-negative; was -1");
+    assertError("b=3 a=b[3]", "Cannot apply \\[ operator to left operand of type INT");
   }
 
   @Test
@@ -622,9 +623,9 @@ public class StaticCheckerTest {
     // This may or may not be an error later
     assertError("a:bool main {a:int}", "already declared as BOOL");
     assertError("a:int b=a", "'a' used before assign");
-    assertError("a:int a=true", "declared as INT");
-    assertError("a:string a=true", "declared as STRING");
-    assertError("a:int a=''", "declared as INT");
+    assertError("a:int a=true", "declared type INT to BOOL");
+    assertError("a:string a=true", "declared type STRING to BOOL");
+    assertError("a:int a=''", "declared type INT to STRING");
   }
 
   @Test
@@ -695,13 +696,13 @@ public class StaticCheckerTest {
   public void procParams_errors() {
     assertError("fib:proc(n1):int {return n1}", "Indeterminable type for RETURN statement");
     assertError("fib:proc(a, b, a) {}", "Duplicate parameter");
-    assertError("fib:proc() {a=3 a=true}", "declared as INT");
-    assertError("a=true fib:proc() {a=3}", "declared as BOOL");
-    assertError("fib:proc(n1) {}", "determine type of formal parameter");
+    assertError("fib:proc() {a=3 a=true}", "declared type INT to BOOL");
+    assertError("a=true fib:proc() {a=3}", "declared type BOOL to INT");
+    assertError("fib:proc(n1) {}", "determine type of parameter");
     assertError("fib:proc(n:int) {} fib(true)", "found BOOL, expected INT");
     assertError("fib:proc(a:int[]) {a[0]=3} fib(1)", "expected 1-d ARRAY of INT");
     assertError("fib:proc(a:int) {a=3} fib([1])", "found 1-d ARRAY of INT");
-    assertError("fib:proc(n1:rec){} ", "unknown RECORD 'rec'");
+    assertError("fib:proc(n1:rec){} ", "unknown RECORD type rec");
   }
 
   @Test
@@ -716,8 +717,8 @@ public class StaticCheckerTest {
 
   @Test
   public void externProcParams_errors() {
-    assertError("fib:extern proc(n1) ", "determine type of formal parameter");
-    assertError("fib:extern proc(n1:rec) ", "unknown RECORD 'rec'");
+    assertError("fib:extern proc(n1) ", "determine type of parameter");
+    assertError("fib:extern proc(n1:rec) ", "unknown RECORD type rec");
     assertError("fib:extern proc(a, b, a)", "Duplicate parameter");
     assertError("fib:extern proc(n:int) fib(true)", "found BOOL, expected INT");
     assertError("fib:extern proc(a:int[]) fib(1)", "expected 1-d ARRAY of INT");
@@ -726,17 +727,19 @@ public class StaticCheckerTest {
 
   @Test
   public void return_mismatch() {
-    assertError("fib:proc():bool {return 3}", "declared to return BOOL but returned INT");
-    assertError("fib:proc(a):int {a='hi' return a}", "declared to return INT but returned STRING");
-    assertError("fib:proc(a:int) {a=3 return a}", "declared to return VOID but returned INT");
+    assertError(
+        "fib:proc():bool {return 3}",
+        "declared to return BOOL but RETURN statement was of type INT");
+    assertError("fib:proc(a):int {a='hi' return a}", "INT.*STRING");
+    assertError("fib:proc(a:int) {a=3 return a}", "VOID.*INT");
 
-    assertError("fib:proc() {return 3}", "declared to return VOID but returned INT");
-    assertError("fib:proc():int {return}", "declared to return INT but returned VOID");
+    assertError("fib:proc() {return 3}", "VOID.*INT");
+    assertError("fib:proc():int {return}", "INT.*VOID");
   }
 
   @Test
   public void return_required() {
-    assertError("fib:proc():int {}", "No RETURN statement");
+    assertError("fib:proc():int {}", "Not all codepaths");
     assertError(
         "fib:proc():bool {" + "if false {" + " return false" + "}" + "}", "Not all codepaths");
     assertError(
@@ -780,21 +783,22 @@ public class StaticCheckerTest {
 
   @Test
   public void callErrors() {
-    assertError("foo(3)", "PROC 'foo' is unknown");
-    assertError("a:int a(3)", "PROC 'a' is unknown");
-    assertError("fib:proc(){inner:proc(){}} inner(3)", "PROC 'inner' is unknown");
+    assertError("foo(3)", "PROC 'foo' is undefined");
+    assertError("a:int a(3)", "PROC 'a' is undefined");
+    assertError("fib:proc(){inner:proc(){}} inner(3)", "PROC 'inner' is undefined");
     // wrong number of params
     assertError(
-        "fib:proc(){} fib(3)", "Wrong number of arguments to PROC 'fib': found 1, expected 0");
+        "fib:proc(){} fib(3)",
+        "Wrong number of arguments in call to PROC 'fib': found 1, expected 0");
     assertError(
         "fib:proc(n:int){} fib(3, 4)",
-        "Wrong number of arguments to PROC 'fib': found 2, expected 1");
+        "Wrong number of arguments in call to PROC 'fib': found 2, expected 1");
     // indeterminable arg type
     assertError("fib:proc(n) {fib(n)}", "Indeterminable type for parameter 'n' of PROC 'fib'");
     // wrong arg type
     assertError(
         "fib:proc(n:int) {} fib(false)",
-        "Type mismatch for parameter 'n' to PROC 'fib': found BOOL, expected INT");
+        "Incorrect type of parameter 'n' to PROC 'fib': found BOOL, expected INT");
     // can't assign to void
     assertError("fib:proc(n:int) {} x=fib(3)", "Cannot assign value of VOID expression");
   }
@@ -829,8 +833,8 @@ public class StaticCheckerTest {
 
   @Test
   public void input_errors() {
-    assertError("f:int f=input", "declared as INT");
-    assertError("f=5 f=input", "declared as INT");
+    assertError("f:int f=input", "declared type INT to STRING");
+    assertError("f=5 f=input", "declared type INT to STRING");
   }
 
   @Test
@@ -872,7 +876,7 @@ public class StaticCheckerTest {
     assertError(
         "r: record{i:int f:int f:bool i:int b:bool}",
         "Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
-    assertError("r: record{f:dne}", "Unknown RECORD type 'dne'");
+    assertError("r: record{f:dne}", "unknown RECORD type dne");
     assertError(
         "s=3 r:record{a:string[s]} anr=new r print anr.a",
         "ARRAYs in RECORDs must have constant size");
@@ -880,7 +884,7 @@ public class StaticCheckerTest {
         "r:record{a:string[1+1]} anr=new r print anr.a",
         "ARRAYs in RECORDs must have constant size");
     assertError(
-        "r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]", "INT but expression is STRING");
+        "r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]", "declared type INT to STRING");
   }
 
   @Test
@@ -906,12 +910,13 @@ public class StaticCheckerTest {
 
   @Test
   public void variableDecl_errorRecordType() {
-    assertError("instance: r1", "Cannot declare 'instance' as unknown RECORD 'r1'");
+    assertError("instance: r1", "Cannot declare variable 'instance' as unknown RECORD type r1");
   }
 
   @Test
   public void variableDecl_recordLikeTypeButNotQuiteRecordType() {
-    assertError("p:proc(){} instance: p", "Cannot declare 'instance' as unknown RECORD 'p'");
+    assertError(
+        "p:proc(){} instance: p", "Cannot declare variable 'instance' as unknown RECORD type p");
   }
 
   @Test
@@ -925,7 +930,8 @@ public class StaticCheckerTest {
 
   @Test
   public void paramDecl_errorRecordType() {
-    assertError("p:proc(instance:r1){}", "Cannot declare 'instance' as unknown RECORD 'r1'");
+    assertError(
+        "p:proc(instance:r1){}", "Cannot declare variable 'instance' as unknown RECORD type r1");
   }
 
   @Test
@@ -938,7 +944,10 @@ public class StaticCheckerTest {
 
   @Test
   public void returnType_errorRecordType() {
-    assertError("p:proc:r1 {return null}", "Cannot declare 'return type' as unknown RECORD 'r1'");
+    assertError(
+        "p:proc:r1 {return null}",
+        // WHAT IN THE LIVING HECK? "variable 'return type'"?
+        "Cannot declare variable 'return type' as unknown RECORD type r1");
   }
 
   @Test
@@ -987,10 +996,14 @@ public class StaticCheckerTest {
 
   @Test
   public void nullErrors() {
-    assertError("s='' if null > s { print 'not null'}", "Cannot apply > operator to NULL operand");
-    assertError("if null < null { print 'not null'}", "Cannot apply < operator to NULL operand");
+    assertError(
+        "s='' if null > s { print 'not null'}",
+        "Cannot apply > operator to left operand of type NULL");
+    assertError(
+        "if null < null { print 'not null'}",
+        "Cannot apply < operator to left operand of type NULL");
     assertError("if not null {print 'not null'}", "Cannot apply NOT operator to NULL expression");
-    assertError("if null == 3 {print 'not 3'}", "Type mismatch.*null.*INT");
+    assertError("if null == 3 {print 'not 3'}", "Incompatible types for.*NULL.*INT");
   }
 
   @Test
@@ -1007,23 +1020,24 @@ public class StaticCheckerTest {
 
   @Test
   public void assignRecordType_mismatch() {
-    assertError("r1:record{} var1:r1 var1=null var2:int var2=var1", "is r1: RECORD");
-    assertError("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1", "is r1: RECORD");
+    assertError("r1:record{} var1:r1 var1=null var2:int var2=var1", "to r1: RECORD");
+    assertError("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1", "to r1: RECORD");
     assertError(
-        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "is r2: RECORD");
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "to r2: RECORD");
     assertError(
-        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "is r2: RECORD");
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2", "to r2: RECORD");
     assertError(
-        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var2=var1", "is r1: RECORD");
+        "r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var2=var1", "to r1: RECORD");
   }
 
   @Test
   public void assignRecordType_procReturnMismatch() {
     assertError(
-        "r1:record{i:int} r2:record{} p:proc():r1{return new r2}", "but returned r2: RECORD");
+        "r1:record{i:int} r2:record{} p:proc():r1{return new r2}",
+        "but RETURN statement was of type r2: RECORD");
     assertError(
         "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()",
-        "is r2: RECORD");
+        "type r1: RECORD to r2: RECORD");
   }
 
   @Test
@@ -1062,20 +1076,20 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_unknown() {
-    assertError("var1=new r2", "unknown RECORD 'r2");
-    assertError("r1:record{s:string} var1=new r2", "unknown RECORD 'r2");
+    assertError("var1=new r2", "unknown RECORD type r2");
+    assertError("r1:record{s:string} var1=new r2", "unknown RECORD type r2");
   }
 
   @Test
   public void newRecord_mismatch() {
     assertError(
         "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1",
-        "is r1: RECORD");
+        "to r1: RECORD");
     assertError(
         "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2",
-        "is r2: RECORD");
-    assertError("r1:record{s:string} var1=new r1 var2=1 var1=var2", "is INT");
-    assertError("r1:record{s:string} var1=new r1 var2=1 var2=var1", "is r1: RECORD");
+        "to r2: RECORD");
+    assertError("r1:record{s:string} var1=new r1 var2=1 var1=var2", "to INT");
+    assertError("r1:record{s:string} var1=new r1 var2=1 var2=var1", "to r1: RECORD");
   }
 
   @Test
@@ -1114,15 +1128,17 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_mismatch() {
-    assertError("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i", "is INT");
-    assertError("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i", "is INT");
-    assertError("ss='string' ss2=ss.i", "Cannot apply . operator to STRING");
+    assertError("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i", "STRING to INT");
+    assertError("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i", "STRING to INT");
+    assertError("ss='string' ss2=ss.i", "Cannot apply . operator to left operand of type STRING");
   }
 
   @Test
   public void record_badOp() {
-    assertError("r1:record{s:string i:int} var1=new r1 var2=var1+1", "Type mismatch");
-    assertError("r1:record{s:string i:int} var1=new r1 var2=1+var1", "Type mismatch");
+    assertError(
+        "r1:record{s:string i:int} var1=new r1 var2=var1+1", "Incompatible types for operator +");
+    assertError(
+        "r1:record{s:string i:int} var1=new r1 var2=1+var1", "Incompatible types for operator +");
   }
 
   @Test
@@ -1157,13 +1173,13 @@ public class StaticCheckerTest {
             + "ar:r[2] "
             + "ai:int[2] "
             + "ar=ai",
-        "ARRAY of r but expression is");
+        "ARRAY of r to 1-d ARRAY of INT");
     assertError(
         "      r:record{a:string} " //
             + "ar:r[2] "
             + "ai:int[2] "
             + "ai=ar",
-        "ARRAY of INT but expression is");
+        "ARRAY of INT to 1-d ARRAY of r");
   }
 
   @Test
@@ -1180,11 +1196,18 @@ public class StaticCheckerTest {
 
   @Test
   public void invalidFieldName() {
-    assertError("r1:record{field:string} foo=new r1 bam = foo.3", "Invalid field");
-    assertError("r1:record{field:string} foo=new r1 bam = foo.'hi'", "Invalid field");
-    assertError("r1:record{field:string} foo=new r1 bam = foo.'field'", "Invalid field");
-    assertError("r1:record{field:string} foo=new r1 bam = foo.true", "Invalid field");
-    assertError("r1:record{field:string} foo=new r1 f='field' bam = foo.f", "Unknown field");
+    assertError(
+        "r1:record{field:string} foo=new r1 bam = foo.3",
+        "Cannot use expression 3 to get field of RECORD type r1");
+    assertError(
+        "r1:record{field:string} foo=new r1 bam = foo.'hi'",
+        "Cannot use expression 'hi' to get field of RECORD type r1");
+    assertError(
+        "r1:record{field:string} foo=new r1 bam = foo.'field'",
+        "Cannot use expression 'field' to get field of RECORD type r1");
+    assertError(
+        "r1:record{field:string} foo=new r1 bam = foo.true", "true to get field of RECORD type r1");
+    assertError("r1:record{field:string} foo=new r1 f='field' bam = foo.f", "unknown field f");
   }
 
   private void assertError(String program, String messageShouldContain) {

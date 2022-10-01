@@ -28,7 +28,7 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   @Override
   public String toString() {
-    return String.format("CallNode: %s(%s)", procName, actuals);
+    return String.format("%s(%s)", procName, actuals);
   }
 
   @Override

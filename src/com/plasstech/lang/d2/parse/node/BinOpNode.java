@@ -72,8 +72,7 @@ public class BinOpNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return String.format(
-        "BinOpNode: {%s} %s {%s}", left.toString(), operator.name(), right.toString());
+    return String.format("%s %s %s", left.toString(), operator, right.toString());
   }
 
   @Override

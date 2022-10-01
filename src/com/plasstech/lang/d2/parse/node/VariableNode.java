@@ -17,7 +17,7 @@ public class VariableNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return String.format("VarNode: %s (%s)", name, varType());
+    return name;
   }
 
   @Override

@@ -18,6 +18,6 @@ public class InputNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return "InputNode";
+    return "INPUT";
   }
 }

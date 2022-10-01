@@ -34,6 +34,6 @@ public class ArrayLiteralNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return String.format("ArrayLiteralNode: [%s]", Joiner.on(", ").join(elements));
+    return String.format("[%s]", Joiner.on(", ").join(elements));
   }
 }

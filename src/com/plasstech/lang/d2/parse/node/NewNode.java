@@ -25,6 +25,6 @@ public class NewNode extends AbstractNode implements ExprNode {
 
   @Override
   public String toString() {
-    return String.format("NewNode: %s", recordName);
+    return String.format("NEW %s", recordName);
   }
 }
