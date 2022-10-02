@@ -35,6 +35,7 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
 
     RegisterState state =
         RegisterState.condPush(emitter, registers, ImmutableList.of(RCX, RDX, R8, R9));
+    emitter.emitExternCall("_flushall");
 
     // 1. calloc 1mb
     emitter.emit("mov RDX, %d; allocate 1mb", ONE_MB);

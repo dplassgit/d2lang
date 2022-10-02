@@ -108,5 +108,6 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     }
     registerState.condPop();
     resolver.deallocate(arg);
+    emitter.emitExternCall("_flushall");
   }
 }
