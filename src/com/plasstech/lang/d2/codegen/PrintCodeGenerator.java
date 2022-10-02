@@ -106,8 +106,8 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
     }
+    emitter.emitExternCall("_flushall");
     registerState.condPop();
     resolver.deallocate(arg);
-    emitter.emitExternCall("_flushall");
   }
 }
