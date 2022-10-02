@@ -33,6 +33,6 @@ public class RecordDeclarationNode extends DeclarationNode {
 
   @Override
   public String toString() {
-    return String.format("RecordDeclNode: %s: record {%s}", name(), fields());
+    return String.format("%s: RECORD {%s}", name(), fields());
   }
 }

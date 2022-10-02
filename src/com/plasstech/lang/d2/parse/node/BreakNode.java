@@ -16,6 +16,6 @@ public class BreakNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return "BreakNode";
+    return "BREAK";
   }
 }

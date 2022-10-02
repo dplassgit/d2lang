@@ -16,6 +16,6 @@ public class ContinueNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return "ContinueNode";
+    return "CONTINUE";
   }
 }

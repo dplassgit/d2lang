@@ -27,7 +27,7 @@ public class ConstNode<T> extends AbstractNode implements ExprNode {
   public String toString() {
     if (varType() == VarType.STRING) {
       return String.format("'%s'", value);
-    } else  {
+    } else {
       return value.toString();
     }
   }

@@ -1,8 +1,9 @@
 package com.plasstech.lang.d2.parse.node;
 
+import java.util.List;
+
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.Position;
-import java.util.List;
 
 /** If/elif/else node. */
 public class IfNode extends AbstractNode implements StatementNode {
@@ -55,10 +56,10 @@ public class IfNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (elseBlock != null) {
-      return String.format("IfNode: (%s) else {%s}", cases(), elseBlock());
+      return String.format("IF {%s} ELSE {%s}", cases(), elseBlock());
     } else {
       // this isn't ideal, but shrug.
-      return String.format("IfNode: (%s)", cases());
+      return String.format("IF %s", cases());
     }
   }
 }

@@ -21,8 +21,7 @@ public class AssignmentNode extends AbstractNode implements StatementNode {
 
   @Override
   public String toString() {
-    return String.format(
-        "AssignmentNode: %s (%s) = %s", variable.toString(), variable.varType(), expr);
+    return String.format("%s = %s", variable, expr);
   }
 
   @Override

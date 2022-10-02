@@ -29,4 +29,9 @@ public class ArrayDeclarationNode extends DeclarationNode {
   public ArrayType arrayType() {
     return arrayType;
   }
+
+  @Override
+  public String toString() {
+    return String.format("%s: %s[%s]", name(), arrayType(), sizeExpr());
+  }
 }

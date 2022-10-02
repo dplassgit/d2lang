@@ -1,7 +1,8 @@
 package com.plasstech.lang.d2.parse.node;
 
-import com.plasstech.lang.d2.common.Position;
 import java.util.Optional;
+
+import com.plasstech.lang.d2.common.Position;
 
 /** A "while" loop node. */
 public class WhileNode extends AbstractNode implements StatementNode {
@@ -38,10 +39,9 @@ public class WhileNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (doStatement.isPresent()) {
-      return String.format(
-          "WhileNode: while (%s) do (%s) {%s}", condition, doStatement.get(), block);
+      return String.format("WHILE %s DO %s {%s}", condition, doStatement.get(), block);
     } else {
-      return String.format("WhileNode: while (%s) {%s}", condition, block);
+      return String.format("WHILE %s {%s}", condition, block);
     }
   }
 }

@@ -1,7 +1,8 @@
 package com.plasstech.lang.d2.parse.node;
 
-import com.plasstech.lang.d2.common.Position;
 import java.util.Optional;
+
+import com.plasstech.lang.d2.common.Position;
 
 public class ProgramNode extends AbstractNode {
 
@@ -41,9 +42,9 @@ public class ProgramNode extends AbstractNode {
   @Override
   public String toString() {
     if (main.isPresent()) {
-      return String.format("ProgramNode: %s\n%s", statements(), main.get());
+      return String.format("%s\n%s", statements(), main.get());
     } else {
-      return String.format("ProgramNode: %s", statements());
+      return statements().toString();
     }
   }
 }

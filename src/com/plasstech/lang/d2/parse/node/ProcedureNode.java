@@ -57,7 +57,6 @@ public class ProcedureNode extends DeclarationNode {
 
   @Override
   public String toString() {
-    return String.format(
-        "ProcedureNode: %s: proc(%s) returns %s:\n{%s\n}", name(), parameters, returnType, block);
+    return String.format("%s: PROC(%s): %s {\n%s\n}", name(), parameters, returnType, block);
   }
 }

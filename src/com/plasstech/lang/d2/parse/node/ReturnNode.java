@@ -38,9 +38,9 @@ public class ReturnNode extends AbstractNode implements StatementNode {
   @Override
   public String toString() {
     if (expr.isPresent()) {
-      return String.format("ReturnNode: return %s", expr.get().toString());
+      return String.format("RETURN %s", expr.get());
     } else {
-      return "ReturnNode: return";
+      return "RETURN";
     }
   }
 
