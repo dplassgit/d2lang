@@ -1,10 +1,8 @@
-// hanoi.d - standard "Towers of Hanoi" in D(2). Ported from toy (http://www.graysage.com/cg/Compilers/Toy/hanoi.toy)
+// "Towers of Hanoi" in D2. Ported from toy (http://www.graysage.com/cg/Compilers/Toy/hanoi.toy)
 
 PEGS = ["", "left", "center", "right"]
 
-
 printPeg: proc(peg:int) {
-  // print "peg: " print peg print ": " 
   print PEGS[peg]
 }
 
@@ -12,13 +10,10 @@ hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
   if n != 0 {
     hanoi(n - 1, fromPeg, toPeg, usingPeg)
     print "Move disk from "
-    //print fromPeg
     printPeg(fromPeg)
     print " peg to "
     printPeg(toPeg)
-    //print toPeg
     println " peg"
-    //println ""
     hanoi(n - 1, usingPeg, fromPeg, toPeg)
   }
 }
