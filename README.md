@@ -1,8 +1,11 @@
 # d2lang
 
-A simple type-inferred language compiler.
+D2 is a strongly typed, statically typed, inferred type language. It has similar semantics to C and Java.
+
+The D2 compiler can compile D to X64 assembly language only. It currently uses nasm and gcc to assemble and link, respectively, to Windows executables only.
 
 <tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
+
 
 ## Installing
 
@@ -12,30 +15,62 @@ A simple type-inferred language compiler.
 
 3. Install [gcc](https://gcc.gnu.org/install/binaries.html)
 
-4. Optional: Install git bash shell (mingw64.)
+4. Optional: Install git bash shell (mingw64)
 
 
 ## Running Tests
 
 `bazel test ...`
 
-See also docs/running.md
+See also [docs/running.md](docs/running.md)
 
 
 ## Caveats
 
-Only compiles to Intel x64. Only links the Windows version of the gcc runtime 
+Only compiles to Intel x64. Only links the Windows version of the `gcc` runtime 
 library. Only uses `nasm` and `gcc`.
 
 
-## Getting the source code
+## Language sample
 
-`git clone git@github.com:dplassgit/d2lang.git` clones into the `d2lang` 
-subdirectory.
+Here’s hello world:
 
-`git pull`
+```
+println "Hello world"
+```
 
-`git push origin trunk`
+Here’s [Tower of Hanoi](samples/hanoi.d)
 
-Using from git bash shell should let us log in from the browser.
+```
+// Ported from toy (http://www.graysage.com/cg/Compilers/Toy/hanoi.toy)
 
+PEGS = ["", "left", "center", "right"]
+
+printPeg: proc(peg:int) {
+  print PEGS[peg]
+}
+
+hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
+  if n != 0 {
+    hanoi(n - 1, fromPeg, toPeg, usingPeg)
+    print "Move disk from "
+    printPeg(fromPeg)
+    print " peg to "
+    printPeg(toPeg)
+    println " peg"
+    hanoi(n - 1, usingPeg, fromPeg, toPeg)
+  }
+}
+
+main { // fun fact, “main” is optional.
+  n = 5
+  hanoi(n, 1, 2, 3)
+}
+```
+
+See more [samples](samples)
+
+
+## Why did I build D2?
+
+See [docs/history](docs/history.md)
