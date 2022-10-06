@@ -56,8 +56,8 @@ proc foo() returns int
 {
   i: int;
   i = 0;
-
-      while i < 10
+  
+  while i < 10
   {
     i++;
     if i < 7 then
@@ -68,7 +68,7 @@ proc foo() returns int
 
 proc main(bar: int)
 {
-c: int;
+  c: int;
   c = bar + 3;  # 3 forces bar: int
   i = bar;    # forces i: int
 }
