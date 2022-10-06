@@ -1,4 +1,18 @@
-# How to run stuff
+# How to run the D2 compiler
+
+## Prerequisites
+
+To compile the D2 compiler, the following are needed:
+
+   * Java 11 or higher
+   * Bazel
+
+In order for the compiler to generate Windows executables, the following are also needed:
+   * nasm
+   * GCC
+
+Note: the D2 compiler can *only* generate X64 Assembly language and link against
+Windows (gcc) stdlib.
 
 ## Compiler
 
@@ -12,7 +26,7 @@ compilation passes**. It will remove `d2out.exe` before running.
 ## Interpreter
 
 `./scripts/rund foo.d` will run `foo.d` using the interpreter and optimizations.
-The interpreter does not support externs.
+**NOTE**: the interpreter does not support `extern`s.
 
 
 ## Nasm
