@@ -2,14 +2,14 @@
 
 ## Types & Keywords
 
-Current built-in types: int, string, boolean, arrays, records
+Built-in types: int, string, boolean, float, byte, arrays, records
 
-Eventually: (more arrays), map?, lambda? (but not closures)
+Eventually: long, n-dimensional arrays, map, lambda (but not closures)
 
 Current keywords (excluding built-in types)
 
 ```
-if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length, exit, input, record, new, null
+if, else, elif, do, while, break, continue, return, proc, print, println, main, asc, chr, length, exit, input, record, new, null, extern
 ```
 
 Eventually:
@@ -20,11 +20,11 @@ keys?, values?, delete(?)
 
 ## Oddities
 
-No semicolons because why not.
+No semicolons.
 
-Do I want `*=` (& siblings)? **Yes, but not implemented yet.**
+I want `*=` (& siblings) **, but not implemented yet.**
 
-Blocks MUST start/end with `{}`. BUT expressions don't need parens, so:
+Blocks MUST start/end with `{}`. BUT expressions don't need parens, so an `if` statement looks like:
 
 ```
 if a < 3 {
@@ -32,11 +32,26 @@ if a < 3 {
 }
 ```
 
+Variable declarations are optional. You just write the expression and the compiler will deduce and enforce
+the type of the variable. E.g.:
+
+```
+
+foo: proc: int {  // note no empty list of parameters
+  return 4
+}
+
+a=foo(3) // a will be of type int
+```
+
+
 ## Comments
 
 `//` to end of line is considered a comment.
 
-## `for` loop explorations
+## `for` loops
+
+### Possible syntaxes
 
 ```
 for i = 1 to 20 step 3
@@ -49,6 +64,8 @@ for i = 1 while i < 30 update i=i+1
 for i = 1 until i == 30 update i=i+1 
 for i=0 while i < 30 do i +=1 {
 ```
+
+### Actual syntax
 
 **Winner!**
 
@@ -87,7 +104,7 @@ foo:proc(a:map,b,c) : int {
 } 
 ```
 
-Should the return type be optional? We can infer it from the return statement and/or calls. Yes, but not implemented yet.
+Eventually the return type will be optional. But not implemented yet.
 
 ## Chars and strings
 
@@ -166,7 +183,7 @@ Everything is like strings
 ```
 keywords=["hi", "bye"]
 keywords[0] = 'sorry' // assign
-keywords[1:3] // slice
+keywords[1:3] // slice, not implemented yet
 print keywords[-1] // "bye" // not implemented yet
 ```
 
@@ -179,15 +196,15 @@ Winner: `length(array)`
 This actually declares and allocates the array.
 
 ```
-keywords:Array of int
-keywords:array{int}
-keywords:array[int]
-keywords:int array
-keywords:[int]
+// keywords:Array of int
+// keywords:array{int}
+// keywords:array[int]
+// keywords:int array
+// keywords:[int]
 keywords:int[3] // winner because multidimensional arrays.
 ```
 
-Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated. We allow the size at declaration time.
+Should we allow the size at declaration time? Java does not allow this, though C++ does. In Java all arrays are dynamically allocated. We require the size at declaration time, except for parameters.
 
 ### Multi-dimensional (not implemented yet)
 
@@ -199,9 +216,16 @@ keywords:int[1,2]
 
 ```
 keywords=[1,2,3,4]
-numbers=[1,2,functioncall(), a]
+// not allowed: numbers=[1,2,functioncall(), a]
 ```
 
 ### Allocating 
 
 There's no separation between allocation and declaration of arrays.
+
+## Bytes
+
+To distinguish bytes from ints, byte hexadecimal constants use a `0y` prefix:
+e.g., `0y2f`. Bytes are signed.
+
+

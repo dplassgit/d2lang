@@ -10,10 +10,12 @@ statements -> statement*
 statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'CONTINUE' | return_stmt | procedure_call | exit
 // reserved, but not implemented:
 // FOR <variable> IN <array>
-// DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXTERN, EXPORT
+// DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXPORT
 
-main -> 'MAIN' mainarg? '{' statements '}'
-mainarg -> '(' variable ')' // not implemented yet
+main -> 'MAIN' '{' statements '}'
+// Not implemented yet:
+// main -> 'MAIN' mainarg? '{' statements '}'
+// mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> lvalue '=' expr
 lvalue -> variable | variable '[' expr ']' | variable '.' variable
@@ -27,9 +29,9 @@ else -> 'ELSE' '{' statements '}'
 while -> 'WHILE' expr do? '{' statements '}'
 do -> 'DO' statement
 
-declaration -> variable ':' type | variable ':' 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE'
-// reserved, but not implemented: BYTE, CHAR, LONG
+declaration -> variable ':' type | variable ':' 'EXTERN'? 'PROC' procdef
+type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE' | 'BYTE'
+// reserved, but not implemented: CHAR, LONG
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
@@ -71,14 +73,15 @@ composite -> atom ('[' expr ']') | atom ('.' atom)*
 
 atom ->   int_constant
         | double_constant
-	| boolean_constant
-	| string_constant
-	| 'NULL'
+        | byte_constant
+	      | boolean_constant
+	      | string_constant
+	      | 'NULL'
         | variable
         | variable '(' comma-separated-expressions ')'
-	| '(' expr ')'
-	| '[' comma-separated-expressions ']'
-	| 'INPUT'
+	      | '(' expr ')'
+	      | '[' comma-separated-expressions ']'
+	      | 'INPUT'
 ```
 
 Not implemented yet: power
