@@ -79,7 +79,8 @@ public class ILOptimizerTest {
 
   @Test
   public void modByOne() {
-    TestUtils.optimizeAssertSameVariables("a = 14 b=a%1");
+    TestUtils.optimizeAssertSameVariables(
+        "a = 14 b=a%1 println 'a' println a println 'b' println b");
   }
 
   @Test

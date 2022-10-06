@@ -7,6 +7,7 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantOperand<T> implements Operand {
+  // These shouldn't use "of" because "of" sometimes uses these.
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
   public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
   public static final ConstantOperand<Byte> ZERO_BYTE =

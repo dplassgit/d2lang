@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.EMPTY_STRING;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.FALSE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
+import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE_BYTE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE_DBL;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
@@ -18,6 +19,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -41,6 +43,8 @@ public class ArithmeticOptimizerTest {
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
   private static final TempLocation STRING_TEMP = new TempLocation("temp3", VarType.STRING);
   private static final TempLocation DBL1 = new TempLocation("temp1", VarType.DOUBLE);
+  private static final StackLocation STACK1 = new StackLocation("stack1", VarType.INT, 4);
+  private static final StackLocation STACK2 = new StackLocation("stack2", VarType.INT, 4);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
 
@@ -183,6 +187,40 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized.get(1)).isTransferredFrom(TRUE);
     assertThat(optimized.get(2)).isTransferredFrom(TRUE);
     assertThat(optimized.get(3)).isTransferredFrom(FALSE);
+  }
+
+  @Test
+  public void eqConstantInts() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, ONE, TokenType.EQEQ, ONE, null),
+            new BinOp(TEMP1, ZERO, TokenType.EQEQ, ONE, null),
+            new BinOp(TEMP1, ONE, TokenType.NEQ, ONE, null),
+            new BinOp(TEMP1, ZERO, TokenType.NEQ, ONE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(4);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(2)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(3)).isTransferredFrom(TRUE);
+  }
+
+  @Test
+  public void eqSame() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP1, STACK1, TokenType.EQEQ, STACK1, null),
+            new BinOp(TEMP1, STACK1, TokenType.NEQ, STACK1, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(2);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
   }
 
   @Test
@@ -360,6 +398,31 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
-    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ZERO);
+    assertThat(optimized.get(0)).isTransferredFrom(ZERO);
+  }
+
+  @Test
+  public void xMod1() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP2, ConstantOperand.of(14), TokenType.MOD, ONE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ZERO);
+  }
+
+  @Test
+  public void byteMod1() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP2, ConstantOperand.of((byte) 14), TokenType.MOD, ONE_BYTE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ZERO_BYTE);
   }
 }
