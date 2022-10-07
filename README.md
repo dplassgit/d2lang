@@ -1,15 +1,15 @@
 # d2lang
 
-D2 is a strongly typed, statically typed, inferred type language. It has similar
-semantics to C and Java.
+D2 is a strongly-typed, statically-typed, inferred-type compiled language. 
+Its syntax draws from C, Java and Python.
 
-The D2 compiler can compile D to X64 assembly language only. It currently uses
-nasm and gcc to assemble and link, respectively, to Windows executables only.
-
-<tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
+The D2 compiler compiles to X64 assembly language only. It currently uses
+`nasm` and `gcc` to assemble and link, respectively, to Windows executables only.
 
 See the [overview](docs/overview.md) for a more comprehensive description of the 
 types, control structures, operators and statements in D2.
+
+<tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
 
 
 ## Installing
@@ -33,7 +33,9 @@ See also [docs/running.md](docs/running.md)
 ## Caveats
 
 Only compiles to Intel x64. Only links the Windows version of the `gcc` runtime 
-library. Only uses `nasm` and `gcc`.
+library. Only uses `nasm` and `gcc`. 
+
+There are (various bugs)[https://github.com/dplassgit/d2lang/labels/bug].
 
 
 ## Language sample
@@ -68,7 +70,7 @@ hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
 }
 
 main { // fun fact, “main” is optional.
-  n = 5
+  n = 5 // defines global
   hanoi(n, 1, 2, 3)
 }
 ```
