@@ -15,16 +15,17 @@ The following types are built-in:
 * `string`: immutable sequence of characters. There is no separate "character" type (as in Python)
 * `record`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
-* `null`: Un-set value that can be used in place of a string, record or array.
+* `null`: an un-set value that can be used in place of a string, record or array.
 
 
-When defining an array, record or procedure, 'forward' references are allowed.
+When defining an array, record or procedure, "forward references" (references 
+before definition) are allowed.
 
 
 ## Arithmetic
 
-All arithmetic must be type-consistent. As of now there is no implicit (or explicit) conversion between
-arithmetic types.
+All arithmetic must be type-consistent. As of now there is no implicit (or
+explicit) conversion between arithmetic types.
 
 The following operators are available:
 
@@ -44,9 +45,17 @@ Floating constants must include a decimal point (dot). Example: 123.4
 
 Strings are immutable. Strings can be concatenated via the `+` operator, which
 usually creates a new string. Substrings may or may not create a new string.
-To find the length of a string, use the built-in function `length`.
 
 String constants can be indicated with single or double quotes.
+
+Examples:
+
+```
+s = 'string'
+s2 = "another string"
+s3 = s + s2
+s4 = s3[0]
+```
 
 
 ## Arrays
@@ -131,17 +140,38 @@ a global variable with a local variable of th esame name.
 * `+`: for int, byte, float
 * `-`, `*`, `/`: for int, byte, float
 * `%`: modulo for int, byte
+* '|': bitwise or for int, byte
+* '&': bitwise and for int, byte
+* '^': bitwise xor for int, byte
+* '>>': shift right for int, byte
+* '<<': shift left for int, byte
+
+And all comparisons: `== != < <= > >=`.
+
+
+### Boolean
+
+* `AND` boolean and
+* `OR` boolean or
+* `NOT` boolean not
+* `XOR` boolean xor
 
 
 ### Strings
 
-Use `+` to concatenate strings. Use `[index]` to retrieve a single-character substring
-of a string.
+Use `+` to concatenate strings. Use `s[index]` to extract a single-character 
+substring of a string.
+
+Use `ASC` to convert from the first letter of a string to int, and `CHR` for
+int to a 1-character string.
+
+To find the length of a string, use the built-in function `length`.
 
 
 ### Records
 
 See above.
+
 
 ### Arrays
 
@@ -157,30 +187,67 @@ Global statements are excuted top to bottom in a D2 file.
 
 ### Control structures
 
-#### If/Else
+#### `if/elif/else`
 
-#### While
+
+```
+if i == 0 {  // must be a boolean expression
+   println "zero"
+} elif i == 1 {
+   println "one"
+} else {
+   println "other"
+}
+```
+
+Any number of `elif` clauses are allowed. Like Python (and unlike Java and C), 
+parentheses are *not required* around the boolean expression.
+
+#### `while` loop
 
 ```
 while i< 10 do i = i + 1 {
   // loop statements
+  break
 }
 ```
 
-### Print
+`break` and `continue` work the same as in Java, C, JavaScript, Python, elt.
 
-### Input
+
+### `print` and `println`
+
+`print` prints a number, string or boolean variable to stdout. Limited support
+for printing arrays. No support for printing records at this time.
+
+`println variable` appends a newline to printing the object.
+
+
+### `input`
+
+Gets a string from stdin until EOF, or 1 MB. (D2 is still a toy language in some
+ways.)
+
+```
+in: string
+in = input
+```
 
 ### Exit
+
+`exit "Message"` prints the message on stdout and exits with return code -1.
+
 
 ### Procedures
 
 #### Procedure definitions
 
-Define a procedure that takes a string and an array of string, that returns an int:
+This declaration will define a procedure that takes a string and an array of
+strings, and returns an int:
 
 ```
 index: proc(arg1: string, arg2: string[]): int {
+   return 0
 }
 ```
 
@@ -188,7 +255,7 @@ Void procedures are supported:
 
 ```
 think: proc { // parentheses are optional for no-arg proces
-// no return statement
+  // no return statement
 }
 ```
 
@@ -208,11 +275,33 @@ index('hi', ['a', 'b', 'c'])
 ```
 
 
+NOTE: There is a limit of 4 parameters in procedure definitions and calls. There is 
+an [open bug](issues/63) to address this.
+
 
 #### main
 
+The procedure `main` is optional and if included, must be the last 'statement' in a D2 file.
+
+There is no support for passing argv/argc to `main`, but there is an [open bug](issues/8) to finish this.
 
 #### Externally defined procedures
 
+Prepend `extern` before the `proc` keyword. This must be a procedure/function in the gcc
+runtime library.
 
-## Runtime
+```
+rand: extern proc(n: int): int
+```
+
+
+## Runtime Checks
+
+There are runtime checks in place for
+* null pointer dereferences (strings, records, arrays), 
+* index out of range for strings and arrays
+* division by zero (and modulo zero)
+
+When possible, the optimizer will find division by zero at compile time.
+
+

@@ -35,7 +35,7 @@ type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
-param -> variable (':' type)? // currently, must specify type
+param -> variable ':' type
 returns -> ':' type
 
 return_stmt -> 'RETURN' expr?
@@ -68,20 +68,19 @@ muldiv -> unary (('*' | '/' | '%') unary)*
 unary -> ('!' | '-' | '+' | 'NOT') unary |  unary_fn '(' expr ')' | 'NEW' variable | composite
 unary_fn -> 'ASC' | 'CHR' | 'LENGTH'
 
-// note: it's actually more complicated than this
-composite -> atom ('[' expr ']') | atom ('.' atom)*
+composite -> atom ('[' expr ']') ('.' atom)*
 
 atom ->   int_constant
         | double_constant
         | byte_constant
-	      | boolean_constant
-	      | string_constant
-	      | 'NULL'
+        | boolean_constant
+        | string_constant
+        | 'NULL'
         | variable
         | variable '(' comma-separated-expressions ')'
-	      | '(' expr ')'
-	      | '[' comma-separated-expressions ']'
-	      | 'INPUT'
+        | '(' expr ')'
+        | '[' comma-separated-expressions ']'
+        | 'INPUT'
 ```
 
 Not implemented yet: power
