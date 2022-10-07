@@ -33,8 +33,11 @@ the world:
    * Type checker: Given a parse tree, creates a symbol table with globals, procs and record definitions. Checks for type correctness and infers types when they are not set
    * Intermediate language (IL) generator: Given a parse tree and symbol table, generates IL code that is not D-specific
    * IL Optimizers: Given an IL program, optimizes it in various ways:
-   * Arithmetic optimization (e.g., 1+1 optimizes to 2, a\*0 optimizes to 0)
+      * Constant propagation
+      * Arithmetic optimization (e.g., 1+1 optimizes to 2, a\*0 optimizes to 0)
       * Dead code elimination
+      * Loop invariant raising
+      * Small procedure inlining (disabled)
       * Others
    * Nasm code generator: Given an IL program (optimized or not), generates assembly language
 
