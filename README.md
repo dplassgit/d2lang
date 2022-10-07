@@ -1,10 +1,15 @@
 # d2lang
 
-D2 is a strongly typed, statically typed, inferred type language. It has similar semantics to C and Java.
+D2 is a strongly typed, statically typed, inferred type language. It has similar
+semantics to C and Java.
 
-The D2 compiler can compile D to X64 assembly language only. It currently uses nasm and gcc to assemble and link, respectively, to Windows executables only.
+The D2 compiler can compile D to X64 assembly language only. It currently uses
+nasm and gcc to assemble and link, respectively, to Windows executables only.
 
 <tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
+
+See the [overview](docs/overview.md) for a more comprehensive description of the 
+types, control structures, operators and statements in D2.
 
 
 ## Installing
@@ -33,13 +38,13 @@ library. Only uses `nasm` and `gcc`.
 
 ## Language sample
 
-Here’s hello world:
+Canonical hello world:
 
 ```
 println "Hello world"
 ```
 
-Here’s [Tower of Hanoi](samples/hanoi.d)
+[Tower of Hanoi](samples/hanoi.d)
 
 ```
 // Ported from toy (http://www.graysage.com/cg/Compilers/Toy/hanoi.toy)
