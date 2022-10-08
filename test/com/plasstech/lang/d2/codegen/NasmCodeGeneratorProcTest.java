@@ -1,7 +1,9 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assume.assumeTrue;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -146,7 +148,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     RegisterLocation register4 = (RegisterLocation) param4.location();
     assertThat(register4.register()).isEqualTo(IntRegister.R9);
   }
-  
+
   @Test
   public void allOpsLocals() throws Exception {
     execute(
@@ -228,5 +230,18 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "}" //
             + "a()",
         "ignoreReturn");
+  }
+
+  @Test
+  @Ignore("Bug #188: Runs out of registers, even with optimization")
+  public void outOfRegisters() throws Exception {
+    assumeTrue(optimize);
+    execute(
+        "      fun:proc(a:int, b:int, cc:int, dd:int) {\r"
+            + "  c=((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*(a+b))))))))))))))\r"
+            + "  println c\r"
+            + "}\r"
+            + "fun(1,2,3,4)\r",
+        "outOfRegs");
   }
 }
