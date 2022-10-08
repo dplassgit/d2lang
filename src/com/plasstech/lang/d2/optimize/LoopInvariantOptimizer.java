@@ -265,7 +265,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
           break;
       }
     }
-    
+
     @Override
     public void visit(Transfer op) {
       if (!op.source().isConstant()) {

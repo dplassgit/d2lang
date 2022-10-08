@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import java.util.Objects;
+
 public class Label extends Op {
   public static final String LOOP_BEGIN_PREFIX = "loop_begin";
   public static final String LOOP_END_PREFIX = "loop_end";
@@ -18,6 +20,19 @@ public class Label extends Op {
   @Override
   public String toString() {
     return String.format("%s:", label);
+  }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof Label)) {
+      return false;
+    }
+    return this.hashCode() == that.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass().getName(), label());
   }
 
   @Override

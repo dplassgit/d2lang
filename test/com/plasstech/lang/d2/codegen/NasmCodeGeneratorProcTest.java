@@ -244,4 +244,19 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "fun(1,2,3,4)\r",
         "outOfRegs");
   }
+
+  @Test
+  public void fact() throws Exception {
+    execute(
+        "      dofact:proc(n:int): int {"
+            + "  fact = 1 "
+            + "  i=1 while i <= 10 do i = i + 1 {"
+            + "    unchanged = 0"
+            + "    fact = fact * i"
+            + "  }"
+            + "  return fact + unchanged"
+            + "}"
+            + "print dofact(10)",
+        "fact");
+  }
 }

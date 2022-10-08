@@ -36,4 +36,9 @@ public class StackLocation extends Location {
   public int hashCode() {
     return Objects.hash(getClass().getName(), name(), type(), offset(), storage());
   }
+
+  @Override
+  public String toString() {
+    return String.format("%s: %s (%d)", name(), type(), offset());
+  }
 }

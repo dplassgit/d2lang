@@ -29,7 +29,7 @@ public class TestUtils {
     InterpreterExecutor ee = new InterpreterExecutor(program);
     InterpreterResult unoptimizedResult = ee.execute();
     ImmutableList<Op> originalCode = unoptimizedResult.code();
-    
+
     System.out.printf("\nUNOPTIMIZED:\n");
     System.out.println(Joiner.on("\n").join(originalCode));
 
@@ -52,12 +52,12 @@ public class TestUtils {
         .isEqualTo(Joiner.on("").join(unoptimizedResult.environment().output()));
     assertMapsSame(
         optimizedResult.environment().variables(), unoptimizedResult.environment().variables());
-    //    assertWithMessage("New code should be smaller")
-    //        .that(unoptimizedResult.linesOfCode())
-    //        .isAtLeast(optimizedResult.linesOfCode());
-    assertWithMessage("New code should run in fewer cycles")
-        .that(unoptimizedResult.instructionCycles())
-        .isAtLeast(optimizedResult.instructionCycles());
+    // new code should either be faster or smaller or both
+    if (unoptimizedResult.linesOfCode() >= optimizedResult.linesOfCode()) {
+      assertWithMessage("New code should run in fewer cycles (if it's not smaller)")
+          .that(unoptimizedResult.instructionCycles())
+          .isAtLeast(optimizedResult.instructionCycles());
+    }
     return optimizedResult;
   }
 
@@ -132,6 +132,10 @@ public class TestUtils {
 
   // Hm, maybe move this to Executor?
   public static State compile(String text) {
+    return compile(text, new ILOptimizer(0));
+  }
+
+  public static State compile(String text, Optimizer optimizer) {
     Lexer lex = new Lexer(text);
     State state = State.create(text).build();
     Parser parser = new Parser(lex);
@@ -153,8 +157,8 @@ public class TestUtils {
     }
 
     // Runs all the optimizers.
-    ILOptimizer optimizer = new ILOptimizer(0);
-    state = optimizer.execute(state);
+    ILOptimizer opt = new ILOptimizer(ImmutableList.of(optimizer));
+    state = opt.execute(state);
     if (state.error()) {
       fail(state.errorMessage());
     }

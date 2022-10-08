@@ -1,26 +1,30 @@
 package com.plasstech.lang.d2.optimize;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.StackLocation;
+import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.VarType;
 
 public class LoopInvariantOptimizerTest {
   private static Optimizer loopOptimizer = new LoopInvariantOptimizer(2);
-  private static Optimizer ilOptimizer =
+  private static ILOptimizer ilOptimizer =
       new ILOptimizer(
               ImmutableList.of(
-                  new ArithmeticOptimizer(2),
-                  new ConstantPropagationOptimizer(2),
-                  new DeadCodeOptimizer(2),
-                  new DeadLabelOptimizer(2),
-                  new DeadAssignmentOptimizer(2),
-                  new IncDecOptimizer(2),
-                  new InlineOptimizer(2),
-                  new LoopInvariantOptimizer(2) // ,
+                  new NopOptimizer(),
+                  new DeadCodeOptimizer(2), //
+                  new LoopInvariantOptimizer(2) //
                   ))
           .setDebugLevel(2);
-  private static Optimizer loopAndConstantOptimizer =
+  private static ILOptimizer loopAndConstantOptimizer =
       new ILOptimizer(
               ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
           .setDebugLevel(2);
@@ -39,6 +43,41 @@ public class LoopInvariantOptimizerTest {
             + "}"
             + "println oneLoop(10)",
         loopAndConstantOptimizer);
+  }
+
+  @Test
+  public void simplest() {
+    String program =
+        "      simplest:proc(n:int) { "
+            + "  while n > 0 do n = n - 1 {"
+            + "    x = 0 " // this should be lifted out of the loop
+            + "  }"
+            + "  print x "
+            + "}";
+    State unoptimized = TestUtils.compile(program, new NopOptimizer());
+    // unoptimized:
+    /*
+     *  __loop_begin_2:
+     *  x = 0
+     */
+    assertThat(unoptimized.ilCode())
+        .containsAtLeast(
+            new Label("__loop_begin_2"),
+            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO))
+        .inOrder();
+
+    InterpreterResult optimizedResult =
+        TestUtils.optimizeAssertSameVariables(program, loopAndConstantOptimizer);
+    // optimized:
+    /*
+     *  __loop_begin_2:
+     *  x = 0
+     */
+    assertThat(optimizedResult.code())
+        .containsAtLeast(
+            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO),
+            new Label("__loop_begin_2"))
+        .inOrder();
   }
 
   @Test

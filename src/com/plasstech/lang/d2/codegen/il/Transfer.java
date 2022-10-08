@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import java.util.Objects;
+
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 
@@ -19,6 +21,19 @@ public class Transfer extends Op {
 
   public Operand source() {
     return source;
+  }
+
+  @Override
+  public boolean equals(Object that) {
+    if (that == null || !(that instanceof Transfer)) {
+      return false;
+    }
+    return this.hashCode() == that.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getClass().getName(), destination().toString(), source().toString());
   }
 
   @Override
