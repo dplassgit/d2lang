@@ -36,3 +36,4 @@ bazel-testlogs
 /*.asm
 *.obj
 *.exe
+*.il
