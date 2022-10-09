@@ -28,7 +28,7 @@ tester: proc(s:string, expected:bool) {
   if is == expected {
     println s + " is correctly " + toString(is)
   } else {
-    println s + " is UNEXPECTEDLY "  + toString(is)
+    exit s + " is UNEXPECTEDLY "  + toString(is)
   }
 }
 

@@ -36,7 +36,8 @@ public class LoopInvariantOptimizerTest {
             + "  sum = 0 "
             + "  i = 0 "
             + "  while i < 10 do i = i + 1 {"
-            + "    x = n + 1 "
+            + "    x = n + 1 " // this can be lifted but... it's temp=n+1 x = temp, and it will only
+                               // move one instruction, not two...
             + "    sum = sum + 1 "
             + "  }"
             + "  return sum"
@@ -78,6 +79,18 @@ public class LoopInvariantOptimizerTest {
             new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO),
             new Label("__loop_begin_2"))
         .inOrder();
+  }
+
+  @Test
+  public void simplest_tempInvariant() {
+    TestUtils.optimizeAssertSameVariables(
+        "      simplest:proc(s:string) { "
+            + "  i = 0 while i < length(s) do i = i + 1 {"
+            + "    print s[length(s)-1] "
+            + "  }"
+            + "}"
+            + "simplest('hi')",
+        loopAndConstantOptimizer);
   }
 
   @Test

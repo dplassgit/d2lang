@@ -11,10 +11,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
+import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -36,7 +39,6 @@ import com.plasstech.lang.d2.type.SymbolStorage;
  *  3. Find all vars that are read in the loop
  *  4. For each local var that is set, if all its dependencies are only set from temps or locals
  *    that are not set in the loop, it is invariant.
- *  5. For temps: if a temp is set to a value that is not itself set in the loop, it's invariant.
  * </pre>
  */
 class LoopInvariantOptimizer extends DefaultOptimizer {
@@ -59,16 +61,13 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
     logger.at(loggingLevel).log("Loops: %s", loops);
 
     // Optimize each loop. This works for all loops throughout the codebase.
-    int iterations = 0;
     for (Block loop : loops) {
-      while (optimizeLoop(loop)) {
-        // OH NO the starts and ends may have moved...do we just give up? or re-start?
-        iterations++;
+      if (optimizeLoop(loop)) {
+        // Stop, because the loop locations may have chnaged.
         setChanged(true);
+        break;
       }
     }
-
-    logger.at(loggingLevel).log("LoopInvariant loops (heh): %d", iterations);
 
     return ImmutableList.copyOf(code);
   }
@@ -84,13 +83,13 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
     logger.at(loggingLevel).log("Getters = %s", finder.getters);
 
     TransferMover mover = new TransferMover(finder);
-    boolean optimizedLoop = false;
+    boolean changed = false;
     for (int ip = loop.start(); ip < loop.end(); ++ip) {
       mover.reset();
       Op op = code.get(ip);
       op.accept(mover);
       if (mover.liftedLast()) {
-        optimizedLoop = true;
+        changed = true;
         logger.at(loggingLevel).log("Moving op %s from %d to %d", op, ip, loop.start());
         code.remove(ip);
         code.add(loop.start(), op);
@@ -98,7 +97,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
       }
     }
 
-    return optimizedLoop;
+    return changed;
   }
 
   private class TransferMover extends DefaultOpcodeVisitor {
@@ -119,23 +118,27 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(UnaryOp op) {
-      // Assigning to a temp, a non-global that was not changed in the loop.
-      if (op.destination().storage() == SymbolStorage.TEMP
-          && op.operand().storage() != SymbolStorage.GLOBAL
-          && op.operand().storage() != SymbolStorage.HEAP
-          && !finder.setters.contains(op.operand())) {
+      // Assigning to a stack variable, a non-global that was not changed in the loop.
+      if (isLocalOrParam(op.destination())
+          && finder.setters.count(op.operand()) == 1
+          && !finder.getters.contains(op.operand())) {
 
         logger.at(loggingLevel).log(
-            "Lifting unary assignment to temp of non-global invariant: %s", op);
+            "Lifting unary assignment to %s invariant: %s", op.destination().storage(), op);
         lifted = true;
       }
     }
 
+    private boolean isLocalOrParam(Operand location) {
+      return location.storage() == SymbolStorage.LOCAL || location.storage() == SymbolStorage.PARAM;
+    }
+
     @Override
     public void visit(BinOp op) {
-      // why only storing in temp?!
-
-      if (op.destination().storage() == SymbolStorage.TEMP && op.operator() != TokenType.DOT) {
+      if (isLocalOrParam(op.destination())
+          && finder.setters.count(op.destination()) == 1
+          && !finder.getters.contains(op.destination())
+          && op.operator() != TokenType.DOT) {
         // If left is not a global and its value is not set in this loop,
         // and right is not a global and its value is not set in this loop,
         // we can lift this one.
@@ -151,7 +154,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
                 && !finder.setters.contains(rightOp);
         if (leftOk && rightOk) {
           logger.at(loggingLevel).log(
-              "Lifting binary assignment to temp of non-global invariant: %s", op);
+              "Lifting binary assignment to %s invariant: %s", op.destination().storage(), op);
           lifted = true;
         }
       }
@@ -159,46 +162,26 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(Transfer op) {
-      switch (op.destination().storage()) {
-        case TEMP:
-          // Transferring to a temp
-          if (op.source().isConstant()) {
-            // can lift
-            logger.at(loggingLevel).log("Lifting to temp of const: %s", op);
-            lifted = true;
-          } else if (op.source().storage() != SymbolStorage.GLOBAL
-              && op.source().storage() != SymbolStorage.HEAP
-              && !finder.setters.contains(op.source())) {
-            logger.at(loggingLevel).log(
-                "Lifting assignment to temp of non-global invariant: %s", op);
-            lifted = true;
-          }
-          break;
-
-        case LOCAL:
-        case PARAM:
-          // Transferring to a local or param that is only set once (here)
-          if (op.source().isConstant()
-              && finder.setters.count(op.destination()) == 1
-              && !finder.getters.contains(op.destination())) {
-            // It's only set this one time and isn't read anywhere else.
-            // It might be a dead assignment, but that's not our problem.
-            logger.at(loggingLevel).log("Lifting assignment to local or param of const: %s", op);
-            lifted = true;
-          } else if (op.source().storage() != SymbolStorage.GLOBAL
-              && op.source().storage() != SymbolStorage.HEAP
-              && finder.setters.count(op.destination()) == 1
-              && !finder.setters.contains(op.source())) {
-            // Not reading from a global; the only time we are set is here, and our source
-            // is not set within the loop.
-            logger.at(loggingLevel).log(
-                "Lifting assignment to local or param of invariant: %s", op);
-            lifted = true;
-          }
-          break;
-
-        default:
-          break;
+      if (isLocalOrParam(op.destination())) {
+        // Transferring to a local or param that is only set once (here)
+        if (op.source().isConstant()
+            && finder.setters.count(op.destination()) == 1
+            && !finder.getters.contains(op.destination())) {
+          // It's only set this one time and isn't read anywhere else.
+          // It might be a dead assignment, but that's not our problem.
+          logger.at(loggingLevel).log(
+              "Lifting assignment to %s of const: %s", op.destination().storage(), op);
+          lifted = true;
+        } else if (op.source().storage() != SymbolStorage.GLOBAL
+            && op.source().storage() != SymbolStorage.HEAP
+            && finder.setters.count(op.destination()) == 1
+            && !finder.setters.contains(op.source())) {
+          // Not reading from a global; the only time we are set is here, and our source
+          // is not set within the loop.
+          logger.at(loggingLevel).log(
+              "Lifting assignment to %s of invariant: %s", op.destination().storage(), op);
+          lifted = true;
+        }
       }
     }
   }
@@ -211,7 +194,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
     @Override
     public void visit(Call op) {
       if (op.destination().isPresent()) {
-        setters.add(op.destination().get());
+        setters.add(op.destination().get().baseLocation());
       }
       for (Operand actual : op.actuals()) {
         if (!actual.isConstant()) {
@@ -256,7 +239,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
     public void visit(SysCall op) {
       switch (op.call()) {
         case INPUT:
-          setters.add(op.arg()); // is this right?!
+          setters.add(op.arg());
           break;
         default:
           if (!op.arg().isConstant()) {
@@ -282,6 +265,27 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
       if (!op.right().isConstant()) {
         getters.add(op.right());
       }
+      setters.add(op.destination());
+    }
+
+    @Override
+    public void visit(ArraySet op) {
+      if (!op.source().isConstant()) {
+        getters.add(op.source());
+      }
+      setters.add(op.array().baseLocation());
+    }
+
+    @Override
+    public void visit(FieldSetOp op) {
+      if (!op.source().isConstant()) {
+        getters.add(op.source());
+      }
+      setters.add(op.recordLocation().baseLocation());
+    }
+
+    @Override
+    public void visit(AllocateOp op) {
       setters.add(op.destination());
     }
 

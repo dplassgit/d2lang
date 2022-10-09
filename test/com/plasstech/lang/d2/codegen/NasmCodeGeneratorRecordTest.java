@@ -171,10 +171,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void nullCheck() throws Exception {
     assertRuntimeError(
-        "      rt: record {s:string i:int} \r\n"
-            + " a:rt \r\n "
-            + "a=null \r\n"
-            + "println a.s",
+        "      rt: record {s:string i:int} \r\n" + " a:rt \r\n " + "a=null \r\n" + "println a.s",
         "nulLCheck",
         "Null pointer error");
   }
@@ -255,5 +252,57 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + " bam = foo[3+a].bar.baz[f()].qux"
             + " if bam != 'hi' { exit 'fail, actual ' + bam} ",
         "advancedRValue_bug158");
+  }
+
+  @Test
+  public void loopInvariantError_bug190_field() throws Exception {
+    execute(
+        "      r1:record{amt: double}\r"
+            + "f:proc {"
+            + "  amt = 0.0 i = 0 "
+            + "  while i < 10 do i = i + 1 {"
+            + "    p = new r1"
+            + "    p.amt = amt"
+            + "    amt = amt + 1.1"
+            + "  }"
+            + "}"
+            + "f()",
+        "loopInvariantError_bug190_field");
+  }
+
+  @Test
+  public void loopInvariantError_bug190_arraySetIsAGet() throws Exception {
+    execute(
+        "      r1:record{amt: double}\r"
+            + "rarray:r1[10]\r"
+            + "f:proc {"
+            + "  i = 0 amt = 1.1"
+            + "  while i < 10 do i = i + 1 {"
+            + "    p = new r1"
+            + "    amt = amt + 1.1"
+            + "    p.amt = amt"
+            + "    rarray[i] = p"
+            + "  }"
+            + "  i = 0 while i < 10 do i = i + 1 {"
+            + "    println rarray[i].amt"
+            + "  }"
+            + "}"
+            + "f()",
+        "loopInvariantError_bug190_arraySetIsAGet");
+  }
+
+  @Test
+  public void loopInvariantError_bug190_trim() throws Exception {
+    execute(
+        "    trim: proc(s: string): string {\r\n"
+            + "  r = ''\r\n"
+            + "  i = 0 while i < length(s) do i = i + 1 {\r\n"
+            + "    c = s[i]\r\n"
+            + "    if c != '\\n' { r = r + c }\r\n"
+            + "  }\r\n"
+            + "  return r\r\n"
+            + "}\r\n"
+            + "println trim('hi \\r')",
+        "loopInvariantError_bug190_trim");
   }
 }
