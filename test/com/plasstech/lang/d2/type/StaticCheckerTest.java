@@ -706,6 +706,13 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void proc5Params() {
+    checkProgram(
+        "       add5:proc(a:int,b:int,c:int,d:int,e:int):int {return a+b+c+d+e}"
+            + " println add5(1,2,3,4,5) ");
+  }
+
+  @Test
   public void externProc() {
     checkProgram("fib:extern proc()");
     checkProgram("fib:extern proc(n:int) ");

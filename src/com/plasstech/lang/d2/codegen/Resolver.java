@@ -109,7 +109,7 @@ class Resolver implements RegistersInterface {
         return "[_" + location.name() + "]";
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
-        return generateParamLocationName(paramLoc.index(), location.type());
+        return generateParamLocationName(paramLoc);
       case LOCAL:
         StackLocation stackLoc = (StackLocation) location;
         return "[RBP - " + stackLoc.offset() + "]";
@@ -120,14 +120,27 @@ class Resolver implements RegistersInterface {
   }
 
   /** Given a parameter index and type, returns a string representation of that parameter. */
-  private String generateParamLocationName(int index, VarType varType) {
-    Register reg = Register.paramRegister(varType, index);
+  private String generateParamLocationName(ParamLocation param) {
+    Register reg = Register.paramRegister(param.type(), param.index());
     if (reg == null) {
-      // TODO: implement > 4 params.
-      emitter.fail("Cannot generate more than 4 params yet");
-      return null;
+      // implement > 4 params.
+      emitter.emit("; param location for %s (%d)", param.name(), param.offset());
+      return "[RBP + " + param.offset() + "]";
     }
-    return reg.sizeByType(varType);
+    /*
+    *       if (i < 4) {
+       Register reg = Register.paramRegister(formal.varType(), i);
+       //        location = new RegisterLocation(formal.name(), reg, formal.varType());
+       resolver.reserve(reg);
+     } else {
+       // use the vartype to decide how much space to allocate
+       //        stackAmount -= formal.varType().size();
+       //        location = new StackLocation(formal.name(), formal.varType(), stackAmount);
+     }
+
+    *
+    */
+    return reg.sizeByType(param.type());
   }
 
   /** If the operand is a temp and was allocated, deallocate its register. */
@@ -368,7 +381,7 @@ class Resolver implements RegistersInterface {
     usedRegisters.retainAll(Register.NONVOLATILE_REGISTERS);
     ImmutableList<Register> registersToSave = ImmutableList.copyOf(usedRegisters);
     for (Register r : registersToSave) {
-        rs.push(r);
+      rs.push(r);
     }
 
     // then copy everything from the child to the *original* emitter
@@ -390,6 +403,17 @@ class Resolver implements RegistersInterface {
 
     emitter.setDelegate(original);
     usedRegisters.clear();
+  }
+
+  void push(ResolvedOperand operand) {
+    Register register = operand.register();
+    if (register != null) {
+      // This is a little wasteful, shrug.
+      RegisterState rs = new RegisterState(emitter);
+      rs.push(register);
+    } else {
+      emitter.emit("push QWORD %s", operand.name());
+    }
   }
 
   @AutoValue
@@ -416,7 +440,7 @@ class Resolver implements RegistersInterface {
 
     @Override
     public boolean isRegister() {
-      return operand().isRegister();
+      return register() != null;
     }
 
     @Override

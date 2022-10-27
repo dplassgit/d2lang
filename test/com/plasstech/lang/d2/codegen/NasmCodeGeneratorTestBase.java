@@ -118,7 +118,7 @@ public class NasmCodeGeneratorTestBase {
     String interpreterOutput =
         Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
 
-    assertThat(interpreterOutput).isEqualTo(compiledOutput);
+    assertThat(compiledOutput).isEqualTo(interpreterOutput);
   }
 
   public void assertCompiledOutput(String sourceCode, String filename, String expectedOutput)

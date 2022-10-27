@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.plasstech.lang.d2.codegen.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -31,7 +32,7 @@ class CallCodeGenerator {
     for (int i = 0; i < Math.min(op.actuals().size(), 4); ++i) {
       Location formalLocation = op.formals().get(i);
       Register reg = Register.paramRegister(formalLocation.type(), i);
-      for (int j = i + 1; j < op.actuals().size(); ++j) {
+      for (int j = i + 1; j < Math.min(op.actuals().size(), 4); ++j) {
         // this allocates a register to it, but... it shouldn't be needed here (WHY?!)
         Operand actual = op.actuals().get(j);
         resolver.resolve(actual);
@@ -48,25 +49,41 @@ class CallCodeGenerator {
     }
 
     if (sourceToAlias.isEmpty()) {
-      // simple case, no conflicts or all locals.
+      // Simple case, no conflicts or all locals.
       emitter.emit("; no sources conflict with dests, doing simple version");
-      int index = 0;
-      for (Operand actual : op.actuals()) {
-        Location formal = op.formals().get(index);
-        String formalLocation = resolver.resolve(formal);
-        String actualLocation = resolver.resolve(actual);
-        if (formalLocation.equals(actualLocation)) {
-          emitter.emit(
-              "; parameter #%d (formal %s) already in %s (%s)",
-              index, formal.name(), actualLocation, actual);
+      // Push from right to left.
+      for (int index = op.actuals().size() - 1; index >= 0; index--) {
+        Operand actual = op.actuals().get(index);
+        if (index <= 3) {
+          // write into register.
+          Location formal = op.formals().get(index);
+          String formalLocation = resolver.resolve(formal);
+          String actualLocation = resolver.resolve(actual);
+          if (formalLocation.equals(actualLocation)) {
+            emitter.emit(
+                "; parameter #%d (formal %s) already in %s (%s)",
+                index, formal.name(), actualLocation, actual);
+          } else {
+            resolver.mov(actual, formal);
+          }
         } else {
-          resolver.mov(actual, formal);
+          // push onto stack.
+          ResolvedOperand actualOp = resolver.resolveFully(actual);
+          // Push it, push it good.
+          resolver.push(actualOp);
         }
-        index++;
       }
     } else {
       emitter.emit("; at least one conflict; doing complicated case");
-      for (int i = 0; i < op.actuals().size(); ++i) {
+      if (op.actuals().size() > 3) {
+        // Push from right to left.
+        for (int i = op.actuals().size() - 1; i >= 4; i--) {
+          Operand actual = op.actuals().get(i);
+          ResolvedOperand actualOp = resolver.resolveFully(actual);
+          resolver.push(actualOp);
+        }
+      }
+      for (int i = 0; i < Math.min(op.actuals().size(), 4); ++i) {
         Operand actual = op.actuals().get(i);
         VarType type = actual.type();
         Register sourceReg = resolver.toRegister(actual);

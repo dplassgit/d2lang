@@ -279,7 +279,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Location dest = op.destination();
     boolean reuse = false;
     if (op.left() instanceof TempLocation
-        && op.right() instanceof TempLocation
         && op.destination() instanceof TempLocation
         && (leftType == VarType.BOOL
             || leftType == VarType.BYTE
@@ -709,27 +708,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // this may over-allocate, but /shrug.
       int bytes = 16 * (op.localBytes() / 16 + 1);
       emit("sub RSP, %d  ; space for locals", bytes);
+    } else {
+      emit("push RBP");
+      emit("mov RBP, RSP");
     }
     resolver.procEntry();
-    // Assign locations of each parameter
     int i = 0;
-    // I hate this. the param should already know its location, as a ParamLocation
     for (Parameter formal : op.formals()) {
-      Location location;
-      Register reg = Register.paramRegister(formal.varType(), i);
-      if (reg != null) {
-        location = new RegisterLocation(formal.name(), reg, formal.varType());
-        resolver.reserve(reg);
+      if (i < 4) {
+        resolver.reserve(Register.paramRegister(formal.varType(), i));
       } else {
-        // TODO: implement this
-        // use the vartype to decide how much space to allocate
-        // location = new StackLocation(formal.name(), -i * 8, formal.varType());
-        fail("Cannot generate more than 4 params yet");
-        return;
+        break;
       }
       i++;
-      // Is this even ever used?!
-      formal.setLocation(location);
     }
   }
 
@@ -762,10 +753,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("__exit_of_%s:", op.procName());
     resolver.procEnd();
 
-    if (op.localBytes() > 0) {
-      // this adjusts rbp, rsp
-      emit("leave");
-    }
+    //    if (op.localBytes() > 0) {
+    //     this adjusts rbp, rsp
+    //    emit("leave");
+    emit("mov RSP, RBP");
+    emit("pop RBP");
+    //    }
     emit("ret  ; return from procedure");
   }
 

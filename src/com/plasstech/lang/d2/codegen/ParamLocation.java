@@ -7,10 +7,12 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class ParamLocation extends Location {
   private final int index;
+  private final int offset;
 
-  public ParamLocation(String varName, VarType varType, int index) {
+  public ParamLocation(String varName, VarType varType, int index, int offset) {
     super(varName, varType);
     this.index = index;
+    this.offset = offset;
   }
 
   @Override
@@ -20,6 +22,10 @@ public class ParamLocation extends Location {
 
   public int index() {
     return index;
+  }
+
+  public int offset() {
+    return offset;
   }
 
   @Override
@@ -32,6 +38,6 @@ public class ParamLocation extends Location {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getClass().getName(), name(), type(), storage(), index);
+    return Objects.hash(getClass().getName(), name(), type(), storage(), index, offset);
   }
 }

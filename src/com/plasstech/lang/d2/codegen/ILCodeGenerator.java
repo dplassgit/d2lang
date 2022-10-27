@@ -338,7 +338,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         return new StackLocation(local.name(), local.varType(), local.offset());
       case PARAM:
         ParamSymbol param = (ParamSymbol) variable;
-        return new ParamLocation(name, variable.varType(), param.index());
+        return new ParamLocation(name, variable.varType(), param.index(), param.offset());
       default:
         throw new IllegalStateException(
             String.format(
@@ -620,6 +620,23 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       localBytes += localSymbol.varType().size();
       localSymbol.setOffset(localBytes);
     }
+    ImmutableList<Symbol> params =
+        symTab
+            .entries()
+            .values()
+            .stream()
+            .filter(symbol -> symbol.storage() == SymbolStorage.PARAM)
+            .collect(ImmutableList.toImmutableList());
+    int paramBytes = 0;
+    int i = 0;
+    for (Symbol symbol : params) {
+      if (i > 3) {
+        ParamSymbol paramSymbol = (ParamSymbol) symbol;
+        paramBytes += 8; // parameters go on the stack and they must always be at a multiple of 8.
+        paramSymbol.setOffset(paramBytes + 8); // 8 for the return address on the stack
+      }
+      i++;
+    }
 
     emit(new ProcEntry(node.name(), node.parameters(), localBytes));
 
@@ -675,8 +692,15 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     ImmutableList.Builder<Location> formals = ImmutableList.builder();
     int i = 0;
+    int paramBytes = 0;
+
+    // set the offset here, which will be used for calls (?)
     for (Parameter formal : formalParams) {
-      formals.add(new ParamLocation(formal.name(), formal.varType(), i++));
+      // this is used in CallCodeGenerator
+      if (i > 3) {
+        paramBytes += formal.varType().size();
+      }
+      formals.add(new ParamLocation(formal.name(), formal.varType(), i++, paramBytes));
     }
     return formals.build();
   }

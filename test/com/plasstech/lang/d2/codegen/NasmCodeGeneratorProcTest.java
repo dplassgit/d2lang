@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assume.assumeTrue;
 
 import org.junit.Ignore;
@@ -9,7 +8,6 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 
@@ -120,6 +118,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
           + "procParamFirst4Locations(false,'thep4',-1,-2) ";
 
   @Test
+  @Ignore("Irrelevant now")
   public void procParamFirst4Locations() throws Exception {
     execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
 
@@ -127,26 +126,26 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     ProgramNode root = state.programNode();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
 
-    // RCX, RDX, R8, and R9
-    Parameter param1 = proc.parameters().get(0);
-    assertThat(param1.location()).isInstanceOf(RegisterLocation.class);
-    RegisterLocation register1 = (RegisterLocation) param1.location();
-    assertThat(register1.register()).isEqualTo(IntRegister.RCX);
-
-    Parameter param2 = proc.parameters().get(1);
-    assertThat(param2.location()).isInstanceOf(RegisterLocation.class);
-    RegisterLocation register2 = (RegisterLocation) param2.location();
-    assertThat(register2.register()).isEqualTo(IntRegister.RDX);
-
-    Parameter param3 = proc.parameters().get(2);
-    assertThat(param3.location()).isInstanceOf(RegisterLocation.class);
-    RegisterLocation register3 = (RegisterLocation) param3.location();
-    assertThat(register3.register()).isEqualTo(IntRegister.R8);
-
-    Parameter param4 = proc.parameters().get(3);
-    assertThat(param4.location()).isInstanceOf(RegisterLocation.class);
-    RegisterLocation register4 = (RegisterLocation) param4.location();
-    assertThat(register4.register()).isEqualTo(IntRegister.R9);
+    //    // RCX, RDX, R8, and R9
+    //    Parameter param1 = proc.parameters().get(0);
+    //    assertThat(param1.location()).isInstanceOf(RegisterLocation.class);
+    //    RegisterLocation register1 = (RegisterLocation) param1.location();
+    //    assertThat(register1.register()).isEqualTo(IntRegister.RCX);
+    //
+    //    Parameter param2 = proc.parameters().get(1);
+    //    assertThat(param2.location()).isInstanceOf(RegisterLocation.class);
+    //    RegisterLocation register2 = (RegisterLocation) param2.location();
+    //    assertThat(register2.register()).isEqualTo(IntRegister.RDX);
+    //
+    //    Parameter param3 = proc.parameters().get(2);
+    //    assertThat(param3.location()).isInstanceOf(RegisterLocation.class);
+    //    RegisterLocation register3 = (RegisterLocation) param3.location();
+    //    assertThat(register3.register()).isEqualTo(IntRegister.R8);
+    //
+    //    Parameter param4 = proc.parameters().get(3);
+    //    assertThat(param4.location()).isInstanceOf(RegisterLocation.class);
+    //    RegisterLocation register4 = (RegisterLocation) param4.location();
+    //    assertThat(register4.register()).isEqualTo(IntRegister.R9);
   }
 
   @Test
@@ -258,5 +257,117 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "}"
             + "print dofact(10)",
         "fact");
+  }
+
+  @Test
+  public void moreThan4BoolParams() throws Exception {
+    execute(
+        "      and6:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
+            + "  println e"
+            + "  println f"
+            + "  return a and b and c and d and e and f"
+            + "}"
+            + " println and6(true, false, true, false, true, false)",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4IntParams() throws Exception {
+    execute(
+        "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + " println add6(1,2,3,4,5,6) ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4StringParams() throws Exception {
+    execute(
+        "      add6:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + " println add6('a','b','c','d','e','f') ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4DoubleParams() throws Exception {
+    execute(
+        "      add6:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + " println add6(1.,2.,3.,4.,5.,6.) ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4IntLocalParams() throws Exception {
+    execute(
+        "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + "doit:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
+            + "  aa = -a bb = -b ff = -f ee = -e"
+            + "  return add6(ff,ee,d,c,bb,aa)"
+            + "}"
+            + " println doit(1,2,3,4,5,6) ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4StringLocalParams() throws Exception {
+    execute(
+        "      add6:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + "doit:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"
+            + "  aa = a[0] ee = e[0]"
+            + "  return add6(f,ee,d,c,b,aa)"
+            + "}"
+            + " println doit('aa','bb','cc','dd','ee','ff') ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4DoubleLocalParams() throws Exception {
+    execute(
+        "      add6:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
+            + "  println e"
+            + "  println f"
+            + "  return a+b+c+d+e+f"
+            + "}"
+            + "doit:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
+            + "  aa = -a bb = -b ff = -f ee = -e"
+            + "  return add6(ff,ee,d,c,bb,aa)"
+            + "}"
+            + " println doit(1.,2.,3.,4.,5.,6.) ",
+        "params6");
+  }
+
+  @Test
+  public void moreThan4BoolLocalParams() throws Exception {
+    execute(
+        "      add6:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
+            + "  println e"
+            + "  println f"
+            + "  return a and b and c and d and e and f"
+            + "}"
+            + "doit:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
+            + "  aa = not a bb = not b ee = not e ff = not f"
+            + "  return add6(ff,ee,d,c,bb,aa)"
+            + "}"
+            + " println doit(true, false, true, false, true, false) ",
+        "params6");
   }
 }

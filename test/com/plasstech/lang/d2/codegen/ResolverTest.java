@@ -24,10 +24,10 @@ public class ResolverTest {
   private static final StackLocation STACK_INT2 = new StackLocation("i1", VarType.INT, 4);
   private static final StackLocation STACK_STRING = new StackLocation("s2", VarType.STRING, 16);
 
-  private static final ParamLocation PARAM_BYTE = new ParamLocation("p1", VarType.BYTE, 0);
-  private static final ParamLocation PARAM_DOUBLE = new ParamLocation("d1", VarType.DOUBLE, 1);
-  private static final ParamLocation PARAM_INT = new ParamLocation("i1", VarType.INT, 2);
-  private static final ParamLocation PARAM_STRING = new ParamLocation("s2", VarType.STRING, 3);
+  private static final ParamLocation PARAM_BYTE = new ParamLocation("p1", VarType.BYTE, 0, 0);
+  private static final ParamLocation PARAM_DOUBLE = new ParamLocation("d1", VarType.DOUBLE, 1, 0);
+  private static final ParamLocation PARAM_INT = new ParamLocation("i1", VarType.INT, 2, 0);
+  private static final ParamLocation PARAM_STRING = new ParamLocation("s2", VarType.STRING, 3, 0);
   private static final TempLocation TEMP_BYTE = new TempLocation("__tempb", VarType.BYTE);
   private static final TempLocation TEMP_DOUBLE = new TempLocation("__tempd", VarType.DOUBLE);
   private static final TempLocation TEMP_INT = new TempLocation("__tempi", VarType.INT);

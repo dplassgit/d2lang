@@ -120,6 +120,16 @@ public class InterpreterTest {
   }
 
   @Test
+  public void proc5Params(@TestParameter boolean optimize) {
+    Environment env =
+        execute(
+            "       add5:proc(a:int,b:int,c:int,d:int,e:int):int {return a+b+c+d+e}"
+                + " x=add5(1,2,3,4,5) ",
+            optimize);
+    assertThat(env.getValue("x")).isEqualTo(1 + 2 + 3 + 4 + 5);
+  }
+
+  @Test
   public void recursiveProcCall() {
     Environment env =
         execute(
@@ -420,8 +430,8 @@ public class InterpreterTest {
 
   private Environment execute(String program, boolean optimize) {
     InterpreterExecutor ee = new InterpreterExecutor(program);
-    //    ee.setCodeGenDebugLevel(2);
-    //    ee.setOptDebugLevel(2);
+    ee.setCodeGenDebugLevel(2);
+    ee.setOptDebugLevel(2);
     ee.setOptimize(optimize);
     InterpreterResult result = ee.execute();
     //    System.out.println(ee.programNode());
