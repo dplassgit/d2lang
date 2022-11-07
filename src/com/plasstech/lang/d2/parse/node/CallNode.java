@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse.node;
 
 import java.util.List;
 
+import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
 
 /** Represents a node for calling a procedure with actual parameters */
@@ -42,5 +43,18 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
    */
   public boolean isStatement() {
     return isStatement;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof CallNode)) {
+      return false;
+    }
+    return this.hashCode() == obj.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(procName, actuals, isStatement, varType(), getClass());
   }
 }

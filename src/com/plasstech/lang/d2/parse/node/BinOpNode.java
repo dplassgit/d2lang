@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse.node;
 
 import java.util.Set;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.TokenType;
@@ -78,5 +79,18 @@ public class BinOpNode extends AbstractNode implements ExprNode {
   @Override
   public void accept(NodeVisitor visitor) {
     visitor.visit(this);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof BinOpNode)) {
+      return false;
+    }
+    return this.hashCode() == obj.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(left, right, operator, varType(), getClass());
   }
 }

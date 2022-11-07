@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.parse.node;
 
+import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 
@@ -26,5 +27,18 @@ public class NewNode extends AbstractNode implements ExprNode {
   @Override
   public String toString() {
     return String.format("NEW %s", recordName);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof NewNode)) {
+      return false;
+    }
+    return this.hashCode() == obj.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(recordName, varType(), getClass());
   }
 }

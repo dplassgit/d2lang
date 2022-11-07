@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.parse.node;
 
+import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -35,5 +36,18 @@ public class ConstNode<T> extends AbstractNode implements ExprNode {
   @Override
   public void accept(NodeVisitor visitor) {
     visitor.visit(this);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof ConstNode)) {
+      return false;
+    }
+    return this.hashCode() == obj.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(value, value.getClass(), varType(), getClass());
   }
 }
