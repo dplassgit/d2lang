@@ -49,7 +49,7 @@ String constants can be created with single or double quotes.
 To define:
 
 ```
-a:int[3] // allocates an array in memory
+a: int[3] // declares & allocates an array in memory
 a[0] = 1
 a[1] = 2
 ```
@@ -63,7 +63,7 @@ lit = [1, 2, 3] // also allocates in memory
 Use the `length` function to find the length of an array:
 
 ```
-x=length([1, 2, 3])
+x = length([1, 2, 3])
 println x == 3
 ```
 
@@ -86,14 +86,14 @@ r: record {
 To create:
 
 ```
-ar=new r
+ar = new r
 ar.f1 = 's'
 ar.f2 = 3
 ar.f3 = new r
 ```
 Records can be compared using `==` and `!=`. Two records
 are `==` if every field is `==`, but not recursively. At this
-time, D2's record comparison is shallow only.
+time, D2's record comparison is "shallow".
 
 
 ## Variables
@@ -104,10 +104,10 @@ Variables do not need to be declared before assigned. You can
 still declare variables before use if you want:
 
 ```
-a:int
-b:string
-c:r  // record type, either previously or subsequently defined
-d:bool
+a: int
+b: string
+c: r  // record type, either previously or subsequently defined
+d: bool
 ```
 
 
@@ -117,7 +117,7 @@ If a variable is not declared, whatever type it is when first assigned will be i
 type throughout its lifetime.
 
 ```
-a=3
+a = 3
 // if a==true // this is a compile-time error because int and bool cannot be compared.
 ```
 
@@ -145,14 +145,13 @@ f:proc {
 
 ### Numbers
 
-* `+`: for int, byte, float
-* `-`, `*`, `/`: for int, byte, float
+* `+`, `-`, `*`, `/`: for int, byte, float
 * `%`: modulo for int, byte
-* '|': bitwise or for int, byte
-* '&': bitwise and for int, byte
-* '^': bitwise xor for int, byte
-* '>>': shift right for int, byte
-* '<<': shift left for int, byte
+* `|`: bitwise `or` for int, byte
+* `&`: bitwise `and` for int, byte
+* `^`: bitwise `xor` for int, byte
+* `>>`: shift right for int, byte
+* `<<`: shift left for int, byte
 
 And all typical comparisons: `== != < <= > >=`.
 
@@ -187,12 +186,12 @@ use the same semantics as C's `strcmp`.
 
 Use `ASC` to get the ASCII int value of the first letter of a string, and `CHR` to 
 create a 1-character string from the ASCII int argument. (D2 does not support
-unicode, though it wouldn't be that difficult to.)
+Unicode yet.)
 
 ```
 s = 'Ab'
-a = asc(s) // becomes 65
-b = chr(a) // becomes 'A'
+a = asc(s) // 65
+b = chr(a) // a one-character string 'A'
 ```
 
 To find the length of a string, use the built-in function `length`.
@@ -209,12 +208,12 @@ See above.
 
 ### Arrays
 
-Use `[index]` to retrieve or set a single entry from an array
+Use `[index]` to retrieve or set a single entry from an array.
 
 
 ## Statements
 
-Statements can live inside or outside a procedure (like in Python.)
+Statements can live inside or outside a procedure, like in Python.
 
 Global statements are excuted top to bottom in a D2 file.
 
@@ -227,26 +226,26 @@ Typical Python semantics:
 
 ```
 if i == 0 {  // must be a boolean expression
-   println "zero"
+  println "zero"
 } elif i == 1 {
-   println "one"
+  println "one"
 } else {
-   println "other"
+  println "other"
 }
 ```
 
 Any number of `elif` clauses are allowed. Like Python (and unlike Java and C), 
 parentheses are *not required* around the boolean expression.
 
-There is no "case" statement in D2, like in Python.
+There is no `case` statement in D2, like in Python.
 
 
 #### `while` loop
 
 ```
-while i< 10 do i = i + 1 {
+while i < 10 do i = i + 1 {
   // loop statements
-  break
+  println i
 }
 ```
 
@@ -259,12 +258,12 @@ while i< 10 do i = i + 1 {
 built-in support for printing arrays. There is no built-in support for printing
 records.
 
-`println variable` appends a newline to printing the object.
+`println variable` appends a newline after printing the object.
 
 
 ### `input`
 
-Gets a string from stdin until EOF, or 1 MB. (D2 is still a toy language in some
+Gets a string from stdin until EOF, or 1 MB of data is read. (D2 is still a toy language in some
 ways.)
 
 ```
@@ -318,29 +317,28 @@ NOTE: There is a limit of 4 parameters in procedure definitions and calls. There
 an [open bug](https://github.com/dplassgit/d2lang/issues/63) to address this.
 
 
-#### main
+#### `main`
 
-The procedure `main` is optional and if included, must be the last 'statement' in a D2 file.
+The procedure `main` is optional and if included, must be the last statement in a D2 file.
 
-There is no support yet for passing argv/argc to `main`, but there is an [open bug](https://github.com/dplassgit/d2lang/issues/8) to finish this.
+There is no support yet for passing argv/argc to `main`, but there is an 
+[open bug](https://github.com/dplassgit/d2lang/issues/8) to finish this.
 
 #### Externally defined procedures
 
-Prepend `extern` before the `proc` keyword. This must be a procedure/function in the gcc
-runtime library.
+Prepend `extern` before the `proc` keyword, and don't define the body of the procedure. Example:
 
 ```
 rand: extern proc(n: int): int
 ```
 
+This must be a procedure/function in the `gcc` runtime library.
 
 ## Runtime Checks
 
 There are runtime checks in place for
-* null pointer dereferences (strings, records, arrays), 
-* index out of range for strings and arrays
-* division by zero (and modulo zero)
+* null pointer dereferences (strings, records, arrays)
+* index out of range for string and array references
+* division by zero and modulo zero
 
 When possible, the optimizer will find division by zero at compile time.
-
-

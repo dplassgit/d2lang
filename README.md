@@ -35,7 +35,7 @@ See also [docs/running.md](docs/running.md)
 Only compiles to Intel x64. Only links the Windows version of the `gcc` runtime 
 library. Only uses `nasm` and `gcc`. 
 
-There are (various bugs)[https://github.com/dplassgit/d2lang/labels/bug].
+There are [various bugs](https://github.com/dplassgit/d2lang/labels/bug).
 
 
 ## Language sample
