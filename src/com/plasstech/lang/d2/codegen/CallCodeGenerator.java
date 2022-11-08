@@ -33,11 +33,9 @@ class CallCodeGenerator {
       Location formalLocation = op.formals().get(i);
       Register reg = Register.paramRegister(formalLocation.type(), i);
       for (int j = i + 1; j < Math.min(op.actuals().size(), 4); ++j) {
-        // this allocates a register to it, but... it shouldn't be needed here (WHY?!)
         Operand actual = op.actuals().get(j);
-        resolver.resolve(actual);
-        Register sourceReg = resolver.toRegister(actual);
-        if (reg == sourceReg) {
+        ResolvedOperand resolved = resolver.resolveFully(actual);
+        if (reg == resolved.register()) {
           // it means we're being copied to a later register.
           Register alias = resolver.allocate(formalLocation.type());
           sourceToAlias.put(reg, alias);
@@ -54,21 +52,19 @@ class CallCodeGenerator {
       // Push from right to left.
       for (int index = op.actuals().size() - 1; index >= 0; index--) {
         Operand actual = op.actuals().get(index);
+        ResolvedOperand actualOp = resolver.resolveFully(actual);
         if (index <= 3) {
           // write into register.
           Location formal = op.formals().get(index);
           String formalLocation = resolver.resolve(formal);
-          String actualLocation = resolver.resolve(actual);
-          if (formalLocation.equals(actualLocation)) {
+          if (formalLocation.equals(actualOp.name())) {
             emitter.emit(
                 "; parameter #%d (formal %s) already in %s (%s)",
-                index, formal.name(), actualLocation, actual);
+                index, formal.name(), actualOp.name(), actual);
           } else {
             resolver.mov(actual, formal);
           }
         } else {
-          // push onto stack.
-          ResolvedOperand actualOp = resolver.resolveFully(actual);
           // Push it, push it good.
           resolver.push(actualOp);
         }

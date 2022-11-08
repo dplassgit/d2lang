@@ -123,23 +123,10 @@ class Resolver implements RegistersInterface {
   private String generateParamLocationName(ParamLocation param) {
     Register reg = Register.paramRegister(param.type(), param.index());
     if (reg == null) {
-      // implement > 4 params.
+      // No register; must be an overflow parameter
       emitter.emit("; param location for %s (%d)", param.name(), param.offset());
       return "[RBP + " + param.offset() + "]";
     }
-    /*
-    *       if (i < 4) {
-       Register reg = Register.paramRegister(formal.varType(), i);
-       //        location = new RegisterLocation(formal.name(), reg, formal.varType());
-       resolver.reserve(reg);
-     } else {
-       // use the vartype to decide how much space to allocate
-       //        stackAmount -= formal.varType().size();
-       //        location = new StackLocation(formal.name(), formal.varType(), stackAmount);
-     }
-
-    *
-    */
     return reg.sizeByType(param.type());
   }
 

@@ -702,15 +702,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcEntry op) {
+    emit("push RBP");
+    emit("mov RBP, RSP");
     if (op.localBytes() > 0) {
-      emit("push RBP");
-      emit("mov RBP, RSP");
       // this may over-allocate, but /shrug.
       int bytes = 16 * (op.localBytes() / 16 + 1);
       emit("sub RSP, %d  ; space for locals", bytes);
-    } else {
-      emit("push RBP");
-      emit("mov RBP, RSP");
     }
     resolver.procEntry();
     int i = 0;
@@ -753,12 +750,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit0("__exit_of_%s:", op.procName());
     resolver.procEnd();
 
-    //    if (op.localBytes() > 0) {
-    //     this adjusts rbp, rsp
-    //    emit("leave");
     emit("mov RSP, RBP");
     emit("pop RBP");
-    //    }
     emit("ret  ; return from procedure");
   }
 

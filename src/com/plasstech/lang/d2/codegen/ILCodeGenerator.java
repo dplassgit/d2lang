@@ -692,15 +692,11 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     ImmutableList.Builder<Location> formals = ImmutableList.builder();
     int i = 0;
-    int paramBytes = 0;
-
-    // set the offset here, which will be used for calls (?)
     for (Parameter formal : formalParams) {
-      // this is used in CallCodeGenerator
-      if (i > 3) {
-        paramBytes += formal.varType().size();
-      }
-      formals.add(new ParamLocation(formal.name(), formal.varType(), i++, paramBytes));
+      // why is this here, and also in visit(ProcedureNode) for setting the
+      // SYMBOL offset?
+      // Maybe these should just be the symbols?
+      formals.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
     }
     return formals.build();
   }
