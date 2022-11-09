@@ -685,8 +685,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     ImmutableList.Builder<Location> formalLocations = ImmutableList.builder();
     int i = 0;
     for (ParamSymbol formal : formals) {
-      // Why is this here, and also in lookupLocation, where it *really* sets the offset?
-      // Maybe these should just be the symbols?
+      // TODO(bug #194): Why is this here, and also in lookupLocation, where it *really* sets the
+      // offset? Maybe these should just be the symbols?
       formalLocations.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
     }
     return formalLocations.build();
