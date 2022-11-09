@@ -39,8 +39,8 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -684,7 +684,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     ProcSymbol procSymbol = op.procSym();
     for (int i = 0; i < op.actuals().size(); ++i) {
       Operand actualSource = op.actuals().get(i);
-      Parameter formalParam = procSymbol.parameters().get(i);
+      ParamSymbol formalParam = procSymbol.formal(i);
       // formals are not necessarily on the stack...
       Location formal = new StackLocation(formalParam.name(), formalParam.varType(), 0);
       childEnv.setValue(formal, resolve(actualSource));

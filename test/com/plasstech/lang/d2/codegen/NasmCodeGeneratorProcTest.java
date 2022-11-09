@@ -255,6 +255,25 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void manyManyParams() throws Exception {
+    execute(
+        "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int,"
+            + "a2:int,b2:int,c2:int,d2:int,e2:int,f2:int):int {"
+            + "  println e"
+            + "  println f"
+            + "  println a2"
+            + "  println b2"
+            + "  println c2"
+            + "  println d2"
+            + "  println e2"
+            + "  println f2"
+            + "  return a+b+c+d+e+f-a2-b2-c2-d2-e2-f2"
+            + "}"
+            + " println add6(1,2,3,4,5,6,7,8,9,10,11,12) ",
+        "params6");
+  }
+
+  @Test
   public void moreThan4StringParams() throws Exception {
     execute(
         "      add6:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"

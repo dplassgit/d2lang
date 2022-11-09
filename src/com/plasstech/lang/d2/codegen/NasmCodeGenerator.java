@@ -35,9 +35,9 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
@@ -710,8 +710,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("sub RSP, %d  ; space for locals", bytes);
     }
     resolver.procEntry();
+
     int i = 0;
-    for (Parameter formal : op.formals()) {
+    for (ParamSymbol formal : op.formals()) {
       if (i < 4) {
         resolver.reserve(Register.paramRegister(formal.varType(), i));
       } else {

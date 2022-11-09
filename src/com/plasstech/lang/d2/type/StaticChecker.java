@@ -465,20 +465,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
     // 2. make sure the arg length is right.
     ProcSymbol proc = (ProcSymbol) maybeProc;
-    if (proc.parameters().size() != node.actuals().size()) {
+    if (proc.formals().size() != node.actuals().size()) {
       errors.add(
           new TypeException(
               String.format(
                   "Wrong number of arguments in call to PROC '%s': found %d, expected %d",
-                  node.procName(), node.actuals().size(), proc.parameters().size()),
+                  node.procName(), node.actuals().size(), proc.formals().size()),
               node.position()));
     }
     // 3. eval parameter expressions.
     node.actuals().forEach(actual -> actual.accept(this));
 
     // 4. for each param, if param type is unknown, set it from the expr if possible
-    for (int i = 0; i < Math.min(proc.parameters().size(), node.actuals().size()); ++i) {
-      Parameter formal = proc.parameters().get(i);
+    for (int i = 0; i < Math.min(proc.formals().size(), node.actuals().size()); ++i) {
+      ParamSymbol formal = proc.formal(i);
       ExprNode actual = node.actuals().get(i);
       if (formal.varType().isUnknown()) {
         if (actual.varType().isUnknown()) {
@@ -893,8 +893,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (sym == null) {
       // nested proc; spawn symbol table & assign to the node.
       procSymbol = symbolTable().declareProc(node);
-      SymTab child = symbolTable().spawn();
-      procSymbol.setSymTab(child);
     } else if (sym.varType() != VarType.PROC) {
       errors.add(
           new TypeException(
@@ -910,11 +908,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       needsReturn.add(procSymbol);
     }
 
-    // add all args to local symbol table
+    // add all parameters to local symbol table
     if (innerProc) {
       int i = 0;
       for (Parameter param : node.parameters()) {
-        symbolTable().declareParam(param.name(), param.varType(), i++);
+        procSymbol.declareParam(param.name(), param.varType(), i++);
       }
     }
 
@@ -962,7 +960,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   }
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
-    /**
+    /*
      * <pre>
      * If there's a top-level "return" in this block, return true
      * Else for each statement in the block:
@@ -981,18 +979,18 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
 
-    // for each 'if' find if there's a
     for (StatementNode stmt : node.statements()) {
       if (stmt instanceof IfNode) {
+        // for each 'if':
         IfNode ifNode = (IfNode) stmt;
         boolean ok = true;
         for (Case ifCase : ifNode.cases()) {
-          // make sure all the arms have a return
+          // make sure all the "case" arms have a return
           ok &= checkAllPathsHaveReturn(ifCase.block());
         }
         BlockNode elseBlock = ifNode.elseBlock();
         if (elseBlock != null) {
-          // make sure the else has a return
+          // make sure the "else" has a return
           ok &= checkAllPathsHaveReturn(elseBlock);
         } else {
           // no "else" - no good.

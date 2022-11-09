@@ -46,7 +46,13 @@ class ProcGatherer extends DefaultNodeVisitor {
     }
 
     // Add this procedure to the symbol table
-    symbolTable.declareProc(node);
+    ExternProcSymbol procSymbol = symbolTable.declareProc(node);
+
+    // 4. add all formals to proc's symbol table
+    int i = 0;
+    for (Parameter formal : node.parameters()) {
+      procSymbol.declareParam(formal.name(), formal.varType(), i++);
+    }
   }
 
   @Override
@@ -74,14 +80,10 @@ class ProcGatherer extends DefaultNodeVisitor {
     // Add this procedure to the symbol table
     ProcSymbol procSymbol = symbolTable.declareProc(node);
 
-    // 2. spawn symbol table & assign to the node.
-    SymTab child = symbolTable.spawn();
-    procSymbol.setSymTab(child);
-
-    // 4. add all formals to proc's symbol table
+    // add all formals to proc's symbol table
     int i = 0;
     for (Parameter formal : node.parameters()) {
-      child.declareParam(formal.name(), formal.varType(), i++);
+      procSymbol.declareParam(formal.name(), formal.varType(), i++);
     }
   }
 }

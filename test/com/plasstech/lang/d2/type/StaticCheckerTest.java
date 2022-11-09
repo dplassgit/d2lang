@@ -17,7 +17,6 @@ import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.Node;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -930,7 +929,7 @@ public class StaticCheckerTest {
   public void paramDecl_recordType() {
     SymTab symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
-    Parameter instance = proc.parameters().get(0);
+    ParamSymbol instance = proc.formal(0);
     RecordReferenceType r1 = (RecordReferenceType) instance.varType();
     assertThat(r1.name()).isEqualTo("r1");
   }

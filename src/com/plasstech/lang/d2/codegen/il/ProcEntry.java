@@ -4,15 +4,15 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.type.ParamSymbol;
 
 public class ProcEntry extends Op {
 
   private final String name;
-  private final ImmutableList<Parameter> formals;
+  private final ImmutableList<ParamSymbol> formals;
   private final int localBytes;
 
-  public ProcEntry(String name, ImmutableList<Parameter> formals, int localBytes) {
+  public ProcEntry(String name, ImmutableList<ParamSymbol> formals, int localBytes) {
     this.name = name;
     this.formals = formals;
     this.localBytes = localBytes;
@@ -22,12 +22,12 @@ public class ProcEntry extends Op {
     return name;
   }
 
-  public ImmutableList<Parameter> formals() {
+  public ImmutableList<ParamSymbol> formals() {
     return formals;
   }
 
   public ImmutableList<String> formalNames() {
-    return formals.stream().map(Parameter::name).collect(toImmutableList());
+    return formals.stream().map(ParamSymbol::name).collect(toImmutableList());
   }
 
   @Override

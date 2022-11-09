@@ -84,7 +84,7 @@ public class SymTab {
     return declareVariable(name, varType, SymbolStorage.TEMP);
   }
 
-  public Symbol declareParam(String name, VarType varType, int index) {
+  public ParamSymbol declareParam(String name, VarType varType, int index) {
     Preconditions.checkState(
         !values.containsKey(name),
         "%s already declared as %s. Cannot be redeclared as %s.",
@@ -95,7 +95,8 @@ public class SymTab {
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
     // parameters are always assigned, by definition.
-    Symbol param = new ParamSymbol(name, index).setVarType(varType).setAssigned();
+    ParamSymbol param = new ParamSymbol(name, index);
+    param.setVarType(varType).setAssigned();
     values.put(name, param);
     return param;
   }
@@ -109,7 +110,8 @@ public class SymTab {
               node.name(), sym.varType()),
           node.position());
     }
-    ExternProcSymbol procSymbol = new ExternProcSymbol(node);
+    SymTab child = spawn();
+    ExternProcSymbol procSymbol = new ExternProcSymbol(node, child);
     values.put(node.name(), procSymbol);
     return procSymbol;
   }
@@ -123,7 +125,8 @@ public class SymTab {
               node.name(), sym.varType()),
           node.position());
     }
-    ProcSymbol procSymbol = new ProcSymbol(node);
+    SymTab child = spawn();
+    ProcSymbol procSymbol = new ProcSymbol(node, child);
     values.put(node.name(), procSymbol);
     return procSymbol;
   }

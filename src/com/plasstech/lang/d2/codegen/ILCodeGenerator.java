@@ -49,7 +49,6 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -620,25 +619,18 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       localBytes += localSymbol.varType().size();
       localSymbol.setOffset(localBytes);
     }
-    ImmutableList<Symbol> params =
-        symTab
-            .entries()
-            .values()
-            .stream()
-            .filter(symbol -> symbol.storage() == SymbolStorage.PARAM)
-            .collect(ImmutableList.toImmutableList());
-    int paramBytes = 0;
-    int i = 0;
-    for (Symbol symbol : params) {
+
+    ImmutableList<ParamSymbol> formals = procSym.formals();
+    int paramBytes = 8; // 8 for the return address on the stack
+    for (int i = 0; i < formals.size(); ++i) {
       if (i > 3) {
-        ParamSymbol paramSymbol = (ParamSymbol) symbol;
+        ParamSymbol formal = formals.get(i);
         paramBytes += 8; // parameters go on the stack and they must always be at a multiple of 8.
-        paramSymbol.setOffset(paramBytes + 8); // 8 for the return address on the stack
+        formal.setOffset(paramBytes);
       }
-      i++;
     }
 
-    emit(new ProcEntry(node.name(), node.parameters(), localBytes));
+    emit(new ProcEntry(node.name(), formals, localBytes));
 
     node.block().accept(this);
 
@@ -688,17 +680,16 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private ImmutableList<Location> procSymFormals(ProcSymbol procSym) {
-    ImmutableList<Parameter> formalParams = procSym.parameters();
+    ImmutableList<ParamSymbol> formals = procSym.formals();
 
-    ImmutableList.Builder<Location> formals = ImmutableList.builder();
+    ImmutableList.Builder<Location> formalLocations = ImmutableList.builder();
     int i = 0;
-    for (Parameter formal : formalParams) {
-      // why is this here, and also in visit(ProcedureNode) for setting the
-      // SYMBOL offset?
+    for (ParamSymbol formal : formals) {
+      // Why is this here, and also in lookupLocation, where it *really* sets the offset?
       // Maybe these should just be the symbols?
-      formals.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
+      formalLocations.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
     }
-    return formals.build();
+    return formalLocations.build();
   }
 
   private void emit(Op op) {
