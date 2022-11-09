@@ -697,6 +697,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(IfNode node) {
+    Set<Node> conditions = new HashSet<>();
     for (IfNode.Case ifCase : node.cases()) {
       Node condition = ifCase.condition();
       condition.accept(this);
@@ -707,6 +708,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                     "Cannot use %s expression in IF or ELIF; must be BOOL", condition.varType()),
                 condition.position()));
       }
+      if (conditions.contains(condition)) {
+        errors.add(
+            new TypeException(
+                String.format("Duplicate expression %s in IF/ELIF", condition),
+                condition.position()));
+      }
+      conditions.add(condition);
       ifCase
           .block()
           .statements()

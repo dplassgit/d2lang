@@ -565,6 +565,17 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void if_duplicated_cases() {
+    assertError("a=1 if a==1 { print a } elif a == 1 {print 'a'} ", "Duplicate expression a == 1");
+    assertError(
+        "a='hi' if a==input { print a } elif a == input {print 'a'} ",
+        "Duplicate expression a == INPUT");
+    assertError(
+        "a=1 if a==1 OR a == 2 { print a } elif a == 1 OR a == 2 {print 'a'} ",
+        "Duplicate expression a == 1 OR a == 2");
+  }
+
+  @Test
   public void else_error() {
     assertError("a=1 if a==1 {} else {a=b }", "Indeterminable");
   }

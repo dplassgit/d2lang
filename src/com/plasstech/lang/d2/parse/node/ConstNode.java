@@ -48,6 +48,9 @@ public class ConstNode<T> extends AbstractNode implements ExprNode {
 
   @Override
   public int hashCode() {
+    if (value == null) {
+      return Objects.hashCode(varType(), getClass());
+    }
     return Objects.hashCode(value, value.getClass(), varType(), getClass());
   }
 }
