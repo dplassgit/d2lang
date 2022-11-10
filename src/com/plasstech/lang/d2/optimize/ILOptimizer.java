@@ -22,6 +22,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new ConstantPropagationOptimizer(debugLevel),
             new ArithmeticOptimizer(debugLevel),
             new AdjacentArithmeticOptimizer(debugLevel),
+            new AdjacentLabelOptimizer(debugLevel),
             new PrintOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),

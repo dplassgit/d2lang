@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableList;
@@ -51,7 +52,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     setChanged(false);
     for (ip = 0; ip < code.size(); ++ip) {
       try {
-      code.get(ip).accept(this);
+        code.get(ip).accept(this);
       } catch (ClassCastException e) {
         logger.atSevere().withCause(e).log("Cannot optimize %s", code.get(ip).toString());
         throw e;
@@ -102,6 +103,14 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   protected final int ip() {
     return ip;
+  }
+
+  protected final void replaceAllMatching(Predicate<Op> pred, Op replacement) {
+    for (int index = 0; index < code.size(); ++index) {
+      if (pred.test(code.get(index))) {
+        replaceAt(index, replacement);
+      }
+    }
   }
 
   @Override

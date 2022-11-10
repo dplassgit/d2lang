@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.optimize;
 
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
@@ -50,7 +48,8 @@ class DeadCodeOptimizer extends LineOptimizer {
     }
   }
 
-  private int getNextMatch(Class<?> clazz) {
+  // Find the next operand that is not a nop. If it matches "clazz", returns the IP.
+  private int getNextMatch(Class<? extends Op> clazz) {
     for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
       if (testOp instanceof Nop) {
@@ -70,11 +69,11 @@ class DeadCodeOptimizer extends LineOptimizer {
       if (op.isNot()) {
         // if not true == nop
         deleteCurrent();
-        return;
       } else {
         // if true == jump unconditionally
         replaceCurrent(new Goto(op.destination()));
       }
+      return;
     }
     if (op.condition().equals(ConstantOperand.FALSE)
         || op.condition().equals(ConstantOperand.ZERO)) {
@@ -84,27 +83,35 @@ class DeadCodeOptimizer extends LineOptimizer {
       } else {
         // if false == nop
         deleteCurrent();
-        return;
       }
+      return;
     }
-    int nextIp = getNextMatch(Goto.class);
-    if (nextIp != -1) {
-      Op next = getOpAt(nextIp);
-      Goto nextGoto = (Goto) next;
+    int nextGotoIp = getNextMatch(Goto.class);
+    if (nextGotoIp != -1) {
+      Goto nextGoto = (Goto) getOpAt(nextGotoIp);
       if (op.destination().equals(nextGoto.label())) {
         logger.at(loggingLevel).log("Nopping 'if' followed by 'goto' to same place");
         // both the "if" and the "goto" goto the same place, so one is redundant.
         deleteCurrent();
+        return;
+      }
+    }
+
+    int nextLabelIp = getNextMatch(Label.class);
+    if (nextLabelIp != -1) {
+      Label nextLabel = (Label) getOpAt(nextLabelIp);
+      if (op.destination().equals(nextLabel.label())) {
+        logger.at(loggingLevel).log("Nopping 'if' followed by 'label' to same place");
+        // the "if" goes to the next line, so the "if" is redundant.
+        deleteCurrent();
+        return;
       }
     }
   }
 
   @Override
   public void visit(Transfer op) {
-    Operand source = op.source();
-    Location dest = op.destination();
-
-    if (dest.equals(source)) {
+    if (op.destination().equals(op.source())) {
       // a=a is dead. unfortunately this almost never happens...
       deleteCurrent();
       return;
@@ -116,8 +123,7 @@ class DeadCodeOptimizer extends LineOptimizer {
     // 1. if there only nops or labels between here and dest, we don't have to goto.
     int nextIp = getNextMatch(Label.class);
     if (nextIp != -1) {
-      Op testOp = code.get(nextIp);
-      Label label = (Label) testOp;
+      Label label = (Label) code.get(nextIp);
       if (label.label().equals(op.label())) {
         // Found the label!
         logger.at(loggingLevel).log(
