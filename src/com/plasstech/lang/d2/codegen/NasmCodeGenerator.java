@@ -779,6 +779,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     } else {
       emit("call %s", procSym.mungedName());
     }
+    int numArgs = op.actuals().size();
+    if (numArgs > 3) {
+      // # of bytes we have to adjust the stack (pseudo-pop)
+      int bytes = 8 * (numArgs - 4);
+      emit("add RSP, %d  ; adjust for 5th-nth parameters pushed into stack", bytes);
+    }
     Register tempReg = null;
     if (op.destination().isPresent()) {
       Location destination = op.destination().get();

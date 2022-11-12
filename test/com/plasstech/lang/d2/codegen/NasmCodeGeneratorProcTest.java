@@ -257,8 +257,8 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   @Test
   public void manyManyParams() throws Exception {
     execute(
-        "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int,"
-            + "a2:int,b2:int,c2:int,d2:int,e2:int,f2:int):int {"
+        "      add12:proc(a:int,b:int,c:int,d:int,e:int,f:int,"
+            + "          a2:int,b2:int,c2:int,d2:int,e2:int,f2:int):int {"
             + "  println e"
             + "  println f"
             + "  println a2"
@@ -269,7 +269,12 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "  println f2"
             + "  return a+b+c+d+e+f-a2-b2-c2-d2-e2-f2"
             + "}"
-            + " println add6(1,2,3,4,5,6,7,8,9,10,11,12) ",
+            + " add122:proc(a:int,b:int,c:int,d:int,e:int,f:int,"
+            + "           a2:int,b2:int,c2:int,d2:int,e2:int,f2:int):int {"
+            + "  println add12(f,e,d,c,b,a,a2,b2,c2,d2,e2,f2) "
+            + "  return add12(f,e,d,c,b,a,a2,b2,c2,d2,e2,f2) "
+            + "}"
+            + " println add122(1,2,3,4,5,6,7,8,9,10,11,12) ",
         "params6");
   }
 
@@ -339,7 +344,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "}"
             + "doit:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
             + "  aa = -a bb = -b ff = -f ee = -e"
-            + "  return add6(ff,ee,d,c,bb,aa)"
+            + "  return add6(ff,ee,d,c,bb,aa) "
             + "}"
             + " println doit(1.,2.,3.,4.,5.,6.) ",
         "params6");
