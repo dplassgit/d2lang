@@ -156,27 +156,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private static final ImmutableSet<VarType> COMPARABLE_VARTYPES =
       ImmutableSet.of(VarType.INT, VarType.STRING, VarType.BYTE, VarType.DOUBLE);
 
-  // TODO(#132): implement EQEQ and NEQ for arrays
   private static final Set<TokenType> ARRAY_OPERATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
-
-  private static final Set<TokenType> ARRAY_COMPARATORS =
-      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
 
   private Node root;
   private final SymTab symbolTable = new SymTab();
 
-  private Stack<ProcSymbol> procedures = new Stack<>();
-  private Set<ProcSymbol> needsReturn = new HashSet<>();
+  private final Stack<ProcSymbol> procedures = new Stack<>();
+  private final Set<ProcSymbol> needsReturn = new HashSet<>();
   private final Errors errors = new Errors();
-
-  public StaticChecker(Node root) {
-    this.root = root;
-  }
-
-  public StaticChecker() {
-    this.root = null;
-  }
 
   @Override
   public State execute(State input) {
