@@ -144,23 +144,10 @@ public class Parser implements Phase {
 
   private ProgramNode program() {
     // Read statements until EOF or "main"
-    BlockNode statements = statements(matchesEofOrMain());
+    BlockNode statements = statements(matchesEof());
 
     // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
-    if (token.type() == TokenType.EOF) {
-      return new ProgramNode(statements);
-    } else if (token.type() == TokenType.MAIN) {
-      // if main, process main
-      Token start = token;
-      advance(); // eat the main
-      // TODO: parse arguments
-      BlockNode mainBlock = block();
-      expect(TokenType.EOF);
-      MainNode mainProc = new MainNode(mainBlock, start.start());
-      return new ProgramNode(statements, mainProc);
-    }
-    expect(TokenType.MAIN, TokenType.EOF);
-    return null;
+    return new ProgramNode(statements);
   }
 
   private BlockNode statements(Function<Token, Boolean> matcher) {
@@ -173,12 +160,9 @@ public class Parser implements Phase {
     return new BlockNode(children, start);
   }
 
-  private static Function<Token, Boolean> matchesEofOrMain() {
+  private static Function<Token, Boolean> matchesEof() {
     return token -> {
-      if (token.type() == TokenType.EOF) {
-        return true;
-      }
-      return token.type() == TokenType.MAIN;
+      return token.type() == TokenType.EOF;
     };
   }
 
@@ -195,6 +179,14 @@ public class Parser implements Phase {
 
   private StatementNode statement() {
     switch (token.type()) {
+      case MAIN:
+        Token start = token;
+        advance(); // eat the main
+        // TODO: parse arguments
+        BlockNode mainBlock = block();
+        expect(TokenType.EOF);
+        return new MainNode(mainBlock, start.start());
+
       case PRINT:
       case PRINTLN:
         return print(token);

@@ -697,14 +697,14 @@ public class ParserTest {
   @Test
   public void mainEmpty() {
     ProgramNode root = parseProgram("main{}");
-    assertThat(root.main().isPresent()).isTrue();
+    assertThat(root.statements().statements().get(0)).isInstanceOf(MainNode.class);
   }
 
   @Test
   public void statementThenMainEmpty() {
     ProgramNode root = parseProgram("print 123 main{}");
     BlockNode block = root.statements();
-    assertThat(block.statements()).hasSize(1);
+    assertThat(block.statements()).hasSize(2);
 
     PrintNode node = (PrintNode) block.statements().get(0);
     assertThat(node.position().line()).isEqualTo(1);
@@ -715,15 +715,16 @@ public class ParserTest {
     assertThat(intNode.value()).isEqualTo(123);
     assertThat(intNode.position().line()).isEqualTo(1);
     assertThat(intNode.position().column()).isEqualTo(7);
-    assertThat(root.main().isPresent()).isTrue();
+
+    assertThat(block.statements().get(1)).isInstanceOf(MainNode.class);
   }
 
   @Test
   public void mainWithStatement() {
     ProgramNode root = parseProgram("main{ print 123 }");
     BlockNode globalBlock = root.statements();
-    assertThat(globalBlock.statements()).isEmpty();
-    MainNode main = root.main().get();
+    assertThat(globalBlock.statements()).hasSize(1);
+    MainNode main = (MainNode) globalBlock.statements().get(0);
     BlockNode block = main.block();
 
     PrintNode node = (PrintNode) block.statements().get(0);

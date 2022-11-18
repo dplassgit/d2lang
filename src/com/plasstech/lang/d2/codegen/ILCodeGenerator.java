@@ -95,6 +95,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private ImmutableList<Op> generate() {
     root.accept(this);
+    // If there is no "main", there won't be a "stop". Add one. It'll get optimized out.
+    emit(new Stop());
     return ImmutableList.copyOf(operations);
   }
 
@@ -560,9 +562,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   public void visit(MainNode node) {
     // TODO: something about arguments? probably add to local symbol table
     // Also TODO: how to reference arguments
-    if (node.block() != null && !node.block().statements().isEmpty()) {
-      node.block().accept(this);
-    }
+    node.block().accept(this);
     emit(new Stop());
   }
 

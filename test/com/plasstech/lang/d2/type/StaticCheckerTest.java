@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
@@ -598,7 +599,9 @@ public class StaticCheckerTest {
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
 
     ProgramNode root = state.programNode();
-    AssignmentNode node = (AssignmentNode) root.main().get().block().statements().get(1);
+    MainNode mainNode = (MainNode) root.statements().statements().get(0);
+
+    AssignmentNode node = (AssignmentNode) mainNode.block().statements().get(1);
     VariableSetNode var = (VariableSetNode) node.lvalue();
     assertThat(var.name()).isEqualTo("b");
     assertThat(var.varType()).isEqualTo(VarType.INT);
