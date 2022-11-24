@@ -166,10 +166,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private final Set<ProcSymbol> needsReturn = new HashSet<>();
   private final Errors errors = new Errors();
 
-  public StaticChecker() {
-    symbolTable.assign("argv", new ArrayType(VarType.STRING, 1));
-  }
-
   @Override
   public State execute(State input) {
     assert input.programNode() != null;

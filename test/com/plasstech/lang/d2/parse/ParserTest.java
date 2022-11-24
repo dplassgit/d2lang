@@ -1460,9 +1460,11 @@ public class ParserTest {
 
   @Test
   public void badArgs() {
+    assertParseError("ARGS = 3", "Unexpected start of statement 'ARGS'");
     assertParseError("args = 3", "Unexpected start of statement 'ARGS'");
     assertParseError("args:int", "Unexpected start of statement 'ARGS'");
     assertParseError("args[3]=3", "Unexpected start of statement 'ARGS'");
+    assertParseError("f:proc(args:String[]) {print args[0]}", "Unexpected 'ARGS'");
   }
 
   private BlockNode parseStatements(String expression) {

@@ -21,7 +21,9 @@ main:
   ; this is required to convert the stack to the thingie
 	mov	DWORD [rsp+16], ecx
 	mov	QWORD [rsp+24], rdx
+  sub RSP, 0x20
 	call	__main
+  add RSP, 0x20
 
   mov rcx, PRINTF_COUNT
   ; this works!

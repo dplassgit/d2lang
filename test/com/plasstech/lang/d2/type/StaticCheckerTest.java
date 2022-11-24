@@ -1231,6 +1231,12 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void noArgs() {
+    SymTab symTab = checkProgram("a=3");
+    assertThat(symTab.lookup("ARGS")).isEqualTo(VarType.UNKNOWN);
+  }
+
+  @Test
   public void simpleArgs() {
     SymTab symTab = checkProgram("println args[0]");
     assertThat(symTab.lookup("ARGS")).isArray();

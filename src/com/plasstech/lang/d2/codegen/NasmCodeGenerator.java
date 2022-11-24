@@ -94,6 +94,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private InputCodeGenerator inputGenerator;
   private PrintCodeGenerator printGenerator;
   private DoubleCodeGenerator doubleGenerator;
+  private ArgsCodeGenerator argsGenerator;
 
   @Override
   public State execute(State input) {
@@ -108,6 +109,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
     printGenerator = new PrintCodeGenerator(resolver, emitter);
     doubleGenerator = new DoubleCodeGenerator(resolver, emitter);
+    argsGenerator = new ArgsCodeGenerator(emitter, input.symbolTable());
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -138,8 +140,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.addData(entry.dataEntry());
     }
 
-    // TODO: convert command-line arguments to ??? and send to _main
     emit0("main:");
+    // Convert command-line arguments to a D-style array of strings
+    argsGenerator.generate();
+
     try {
       for (Op opcode : code) {
         // need to escape this!
