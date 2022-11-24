@@ -13,9 +13,6 @@ statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'C
 // DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXPORT
 
 main -> 'MAIN' '{' statements '}'
-// Not implemented yet:
-// main -> 'MAIN' mainarg? '{' statements '}'
-// mainarg -> '(' variable ')' // not implemented yet
 
 assignment -> lvalue '=' expr
 lvalue -> variable | variable '[' expr ']' | variable '.' variable
@@ -77,6 +74,7 @@ atom ->   int_constant
         | string_constant
         | 'NULL'
         | variable
+        | 'ARGS'
         | variable '(' comma-separated-expressions ')'
         | '(' expr ')'
         | '[' comma-separated-expressions ']'

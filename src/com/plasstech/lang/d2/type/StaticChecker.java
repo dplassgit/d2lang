@@ -166,6 +166,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private final Set<ProcSymbol> needsReturn = new HashSet<>();
   private final Errors errors = new Errors();
 
+  public StaticChecker() {
+    symbolTable.assign("argv", new ArrayType(VarType.STRING, 1));
+  }
+
   @Override
   public State execute(State input) {
     assert input.programNode() != null;
@@ -437,6 +441,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                   node.position()));
         }
         node.setVarType(existingType);
+      }
+    } else if (node.name().equals("ARGS")) {
+      VarType type = symbolTable().lookup(node.name());
+      if (type == VarType.UNKNOWN) {
+        // put it in the global symbol table
+        symbolTable.declare(node.name(), node.varType());
       }
     }
   }

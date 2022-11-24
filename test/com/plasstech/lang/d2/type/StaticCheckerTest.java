@@ -1230,6 +1230,41 @@ public class StaticCheckerTest {
     assertError("r1:record{field:string} foo=new r1 f='field' bam = foo.f", "unknown field f");
   }
 
+  @Test
+  public void simpleArgs() {
+    SymTab symTab = checkProgram("println args[0]");
+    assertThat(symTab.lookup("ARGS")).isArray();
+    assertThat(symTab.lookup("ARGS")).hasArrayBaseType(VarType.STRING);
+  }
+
+  @Test
+  public void copyArgs() {
+    SymTab symTab = checkProgram("b=args");
+    assertThat(symTab.lookup("b")).isArray();
+    assertThat(symTab.lookup("b")).hasArrayBaseType(VarType.STRING);
+  }
+
+  @Test
+  public void complexArgs() {
+    SymTab symTab =
+        checkProgram(
+            "      len=length(args)\r\n"
+                + "print 'length is ' println len\r\n"
+                + "a=args[0]\r\n"
+                + "println 'first is ' + a\r\n");
+    assertThat(symTab.lookup("len")).isEqualTo(VarType.INT);
+    assertThat(symTab.lookup("a")).isEqualTo(VarType.STRING);
+    assertThat(symTab.lookup("ARGS")).isArray();
+    assertThat(symTab.lookup("ARGS")).hasArrayBaseType(VarType.STRING);
+  }
+
+  @Test
+  public void badArgs() {
+    assertError("a:bool a=args", "Cannot convert");
+    assertError("a:bool a=args[0]", "Cannot convert");
+    assertError("a:bool a=length(args)", "Cannot convert");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

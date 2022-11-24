@@ -815,6 +815,12 @@ public class Parser implements Phase {
       Token nt = token;
       advance();
       return new ConstNode<Void>(null, VarType.NULL, nt.start());
+    } else if (token.type() == TokenType.ARGS) {
+      Token argsToken = token;
+      advance();
+      VariableNode argsNode = new VariableNode(argsToken.type().name(), argsToken.start());
+      argsNode.setVarType(new ArrayType(VarType.STRING, 1));
+      return argsNode;
     } else if (token.type() == TokenType.VARIABLE) {
       Token varToken = token;
       advance();

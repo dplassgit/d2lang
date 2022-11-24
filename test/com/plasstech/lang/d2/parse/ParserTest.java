@@ -1414,14 +1414,13 @@ public class ParserTest {
   }
 
   @Test
-  public void arrayINRecord() {
+  public void arrayInRecord() {
     parseStatements("r:record{a:string[1]} anr=new r print anr.a");
   }
 
   @Test
-  @Ignore
+  @Ignore("Bug #155")
   public void advancedLValue() {
-    // this still fails. bug #155
     parseStatements("foo[3].bar.baz[4].qux = 3");
   }
 
@@ -1432,6 +1431,38 @@ public class ParserTest {
     parseStatements("bam = foo[3+a].bar.baz[f()].qux");
     // this parses but shouldn't pass static checking
     parseStatements("bam = foo.3");
+  }
+
+  @Test
+  public void args() {
+    BlockNode node = parseStatements("a = args[0]");
+    AssignmentNode assignment = (AssignmentNode) node.statements().get(0);
+    ExprNode rhs = assignment.expr();
+    assertThat(rhs).isInstanceOf(BinOpNode.class);
+    BinOpNode binOp = (BinOpNode) rhs;
+    ExprNode left = binOp.left();
+    assertThat(left).isInstanceOf(VariableNode.class);
+    VariableNode leftVar = (VariableNode) left;
+    assertThat(leftVar.name()).isEqualTo("ARGS");
+    assertThat(leftVar.varType()).isArray();
+    assertThat(leftVar.varType()).hasArrayBaseType(VarType.STRING);
+  }
+
+  @Test
+  public void argsLen() {
+    parseStatements(
+        "      len=length(args)\r\n"
+            + "print 'length is ' println len\r\n"
+            + "b=args\r\n"
+            + "a=args[0]\r\n"
+            + "println 'first is ' + a\r\n");
+  }
+
+  @Test
+  public void badArgs() {
+    assertParseError("args = 3", "Unexpected start of statement 'ARGS'");
+    assertParseError("args:int", "Unexpected start of statement 'ARGS'");
+    assertParseError("args[3]=3", "Unexpected start of statement 'ARGS'");
   }
 
   private BlockNode parseStatements(String expression) {

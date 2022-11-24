@@ -19,6 +19,7 @@ public enum TokenType {
   ELSE(true),
   ELIF(true),
   MAIN(true),
+  ARGS(true), // for command line arguments
   PROC(true),
   EXTERN(true), // reference an externally defined symbol
   RETURN(true),
