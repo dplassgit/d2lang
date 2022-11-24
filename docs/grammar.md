@@ -6,7 +6,7 @@
 ```
 program -> statements main?
 
-statements -> statement* 
+statements -> statement*
 statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'CONTINUE' | return_stmt | procedure_call | exit
 // reserved, but not implemented:
 // FOR <variable> IN <array>

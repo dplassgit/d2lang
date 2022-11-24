@@ -3,40 +3,43 @@
 D2 is a strongly-typed, statically-typed, inferred-type compiled language.
 Its syntax draws from C, Java and Python.
 
+D2 keywords are **case insensitive**, but by tradition are written in UPPER
+CASE. D2 variables are **case sensitive**.
+
 
 ## Data Types
 
 The following types are built-in:
 
-* `int`: 32 bit integer
-* `byte`: 8 bit integer
-* `float`: 64 bit floating point
-* `bool`: boolean values (`true`, `false` are the two built-in values)
-* `string`: immutable sequence of characters. There is no separate "character" type (as in Python)
-* `record`: user-defined structure (akin to C `struct`)
+* `INT`: 32-bit integer
+* `BYTE`: 8-bit integer
+* `FLOAT`: 64-bit floating point
+* `BOOL`: boolean values (`TRUE`, `FALSE` are the two built-in values)
+* `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
+* `RECORD`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
-* `null`: an un-set value that can be used in place of a string, record or array.
+* `NULL`: an un-set value that can be used in place of a string, record or array.
 
-When defining an array, record or procedure, "forward references" (references 
-before definitions) are allowed.
+When defining or using an array, record or procedure, "forward references" (reference
+before definition) are allowed.
 
 
 ## Arithmetic and expressions
 
 All arithmetic must be type-consistent. As of now there is no implicit (or
-explicit) conversion between arithmetic types.
+explicit) conversion between arithmetic types, though you can use `gcc` functions
+to convert from float to int (e.g., `round`.)
 
 Similarly, all expressions must be type-consistent.
-
 
 ### Constants
 
 Integer constants can represent -2^31-1 to 2^31. Example: 1234
 
-Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal. 
-Example: `0y2f` for 47.
+Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal.
+Example: `0y2f` for 47 decimal.
 
-Floating constants must include a decimal point (dot). Example: 123.4
+Floating point constants **must** include a decimal point (dot). Example: 123.4
 
 
 ## Strings
@@ -52,15 +55,17 @@ To define:
 a: int[3] // declares & allocates an array in memory
 a[0] = 1
 a[1] = 2
+a[2] = 3
+// print a[3] gives runtime exceptoin
 ```
 
 Array literals:
 
 ```
-lit = [1, 2, 3] // also allocates in memory
+lit = [1, 2, 3] // also allocates memory
 ```
 
-Use the `length` function to find the length of an array:
+Use the `LENGTH` function to find the length of an array:
 
 ```
 x = length([1, 2, 3])
@@ -91,6 +96,10 @@ ar.f1 = 's'
 ar.f2 = 3
 ar.f3 = new r
 ```
+
+Fields that are not set default to their default value (zero for
+numbers, false for boolean, and `NULL` for others.)
+
 Records can be compared using `==` and `!=`. Two records
 are `==` if every field is `==`, but not recursively. At this
 time, D2's record comparison is "shallow".
@@ -100,7 +109,7 @@ time, D2's record comparison is "shallow".
 
 ### Declaration
 
-Variables do not need to be declared before assigned. You can 
+Variables do not need to be declared before assignment. You can
 still declare variables before use if you want:
 
 ```
@@ -113,8 +122,8 @@ d: bool
 
 ### Assignment
 
-If a variable is not declared, whatever type it is when first assigned will be its
-type throughout its lifetime.
+If a variable is not declared, whatever type it is when first assigned will be
+its type throughout its lifetime.
 
 ```
 a = 3
@@ -145,13 +154,13 @@ f:proc {
 
 ### Numbers
 
-* `+`, `-`, `*`, `/`: for int, byte, float
-* `%`: modulo for int, byte
-* `|`: bitwise `or` for int, byte
-* `&`: bitwise `and` for int, byte
-* `^`: bitwise `xor` for int, byte
-* `>>`: shift right for int, byte
-* `<<`: shift left for int, byte
+* `+`, `-`, `*`, `/`: for INT, BYTE, FLOAT
+* `%`: modulo for INT, BYTE
+* `|`: bitwise "or" for INT, BYTE
+* `&`: bitwise "and" for INT, BYTE
+* `^`: bitwise "xor" for INT, BYTE
+* `>>`: shift right for INT, BYTE
+* `<<`: shift left for INT, BYTE
 
 And all typical comparisons: `== != < <= > >=`.
 
@@ -163,7 +172,8 @@ And all typical comparisons: `== != < <= > >=`.
 * `NOT` boolean not
 * `XOR` boolean xor
 
-Booleans can be compared using `== != < <= > >=`. By definition, `true > false`.
+Booleans can be compared using `== != < <= > >=`. By definition, `TRUE > FALSE`.
+
 
 ### Strings
 
@@ -184,7 +194,7 @@ Strings can be compared using the usual operators `== != < <= > >=`.
 Two strings are `==` if all their characters are `==`. Inequality (comparisons)
 use the same semantics as C's `strcmp`.
 
-Use `ASC` to get the ASCII int value of the first letter of a string, and `CHR` to 
+Use `ASC` to get the ASCII int value of the first letter of a string, and `CHR` to
 create a 1-character string from the ASCII int argument. (D2 does not support
 Unicode yet.)
 
@@ -194,7 +204,7 @@ a = asc(s) // 65
 b = chr(a) // a one-character string 'A'
 ```
 
-To find the length of a string, use the built-in function `length`.
+To find the length of a string, use the built-in function `LENGTH`.
 
 ```
 println length("abc") // prints 3 with newline
@@ -220,7 +230,7 @@ Global statements are excuted top to bottom in a D2 file.
 
 ### Control structures
 
-#### `if/elif/else`
+#### `IF/ELIF/ELSE`
 
 Typical Python semantics:
 
@@ -234,13 +244,13 @@ if i == 0 {  // must be a boolean expression
 }
 ```
 
-Any number of `elif` clauses are allowed. Like Python (and unlike Java and C), 
+Any number of `ELIF` clauses are allowed. Like Python (and unlike Java and C),
 parentheses are *not required* around the boolean expression.
 
-There is no `case` statement in D2, like in Python.
+As in Python, there is no `case` statement in D2.
 
 
-#### `while` loop
+#### `WHILE` loop
 
 ```
 while i < 10 do i = i + 1 {
@@ -249,39 +259,38 @@ while i < 10 do i = i + 1 {
 }
 ```
 
-`break` and `continue` work the same as in Java, C, JavaScript, Python, etc.
+`BREAK` and `CONTINUE` work the same as in Java, C, JavaScript, Python, etc.
 
 
-### `print` and `println`
+### `PRINT` and `PRINTLN`
 
-`print` prints a number, string or boolean variable to stdout. There is limited 
-built-in support for printing arrays. There is no built-in support for printing
-records.
+`PRINT` prints a variable to stdout. There is limited built-in support for printing
+arrays. There is no built-in support for printing records.
 
-`println variable` appends a newline after printing the object.
+`PRINTLN variable` appends a newline after printing the object.
 
 
-### `input`
+### `INPUT`
 
-Gets a string from stdin until EOF, or 1 MB of data is read. (D2 is still a toy language in some
-ways.)
+Reads a string from `stdin` until EOF, or 1 MB of data is read. (D2 is still a
+toy language in some ways.)
 
 ```
 in: string
 in = input
 ```
 
-### Exit
+### `EXIT`
 
-`exit "Message"` prints the message on stdout and exits with return code -1.
+`EXIT "Message"` prints the message on stdout and exits with return code -1.
 
 
 ### Procedures
 
 #### Procedure definitions
 
-This will define a procedure that takes two parameters: a string and an array of
-strings, and returns an int:
+This example defines a procedure that takes two parameters: a string and an
+array of strings, and returns an int:
 
 ```
 index: proc(arg1: string, arg2: string[]): int {
@@ -313,26 +322,28 @@ index('hi', ['a', 'b', 'c'])
 ```
 
 
-NOTE: There is a limit of 4 parameters in procedure definitions and calls. There is 
-an [open bug](https://github.com/dplassgit/d2lang/issues/63) to address this.
+#### `MAIN`
 
+The procedure `MAIN` is optional and if included, must be the last statement
+in a D2 file. Whether `MAIN` is included or not, statements outside of procedures
+are executed top-to-bottom.
 
-#### `main`
+#### Command line arguments
 
-The procedure `main` is optional and if included, must be the last statement in a D2 file.
-
-There is no support yet for passing argv/argc to `main`, but there is an 
-[open bug](https://github.com/dplassgit/d2lang/issues/8) to finish this.
+Command-line arguments are provided in the built-in `ARGS` array (a 1-dimensional
+array of `STRING`s.)
 
 #### Externally defined procedures
 
-Prepend `extern` before the `proc` keyword, and don't define the body of the procedure. Example:
+Prepend `EXTERN` before the `PROC` keyword, and don't define the body of the
+procedure. Example:
 
 ```
 rand: extern proc(n: int): int
 ```
 
 This must be a procedure/function in the `gcc` runtime library.
+
 
 ## Runtime Checks
 

@@ -2,13 +2,13 @@
 
 ## Pre-history
 
-From the time I took a compiler class in college in 1989, I wanted to write a compiler. 
+From the time I took a compiler class in college in 1989, I wanted to write a compiler.
 
 Here are some notes from the first iteration of D (the original name; it was a play on "C"
 and because my name starts with D):
 
 ```
-2/91 Mac Wrote in Think C: lex, RD [recursive-descent] parser with no attributes. 
+2/91 Mac Wrote in Think C: lex, RD [recursive-descent] parser with no attributes.
 Worked for simple programs. No comparison ops in grammar. Precedence was wrong (didn't know it)
 
 4/91 Realized I needed attributes. Rewrote parser to use attributes and
@@ -27,7 +27,7 @@ Gave up.
 ... (did nothing between 1/92 and ~2/99)
 .
 
-1999 Moved to Win98/VC++. Rewrote lex, parser in C++ as class hierarchy for easy expansion and 
+1999 Moved to Win98/VC++. Rewrote lex, parser in C++ as class hierarchy for easy expansion and
 modifyability. Token hierarchy. Compiler phase hierarchy. Designed for expandability and reuse.
 New ideas:
         prototypes for procedures
@@ -43,7 +43,7 @@ New ideas:
 Mid-99: Second child born. All work stopped
 ```
 
-Nearly from the start, I envisioned a completely type-optional (type-inferred) language, which 
+Nearly from the start, I envisioned a completely type-optional (type-inferred) language, which
 would "just figure out" what the type of everything would be.
 
 The syntax of D(1) was different than the final D2 syntax; here's a sample:
@@ -56,7 +56,7 @@ proc foo() returns int
 {
   i: int;
   i = 0;
-  
+
   while i < 10
   {
     i++;
@@ -74,26 +74,26 @@ proc main(bar: int)
 }
 ```
 
-I envisioned a pointer-like data type called a 'link' which was kind of like C++ references, but 
+I envisioned a pointer-like data type called a 'link' which was kind of like C++ references, but
 smarter. This didn't make it into D2.
 
-The VC++ version had no unit tests and I was constantly writing and running code samples to see 
-what the compiler would barf on. 
+The VC++ version had no unit tests and I was constantly writing and running code samples to see
+what the compiler would barf on.
 
 In mid 1999, my 2nd kid was born and I stopped all work on it. FOR TWENTY YEARS.
 
 ## Recent history
 
-Then in early 2021 I watched David Callahan's EXCELLENT YouTube series 
-[Make YOUR OWN Programming Language in Python](https://www.youtube.com/playlist?list=PLZQftyCk7_SdoVexSmwy_tBgs7P0b97yD) 
-in which he wrote a BASIC-like programming language interpreter from scratch in Python. It was 
-inspiring to watch something go from zero to a language in just 14 easy steps. I ate it up and 
+Then in early 2021 I watched David Callahan's EXCELLENT YouTube series
+[Make YOUR OWN Programming Language in Python](https://www.youtube.com/playlist?list=PLZQftyCk7_SdoVexSmwy_tBgs7P0b97yD)
+in which he wrote a BASIC-like programming language interpreter from scratch in Python. It was
+inspiring to watch something go from zero to a language in just 14 easy steps. I ate it up and
 thought, "hey, I could totally do that for D!"
 
 So in May 2021 I restarted D, as D2, but instead of VC++ or Python, I wrote it in Java. And instead
 of no tests, I wrote unit and integration tests as I went along. Some of the concepts for the lexer
 and parser I borrowed from David's videos.
 
-As of today (Oct 2022), I have a working, optimizing compiler, with excellent test coverage and 
+As of today (Oct 2022), I have a working, optimizing compiler, with excellent test coverage and
 tons of examples. The language and compiler are complete enough that it can be self-hosted; the
 lexer-in-d is working and I started the parser.

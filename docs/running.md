@@ -18,7 +18,7 @@ Windows (gcc) stdlib.
 
 `./scripts/dcc foo.d` will compile `foo.d` into `d2out.exe` with optimizations.
 
-`./scripts/dccrun foo.d` will compile `foo.d` into `d2out.exe` with optimizations, 
+`./scripts/dccrun foo.d` will compile `foo.d` into `d2out.exe` with optimizations,
 retain the temp files `foo.asm` and `foo.obj`, **and run the executable if
 compilation passes**. It will remove `d2out.exe` before running.
 
@@ -35,7 +35,7 @@ compilation passes**. It will remove `d2out.exe` before running.
 
 To run the whole chain and generate `foo.exe`:
 
-`nasm -fwin64 foo.asm && gcc foo.obj -o foo.exe` 
+`nasm -fwin64 foo.asm && gcc foo.obj -o foo.exe`
 
 
 ## GCC
