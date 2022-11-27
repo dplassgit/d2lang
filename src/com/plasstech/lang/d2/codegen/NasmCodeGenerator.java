@@ -508,12 +508,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private Register generateCmp(
       ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
     Register tempReg = null;
-    if (leftRo.register() != null || (!leftRo.isConstant() && rightRo.isRegister())) {
-      // Can do a direct comparison: reg/imm, reg/reg, reg/mem, mem/reg
-      // TODO: can also compare mem/imm, but this path doesn't support it yet
-      emit("cmp %s, %s  ; direct comparison", leftRo.name(), rightRo.name());
+    if (directCompare(leftRo, rightRo)) {
+      // Direct comparison: reg/anything, mem/reg, mem/imm
+      emit(
+          "cmp %s %s, %s  ; direct comparison",
+          Size.of(leftRo.type()).asmType, leftRo.name(), rightRo.name());
     } else {
-      // imm/imm, imm/reg, imm/mem, mem/mem, mem/imm (temporary)
+      // imm/imm, imm/reg, imm/mem, mem/mem
       // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the code generator
       tempReg = resolver.allocate(VarType.INT);
       String tempRegName = tempReg.sizeByType(leftRo.type());
@@ -522,6 +523,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     emit("%s %s", BINARY_OPCODE.get(operator), destName);
     return tempReg;
+  }
+
+  /** returns true if we can directly compare left and right. */
+  private static boolean directCompare(ResolvedOperand leftRo, ResolvedOperand rightRo) {
+    if (leftRo.isRegister()) {
+      // reg/anything
+      return true;
+    }
+    if (leftRo.isConstant()) {
+      // cannot do imm/anything
+      return false;
+    }
+    // can do mem/reg or mem/imm
+    return rightRo.isRegister() || rightRo.isConstant();
   }
 
   private void generateDivMod(BinOp op, Location dest) {
