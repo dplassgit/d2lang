@@ -3,12 +3,16 @@ package com.plasstech.lang.d2.optimize;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.SymTab;
 
+@RunWith(TestParameterInjector.class)
 public class ILOptimizerTest {
   @Test
   public void plusZero() {
@@ -187,6 +191,12 @@ public class ILOptimizerTest {
     TestUtils.optimizeAssertSameVariables("a = 4>=3");
     TestUtils.optimizeAssertSameVariables("a = 3<3");
     TestUtils.optimizeAssertSameVariables("a = 4<=3");
+  }
+
+  @Test
+  public void compareConstant(@TestParameter({"<", ">", ">=", "<=", "==", "!="}) String op) {
+    TestUtils.optimizeAssertSameVariables(
+        String.format("b=4 println b %s 3 println 3 %s b", op, op));
   }
 
   @Test

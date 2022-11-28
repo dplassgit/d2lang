@@ -13,9 +13,9 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AdjacentArithmeticOptimizerTest {
-  private final Optimizer optimizer = new AdjacentArithmeticOptimizer(2);
   private final Optimizer OPTIMIZERS =
-      new ILOptimizer(ImmutableList.of(optimizer, new NopOptimizer())).setDebugLevel(2);
+      new ILOptimizer(ImmutableList.of(new AdjacentArithmeticOptimizer(2), new NopOptimizer()))
+          .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);

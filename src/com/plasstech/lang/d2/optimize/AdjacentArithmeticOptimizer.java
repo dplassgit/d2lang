@@ -26,21 +26,7 @@ import com.plasstech.lang.d2.type.VarType;
  *   __temp3 = __temp1 + 5
  * </pre>
  *
- * (Also works for multiplication.)
- *
- * <p>For future expansion, it will also do:
- *
- * <pre>
- *  __temp2 = __temp1 - 2
- *  __temp3 = __temp2 + 3
- * </pre>
- *
- * into:
- *
- * <pre>
- *   nop
- *   __temp3 = __temp1 + 1
- * </pre>
+ * (Also works for subtraction, multiplication and division.)
  */
 class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
