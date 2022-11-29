@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 
@@ -105,10 +106,16 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     return ip;
   }
 
-  protected final void replaceAllMatching(Predicate<Op> pred, Op replacement) {
+  protected final <T extends Op> void replaceAllMatching(
+      Class<T> opClazz, Predicate<T> pred, Function<T, Op> replacer) {
+
     for (int index = 0; index < code.size(); ++index) {
-      if (pred.test(code.get(index))) {
-        replaceAt(index, replacement);
+      Op op = code.get(index);
+      if (op.getClass().equals(opClazz)) {
+        T top = (T) op;
+        if (pred.test(top)) {
+          replaceAt(index, replacer.apply(top));
+        }
       }
     }
   }

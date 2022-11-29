@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 
@@ -24,13 +25,12 @@ class AdjacentLabelOptimizer extends LineOptimizer {
     // Two in a row. Delete the 2nd and replace all instances of goto(secondOp)
     deleteAt(ip() + 1);
     replaceAllMatching(
-        op -> {
-          if (op instanceof Goto) {
-            Goto gotoOp = (Goto) op;
-            return gotoOp.label().equals(secondLabel.label());
-          }
-          return false;
-        },
-        new Goto(firstLabel.label()));
+        Goto.class,
+        gotoOp -> gotoOp.label().equals(secondLabel.label()),
+        ignored -> new Goto(firstLabel.label()));
+    replaceAllMatching(
+        IfOp.class,
+        ifOp -> ifOp.destination().equals(secondLabel.label()),
+        ifOp -> new IfOp(ifOp.condition(), firstLabel.label(), ifOp.isNot()));
   }
 }
