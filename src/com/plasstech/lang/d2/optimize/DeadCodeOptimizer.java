@@ -50,15 +50,9 @@ class DeadCodeOptimizer extends LineOptimizer {
 
   // Find the next operand that is not a nop. If it matches "clazz", returns the IP.
   private int getNextMatch(Class<? extends Op> clazz) {
-    for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
-      Op testOp = code.get(testIp);
-      if (testOp instanceof Nop) {
-        continue;
-      } else if (testOp.getClass() == clazz) {
-        return testIp;
-      } else {
-        break;
-      }
+    Op testOp = getOpAt(ip() + 1);
+    if (testOp != null && testOp.getClass() == clazz) {
+      return ip() + 1;
     }
     return -1;
   }
@@ -189,7 +183,7 @@ class DeadCodeOptimizer extends LineOptimizer {
         break;
       } else {
         logger.at(loggingLevel).log("Nopping dead statement after %s", source);
-        replaceAt(testIp, new Nop(testOp));
+        deleteAt(testIp);
       }
     }
   }

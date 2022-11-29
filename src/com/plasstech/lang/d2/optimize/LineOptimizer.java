@@ -93,8 +93,9 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   /** Replace the op at the given ip with a nop. */
   protected final void deleteAt(int theIp) {
     Op theOp = code.get(theIp);
-    Op newOp = new Nop(theOp);
-    replaceAt(theIp, newOp);
+    if (!(theOp instanceof Nop)) {
+      replaceAt(theIp, new Nop(theOp));
+    }
   }
 
   /** Replace the current op with a nop. */
