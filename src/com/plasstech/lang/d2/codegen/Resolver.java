@@ -1,11 +1,12 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.annotation.Nullable;
 
@@ -28,7 +29,15 @@ class Resolver implements RegistersInterface {
   private final DelegatingEmitter emitter;
   private final Deque<Emitter> emitters = new ArrayDeque<>();
 
-  private final Set<Register> usedRegisters = new HashSet<>();
+  private static final Comparator<Register> REGISTER_NAME_COMPARATOR =
+      new Comparator<Register>() {
+        @Override
+        public int compare(Register arg0, Register arg1) {
+          // This doesn't sort in enum order but it doesn't matter.
+          return arg0.name64().compareTo(arg1.name64());
+        }
+      };
+  private final Set<Register> usedRegisters = new TreeSet<>(REGISTER_NAME_COMPARATOR);
   private boolean inProc;
 
   Resolver(

@@ -440,6 +440,69 @@ public class ResolverTest {
   }
 
   @Test
+  public void procEntryProcEnd_intAndFloat() {
+    resolver.procEntry();
+    resolver.allocate(VarType.INT); // allocates rbx
+    // allocate XMM4 through XMM7
+    for (int i = 4; i <= 7; ++i) {
+      resolver.allocate(VarType.DOUBLE); // allocates XMM4
+    }
+    emitter.emit("mov RCX, 0");
+    resolver.procEnd();
+    assertThat(emitter)
+        .containsExactly(
+            "push RBX", //
+            "sub RSP, 8",
+            "movq [RSP], XMM6",
+            "sub RSP, 8",
+            "movq [RSP], XMM7",
+            "mov RCX, 0",
+            "movq XMM7, [RSP]",
+            "add RSP, 8",
+            "movq XMM6, [RSP]",
+            "add RSP, 8",
+            "pop RBX");
+  }
+
+  @Test
+  public void procEntryProcEnd_intAndVolatileFloat() {
+    resolver.procEntry();
+    resolver.allocate(VarType.INT); // allocates rbx
+    resolver.allocate(VarType.DOUBLE); // allocates XMM4, but doesn't push because XMM4 is volatile
+    emitter.emit("mov RCX, 0");
+    resolver.procEnd();
+    assertThat(emitter)
+        .containsExactly(
+            "push RBX", //
+            "mov RCX, 0",
+            "pop RBX");
+  }
+
+  @Test
+  public void procEntryProcEnd_sorted() {
+    resolver.procEntry();
+    // Allocates RBX through R13
+    for (int i = 0; i < 5; ++i) {
+      resolver.allocate(VarType.INT);
+    }
+    emitter.emit("mov RCX, 0");
+    resolver.procEnd();
+    assertThat(emitter)
+        .containsExactly(
+            "push R12",
+            "push R13",
+            "push RBX",
+            "push RDI",
+            "push RSI",
+            "mov RCX, 0",
+            "pop RSI",
+            "pop RDI",
+            "pop RBX",
+            "pop R13",
+            "pop R12");
+  }
+
+  @Test
   public void procEntryProcEnd_nonvolatile() {
     resolver.procEntry();
     resolver.reserve(IntRegister.RCX);
