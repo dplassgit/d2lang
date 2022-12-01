@@ -648,6 +648,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object resolved = resolve(op.arg());
     switch (op.call()) {
       case PRINT:
+      case PRINTLN:
         String val;
         if (op.arg().type() == VarType.DOUBLE) {
           double resolvedd = (double) resolved;
@@ -659,6 +660,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
           System.out.print(val);
         }
         rootEnv.addOutput(val);
+        if (op.call() == SysCall.Call.PRINTLN) {
+          rootEnv.addOutput("\n");
+        }
         break;
       case MESSAGE:
         if (interactive) {

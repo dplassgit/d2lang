@@ -235,6 +235,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.call()) {
       case MESSAGE:
       case PRINT:
+      case PRINTLN:
         printGenerator.visit(op);
         break;
       case INPUT:

@@ -245,7 +245,7 @@ public class NasmCodeGeneratorTest {
         .containsAtLeast(
             "movsd XMM4, [DOUBLE_123_0_0]",
             "movq RDX, XMM4",
-            "mov RCX, PRINTF_DOUBLE_FMT",
+            "mov RCX, PRINTF_DOUBLE",
             "call printf");
   }
 
@@ -255,7 +255,7 @@ public class NasmCodeGeneratorTest {
     Op op = new SysCall(Call.PRINT, doubleReg);
     generateOne(op);
     assertThat(emitter)
-        .containsAtLeast("mov RDX, [_double]", "mov RCX, PRINTF_DOUBLE_FMT", "call printf");
+        .containsAtLeast("mov RDX, [_double]", "mov RCX, PRINTF_DOUBLE", "call printf");
   }
 
   @Test
@@ -272,8 +272,7 @@ public class NasmCodeGeneratorTest {
     Operand doubleReg = new RegisterLocation("__double", XmmRegister.XMM3, VarType.DOUBLE);
     Op op = new SysCall(Call.PRINT, doubleReg);
     generateOne(op);
-    assertThat(emitter)
-        .containsAtLeast("movq RDX, XMM3", "mov RCX, PRINTF_DOUBLE_FMT", "call printf");
+    assertThat(emitter).containsAtLeast("movq RDX, XMM3", "mov RCX, PRINTF_DOUBLE", "call printf");
   }
 
   private State generateOne(Op shiftOp) {

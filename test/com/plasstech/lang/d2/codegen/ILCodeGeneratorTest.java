@@ -40,7 +40,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void println() {
-    generateProgram("a='world' print 'hello, ' println a");
+    System.err.println(generateProgram("a='world' print 'hello, ' println a"));
   }
 
   @Test
@@ -161,15 +161,17 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordFieldSet() {
-    System.err.println(generateProgram(
-        "rec: record {f:string i:int}\n" //
-            + "r = new rec\n" //
-            + "r.f = 'hi'"));
+    System.err.println(
+        generateProgram(
+            "rec: record {f:string i:int}\n" //
+                + "r = new rec\n" //
+                + "r.f = 'hi'"));
   }
 
   @Test
   public void recordWithArray() {
-    List<Op> program = generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
+    List<Op> program =
+        generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
     System.err.println(Joiner.on('\n').join(program));
   }
 

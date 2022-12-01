@@ -178,11 +178,15 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new Label(endLoopLabel));
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("]")));
     } else {
-      emit(new SysCall(SysCall.Call.PRINT, expr.location()));
+      if (node.isPrintln()) {
+        emit(new SysCall(SysCall.Call.PRINTLN, expr.location()));
+      } else {
+        emit(new SysCall(SysCall.Call.PRINT, expr.location()));
+      }
     }
-    if (node.isPrintln()) {
-      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
-    }
+    //    if (node.isPrintln()) {
+    //      emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("\n")));
+    //    }
   }
 
   @Override

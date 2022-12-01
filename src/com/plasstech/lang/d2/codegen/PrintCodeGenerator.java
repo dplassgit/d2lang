@@ -1,21 +1,47 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import com.plasstech.lang.d2.codegen.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generates NASM code for printing things. */
 class PrintCodeGenerator extends DefaultOpcodeVisitor {
-  private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\", 0";
-  private static final String PRINTF_INT_FMT = "PRINTF_INT_FMT: db \"%d\", 0";
-  private static final String PRINTF_DOUBLE_FMT = "PRINTF_DOUBLE_FMT: db \"%f\", 0";
-  private static final String CONST_FALSE = "CONST_FALSE: db \"false\", 0";
-  private static final String CONST_TRUE = "CONST_TRUE: db \"true\", 0";
-  private static final String CONST_NULL = "CONST_NULL: db \"null\", 0";
+  private static final String EXIT_MSG = "EXIT_MSG: db \"ERROR: %s\"";
+
+  enum Format {
+    INT("%d"),
+    DOUBLE("%f"),
+    TRUE("true"),
+    FALSE("false"),
+    STRING("%s"),
+    NULL("null");
+
+    private final String spec;
+
+    Format(String spec) {
+      this.spec = spec;
+    }
+
+    String constName(boolean newline) {
+      if (newline) {
+        return String.format("PRINTLN_%s", this.name());
+      } else {
+        return String.format("PRINT_%s", this.name());
+      }
+    }
+
+    String constData(boolean newline) {
+      String suffix = "0";
+      if (newline) {
+        suffix = "10, 0";
+      }
+      return String.format("%s: db \"%s\", %s", constName(newline), this.spec, suffix);
+    }
+  }
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -33,57 +59,61 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     Operand arg = op.arg();
     ResolvedOperand argRo = resolver.resolveFully(arg);
     String argName = argRo.name();
+    boolean isNewline = op.call() == Call.PRINTLN;
     if (arg.type() == VarType.INT || arg.type() == VarType.BYTE) {
       // TODO: print bytes with 0y prefix?
       // move with sign extend. intentionally set rdx first, in case the arg is in ecx
       Size size = Size.of(arg.type());
+      // this is failing for constants. wth
       emitter.emit("movsx RDX, %s %s  ; parameter", size.asmType, argName);
-      emitter.addData(PRINTF_INT_FMT);
-      emitter.emit("mov RCX, PRINTF_INT_FMT  ; pattern");
+      setUpFormat(Format.INT, isNewline);
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.BOOL) {
       if (argName.equals("1")) {
-        emitter.addData(CONST_TRUE);
-        emitter.emit("mov RCX, CONST_TRUE");
+        setUpFormat(Format.TRUE, isNewline);
       } else if (argName.equals("0")) {
-        emitter.addData(CONST_FALSE);
-        emitter.emit("mov RCX, CONST_FALSE");
+        setUpFormat(Format.FALSE, isNewline);
       } else {
         // translate dynamically from 0/1 to false/true
         // Intentionally do the comp first, in case the arg is in dl or cl
         emitter.emit("cmp BYTE %s, 1", argName);
-        emitter.addData(CONST_FALSE);
-        emitter.emit("mov RCX, CONST_FALSE");
-        emitter.addData(CONST_TRUE);
-        emitter.emit("mov RDX, CONST_TRUE");
+        setUpFormat(Format.FALSE, isNewline);
+
+        // Note, this puts pattern into RDX
+        emitter.addData(Format.TRUE.constData(isNewline));
+        emitter.emit("mov RDX, %s  ; pattern", Format.TRUE.constName(isNewline));
         // Conditional move
         emitter.emit("cmovz RCX, RDX");
       }
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.STRING) {
+
       // String
       if (op.call() == SysCall.Call.MESSAGE) {
         // Intentionally set rdx first in case the arg is in rcx
         resolver.mov(arg, RDX);
         emitter.addData(EXIT_MSG);
         emitter.emit("mov RCX, EXIT_MSG  ; pattern");
-      } else {
-        // arg is not in rcx yet
-        resolver.mov(arg, RCX);
+        emitter.emitExternCall("printf");
+        return;
       }
+      // TODO: should we care if we're munging rcx or rdx?!!
+      // arg may not be in rcx (or rdx) yet
+      resolver.mov(arg, RDX);
+      // pre-set the format as string
+      setUpFormat(Format.STRING, isNewline);
       if (!arg.isConstant()) {
-        // if null, print null
-        emitter.emit("cmp QWORD RCX, 0");
+        // check for null; if null, change format to printing null
+        emitter.emit("cmp QWORD %s, 0", RDX);
         String notNullLabel = resolver.nextLabel("not_null");
         emitter.emit("jne %s", notNullLabel);
-        emitter.addData(CONST_NULL);
-        emitter.emit("mov RCX, CONST_NULL  ; constant 'null'");
+        setUpFormat(Format.NULL, isNewline);
         emitter.emitLabel(notNullLabel);
       }
       emitter.emitExternCall("printf");
+
     } else if (arg.type() == VarType.NULL) {
-      emitter.addData(CONST_NULL);
-      emitter.emit("mov RCX, CONST_NULL  ; constant 'null'");
+      setUpFormat(Format.NULL, isNewline);
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.DOUBLE) {
       if (arg.isConstant()) {
@@ -100,8 +130,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         // wrong for non-registers or something like that
         emitter.emit("mov RDX, %s", argName);
       }
-      emitter.addData(PRINTF_DOUBLE_FMT);
-      emitter.emit("mov RCX, PRINTF_DOUBLE_FMT  ; address of pattern");
+      setUpFormat(Format.DOUBLE, isNewline);
       emitter.emitExternCall("printf");
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
@@ -109,5 +138,10 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emitExternCall("_flushall");
     registerState.condPop();
     resolver.deallocate(arg);
+  }
+
+  private void setUpFormat(Format format, boolean isNewline) {
+    emitter.addData(format.constData(isNewline));
+    emitter.emit("mov RCX, %s  ; pattern", format.constName(isNewline));
   }
 }

@@ -102,7 +102,7 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   @Override
   public void visit(SysCall op) {
-    if (op.call() != SysCall.Call.PRINT) {
+    if (op.call() != SysCall.Call.PRINT && op.call() != SysCall.Call.PRINTLN) {
       return;
     }
     Operand arg = op.arg();

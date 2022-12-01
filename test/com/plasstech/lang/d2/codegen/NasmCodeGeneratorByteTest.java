@@ -208,6 +208,7 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
             + "  println 0y3+a*-b // 3+(-18*18)\r\n"
             + "  println (0y3+a)*-b\r\n"
             + "  println 0y4%0y6\r\n"
+            + "  println 0y7f"
             + "}\r\n"
             + "main {\r\n"
             + "  p()\r\n"
