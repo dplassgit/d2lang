@@ -627,6 +627,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         || ((leftType.isRecord() || leftType.isNull()) && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
     } else {
+      if (leftType.isUnknown()) {
+        // Can't do much more
+        return;
+      }
+
       node.setVarType(leftType);
     }
   }

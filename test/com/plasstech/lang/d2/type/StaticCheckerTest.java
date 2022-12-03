@@ -1271,6 +1271,13 @@ public class StaticCheckerTest {
     assertError("a:bool a=length(args)", "Cannot convert");
   }
 
+  @Test
+  public void unknownWhile() {
+    // Tests bug #204
+    assertError("while x < 3 { println x}", "Indeterminable type for expression x");
+    assertError("while 3 < x { println x}", "Indeterminable type for expression x");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
