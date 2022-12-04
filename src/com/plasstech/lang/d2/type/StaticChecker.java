@@ -606,6 +606,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         // NOTE RETURN
         return;
       }
+      if (leftType.isUnknown()) {
+        errors.add(
+            new TypeException(
+                String.format("Indeterminable type used as ARRAY: %s", left), left.position()));
+        // note return; can't do anything.
+        return;
+      }
 
       // TODO: Generalize this, e.g., have a "baseType" method on VarType
       ArrayType arrayType = (ArrayType) leftType;
@@ -617,7 +624,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(
           new TypeException(
               String.format(
-                  "Incompatible types for operator %s; left operand resolves to %s but right operand resolves to %s",
+                  "Incompatible types for operator %s; left operand is %s but right is %s",
                   operator, leftType, rightType),
               left.position()));
     }

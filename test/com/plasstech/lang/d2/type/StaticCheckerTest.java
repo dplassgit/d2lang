@@ -1278,6 +1278,19 @@ public class StaticCheckerTest {
     assertError("while 3 < x { println x}", "Indeterminable type for expression x");
   }
 
+  @Test
+  public void unknownBracket() {
+    // Tests bug #205
+    assertError("x=a[3]", "Indeterminable type for expression a");
+    assertError("p:proc() {x=a[3]}", "Indeterminable type for expression a");
+  }
+
+  @Test
+  public void badBracket() {
+    // Tests bug #205
+    assertError("a=0 x=a[3]", "Cannot apply.*operand of type INT");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
