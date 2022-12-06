@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.ConstToken;
 import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.lex.ScannerException;
 import com.plasstech.lang.d2.lex.Token;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
@@ -115,6 +116,8 @@ public class Parser implements Phase {
     try {
       ProgramNode node = parse();
       return input.addProgramNode(node);
+    } catch (ScannerException se) {
+      return input.addException(se);
     } catch (ParseException pe) {
       return input.addException(pe);
     }

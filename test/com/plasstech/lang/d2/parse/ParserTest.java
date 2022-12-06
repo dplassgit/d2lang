@@ -84,6 +84,12 @@ public class ParserTest {
   }
 
   @Test
+  public void printInvalidChar() {
+    assertParseError("print �hi�", "Unexpected character '�'");
+    assertParseError("print @", "Unexpected character '@'");
+  }
+
+  @Test
   public void assignErrors() {
     assertParseError("a=", "expected literal");
     assertParseError("a=(3+", "expected literal");

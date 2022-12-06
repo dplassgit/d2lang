@@ -69,6 +69,14 @@ public class LexerTest {
   }
 
   @Test
+  public void invalidSingleChars() {
+    assertThrows(ScannerException.class, () -> new Lexer("@").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer(";").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("�").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("�").nextToken());
+  }
+
+  @Test
   public void longerInt() {
     Lexer lexer = new Lexer("1234");
     Token token = lexer.nextToken();
