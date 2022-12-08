@@ -326,7 +326,7 @@ makeSymbol: proc(): string {
     advance()
     return Token(Type_DOT, oc)
   } else {
-    error = "Line:" + toString(lexer_line) + ': Unknown character:' + lexer_cc + ' ASCII code: ' + toString(asc(lexer_cc))
+    error = 'Line:' + toString(lexer_line) + ': Unknown character:' + lexer_cc + ' ASCII code: ' + toString(asc(lexer_cc))
     exit error
   }
 }

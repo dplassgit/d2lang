@@ -1473,6 +1473,13 @@ public class ParserTest {
     assertParseError("f:proc(args:String[]) {print args[0]}", "Unexpected 'ARGS'");
   }
 
+  @Test
+  public void badLength() {
+    // tests bug #211
+    assertParseError("x = length(string)", "Unexpected 'STRING'; expected literal");
+    assertParseError("x = length(int)", "Unexpected 'INT'; expected literal");
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();

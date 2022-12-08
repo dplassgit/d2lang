@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.common;
 
 public enum TokenType {
   VARIABLE, // all variables are tagged with this type
+  LITERAL, // all literal values are tagged with this type
   // Keywords:
   INT(true), // indicates the "int" keyword
   BOOL(true), // indicates the "bool" keyword

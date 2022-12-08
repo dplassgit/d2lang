@@ -73,23 +73,20 @@ public class Parser implements Phase {
 
   private static final Set<TokenType> EXPRESSION_STARTS =
       ImmutableSet.of(
+          TokenType.ARGS,
           TokenType.ASC,
           TokenType.BIT_NOT,
-          TokenType.BOOL,
-          TokenType.BYTE,
           TokenType.CHR,
-          TokenType.DOUBLE,
           TokenType.FALSE,
-          TokenType.INT,
+          TokenType.INPUT,
           TokenType.LENGTH,
-          TokenType.LONG,
+          TokenType.LITERAL,
           TokenType.LPAREN,
           TokenType.MINUS,
           TokenType.NEW,
           TokenType.NOT,
           TokenType.NULL,
           TokenType.PLUS,
-          TokenType.STRING,
           TokenType.TRUE,
           TokenType.VARIABLE);
 
@@ -247,6 +244,9 @@ public class Parser implements Phase {
 
   private ExitNode exitStmt(Position start) {
     // If it's the start of an expression, read the whole expression...
+    if (token.type() == TokenType.INPUT) {
+      throw new ParseException("'INPUT' is not allowed in 'EXIT' statements", token.start());
+    }
     if (EXPRESSION_STARTS.contains(token.type())) {
       return new ExitNode(start, expr());
     }
@@ -794,26 +794,38 @@ public class Parser implements Phase {
    * </pre>
    */
   private ExprNode atom() {
-    if (token.type() == TokenType.INT) {
-      ConstToken<Integer> it = (ConstToken<Integer>) token;
-      advance();
-      return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
-    } else if (token.type() == TokenType.DOUBLE) {
-      ConstToken<Double> dt = (ConstToken<Double>) token;
-      advance();
-      return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
-    } else if (token.type() == TokenType.BYTE) {
-      ConstToken<Byte> bt = (ConstToken<Byte>) token;
-      advance();
-      return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
+    if (token.type() == TokenType.LITERAL) {
+      ConstToken<?> ct = (ConstToken<?>) token;
+      switch (ct.literalType()) {
+        case INT:
+          ConstToken<Integer> it = (ConstToken<Integer>) token;
+          advance();
+          return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+
+        case DOUBLE:
+          ConstToken<Double> dt = (ConstToken<Double>) token;
+          advance();
+          return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
+
+        case BYTE:
+          ConstToken<Byte> bt = (ConstToken<Byte>) token;
+          advance();
+          return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
+
+        case STRING:
+          ConstToken<String> st = (ConstToken<String>) token;
+          advance();
+          return new ConstNode<String>(st.value(), VarType.STRING, st.start());
+
+        default:
+          throw new ParseException(
+              String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
+              token.start());
+      }
     } else if (token.type() == TokenType.TRUE || token.type() == TokenType.FALSE) {
       Token bt = token;
       advance();
       return new ConstNode<Boolean>(bt.type() == TokenType.TRUE, VarType.BOOL, bt.start());
-    } else if (token.type() == TokenType.STRING) {
-      ConstToken<String> st = (ConstToken<String>) token;
-      advance();
-      return new ConstNode<String>(st.value(), VarType.STRING, st.start());
     } else if (token.type() == TokenType.NULL) {
       Token nt = token;
       advance();

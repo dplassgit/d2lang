@@ -80,9 +80,10 @@ public class LexerTest {
   public void longerInt() {
     Lexer lexer = new Lexer("1234");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1234");
     ConstToken<Integer> itt = (ConstToken<Integer>) token;
+    assertThat(itt.literalType()).isEqualTo(TokenType.INT);
     assertThat(itt.value()).isEqualTo(1234);
   }
 
@@ -90,7 +91,7 @@ public class LexerTest {
   public void byteConstant() {
     Lexer lexer = new Lexer("0y3F");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("3F");
     ConstToken<Byte> itt = (ConstToken<Byte>) token;
     assertThat(itt.value()).isEqualTo((byte) 0x3F);
@@ -100,10 +101,11 @@ public class LexerTest {
   public void byteConstantOneDigit() {
     Lexer lexer = new Lexer("0y3 f");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("3");
-    ConstToken<Byte> itt = (ConstToken<Byte>) token;
-    assertThat(itt.value()).isEqualTo(3);
+    ConstToken<Byte> byteToken = (ConstToken<Byte>) token;
+    assertThat(byteToken.value()).isEqualTo(3);
+    assertThat(byteToken.literalType()).isEqualTo(TokenType.BYTE);
   }
 
   @Test
@@ -124,30 +126,33 @@ public class LexerTest {
   public void caseInsensitiveByteConstant() {
     Lexer lexer = new Lexer("0yeA");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.BYTE);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("eA");
-    ConstToken<Byte> itt = (ConstToken<Byte>) token;
-    assertThat(itt.value()).isEqualTo((byte) 0xea);
+    ConstToken<Byte> byteToken = (ConstToken<Byte>) token;
+    assertThat(byteToken.value()).isEqualTo((byte) 0xea);
+    assertThat(byteToken.literalType()).isEqualTo(TokenType.BYTE);
   }
 
   @Test
   public void doubleToken() {
     Lexer lexer = new Lexer("1234.5");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1234.5");
-    ConstToken<Double> itt = (ConstToken<Double>) token;
-    assertThat(itt.value()).isEqualTo(1234.5);
+    ConstToken<Double> doubleToken = (ConstToken<Double>) token;
+    assertThat(doubleToken.value()).isEqualTo(1234.5);
+    assertThat(doubleToken.literalType()).isEqualTo(TokenType.DOUBLE);
   }
 
   @Test
   public void doubleTokenJustADot() {
     Lexer lexer = new Lexer("1234. next");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.DOUBLE);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1234.0");
-    ConstToken<Double> itt = (ConstToken<Double>) token;
-    assertThat(itt.value()).isEqualTo(1234.);
+    ConstToken<Double> doubleToken = (ConstToken<Double>) token;
+    assertThat(doubleToken.value()).isEqualTo(1234.);
+    assertThat(doubleToken.literalType()).isEqualTo(TokenType.DOUBLE);
   }
 
   @Test
@@ -168,11 +173,11 @@ public class LexerTest {
   public void twoNumbers() {
     Lexer lexer = new Lexer("1 2");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("2");
   }
 
@@ -180,7 +185,8 @@ public class LexerTest {
   public void whiteSpace() {
     Lexer lexer = new Lexer("1\n\t 23");
     ConstToken<Integer> token = (ConstToken<Integer>) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
+    assertThat(token.literalType()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("1");
     assertThat(token.value()).isEqualTo(1);
     assertThat(token.start().line()).isEqualTo(1);
@@ -189,7 +195,8 @@ public class LexerTest {
     assertThat(token.end().column()).isEqualTo(2);
 
     token = (ConstToken<Integer>) lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
+    assertThat(token.literalType()).isEqualTo(TokenType.INT);
     assertThat(token.text()).isEqualTo("23");
     assertThat(token.value()).isEqualTo(23);
     assertThat(token.start().line()).isEqualTo(2);
@@ -312,7 +319,8 @@ public class LexerTest {
     assertThat(token.type().isKeyword()).isTrue();
 
     ConstToken<Integer> intToken = (ConstToken<Integer>) lexer.nextToken();
-    assertThat(intToken.type()).isEqualTo(TokenType.INT);
+    assertThat(intToken.type()).isEqualTo(TokenType.LITERAL);
+    assertThat(intToken.literalType()).isEqualTo(TokenType.INT);
     assertThat(intToken.value()).isEqualTo(3);
 
     Token varToken = lexer.nextToken();
@@ -378,7 +386,7 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(TokenType.EQ);
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("3");
   }
 
@@ -394,7 +402,7 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(TokenType.EQ);
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("3");
 
     token = lexer.nextToken();
@@ -402,7 +410,7 @@ public class LexerTest {
     assertThat(token.text()).isEqualTo("+");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("4");
   }
 
@@ -411,7 +419,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\na");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -427,7 +435,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -439,7 +447,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -451,7 +459,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\r\n");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -463,7 +471,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n\r");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -475,7 +483,7 @@ public class LexerTest {
     Lexer lexer = new Lexer("1// ignored\n// so is this...\nb");
 
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.INT);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("1");
 
     token = lexer.nextToken();
@@ -490,7 +498,7 @@ public class LexerTest {
   public void stringTick() {
     Lexer lexer = new Lexer("'Hi'");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("Hi");
   }
 
@@ -498,7 +506,7 @@ public class LexerTest {
   public void stringQuotes() {
     Lexer lexer = new Lexer("\"Hi\"");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("Hi");
   }
 
@@ -506,7 +514,7 @@ public class LexerTest {
   public void stringEmpty() {
     Lexer lexer = new Lexer("''");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("");
   }
 
@@ -514,7 +522,7 @@ public class LexerTest {
   public void stringSpace() {
     Lexer lexer = new Lexer("' '");
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo(" ");
   }
 
@@ -530,7 +538,7 @@ public class LexerTest {
     String input = "'\\n \\\\ \\' \\\"'";
     Lexer lexer = new Lexer(input);
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo("\n \\ ' \"");
   }
 
@@ -540,7 +548,7 @@ public class LexerTest {
     String input = "\" \\n \\\\ \\' \\\" \"";
     Lexer lexer = new Lexer(input);
     Token token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.STRING);
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
     assertThat(token.text()).isEqualTo(" \n \\ ' \" ");
   }
 
@@ -553,5 +561,12 @@ public class LexerTest {
     ScannerException exception =
         assertThrows(ScannerException.class, () -> new Lexer("'\\").nextToken());
     assertThat(exception).hasMessageThat().contains("Unclosed");
+  }
+
+  @Test
+  public void null_constant() {
+    Lexer lexer = new Lexer("null");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.NULL);
   }
 }
