@@ -167,11 +167,9 @@ public class Lexer {
       case '>':
         return startsWithGt(start);
       case '+':
-        advance();
-        return new Token(TokenType.PLUS, start, oc);
+        return startsWithPlus(start);
       case '-':
-        advance();
-        return new Token(TokenType.MINUS, start, oc);
+        return startsWithMinus(start);
       case '(':
         advance();
         return new Token(TokenType.LPAREN, start, oc);
@@ -223,6 +221,30 @@ public class Lexer {
         return new Token(TokenType.DOT, start, oc);
       default:
         throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
+    }
+  }
+
+  private Token startsWithPlus(Position start) {
+    char oc = cc;
+    advance(); // eat the first +
+    if (cc == '+') {
+      Position end = new Position(line, col);
+      advance(); // eat the second +
+      return new Token(TokenType.INCREMENT, start, end, "++");
+    } else {
+      return new Token(TokenType.PLUS, start, oc);
+    }
+  }
+
+  private Token startsWithMinus(Position start) {
+    char oc = cc;
+    advance(); // eat the first -
+    if (cc == '-') {
+      Position end = new Position(line, col);
+      advance(); // eat the second -
+      return new Token(TokenType.DECREMENT, start, end, "--");
+    } else {
+      return new Token(TokenType.MINUS, start, oc);
     }
   }
 

@@ -370,18 +370,13 @@ public class ParserTest {
   @Test
   public void unaryNegativeInt() {
     assertUnaryAssignConstant("a=-5", -5);
-    assertUnaryAssignConstant("a=-+5", -5);
-    assertUnaryAssignConstant("a=+-5", -5);
-    assertUnaryAssignConstant("a=---5", -5);
   }
 
   @Test
   public void multipleUnary() {
-    assertUnaryAssignConstant("a=++5", 5);
-    assertUnaryAssignConstant("a=+++5", 5);
-    assertUnaryAssignConstant("a=--5", 5);
+    assertUnaryAssignConstant("a=+-5", -5);
+    assertUnaryAssignConstant("a=-+5", -5);
     assertUnaryAssignConstant("a=-+-5", 5);
-    assertUnaryAssignConstant("a=--+5", 5);
   }
 
   private BlockNode assertUnaryAssignConstant(String expression, int value) {

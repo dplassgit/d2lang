@@ -36,6 +36,8 @@ public enum TokenType {
   LENGTH(true),
   CHR(true),
   ASC(true),
+  INCREMENT("++"),
+  DECREMENT("--"),
   // Comparisons:
   EQ("="),
   EQEQ("=="),
