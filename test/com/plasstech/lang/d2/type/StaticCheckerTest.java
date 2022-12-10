@@ -511,7 +511,7 @@ public class StaticCheckerTest {
     assertError("a:bool[1] a[0]=3", "declared as ARRAY of BOOL but.*INT");
     assertError("a:string[1] a[0]=true", "declared as ARRAY of STRING but.*BOOL");
     assertError("a[0]=true", "Unknown variable 'a' used as ARRAY");
-    assertError("a=3 a[0]=1", "must be of type ARRAY; was INT");
+    assertError("a=3 a[0]=1", "used as ARRAY; was INT");
   }
 
   @Test
@@ -792,6 +792,15 @@ public class StaticCheckerTest {
             + "    return 3"
             + "  }"
             + "}"
+            + "}",
+        "Not all codepaths");
+    assertError(
+        "      head:proc{}\r\n"
+            + "head=[1]\r\n"
+            + "bar:proc:int{\r\n"
+            + "  if true {\r\n"
+            + "    return head[0]\r\n"
+            + "  }"
             + "}",
         "Not all codepaths");
   }
@@ -1289,6 +1298,15 @@ public class StaticCheckerTest {
   public void badBracket() {
     // Tests bug #205
     assertError("a=0 x=a[3]", "Cannot apply.*operand of type INT");
+  }
+
+  @Test
+  public void alreadyDeclaredAsProc() {
+    // tests bug #214
+    assertError("head:proc{} head=[1] bar:proc:int{return head[0]}", "already declared as PROC");
+    assertError("head:proc{} r:record{} head=new r", "already declared as PROC");
+    assertError("head:proc{} head.f=3", "Cannot dereference.*already declared as PROC");
+    assertError("head:proc{} foo:proc {head[1]=3}", "used as ARRAY; was PROC");
   }
 
   private void assertError(String program, String messageShouldContain) {

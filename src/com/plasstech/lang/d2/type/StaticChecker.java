@@ -195,7 +195,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         ProcSymbol top = procedures.peek();
         errors.add(
             new TypeException(
-                String.format("Still in PROC '%s'. (This should never happen)", top),
+                String.format("Still in PROC '%s'. (This should never happen)", top.name()),
                 top.position()));
       }
       if (errors.hasErrors()) {
@@ -277,6 +277,16 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           public void visit(FieldSetNode fsn) {
             // Get the record from the symbol table.
             Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
+            if (variableSymbol.varType() == VarType.PROC) {
+              // can't assign to a proc
+              errors.add(
+                  new TypeException(
+                      String.format(
+                          "Cannot dereference '%s' as RECORD; already declared as PROC",
+                          lvalue.name()),
+                      lvalue.position()));
+              return;
+            }
             VarType varType = variableSymbol.varType();
             if (variableSymbol == null || !varType.isRecord()) {
               errors.add(
@@ -335,14 +345,24 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               // Already known in some scope. Update.
               if (symbol.varType().isUnknown()) {
                 symbol.setVarType(right.varType());
+              } else if (symbol.varType() == VarType.PROC) {
+                // can't assign to a proc
+                errors.add(
+                    new TypeException(
+                        String.format(
+                            "Cannot assign '%s' as %s; already declared as PROC",
+                            lvalue.name(), right.varType()),
+                        lvalue.position()));
+                return;
               } else if (!symbol.varType().compatibleWith(right.varType())) {
-                // It was already in the symbol table. Possible that it's wrong
+                // It was already in the symbol table. Possible that it's wrong.
                 errors.add(
                     new TypeException(
                         String.format(
                             "Cannot convert variable '%s' from declared type %s to %s",
                             lvalue.name(), symbol.varType(), right.varType()),
                         lvalue.position()));
+                return;
               }
 
               // TODO(#38): if arrays, the # of dimensions must match.
@@ -362,7 +382,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               // this should never happen?
               errors.add(
                   new TypeException(
-                      String.format("Unknown variable '%s' used as ARRAY type", variableName),
+                      String.format("Unknown variable '%s' used as ARRAY", variableName),
                       lvalue.position()));
               return;
             }
@@ -370,8 +390,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               errors.add(
                   new TypeException(
                       String.format(
-                          "Variable '%s' must be of type ARRAY; was %s",
-                          variableName, symbol.varType()),
+                          "Variable '%s' used as ARRAY; was %s", variableName, symbol.varType()),
                       lvalue.position()));
               return;
             }
@@ -614,6 +633,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
 
+      // bug #214
+      if (!(leftType instanceof ArrayType)) {
+        errors.add(
+            new TypeException(
+                String.format("%s cannot be used as ARRAY", leftType), left.position()));
+        return;
+      }
       // TODO: Generalize this, e.g., have a "baseType" method on VarType
       ArrayType arrayType = (ArrayType) leftType;
       node.setVarType(arrayType.baseType());
@@ -955,16 +981,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             new TypeException(
                 String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
                 node.position()));
-        return;
       }
       if (!checkAllPathsHaveReturn(node)) {
         errors.add(
             new TypeException(
                 String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
                 node.position()));
-        return;
+      } else {
+        validatePossibleRecordType("return type", node.returnType(), node.position());
       }
-      validatePossibleRecordType("return type", node.returnType(), node.position());
     }
     procedures.pop();
   }
@@ -1034,6 +1059,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             new TypeException(
                 String.format("Indeterminable type for RETURN statement: %s", node),
                 node.position()));
+        ProcSymbol proc = procedures.peek();
+        needsReturn.remove(proc);
         return;
       }
       node.setVarType(expr.varType());
