@@ -6,6 +6,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ProcSymbol;
 
 public class Call extends Op {
@@ -19,7 +20,9 @@ public class Call extends Op {
       Optional<Location> destination,
       ProcSymbol procSym,
       ImmutableList<Operand> actuals,
-      ImmutableList<Location> formals) {
+      ImmutableList<Location> formals,
+      Position position) {
+    super(position);
     this.destination = destination;
     this.procSym = procSym;
     this.actuals = actuals;
@@ -27,15 +30,11 @@ public class Call extends Op {
   }
 
   public Call(
-      Location destination,
       ProcSymbol procSym,
       ImmutableList<Operand> actuals,
-      ImmutableList<Location> formals) {
-    this(Optional.of(destination), procSym, actuals, formals);
-  }
-
-  public Call(ProcSymbol procSym, ImmutableList<Operand> actuals, ImmutableList<Location> formals) {
-    this(Optional.empty(), procSym, actuals, formals);
+      ImmutableList<Location> formals,
+      Position position) {
+    this(Optional.empty(), procSym, actuals, formals, position);
   }
 
   public ProcSymbol procSym() {

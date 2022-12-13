@@ -70,8 +70,8 @@ class IncDecOptimizer extends LineOptimizer {
 
       deleteCurrent();
 
-      Inc increment = new Inc(third.destination());
-      Dec decrement = new Dec(third.destination());
+      Inc increment = new Inc(third.destination(), third.position());
+      Dec decrement = new Dec(third.destination(), third.position());
       if (value.equals(2)) {
         // +/- 2
         replaceAt(ip() + 1, plus ? increment : decrement);
@@ -125,8 +125,8 @@ class IncDecOptimizer extends LineOptimizer {
 
       deleteCurrent();
 
-      Inc increment = new Inc(second.destination());
-      Dec decrement = new Dec(second.destination());
+      Inc increment = new Inc(second.destination(), first.position());
+      Dec decrement = new Dec(second.destination(), first.position());
       if (value.equals(2)) {
         // +/- 2
         replaceAt(ip(), plus ? increment : decrement);

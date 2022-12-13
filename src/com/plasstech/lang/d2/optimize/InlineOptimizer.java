@@ -129,7 +129,10 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       if (op.destination().isPresent() && returnOp != null) {
         // if op is assigned to a return value, copy that
         // from the "return" statement
-        code.add(ip, new Transfer(op.destination().get(), returnOp.returnValueLocation().get()));
+        code.add(
+            ip,
+            new Transfer(
+                op.destination().get(), returnOp.returnValueLocation().get(), op.position()));
       }
       // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);
@@ -138,7 +141,9 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         code.add(
             ip,
             new Transfer(
-                inlineRemapper.remapFormal(entry.formalNames().get(i), actual.type()), actual));
+                inlineRemapper.remapFormal(entry.formalNames().get(i), actual.type()),
+                actual,
+                op.position()));
       }
       code.add(ip, new Nop("(inline start)"));
       changed = true;

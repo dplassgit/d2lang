@@ -64,7 +64,7 @@ public class LoopInvariantOptimizerTest {
     assertThat(unoptimized.ilCode())
         .containsAtLeast(
             new Label("__loop_begin_2"),
-            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO))
+            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO, null))
         .inOrder();
 
     InterpreterResult optimizedResult =
@@ -76,7 +76,7 @@ public class LoopInvariantOptimizerTest {
      */
     assertThat(optimizedResult.code())
         .containsAtLeast(
-            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO),
+            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO, null),
             new Label("__loop_begin_2"))
         .inOrder();
   }

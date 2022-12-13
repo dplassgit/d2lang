@@ -150,7 +150,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String opcodeString = opcode.toString();
         String escaped = ESCAPER.escape(opcodeString);
         emit0("");
-        emit("; SOURCE: %s", escaped);
+        if (opcode.position() != null) {
+          emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
+        } else {
+          emit("; SOURCE: %s", escaped);
+        }
         opcode.accept(this);
       }
     } catch (D2RuntimeException e) {

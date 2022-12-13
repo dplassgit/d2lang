@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableList;
@@ -141,7 +142,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       Location index = lookupLocation("array_print_index");
       ArrayType arrayType = (ArrayType) expr.varType();
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("[")));
-      emit(new Transfer(index, ConstantOperand.of(0)));
+      emit(new Transfer(index, ConstantOperand.of(0), node.position()));
       // length = calculate length of array
       if (symbolTable.lookup("array_print_length") == VarType.UNKNOWN) {
         symbolTable.declare("array_print_length", VarType.INT);
@@ -152,7 +153,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       // mov RBX, [__arr] ; get array location into reg
       // mov [__length], [RBX + 1] ; get length from first dimension
       emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location(), node.position()));
-      emit(new Transfer(length, tempLength));
+      emit(new Transfer(length, tempLength, null));
       String loopLabel = nextLabel("array_print_loop");
       // loop:
       emit(new Label(loopLabel));
@@ -161,7 +162,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       TempLocation compare = allocateTemp(VarType.BOOL);
       emit(new BinOp(compare, index, TokenType.EQEQ, length, node.position()));
       //   if equal, go to end
-      emit(new IfOp(compare, endLoopLabel, false));
+      emit(new IfOp(compare, endLoopLabel, false, node.position()));
       TempLocation item = allocateTemp(arrayType.baseType());
       //   item = get "index"th item
       emit(new BinOp(item, expr.location(), TokenType.LBRACKET, index, node.position()));
@@ -170,7 +171,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       // this adds a trailing comma but who cares.
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of(",")));
       //   inc index
-      emit(new Inc(index));
+      emit(new Inc(index, node.position()));
       //   goto loop
       emit(new Goto(loopLabel));
       // end:
@@ -234,7 +235,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           public void visit(VariableSetNode variableNode) {
             Location dest = lookupLocation(variableNode.name());
             variableNode.setLocation(dest);
-            emit(new Transfer(dest, rhsLocation));
+            emit(new Transfer(dest, rhsLocation, variableNode.position()));
           }
 
           @Override
@@ -307,7 +308,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // TODO: this is causing issues with inline optimizer, not surprisngly...
     TempLocation recordLocation = allocateTemp(symbol.varType());
     node.setLocation(recordLocation);
-    emit(new AllocateOp(recordLocation, symbol));
+    emit(new AllocateOp(recordLocation, symbol, node.position()));
 
     // Generate array allocation node for each array field
     List<ArrayField> arrayFields = symbol.arrayFields();
@@ -357,7 +358,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     node.setLocation(destination);
 
     ConstantOperand<T> constOperand = toConstOperand(node);
-    Transfer transfer = new Transfer(destination, constOperand);
+    Transfer transfer = new Transfer(destination, constOperand, node.position());
     emit(transfer);
   }
 
@@ -483,7 +484,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       cond.accept(this);
 
       // if !cond.location goto nextLabel
-      emit(new IfOp(cond.location(), nextLabel, true));
+      emit(new IfOp(cond.location(), nextLabel, true, node.position()));
 
       ifCase.block().accept(this);
       // We're in a block , now jump completely after.
@@ -522,7 +523,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     Node condition = node.condition();
     condition.accept(this);
     // if not condition.location() goto after
-    emit(new IfOp(condition.location(), after, true));
+    emit(new IfOp(condition.location(), after, true, node.position()));
 
     emit(new Label(before));
 
@@ -669,12 +670,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     ImmutableList<Location> formals = procSymFormals(procSym);
     if (node.isStatement()) {
       // No return value
-      call = new Call(procSym, actuals, formals);
+      call = new Call(procSym, actuals, formals, node.position());
     } else {
       // 3. put result location into node.location
       Location location = allocateTemp(node.varType());
       node.setLocation(location);
-      call = new Call(location, procSym, actuals, formals);
+      call = new Call(Optional.of(location), procSym, actuals, formals, node.position());
     }
     emit(call);
   }

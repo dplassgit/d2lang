@@ -117,7 +117,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
         deleteCurrent();
       } else if (!(source instanceof TempLocation)) {
         // don't propagate temps
-        logger.at(loggingLevel).log("Potentially replacing temp %s with value %s", dest.name(), source);
+        logger.at(loggingLevel).log(
+            "Potentially replacing temp %s with value %s", dest.name(), source);
         tempAssignments.put(dest.name(), source);
         deleteCurrent();
       }
@@ -130,7 +131,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     } else if (!source.isConstant()) {
       Operand replacement = findReplacement(source);
       if (replacement != null) {
-        replaceCurrent(new Transfer(dest, replacement));
+        replaceCurrent(new Transfer(dest, replacement, op.position()));
       }
     }
   }
@@ -158,7 +159,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.condition();
     Operand replacement = findReplacement(operand);
     if (replacement != null) {
-      replaceCurrent(new IfOp(replacement, op.destination(), op.isNot()));
+      replaceCurrent(new IfOp(replacement, op.destination(), op.isNot(), op.position()));
     }
     // Going into an if, we can't rely on the value of the constant anymore, maybe.
     stackAssignments.clear();
@@ -190,7 +191,12 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (changed) {
       replaceCurrent(
-          new Call(op.destination(), op.procSym(), replacementParams.build(), op.formals()));
+          new Call(
+              op.destination(),
+              op.procSym(),
+              replacementParams.build(),
+              op.formals(),
+              op.position()));
     }
 
     stackAssignments.clear();

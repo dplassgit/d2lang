@@ -10,13 +10,16 @@ public class Return extends Op {
   private final String procName;
 
   public Return(String procName) {
-    this.procName = procName;
-    this.returnValueLocation = Optional.empty();
+    this(procName, Optional.empty());
   }
 
-  public Return(String procName, Operand operand) {
+  public Return(String procName, Operand returnValue) {
+    this(procName, Optional.of(returnValue));
+  }
+
+  public Return(String procName, Optional<Operand> maybeReturnValue) {
     this.procName = procName;
-    this.returnValueLocation = Optional.of(operand);
+    this.returnValueLocation = maybeReturnValue;
   }
 
   public Optional<Operand> returnValueLocation() {

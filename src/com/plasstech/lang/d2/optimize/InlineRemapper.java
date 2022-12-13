@@ -89,7 +89,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (operand == op.target()) {
       return;
     }
-    code.set(ip, new Inc((Location) operand));
+    code.set(ip, new Inc((Location) operand, op.position()));
   }
 
   @Override
@@ -98,7 +98,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (operand == op.target()) {
       return;
     }
-    code.set(ip, new Dec((Location) operand));
+    code.set(ip, new Dec((Location) operand, op.position()));
   }
 
   @Override
@@ -108,7 +108,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (source == op.source() && destination == op.destination()) {
       return;
     }
-    code.set(ip, new Transfer((Location) destination, source));
+    code.set(ip, new Transfer((Location) destination, source, op.position()));
   }
 
   @Override
@@ -121,7 +121,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     }
     code.set(ip, new ArraySet(destination, op.arrayType(), index, source, false, op.position()));
   }
-  
+
   @Override
   public void visit(FieldSetOp op) {
     Operand source = remap(op.source());
@@ -131,14 +131,14 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     }
     code.set(ip, new FieldSetOp(destination, op.recordSymbol(), op.field(), source, op.position()));
   }
-  
+
   @Override
   public void visit(AllocateOp op) {
     Location destination = (Location) remap(op.destination());
     if (destination == op.destination()) {
       return;
     }
-    code.set(ip, new AllocateOp(destination, op.record()));
+    code.set(ip, new AllocateOp(destination, op.record(), op.position()));
   }
 
   @Override

@@ -31,6 +31,6 @@ class AdjacentLabelOptimizer extends LineOptimizer {
     replaceAllMatching(
         IfOp.class,
         ifOp -> ifOp.destination().equals(secondLabel.label()),
-        ifOp -> new IfOp(ifOp.condition(), firstLabel.label(), ifOp.isNot()));
+        ifOp -> new IfOp(ifOp.condition(), firstLabel.label(), ifOp.isNot(), ifOp.position()));
   }
 }

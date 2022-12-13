@@ -20,14 +20,14 @@ public class DoubleFinderTest {
 
   @Test
   public void noDoubles() {
-    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(true)));
+    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(true), null));
     DoubleTable table = df.execute(ops);
     assertThat(table.entries()).isEmpty();
   }
 
   @Test
   public void oneDouble() {
-    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(3.14)));
+    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(3.14), null));
     DoubleTable table = df.execute(ops);
     assertThat(table.entries()).hasSize(1);
   }
@@ -36,8 +36,8 @@ public class DoubleFinderTest {
   public void twoDoubles() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of(3.14)),
-            new Transfer(null, ConstantOperand.of(5.1)));
+            new Transfer(null, ConstantOperand.of(3.14), null),
+            new Transfer(null, ConstantOperand.of(5.1), null));
     DoubleTable table = df.execute(ops);
     assertThat(table.entries()).hasSize(2);
   }
@@ -46,11 +46,11 @@ public class DoubleFinderTest {
   public void twoDoublesAndOthers() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of(3.14)),
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of(3)),
-            new Transfer(null, ConstantOperand.of(true)),
-            new Transfer(null, ConstantOperand.of(5.1)));
+            new Transfer(null, ConstantOperand.of(3.14), null),
+            new Transfer(null, ConstantOperand.of("hi"), null),
+            new Transfer(null, ConstantOperand.of(3), null),
+            new Transfer(null, ConstantOperand.of(true), null),
+            new Transfer(null, ConstantOperand.of(5.1), null));
     DoubleTable table = df.execute(ops);
     assertThat(table.entries()).hasSize(2);
   }
@@ -59,8 +59,8 @@ public class DoubleFinderTest {
   public void twoIdenticalDoubles() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of(3.14)),
-            new Transfer(null, ConstantOperand.of(3.14)));
+            new Transfer(null, ConstantOperand.of(3.14), null),
+            new Transfer(null, ConstantOperand.of(3.14), null));
     DoubleTable table = df.execute(ops);
     assertThat(table.entries()).hasSize(1);
     ConstEntry<Double> entry = table.lookup(3.14);

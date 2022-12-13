@@ -20,14 +20,14 @@ public class StringFinderTest {
 
   @Test
   public void noStrings() {
-    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(true)));
+    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of(true), null));
     StringTable table = sf.execute(ops);
     assertThat(table.entries()).isEmpty();
   }
 
   @Test
   public void oneString() {
-    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of("hi")));
+    ImmutableList<Op> ops = ImmutableList.of(new Transfer(null, ConstantOperand.of("hi"), null));
     StringTable table = sf.execute(ops);
     assertThat(table.entries()).hasSize(1);
   }
@@ -36,8 +36,8 @@ public class StringFinderTest {
   public void twoNonOverlappingStrings() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("there")));
+            new Transfer(null, ConstantOperand.of("hi"), null),
+            new Transfer(null, ConstantOperand.of("there"), null));
     StringTable table = sf.execute(ops);
     assertThat(table.entries()).hasSize(2);
   }
@@ -46,8 +46,8 @@ public class StringFinderTest {
   public void twoOverlappingStrings() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("ohhi")));
+            new Transfer(null, ConstantOperand.of("hi"), null),
+            new Transfer(null, ConstantOperand.of("ohhi"), null));
     StringTable table = sf.execute(ops);
     // Still has size 2, though one references the other.
     assertThat(table.entries()).hasSize(2);
@@ -57,8 +57,8 @@ public class StringFinderTest {
   public void twoIdenticalStrings() {
     ImmutableList<Op> ops =
         ImmutableList.of(
-            new Transfer(null, ConstantOperand.of("hi")),
-            new Transfer(null, ConstantOperand.of("hi")));
+            new Transfer(null, ConstantOperand.of("hi"), null),
+            new Transfer(null, ConstantOperand.of("hi"), null));
     StringTable table = sf.execute(ops);
     assertThat(table.entries()).hasSize(1);
   }

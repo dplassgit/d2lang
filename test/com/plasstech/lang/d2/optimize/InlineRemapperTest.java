@@ -29,7 +29,7 @@ public class InlineRemapperTest {
 
   @Test
   public void transferConstantToStack() {
-    ImmutableList<Op> input = ImmutableList.of(new Transfer(STACK, ConstantOperand.ONE));
+    ImmutableList<Op> input = ImmutableList.of(new Transfer(STACK, ConstantOperand.ONE, null));
     List<Op> mapped = new InlineRemapper(input, new SymTab()).remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).startsWith("__stack__inline__");
@@ -40,7 +40,7 @@ public class InlineRemapperTest {
   public void transferConstantToTemp() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE)), new SymTab())
+                ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -50,7 +50,7 @@ public class InlineRemapperTest {
   @Test
   public void transferTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE)), new SymTab())
+        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE, null)), new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -60,7 +60,7 @@ public class InlineRemapperTest {
   @Test
   public void transferFromTemp() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE)), new SymTab())
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE, null)), new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
@@ -70,7 +70,7 @@ public class InlineRemapperTest {
   @Test
   public void transferNoTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY)), new SymTab()).remap();
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), new SymTab()).remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
     assertThat(op.source()).isEqualTo(MEMORY);

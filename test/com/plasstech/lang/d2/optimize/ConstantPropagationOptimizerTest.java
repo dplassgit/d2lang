@@ -30,9 +30,9 @@ public class ConstantPropagationOptimizerTest {
   public void twoTransfers() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(TEMP_INT1, ConstantOperand.ONE),
-            new Transfer(TEMP_INT2, TEMP_INT1),
-            new Transfer(STACK_INT1, TEMP_INT2));
+            new Transfer(TEMP_INT1, ConstantOperand.ONE, null),
+            new Transfer(TEMP_INT2, TEMP_INT1, null),
+            new Transfer(STACK_INT1, TEMP_INT2, null));
 
     program = OPTIMIZER.optimize(program, null);
 
@@ -44,9 +44,9 @@ public class ConstantPropagationOptimizerTest {
   public void transferToGlobal() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(GLOBAL_INT1, ConstantOperand.ONE),
-            new Transfer(TEMP_INT1, GLOBAL_INT1), //
-            new Transfer(GLOBAL_INT2, TEMP_INT1));
+            new Transfer(GLOBAL_INT1, ConstantOperand.ONE, null),
+            new Transfer(TEMP_INT1, GLOBAL_INT1, null), //
+            new Transfer(GLOBAL_INT2, TEMP_INT1, null));
 
     program = OPTIMIZER.optimize(program, null);
     assertThat(program).hasSize(2);
