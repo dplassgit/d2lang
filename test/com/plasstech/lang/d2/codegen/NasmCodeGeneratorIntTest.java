@@ -159,6 +159,16 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void increment() throws Exception {
+    execute("a=3 a++ if a!=4 {exit('increment is broken')} print a", "increment");
+  }
+
+  @Test
+  public void decrement() throws Exception {
+    execute("a=3 a-- print a", "decrement");
+  }
+
+  @Test
   public void divLoop() throws Exception {
     execute("a=10000 while a > 0 {print a a = a / 10 }", "divLoop");
   }
@@ -185,7 +195,6 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
             + "  a:int\r\n"
             + "  a=3\r\n"
             + "  a=-3\r\n"
-            + "  a=--3\r\n"
             + "  a=-+-3\r\n"
             + "  a=+3+-3\r\n"
             + "  a=+3\r\n"

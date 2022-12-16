@@ -1,15 +1,13 @@
-
 reverseIter: proc(s: string): string {
-  reverse: string 
   reverse = ""
-  i=length(s)-1 while i >= 0 do i=i-1 {
+  i = length(s) - 1 while i >= 0 do i-- {
     reverse = reverse + s[i]
   }
   return reverse
 }
 
 reverseRecursive: proc(s: string): string {
-  return reverse2(length(s) ,s)
+  return reverse2(length(s), s)
 }
 
 reverse2: proc(start: int, s: string): string {

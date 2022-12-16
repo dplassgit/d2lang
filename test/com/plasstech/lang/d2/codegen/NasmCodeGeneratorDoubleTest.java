@@ -26,7 +26,7 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void negateLocal() throws Exception {
-    execute("f:proc(a:double) { b=a+1.0 c=-b d=--c println d} f(1.2)", "negateLocal");
+    execute("f:proc(a:double) { b=a+1.0 c=-b d=-c println d} f(1.2)", "negateLocal");
   }
 
   @Test

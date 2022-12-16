@@ -47,7 +47,7 @@ public class ILOptimizerTest {
 
   @Test
   public void zeroMinus() {
-    TestUtils.optimizeAssertSameVariables("zeroMinus:proc() {a = 0 b=a--3 println b} zeroMinus()");
+    TestUtils.optimizeAssertSameVariables("zeroMinus:proc() {a = 0 b=a-3 println b} zeroMinus()");
   }
 
   @Test

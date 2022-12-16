@@ -37,7 +37,10 @@ abstract class AbstractNode implements Node {
   protected final void internalSetVarType(VarType varType) {
     Preconditions.checkArgument(
         this.varType.isUnknown(),
-        "Cannot overwrite already-set vartype. Was: " + this.varType.name());
+        "Cannot overwrite already-set vartype of node "
+            + this.toString()
+            + ". Was: "
+            + this.varType.name());
     Preconditions.checkNotNull(varType, "Cannot set to null");
     this.varType = varType;
   }

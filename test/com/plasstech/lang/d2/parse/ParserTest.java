@@ -1475,6 +1475,50 @@ public class ParserTest {
     assertParseError("x = length(int)", "Unexpected 'INT'; expected literal");
   }
 
+  @Test
+  public void increment() {
+    BlockNode root = parseStatements("a++");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableSetNode lvalue = (VariableSetNode) node.lvalue();
+    assertThat(lvalue.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+
+    BinOpNode binOp = (BinOpNode) expr;
+    VariableNode var = (VariableNode) binOp.left();
+    assertThat(var.name()).isEqualTo("a");
+
+    assertThat(binOp.operator()).isEqualTo(TokenType.PLUS);
+
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
+    assertThat(right.value()).isEqualTo(1);
+  }
+
+  @Test
+  public void decrement() {
+    BlockNode root = parseStatements("a--");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    VariableSetNode lvalue = (VariableSetNode) node.lvalue();
+    assertThat(lvalue.name()).isEqualTo("a");
+
+    ExprNode expr = node.expr();
+
+    BinOpNode binOp = (BinOpNode) expr;
+    VariableNode var = (VariableNode) binOp.left();
+    assertThat(var.name()).isEqualTo("a");
+
+    assertThat(binOp.operator()).isEqualTo(TokenType.MINUS);
+
+    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
+    assertThat(right.value()).isEqualTo(1);
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();

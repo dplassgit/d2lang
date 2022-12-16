@@ -1,4 +1,11 @@
 f1:proc(a:double, b:double): double {
+  i=1
+  i++
+  print i
+  m=3
+  m--
+
+  print m
   a=2.0 
   b=3.0 
   c=-5.0 

@@ -195,7 +195,7 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
             + "  a:byte\r\n"
             + "  a=0y3\r\n"
             + "  a=-0y3\r\n"
-            + "  a=--0y3\r\n"
+            + "  a=-0y3\r\n"
             + "  a=-+-0y3\r\n"
             + "  a=+0y3+-0y3\r\n"
             + "  a=+0y3\r\n"

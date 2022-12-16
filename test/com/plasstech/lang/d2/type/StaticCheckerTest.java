@@ -1315,6 +1315,17 @@ public class StaticCheckerTest {
     assertError("if not a { print 'sorry'}", "Indeterminable type for expression a");
   }
 
+  @Test
+  public void badIncDec() {
+    assertError("a=1.0 a++", "DOUBLE but right is INT");
+    assertError("a=1.0 a--", "DOUBLE but right is INT");
+    assertError("a=true a++", "to left operand of type BOOL");
+    assertError("a=true a--", "to left operand of type BOOL");
+    assertError("a='' a++", "STRING but right is INT");
+    // this is weird, but at least it catches it.
+    assertError("a='' a--", "to left operand of type STRING");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

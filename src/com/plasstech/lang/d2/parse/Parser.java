@@ -36,6 +36,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
@@ -285,6 +286,13 @@ public class Parser implements Phase {
         //  bracket for array slot assignment (field[expression] = expression)
       case LBRACKET:
         return arraySlotAssignment(variable);
+
+      case INCREMENT:
+      case DECREMENT:
+        boolean inc = token.type() == TokenType.INCREMENT;
+        advance(); // eat the ++ or --
+        VariableSetNode incVar = new VariableSetNode(variable.text(), variable.start());
+        return new IncDecNode(incVar, inc);
 
       default:
         break;
