@@ -299,9 +299,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         && (leftType.equals(op.destination().type()))) {
 
       // reuse left. left = left (op) right.
-      dest = (Location) op.left();
-      reuse = true;
-      resolver.addAlias(op.destination(), op.left());
+      Register maybeAlias = resolver.toRegister(op.destination());
+      if (maybeAlias != null) {
+        // if dest is already allocated to a register, so don't re-allocate it, and don't alias it.
+        emitter.emit("; dest %s already in a register %s", op.destination(), maybeAlias);
+      } else {
+        dest = (Location) op.left();
+        reuse = true;
+        resolver.addAlias(op.destination(), op.left());
+      }
     }
     // 3. determine dest location
     ResolvedOperand destRo = resolver.resolveFully(dest);

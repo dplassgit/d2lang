@@ -4,12 +4,23 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Stop;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.ProcSymbol;
+import com.plasstech.lang.d2.type.VarType;
 
 public class DeadAssignmentOptimizerTest {
 
-  private Optimizer optimizer = new ILOptimizer(new DeadAssignmentOptimizer(2)).setDebugLevel(2);
+  private Optimizer optimizer =
+      new ILOptimizer(ImmutableList.of(new DeadAssignmentOptimizer(2), new NopOptimizer()));
 
   @Test
   public void notDeadParams() {
@@ -71,5 +82,19 @@ public class DeadAssignmentOptimizerTest {
   @Test
   public void linkedList() {
     TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
+  }
+
+  @Test
+  public void deadTempsLowLevel() {
+    ProcSymbol procSym =
+        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(
+                new TempLocation("temp", VarType.STRING), ConstantOperand.EMPTY_STRING, null),
+            new Call(procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Stop());
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(2);
   }
 }

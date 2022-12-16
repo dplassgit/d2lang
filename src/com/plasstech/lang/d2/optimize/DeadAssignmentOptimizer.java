@@ -79,8 +79,20 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Stop op) {
-    assignments.clear();
-    tempAssignments.clear();
+    if (!assignments.isEmpty()) {
+      logger.at(loggingLevel).log("Killing all unused variables at stop: %s", assignments);
+      for (int theIp : assignments.values()) {
+        deleteAt(theIp);
+      }
+      assignments.clear();
+    }
+    if (!tempAssignments.isEmpty()) {
+      logger.at(loggingLevel).log("Killing all unused temps at stop: %s", tempAssignments);
+      for (int theIp : tempAssignments.values()) {
+        deleteAt(theIp);
+      }
+      tempAssignments.clear();
+    }
   }
 
   @Override
@@ -196,6 +208,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public void visit(IfOp op) {
     assignments.clear();
+    // maybe also tempAssignments.clear()
     markRead(op.condition());
   }
 
@@ -219,10 +232,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Return op) {
-    if (op.returnValueLocation().isPresent()) {
-      Operand returnValue = op.returnValueLocation().get();
-      markRead(returnValue);
-    }
+    op.returnValueLocation().ifPresent(returnValue -> markRead(returnValue));
   }
 
   @Override

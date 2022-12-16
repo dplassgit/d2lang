@@ -545,13 +545,14 @@ public class Interpreter extends DefaultOpcodeVisitor {
     Object rhs = resolve(op.operand());
     Object result = null;
     // FFS use op.source.type
+
     if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
     } else if (rhs instanceof Byte) {
       result = visitUnaryByte(op, rhs);
     } else if (rhs instanceof Double) {
       result = visitUnaryDouble(op, rhs);
-    } else if (rhs instanceof String) {
+    } else if (op.operand().type() == VarType.STRING) {
       result = visitUnaryString(op, (String) rhs);
     } else if (rhs != null && rhs.getClass().isArray()) {
       result = visitUnaryArray(op, (Object[]) rhs);

@@ -45,10 +45,11 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
       @TestParameter boolean boola,
       @TestParameter boolean boolb)
       throws Exception {
-    execute(
+    String program =
         String.format(
-            "f:proc{a=%s b=%s c=a %s b print c d=b %s a print d} f()", boola, boolb, op, op),
-        "boolBinOpProc" + boola + boolb);
+            "f:proc{a=%s b=%s c=a %s b print c d=b %s a print d} f()", boola, boolb, op, op);
+    System.err.println(program);
+    execute(program, "boolBinOpProc" + boola + boolb);
   }
 
   @Test
@@ -69,5 +70,28 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
     execute(
         "f:proc(a:int, b:int):bool {if a+b > b-a or a<a-b { return true} return false} f(1,2)",
         "boolAnd");
+  }
+
+  @Test
+  public void shortCircuitAnd() throws Exception {
+    execute(
+        "      f:proc(s:string) { "
+            + "  if s != null and length(s) > 1 { "
+            + "     print 'length is: ' println s "
+            + "  } "
+            + "  println 'done'"
+            + "} "
+            + "f('a') f('hi') f(null)",
+        "shortCircuitAnd");
+  }
+
+  @Test
+  public void shortCircuitOr() throws Exception {
+    execute(
+        "      f:proc(s:string) { if s== null or length(s) > 1 { println 'null or big' } println 'done'} "
+            + "f('a') "
+            + "f('hi') "
+            + "f(null)",
+        "shortCircuitOr");
   }
 }

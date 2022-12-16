@@ -58,6 +58,18 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void shortCircuitAnd() {
+    System.err.println(generateProgram("bucket=3 if bucket==3 and bucket > 4 { print bucket}"));
+  }
+
+  @Test
+  public void shortCircuitOr() {
+    System.err.println(
+        Joiner.on('\n')
+            .join(generateProgram("bucket=3 if bucket==3 or bucket > 4 { print bucket}")));
+  }
+
+  @Test
   public void ifStmt() {
     generateProgram(
         "a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} else {print 2} print 3");

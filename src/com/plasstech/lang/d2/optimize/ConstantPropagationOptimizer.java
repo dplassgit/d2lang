@@ -33,7 +33,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from temp name to its source value
-  private final Map<String, Operand> tempAssignments = new HashMap<>();
+  //  private final Map<String, Operand> tempAssignments = new HashMap<>();
   // Map from stack to source
   private final Map<String, Operand> stackAssignments = new HashMap<>();
   // TODO: Map from global to constant
@@ -45,7 +45,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   protected void preProcess() {
-    tempAssignments.clear();
+    //    tempAssignments.clear();
     stackAssignments.clear();
   }
 
@@ -105,33 +105,44 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       stackAssignments.remove(dest.name());
     }
 
-    if (dest instanceof TempLocation) {
-      // temp = 1 or temp=a or temp=temp
+    //    if (dest instanceof TempLocation) {
+    //      // temp = 1 or temp=a or temp=temp
+    //
+    //      Operand replacement = findReplacement(source);
+    //      if (replacement != null) {
+    //        // the source was already replaced - use it instead.
+    //        logger.at(loggingLevel).log(
+    //            "Potentially replacing temp %s with const %s", dest.name(), replacement);
+    //        tempAssignments.put(dest.name(), replacement);
+    //        deleteCurrent();
+    //      } else if (!(source instanceof TempLocation)) {
+    //        // don't propagate temps
+    //        logger.at(loggingLevel).log(
+    //            "Potentially replacing temp %s with value %s", dest.name(), source);
+    //        tempAssignments.put(dest.name(), source);
+    //        deleteCurrent();
+    //      }
+    //    } else if ((dest instanceof StackLocation || dest instanceof ParamLocation)
+    //        && !(source instanceof TempLocation)) {
 
-      Operand replacement = findReplacement(source);
-      if (replacement != null) {
-        // the source was already replaced - use it instead.
-        logger.at(loggingLevel).log(
-            "Potentially replacing temp %s with const %s", dest.name(), replacement);
-        tempAssignments.put(dest.name(), replacement);
-        deleteCurrent();
-      } else if (!(source instanceof TempLocation)) {
-        // don't propagate temps
-        logger.at(loggingLevel).log(
-            "Potentially replacing temp %s with value %s", dest.name(), source);
-        tempAssignments.put(dest.name(), source);
-        deleteCurrent();
-      }
-    } else if ((dest instanceof StackLocation || dest instanceof ParamLocation)
-        && !(source instanceof TempLocation)) {
-      // Do not propagate temps, because temps can only be read once.
+    // never replace a local with a temp
+    if (((dest instanceof StackLocation || dest instanceof ParamLocation)
+            && !(source instanceof TempLocation))
+        || (dest instanceof TempLocation)) {
       logger.at(loggingLevel).log(
           "Potentially replacing local/param %s with %s", dest.name(), source);
       stackAssignments.put(dest.name(), source);
-    } else if (!source.isConstant()) {
+    }
+
+    if (!source.isConstant()) {
       Operand replacement = findReplacement(source);
       if (replacement != null) {
-        replaceCurrent(new Transfer(dest, replacement, op.position()));
+        // never replace a local with a temp
+        if (((dest instanceof StackLocation || dest instanceof ParamLocation)
+                && !(replacement instanceof TempLocation))
+            || (dest instanceof TempLocation)) {
+          replaceCurrent(new Transfer(dest, replacement, op.position()));
+        }
       }
     }
   }
@@ -265,18 +276,17 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (operand.isConstant()) {
       return null;
     }
-    if (operand instanceof TempLocation) {
-      // look it up
-      TempLocation sourceTemp = (TempLocation) operand;
-      if (tempAssignments.get(sourceTemp.name()) != null) {
-        return tempAssignments.get(sourceTemp.name());
-      }
-    } else if (operand instanceof StackLocation || operand instanceof ParamLocation) {
+    //    if (operand instanceof TempLocation) {
+    //       look it up
+    //      TempLocation sourceTemp = (TempLocation) operand;
+    //      if (tempAssignments.get(sourceTemp.name()) != null) {
+    //        return tempAssignments.get(sourceTemp.name());
+    //      }
+    //    } else if (operand instanceof StackLocation || operand instanceof ParamLocation) {
+    if (operand instanceof Location) {
       // look it up
       Location sourceTemp = (Location) operand;
-      if (stackAssignments.get(sourceTemp.name()) != null) {
-        return stackAssignments.get(sourceTemp.name());
-      }
+      return stackAssignments.get(sourceTemp.name());
     }
     return null;
   }

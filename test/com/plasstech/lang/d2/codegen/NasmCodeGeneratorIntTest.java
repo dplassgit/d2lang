@@ -78,10 +78,10 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op) throws Exception {
-    execute(
+    String program =
         String.format(
-            "f:proc(a:int) {b=4 b=b %s a println a a=a%sb println a c=a<<2 print c} f(2)", op, op),
-        "shiftOpsProc");
+            "f:proc(a:int) {b=4 b=b %s a println a a=a%sb println a c=a<<2 print c} f(2)", op, op);
+    execute(program, "shiftOpsProc");
   }
 
   @Test

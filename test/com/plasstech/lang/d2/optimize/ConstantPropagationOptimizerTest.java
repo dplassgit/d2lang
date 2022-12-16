@@ -35,8 +35,9 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(STACK_INT1, TEMP_INT2, null));
 
     program = OPTIMIZER.optimize(program, null);
-
     assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
+    assertThat(program.get(1)).isTransferredFrom(ConstantOperand.ONE);
+    assertThat(program.get(2)).isTransferredFrom(ConstantOperand.ONE);
   }
 
   @Test

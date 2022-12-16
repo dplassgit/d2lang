@@ -424,13 +424,46 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       leftSrc = left.location();
     }
 
+    TempLocation destination = allocateTemp(node.varType());
+    node.setLocation(destination);
+
+    String resultIsFalseLabel = null;
+    String resultIsTrueLabel = null;
+
+    // if node.operator == AND, generate:
+    //    if !left, goto resultisfalse
+    //      generate right,
+    //      value is right // we know left is true, so value is true AND right = right
+    //      goto valueIsSetLabel
+    //    resultisfalse:
+    //      value is false
+    //    valueIsSetLabel:
+
+    // if node.operator == OR: generate:
+    //    if left: goto resultistrue
+    //      generate right
+    //      value = right // we know left is false, so value is false OR right = right
+    //      goto valueissetlabel
+    //    resultistrue:
+    //      value is true
+    //    valuissetlabel
+
+    if (node.operator() == TokenType.AND) {
+      resultIsFalseLabel = nextLabel("short_circuit_result_false");
+      emit(new IfOp(leftSrc, resultIsFalseLabel, true, node.position()));
+      // ... to be continued
+    } else if (node.operator() == TokenType.OR) {
+      resultIsTrueLabel = nextLabel("short_circuit_result_true");
+      emit(new IfOp(leftSrc, resultIsTrueLabel, false, node.position()));
+      // ... to be continued
+    }
+
     // Calculate the value and put it somewhere
     Node right = node.right();
     // Source for the value of right - either a register or memory location or a constant value.
     Operand rightSrc;
 
     if (node.operator() == TokenType.DOT) {
-
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) right;
       rightSrc = ConstantOperand.of(rightVarNode.name());
@@ -443,11 +476,41 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         right.accept(this);
         rightSrc = right.location();
       }
+
+      String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+      if (node.operator() == TokenType.AND) {
+        // value = right (we know left is true, therefore value is true AND right = right)
+        emit(new Transfer(destination, rightSrc, node.position()));
+        // goto valueIsSetLabel
+        emit(new Goto(valueIsSetLabel));
+
+        // resultisfalse:
+        emit(new Label(resultIsFalseLabel));
+        //   value=false
+        emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
+
+        // valueIsSetLabel: (continue)
+        emit(new Label(valueIsSetLabel));
+
+      } else if (node.operator() == TokenType.OR) {
+        // value = right (we know left is false, so value is false OR right = right)
+        emit(new Transfer(destination, rightSrc, node.position()));
+        // goto valueIsSetLabel
+        emit(new Goto(valueIsSetLabel));
+
+        // resultistrue:
+        emit(new Label(resultIsTrueLabel));
+        //   value=true
+        emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
+        // valueIsSetLabel:
+        emit(new Label(valueIsSetLabel));
+      }
     }
 
-    TempLocation location = allocateTemp(node.varType());
-    node.setLocation(location);
-    emit(new BinOp(location, leftSrc, node.operator(), rightSrc, node.position()));
+    // do not do this for AND or OR
+    if (node.operator() != TokenType.AND && node.operator() != TokenType.OR) {
+      emit(new BinOp(destination, leftSrc, node.operator(), rightSrc, node.position()));
+    }
   }
 
   @Override

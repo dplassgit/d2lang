@@ -38,7 +38,11 @@ public class ArithmeticOptimizerTest {
   private final Optimizer optimizer = new ArithmeticOptimizer(2);
   private final Optimizer OPTIMIZERS =
       new ILOptimizer(
-              ImmutableList.of(optimizer, new ConstantPropagationOptimizer(0), new NopOptimizer()))
+              ImmutableList.of(
+                  optimizer,
+                  new ConstantPropagationOptimizer(0),
+                  new NopOptimizer(),
+                  new DeadAssignmentOptimizer(0)))
           .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
@@ -46,7 +50,6 @@ public class ArithmeticOptimizerTest {
   private static final TempLocation STRING_TEMP = new TempLocation("temp3", VarType.STRING);
   private static final TempLocation DBL1 = new TempLocation("temp1", VarType.DOUBLE);
   private static final StackLocation STACK1 = new StackLocation("stack1", VarType.INT, 4);
-  private static final StackLocation STACK2 = new StackLocation("stack2", VarType.INT, 4);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
   private static final ConstantOperand<String> NULL_STRING =

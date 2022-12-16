@@ -16,7 +16,10 @@ public class PrintOptimizerTest {
   private Optimizer optimizer =
       new ILOptimizer(
           ImmutableList.of(
-              new ConstantPropagationOptimizer(0), new NopOptimizer(), new PrintOptimizer(2)));
+              new ConstantPropagationOptimizer(0),
+              new DeadAssignmentOptimizer(0),
+              new NopOptimizer(),
+              new PrintOptimizer(2)));
 
   @Test
   public void twoInARow() {
@@ -87,6 +90,8 @@ public class PrintOptimizerTest {
                     new NopOptimizer(),
                     // need this to propagate the __temp1=3+println __temp1 to println 3
                     new ConstantPropagationOptimizer(0),
+                    // need this to get rid of dead temp assignments
+                    new DeadAssignmentOptimizer(0),
                     // need this to convert println 3 to println "3"
                     new ArithmeticOptimizer(2),
                     new PrintOptimizer(2))));

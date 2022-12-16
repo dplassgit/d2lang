@@ -5,6 +5,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 
+/** Represents a binary operation: destination = left (operator) right */
 public class BinOp extends Op {
   private final Location destination;
   private final TokenType operator;
