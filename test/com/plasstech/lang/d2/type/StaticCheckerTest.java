@@ -1309,6 +1309,12 @@ public class StaticCheckerTest {
     assertError("head:proc{} foo:proc {head[1]=3}", "used as ARRAY; was PROC");
   }
 
+  @Test
+  public void badUnary() {
+    // Tests bug #217
+    assertError("if not a { print 'sorry'}", "Indeterminable type for expression a");
+  }
+
   private void assertError(String program, String messageShouldContain) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();

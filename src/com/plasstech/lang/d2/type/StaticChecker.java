@@ -204,6 +204,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return new TypeCheckResult(symbolTable);
     } catch (D2RuntimeException e) {
       return new TypeCheckResult(errors);
+    } catch (IllegalArgumentException e) {
+      // Closes #217 once and for all. BUT... ONCE AND FOR ALL.
+      e.printStackTrace();
+      errors.add(new D2RuntimeException(e.getMessage(), root.position(), "INTERNAL ERROR"));
+      return new TypeCheckResult(errors);
     }
   }
 
@@ -454,6 +459,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               new TypeException(
                   String.format("Variable '%s' used before assignment", node.name()),
                   node.position()));
+          return;
         }
         node.setVarType(existingType);
       }
@@ -513,6 +519,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                     "Incorrect type of parameter '%s' to PROC '%s': found %s, expected %s",
                     formal.name(), proc.name(), actual.varType(), formal.varType()),
                 node.position()));
+        return;
       }
     }
     // 6. set the type of the expression to the return type of the node
@@ -661,7 +668,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       node.setVarType(VarType.BOOL);
     } else {
       if (leftType.isUnknown()) {
-        // Can't do much more
+        // Can't do much more. Fixed bug #204
         return;
       }
 
@@ -684,6 +691,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(
           new TypeException(
               String.format("Indeterminable type for expression %s", expr), expr.position()));
+      return;
     }
     if (exprType.isNull()) {
       errors.add(
