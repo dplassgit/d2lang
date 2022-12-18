@@ -121,7 +121,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
         String.format(
             "      a='%s' b='%s' " //
                 + "c=a %s b println c " //
-                + "// d=b %s a // println d",
+                + "d=b %s a println d",
             first, second, op, op),
         "compOpsGlobals");
   }
@@ -144,19 +144,21 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void compOpsNull(@TestParameter({"<", "<=", ">=", ">"}) String op) throws Exception {
-    assertRuntimeError(
-        String.format("a='abc' c=a %s null", op), "compOpsNull", "Null pointer error");
-    assertRuntimeError(
-        String.format("a='abc' b=null c=a %s b", op), "compOpsNull", "Null pointer error");
-    assertRuntimeError(
-        String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNull", "Null pointer error");
+    //  public void compOpsNull(@TestParameter({"<="}) String op) throws Exception {
+    execute(String.format("a='abc' c=a %s null", op), "compOpsNullLiteral");
+    execute(String.format("a='abc' b=null c=a %s b", op), "compOpsNullGlobal");
+    execute(String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNullGlobalAsString");
   }
 
   @Test
   public void equalityOpsNull(@TestParameter({"==", "!="}) String op) throws Exception {
-    execute(String.format("a='abc' c=a %s null", op), "equalityOpsNull");
-    execute(String.format("a='abc' b=null c=a %s b", op), "equalityOpsNull");
-    execute(String.format("a='abc' b:string b=null c=b %s a", op), "equalityOpsNull");
+    execute(String.format("a='abc' c=a %s null println c", op), "equalityOpsNullLiteral");
+    execute(String.format("a='abc' b=null c=a %s b println c", op), "equalityOpsNullGlobal");
+    execute(
+        String.format("f:proc:bool { a='abc' b=null c=a %s b return c} println f()", op),
+        "equalityOpsNullProc");
+    execute(
+        String.format("a='abc' b:string b=null c=b %s a println c", op), "equalityOpsNullAsString");
   }
 
   @Test
@@ -327,5 +329,12 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "  println return_postpend(\"hello\")\r\n"
             + "}\r\n",
         "bug83");
+  }
+
+  @Test
+  public void compareToNull() throws Exception {
+    execute(
+        "f:proc(s:string) { if s == null {println 'isnull'} else {println 'nope'}} f('hi')",
+        "compareToNull");
   }
 }

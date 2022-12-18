@@ -282,10 +282,15 @@ public class Interpreter extends DefaultOpcodeVisitor {
     boolean rightNull = right == null;
     switch (op.operator()) {
       case EQEQ:
+      case GEQ:
+      case LEQ:
         return leftNull == rightNull;
       case NEQ:
         return leftNull != rightNull;
-
+      case GT:
+        return !leftNull && rightNull;
+      case LT:
+        return false;
       default:
         throw new IllegalStateException("Unknown null binop " + op);
     }
@@ -341,6 +346,25 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private Object visitStringBinOp(BinOp op, String left, String right) {
+    if (right == null) {
+      switch (op.operator()) {
+        case EQEQ:
+        case LEQ:
+        case GEQ:
+          // we
+          return left == null;
+        case GT:
+          //
+          return left != null;
+        case LT:
+          // nothing can be < null.
+          return false;
+        case NEQ:
+          return left != null;
+        default:
+          throw new IllegalStateException("Unknown string binop " + op.operator());
+      }
+    }
     switch (op.operator()) {
       case EQEQ:
         return left.equals(right);

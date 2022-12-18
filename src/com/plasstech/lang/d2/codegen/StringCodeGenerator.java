@@ -10,6 +10,7 @@ import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -48,75 +49,235 @@ class StringCodeGenerator {
 
   /** Generate destName = left operator right */
   void generateStringCompare(BinOp op) {
-    String destName = resolver.resolve(op.destination());
     Operand left = op.left();
     Operand right = op.right();
+    // this should never happen
+    Preconditions.checkState(
+        !(right.type().isNull() && left.type().isNull()),
+        "Left and right cannot both be null type");
+
+    String destName = resolver.resolve(op.destination());
     TokenType operator = op.operator();
 
-    String endLabel = null;
-    String nonNullStrcmp = null;
-    if (operator != TokenType.EQEQ && operator != TokenType.NEQ) {
-      // do not allow comparing nulls
-      npeCheckGenerator.generateNullPointerCheck(op.position(), left);
-      npeCheckGenerator.generateNullPointerCheck(op.position(), right);
-    } else {
-      endLabel = resolver.nextLabel("strcmp_short_circuit");
-      String nextTest = resolver.nextLabel("next_strcmp_test");
-      String leftName = resolver.resolve(op.left());
-      String rightName = resolver.resolve(op.right());
-      emitter.emit("; if they're identical we can stop now");
-      if (resolver.isInAnyRegister(left) || resolver.isInAnyRegister(right)) {
-        if (left.type().isNull() || left.isConstant()) {
-          // can only have a constant on the RHS.
-          emitter.emit("cmp QWORD %s, %s", rightName, leftName);
-        } else {
-          emitter.emit("cmp QWORD %s, %s", leftName, rightName);
-        }
-      } else {
-        Register tempReg = resolver.allocate(VarType.STRING);
-        emitter.emit("mov QWORD %s, %s ; string compare setup", tempReg.name64(), leftName);
-        emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
-        resolver.deallocate(tempReg);
+    String leftName = resolver.resolve(op.left());
+    String rightName = resolver.resolve(op.right());
+    // Handle literal nulls
+    if (right.type().isNull() || left.type().isNull()) {
+      // Do an "easy" comparison and quit. Issue #218
+      emitter.emit("; left or right is constant null");
+      switch (operator) {
+        case EQEQ:
+        case NEQ:
+          if (left.isConstant() || right.isConstant()) {
+            // constant vs null: always false unless NEQ
+            emitter.emit(
+                "mov BYTE %s, %s  ; one operand is constant and the other is null",
+                destName, (operator == TokenType.NEQ) ? "1" : "0");
+          } else {
+            emitter.emit(
+                "cmp QWORD %s, 0  ; see if left is null",
+                leftName); // (comparison opcode) setz (dest)
+            emitter.emit(
+                "%s %s  ; string %s null",
+                (operator == TokenType.NEQ) ? "setnz" : "setz", destName, operator);
+          }
+          break;
+        case LEQ:
+          if (right.type().isNull()) {
+            // Right is null. Left is not constant null.
+            if (left.isConstant()) {
+              // we know left is not null, so it's constant <= null = false
+              emitter.emit("mov BYTE %s, 0  ; left/constant <= right/null is false", destName);
+            } else {
+              // if left is null (null <= null), this is true.
+              // if left is not null (not null <= null), it's false.
+              emitter.emit(
+                  "cmp QWORD %s, 0  ; right is constant null; see if left is null", leftName);
+              emitter.emit("setz %s", destName);
+            }
+          } else {
+            // Left is constant null. Right is not constant null.
+            // Either: right.isConstant, and so it's null <= constant = true
+            // OR: right is not a constant so it's null <= anything = true
+            emitter.emit("mov BYTE %s, 1  ; left/null <= anything is true", destName);
+          }
+          break;
+        case GEQ:
+          if (right.type().isNull()) {
+            // Right is null. Left is not constant null.
+            if (left.isConstant()) {
+              // we know left is not null, so it's constant >= null = false
+              emitter.emit("mov BYTE %s, 0  ; left/constant >= right/null", destName);
+            } else {
+              // if left is null (null >= null), this is true.
+              // if left is not null (not null >= null), it's true
+              emitter.emit(
+                  "mov BYTE %s, 1  ; left/constant >= right/null is always true", destName);
+            }
+          } else {
+            // Left is constant null. Right is not constant null.
+            if (right.isConstant()) {
+              // Right is not null, so it's null >= constant = false
+              emitter.emit(
+                  "mov BYTE %s, 0  ; left/null >= right/constant is always false", destName);
+            } else {
+              // if right is null (constant null >= null), it's true.
+              // if right is not null (constant null >= not null), it's false.
+              emitter.emit(
+                  "cmp QWORD %s, 0  ; left is constant null, see if right is null", rightName);
+              emitter.emit("setz %s", destName);
+            }
+          }
+          break;
+        case LT:
+          // anything < null and null < anything is always false
+          emitter.emit("mov %s, 0  ; anything < null or null < anything is always false", destName);
+          break;
+        case GT:
+          if (right.type().isNull()) {
+            // left > null is only true if left is not null.
+            if (left.isConstant()) {
+              // constant always > null
+              emitter.emit("mov BYTE %s, 1  ; constant > null", destName);
+            } else {
+              // See
+              emitter.emit(
+                  "cmp QWORD %s, 0  ; right is null, see if left is null",
+                  leftName); // (comparison opcode) setz (dest)
+              emitter.emit("setnz %s  ; string > null", destName);
+            }
+          } else {
+            // null > left is never true, even if left is null
+            emitter.emit("mov %s, 0  ; null > string is always false", destName);
+          }
+          break;
+        default:
+          throw new IllegalStateException(
+              String.format("Cannot compare strings via %s opreator", operator));
       }
-      emitter.emit("jne %s", nextTest);
-
-      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
-      emitter.emit("jmp %s", endLabel);
-
-      emitter.emit("; not identical; test for null");
-      emitter.emitLabel(nextTest);
-      // if left == null: return op == NEQ
-      nextTest = resolver.nextLabel("next_strcmp_test");
-      if (leftName.equals("0")) {
-        emitter.emit("; left is literal null");
-        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp %s", endLabel);
-      } else if (!left.isConstant()) {
-        emitter.emit("cmp QWORD %s, 0", leftName);
-        emitter.emit("jne %s", nextTest);
-        emitter.emit("; left is null, right is not");
-        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp %s", endLabel);
-      }
-      emitter.emit("; left is not null, test right");
-      emitter.emitLabel(nextTest);
-      // if right == null: return op == NEQ
-      if (rightName.equals("0")) {
-        emitter.emit("; right is literal null");
-        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp %s", endLabel);
-      } else if (!right.isConstant()) {
-        emitter.emit("cmp QWORD %s, 0", rightName);
-        nonNullStrcmp = resolver.nextLabel("non_null_strcmp");
-        emitter.emit("jne %s", nonNullStrcmp);
-        emitter.emit("; right is null, left is not");
-        emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-        emitter.emit("jmp %s", endLabel);
-      }
+      // NOTE RETURN
+      return;
     }
 
-    emitter.emit("; left and right both not null");
-    emitter.emitLabel(nonNullStrcmp);
+    String endLabel = resolver.nextLabel("string_compare_end");
+    String compareLeftLabel = resolver.nextLabel("compare_left_to_null");
+    if (!right.isConstant()) {
+      // right is not constant, compare to null, and if not null, jump to comparing left for null
+      emitter.emit(
+          "cmp QWORD %s, 0  ; see if right is null so we can do a simple comparison", rightName);
+      emitter.emit("jne %s  ; not null", compareLeftLabel);
+
+      emitter.emit("; right is null, we know left is not constant null.");
+      // At this point in the runtime, we know rightName is null and left is not constant null.
+      // Do a simple comparison, then jump to end. Issue #218.
+      switch (operator) {
+        case EQEQ:
+        case NEQ:
+          if (left.isConstant()) {
+            // constant vs null: return true if NEQ, false if EQ
+            emitter.emit(
+                "mov BYTE %s, %s  ; left is const, right is null",
+                destName, (operator == TokenType.NEQ) ? "1" : "0");
+          } else {
+            // left might be null, compare.
+            emitter.emit(
+                "cmp QWORD %s, 0  ; see if left is null",
+                leftName); // (comparison opcode) setz (dest)
+            emitter.emit(
+                "%s %s  ; string %s null",
+                (operator == TokenType.NEQ) ? "setnz" : "setz", destName, operator);
+          }
+          break;
+        case LEQ:
+          // Left is not constant null. Right is null.
+          if (left.isConstant()) {
+            // left is not null, so it's constant <= null = false
+            emitter.emit("mov BYTE %s, 0  ; left/constant <= right/null is false", destName);
+          } else {
+            // if left is null (null <= null), this is true.
+            // if left is not null (not null <= null), it's false.
+            emitter.emit(
+                "cmp QWORD %s, 0  ; right is constant null; see if left is null", leftName);
+            emitter.emit("setz %s", destName);
+          }
+          break;
+        case GEQ:
+          // Left is not constant null. Right is null.
+          if (left.isConstant()) {
+            // Left is not null, so it's constant >= null = false
+            emitter.emit("mov BYTE %s, 0  ; left/constant >= right/null", destName);
+          } else {
+            // if left is null (null >= null), this is true.
+            // if left is not null (not null >= null), it's true
+            emitter.emit("mov BYTE %s, 1  ; left/constant >= right/null is always true", destName);
+          }
+          break;
+        case LT:
+          // anything < null and null < anything is always false
+          emitter.emit("mov %s, 0  ; anything < null or null < anything is always false", destName);
+          break;
+        case GT:
+          // left > null is only true if left is not null.
+          if (left.isConstant()) {
+            // constant always > null
+            emitter.emit("mov BYTE %s, 1  ; constant > null", destName);
+          } else {
+            emitter.emit(
+                "cmp QWORD %s, 0  ; right is null, see if left is null",
+                leftName); // (comparison opcode) setz (dest)
+            emitter.emit("setnz %s  ; string > null", destName);
+          }
+          break;
+        default:
+          throw new IllegalStateException(
+              String.format("Cannot compare strings via %s opreator", operator));
+      }
+
+      emitter.emit("jmp %s", endLabel);
+    } else {
+      // right is a constant. do nothing special.
+    }
+
+    emitter.emitLabel(compareLeftLabel);
+    String strcmpLabel = resolver.nextLabel("strcmp");
+    if (!left.isConstant()) {
+      // left is not constant, may be null. at this point in the emitted code, right is definitely
+      // not null.
+      emitter.emit("cmp QWORD %s, 0", leftName);
+      emitter.emit("jne %s", strcmpLabel);
+
+      // At this point in the runtime, left is null and right is definitely not null.
+      // Do a simple comparison, then jump to end. Issue #218.
+      emitter.emit("; at this point, we know left is null and right is not null");
+      switch (operator) {
+        case EQEQ:
+        case NEQ:
+          emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+          break;
+        case LEQ:
+        case LT:
+          // null <= not null is true
+          // null < not null is true
+          emitter.emit("mov BYTE %s, 1", destName);
+          break;
+        case GEQ:
+        case GT:
+          // null >= not null is false
+          // null > not null is false
+          emitter.emit("mov BYTE %s, 0", destName);
+          break;
+        default:
+          throw new IllegalStateException(
+              String.format("Cannot compare strings via %s opreator", operator));
+      }
+
+      emitter.emit("jmp %s", endLabel);
+    }
+
+    // We know both strings are not null (though one may be a constant.) Do the strcmp.
+    emitter.emitLabel(strcmpLabel);
+    emitter.emit("; we know left and right are both not null");
+
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
 
@@ -147,6 +308,7 @@ class StringCodeGenerator {
     emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
     registerState.condPop();
 
+    // Fin
     emitter.emitLabel(endLabel);
   }
 
