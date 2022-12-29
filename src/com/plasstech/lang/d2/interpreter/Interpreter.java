@@ -351,16 +351,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
         case EQEQ:
         case LEQ:
         case GEQ:
-          // we
+          // can only be equal if left == right
           return left == null;
         case GT:
-          //
+          // not null > null
+        case NEQ:
+          // not null != null
           return left != null;
         case LT:
           // nothing can be < null.
           return false;
-        case NEQ:
-          return left != null;
         default:
           throw new IllegalStateException("Unknown string binop " + op.operator());
       }

@@ -87,12 +87,21 @@ public class StringCodeGeneratorTest {
   }
 
   @Test
-  public void variableEqOrLeqNull(@TestParameter({"EQEQ", "LEQ"}) TokenType operand) {
-    BinOp op = new BinOp(DESTINATION, LEFT, operand, NULL, null);
+  public void variableEqNull() {
+    BinOp op = new BinOp(DESTINATION, LEFT, TokenType.EQEQ, NULL, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     assertThat(code).hasSize(2);
     assertThat(code.get(0)).isEqualTo("cmp QWORD RDX, 0");
     assertThat(code.get(1)).isEqualTo("setz CL");
+  }
+
+  @Test
+  public void variableLeqNull() {
+    BinOp op = new BinOp(DESTINATION, LEFT, TokenType.LEQ, NULL, null);
+    ImmutableList<String> code = generateUncommentedCode(op);
+    assertThat(code).hasSize(2);
+    assertThat(code.get(0)).isEqualTo("cmp QWORD RDX, 0");
+    assertThat(code.get(1)).isEqualTo("setle CL");
   }
 
   @Test
@@ -111,12 +120,21 @@ public class StringCodeGeneratorTest {
   }
 
   @Test
-  public void variableNeqOrGtNull(@TestParameter({"NEQ", "GT"}) TokenType operator) {
-    BinOp op = new BinOp(DESTINATION, LEFT, operator, NULL, null);
+  public void variableNeqNull() {
+    BinOp op = new BinOp(DESTINATION, LEFT, TokenType.NEQ, NULL, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     assertThat(code).hasSize(2);
     assertThat(code.get(0)).isEqualTo("cmp QWORD RDX, 0");
     assertThat(code.get(1)).isEqualTo("setnz CL");
+  }
+
+  @Test
+  public void variableGtNull() {
+    BinOp op = new BinOp(DESTINATION, LEFT, TokenType.GT, NULL, null);
+    ImmutableList<String> code = generateUncommentedCode(op);
+    assertThat(code).hasSize(2);
+    assertThat(code.get(0)).isEqualTo("cmp QWORD RDX, 0");
+    assertThat(code.get(1)).isEqualTo("setg CL");
   }
 
   @Test

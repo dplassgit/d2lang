@@ -125,10 +125,6 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   }
 
   private void generateCompare(BinOp op) {
-    newGenerateCompare(op);
-  }
-
-  private void newGenerateCompare(BinOp op) {
     String destName = resolver.resolve(op.destination());
 
     Operand left = op.left();
@@ -141,44 +137,44 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       return;
     }
 
-    String endLabel = resolver.nextLabel("reccmp_end");
-    Register tempReg = resolver.allocate(VarType.INT);
     String leftName = resolver.resolve(op.left());
+    Register tempReg = resolver.allocate(VarType.INT);
     String rightName = resolver.resolve(op.right());
     // TODO this can be simpler if left is already in a register
     emitter.emit("; if they're the same objects we can stop now");
     emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64(), leftName);
     emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
     resolver.deallocate(tempReg);
-    String nextTest = resolver.nextLabel("not_same_object");
-    emitter.emit("jne %s", nextTest);
+    String notSameObjectLabel = resolver.nextLabel("not_same_object");
+    emitter.emit("jne %s", notSameObjectLabel);
 
     emitter.emit("; same objects, done.");
     emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
+    String endLabel = resolver.nextLabel("record_cmp_end");
     emitter.emit("jmp %s", endLabel);
 
-    emitter.emitLabel(nextTest);
+    emitter.emitLabel(notSameObjectLabel);
     emitter.emit("; not the same objects: test left for null");
-    String leftNotNull = resolver.nextLabel("left_not_null");
+    String leftNotNullLabel = resolver.nextLabel("left_not_null");
     emitter.emit("cmp QWORD %s, 0", leftName);
-    emitter.emit("jne %s", leftNotNull);
+    emitter.emit("jne %s", leftNotNullLabel);
     emitter.emit("; left is null, right is not null (it's not === left), done.");
     emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
     emitter.emit("jmp %s", endLabel);
 
-    emitter.emitLabel(leftNotNull);
-    emitter.emit("; left is not null, test right");
+    emitter.emitLabel(leftNotNullLabel);
+    emitter.emit("; left is not null: test right for null");
 
     // if right == null: return op == NEQ
-    String bothNotNull = resolver.nextLabel("both_not_null_reccmp");
+    String bothNotNullLabel = resolver.nextLabel("both_not_null");
     emitter.emit("cmp QWORD %s, 0", rightName);
-    emitter.emit("jne %s", bothNotNull);
+    emitter.emit("jne %s", bothNotNullLabel);
 
     emitter.emit("; right is null, left is not (it's not === right)");
     emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
     emitter.emit("jmp %s", endLabel);
 
-    emitter.emitLabel(bothNotNull);
+    emitter.emitLabel(bothNotNullLabel);
     emitter.emit("; left and right both not null");
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);

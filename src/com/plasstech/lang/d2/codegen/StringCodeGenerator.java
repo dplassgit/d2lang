@@ -8,7 +8,6 @@ import static com.plasstech.lang.d2.codegen.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.IntRegister.RDX;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.base.Objects;
@@ -39,6 +38,74 @@ class StringCodeGenerator {
           .put(TokenType.LEQ, "setle")
           .build();
 
+  private static final Map<NullPair, String> LT_CONSTANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "0",
+          // null < constant is true
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
+          // variable < null should always be false; If variable is null,
+          // null < null is false. If variable is not null, not null < null is false.
+          new NullPair(Nullness.VARIABLE, Nullness.NULL), "0",
+          // constant < null is false
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
+  private static final Map<NullPair, String> GT_CONSTANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "0",
+          // null > constant is false
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
+          // constant > null is true
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
+  private static final Map<NullPair, String> GEQ_CONSTANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "1",
+          // variable >= null should always be true; If variable is null,
+          // null == null is true. If variable is not null, not null > null is true.
+          new NullPair(Nullness.VARIABLE, Nullness.NULL), "1",
+          // null >= constant is false
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
+          // constant >= null is true
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
+  private static final Map<NullPair, String> LEQ_CONTSANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "1",
+          // null <= constant is true
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
+          // constant <= null is false
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
+  private static final Map<NullPair, String> EQEQ_CONSTANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "1",
+          // null == constant is false
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
+          // constant == null is false
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
+  private static final Map<NullPair, String> NEQ_CONSTANT_MAP =
+      ImmutableMap.of(
+          // Include this for completeness
+          new NullPair(Nullness.NULL, Nullness.NULL), "0",
+          // null != constant is true
+          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
+          // constant != null is true
+          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
+
+  // Maps operator to which constant map, above. If missing, use cmp value, 0, with
+  // COMPARISON_OPCODE as the comparator (setz, setnz, etc.)
+  private static final ImmutableMap<TokenType, Map<NullPair, String>> CONSTANT_MAP =
+      // Must use ImmutableMap.Builder because ImmutableMap.of only takes 5 pairs...
+      new ImmutableMap.Builder<TokenType, Map<NullPair, String>>()
+          .put(TokenType.EQEQ, EQEQ_CONSTANT_MAP)
+          .put(TokenType.NEQ, NEQ_CONSTANT_MAP)
+          .put(TokenType.LT, LT_CONSTANT_MAP)
+          .put(TokenType.LEQ, LEQ_CONTSANT_MAP)
+          .put(TokenType.GT, GT_CONSTANT_MAP)
+          .put(TokenType.GEQ, GEQ_CONSTANT_MAP)
+          .build();
+
   private final Resolver resolver;
   private final Emitter emitter;
   private final NullPointerCheckGenerator npeCheckGenerator;
@@ -47,7 +114,6 @@ class StringCodeGenerator {
     this.resolver = resolver;
     this.emitter = emitter;
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
-    setUpMaps();
   }
 
   /** Generate destName = left operator right */
@@ -79,101 +145,32 @@ class StringCodeGenerator {
           "cmp QWORD %s, 0  ; see if right is null so we can do a simple comparison", rightName);
       emitter.emit("jne %s", compareLeftLabel);
 
-      // At this point in the runtime, we know right is null and left is not constant null.
+      // At this point in the runtime, we know left is not constant null and right is runtime null.
       emitter.emit("; now we know left is not constant null, right is runtime null");
+      NullPair nullpair = new NullPair(Nullness.from(left), Nullness.NULL);
       // Do a simple comparison, then jump to end. Issue #218.
-      switch (operator) {
-        case EQEQ:
-        case NEQ:
-          if (left.isConstant()) {
-            // left constant vs right runtime null: return true if NEQ, false if EQ
-            emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-          } else {
-            // left might be (not constant) null, compare.
-            emitter.emit(
-                "cmp QWORD %s, 0  ; see if left is null",
-                leftName); // (comparison opcode) setz (dest)
-            emitter.emit(
-                "%s %s  ; string %s null",
-                (operator == TokenType.NEQ) ? "setnz" : "setz", destName, operator);
-          }
-          break;
-        case LEQ:
-          // Left is not constant null. Right is null.
-          if (left.isConstant()) {
-            // left is not null, so it's constant <= null = false
-            emitter.emit("mov BYTE %s, 0  ; constant <= null is false", destName);
-          } else {
-            // if left is null (null <= null), this is true.
-            // if left is not null (not null <= null), it's false.
-            emitter.emit("cmp QWORD %s, 0  ; see if left is null", leftName);
-            emitter.emit("setz %s", destName);
-          }
-          break;
-        case LT:
-          // anything < null and null < anything is always false
-          emitter.emit("mov BYTE %s, 0  ; anything < null is false", destName);
-          break;
-        case GEQ:
-          emitter.emit("mov BYTE %s, 1  ; anything >= null is true", destName);
-          break;
-        case GT:
-          // left > null is only true if left is not null.
-          if (left.isConstant()) {
-            // constant always > null
-            emitter.emit("mov BYTE %s, 1  ; constant > null is true", destName);
-          } else {
-            emitter.emit(
-                "cmp QWORD %s, 0  ; right is null, see if left is null",
-                leftName); // (comparison opcode) setz (dest)
-            emitter.emit("setnz %s  ; string > null", destName);
-          }
-          break;
-        default:
-          throw new IllegalStateException(
-              String.format("Cannot compare strings via %s opreator", operator));
-      }
+      generateCompareVsNull(destName, operator, nullpair, leftName, rightName);
 
       emitter.emit("jmp %s", endLabel);
     } else {
-      // right is a constant. do nothing special.
+      // right is a constant; do nothing special (?)
     }
 
     emitter.emitLabel(compareLeftLabel);
     String strcmpLabel = resolver.nextLabel("strcmp");
     if (!left.isConstant()) {
-      // left is not constant, may be null. at this point in the emitted code, right is definitely
-      // not null.
+      // left is not constant, so it may be null. At this point in the emitted code, right is
+      // definitely not null.
       emitter.emit(
           "cmp QWORD %s, 0  ; see if left is null so we can do a simple comparison", leftName);
       emitter.emit("jne %s", strcmpLabel);
 
-      // At this point in the runtime, left is null and right is definitely not null.
-      // Do a simple comparison, then jump to end. Issue #218.
       emitter.emit("; now we know left is runtime null and right is not null");
-      switch (operator) {
-        case EQEQ:
-        case NEQ:
-          emitter.emit(
-              "mov BYTE %s, %s  ; null %s not null",
-              destName, (operator == TokenType.NEQ) ? "1" : "0", operator);
-          break;
-        case LEQ:
-        case LT:
-          // null <= not null is true
-          // null < not null is true
-          emitter.emit("mov BYTE %s, 1  ; null %s not null is always true", destName, operator);
-          break;
-        case GEQ:
-        case GT:
-          // null >= not null is false
-          // null > not null is false
-          emitter.emit("mov BYTE %s, 0  ; null %s not null is always false", destName, operator);
-          break;
-        default:
-          throw new IllegalStateException(
-              String.format("Cannot compare strings via %s operator", operator));
-      }
+      // At this point in the runtime, left is null and right is definitely not null,
+      // so we can consider it a constant.
+      NullPair nullpair = new NullPair(Nullness.NULL, Nullness.CONSTANT);
+      // Do a simple comparison, then jump to end. Issue #218.
+      generateCompareVsNull(destName, operator, nullpair, leftName, rightName);
 
       emitter.emit("jmp %s", endLabel);
     }
@@ -216,152 +213,41 @@ class StringCodeGenerator {
     emitter.emitLabel(endLabel);
   }
 
-  private enum Nullness {
-    NULL,
-    CONSTANT,
-    VARIABLE;
-
-    static Nullness from(Operand op) {
-      if (op.type().isNull()) {
-        return NULL;
-      } else if (op.isConstant()) {
-        return CONSTANT;
-      }
-      return VARIABLE;
-    }
-  }
-
-  private static class NullPair {
-    final Nullness left;
-    final Nullness right;
-
-    public NullPair(Nullness left, Nullness right) {
-      this.left = left;
-      this.right = right;
-    }
-
-    public NullPair(Operand left, Operand right) {
-      this(Nullness.from(left), Nullness.from(right));
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null || !(obj instanceof NullPair)) {
-        return false;
-      }
-      NullPair that = (NullPair) obj;
-      return this.hashCode() == that.hashCode();
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(left, right);
-    }
-  }
-
-  // For less than, map the variable state to a constant.
-  private static final Map<NullPair, String> LT_CONSTANT_MAP =
-      ImmutableMap.of(
-          // null < constant is true
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
-          // variable < null should always be false; If variable is null,
-          // null < null is false. If variable is not null, not null < null is false.
-          new NullPair(Nullness.VARIABLE, Nullness.NULL), "0",
-          // constant < null is false
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
-  private static final Map<NullPair, String> GT_CONSTANT_MAP =
-      ImmutableMap.of(
-          // null > constant is false
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
-          // constant > null is true
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
-  private static final Map<NullPair, String> GEQ_CONSTANT_MAP =
-      ImmutableMap.of(
-          // variable >= null should always be true; If variable is null,
-          // null == null is true. If variable is not null, not null > null is true.
-          new NullPair(Nullness.VARIABLE, Nullness.NULL), "1",
-          // null >= constant is false
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
-          // constant >= null is true
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
-  private static final Map<NullPair, String> LEQ_CONTSANT_MAP =
-      ImmutableMap.of(
-          // null <= constant is true
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
-          // constant <= null is false
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
-  private static final Map<NullPair, String> EQEQ_CONSTANT_MAP =
-      ImmutableMap.of(
-          // null == constant is false
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "0",
-          // constant == null is false
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "0");
-  private static final Map<NullPair, String> NEQ_CONSTANT_MAP =
-      ImmutableMap.of(
-          // null != constant is true
-          new NullPair(Nullness.NULL, Nullness.CONSTANT), "1",
-          // constant != null is true
-          new NullPair(Nullness.CONSTANT, Nullness.NULL), "1");
-
-  // Maps operator to which constant map, above. If missing, use cmp value, 0, with
-  // COMPARATOR_MAP as the comparator (setz or setnz)
-  private final Map<TokenType, Map<NullPair, String>> CONSTANT_MAP = new HashMap<>();
-  private final Map<TokenType, String> COMPARATOR_MAP = new HashMap<>();
-
-  private void setUpMaps() {
-    CONSTANT_MAP.put(TokenType.EQEQ, EQEQ_CONSTANT_MAP);
-    CONSTANT_MAP.put(TokenType.NEQ, NEQ_CONSTANT_MAP);
-    CONSTANT_MAP.put(TokenType.LT, LT_CONSTANT_MAP);
-    CONSTANT_MAP.put(TokenType.LEQ, LEQ_CONTSANT_MAP);
-    CONSTANT_MAP.put(TokenType.GT, GT_CONSTANT_MAP);
-    CONSTANT_MAP.put(TokenType.GEQ, GEQ_CONSTANT_MAP);
-
-    // variable > null should be true if variable is not null
-    // cmp variable, 0, setnz bl
-    COMPARATOR_MAP.put(TokenType.GT, "setnz");
-    // variable <= null should be true only if variable is null
-    // cmp variable, 0, setz bl
-    COMPARATOR_MAP.put(TokenType.LEQ, "setz");
-    // variable == null: cmp variable, 0, setz bl
-    COMPARATOR_MAP.put(TokenType.EQEQ, "setz");
-    // variable != null: cmp variable, 0, setnz bl
-    COMPARATOR_MAP.put(TokenType.NEQ, "setnz");
-  }
-
-  /** Either left or right is constant null. */
+  /** Either left or right is constant null. Do an "easy" comparison. Issue #218. */
   private void generateCompareVsNull(
       Operand left, Operand right, String destName, TokenType operator) {
-    // Do an "easy" comparison and quit. Issue #218
-    emitter.emit("; left or right is constant null");
 
+    NullPair nullpair = new NullPair(left, right);
+    String leftName = resolver.resolve(left);
+    String rightName = resolver.resolve(right);
+
+    generateCompareVsNull(destName, operator, nullpair, leftName, rightName);
+  }
+
+  private void generateCompareVsNull(
+      String destName, TokenType operator, NullPair nullpair, String leftName, String rightName) {
+
+    emitter.emit("; left or right is null");
     Map<NullPair, String> constantMap = CONSTANT_MAP.get(operator);
     if (constantMap == null) {
       throw new IllegalStateException(
           String.format("Cannot compare strings via %s operator", operator));
     }
 
-    NullPair nullpair = new NullPair(left, right);
     String constant = constantMap.get(nullpair);
     if (constant != null) {
       // we're comparing null with a constant or variable (or vice versa)
       emitter.emit("mov BYTE %s, %s  ; one operand is null", destName, constant);
     } else {
       // Comparing variable with null (or vice versa)
-      String comparator = COMPARATOR_MAP.get(operator);
-      if (comparator == null) {
-        throw new IllegalStateException("Cannot figure out what to do with " + operator);
-      }
-
-      String leftName = resolver.resolve(left);
-      String rightName = resolver.resolve(right);
-      if (left.type().isNull()) {
+      if (nullpair.left == Nullness.NULL) {
         // see if right is not null.
-        emitter.emit("cmp QWORD %s, 0  ; see if right is not null", rightName);
+        emitter.emit("cmp QWORD %s, 0  ; see if right is null", rightName);
       } else {
         // see if left is not null
-        emitter.emit("cmp QWORD %s, 0  ; see if left is not null", leftName);
+        emitter.emit("cmp QWORD %s, 0  ; see if left is null", leftName);
       }
-      emitter.emit("%s %s  ; string %s null", comparator, destName, operator);
+      emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
     }
   }
 
@@ -667,5 +553,48 @@ class StringCodeGenerator {
 
     raxState.condPop();
     resolver.deallocate(charReg);
+  }
+
+  private enum Nullness {
+    NULL,
+    CONSTANT,
+    VARIABLE;
+
+    static Nullness from(Operand op) {
+      if (op.type().isNull()) {
+        return NULL;
+      } else if (op.isConstant()) {
+        return CONSTANT;
+      }
+      return VARIABLE;
+    }
+  }
+
+  private static class NullPair {
+    final Nullness left;
+    final Nullness right;
+
+    public NullPair(Nullness left, Nullness right) {
+      this.left = left;
+      this.right = right;
+    }
+
+    public NullPair(Operand left, Operand right) {
+      this(Nullness.from(left), Nullness.from(right));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null || !(obj instanceof NullPair)) {
+        return false;
+      }
+      NullPair that = (NullPair) obj;
+      return this.hashCode() == that.hashCode();
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(left, right);
+    }
   }
 }

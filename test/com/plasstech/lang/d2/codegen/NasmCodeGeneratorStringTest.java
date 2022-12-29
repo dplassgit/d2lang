@@ -144,7 +144,6 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void compOpsNull(@TestParameter({"<", "<=", ">=", ">"}) String op) throws Exception {
-    //  public void compOpsNull(@TestParameter({"<="}) String op) throws Exception {
     execute(String.format("a='abc' c=a %s null", op), "compOpsNullLiteral");
     execute(String.format("a='abc' b=null c=a %s b", op), "compOpsNullGlobal");
     execute(String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNullGlobalAsString");
@@ -164,8 +163,6 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void equalityOpsNull2(@TestParameter({"==", "!="}) String op) throws Exception {
     execute(String.format("a='abc' c=a %s null", op), "equalityOpsNull");
-    //    assertRuntimeError(
-    //        String.format("a='abc' c=null %s a", op), "compOpsNull", "Null pointer error");
     execute(String.format("a='abc' a=null b=null c=a %s b", op), "equalityOpsNull");
     execute(String.format("a='abc' b:string b=null c=b %s a", op), "equalityOpsNull");
   }
