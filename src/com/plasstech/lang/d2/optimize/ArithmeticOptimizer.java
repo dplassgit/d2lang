@@ -494,6 +494,10 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
       // Strings
       if (left.type() == VarType.STRING) {
+        if (right.type().isNull()) {
+          throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+        }
+        @SuppressWarnings("unchecked")
         ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
         @SuppressWarnings("unchecked")
         ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
@@ -509,13 +513,18 @@ class ArithmeticOptimizer extends LineOptimizer {
     // Replace a + "" with a
     if (left.type() == VarType.STRING) {
       if (left.isConstant()) {
+        @SuppressWarnings("unchecked")
         ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
         if (leftConstant.value().isEmpty()) {
           replaceCurrent(new Transfer(op.destination(), right, op.position()));
           return;
         }
       } else if (right.isConstant()) {
+        @SuppressWarnings("unchecked")
         ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
+        if (right.type().isNull()) {
+          throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+        }
         if (rightConstant.value().isEmpty()) {
           replaceCurrent(new Transfer(op.destination(), left, op.position()));
           return;

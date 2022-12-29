@@ -10,6 +10,7 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO_DBL;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +25,7 @@ import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
@@ -47,6 +49,8 @@ public class ArithmeticOptimizerTest {
   private static final StackLocation STACK2 = new StackLocation("stack2", VarType.INT, 4);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
+  private static final ConstantOperand<String> NULL_STRING =
+      new ConstantOperand<String>(null, VarType.NULL);
 
   @Test
   public void varPlusVarInts() {
@@ -168,6 +172,24 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
+  }
+
+  @Test
+  public void varPlusNull() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP1, STRING_TEMP, TokenType.PLUS, NULL_STRING, null));
+    RuntimeException exception =
+        assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
+    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
+  }
+
+  @Test
+  public void constPlusNull() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP1, CONSTANT_A, TokenType.PLUS, NULL_STRING, null));
+    RuntimeException exception =
+        assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
+    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
   }
 
   @Test

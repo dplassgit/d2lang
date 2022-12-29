@@ -426,6 +426,13 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void stringAddToNull_error() {
+    assertError("b='hi' a=b+null", "Cannot add NULL to STRING");
+    assertError("a='hi'+null", "Cannot add NULL to STRING");
+    assertError("b='hi' a=null+b", "Cannot apply \\+ operator to left operand of type NULL");
+  }
+
+  @Test
   public void stringIndex() {
     SymTab symTab = checkProgram("b='hi' a=b[1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
@@ -1326,12 +1333,12 @@ public class StaticCheckerTest {
     assertError("a='' a--", "to left operand of type STRING");
   }
 
-  private void assertError(String program, String messageShouldContain) {
+  private void assertError(String program, String messageShouldMatch) {
     State state = unsafeTypeCheck(program);
     assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
     assertWithMessage("Should have correct error for:\n " + program)
         .that(state.errorMessage())
-        .containsMatch(messageShouldContain);
+        .containsMatch(messageShouldMatch);
   }
 
   private SymTab checkProgram(String program) {

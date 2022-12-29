@@ -17,12 +17,13 @@ public interface VarType {
       new SimpleType("STRING", 8) {
         @Override
         public boolean compatibleWith(VarType that) {
-          return super.compatibleWith(that) || that == NULL;
+          return super.compatibleWith(that) || that.isNull();
         }
       };
   VarType UNKNOWN = new UnknownType();
   VarType VOID = new SimpleType("VOID");
-  Set<VarType> NUMERIC_TYPES = ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.DOUBLE);
+  Set<VarType> NUMERIC_TYPES =
+      ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.DOUBLE, VarType.LONG);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",
@@ -44,7 +45,7 @@ public interface VarType {
   default boolean isArray() {
     return false;
   }
-  
+
   default boolean isRecord() {
     return false;
   }

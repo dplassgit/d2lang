@@ -143,14 +143,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   private static final ImmutableSet<TokenType> COMPARISION_OPERATORS =
       ImmutableSet.of(
-          TokenType.AND,
-          TokenType.OR,
-          TokenType.EQEQ,
-          TokenType.LT,
-          TokenType.GT,
-          TokenType.LEQ,
-          TokenType.GEQ,
-          TokenType.NEQ);
+          TokenType.EQEQ, TokenType.LT, TokenType.GT, TokenType.LEQ, TokenType.GEQ, TokenType.NEQ);
 
   /** VarTypes that can be compared using COMPARISON_OPERATORS */
   private static final ImmutableSet<VarType> COMPARABLE_VARTYPES =
@@ -540,6 +533,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(
           new TypeException(
               String.format("Indeterminable type for expression %s", left), left.position()));
+      // stop here, because it's only going to get worse
+      return;
     }
 
     // Only care if RHS is unknown if it's not DOT, because fields are not exactly like variables
@@ -549,6 +544,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(
           new TypeException(
               String.format("Indeterminable type for expression %s", right), right.position()));
+      // stop here, because it's only going to get worse
     }
 
     // Check that they're not trying to, for example, multiply booleans
@@ -607,8 +603,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
     }
 
-    // string[int] and array[int]
+    if (leftType == VarType.STRING && operator == TokenType.PLUS && rightType.isNull()) {
+      // Ugh, this is such a random one-off...
+      errors.add(new TypeException("Cannot add NULL to STRING", right.position()));
+    }
+
     if (operator == TokenType.LBRACKET) {
+      // string[int] and array[int]
       if (rightType != VarType.INT) {
         errors.add(
             new TypeException(
