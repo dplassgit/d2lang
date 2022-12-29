@@ -291,7 +291,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         && (leftType == VarType.BOOL
             || leftType == VarType.BYTE
             || leftType == VarType.DOUBLE
-            || leftType == VarType.INT)
+            || leftType == VarType.INT
+            || leftType == VarType.LONG)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now
         && (leftType.equals(op.destination().type()))) {
@@ -355,7 +356,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
-    } else if (leftType == VarType.INT || leftType == VarType.BYTE) {
+    } else if (leftType == VarType.BYTE || leftType == VarType.INT || leftType == VarType.LONG) {
       String size = Size.of(leftType).asmType;
       switch (operator) {
         case MULT:

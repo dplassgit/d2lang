@@ -110,12 +110,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   // NOTE: Does not include arrays or records.
   private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
       ImmutableMap.<VarType, Set<TokenType>>builder()
-          .put(VarType.INT, INT_OPERATORS)
           .put(VarType.BOOL, BOOL_OPERATORS)
-          .put(VarType.STRING, STRING_OPERATORS)
           .put(VarType.BYTE, INT_OPERATORS)
           .put(VarType.DOUBLE, DOUBLE_OPERATORS)
+          .put(VarType.INT, INT_OPERATORS)
+          .put(VarType.LONG, INT_OPERATORS)
           .put(VarType.NULL, NULL_OPERATORS)
+          .put(VarType.STRING, STRING_OPERATORS)
           .build();
 
   private static final ImmutableSet<TokenType> INT_UNARY_OPERATORS =
@@ -131,12 +132,14 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       ImmutableSet.of(TokenType.NOT);
 
   private static final Map<VarType, ImmutableSet<TokenType>> UNARY_OPERATORS_BY_VARTYPE =
-      ImmutableMap.of(
-          VarType.INT, INT_UNARY_OPERATORS,
-          VarType.BOOL, BOOL_UNARY_OPERATORS,
-          VarType.STRING, STRING_UNARY_OPERATORS,
-          VarType.BYTE, INT_UNARY_OPERATORS,
-          VarType.DOUBLE, DOUBLE_UNARY_OPERATORS);
+      ImmutableMap.<VarType, ImmutableSet<TokenType>>builder()
+          .put(VarType.BOOL, BOOL_UNARY_OPERATORS)
+          .put(VarType.BYTE, INT_UNARY_OPERATORS)
+          .put(VarType.DOUBLE, DOUBLE_UNARY_OPERATORS)
+          .put(VarType.INT, INT_UNARY_OPERATORS)
+          .put(VarType.LONG, INT_UNARY_OPERATORS)
+          .put(VarType.STRING, STRING_UNARY_OPERATORS)
+          .build();
 
   private static final Set<TokenType> RECORD_COMPARATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
@@ -147,7 +150,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   /** VarTypes that can be compared using COMPARISON_OPERATORS */
   private static final ImmutableSet<VarType> COMPARABLE_VARTYPES =
-      ImmutableSet.of(VarType.INT, VarType.STRING, VarType.BYTE, VarType.DOUBLE);
+      ImmutableSet.of(VarType.BYTE, VarType.DOUBLE, VarType.INT, VarType.LONG, VarType.STRING);
 
   private static final Set<TokenType> ARRAY_OPERATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);

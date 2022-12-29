@@ -70,7 +70,9 @@ class Resolver implements RegistersInterface {
    */
   String resolve(Operand operand) {
     if (operand.isConstant()) {
-      if (operand.type() == VarType.INT || operand.type() == VarType.BYTE) {
+      if (operand.type() == VarType.BYTE
+          || operand.type() == VarType.INT
+          || operand.type() == VarType.LONG) {
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
         ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;

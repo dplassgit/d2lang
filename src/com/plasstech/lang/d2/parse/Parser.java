@@ -183,7 +183,6 @@ public class Parser implements Phase {
       case MAIN:
         Token start = token;
         advance(); // eat the main
-        // TODO: parse arguments
         BlockNode mainBlock = block();
         expect(TokenType.EOF);
         return new MainNode(mainBlock, start.start());
@@ -519,29 +518,18 @@ public class Parser implements Phase {
     cases.add(new IfNode.Case(condition, statements));
 
     BlockNode elseStatements = null;
-    // TODO: This is weird, why do we care if it's a keyword?!
-    if (token.type().isKeyword()) {
-      Token elseOrElif = token;
-      // while elif: get condition, get statements, add to case list.
-      while (elseOrElif != null && elseOrElif.type() == TokenType.ELIF) {
-        advance();
+    // while elif: get condition, get statements, add to case list.
+    while (token.type() == TokenType.ELIF) {
+      advance();
 
-        Node elifCondition = expr();
-        Node elifStatements = block();
-        cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
+      Node elifCondition = expr();
+      Node elifStatements = block();
+      cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
+    }
 
-        // TODO: What?!
-        if (token.type().isKeyword()) {
-          elseOrElif = token;
-        } else {
-          elseOrElif = null;
-        }
-      }
-
-      if (elseOrElif != null && elseOrElif.type() == TokenType.ELSE) {
-        advance();
-        elseStatements = block();
-      }
+    if (token.type() == TokenType.ELSE) {
+      advance();
+      elseStatements = block();
     }
 
     return new IfNode(cases, elseStatements, kt.start());
@@ -797,79 +785,76 @@ public class Parser implements Phase {
    * Parse an atom: a literal, variable or parenthesized expression.
    *
    * <pre>
-   * atom -> int | double | byte | true | false | string | null | variable | procedureCall |
-   *     '(' expr ')' | '[' arrayLiteral ']'
+   * atom -> ARGS | byte | double | int | string | FALSE | TRUE | NULL | variable | procedureCall |
+   *     INPUT | '(' expr ')' | '[' arrayLiteral ']'
    * </pre>
    */
   private ExprNode atom() {
-    if (token.type() == TokenType.LITERAL) {
-      ConstToken<?> ct = (ConstToken<?>) token;
-      switch (ct.literalType()) {
-        case INT:
-          ConstToken<Integer> it = (ConstToken<Integer>) token;
-          advance();
-          return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
-
-        case DOUBLE:
-          ConstToken<Double> dt = (ConstToken<Double>) token;
-          advance();
-          return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
-
-        case BYTE:
-          ConstToken<Byte> bt = (ConstToken<Byte>) token;
-          advance();
-          return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
-
-        case STRING:
-          ConstToken<String> st = (ConstToken<String>) token;
-          advance();
-          return new ConstNode<String>(st.value(), VarType.STRING, st.start());
-
-        default:
-          throw new ParseException(
-              String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
-              token.start());
-      }
-    } else if (token.type() == TokenType.TRUE || token.type() == TokenType.FALSE) {
-      Token bt = token;
-      advance();
-      return new ConstNode<Boolean>(bt.type() == TokenType.TRUE, VarType.BOOL, bt.start());
-    } else if (token.type() == TokenType.NULL) {
-      Token nt = token;
-      advance();
-      return new ConstNode<Void>(null, VarType.NULL, nt.start());
-    } else if (token.type() == TokenType.ARGS) {
-      Token argsToken = token;
-      advance();
-      VariableNode argsNode = new VariableNode(argsToken.type().name(), argsToken.start());
-      argsNode.setVarType(new ArrayType(VarType.STRING, 1));
-      return argsNode;
-    } else if (token.type() == TokenType.VARIABLE) {
-      Token varToken = token;
-      advance();
-      if (token.type() == TokenType.LPAREN) {
-        return procedureCall(varToken, false);
-      } else {
-        String name = varToken.text();
-        return new VariableNode(name, varToken.start());
-      }
-    } else if (token.type() == TokenType.LPAREN) {
-      advance();
-      ExprNode expr = expr();
-      expect(TokenType.RPAREN);
-      advance();
-      return expr;
-    } else if (token.type() == TokenType.LBRACKET) {
-      // array literal
-      return arrayLiteral();
-    } else if (token.type() == TokenType.INPUT) {
-      Token it = token;
-      advance();
-      return new InputNode(it.start());
-    } else {
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
-          token.start());
+    switch (token.type()) {
+      case ARGS:
+        Token argsToken = token;
+        advance();
+        VariableNode argsNode = new VariableNode(argsToken.type().name(), argsToken.start());
+        argsNode.setVarType(new ArrayType(VarType.STRING, 1));
+        return argsNode;
+      case FALSE:
+      case TRUE:
+        Token booleanToken = token;
+        advance();
+        return new ConstNode<Boolean>(
+            booleanToken.type() == TokenType.TRUE, VarType.BOOL, booleanToken.start());
+      case INPUT:
+        Token inputToken = token;
+        advance();
+        return new InputNode(inputToken.start());
+      case LBRACKET:
+        return arrayLiteral();
+      case LITERAL:
+        ConstToken<?> ct = (ConstToken<?>) token;
+        switch (ct.literalType()) {
+          case BYTE:
+            ConstToken<Byte> bt = (ConstToken<Byte>) token;
+            advance();
+            return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
+          case DOUBLE:
+            ConstToken<Double> dt = (ConstToken<Double>) token;
+            advance();
+            return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
+          case INT:
+            ConstToken<Integer> it = (ConstToken<Integer>) token;
+            advance();
+            return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+          case STRING:
+            ConstToken<String> st = (ConstToken<String>) token;
+            advance();
+            return new ConstNode<String>(st.value(), VarType.STRING, st.start());
+          default:
+            throw new ParseException(
+                String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
+                token.start());
+        }
+      case LPAREN:
+        advance(); // eat lparen
+        ExprNode expr = expr();
+        expect(TokenType.RPAREN);
+        advance(); // eat rparen
+        return expr;
+      case NULL:
+        Token nt = token;
+        advance();
+        return new ConstNode<Void>(null, VarType.NULL, nt.start());
+      case VARIABLE:
+        Token varToken = token;
+        advance();
+        if (token.type() == TokenType.LPAREN) {
+          return procedureCall(varToken, false);
+        } else {
+          return new VariableNode(varToken.text(), varToken.start());
+        }
+      default:
+        throw new ParseException(
+            String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
+            token.start());
     }
   }
 
@@ -882,7 +867,7 @@ public class Parser implements Phase {
     List<ExprNode> values = commaSeparatedExpressions();
     if (values.isEmpty()) {
       // will this ever be allowed?
-      throw new ParseException("Empty array constants are not allowed yet", token.start());
+      throw new ParseException("Empty array constants are not allowed yet", openBracket.start());
     }
 
     expect(TokenType.RBRACKET);

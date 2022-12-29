@@ -363,7 +363,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   /**
-   * This winds up generating code that may be difficult to translate to assembly/bytecode, e.g.,
+   * This winds up generating code that may be difficult to translate to assembly, e.g.,
    *
    * <pre>
    * __temp32 = a + b
