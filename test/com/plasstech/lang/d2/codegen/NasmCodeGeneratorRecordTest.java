@@ -171,9 +171,17 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void nullCheck() throws Exception {
     assertRuntimeError(
-        "      rt: record {s:string i:int} \r\n" + " a:rt \r\n " + "a=null \r\n" + "println a.s",
-        "nulLCheck",
-        "Null pointer error");
+        "rt: record {s:string i:int} a:rt a=null println a.s", "nulLCheck", "Null pointer error");
+  }
+
+  @Test
+  public void compareToNull_bug220() throws Exception {
+    execute(
+        "      rt: record{s:string i:int} "
+            + "f:proc(x:rt):int { if x != null {return x.i} return -1}  "
+            + "y=new rt "
+            + "y.i=3 print f(y)",
+        "compareToNull");
   }
 
   @Test
@@ -182,26 +190,26 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
         "      rt: record {s:string i:int} "
             + "a=new rt a.s='hi' a.i=3 "
             + "b=new rt b.s='hi' b.i=3 "
-            + "print 'a==b Should be true: ' "
-            + "println a==b "
-            + "print 'a!=b Should be false: ' "
-            + "println a!=b "
-            + "print 'a==a Should be true: ' "
-            + "println a==a "
-            + "print 'b==b Should be true: ' "
-            + "println b==b "
+            + "print 'a==b Should be true: ' println a==b "
+            + "if not (a==b) {exit 'assertion failure'} "
+            + "print 'a!=b Should be false: ' println a!=b "
+            + "if (a!=b) {exit 'assertion failure'} "
+            + "print 'a==a Should be true: ' println a==a "
+            + "if not (a==a) {exit 'assertion failure'} "
+            + "print 'b==b Should be true: ' println b==b "
+            + "if not (b==b) {exit 'assertion failure'} "
             + "c=a "
-            + "print 'c==a Should be true: ' "
-            + "println c==a "
-            + "print 'c==b Should be true: ' "
-            + "println c==b "
-            + "print 'c!=b Should be false: ' "
-            + "println c!=b "
+            + "print 'c==a Should be true: ' println c==a "
+            + "if not (c==a) {exit 'assertion failure'} "
+            + "print 'c==b Should be true: ' println c==b "
+            + "if not (c==b) {exit 'assertion failure'} "
+            + "print 'c!=b Should be false: ' println c!=b "
+            + "if c!=b {exit 'assertion failure'} "
             + "d=new rt d.s='hi ' d.i=4 "
-            + "print 'a==d Should be false: ' "
-            + "println a==d "
-            + "print 'a!=d Should be true: ' "
-            + "println a!=d ",
+            + "print 'a==d Should be false: ' println a==d "
+            + "if a==d {exit 'assertion failure'} "
+            + "print 'a!=d Should be true: ' println a!=d "
+            + "if not (a!=d) {exit 'assertion failure'} ",
         "compare");
   }
 
