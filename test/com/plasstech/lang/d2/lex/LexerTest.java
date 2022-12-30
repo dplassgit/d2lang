@@ -28,7 +28,7 @@ public class LexerTest {
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.BIT_NOT);
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.ASSIGN);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.LT);
     token = lexer.nextToken();
@@ -53,7 +53,7 @@ public class LexerTest {
 
   @Test
   public void doubleSymbols() {
-    Lexer lexer = new Lexer("== <= >= != >> << ++ --");
+    Lexer lexer = new Lexer("==<=>=!=>><<++--");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.EQEQ);
     token = lexer.nextToken();
@@ -81,7 +81,7 @@ public class LexerTest {
   }
 
   @Test
-  public void longerInt() {
+  public void intConstant() {
     Lexer lexer = new Lexer("1234");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.LITERAL);
@@ -89,6 +89,12 @@ public class LexerTest {
     ConstToken<Integer> itt = (ConstToken<Integer>) token;
     assertThat(itt.literalType()).isEqualTo(TokenType.INT);
     assertThat(itt.value()).isEqualTo(1234);
+  }
+
+  @Test
+  public void tooLongInt() {
+    Lexer lexer = new Lexer("1234567890123");
+    assertThrows(ScannerException.class, () -> lexer.nextToken());
   }
 
   @Test
@@ -157,12 +163,6 @@ public class LexerTest {
     ConstToken<Double> doubleToken = (ConstToken<Double>) token;
     assertThat(doubleToken.value()).isEqualTo(1234.);
     assertThat(doubleToken.literalType()).isEqualTo(TokenType.DOUBLE);
-  }
-
-  @Test
-  public void tooLongInt() {
-    Lexer lexer = new Lexer("1234567890123");
-    assertThrows(ScannerException.class, () -> lexer.nextToken());
   }
 
   @Test
@@ -333,7 +333,7 @@ public class LexerTest {
   }
 
   @Test
-  public void longNotKeyword() {
+  public void notAKeyword() {
     Lexer lexer = new Lexer("printed");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
@@ -387,7 +387,7 @@ public class LexerTest {
     assertThat(token.text()).isEqualTo("a");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.ASSIGN);
 
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.LITERAL);
@@ -403,7 +403,7 @@ public class LexerTest {
     assertThat(token.text()).isEqualTo("a");
 
     token = lexer.nextToken();
-    assertThat(token.type()).isEqualTo(TokenType.EQ);
+    assertThat(token.type()).isEqualTo(TokenType.ASSIGN);
 
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.LITERAL);
@@ -435,7 +435,7 @@ public class LexerTest {
   }
 
   @Test
-  public void commentEom() {
+  public void commentEof() {
     Lexer lexer = new Lexer("1// ignored\n");
 
     Token token = lexer.nextToken();

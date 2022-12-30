@@ -315,7 +315,7 @@ public class Lexer {
       advance(); // eat the second =
       return new Token(TokenType.EQEQ, start, end, "==");
     }
-    return new Token(TokenType.EQ, start, oc);
+    return new Token(TokenType.ASSIGN, start, oc);
   }
 
   private Token makeStringToken(Position start, char openingChar) {

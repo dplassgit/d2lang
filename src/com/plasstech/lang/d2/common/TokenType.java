@@ -39,7 +39,7 @@ public enum TokenType {
   INCREMENT("++"),
   DECREMENT("--"),
   // Comparisons:
-  EQ("="),
+  ASSIGN("="),
   EQEQ("=="),
   LT("<"),
   GT(">"),

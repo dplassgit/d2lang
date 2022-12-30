@@ -689,10 +689,10 @@ public class ParserTest {
     assertParseError("while a==3 do {print}", "Unexpected start of statement '{'");
     assertParseError("while a==3 do print {print}", "expected literal");
     assertParseError("while a==3 do a=a+1 {a=}", "expected literal");
-    assertParseError("continue", "CONTINUE not found in WHILE");
-    assertParseError("break", "BREAK not found in WHILE");
-    assertParseError("if true {break while true {continue }}", "BREAK not found in WHILE");
-    assertParseError("if true {continue while true {break}}", "CONTINUE not found in WHILE");
+    assertParseError("continue", "CONTINUE found outside of WHILE");
+    assertParseError("if true {break while true {continue }}", "BREAK found outside of WHILE");
+    assertParseError("break", "BREAK found outside of WHILE");
+    assertParseError("if true {continue while true {break}}", "CONTINUE found outside of WHILE");
   }
 
   @Test

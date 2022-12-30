@@ -162,9 +162,7 @@ public class Parser implements Phase {
   }
 
   private static Function<Token, Boolean> matchesEof() {
-    return token -> {
-      return token.type() == TokenType.EOF;
-    };
+    return token -> token.type() == TokenType.EOF;
   }
 
   // This is a statements node surrounded by braces.
@@ -180,6 +178,27 @@ public class Parser implements Phase {
 
   private StatementNode statement() {
     switch (token.type()) {
+      case BREAK:
+        if (inWhile == 0) {
+          throw new ParseException("BREAK found outside of WHILE block", token.start());
+        }
+        advance();
+        return new BreakNode(token.start());
+
+      case CONTINUE:
+        if (inWhile == 0) {
+          throw new ParseException("CONTINUE found outside of WHILE block", token.start());
+        }
+        advance();
+        return new ContinueNode(token.start());
+
+      case EXIT:
+        advance();
+        return exitStmt(token.start());
+
+      case IF:
+        return ifStmt(token);
+
       case MAIN:
         Token start = token;
         advance(); // eat the main
@@ -191,41 +210,18 @@ public class Parser implements Phase {
       case PRINTLN:
         return print(token);
 
-      case IF:
-        return ifStmt(token);
-
-      case WHILE:
-        {
-          inWhile++;
-          WhileNode whileStmt = whileStmt(token);
-          inWhile--;
-          return whileStmt;
-        }
-
-      case BREAK:
-        if (inWhile == 0) {
-          throw new ParseException("BREAK not found in WHILE block", token.start());
-        }
-        advance();
-        return new BreakNode(token.start());
-
-      case CONTINUE:
-        if (inWhile == 0) {
-          throw new ParseException("CONTINUE not found in WHILE block", token.start());
-        }
-        advance();
-        return new ContinueNode(token.start());
-
       case RETURN:
         advance();
         return returnStmt(token.start());
 
-      case EXIT:
-        advance();
-        return exitStmt(token.start());
-
       case VARIABLE:
         return startsWithVariableStmt();
+
+      case WHILE:
+        inWhile++;
+        WhileNode whileStmt = whileStmt(token);
+        inWhile--;
+        return whileStmt;
 
       default:
         throw new ParseException(
@@ -244,8 +240,9 @@ public class Parser implements Phase {
 
   private ExitNode exitStmt(Position start) {
     // If it's the start of an expression, read the whole expression...
+    // (Except INPUT, which is forbidden.)
     if (token.type() == TokenType.INPUT) {
-      throw new ParseException("'INPUT' is not allowed in 'EXIT' statements", token.start());
+      throw new ParseException("Use of INPUT is not allowed in EXIT statements", token.start());
     }
     if (EXPRESSION_STARTS.contains(token.type())) {
       return new ExitNode(start, expr());
@@ -263,35 +260,35 @@ public class Parser implements Phase {
 
     Token variable = advance(); // eat the variable name
     switch (token.type()) {
-        // Assignment (variable=expression)
-      case EQ:
+        // Assignment: variable=expression
+      case ASSIGN:
         advance(); // eat the =
         VariableSetNode var = new VariableSetNode(variable.text(), variable.start());
         ExprNode expr = expr();
         return new AssignmentNode(var, expr);
 
-        // Declaration (variable:type)
+        // Declaration: variable:type
       case COLON:
         return declaration(variable);
 
-        // Procedure call statement (variable(comma-separated-list))
-      case LPAREN:
-        return procedureCall(variable, true);
-
-        // for record field set (field.name=expression)
-      case DOT:
-        return fieldAssignment(variable);
-
-        //  bracket for array slot assignment (field[expression] = expression)
-      case LBRACKET:
-        return arraySlotAssignment(variable);
-
-      case INCREMENT:
       case DECREMENT:
+      case INCREMENT:
         boolean inc = token.type() == TokenType.INCREMENT;
         advance(); // eat the ++ or --
         VariableSetNode incVar = new VariableSetNode(variable.text(), variable.start());
         return new IncDecNode(incVar, inc);
+
+        // for record field set: field.name=expression
+      case DOT:
+        return fieldAssignment(variable);
+
+        // bracket for array slot assignment: field[expression] = expression
+      case LBRACKET:
+        return arraySlotAssignment(variable);
+
+        // Procedure call: variable(comma-separated-list)
+      case LPAREN:
+        return procedureCall(variable, true);
 
       default:
         break;
@@ -310,7 +307,7 @@ public class Parser implements Phase {
     expect(TokenType.RBRACKET);
     advance(); // eat the ]
 
-    expect(TokenType.EQ);
+    expect(TokenType.ASSIGN);
     advance();
     ExprNode rhs = expr();
 
@@ -324,7 +321,7 @@ public class Parser implements Phase {
     expect(TokenType.VARIABLE);
     Token fieldName = advance();
     FieldSetNode fsn = new FieldSetNode(variable.text(), fieldName.text(), variable.start());
-    expect(TokenType.EQ);
+    expect(TokenType.ASSIGN);
     advance();
     ExprNode rhs = expr();
 
@@ -824,6 +821,10 @@ public class Parser implements Phase {
             ConstToken<Integer> it = (ConstToken<Integer>) token;
             advance();
             return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+          case LONG:
+            ConstToken<Long> longToken = (ConstToken<Long>) token;
+            advance();
+            return new ConstNode<Long>(longToken.value(), VarType.LONG, longToken.start());
           case STRING:
             ConstToken<String> st = (ConstToken<String>) token;
             advance();
