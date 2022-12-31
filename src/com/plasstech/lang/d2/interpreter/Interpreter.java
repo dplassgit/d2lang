@@ -657,7 +657,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
           val = String.valueOf(resolved);
         }
         if (interactive) {
-          System.out.print(val);
+          if (op.call() == SysCall.Call.PRINTLN) {
+            System.out.println(val);
+          } else {
+            System.out.print(val);
+          }
         }
         rootEnv.addOutput(val);
         if (op.call() == SysCall.Call.PRINTLN) {
@@ -669,6 +673,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
           System.err.println("ERROR: " + resolved);
         }
         rootEnv.addOutput("ERROR: " + resolved);
+        rootEnv.addOutput("\n");
         break;
       case INPUT:
         assert (op.arg() instanceof Location);

@@ -100,6 +100,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
   }
 
+  // TODO: Move this to PrintOptimizer
   @Override
   public void visit(SysCall op) {
     if (op.call() != SysCall.Call.PRINT && op.call() != SysCall.Call.PRINTLN) {

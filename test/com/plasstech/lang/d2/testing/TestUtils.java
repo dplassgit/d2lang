@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.testing;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.fail;
@@ -163,5 +164,23 @@ public class TestUtils {
       fail(state.errorMessage());
     }
     return state;
+  }
+
+  /** Trims all comments from the code, and trims each line. */
+  public static ImmutableList<String> trimComments(ImmutableList<String> code) {
+    return code.stream()
+        .map(s -> s.trim())
+        .filter(s -> !s.startsWith(";"))
+        .map(
+            old -> {
+              int semi = old.indexOf(';');
+              if (semi != -1) {
+                return old.substring(0, semi - 1);
+              } else {
+                return old;
+              }
+            })
+        .map(s -> s.trim())
+        .collect(toImmutableList());
   }
 }

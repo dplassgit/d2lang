@@ -304,27 +304,27 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void bug83() throws Exception {
     execute(
-        "prepend: proc(s:string) {\r\n"
-            + "   println s + \" there\"\r\n"
-            + "}\r\n"
-            + "return_prepend: proc(s:string):string {\r\n"
-            + "   return s + \" there\"\r\n"
-            + "}\r\n"
-            + "postpend: proc(s:string) {\r\n"
-            + "   println \"there \" + s\r\n"
-            + "}\r\n"
-            + "return_postpend: proc(s:string):string {\r\n"
-            + "   return \"there \" + s\r\n"
-            + "}\r\n"
-            + "\r\n"
-            + "main {\r\n"
-            + "  println \"Should print hello there\"\r\n"
-            + "  prepend(\"hello\")\r\n"
-            + "  println return_prepend(\"hello\")\r\n"
-            + "  println \"Should print there hello\"\r\n"
-            + "  postpend(\"hello\")\r\n"
-            + "  println return_postpend(\"hello\")\r\n"
-            + "}\r\n",
+        "      prepend: proc(s:string) {\n"
+            + "   println s + ' there'\n"
+            + "}\n"
+            + "return_prepend: proc(s:string):string {\n"
+            + "   return s + ' there'\n"
+            + "}\n"
+            + "postpend: proc(s:string) {\n"
+            + "   println 'there ' + s\n"
+            + "}\n"
+            + "return_postpend: proc(s:string):string {\n"
+            + "   return 'there ' + s\n"
+            + "}\n"
+            + "\n"
+            + "main {\n"
+            + "  println 'Should print hello there'\n"
+            + "  prepend('hello')\n"
+            + "  println return_prepend('hello')\n"
+            + "  println 'Should print there hello'\n"
+            + "  postpend('hello')\n"
+            + "  println return_postpend('hello')\n"
+            + "}\n",
         "bug83");
   }
 

@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Before;
@@ -13,6 +12,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
@@ -159,23 +159,6 @@ public class StringCodeGeneratorTest {
     sut.generateStringCompare(op);
     System.err.printf("\nTEST CASE: %s\n\n", op);
     System.err.println(NEWLINE_JOINER.join(emitter.all()));
-    return trimComments(emitter.all());
-  }
-
-  private static ImmutableList<String> trimComments(ImmutableList<String> code) {
-    return code.stream()
-        .map(s -> s.trim())
-        .filter(s -> !s.startsWith(";"))
-        .map(
-            old -> {
-              int semi = old.indexOf(';');
-              if (semi != -1) {
-                return old.substring(0, semi - 1);
-              } else {
-                return old;
-              }
-            })
-        .map(s -> s.trim())
-        .collect(toImmutableList());
+    return TestUtils.trimComments(emitter.all());
   }
 }

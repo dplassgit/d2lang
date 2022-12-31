@@ -192,7 +192,10 @@ public class NasmCodeGeneratorTestBase {
     if (process.exitValue() != exitCode) {
       InputStream stream = process.getErrorStream();
       String output = new String(ByteStreams.toByteArray(stream));
-      System.err.printf("%s output: %s\n", name, output);
+      System.err.printf("%s error output: %s\n", name, output);
+      stream = process.getInputStream();
+      output = new String(ByteStreams.toByteArray(stream));
+      System.err.printf("%s std output: %s\n", name, output);
       assertWithMessage(name + " had wrong exit value: " + output)
           .that(process.exitValue())
           .isEqualTo(0);
