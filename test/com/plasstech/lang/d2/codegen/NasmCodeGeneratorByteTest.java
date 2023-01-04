@@ -218,7 +218,12 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
-    assertRuntimeError("a=0y0 b=0y1/a", "divByZero", "Division by 0");
+    String sourceCode = "a=0y0 b=0y1/a";
+    if (optimize) {
+      assertGenerateError(sourceCode, "Division by 0");
+    } else {
+      assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
+    }
   }
 
   @Test

@@ -154,16 +154,21 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
-    assertRuntimeError("a=0.0 b=1.0/a", "divByZero", "Division by 0");
+    String program = "a=0.0 b=1.0/a";
+    if (optimize) {
+      assertGenerateError(program, "Division by 0");
+    } else {
+      assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
+    }
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
+    String program = "f:proc:double{a=0.0 b=1.0/a return b} f()";
     if (optimize) {
-      assertGenerateError("f:proc:double{a=0.0 b=1.0/a return b} f()", "Division by 0");
+      assertGenerateError(program, "Division by 0");
     } else {
-      assertRuntimeError(
-          "f:proc:double{a=0.0 b=1.0/a return b} f()", "divisionByZeroLocal", "Division by 0");
+      assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
     }
   }
 

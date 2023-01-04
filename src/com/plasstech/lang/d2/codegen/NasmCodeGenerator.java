@@ -499,6 +499,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case NEQ:
           tempReg = generateCmp(leftRo, rightRo, operator, destName);
           break;
+        case DOT:
+          fail("Null pointer error", operator, leftType);
+          break;
         default:
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;

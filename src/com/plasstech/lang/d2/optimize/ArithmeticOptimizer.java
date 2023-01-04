@@ -4,6 +4,8 @@ import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -198,19 +200,35 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       case LEQ:
-        optimizeCompare(op, (a, b) -> a.compareTo(b) <= 0);
+        optimizeCompare(
+            op,
+            (a, b) ->
+                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
+                    <= 0);
         return;
 
       case LT:
-        optimizeCompare(op, (a, b) -> a.compareTo(b) < 0);
+        optimizeCompare(
+            op,
+            (a, b) ->
+                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
+                    < 0);
         return;
 
       case GEQ:
-        optimizeCompare(op, (a, b) -> a.compareTo(b) >= 0);
+        optimizeCompare(
+            op,
+            (a, b) ->
+                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
+                    >= 0);
         return;
 
       case GT:
-        optimizeCompare(op, (a, b) -> a.compareTo(b) > 0);
+        optimizeCompare(
+            op,
+            (a, b) ->
+                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
+                    > 0);
         return;
 
       case LBRACKET:
@@ -734,10 +752,16 @@ class ArithmeticOptimizer extends LineOptimizer {
       ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
       Comparable leftval = (Comparable) leftConstant.value();
       Comparable rightval = (Comparable) rightConstant.value();
-      replaceCurrent(
-          new Transfer(
-              destination, ConstantOperand.of(fun.test(leftval, rightval)), op.position()));
-      return true;
+
+      try {
+        boolean result = fun.test(leftval, rightval);
+        replaceCurrent(
+            new Transfer(
+                destination, ConstantOperand.of(fun.test(leftval, rightval)), op.position()));
+        return true;
+      } catch (NullPointerException npe) {
+        throw new D2RuntimeException("Null pointer error", op.position(), "Null pointer");
+      }
     }
     if (left.equals(right)) {
       // they're equal, so we can optimize it. If it's LEQ or GEQ, we pass TRUE, otherwise FALSE.

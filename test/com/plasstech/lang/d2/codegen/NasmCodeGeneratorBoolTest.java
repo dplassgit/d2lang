@@ -47,7 +47,7 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
       throws Exception {
     String program =
         String.format(
-            "f:proc{a=%s b=%s c=a %s b print c d=b %s a print d} f()", boola, boolb, op, op);
+            "f:proc{a=%s b=%s c=a %s b println c d=b %s a println d} f()", boola, boolb, op, op);
     System.err.println(program);
     execute(program, "boolBinOpProc" + boola + boolb);
   }

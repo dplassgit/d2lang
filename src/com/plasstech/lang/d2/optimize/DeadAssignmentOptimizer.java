@@ -208,7 +208,6 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public void visit(IfOp op) {
     assignments.clear();
-    // maybe also tempAssignments.clear()
     markRead(op.condition());
   }
 

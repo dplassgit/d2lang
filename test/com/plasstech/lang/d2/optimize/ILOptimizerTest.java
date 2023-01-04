@@ -354,6 +354,10 @@ public class ILOptimizerTest {
             + "  a=a-1 " // a=3
             + "  return a+b} " // 7
             + "print incDec(3)");
+  }
+
+  @Test
+  public void incDecGlobals() {
     TestUtils.optimizeAssertSameVariables("b=3 b=b+1 a=b*2 a=a-1 print a+1");
   }
 

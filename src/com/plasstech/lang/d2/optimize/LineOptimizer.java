@@ -81,7 +81,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     logger
         .at(loggingLevel)
         .withInjectedLogSite(LogSites.callerOf(LineOptimizer.class))
-        .log("Replacing ip %d: %s with %s", theIp, code.get(theIp), newOp);
+        .log("REPLACING ip %d: %s with %s", theIp, code.get(theIp), newOp);
     code.set(theIp, newOp);
   }
 

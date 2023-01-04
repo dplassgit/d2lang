@@ -73,9 +73,12 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    // because globals aren't propagated (yet), it must be a runtime error.
-    assertRuntimeError(
-        sourceCode, "negativeIndexRunTime", "STRING index must be non-negative; was -2");
+    if (optimize) {
+      assertGenerateError(sourceCode, "STRING index must be non-negative; was -2");
+    } else {
+      assertRuntimeError(
+          sourceCode, "negativeIndexRunTimeGlobal", "STRING index must be non-negative; was -2");
+    }
   }
 
   @Test
@@ -154,10 +157,14 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     execute(String.format("a='abc' c=a %s null println c", op), "equalityOpsNullLiteral");
     execute(String.format("a='abc' b=null c=a %s b println c", op), "equalityOpsNullGlobal");
     execute(
+        String.format("a='abc' b:string b=null c=b %s a println c", op), "equalityOpsNullAsString");
+  }
+
+  @Test
+  public void equalityOpsNullProc(@TestParameter({"==", "!="}) String op) throws Exception {
+    execute(
         String.format("f:proc:bool { a='abc' b=null c=a %s b return c} println f()", op),
         "equalityOpsNullProc");
-    execute(
-        String.format("a='abc' b:string b=null c=b %s a println c", op), "equalityOpsNullAsString");
   }
 
   @Test
@@ -169,17 +176,22 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void lengthNullLocal() throws Exception {
+    String program = "f:proc {a='hello' a=null println length(a)} f()";
     if (optimize) {
-      assertGenerateError("f:proc {a='hello' a=null println length(a)} f()", ".*NULL expression.*");
+      assertGenerateError(program, ".*NULL expression.*");
     } else {
-      assertRuntimeError(
-          "f:proc {a='hello' a=null println length(a)} f()", "length", "Null pointer error");
+      assertRuntimeError(program, "length", "Null pointer error");
     }
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
-    assertRuntimeError("a='hello' a=null println length(a)", "length", "Null pointer error");
+    String program = "a='hello' a=null println length(a)";
+    if (optimize) {
+      assertGenerateError(program, ".*NULL expression.*");
+    } else {
+      assertRuntimeError(program, "length", "Null pointer error");
+    }
   }
 
   @Test

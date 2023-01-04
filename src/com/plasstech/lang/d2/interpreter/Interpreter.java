@@ -38,6 +38,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ParamSymbol;
@@ -297,6 +298,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
   }
 
   private Object visitDotOp(Object left, String right) {
+    if (left == null) {
+      throw new D2RuntimeException("Dereferencing null record", null, "Interpreter");
+    }
     if (!(left instanceof Map)) {
       logger.atSevere().log("Not sure what to do with %s, should be record type", left);
     }

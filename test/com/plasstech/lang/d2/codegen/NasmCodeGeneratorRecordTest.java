@@ -170,8 +170,12 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void nullCheck() throws Exception {
-    assertRuntimeError(
-        "rt: record {s:string i:int} a:rt a=null println a.s", "nulLCheck", "Null pointer error");
+    String program = "rt: record {s:string i:int} a:rt a=null println a.s";
+    if (optimize) {
+      assertGenerateError(program, "Null pointer error");
+    } else {
+      assertRuntimeError(program, "nullCheck", "Null pointer error");
+    }
   }
 
   @Test

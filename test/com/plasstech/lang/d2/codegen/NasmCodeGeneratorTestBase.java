@@ -223,7 +223,7 @@ public class NasmCodeGeneratorTestBase {
     state = codegen.execute(state);
     if (optimize) {
       // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer();
+      ILOptimizer optimizer = new ILOptimizer(2);
       state = optimizer.execute(state);
     }
 
@@ -253,13 +253,16 @@ public class NasmCodeGeneratorTestBase {
     state = codegen.execute(state);
     if (optimize) {
       // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer();
+      ILOptimizer optimizer = new ILOptimizer(2);
       state = optimizer.execute(state);
       state.throwOnError();
     }
 
     state = new NasmCodeGenerator().execute(state);
-    state.throwOnError();
+    if (state.error()) {
+      System.err.println(Joiner.on("\n").join(state.lastIlCode()));
+      state.throwOnError();
+    }
 
     state = state.addFilename(filename);
 
