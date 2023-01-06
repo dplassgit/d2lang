@@ -143,6 +143,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Integer[] integers = new Integer[sizeVal];
       Arrays.setAll(integers, (index) -> 0);
       return integers;
+    } else if (baseType == VarType.LONG) {
+      Long[] longs = new Long[sizeVal];
+      Arrays.setAll(longs, (index) -> 0L);
+      return longs;
     } else if (baseType == VarType.BYTE) {
       Byte[] bytes = new Byte[sizeVal];
       Arrays.setAll(bytes, (index) -> (byte) 0);
@@ -231,6 +235,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitDotOp(left, (String) right);
     } else if (left instanceof Integer && right instanceof Integer) {
       result = visitIntBinOp(op, (Integer) left, (Integer) right);
+    } else if (left instanceof Long && right instanceof Long) {
+      result = visitLongBinOp(op, (Long) left, (Long) right);
     } else if (left instanceof Byte && right instanceof Byte) {
       result = visitByteBinOp(op, (Byte) left, (Byte) right);
     } else if (left instanceof Double && right instanceof Double) {
@@ -429,6 +435,45 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
+  private Object visitLongBinOp(BinOp op, long left, long right) {
+    switch (op.operator()) {
+      case DIV:
+        return left / right;
+      case EQEQ:
+        return left == right;
+      case GEQ:
+        return left >= right;
+      case GT:
+        return left > right;
+      case LEQ:
+        return left <= right;
+      case LT:
+        return left < right;
+      case MINUS:
+        return left - right;
+      case MOD:
+        return left % right;
+      case MULT:
+        return left * right;
+      case NEQ:
+        return left != right;
+      case PLUS:
+        return left + right;
+      case SHIFT_LEFT:
+        return left << right;
+      case SHIFT_RIGHT:
+        return left >> right;
+      case BIT_AND:
+        return left & right;
+      case BIT_OR:
+        return left | right;
+      case BIT_XOR:
+        return left ^ right;
+      default:
+        throw new IllegalStateException("Unknown long binop " + op.operator());
+    }
+  }
+
   private Object visitByteBinOp(BinOp op, byte left, byte right) {
     switch (op.operator()) {
       case DIV:
@@ -552,6 +597,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
     if (rhs instanceof Boolean || rhs instanceof Integer) {
       result = visitUnaryInt(op, rhs);
+    } else if (rhs instanceof Long) {
+      result = visitUnaryLong(op, rhs);
     } else if (rhs instanceof Byte) {
       result = visitUnaryByte(op, rhs);
     } else if (rhs instanceof Double) {
@@ -622,6 +669,24 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return "" + (char) r1;
       default:
         throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
+    }
+  }
+
+  private static Object visitUnaryLong(UnaryOp op, Object rhs) {
+    if (op.operator() == TokenType.NOT) {
+      return rhs.equals(Boolean.FALSE);
+    }
+    long r1 = (long) rhs;
+    ;
+    switch (op.operator()) {
+      case PLUS:
+        return r1;
+      case MINUS:
+        return 0 - r1;
+      case BIT_NOT:
+        return ~r1;
+      default:
+        throw new IllegalStateException("Unknown long unaryop " + op.operator());
     }
   }
 

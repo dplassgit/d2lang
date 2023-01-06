@@ -98,6 +98,44 @@ public class LexerTest {
   }
 
   @Test
+  public void longConstant() {
+    Lexer lexer = new Lexer("1234L");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
+    ConstToken<Long> itt = (ConstToken<Long>) token;
+    assertThat(itt.literalType()).isEqualTo(TokenType.LONG);
+    assertThat(itt.value()).isEqualTo(1234L);
+  }
+
+  @Test
+  public void intConstantThenAnL() {
+    Lexer lexer = new Lexer("1234 L");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
+    ConstToken<Integer> itt = (ConstToken<Integer>) token;
+    assertThat(itt.literalType()).isEqualTo(TokenType.INT);
+    assertThat(itt.value()).isEqualTo(1234);
+    token = lexer.nextToken();
+    assertThat(token.text()).isEqualTo("L");
+  }
+
+  @Test
+  public void longConstantLowerL() {
+    Lexer lexer = new Lexer("1234l");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.LITERAL);
+    ConstToken<Long> itt = (ConstToken<Long>) token;
+    assertThat(itt.literalType()).isEqualTo(TokenType.LONG);
+    assertThat(itt.value()).isEqualTo(1234L);
+  }
+
+  @Test
+  public void tooLongLong() { // heh
+    Lexer lexer = new Lexer(String.format("%d0", Long.MAX_VALUE));
+    assertThrows(ScannerException.class, () -> lexer.nextToken());
+  }
+
+  @Test
   public void byteConstant() {
     Lexer lexer = new Lexer("0y3F");
     Token token = lexer.nextToken();

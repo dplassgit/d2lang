@@ -10,6 +10,8 @@ public class ConstantOperand<T> implements Operand {
   // These shouldn't use "of" because "of" sometimes uses these.
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
   public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
+  public static final ConstantOperand<Long> ZERO_LONG = new ConstantOperand<Long>(0L, VarType.LONG);
+  public static final ConstantOperand<Long> ONE_LONG = new ConstantOperand<Long>(1L, VarType.LONG);
   public static final ConstantOperand<Byte> ZERO_BYTE =
       new ConstantOperand<Byte>((byte) 0, VarType.BYTE);
   public static final ConstantOperand<Byte> ONE_BYTE =
@@ -41,7 +43,21 @@ public class ConstantOperand<T> implements Operand {
     return new ConstantOperand<Integer>(value, VarType.INT);
   }
 
+  public static ConstantOperand<Long> of(long value) {
+    if (value == 0L) {
+      return ZERO_LONG;
+    } else if (value == 1L) {
+      return ONE_LONG;
+    }
+    return new ConstantOperand<Long>(value, VarType.INT);
+  }
+
   public static ConstantOperand<Byte> of(byte value) {
+    if (value == 0) {
+      return ZERO_BYTE;
+    } else if (value == 1) {
+      return ONE_BYTE;
+    }
     return new ConstantOperand<Byte>(value, VarType.BYTE);
   }
 

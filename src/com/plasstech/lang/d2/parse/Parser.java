@@ -704,6 +704,19 @@ public class Parser implements Phase {
           ConstNode<Integer> in = (ConstNode<Integer>) expr;
           return new ConstNode<Integer>(~in.value(), VarType.INT, unaryToken.start());
         }
+      } else if (expr.varType() == VarType.LONG) {
+        // We can simplify now
+        if (unaryToken.type() == TokenType.PLUS) {
+          return expr;
+        } else if (unaryToken.type() == TokenType.MINUS) {
+          @SuppressWarnings("unchecked")
+          ConstNode<Long> in = (ConstNode<Long>) expr;
+          return new ConstNode<Long>(-in.value(), VarType.LONG, unaryToken.start());
+        } else if (unaryToken.type() == TokenType.BIT_NOT) {
+          @SuppressWarnings("unchecked")
+          ConstNode<Long> in = (ConstNode<Long>) expr;
+          return new ConstNode<Long>(~in.value(), VarType.LONG, unaryToken.start());
+        }
       } else if (expr.varType() == VarType.DOUBLE) {
         // We can simplify now
         if (unaryToken.type() == TokenType.PLUS) {

@@ -347,7 +347,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (!reuse) {
             resolver.mov(op.left(), dest);
           }
-          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
+          generateBinOp(rightRo, destName, operator);
           break;
 
         case EQEQ:
@@ -400,7 +400,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (!reuse) {
             resolver.mov(op.left(), dest);
           }
-          emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
+          generateBinOp(rightRo, destName, operator);
           break;
 
         case SHIFT_LEFT:
@@ -412,7 +412,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (!reuse) {
               resolver.mov(op.left(), dest);
             }
-            emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, rightRo.name());
+            generateBinOp(rightRo, destName, operator);
           } else {
             // TODO: this is stupidly complex.
             Register rightReg = null;
@@ -520,6 +520,24 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.deallocate(op.right());
   }
 
+  private void generateBinOp(ResolvedOperand source, String destName, TokenType operator) {
+    if (source.isConstant() && source.type() == VarType.LONG) {
+      ConstantOperand<Long> longOp = (ConstantOperand<Long>) source.operand();
+      long value = longOp.value();
+      if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+        // adjust for OPCODE REG, imm64 if the constant is too big.
+        emitter.emit("; constant is larger than 32 bits, must use intermediary");
+        Register tempReg = resolver.allocate(VarType.INT);
+        resolver.mov(source.operand(), tempReg);
+        emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, tempReg.name());
+        resolver.deallocate(tempReg);
+        // NOTE RETURN
+        return;
+      }
+    }
+    emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, source.name());
+  }
+
   private Register generateCmp(
       ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
     Register tempReg = null;
@@ -554,6 +572,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     return rightRo.isRegister() || rightRo.isConstant();
   }
 
+  private static boolean isAnyZero(Operand operand) {
+    return operand.equals(ConstantOperand.ZERO) // int
+        || operand.equals(ConstantOperand.ZERO_LONG)
+        || operand.equals(ConstantOperand.ZERO_BYTE);
+  }
+
   private void generateDivMod(BinOp op, Location dest) {
     Operand rightOperand = op.right();
     String rightName = resolver.resolve(rightOperand);
@@ -562,18 +586,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String size = Size.of(operandType).asmType;
 
     if (rightOperand.isConstant()) {
-      if (rightOperand.type() == VarType.INT) {
-        ConstantOperand<Integer> rightConstOperand = (ConstantOperand<Integer>) rightOperand;
-        int rightValue = rightConstOperand.value();
-        if (rightValue == 0) {
-          throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
-        }
-      } else {
-        ConstantOperand<Byte> rightConstOperand = (ConstantOperand<Byte>) rightOperand;
-        byte rightValue = rightConstOperand.value();
-        if (rightValue == 0) {
-          throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
-        }
+      if (isAnyZero(rightOperand)) {
+        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
       }
     } else {
       emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
@@ -603,11 +617,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("; denominator:");
     resolver.mov(rightOperand, temp);
 
-    if (operandType == VarType.BYTE) {
-      emit("cbw  ; sign extend al to ax");
-    } else {
+    if (operandType == VarType.INT) {
       emit("cdq  ; sign extend eax to edx");
+    } else if (operandType == VarType.LONG) {
+      emit("cqo  ; sign extend rax to rdx");
+    } else if (operandType == VarType.BYTE) {
+      emit("cbw  ; sign extend al to ax");
     }
+
     emit(
         "idiv %s  ; %s = %s / %s",
         temp.sizeByType(operandType), RAX.sizeByType(operandType), leftName, rightName);
@@ -661,7 +678,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         emit("setz %s  ; boolean not", destName);
         break;
       case MINUS:
-        if (source.type() == VarType.INT || source.type() == VarType.BYTE) {
+        if (source.type() == VarType.INT
+            || source.type() == VarType.BYTE
+            || source.type() == VarType.LONG) {
           resolver.mov(source, destination);
           emit("neg %s  ; unary minus", destName);
         } else {

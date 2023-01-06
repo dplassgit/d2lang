@@ -93,6 +93,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     return false;
   }
 
+  // TODO: update this for long
   private Operand combine(
       Operand left, Operand right, TokenType firstOperator, TokenType secondOperator) {
     Number firstConst = fromConstOperand(left);

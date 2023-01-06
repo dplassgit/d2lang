@@ -58,6 +58,23 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void assignLong() {
+    State state = safeTypeCheck("a=3L");
+    SymTab types = state.symbolTable();
+
+    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.LONG);
+
+    ProgramNode root = state.programNode();
+    AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
+    VariableSetNode var = (VariableSetNode) node.lvalue();
+    assertThat(var.name()).isEqualTo("a");
+    assertThat(var.varType()).isEqualTo(VarType.LONG);
+
+    ExprNode expr = node.expr();
+    assertThat(expr.varType()).isEqualTo(VarType.LONG);
+  }
+
+  @Test
   public void assignUnaryIntConst() {
     State state = safeTypeCheck("a=-3");
     SymTab types = state.symbolTable();
@@ -129,10 +146,10 @@ public class StaticCheckerTest {
 
   @Test
   public void manyBinOps() {
-    SymTab types = checkProgram("a=4 b=5 e=(a>=3) or not (b<3)");
+    SymTab types = checkProgram("a=4 b=5L e=(a>=3) or not (b<3L)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.LONG);
     assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
   }
 

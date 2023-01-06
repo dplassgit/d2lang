@@ -31,11 +31,14 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     String argName = argRo.name();
     boolean isNewline = op.call() == Call.PRINTLN || op.call() == Call.MESSAGE;
     if (arg.type() == VarType.INT || arg.type() == VarType.BYTE) {
-
       // Move with sign extend. Intentionally set rdx first, in case the arg is in ecx
       Size size = Size.of(arg.type());
       emitter.emit("movsx RDX, %s %s  ; parameter", size.asmType, argName);
       setUpFormat(Format.INT, isNewline);
+      emitter.emitExternCall("printf");
+    } else if (arg.type() == VarType.LONG) {
+      emitter.emit("mov RDX, %s  ; parameter", argName);
+      setUpFormat(Format.LONG, isNewline);
       emitter.emitExternCall("printf");
 
     } else if (arg.type() == VarType.BOOL) {
@@ -119,6 +122,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
   private enum Format {
     // TODO: print bytes with 0y prefix?
     INT("%d"),
+    LONG("%lld"),
     DOUBLE("%f"),
     TRUE("true"),
     FALSE("false"),

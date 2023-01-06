@@ -9,7 +9,7 @@ import com.plasstech.lang.d2.common.TokenType;
 public class Lexer {
   private final String text;
 
-  private int line, col; // current line & colum=n
+  private int line, col; // current line & column
   private int loc; // location inside text
   private char cc; // current character
 
@@ -146,6 +146,17 @@ public class Lexer {
         return new ConstToken<Double>(TokenType.DOUBLE, value, start, end);
       } catch (Exception e) {
         throw new ScannerException(String.format("Double constant too big %s", sb), start);
+      }
+    } else if (cc == 'L' || cc == 'l') {
+      // making a long
+      try {
+        advance();
+        Position end = new Position(line, col);
+        long value = Long.parseLong(sb.toString());
+        sb.append(cc);
+        return new ConstToken<Long>(TokenType.LONG, value, start, end);
+      } catch (Exception e) {
+        throw new ScannerException(String.format("Long constant too big %s", sb), start);
       }
     }
     try {

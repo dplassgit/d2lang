@@ -73,6 +73,7 @@ class Resolver implements RegistersInterface {
       if (operand.type() == VarType.BYTE
           || operand.type() == VarType.INT
           || operand.type() == VarType.LONG) {
+        // TODO: this is weird - should be operand.value.toString?
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
         ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;
@@ -277,9 +278,28 @@ class Resolver implements RegistersInterface {
         emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
       } else {
         if (sourceReg != null && destReg != null) {
-          // Issue #170: if register to register, don't need "size"
+          // Fixed Issue #170: if register to register, don't need "size"
           emitter.emit("mov %s, %s", destReg.sizeByType(type), sourceReg.sizeByType(type));
         } else {
+          // if source is a constant and it's bigger than a 32-bit int, AND we're moving to
+          // memory, we need to use an intermediary
+          if (type == VarType.LONG && source.isConstant() && destReg == null) {
+            ConstantOperand<Long> longOp = (ConstantOperand<Long>) source.operand();
+            long value = longOp.value();
+            if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+              emitter.emit("; constant is larger than 32 bits, must use intermediary");
+              Register tempReg = allocate(VarType.INT);
+              mov(source.operand(), tempReg);
+              mov(tempReg, dest.location());
+              deallocate(tempReg);
+
+              // NOTE RETURN
+              return;
+            }
+          }
+
+          // mov register, constant
+          // mov qword dest, register
           emitter.emit("mov %s %s, %s", size, destName, sourceName);
         }
       }

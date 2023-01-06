@@ -80,6 +80,18 @@ public class ParserTest {
   }
 
   @Test
+  public void printLong() {
+    BlockNode root = parseStatements("print 123L");
+
+    PrintNode node = (PrintNode) root.statements().get(0);
+    ExprNode expr = node.expr();
+    ConstNode<Long> intNode = (ConstNode<Long>) expr;
+    assertThat(intNode.value()).isEqualTo(123L);
+    assertThat(intNode.position().line()).isEqualTo(1);
+    assertThat(intNode.position().column()).isEqualTo(7);
+  }
+
+  @Test
   public void printError() {
     assertParseError("print", "Unexpected 'EOF'");
   }
