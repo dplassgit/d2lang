@@ -292,12 +292,12 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
 
     // Anything | 0 = the thing
-    if (isAnyZero(left)) {
+    if (ConstantOperand.isAnyZero(left)) {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
       return;
     }
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
       return;
@@ -312,7 +312,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeIntArith(op, left, right, (t, u) -> t & u)) {
       return;
     }
-    if (optimizeLongArith(op, left, right, (t, u) -> t & u)) {
+    if (optimizeLongArith(op, left, right, (t, u) -> (long) (t & u))) {
       return;
     }
     if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t & u))) {
@@ -320,12 +320,12 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
 
     // Anything & 0 = 0
-    if (isAnyZero(left)) {
+    if (ConstantOperand.isAnyZero(left)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), right, op.position()));
       return;
@@ -366,7 +366,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
     try {
       optimizeIntArith(op, left, right, (t, u) -> t % u);
-      optimizeLongArith(op, left, right, (t, u) -> t % u);
+      optimizeLongArith(op, left, right, (t, u) -> (long) (t % u));
       optimizeByteArith(op, left, right, (t, u) -> (byte) (t % u));
     } catch (ArithmeticException e) {
       throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
@@ -379,13 +379,13 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     try {
-      if (isAnyZero(right)) {
+      if (ConstantOperand.isAnyZero(right)) {
         throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
       }
       if (optimizeIntArith(op, left, right, (t, u) -> t / u)) {
         return;
       }
-      if (optimizeLongArith(op, left, right, (t, u) -> t / u)) {
+      if (optimizeLongArith(op, left, right, (t, u) -> (long) (t / u))) {
         return;
       }
       if (optimizeDoubleArith(op, left, right, (t, u) -> t / u)) {
@@ -433,25 +433,25 @@ class ArithmeticOptimizer extends LineOptimizer {
   }
 
   private void optimizeShiftLeft(BinOp op, Operand left, Operand right) {
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
       return;
     }
     if (optimizeIntArith(op, left, right, (t, u) -> t << u)) {
       return;
     }
-    optimizeLongArith(op, left, right, (t, u) -> t << u);
+    optimizeLongArith(op, left, right, (t, u) -> (long) (t << u));
   }
 
   private void optimizeShiftRight(BinOp op, Operand left, Operand right) {
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
       return;
     }
     if (optimizeIntArith(op, left, right, (t, u) -> t >> u)) {
       return;
     }
-    optimizeLongArith(op, left, right, (t, u) -> t >> u);
+    optimizeLongArith(op, left, right, (t, u) -> (long) (t >> u));
   }
 
   private void optimizeSubtract(BinOp op, Operand left, Operand right) {
@@ -532,7 +532,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right, op.position()));
       return;
     }
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
       return;
@@ -671,12 +671,12 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
     }
 
-    if (isAnyZero(left)) {
+    if (ConstantOperand.isAnyZero(left)) {
       // replace with destination = right
       replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
       return;
     }
-    if (isAnyZero(right)) {
+    if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
       return;
@@ -1017,12 +1017,5 @@ class ArithmeticOptimizer extends LineOptimizer {
         || operand.equals(ConstantOperand.ONE_LONG)
         || operand.equals(ConstantOperand.ONE_DBL)
         || operand.equals(ConstantOperand.ONE_BYTE);
-  }
-
-  private static boolean isAnyZero(Operand operand) {
-    return operand.equals(ConstantOperand.ZERO)
-        || operand.equals(ConstantOperand.ZERO_LONG)
-        || operand.equals(ConstantOperand.ZERO_DBL)
-        || operand.equals(ConstantOperand.ZERO_BYTE);
   }
 }

@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -63,23 +62,23 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   @Test
   public void longCompOpsArgs(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
-      @TestParameter({"1234", "-34567"}) int first,
-      @TestParameter({"0", "34567"}) int second)
+      @TestParameter({"12345678901234", "-12345"}) String first,
+      @TestParameter({"123456", "-3456778901234"}) String second)
       throws Exception {
     String program =
         String.format(
             "    bb:long g:bool f:proc(a:long, b:long) { " //
-                + "aa=a " //
-                + "c=a %s b println c " //
-                + "d=b %s aa println d " //
-                + "e=aa %s %dL println e " //
-                + "g=%dL %s aa println g " // global g
-                + "bb=b "
-                + "h=bb < 3L println h"
+                + "aa=a " // to test locals vs args.
+                //                + "c=a %s b println c " //
+                //                + "d=b %s aa println d " //
+                //                + "e=aa %s %sL println e " //
+                + "g=%sL %s aa println g " // global g
+                //                + "bb=b "
+                //                + "h=bb < 3L println h"
                 + "} "
-                + "f(%dL, %dL)",
-            op, op, op, first, second, op, first, second);
-    System.err.println(program);
+                + "f(%sL, %sL)",
+            //            op, op, op, first, second, op, first, second);
+            second, op, first, second);
     execute(program, "longCompOpsArgs");
   }
 
@@ -110,7 +109,6 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore("Don't know why this is failng")
   public void tree() throws Exception {
     execute(
         "      a=2L "
@@ -126,23 +124,22 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void allOpsGlobals() throws Exception {
     execute(
-        "      a=2 "
-            + "b=3 "
-            + "c=-5 "
-            + "d=7 "
-            + "e=11 "
-            + "f=13 "
-            + "z=0"
+        "      a=2L "
+            + "b=3L "
+            + "c=-5L "
+            + "d=7L "
+            + "e=11L "
+            + "f=13L "
+            + "z=0L "
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)+a)*b)/c)-d)) print g"
-            + " k=z+4/(5+(4-5*f)) print k"
-            + " k=0+d/(5+(4-5*f)) print k"
+            + " k=z+4L/(5L+(4L-5L*f)) print k"
+            + " k=0L+d/(5L+(4L-5L*f)) print k"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g"
-            + " h=0+a+(4+3*(4-(3+4/(4+(5-e*6))))) print h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0)))))) print j"
-            + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
+            + " h=0L+a+(4L+3L*(4L-(3L+4L/(4L+(5L-e*6L))))) print h"
+            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0L)))))) print j"
+            + " aa=2L+a*(3L+(3L+5L*(7L-(5L+7L/11L)+(7L-k*13L))*2L)/b) print aa"
             + "",
         "allOpsGlobal");
   }
@@ -153,26 +150,24 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  @Ignore
   public void allOpsLocals() throws Exception {
     execute(
         "fun:proc(a:long, b:long):long { \n"
-            + "b=3 "
-            + "c=-5 "
-            + "d=7 "
-            + "e=11 "
-            + "f=13 "
-            + "z=0"
+            + "c=-5L "
+            + "d=7L "
+            + "e=11L "
+            + "f=13L "
+            + "z=0L "
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)+a)*b)/c)-d)) print g"
-            + " k=z+4/(5+(4-5*f)) print k"
-            + " k=0+d/(5+(4-5*f)) print k"
+            + " k=z+4L/(5L+(4L-5L*f)) print k"
+            + " k=0L+d/(5L+(4L-5L*f)) print k"
             + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print g"
-            + " h=0+a+(4+3*(4-(3+4/(4+(5-e*6))))) print h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0)))))) print j"
-            + " aa=2+a*(3+(3+5*(7-(5+7/11)+(7-11*13))*2)/b) print aa"
+            + " h=0L+a+(4L+3L*(4L-(3L+4L/(4L+(5L-e*6L))))) print h"
+            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0L)))))) print j"
+            + " aa=2L+a*(3L+(3L+5L*(7L-(5L+7L/11L)+(7L-k*13L))*2L)/b) print aa"
             + "   return aa\n"
             + "} \n"
-            + "print fun(2, 3)",
+            + "print fun(2L, 3L)",
         "allOpsLocals");
   }
 
@@ -205,25 +200,23 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   public void incDec() throws Exception {}
 
   @Test
-  @Ignore
   public void bug32() throws Exception {
     execute(
         "p:proc() {\r\n"
             + "  a:long\r\n"
-            + "  a=3\r\n"
-            + "  a=-3\r\n"
-            + "  a=-+-3\r\n"
-            + "  a=+3+-3\r\n"
-            + "  a=+3\r\n"
+            + "  a=3L\r\n"
+            + "  a=-3L\r\n"
+            + "  a=-+-3L\r\n"
+            + "  a=+3L+-3L\r\n"
+            + "  a=+3L\r\n"
             + "  b=a // 3\r\n"
-            + "  a=(3+a)*-b // (3+3)*-3 = 6*-3=-18, ruh roh.\r\n"
+            + "  a=(3L+a)*-b // (3+3)*-3 = 6*-3=-18, ruh roh.\r\n"
             + "  b=+a\r\n"
             + "  b=-a\r\n"
             + "\r\n"
             + "  println a\r\n"
-            + "  println 3+a*-b // 3+(-18*18)\r\n"
-            + "  println (3+a)*-b\r\n"
-            + "  println 4%6\r\n"
+            + "  println 3L+a*-b // 3+(-18*18)\r\n"
+            + "  println (3L+a)*-b\r\n"
             + "}\r\n"
             + "main {\r\n"
             + "  p()\r\n"

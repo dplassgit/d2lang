@@ -542,24 +542,40 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
     Register tempReg = null;
     if (directCompare(leftRo, rightRo)) {
-      // Direct comparison: reg/anything, mem/reg, mem/imm
+      // Direct comparison: reg/anything, mem/reg, mem/imm8, mem/imm32
       emit(
           "cmp %s %s, %s  ; direct comparison",
           Size.of(leftRo.type()).asmType, leftRo.name(), rightRo.name());
     } else {
-      // imm/imm, imm/reg, imm/mem, mem/mem
-      // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the code generator
-      tempReg = resolver.allocate(VarType.INT);
-      String tempRegName = tempReg.sizeByType(leftRo.type());
-      resolver.mov(leftRo.operand(), tempReg);
-      emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
+      if (rightRo.isConstant()) {
+        // it was too big. Need to do even worse indirect comparison.
+        tempReg = resolver.allocate(VarType.INT);
+        String tempRegName = tempReg.sizeByType(leftRo.type());
+        resolver.mov(leftRo.operand(), tempReg);
+        Register rightReg = resolver.allocate(VarType.INT);
+        resolver.mov(rightRo.operand(), rightReg);
+        emit("cmp %s, %s  ; imm comparison", tempRegName, rightReg.sizeByType(rightRo.type()));
+        resolver.deallocate(rightReg);
+      } else {
+        // imm/imm, imm/reg, imm/mem, mem/mem
+        // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the code generator
+        tempReg = resolver.allocate(VarType.INT);
+        String tempRegName = tempReg.sizeByType(leftRo.type());
+        resolver.mov(leftRo.operand(), tempReg);
+        emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
+      }
     }
     emit("%s %s", BINARY_OPCODE.get(operator), destName);
     return tempReg;
   }
 
   /** returns true if we can directly compare left and right. */
-  private static boolean directCompare(ResolvedOperand leftRo, ResolvedOperand rightRo) {
+  private boolean directCompare(ResolvedOperand leftRo, ResolvedOperand rightRo) {
+    // anything vs imm64: false
+    if (ConstantOperand.isImm64(rightRo.operand())) {
+      return false;
+    }
+
     if (leftRo.isRegister()) {
       // reg/anything
       return true;
@@ -568,14 +584,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // cannot do imm/anything
       return false;
     }
-    // can do mem/reg or mem/imm
-    return rightRo.isRegister() || rightRo.isConstant();
-  }
-
-  private static boolean isAnyZero(Operand operand) {
-    return operand.equals(ConstantOperand.ZERO) // int
-        || operand.equals(ConstantOperand.ZERO_LONG)
-        || operand.equals(ConstantOperand.ZERO_BYTE);
+    // left is mem so it's either mem/reg or mem/imm
+    return rightRo.isConstant() || rightRo.isRegister();
   }
 
   private void generateDivMod(BinOp op, Location dest) {
@@ -585,11 +595,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     VarType operandType = leftOperand.type();
     String size = Size.of(operandType).asmType;
 
-    if (rightOperand.isConstant()) {
-      if (isAnyZero(rightOperand)) {
-        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
-      }
-    } else {
+    if (ConstantOperand.isAnyZero(rightOperand)) {
+      throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+    }
+    if (!rightOperand.isConstant()) {
       emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
       String continueLabel = resolver.nextLabel("not_div_by_zero");
       emit("jne %s", continueLabel);

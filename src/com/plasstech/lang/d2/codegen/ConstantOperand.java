@@ -7,23 +7,28 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantOperand<T> implements Operand {
-  // These shouldn't use "of" because "of" sometimes uses these.
+  // These can't use "of" because "of" sometimes uses these.
   public static final ConstantOperand<Integer> ZERO = new ConstantOperand<Integer>(0, VarType.INT);
   public static final ConstantOperand<Integer> ONE = new ConstantOperand<Integer>(1, VarType.INT);
+
   public static final ConstantOperand<Long> ZERO_LONG = new ConstantOperand<Long>(0L, VarType.LONG);
   public static final ConstantOperand<Long> ONE_LONG = new ConstantOperand<Long>(1L, VarType.LONG);
+
   public static final ConstantOperand<Byte> ZERO_BYTE =
       new ConstantOperand<Byte>((byte) 0, VarType.BYTE);
   public static final ConstantOperand<Byte> ONE_BYTE =
       new ConstantOperand<Byte>((byte) 1, VarType.BYTE);
+
   public static final ConstantOperand<Double> ZERO_DBL =
       new ConstantOperand<Double>(0.0, VarType.DOUBLE);
   public static final ConstantOperand<Double> ONE_DBL =
       new ConstantOperand<Double>(1.0, VarType.DOUBLE);
+
   public static final ConstantOperand<Boolean> FALSE =
       new ConstantOperand<Boolean>(false, VarType.BOOL);
   public static final ConstantOperand<Boolean> TRUE =
       new ConstantOperand<Boolean>(true, VarType.BOOL);
+
   public static final ConstantOperand<String> EMPTY_STRING =
       new ConstantOperand<String>("", VarType.STRING);
 
@@ -49,7 +54,7 @@ public class ConstantOperand<T> implements Operand {
     } else if (value == 1L) {
       return ONE_LONG;
     }
-    return new ConstantOperand<Long>(value, VarType.INT);
+    return new ConstantOperand<Long>(value, VarType.LONG);
   }
 
   public static ConstantOperand<Byte> of(byte value) {
@@ -135,5 +140,22 @@ public class ConstantOperand<T> implements Operand {
   @Override
   public int hashCode() {
     return Objects.hash(type(), value());
+  }
+
+  /** Returns true if the operand is an immediate (constant) that is more than 32 bits */
+  public static boolean isImm64(Operand operand) {
+    if (operand.type() == VarType.LONG && operand.isConstant()) {
+      ConstantOperand<Long> longOperand = (ConstantOperand<Long>) operand;
+      long value = longOperand.value();
+      return value > Integer.MAX_VALUE || value < Integer.MIN_VALUE;
+    }
+    return false;
+  }
+
+  public static boolean isAnyZero(Operand operand) {
+    return operand.equals(ZERO) // int
+        || operand.equals(ZERO_LONG)
+        || operand.equals(ZERO_DBL)
+        || operand.equals(ZERO_BYTE);
   }
 }
