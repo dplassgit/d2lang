@@ -24,6 +24,7 @@ public interface VarType {
   VarType VOID = new SimpleType("VOID");
   Set<VarType> NUMERIC_TYPES =
       ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.DOUBLE, VarType.LONG);
+  Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.LONG);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",

@@ -67,4 +67,7 @@ public class DefaultNodeVisitor implements NodeVisitor {
 
   @Override
   public void visit(ArrayLiteralNode node) {}
+
+  @Override
+  public void visit(IncDecNode incDecNode) {}
 }

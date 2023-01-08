@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
@@ -43,6 +44,7 @@ import com.plasstech.lang.d2.parse.node.ExitNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -759,6 +761,17 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       formalLocations.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
     }
     return formalLocations.build();
+  }
+
+  @Override
+  public void visit(IncDecNode node) {
+    Location dest = lookupLocation(node.name());
+    node.setLocation(dest);
+    if (node.isIncrement()) {
+      emit(new Inc(dest, node.position()));
+    } else {
+      emit(new Dec(dest, node.position()));
+    }
   }
 
   private void emit(Op op) {

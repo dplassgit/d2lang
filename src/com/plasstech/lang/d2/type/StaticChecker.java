@@ -26,6 +26,7 @@ import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
+import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
@@ -1127,5 +1128,43 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         needsReturn.remove(proc);
       }
     }
+  }
+
+  @Override
+  public void visit(IncDecNode node) {
+    // make sure variable is a byte, int, long.
+    Symbol symbol = symbolTable().getRecursive(node.name());
+    if (symbol == null || symbol.varType().isUnknown() || !symbol.isAssigned()) {
+      // cannot do this, we do not know what type it is.
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Cannot %screment '%s'; type is unknown",
+                  node.isIncrement() ? "in" : "de", node.name()),
+              node.position()));
+      return;
+    }
+    VarType type = symbol.varType();
+    if (type == VarType.PROC) {
+      // can't assign to a proc
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Cannot %screment '%s'; already declared as PROC",
+                  node.isIncrement() ? "in" : "de", node.name()),
+              node.position()));
+      return;
+    }
+    if (!VarType.INTEGRAL_TYPES.contains(type)) {
+      // It was already in the symbol table, but not aintegral
+      errors.add(
+          new TypeException(
+              String.format(
+                  "Cannot %screment variable '%s'; already declared as %s",
+                  node.isIncrement() ? "in" : "de", node.name(), type),
+              node.position()));
+      return;
+    }
+    node.setVarType(type);
   }
 }

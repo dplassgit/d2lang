@@ -31,6 +31,7 @@ import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
+import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
@@ -1480,21 +1481,10 @@ public class ParserTest {
     BlockNode root = parseStatements("a++");
     assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    IncDecNode node = (IncDecNode) root.statements().get(0);
 
-    VariableSetNode lvalue = (VariableSetNode) node.lvalue();
-    assertThat(lvalue.name()).isEqualTo("a");
-
-    ExprNode expr = node.expr();
-
-    BinOpNode binOp = (BinOpNode) expr;
-    VariableNode var = (VariableNode) binOp.left();
-    assertThat(var.name()).isEqualTo("a");
-
-    assertThat(binOp.operator()).isEqualTo(TokenType.PLUS);
-
-    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
-    assertThat(right.value()).isEqualTo(1);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.isIncrement()).isTrue();
   }
 
   @Test
@@ -1502,21 +1492,10 @@ public class ParserTest {
     BlockNode root = parseStatements("a--");
     assertThat(root.statements()).hasSize(1);
 
-    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    IncDecNode node = (IncDecNode) root.statements().get(0);
 
-    VariableSetNode lvalue = (VariableSetNode) node.lvalue();
-    assertThat(lvalue.name()).isEqualTo("a");
-
-    ExprNode expr = node.expr();
-
-    BinOpNode binOp = (BinOpNode) expr;
-    VariableNode var = (VariableNode) binOp.left();
-    assertThat(var.name()).isEqualTo("a");
-
-    assertThat(binOp.operator()).isEqualTo(TokenType.MINUS);
-
-    ConstNode<Integer> right = (ConstNode<Integer>) binOp.right();
-    assertThat(right.value()).isEqualTo(1);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.isIncrement()).isFalse();
   }
 
   private BlockNode parseStatements(String expression) {

@@ -185,7 +185,8 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void incDec() throws Exception {
-    execute("a=42 a=a+1 print a a=41 a=a-1 print a", "incDec");
+    execute("a=42 a=a+1 print a a=a-1 print a", "incDec");
+    execute("f:proc(a:int) {a=a+1 print a a=a-1 print a} f(42)", "incDec");
   }
 
   @Test

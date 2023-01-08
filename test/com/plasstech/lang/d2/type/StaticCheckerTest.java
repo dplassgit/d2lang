@@ -16,9 +16,11 @@ import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
+import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
+import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
@@ -1324,13 +1326,25 @@ public class StaticCheckerTest {
 
   @Test
   public void badIncDec() {
-    assertError("a=1.0 a++", "DOUBLE but right is INT");
-    assertError("a=1.0 a--", "DOUBLE but right is INT");
-    assertError("a=true a++", "to left operand of type BOOL");
-    assertError("a=true a--", "to left operand of type BOOL");
-    assertError("a='' a++", "STRING but right is INT");
-    // this is weird, but at least it catches it.
-    assertError("a='' a--", "to left operand of type STRING");
+    assertError("a++", "type is unknown");
+    assertError("a=1.0 a++", "already declared as DOUBLE");
+    assertError("a=1.0 a--", "already declared as DOUBLE");
+    assertError("a=true a++", "already declared as BOOL");
+    assertError("a=true a--", "already declared as BOOL");
+    assertError("a='' a++", "already declared as STRING");
+    assertError("a='' a--", "already declared as STRING");
+  }
+
+  @Test
+  public void goodIncDec() {
+    checkProgram("a=1 a++");
+    checkProgram("a=1 a--");
+    //    checkProgram("a=1L a++"); // TODO revive this when longs work.
+
+    State state = safeTypeCheck("a=0y1 a--");
+    StatementNode node = state.programNode().statements().statements().get(1);
+    assertThat(node).isInstanceOf(IncDecNode.class);
+    assertThat(node.varType()).isEqualTo(VarType.BYTE);
   }
 
   private void assertError(String program, String messageShouldMatch) {
