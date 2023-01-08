@@ -197,7 +197,9 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void incDec() throws Exception {}
+  public void incDec() throws Exception {
+    execute("a=3L a-- println a a++ println a", "incdec");
+  }
 
   @Test
   public void bug32() throws Exception {

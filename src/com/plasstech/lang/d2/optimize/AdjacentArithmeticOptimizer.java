@@ -93,7 +93,6 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     return false;
   }
 
-  // TODO: update this for long
   private Operand combine(
       Operand left, Operand right, TokenType firstOperator, TokenType secondOperator) {
     Number firstConst = fromConstOperand(left);
@@ -124,8 +123,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
             // div, then mult
             // temp2=temp1/first, temp3=temp2*second
             // =temp3=(temp1/first)*second
-            // =temp3=temp/(first/second) (NOTE DIV) THIS IS BROKEN because of rounding.
-            // should be instead temp*(second/first)
+            // =temp3=temp/(first/second)
             // mult then div:
             // temp2=temp1*first, temp3=temp2/second
             // =temp3=(temp1*first)/second
@@ -135,6 +133,52 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
               return null;
             }
             return ConstantOperand.of(firstConst.intValue() / secondConst.intValue());
+          }
+        default:
+          break;
+      }
+    } else if (left.type() == VarType.LONG) {
+      switch (firstOperator) {
+        case PLUS:
+        case MINUS:
+          if (firstOperator == secondOperator) {
+            return ConstantOperand.of(firstConst.longValue() + secondConst.longValue());
+          } else {
+            return ConstantOperand.of(firstConst.longValue() - secondConst.longValue());
+          }
+        case DIV:
+        case MULT:
+          if (firstOperator == secondOperator) {
+            return ConstantOperand.of(firstConst.longValue() * secondConst.longValue());
+          } else {
+            if (firstConst.longValue() < secondConst.longValue() || secondConst.longValue() == 0) {
+              logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0L");
+              return null;
+            }
+            return ConstantOperand.of(firstConst.longValue() / secondConst.longValue());
+          }
+        default:
+          break;
+      }
+    } else if (left.type() == VarType.BYTE) {
+      switch (firstOperator) {
+        case PLUS:
+        case MINUS:
+          if (firstOperator == secondOperator) {
+            return ConstantOperand.of((byte) (firstConst.byteValue() + secondConst.byteValue()));
+          } else {
+            return ConstantOperand.of((byte) (firstConst.byteValue() - secondConst.byteValue()));
+          }
+        case DIV:
+        case MULT:
+          if (firstOperator == secondOperator) {
+            return ConstantOperand.of((byte) (firstConst.byteValue() * secondConst.byteValue()));
+          } else {
+            if (firstConst.byteValue() < secondConst.byteValue() || secondConst.byteValue() == 0) {
+              logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0y0");
+              return null;
+            }
+            return ConstantOperand.of((byte) (firstConst.byteValue() / secondConst.byteValue()));
           }
         default:
           break;
@@ -163,7 +207,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
           break;
       }
     }
-    logger.at(loggingLevel).log("Cannot optimize operator yet %s", firstOperator);
+    logger.at(loggingLevel).log("Cannot optimize operator %s yet", firstOperator);
     return null;
   }
 

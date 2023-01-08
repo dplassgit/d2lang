@@ -20,6 +20,9 @@ public class AdjacentArithmeticOptimizerTest {
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
   private static final TempLocation TEMP3 = new TempLocation("temp3", VarType.INT);
+  private static final TempLocation LTEMP1 = new TempLocation("temp1", VarType.LONG);
+  private static final TempLocation LTEMP2 = new TempLocation("temp2", VarType.LONG);
+  private static final TempLocation LTEMP3 = new TempLocation("temp3", VarType.LONG);
   private static final TempLocation DTEMP1 = new TempLocation("temp1", VarType.DOUBLE);
   private static final TempLocation DTEMP2 = new TempLocation("temp2", VarType.DOUBLE);
   private static final TempLocation DTEMP3 = new TempLocation("temp3", VarType.DOUBLE);
@@ -62,6 +65,27 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(first.operator()).isEqualTo(TokenType.PLUS);
     ConstantOperand<Double> right = (ConstantOperand<Double>) first.right();
     assertThat(right.value()).isEqualTo(2);
+  }
+
+  @Test
+  public void multMultLong() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(LTEMP2, LTEMP1, TokenType.MULT, ConstantOperand.of(123123L), null),
+            new BinOp(LTEMP3, LTEMP2, TokenType.MULT, ConstantOperand.of(234234L), null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    BinOp first = (BinOp) optimized.get(0);
+    assertThat(first.destination()).isEqualTo(LTEMP3);
+    assertThat(first.left()).isEqualTo(LTEMP1);
+    assertThat(first.operator()).isEqualTo(TokenType.MULT);
+
+    ConstantOperand<Long> right = (ConstantOperand<Long>) first.right();
+    assertThat(right.value()).isGreaterThan(Integer.MAX_VALUE);
+    assertThat(right.value()).isEqualTo(123123L * 234234L);
   }
 
   @Test

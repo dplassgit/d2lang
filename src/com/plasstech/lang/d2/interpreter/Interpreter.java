@@ -567,25 +567,33 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Inc op) {
-    Object target = resolve(op.target());
-    if (target instanceof Integer) {
-      int previous = (int) target;
-      setValue(op.target(), previous + 1);
-    } else {
-      byte previous = (byte) target;
-      setValue(op.target(), (byte) (previous + 1));
+    Location target = op.target();
+    Number targetValue = (Number) resolve(target);
+    if (target.type() == VarType.INT) {
+      int previous = targetValue.intValue();
+      setValue(target, previous + 1);
+    } else if (target.type() == VarType.LONG) {
+      long previous = targetValue.longValue();
+      setValue(target, previous + 1);
+    } else if (target.type() == VarType.BYTE) {
+      byte previous = targetValue.byteValue();
+      setValue(target, (byte) (previous + 1));
     }
   }
 
   @Override
   public void visit(Dec op) {
-    Object target = resolve(op.target());
-    if (target instanceof Integer) {
-      int previous = (int) target;
-      setValue(op.target(), previous - 1);
-    } else {
-      byte previous = (byte) target;
-      setValue(op.target(), (byte) (previous - 1));
+    Location target = op.target();
+    Number targetValue = (Number) resolve(target);
+    if (target.type() == VarType.INT) {
+      int previous = targetValue.intValue();
+      setValue(target, previous - 1);
+    } else if (target.type() == VarType.LONG) {
+      long previous = targetValue.longValue();
+      setValue(target, previous - 1);
+    } else if (target.type() == VarType.BYTE) {
+      byte previous = targetValue.byteValue();
+      setValue(target, (byte) (previous - 1));
     }
   }
 

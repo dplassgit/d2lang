@@ -521,19 +521,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateBinOp(ResolvedOperand source, String destName, TokenType operator) {
-    if (source.isConstant() && source.type() == VarType.LONG) {
-      ConstantOperand<Long> longOp = (ConstantOperand<Long>) source.operand();
-      long value = longOp.value();
-      if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
-        // adjust for OPCODE REG, imm64 if the constant is too big.
-        emitter.emit("; constant is larger than 32 bits, must use intermediary");
-        Register tempReg = resolver.allocate(VarType.INT);
-        resolver.mov(source.operand(), tempReg);
-        emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, tempReg.name());
-        resolver.deallocate(tempReg);
-        // NOTE RETURN
-        return;
-      }
+    if (ConstantOperand.isImm64(source.operand())) {
+      // adjust for OPCODE REG, imm64 if the constant is too big.
+      emitter.emit("; constant is larger than 32 bits, must use intermediary");
+      Register tempReg = resolver.allocate(VarType.INT);
+      resolver.mov(source.operand(), tempReg);
+      emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, tempReg.name());
+      resolver.deallocate(tempReg);
+      // NOTE RETURN
+      return;
     }
     emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, source.name());
   }
@@ -546,24 +542,24 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit(
           "cmp %s %s, %s  ; direct comparison",
           Size.of(leftRo.type()).asmType, leftRo.name(), rightRo.name());
+    } else if (rightRo.isConstant()) {
+      // Normally we'd do a direct comparison, but the RHS was too big. Need to do even worse
+      // indirect comparison.
+      tempReg = resolver.allocate(VarType.INT);
+      String tempRegName = tempReg.sizeByType(leftRo.type());
+      resolver.mov(leftRo.operand(), tempReg);
+      Register rightReg = resolver.allocate(VarType.INT);
+      resolver.mov(rightRo.operand(), rightReg);
+      emit("cmp %s, %s  ; imm comparison", tempRegName, rightReg.sizeByType(rightRo.type()));
+      resolver.deallocate(rightReg);
     } else {
-      if (rightRo.isConstant()) {
-        // it was too big. Need to do even worse indirect comparison.
-        tempReg = resolver.allocate(VarType.INT);
-        String tempRegName = tempReg.sizeByType(leftRo.type());
-        resolver.mov(leftRo.operand(), tempReg);
-        Register rightReg = resolver.allocate(VarType.INT);
-        resolver.mov(rightRo.operand(), rightReg);
-        emit("cmp %s, %s  ; imm comparison", tempRegName, rightReg.sizeByType(rightRo.type()));
-        resolver.deallocate(rightReg);
-      } else {
-        // imm/imm, imm/reg, imm/mem, mem/mem
-        // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the code generator
-        tempReg = resolver.allocate(VarType.INT);
-        String tempRegName = tempReg.sizeByType(leftRo.type());
-        resolver.mov(leftRo.operand(), tempReg);
-        emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
-      }
+      // imm/imm, imm/reg, imm/mem, mem/mem
+      // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the ILCodeGenerator
+      // (doesn't it do this?!)
+      tempReg = resolver.allocate(VarType.INT);
+      String tempRegName = tempReg.sizeByType(leftRo.type());
+      resolver.mov(leftRo.operand(), tempReg);
+      emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
     }
     emit("%s %s", BINARY_OPCODE.get(operator), destName);
     return tempReg;

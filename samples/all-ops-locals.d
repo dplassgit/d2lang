@@ -4,5 +4,13 @@ fun:proc():int {
   return g 
 } 
 println "Should be -86715:"
-print fun()
+println fun()
+
+funlong:proc():long { 
+  a=10L b=20L c=30L d=40L e=50L f=60L g=30L
+  h=a+a*(b-c*(b+d*(e-f*(g+a)*(b-c*(b+d)*(e+f*(g-a))))))
+  return h 
+} 
+println "Should be -64799424605790:"
+println funlong()
 
