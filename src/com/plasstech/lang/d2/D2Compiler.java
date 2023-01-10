@@ -15,6 +15,7 @@ import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.NasmCodeGenerator;
 import com.plasstech.lang.d2.common.D2Options;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
@@ -83,7 +84,18 @@ public class D2Compiler {
       state.stopOnError(options.debugopt > 0 || options.showStackTraces);
     }
 
-    state = new NasmCodeGenerator().execute(state);
+    switch (options.target) {
+      case x64:
+        state = new NasmCodeGenerator().execute(state);
+        break;
+      default:
+        state =
+            state.addException(
+                new D2RuntimeException(
+                    "Cannot generate asm for " + options.target + " yet", null, "D2 Compiler"));
+        state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
+        break;
+    }
     if (options.debugcodegen > 0) {
       System.out.println("------------------------------");
       System.out.println("\nASM CODE:");
@@ -93,7 +105,7 @@ public class D2Compiler {
 
     File dir = new File(System.getProperty("user.dir"));
     String baseName = Files.getNameWithoutExtension(sourceFilename);
-    File asmFile = new File(dir, baseName + ".asm");
+    File asmFile = new File(dir, baseName + "." + options.target.extension);
     if (asmFile.exists()) {
       asmFile.delete();
     }
@@ -105,41 +117,59 @@ public class D2Compiler {
     // wait until now to throw the exception so that we've written the asm file.
     state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
     if (!options.compileOnly) {
-      File objFile = new File(dir, baseName + ".obj");
-      if (objFile.exists()) {
-        objFile.delete();
+      switch (options.target) {
+        case x64:
+          x64Assemble(options, dir, baseName, asmFile);
+          break;
+
+        default:
+          state =
+              state.addException(
+                  new D2RuntimeException(
+                      "Cannot assemble for " + options.target + " yet", null, "D2 Compiler"));
+          break;
       }
-      // Assemble
-      ProcessBuilder pb =
-          new ProcessBuilder(
-              "nasm", "-fwin64", asmFile.getAbsolutePath(), "-o", objFile.getAbsolutePath());
+    }
+    if (!options.saveTemps) {
+      asmFile.delete();
+    }
+    state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
+  }
+
+  private static void x64Assemble(D2Options options, File dir, String baseName, File asmFile)
+      throws IOException, InterruptedException {
+
+    File objFile = new File(dir, baseName + ".obj");
+    if (objFile.exists()) {
+      objFile.delete();
+    }
+    // Assemble
+    ProcessBuilder pb =
+        new ProcessBuilder(
+            "nasm", "-fwin64", asmFile.getAbsolutePath(), "-o", objFile.getAbsolutePath());
+    pb.directory(dir);
+    if (options.showCommands) {
+      System.out.println(Joiner.on(" ").join(pb.command()));
+    }
+    Process process = pb.start();
+    process.waitFor();
+    assertNoProcessError(process, "Assembling");
+
+    if (!options.compileAndAssembleOnly) {
+      File exeFile = new File(dir, options.exeName);
+      if (exeFile.exists()) {
+        exeFile.delete();
+      }
+      pb = new ProcessBuilder("gcc", objFile.getAbsolutePath(), "-o", exeFile.getAbsolutePath());
       pb.directory(dir);
       if (options.showCommands) {
         System.out.println(Joiner.on(" ").join(pb.command()));
       }
-      Process process = pb.start();
+      process = pb.start();
       process.waitFor();
-      assertNoProcessError(process, "Assembling");
-
-      if (!options.compileAndAssembleOnly) {
-        File exeFile = new File(dir, options.exeName);
-        if (exeFile.exists()) {
-          exeFile.delete();
-        }
-        pb = new ProcessBuilder("gcc", objFile.getAbsolutePath(), "-o", exeFile.getAbsolutePath());
-        pb.directory(dir);
-        if (options.showCommands) {
-          System.out.println(Joiner.on(" ").join(pb.command()));
-        }
-        process = pb.start();
-        process.waitFor();
-        assertNoProcessError(process, "Linking");
-        if (!options.saveTemps) {
-          objFile.delete();
-        }
-      }
+      assertNoProcessError(process, "Linking");
       if (!options.saveTemps) {
-        asmFile.delete();
+        objFile.delete();
       }
     }
   }

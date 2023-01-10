@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.common;
 
+import com.google.devtools.common.options.EnumConverter;
 import com.google.devtools.common.options.Option;
 import com.google.devtools.common.options.OptionsBase;
 
@@ -68,4 +69,17 @@ public class D2Options extends OptionsBase {
       help = "Shows full stack trace of compile-time errors",
       defaultValue = "false")
   public boolean showStackTraces;
+
+  @Option(
+      name = "target",
+      help = "Target architecture",
+      defaultValue = "x64",
+      converter = TargetConverter.class)
+  public Target target;
+
+  public static class TargetConverter extends EnumConverter<Target> {
+    public TargetConverter() {
+      super(Target.class, "Target");
+    }
+  }
 }
