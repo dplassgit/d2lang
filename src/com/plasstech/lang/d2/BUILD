@@ -3,6 +3,7 @@ java_binary(name="D2Compiler",
             deps=[
               "//src/com/plasstech/lang/d2/codegen",
               "//src/com/plasstech/lang/d2/codegen/il",
+              "//src/com/plasstech/lang/d2/codegen/x64",
               "//src/com/plasstech/lang/d2/common",
               "//src/com/plasstech/lang/d2/lex",
               "//src/com/plasstech/lang/d2/optimize",

@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.EmitterSubject.assertThat;
+import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 
 import org.junit.Before;
 import org.junit.Ignore;

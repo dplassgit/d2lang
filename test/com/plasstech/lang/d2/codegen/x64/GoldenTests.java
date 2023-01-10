@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen;
+package com.plasstech.lang.d2.codegen.x64;
 
 import static org.junit.Assert.fail;
 
@@ -19,7 +19,6 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.codegen.x64.NasmCodeGeneratorTestBase;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */

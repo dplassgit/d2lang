@@ -1,0 +1,10 @@
+java_library(
+  name="testing",
+  srcs=["EmitterSubject.java",],
+  deps=[
+    "//src/com/plasstech/lang/d2/codegen",
+    "@maven//:com_google_guava_guava",
+    "@maven//:com_google_truth_truth",
+  ],
+  visibility=["//visibility:public"],
+)
