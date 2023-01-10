@@ -52,6 +52,7 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
@@ -74,7 +75,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private Node root;
   private SymTab symbolTable;
 
   private final List<Op> operations = new ArrayList<>();
@@ -86,21 +86,24 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public State execute(State input) {
-    root = input.programNode();
     symbolTable = input.symbolTable();
     try {
-      ImmutableList<Op> code = generate();
+      ImmutableList<Op> code = generate(input.programNode());
       return input.addIlCode(code);
     } catch (D2RuntimeException re) {
       return input.addException(re);
     }
   }
 
-  private ImmutableList<Op> generate() {
+  private ImmutableList<Op> generate(ProgramNode root) {
     root.accept(this);
-    // If there is no "main", there won't be a "stop". Add one. It'll get optimized out.
     emit(new Stop());
     return ImmutableList.copyOf(operations);
+  }
+
+  private void emit(Op op) {
+    logger.atFine().log("%s", op.toString());
+    operations.add(op);
   }
 
   private SymTab symbolTable() {
@@ -119,6 +122,40 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     String name = String.format("__temp%d", ++id);
     symbolTable().declareTemp(name, varType);
     return new TempLocation(name, varType);
+  }
+
+  private Location lookupLocation(String name) {
+    Symbol variable = symbolTable().getRecursive(name);
+    if (variable == null) {
+      throw new IllegalStateException(
+          String.format("Cannot find location of %s in symbol table", name));
+    }
+    switch (variable.storage()) {
+      case HEAP:
+      case GLOBAL:
+        return new MemoryAddress(name, variable.varType());
+      case LOCAL:
+        LocalSymbol local = (LocalSymbol) variable;
+        // captures its offset
+        return new StackLocation(local.name(), local.varType(), local.offset());
+      case PARAM:
+        ParamSymbol param = (ParamSymbol) variable;
+        return new ParamLocation(name, variable.varType(), param.index(), param.offset());
+      default:
+        throw new IllegalStateException(
+            String.format(
+                "Cannot create location of %s of type %s in symbol table",
+                name, variable.storage()));
+    }
+  }
+
+  private static <T> ConstantOperand<T> toConstOperand(ConstNode<T> node) {
+    return new ConstantOperand<T>(node.value(), node.varType());
+  }
+
+  @Override
+  public void visit(MainNode node) {
+    node.block().accept(this);
   }
 
   @Override
@@ -218,10 +255,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
   }
 
-  private static <T> ConstantOperand<T> toConstOperand(ConstNode<T> node) {
-    return new ConstantOperand<T>(node.value(), node.varType());
-  }
-
   @Override
   public void visit(AssignmentNode node) {
     Node rhs = node.expr();
@@ -311,8 +344,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(NewNode node) {
     RecordSymbol symbol = (RecordSymbol) symbolTable().getRecursive(node.recordName());
-    //    MemoryAddress location = allocateMemory(symbol.varType());
-    // TODO: this is causing issues with inline optimizer, not surprisngly...
     TempLocation recordLocation = allocateTemp(symbol.varType());
     node.setLocation(recordLocation);
     emit(new AllocateOp(recordLocation, symbol, node.position()));
@@ -328,31 +359,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new ArrayAlloc(fieldTemp, at, ConstantOperand.of(size), node.position()));
       // 2. set the field to the temp
       emit(new FieldSetOp(recordLocation, symbol, af.name(), fieldTemp, node.position()));
-    }
-  }
-
-  private Location lookupLocation(String name) {
-    Symbol variable = symbolTable().getRecursive(name);
-    if (variable == null) {
-      throw new IllegalStateException(
-          String.format("Cannot find location of %s in symbol table", name));
-    }
-    switch (variable.storage()) {
-      case HEAP:
-      case GLOBAL:
-        return new MemoryAddress(name, variable.varType());
-      case LOCAL:
-        LocalSymbol local = (LocalSymbol) variable;
-        // captures its offset
-        return new StackLocation(local.name(), local.varType(), local.offset());
-      case PARAM:
-        ParamSymbol param = (ParamSymbol) variable;
-        return new ParamLocation(name, variable.varType(), param.index(), param.offset());
-      default:
-        throw new IllegalStateException(
-            String.format(
-                "Cannot create location of %s of type %s in symbol table",
-                name, variable.storage()));
     }
   }
 
@@ -521,9 +527,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     rhs.accept(this);
 
     // calculate the value and put it somewhere.
-    TempLocation destination = allocateTemp(node.varType());
-    node.setLocation(destination);
-
     switch (node.operator()) {
       case MINUS:
       case BIT_NOT:
@@ -531,10 +534,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       case LENGTH:
       case ASC:
       case CHR:
+        TempLocation destination = allocateTemp(node.varType());
+        node.setLocation(destination);
         emit(new UnaryOp(destination, node.operator(), rhs.location(), node.position()));
         break;
       case PLUS:
-        // tiny optimization - ignores the tmep.
+        // tiny optimization: a=+b -> a=b
         node.setLocation(rhs.location());
         break;
       default:
@@ -627,14 +632,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // continue = go to the "increment" label
     String before = whileContinues.peek();
     emit(new Goto(before));
-  }
-
-  @Override
-  public void visit(MainNode node) {
-    // TODO: something about arguments? probably add to local symbol table
-    // Also TODO: how to reference arguments
-    node.block().accept(this);
-    emit(new Stop());
   }
 
   @Override
@@ -772,10 +769,5 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     } else {
       emit(new Dec(dest, node.position()));
     }
-  }
-
-  private void emit(Op op) {
-    logger.atFine().log("%s", op.toString());
-    operations.add(op);
   }
 }
