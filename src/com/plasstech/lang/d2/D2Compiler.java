@@ -13,7 +13,7 @@ import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.NasmCodeGenerator;
+import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
 import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.lex.Lexer;

@@ -9,7 +9,7 @@ import java.util.TreeSet;
 
 import com.google.common.base.Preconditions;
 
-class StringTable implements ConstTable<String> {
+public class StringTable implements ConstTable<String> {
   private final List<StringEntry> orderedEntries = new ArrayList<>();
   // Values sorted by descending length, with hash as tiebreak
   private final Set<String> values =

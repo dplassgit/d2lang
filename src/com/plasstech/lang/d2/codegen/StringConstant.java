@@ -19,7 +19,7 @@ class StringConstant extends StringEntry {
   }
 
   @Override
-  String dataEntry() {
+  public String dataEntry() {
     StringBuilder escaped = new StringBuilder();
     boolean inQuote = false;
     for (char c : value().toCharArray()) {
@@ -41,6 +41,7 @@ class StringConstant extends StringEntry {
     if (inQuote) {
       escaped.append("\", ");
     }
+    // this might not work for non-nasm
     return String.format("%s: db %s0", name(), escaped);
   }
 }

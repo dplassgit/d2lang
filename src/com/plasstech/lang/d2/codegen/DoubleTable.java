@@ -8,7 +8,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 /** Stores a table of DoubleEntry values, mapped by... double value. */
-class DoubleTable implements ConstTable<Double> {
+public class DoubleTable implements ConstTable<Double> {
   private final Map<Double, DoubleEntry> entries = new HashMap<>();
   private int index;
 

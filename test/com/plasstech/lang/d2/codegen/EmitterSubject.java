@@ -11,7 +11,7 @@ import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Ordered;
 import com.google.common.truth.Subject;
 
-class EmitterSubject extends Subject {
+public class EmitterSubject extends Subject {
 
   private final Emitter actual;
 
@@ -64,4 +64,3 @@ class EmitterSubject extends Subject {
     return assertAbout(EmitterSubject::new).that(actual);
   }
 }
-

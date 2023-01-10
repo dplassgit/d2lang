@@ -8,7 +8,8 @@ class DoubleEntry extends ConstEntry<Double> {
   }
 
   @Override
-  String dataEntry() {
+  public String dataEntry() {
+    // This definitely won't work for non-nasm
     return String.format("%s: dq %f", name(), value());
   }
 }

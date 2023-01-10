@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.List;
 
-interface ConstTable<T> {
+public interface ConstTable<T> {
 
   void add(T value);
 

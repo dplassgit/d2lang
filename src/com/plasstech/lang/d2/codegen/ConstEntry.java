@@ -1,7 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 /** Represents an abstract constant in the nasm data section. */
-abstract class ConstEntry<T> {
+public abstract class ConstEntry<T> {
   private final T value;
   private final String name;
 
@@ -9,14 +9,14 @@ abstract class ConstEntry<T> {
     this.name = name;
     this.value = value;
   }
-  
-  T value() {
+
+  public T value() {
     return value;
   }
 
-  String name() {
+  public String name() {
     return name;
   }
 
-  abstract String dataEntry();
+  public abstract String dataEntry();
 }

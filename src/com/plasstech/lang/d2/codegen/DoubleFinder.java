@@ -9,8 +9,8 @@ import com.plasstech.lang.d2.type.VarType;
  *
  * @see ConstFinder
  */
-class DoubleFinder {
-  DoubleTable execute(ImmutableList<Op> code) {
+public class DoubleFinder {
+  public DoubleTable execute(ImmutableList<Op> code) {
     DoubleTable doubleTable = new DoubleTable();
     ConstFinder<Double> constFinder =
         new ConstFinder<Double>(doubleTable, vt -> vt == VarType.DOUBLE);

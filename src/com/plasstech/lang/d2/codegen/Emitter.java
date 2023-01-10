@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.codegen;
 
 import com.google.common.collect.ImmutableList;
 
-interface Emitter {
+public interface Emitter {
 
   /** "Emit" a line at column 0. */
   void emit0(String string, Object... values);
