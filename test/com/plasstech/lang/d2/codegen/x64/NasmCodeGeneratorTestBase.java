@@ -20,7 +20,6 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;

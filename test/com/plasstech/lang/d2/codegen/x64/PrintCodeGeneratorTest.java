@@ -14,9 +14,6 @@ import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
-import com.plasstech.lang.d2.codegen.x64.PrintCodeGenerator;
-import com.plasstech.lang.d2.codegen.x64.Registers;
-import com.plasstech.lang.d2.codegen.x64.Resolver;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 @RunWith(TestParameterInjector.class)

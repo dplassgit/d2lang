@@ -5,9 +5,6 @@ import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
-import com.plasstech.lang.d2.codegen.x64.IntRegister;
-import com.plasstech.lang.d2.codegen.x64.Register;
-import com.plasstech.lang.d2.codegen.x64.Registers;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.VarType;
 

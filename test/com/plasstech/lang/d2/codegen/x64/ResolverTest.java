@@ -12,10 +12,6 @@ import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
-import com.plasstech.lang.d2.codegen.x64.IntRegister;
-import com.plasstech.lang.d2.codegen.x64.Registers;
-import com.plasstech.lang.d2.codegen.x64.Resolver;
-import com.plasstech.lang.d2.codegen.x64.XmmRegister;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ResolverTest {

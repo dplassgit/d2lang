@@ -827,7 +827,7 @@ class ArithmeticOptimizer extends LineOptimizer {
    *
    * @return true if both operands are constants.
    */
-  private boolean optimizeCompare(BinOp op, BiPredicate<Comparable, Comparable> fun) {
+  private boolean optimizeCompare(BinOp op, BiPredicate<Comparable<?>, Comparable<?>> fun) {
     Location destination = op.destination();
     Operand left = op.left();
     Operand right = op.right();
@@ -835,14 +835,12 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (left.isConstant() && right.isConstant()) {
       ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
       ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-      Comparable leftval = (Comparable) leftConstant.value();
-      Comparable rightval = (Comparable) rightConstant.value();
+      Comparable<?> leftval = (Comparable<?>) leftConstant.value();
+      Comparable<?> rightval = (Comparable<?>) rightConstant.value();
 
       try {
         boolean result = fun.test(leftval, rightval);
-        replaceCurrent(
-            new Transfer(
-                destination, ConstantOperand.of(fun.test(leftval, rightval)), op.position()));
+        replaceCurrent(new Transfer(destination, ConstantOperand.of(result), op.position()));
         return true;
       } catch (NullPointerException npe) {
         throw new D2RuntimeException("Null pointer error", op.position(), "Null pointer");

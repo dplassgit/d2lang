@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -13,16 +14,10 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
-import com.plasstech.lang.d2.codegen.x64.IntRegister;
-import com.plasstech.lang.d2.codegen.x64.RecordCodeGenerator;
-import com.plasstech.lang.d2.codegen.x64.RegisterLocation;
-import com.plasstech.lang.d2.codegen.x64.Registers;
-import com.plasstech.lang.d2.codegen.x64.Resolver;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.RecordReferenceType;
-import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -32,8 +27,6 @@ public class RecordCodeGeneratorTest {
   private static final Joiner NEWLINE_JOINER = Joiner.on("\n");
 
   private SymTab symTab = new SymTab();
-  private RecordSymbol recordSymbol =
-      symTab.declareRecord(new RecordDeclarationNode(RECORD_NAME, ImmutableList.of(), null));
 
   private static final VarType RECORD_TYPE = new RecordReferenceType(RECORD_NAME);
   private static final Location LEFT = new RegisterLocation("left", IntRegister.RDX, RECORD_TYPE);
@@ -48,6 +41,11 @@ public class RecordCodeGeneratorTest {
   private Resolver resolver = new Resolver(registers, null, null, emitter);
 
   private RecordCodeGenerator sut = new RecordCodeGenerator(resolver, symTab, emitter);
+
+  @Before
+  public void setUp() {
+    symTab.declareRecord(new RecordDeclarationNode(RECORD_NAME, ImmutableList.of(), null));
+  }
 
   @Test
   public void variableEqeqNull() {

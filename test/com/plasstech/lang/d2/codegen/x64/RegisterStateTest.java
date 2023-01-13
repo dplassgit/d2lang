@@ -7,11 +7,6 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
-import com.plasstech.lang.d2.codegen.x64.IntRegister;
-import com.plasstech.lang.d2.codegen.x64.Register;
-import com.plasstech.lang.d2.codegen.x64.RegisterState;
-import com.plasstech.lang.d2.codegen.x64.Registers;
-import com.plasstech.lang.d2.codegen.x64.XmmRegister;
 import com.plasstech.lang.d2.type.VarType;
 
 public class RegisterStateTest {
