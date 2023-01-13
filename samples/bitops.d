@@ -1,30 +1,14 @@
-a=123 
-b=a&64 
-c=a|31
-d=!a
+p:proc(pa:int) {
+  println pa
+  pb=pa&640
+  pc=pa|311
+  pd=!pa
+  pe=pa^456
 
-p:proc(pa:int):int {
-pb=pa&64 
-pc=pa|31
-pd=!pa
-pa=234
-
-println pa
-println pb
-println pc
-println pd
-
-pb=pa&pa 
-pc=pa|pa
-pd=pa+pa
-pe=pa-pa
-pf=pa/pa
-
-return pa
+  println pb
+  println pc
+  println pd
+  println pe
 }
 
-println a
-println b
-println c
-println d
-p(123)
+p(1234567)

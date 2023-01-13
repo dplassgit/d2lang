@@ -13,6 +13,7 @@ import com.google.common.io.CharSource;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.devtools.common.options.OptionsParser;
+import com.plasstech.lang.d2.codegen.t100.T100CodeGenerator;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
 import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
@@ -76,6 +77,10 @@ public class D2Compiler {
         state = new NasmCodeGenerator().execute(state);
         break;
 
+      case t100:
+        state = new T100CodeGenerator().execute(state);
+        break;
+
       default:
         state =
             state.addException(
@@ -92,7 +97,23 @@ public class D2Compiler {
     }
 
     if (options.optimizeAsm) {
-      state = new NasmOptimizer(options.debugopt).execute(state);
+      switch (options.target) {
+        case x64:
+          state = new NasmOptimizer(options.debugopt).execute(state);
+          if (options.debugcodegen > 0) {
+            System.out.println("------------------------------");
+            System.out.println("\nOPTIMIZED ASM CODE:");
+            System.out.println(Joiner.on("\n").join(state.asmCode()));
+            System.out.println("------------------------------");
+          }
+          break;
+
+        case t100:
+          break;
+
+        default:
+          break;
+      }
     }
 
     File dir = new File(System.getProperty("user.dir"));
@@ -112,6 +133,10 @@ public class D2Compiler {
       switch (options.target) {
         case x64:
           x64Assemble(options, dir, baseName, asmFile);
+          break;
+
+        // no assembly yet for t100
+        case t100:
           break;
 
         default:

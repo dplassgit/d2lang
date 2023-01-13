@@ -11,7 +11,7 @@ println c
 p:proc(n:int):int {
   // n = 4
   m = n + 1 + 6 // 11
-  print m // print 11
+  println m // print 11
   n = n + 1 // 5
   m = 1 + m // 12
   return n + m // 17

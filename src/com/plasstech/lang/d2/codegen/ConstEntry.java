@@ -5,7 +5,7 @@ public abstract class ConstEntry<T> {
   private final T value;
   private final String name;
 
-  ConstEntry(String name, T value) {
+  public ConstEntry(String name, T value) {
     this.name = name;
     this.value = value;
   }
