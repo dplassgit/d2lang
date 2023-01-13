@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -14,7 +15,7 @@ public abstract class ListEmitter implements Emitter {
 
   private final List<String> code = new ArrayList<>();
   private final Set<String> externs = new TreeSet<>();
-  private final Set<String> data = new TreeSet<>();
+  private final Set<String> data = new LinkedHashSet<>();
 
   @Override
   public void emit0(String format, Object... values) {

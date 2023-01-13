@@ -14,9 +14,8 @@ class Registers implements RegistersInterface {
   private final Set<Register> used = new HashSet<>();
 
   @Override
-  public Register reserve(Register r) {
+  public void reserve(Register r) {
     used.add(r);
-    return r;
   }
 
   @Override

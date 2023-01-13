@@ -6,6 +6,7 @@ java_binary(
     ],
     deps = [
         ":yet_another_compiler",
+        "//src/com/plasstech/lang/d2/codegen/t100",
         "//src/com/plasstech/lang/d2/codegen/x64",
         "//src/com/plasstech/lang/d2/codegen/x64/optimize",
         "//src/com/plasstech/lang/d2/common",

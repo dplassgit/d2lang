@@ -228,12 +228,12 @@ class Resolver implements RegistersInterface {
 
   /** Allocate and return a register. */
   @Override
-  public Register reserve(Register r) {
+  public void reserve(Register r) {
     if (inProc) {
       usedRegisters.add(r);
     }
     emitter.emit("; reserving %s", r);
-    return registers.reserve(r);
+    registers.reserve(r);
   }
 
   @Override

@@ -4,7 +4,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertAbout;
 import static java.util.Arrays.asList;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
@@ -40,6 +42,14 @@ public class EmitterSubject extends Subject {
     return this;
   }
 
+  private List<String> allEmitterOutputTrimmed() {
+    return Stream.of(actual.externs(), actual.data(), actual.all())
+        .flatMap(Collection::stream)
+        .map(EmitterSubject::trim)
+        .filter(s -> !s.isEmpty())
+        .collect(toImmutableList());
+  }
+
   public void containsExactly(String... lines) {
     List<String> expected = asList(lines);
     check("containsExactly")
@@ -61,8 +71,8 @@ public class EmitterSubject extends Subject {
   public Ordered containsAtLeast(String... lines) {
     List<String> expected = asList(lines);
     return check("contains")
-        .that(trimAll(actual.all()))
-        .containsAtLeastElementsIn(trimAll(expected));
+        .that(allEmitterOutputTrimmed())
+        .containsAtLeastElementsIn(trim(expected));
   }
 
   public void isEmpty() {
@@ -77,6 +87,13 @@ public class EmitterSubject extends Subject {
           .filter(s -> !s.isEmpty())
           .collect(toImmutableList());
     }
+  }
+
+  private ImmutableList<String> trim(List<String> all) {
+    return all.stream()
+        .map(s -> optionallyTrim(s))
+        .filter(s -> !s.isEmpty())
+        .collect(toImmutableList());
   }
 
   private String optionallyTrim(String s) {

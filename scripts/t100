@@ -1,0 +1,3 @@
+# ./scripts/dcc samples/$1.d  --debugcodegen=2 --target=t100 -S $* --save-temps && python $PYTHONPATH/assembler.py $1.as -t
+BASE=`basename -s .d $1`
+./scripts/dcc $1 --target=t100 -S $* --save-temps && python $PYTHONPATH/assembler.py $BASE.as -t -o $BASE.bas && cat $BASE.bas
