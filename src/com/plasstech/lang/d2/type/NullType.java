@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.type;
 
 /** A simple type representing NULL - compatible with any record type, and nulls. */
-class NullType extends SimpleType {
+class NullType extends PointerType {
   NullType() {
-    // nulls are pointers so their size is 8 (!)
-    super("NULL", 8);
+    super("NULL");
   }
-  
+
   @Override
   public boolean isNull() {
     return true;

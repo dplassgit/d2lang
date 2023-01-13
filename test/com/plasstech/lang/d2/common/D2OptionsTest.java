@@ -21,9 +21,9 @@ public class D2OptionsTest {
 
   @Test
   public void targetFlag() throws Exception {
-    optionsParser.parse(ImmutableList.of("--target=java"));
+    optionsParser.parse(ImmutableList.of("--target=t100"));
     D2Options options = optionsParser.getOptions(D2Options.class);
-    assertThat(options.target).isEqualTo(Target.java);
+    assertThat(options.target).isEqualTo(Target.t100);
   }
 
   @Test

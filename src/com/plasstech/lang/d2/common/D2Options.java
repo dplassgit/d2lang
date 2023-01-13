@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.common;
 import com.google.devtools.common.options.EnumConverter;
 import com.google.devtools.common.options.Option;
 import com.google.devtools.common.options.OptionsBase;
+import com.google.devtools.common.options.OptionsParsingException;
 
 public class D2Options extends OptionsBase {
   @Option(name = "help", abbrev = 'h', help = "Prints usage info.", defaultValue = "false")
@@ -80,6 +81,13 @@ public class D2Options extends OptionsBase {
   public static class TargetConverter extends EnumConverter<Target> {
     public TargetConverter() {
       super(Target.class, "Target");
+    }
+
+    @Override
+    public Target convert(String input) throws OptionsParsingException {
+      Target it = super.convert(input);
+      Target.setTarget(it);
+      return it;
     }
   }
 }

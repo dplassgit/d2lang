@@ -2,23 +2,14 @@ package com.plasstech.lang.d2.type;
 
 import java.util.Objects;
 
-public class ArrayType implements VarType {
+public class ArrayType extends PointerType {
   private final VarType baseType;
   private final int dimensions;
 
   public ArrayType(VarType baseType, int dimensions) {
+    super("ARRAY of " + baseType.name());
     this.baseType = baseType;
     this.dimensions = dimensions;
-  }
-
-  @Override
-  public String name() {
-    return "ARRAY";
-  }
-
-  @Override
-  public int size() {
-    return 8;
   }
 
   public int dimensions() {
@@ -46,7 +37,7 @@ public class ArrayType implements VarType {
     }
     return this.hashCode() == that.hashCode();
   }
-  
+
   @Override
   public int hashCode() {
     return Objects.hash(name(), dimensions(), baseType());
@@ -54,6 +45,6 @@ public class ArrayType implements VarType {
 
   @Override
   public String toString() {
-    return String.format("%d-d ARRAY of %s", dimensions(), baseType.name());
+    return String.format("%d-d %s", dimensions(), name());
   }
 }

@@ -3,21 +3,9 @@ package com.plasstech.lang.d2.type;
 import java.util.Objects;
 
 /** A forward (or backward) reference to a record type. */
-public class RecordReferenceType implements VarType {
-  private final String name;
-
+public class RecordReferenceType extends PointerType {
   public RecordReferenceType(String recordSymbolName) {
-    this.name = recordSymbolName;
-  }
-
-  @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public int size() {
-    return 8;
+    super(recordSymbolName);
   }
 
   @Override
@@ -27,7 +15,7 @@ public class RecordReferenceType implements VarType {
 
   @Override
   public String toString() {
-    return String.format("%s: RECORD", name);
+    return String.format("%s: RECORD", name());
   }
 
   @Override

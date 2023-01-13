@@ -14,7 +14,7 @@ public interface VarType {
   VarType NULL = new NullType();
   VarType PROC = new SimpleType("PROC");
   VarType STRING =
-      new SimpleType("STRING", 8) {
+      new PointerType("STRING") {
         @Override
         public boolean compatibleWith(VarType that) {
           return super.compatibleWith(that) || that.isNull();
