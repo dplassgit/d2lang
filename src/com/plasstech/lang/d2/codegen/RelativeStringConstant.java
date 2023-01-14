@@ -22,7 +22,7 @@ class RelativeStringConstant extends StringEntry {
 
   @Override
   public String dataEntry() {
-    // this might not work for non-nasm
-    return String.format("%s EQU %s+%d", name(), base(), offset());
+    // This works in both nasm and the t100 assembler
+    return String.format("%s EQU %s+0x%02x", name(), base(), offset());
   }
 }
