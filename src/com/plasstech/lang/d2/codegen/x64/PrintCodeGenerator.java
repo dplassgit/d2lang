@@ -4,6 +4,7 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
@@ -84,7 +85,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
           if (!arg.isConstant()) {
             // check for null; if null, change format to printing null
             emitter.emit("cmp QWORD %s, 0", RDX);
-            String notNullLabel = resolver.nextLabel("not_null");
+            String notNullLabel = Labels.nextLabel("not_null");
             emitter.emit("jne %s", notNullLabel);
             setUpFormat(Format.NULL, isNewline);
             emitter.emitLabel(notNullLabel);

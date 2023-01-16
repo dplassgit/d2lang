@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.DoubleFinder;
 import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -608,7 +609,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     if (!rightOperand.isConstant()) {
       emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
-      String continueLabel = resolver.nextLabel("not_div_by_zero");
+      String continueLabel = Labels.nextLabel("not_div_by_zero");
       emit("jne %s", continueLabel);
 
       emit0("\n  ; division by zero. print error and stop");
@@ -833,8 +834,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     callGenerator.generate(op);
     ProcSymbol procSym = op.procSym();
     if (procSym.isExtern()) {
-      String alignedLabel = resolver.nextLabel("aligned");
-      String afterLabel = resolver.nextLabel("afterExternCall");
+      String alignedLabel = Labels.nextLabel("aligned");
+      String afterLabel = Labels.nextLabel("afterExternCall");
       String externName = procSym.name();
       emitter.addExtern(externName);
       emitter.emit("test rsp, 8");

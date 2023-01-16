@@ -5,6 +5,7 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -92,7 +93,7 @@ class DoubleCodeGenerator {
       // NOTE: register needs to be on the left.
       emitter.emit("comisd %s, %s  ; detect division by zero", zeroReg, right);
       resolver.deallocate(zeroReg);
-      String continueLabel = resolver.nextLabel("not_div_by_zero");
+      String continueLabel = Labels.nextLabel("not_div_by_zero");
       emitter.emit("jne %s", continueLabel);
 
       emitter.emit0("\n  ; division by zero. print error and stop");

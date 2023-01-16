@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
 
@@ -32,7 +33,7 @@ class NullPointerCheckGenerator {
       emitter.emit("; forcing NPE check for constant null");
       generateNPEMessage(position);
     } else if (!source.isConstant()) {
-      String dest = resolver.nextLabel("not_npe");
+      String dest = Labels.nextLabel("not_npe");
       emitter.emit("cmp QWORD %s, 0", sourceName);
       emitter.emit("jne %s", dest);
       generateNPEMessage(position);

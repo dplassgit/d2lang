@@ -17,6 +17,7 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -206,12 +207,6 @@ class Resolver implements RegistersInterface {
   /** Returns true if the given operand is in the given register. */
   boolean isInRegister(Operand arg, Register register) {
     return toRegister(arg) == register;
-  }
-
-  private static int id;
-
-  String nextLabel(String prefix) {
-    return String.format("__%s_%d", prefix, id++);
   }
 
   /** Allocate and return a register. */

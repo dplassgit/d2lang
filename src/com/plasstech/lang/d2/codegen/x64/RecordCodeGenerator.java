@@ -8,6 +8,7 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
@@ -149,17 +150,17 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64(), leftName);
     emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
     resolver.deallocate(tempReg);
-    String notSameObjectLabel = resolver.nextLabel("not_same_object");
+    String notSameObjectLabel = Labels.nextLabel("not_same_object");
     emitter.emit("jne %s", notSameObjectLabel);
 
     emitter.emit("; same objects, done.");
     emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
-    String endLabel = resolver.nextLabel("record_cmp_end");
+    String endLabel = Labels.nextLabel("record_cmp_end");
     emitter.emit("jmp %s", endLabel);
 
     emitter.emitLabel(notSameObjectLabel);
     emitter.emit("; not the same objects: test left for null");
-    String leftNotNullLabel = resolver.nextLabel("left_not_null");
+    String leftNotNullLabel = Labels.nextLabel("left_not_null");
     emitter.emit("cmp QWORD %s, 0", leftName);
     emitter.emit("jne %s", leftNotNullLabel);
     emitter.emit("; left is null, right is not null (it's not === left), done.");
@@ -170,7 +171,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("; left is not null: test right for null");
 
     // if right == null: return op == NEQ
-    String bothNotNullLabel = resolver.nextLabel("both_not_null");
+    String bothNotNullLabel = Labels.nextLabel("both_not_null");
     emitter.emit("cmp QWORD %s, 0", rightName);
     emitter.emit("jne %s", bothNotNullLabel);
 

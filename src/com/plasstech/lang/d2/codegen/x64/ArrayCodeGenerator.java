@@ -9,6 +9,7 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
@@ -77,7 +78,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     } else {
       // Validate array size is positive.
       emitter.emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
-      String continueLabel = resolver.nextLabel("continue");
+      String continueLabel = Labels.nextLabel("continue");
       emitter.emit("jge %s", continueLabel);
 
       emitter.addData(ARRAY_SIZE_ERR);
@@ -246,8 +247,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       return;
     }
 
-    String endLabel = resolver.nextLabel("array_cmp_short_circuit");
-    String nonNullarraycmp = resolver.nextLabel("non_null_array_cmp");
+    String endLabel = Labels.nextLabel("array_cmp_short_circuit");
+    String nonNullarraycmp = Labels.nextLabel("non_null_array_cmp");
     Register tempReg = resolver.allocate(VarType.INT);
     String leftName = resolver.resolve(op.left());
     String rightName = resolver.resolve(op.right());
@@ -256,7 +257,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("mov QWORD %s, %s ; array compare setup", tempReg.name64(), leftName);
     emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
     resolver.deallocate(tempReg);
-    String nextTest = resolver.nextLabel("next_arraycmp_test");
+    String nextTest = Labels.nextLabel("next_arraycmp_test");
     emitter.emit("jne %s", nextTest);
 
     emitter.emit("; same objects");
@@ -266,7 +267,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("; not the same objects: test for null");
     emitter.emitLabel(nextTest);
     // if left == null: return op == NEQ
-    nextTest = resolver.nextLabel("next_arraycmp_test");
+    nextTest = Labels.nextLabel("next_arraycmp_test");
     if (leftName.equals("0")) {
       emitter.emit("; left is literal null");
       emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
@@ -314,7 +315,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     Register rightLengthReg = resolver.allocate(VarType.INT);
     generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
 
-    String continueLabel = resolver.nextLabel("array_memcmp");
+    String continueLabel = Labels.nextLabel("array_memcmp");
     emitter.emit("cmp %s, %s", leftLengthReg.name32(), rightLengthReg.name32());
     resolver.deallocate(rightLengthReg);
     emitter.emit("je %s", continueLabel);
@@ -389,7 +390,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         // 2. compare - NOTE SWAPPED ARGS
         emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32(), index);
         // 3. if good, continue
-        String continueLabel = resolver.nextLabel("good_array_index");
+        String continueLabel = Labels.nextLabel("good_array_index");
         emitter.emit("jg %s", continueLabel);
 
         emitter.emit0("\n  ; no good. print error and stop");
@@ -418,7 +419,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // Validate index part 1
       emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
-      String continueLabel = resolver.nextLabel("continue");
+      String continueLabel = Labels.nextLabel("continue");
       emitter.emit("jge %s", continueLabel);
 
       // print error and stop.
@@ -447,7 +448,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // 2. compare
       emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32());
       // 3. if good, continue
-      continueLabel = resolver.nextLabel("continue");
+      continueLabel = Labels.nextLabel("continue");
       emitter.emit("jl %s", continueLabel);
 
       emitter.emit0("\n  ; no good. print error and stop");

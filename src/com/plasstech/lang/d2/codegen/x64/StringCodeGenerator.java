@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -141,8 +142,8 @@ class StringCodeGenerator {
 
     String leftName = resolver.resolve(op.left());
     String rightName = resolver.resolve(op.right());
-    String endLabel = resolver.nextLabel("string_compare_end");
-    String compareLeftLabel = resolver.nextLabel("compare_left_to_null");
+    String endLabel = Labels.nextLabel("string_compare_end");
+    String compareLeftLabel = Labels.nextLabel("compare_left_to_null");
     if (!right.isConstant()) {
       // right is not constant, compare to null, and if not null, jump to comparing left for null
       emitter.emit(
@@ -161,7 +162,7 @@ class StringCodeGenerator {
     }
 
     emitter.emitLabel(compareLeftLabel);
-    String strcmpLabel = resolver.nextLabel("strcmp");
+    String strcmpLabel = Labels.nextLabel("strcmp");
     if (!left.isConstant()) {
       // left is not constant, so it may be null. At this point in the emitted code, right is
       // definitely not null.
@@ -281,7 +282,7 @@ class StringCodeGenerator {
       // Validate index part 1
       emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
       // Note, three underscores
-      String continueLabel = resolver.nextLabel("continue");
+      String continueLabel = Labels.nextLabel("continue");
       emitter.emit("jge %s", continueLabel);
 
       // print error and stop.
@@ -303,7 +304,7 @@ class StringCodeGenerator {
     registerState.condPop();
     // Make sure index isn't >= length
     emitter.emit("cmp EAX, %s", indexName);
-    String goodIndex = resolver.nextLabel("good_string_index");
+    String goodIndex = Labels.nextLabel("good_string_index");
     emitter.emit("jg %s", goodIndex);
 
     // else bad
@@ -323,7 +324,7 @@ class StringCodeGenerator {
       emitter.emit(
           "cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
     }
-    String allocateLabel = resolver.nextLabel("allocate_2_char_string");
+    String allocateLabel = Labels.nextLabel("allocate_2_char_string");
     emitter.emit("jne %s", allocateLabel);
 
     // At runtime, if we got here, we're getting the last character of the given string.
@@ -349,7 +350,7 @@ class StringCodeGenerator {
         resolver.deallocate(tempReg);
       }
     }
-    String afterLabel = resolver.nextLabel("after_string_index");
+    String afterLabel = Labels.nextLabel("after_string_index");
     emitter.emit("jmp %s", afterLabel);
 
     // At runtime, when we get here, we need to copy the single source character to a new string.
@@ -405,9 +406,9 @@ class StringCodeGenerator {
         position, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
 
     // Optimize at runtime for concatenating empty strings
-    String fin = resolver.nextLabel("string_add_end");
-    String testRight = resolver.nextLabel("test_right_string");
-    String justConcatenate = resolver.nextLabel("concatenate");
+    String fin = Labels.nextLabel("string_add_end");
+    String testRight = Labels.nextLabel("test_right_string");
+    String justConcatenate = Labels.nextLabel("concatenate");
     emitter.emit0("");
     emitter.emit("; short-circuit for empty left");
     emitter.emit("cmp %s, 0", leftLengthReg.name32());
