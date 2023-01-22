@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -79,6 +80,17 @@ import com.plasstech.lang.d2.type.VariableSymbol;
 public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final String DIV_BY_0 = "Arithmetic error at line %d, column %d: Division by 0";
+  private static final String NULL_POINTER = "Null pointer error at line %d, column %d";
+
+  private static final String ARRAY_INDEX_NEGATIVE_ERR =
+      "Invalid index error at line %d, column %d: ARRAY index must be non-negative";
+  private static final String ARRAY_INDEX_OOB_ERR =
+      "Invalid index error at line %d, column %d: ARRAY index out of bounds";
+  private static final String STRING_INDEX_NEGATIVE_ERR =
+      "Invalid index error at line %d, column %d: STRING index must be non-negative";
+  private static final String STRING_INDEX_OOB_ERR =
+      "Invalid index error at line %d, column %d: STRING index out of bounds";
 
   private SymbolTable symbolTable;
   private SymbolTable globals;
@@ -121,6 +133,14 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     String name = String.format("__temp%d", ++id);
     VariableSymbol symbol = symbolTable.declareTemp(name, varType);
     return new TempLocation(symbol);
+  }
+
+  private Location allocateLongTemp(VarType varType) {
+    String name = String.format("__longtemp%d", ++id);
+    // do we really need the temp in the symbol table? can we just create
+    // a VariableSymbol?
+    VariableSymbol symbol = symbolTable.declareTemp(name, varType);
+    return new LongTempLocation(symbol);
   }
 
   private Location lookupLocation(String name, Position position) {
@@ -235,7 +255,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   public void visit(ArrayLiteralNode node) {
     // 1. allocate an array of the desired type and length
     // 2. set each value of the array to what we want.
-    TempLocation destination = allocateTemp(node.varType());
+    Location destination = allocateTemp(node.varType());
     node.setLocation(destination);
 
     ArrayType arrayType = node.arrayType();
@@ -362,20 +382,21 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(BinOpNode node) {
     // Calculate the value and put it somewhere
-    Node left = node.left();
+    Node leftNode = node.left();
     // Source for the value of left - either a register or memory location or a constant value.
-    Operand leftSrc;
+    Operand left;
     // if left is a constant, just get it.
-    if (left.isConstant()) {
-      ConstNode<?> simpleLeft = (ConstNode<?>) left;
-      leftSrc = toConstOperand(simpleLeft);
+    if (leftNode.isConstant()) {
+      ConstNode<?> simpleLeft = (ConstNode<?>) leftNode;
+      left = toConstOperand(simpleLeft);
     } else {
-      left.accept(this);
-      leftSrc = left.location();
+      leftNode.accept(this);
+      left = leftNode.location();
     }
 
     TempLocation destination = allocateTemp(node.varType());
     node.setLocation(destination);
+    TokenType operator = node.operator();
 
     String resultIsFalseLabel = null;
     String resultIsTrueLabel = null;
@@ -398,97 +419,222 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     //      value is true
     //    valuissetlabel
 
-    if (node.operator() == TokenType.AND) {
+    if (operator == TokenType.AND) {
       resultIsFalseLabel = nextLabel("short_circuit_result_false");
-      emit(new IfOp(leftSrc, resultIsFalseLabel, true, node.position()));
+      emit(new IfOp(left, resultIsFalseLabel, true, node.position()));
       // ... to be continued
-    } else if (node.operator() == TokenType.OR) {
+    } else if (operator == TokenType.OR) {
       resultIsTrueLabel = nextLabel("short_circuit_result_true");
-      emit(new IfOp(leftSrc, resultIsTrueLabel, false, node.position()));
+      emit(new IfOp(left, resultIsTrueLabel, false, node.position()));
       // ... to be continued
     }
 
     // Calculate the value and put it somewhere
-    Node right = node.right();
+    Node rightNode = node.right();
     // Source for the value of right - either a register or memory location or a constant value.
-    Operand rightSrc;
+    Operand right;
 
-    if (node.operator() == TokenType.DOT) {
+    // TODO: CLEAN THIS CRAP UP
+    if (operator == TokenType.DOT) {
+      left = npeCheck(left, leftNode.position());
+
       // the RHS is a field reference
-      VariableNode rightVarNode = (VariableNode) right;
-      rightSrc = ConstantOperand.of(rightVarNode.name());
+      VariableNode rightVarNode = (VariableNode) rightNode;
+      right = ConstantOperand.of(rightVarNode.name());
     } else {
+      if (operator == TokenType.LBRACKET
+          || (operator == TokenType.PLUS && left.type() == VarType.STRING)) {
+        // make sure "left" isn't null
+        left = npeCheck(left, leftNode.position());
+      }
       // if right is a constant, just get it.
-      if (right.isConstant()) {
-        ConstNode<?> simpleRight = (ConstNode<?>) right;
-        rightSrc = toConstOperand(simpleRight);
+      if (rightNode.isConstant()) {
+        ConstNode<?> simpleRight = (ConstNode<?>) rightNode;
+        right = toConstOperand(simpleRight);
       } else {
-        right.accept(this);
-        rightSrc = right.location();
+        rightNode.accept(this);
+        right = rightNode.location();
+      }
+      if (operator == TokenType.LBRACKET) {
+        // this may be replaced
+        right = indexChecks(left, right, leftNode.position());
       }
 
-      String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
-      if (node.operator() == TokenType.AND) {
-        // value = right (we know left is true, therefore value is true AND right = right)
-        emit(new Transfer(destination, rightSrc, node.position()));
-        // goto valueIsSetLabel
-        emit(new Goto(valueIsSetLabel));
+      if (operator == TokenType.PLUS && left.type() == VarType.STRING) {
+        // make sure "right" isn't null
+        right = npeCheck(right, rightNode.position());
+      }
 
-        // resultisfalse:
-        emit(new Label(resultIsFalseLabel));
-        //   value=false
-        emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
+      if (operator == TokenType.DIV || operator == TokenType.MOD) {
+        right = divBy0Check(rightNode, right);
+      } else if (operator == TokenType.AND || operator == TokenType.OR) {
+        String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+        if (operator == TokenType.AND) {
+          // value = right (we know left is true, therefore value is true AND right = right)
+          emit(new Transfer(destination, right, node.position()));
+          // goto valueIsSetLabel
+          emit(new Goto(valueIsSetLabel));
 
-        // valueIsSetLabel: (continue)
-        emit(new Label(valueIsSetLabel));
+          // resultisfalse:
+          emit(new Label(resultIsFalseLabel));
+          //   value=false
+          emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
 
-      } else if (node.operator() == TokenType.OR) {
-        // value = right (we know left is false, so value is false OR right = right)
-        emit(new Transfer(destination, rightSrc, node.position()));
-        // goto valueIsSetLabel
-        emit(new Goto(valueIsSetLabel));
+          // valueIsSetLabel: (continue)
+          emit(new Label(valueIsSetLabel));
 
-        // resultistrue:
-        emit(new Label(resultIsTrueLabel));
-        //   value=true
-        emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
-        // valueIsSetLabel:
-        emit(new Label(valueIsSetLabel));
+        } else if (operator == TokenType.OR) {
+          // value = right (we know left is false, so value is false OR right = right)
+          emit(new Transfer(destination, right, node.position()));
+          // goto valueIsSetLabel
+          emit(new Goto(valueIsSetLabel));
+
+          // resultistrue:
+          emit(new Label(resultIsTrueLabel));
+          //   value=true
+          emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
+          // valueIsSetLabel:
+          emit(new Label(valueIsSetLabel));
+        }
       }
     }
 
-    // do not do this for AND or OR
-    if (node.operator() != TokenType.AND && node.operator() != TokenType.OR) {
-      emit(new BinOp(destination, leftSrc, node.operator(), rightSrc, node.position()));
+    if ((left.type() == VarType.STRING || left.type().isArray() || left.type().isRecord())
+        && (operator == TokenType.EQEQ || operator == TokenType.NEQ)) {
+      // emit null comparison checks here ?!
     }
+    // do not do this for AND or OR because it's already taken care of
+    if (operator != TokenType.AND && operator != TokenType.OR) {
+      emit(new BinOp(destination, left, operator, right, node.position()));
+    }
+
+    emitDeallocateLongTemp(left, node.position());
+    emitDeallocateLongTemp(right, node.position());
+  }
+
+  private Operand divBy0Check(Node rightNode, Operand right) {
+    if (right.storage() == SymbolStorage.TEMP) {
+      // Copy right to a long lived temp so we can re-use it
+      Location newRight = allocateLongTemp(rightNode.varType());
+      emit(new Transfer(newRight, right, rightNode.position()));
+      right = newRight;
+    }
+    TempLocation divBy0Bool = allocateTemp(VarType.BOOL);
+    ConstantOperand<? extends Number> zero = ConstantOperand.zeroOf(rightNode.varType());
+    emit(new BinOp(divBy0Bool, right, TokenType.EQEQ, zero, rightNode.position()));
+    String continueLabel = Labels.nextLabel("not_div_by_0");
+    emit(new IfOp(divBy0Bool, continueLabel, true));
+
+    emit(new SysCall(DIV_BY_0, rightNode.position().line(), rightNode.position().column()));
+    emit(new Stop(-1));
+    emit(new Label(continueLabel));
+
+    return right;
+  }
+
+  private <T extends Operand> T npeCheck(T operand, Position position) {
+    if (operand.storage() == SymbolStorage.TEMP) {
+      // Copy operand to a long lived temp so we can re-use it
+      Location longTempOperand = allocateLongTemp(operand.type());
+      emit(new Transfer(longTempOperand, operand, position));
+      operand = (T) longTempOperand; // I wish there was a better way.
+    }
+    TempLocation nullRecordBool = allocateTemp(VarType.BOOL);
+    emit(
+        new BinOp(
+            nullRecordBool,
+            operand,
+            TokenType.EQEQ,
+            new ConstantOperand<Void>(null, operand.type()),
+            position));
+    String continueLabel = Labels.nextLabel("not_null");
+    emit(new IfOp(nullRecordBool, continueLabel, true));
+    emit(new SysCall(NULL_POINTER, position.line(), position.column()));
+    emit(new Stop(-1));
+    emit(new Label(continueLabel));
+    // This may be different now
+    return operand;
+  }
+
+  private Operand indexChecks(Operand thingWithIndex, Operand index, Position position) {
+    if (index.storage() == SymbolStorage.TEMP) {
+      // Copy index to a long lived temp so we can re-use it
+      Location longTemp = allocateLongTemp(VarType.INT);
+      emit(new Transfer(longTemp, index, position));
+      index = longTemp;
+    }
+    // len = length(array)
+    Location length = allocateTemp(VarType.INT);
+    emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
+    // indexInBounds = index < length
+    Location indexInBounds = allocateTemp(VarType.BOOL);
+    emit(new BinOp(indexInBounds, index, TokenType.LT, length, position));
+    // if indexInBounds, goto good
+    String indexInBoundsLabel = nextLabel("index_in_bounds");
+    emit(new IfOp(indexInBounds, indexInBoundsLabel, false, position));
+    if (thingWithIndex.type() == VarType.STRING) {
+      emit(new SysCall(STRING_INDEX_OOB_ERR, position.line(), position.column()));
+    } else {
+      emit(new SysCall(ARRAY_INDEX_OOB_ERR, position.line(), position.column()));
+    }
+    emit(new Stop());
+
+    emit(new Label(indexInBoundsLabel));
+
+    // nonNegativeIndex = index >= 0
+    Location nonNegativeIndex = allocateTemp(VarType.BOOL);
+    emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
+    // if nonnegativeindex: goto good
+    String nonNegativeIndexLabel = nextLabel("non_negative_index");
+    emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
+    if (thingWithIndex.type() == VarType.STRING) {
+      emit(new SysCall(STRING_INDEX_NEGATIVE_ERR, position.line(), position.column()));
+    } else {
+      emit(new SysCall(ARRAY_INDEX_NEGATIVE_ERR, position.line(), position.column()));
+    }
+    emit(new Stop());
+
+    emit(new Label(nonNegativeIndexLabel));
+
+    return index;
   }
 
   @Override
   public void visit(UnaryNode node) {
-    Node rhs = node.expr();
-    rhs.accept(this);
+    Node rhsNode = node.expr();
+    rhsNode.accept(this);
 
     // calculate the value and put it somewhere.
+    Location operand = rhsNode.location();
     switch (node.operator()) {
+      case ASC:
+      case LENGTH:
+        operand = npeCheck(operand, rhsNode.position());
+        // fall through:
       case MINUS:
       case BIT_NOT:
       case NOT:
-      case LENGTH:
-      case ASC:
       case CHR:
         TempLocation destination = allocateTemp(node.varType());
         node.setLocation(destination);
-        emit(new UnaryOp(destination, node.operator(), rhs.location(), node.position()));
+        emit(new UnaryOp(destination, node.operator(), operand, node.position()));
+        emitDeallocateLongTemp(operand, node.position());
         break;
 
       case PLUS:
         // tiny optimization: a=+b -> a=b
-        node.setLocation(rhs.location());
+        node.setLocation(operand);
         break;
 
       default:
         logger.atSevere().log("No code generated for node %s", node);
         break;
+    }
+  }
+
+  private void emitDeallocateLongTemp(Operand operand, Position position) {
+    if (operand.storage() == SymbolStorage.LONG_TEMP) {
+      emit(new DeallocateTemp(operand, position));
     }
   }
 
@@ -766,6 +912,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         String fieldName = fsn.fieldName();
 
         RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
+        recordLocation = npeCheck(recordLocation, fsn.position());
         emit(
             new FieldSetOp(
                 recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
@@ -781,6 +928,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       Symbol sym = symbolTable.getRecursive(asn.variableName());
       if (sym != null) {
         Location arrayLocation = lookupLocation(asn.variableName(), null);
+        arrayLocation = npeCheck(arrayLocation, asn.position());
 
         Node indexNode = asn.indexNode();
         indexNode.accept(ILCodeGenerator.this);

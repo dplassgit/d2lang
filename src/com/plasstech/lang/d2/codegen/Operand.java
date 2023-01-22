@@ -21,4 +21,8 @@ public interface Operand {
   default boolean isTemp() {
     return this.storage() == SymbolStorage.TEMP;
   }
+
+  default boolean isNull() {
+    return type().isNull();
+  }
 }

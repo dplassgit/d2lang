@@ -108,6 +108,10 @@ class ArithmeticOptimizer extends LineOptimizer {
     TokenType operator = op.operator();
 
     switch (operator) {
+      case DOT:
+        optimizeDot(op, left, right);
+        return;
+
       case MULT:
         optimizeMultiply(op, left, right);
         return;
@@ -227,6 +231,14 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
   }
 
+  private void optimizeDot(BinOp op, Operand left, Operand right) {
+    if (left.isNull()) {
+      throw new D2RuntimeException(
+          String.format("Cannot retrieve field %s of NULL RECORD", right.toString()), op.position(),
+          "Null pointer");
+    }
+  }
+
   private void optimizeBitXor(BinOp op, Operand left, Operand right) {
     if (ConstantOperand.isAnyZero(right)) {
       // a ^ 0 == a
@@ -276,6 +288,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     try {
+      if (ConstantOperand.isAnyZero(right)) {
+        throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
+      }
       optimizeIntegralArith(op, left, right, (t, u) -> t % u);
     } catch (ArithmeticException e) {
       throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
@@ -391,9 +406,6 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
     if (left.isConstant() && right.isConstant()) {
       // Strings
-      if (left.type() != VarType.STRING) {
-        return;
-      }
       if (right.type().isNull()) {
         throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
       }

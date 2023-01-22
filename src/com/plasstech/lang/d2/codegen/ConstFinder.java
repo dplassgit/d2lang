@@ -37,7 +37,10 @@ class ConstFinder<T> extends DefaultOpcodeVisitor {
   private void addEntry(Operand operand) {
     if (operand.isConstant() && correctType.test(operand.type())) {
       ConstantOperand<T> constOp = (ConstantOperand<T>) operand;
-      constTable.add(constOp.value());
+      T constantValue = constOp.value();
+      if (constantValue != null) {
+        constTable.add(constantValue);
+      }
     }
   }
 

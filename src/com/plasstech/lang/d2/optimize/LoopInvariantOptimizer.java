@@ -130,6 +130,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
     }
 
     private boolean isLocalOrParam(Operand location) {
+      // TODO: Maybe also LONG_TEMP?
       return location.storage() == SymbolStorage.LOCAL || location.storage() == SymbolStorage.PARAM;
     }
 

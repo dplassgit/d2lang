@@ -362,6 +362,18 @@ public class NasmCodeGeneratorTest {
     assertWithoutTrimmingThat(emitter).contains("  ; Deallocating __longtemp from RBX");
   }
 
+  @Test
+  public void compareNulls() {
+    Operand nullOperand = new ConstantOperand<Void>(null, VarType.NULL);
+
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP, nullOperand, TokenType.NEQ, nullOperand, null));
+    generate(program);
+    assertThat(emitter).contains("  xor RSI, RSI");
+    assertThat(emitter).contains("  xor RDI, RDI");
+  }
+
   private State generateOne(Op op) {
     return generate(ImmutableList.of(op));
   }

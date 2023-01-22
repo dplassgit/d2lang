@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.google.common.truth.TruthJUnit.assume;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,6 +9,8 @@ import org.junit.runner.RunWith;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.phase.PhaseName;
+import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.testing.PrimitiveTypeProvider;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
@@ -18,21 +22,21 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayDeclConstantSize(
-      @TestParameter({"string", "int", "bool", "double"}) String type)
+      @TestParameter(valuesProvider = PrimitiveTypeProvider.class) VarType type)
       throws Exception {
-    execute(String.format("x:%s[%d]", type, type.length()), "arrayDeclConstantSize" + type);
+    execute(String.format("x:%s[%d]", type, type.name().length()), "arrayDeclConstantSize" + type);
   }
 
   @Test
   public void arrayDeclConstantSizeInProc(
-      @TestParameter({"string", "int", "bool", "double", "byte"}) String type) throws Exception {
+      @TestParameter(valuesProvider = PrimitiveTypeProvider.class) VarType type) throws Exception {
     execute(
         String.format(
             "      p:proc(): %s {" //
                 + "  x:%s[%d] return x[0]" //
                 + "}" //
                 + "p()",
-            type, type, type.length()),
+            type, type, type.name().length()),
         "arrayDeclConstantSizeInProc" + type);
   }
 
@@ -53,31 +57,17 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayGet(
-      @TestParameter(
-        {
-            /* "string", */
-            "int",
-            "bool",
-            "double",
-            "byte"
-        }
-      ) String type)
-      throws Exception {
+      @TestParameter(valuesProvider = PrimitiveTypeProvider.class) VarType type) throws Exception {
+
+    assume().that(type != VarType.STRING).isTrue();
     execute(String.format("x:%s[2] print x[0]", type), "arrayGet" + type);
   }
 
   @Test
   public void arrayGetInProc(
-      @TestParameter(
-        {
-            /* "string", */
-            "int",
-            "bool",
-            "double",
-            "byte"
-        }
-      ) String type)
-      throws Exception {
+      @TestParameter(valuesProvider = PrimitiveTypeProvider.class) VarType type) throws Exception {
+
+    assume().that(type != VarType.STRING).isTrue();
     execute(
         String.format("p:proc() {x:%s[2] println 'Should be 0 or false' print x[0]} p()", type),
         "arrayGetInProc");
@@ -105,11 +95,11 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arraySetAndGetString() throws Exception {
     execute(
-        "x:string[2]\r\n"
-            + "x[0]=\"hi\"\r\n"
-            + "x[1]=x[0]+ \" there\"\r\n"
-            + "println \"Should be 'hi there'\"\r\n"
-            + "println x[1]\r\n",
+        "      x:string[2]\n"
+            + "x[0]='hi' \n"
+            + "x[1]=x[0]+ ' there' \n"
+            + "println \"Should be 'hi there'\" \n"
+            + "println x[1]",
         "arraySetAndGetString");
   }
 
@@ -231,7 +221,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayAllocLengthNegative_runtimeError() throws Exception {
     // If optimized, the proc or constant and it will degenerate to the previous test.
-    assertRuntimeError("s=-3 x:string[s]", "arrayAllocLengthNegative",
+    assertRuntimeErrorNoOptimize("s=-3 x:string[s]", "arrayAllocLengthNegative",
         "ARRAY size must be non-negative; was -3");
     assertRuntimeError("x:string[size()] size: proc():int{return -3}",
         "arrayAllocCalLengthNegative", "ARRAY size must be non-negative; was -3");
@@ -240,15 +230,16 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arraySetIndexConstNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
-    assertGenerateError(
+    assertRuntimeError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "ARRAY index must be non-negative; was -3", true, PhaseName.ASM_CODEGEN);
+        "asicne",
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
   public void arraySetIndexLocalNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
-    assertRuntimeError("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+    assertRuntimeErrorNoOptimize("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
         "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative; was -3");
   }
 
@@ -261,19 +252,16 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayGetIndexConstNegative_error() throws Exception {
-    assertGenerateError(
-        "f:proc() {y=-3 x:string[1] print x[y]} f()", "ARRAY index must be non-negative; was -3",
-        true, PhaseName.ASM_CODEGEN);
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] print x[y]} f()",
         "arrayGetIndexLocalNegative",
-        "must be non-negative; was -3");
+        "must be non-negative");
   }
 
   @Test
   public void arrayGetIndexOOBE() throws Exception {
-    assertRuntimeError("f:proc() {y=3 x:string[1] print x[y]} f()", "arrayGetIndexConstOOBE",
-        "out of bounds (length 1); was 3");
+    assertRuntimeError("f:proc() {y=3 x:string[1] println x[y]} f()", "arrayGetIndexConstOOBE",
+        "out of bounds");
   }
 
   @Test

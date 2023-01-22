@@ -3,13 +3,13 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
@@ -19,7 +19,6 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
-import com.plasstech.lang.d2.type.SymTab;
 
 @RunWith(TestParameterInjector.class)
 public class ILOptimizerTest {
@@ -76,13 +75,8 @@ public class ILOptimizerTest {
 
   @Test
   public void divByZero() {
-    InterpreterExecutor ee = new InterpreterExecutor("a = 1 / 0");
-    assertThrows(ArithmeticException.class, () -> ee.execute());
-    System.out.println(ee.state());
-
-    assertThrows(
-        D2RuntimeException.class,
-        () -> new ILOptimizer().optimize(ee.state().ilCode(), new SymTab()));
+    assertThrows(D2RuntimeException.class,
+        () -> TestUtils.optimizeAssertSameVariables("b=10 a=b/0"));
   }
 
   @Test
@@ -392,8 +386,15 @@ public class ILOptimizerTest {
   }
 
   @Test
-  public void tempPropagation() {
-    TestUtils.optimizeAssertSameVariables("f:proc(a:int) {b=a+1 print b} f(2)");
+  @Ignore
+  public void recordWithArray() {
+    TestUtils.optimizeAssertSameVariables(
+        "rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 println x.ar");
+  }
+
+  @Test
+  public void stringIndex() {
+    TestUtils.optimizeAssertSameVariables("a='hi' b=a[1] println a println b");
   }
 
   @Test
@@ -423,9 +424,12 @@ public class ILOptimizerTest {
     InterpreterResult result = TestUtils.optimizeAssertSameVariables(
         "f:proc(a:int[]) { println length(a)} f([1,2])");
     OpcodeVisitor ov = new DefaultOpcodeVisitor() {
+      private int sysCallCount = 0;
+
       @Override
       public void visit(SysCall op) {
-        assertThat(op.arg().isConstant()).isFalse();
+        assertThat(op.arg().isConstant()).isEqualTo(sysCallCount == 0);
+        sysCallCount++;
       }
 
       @Override

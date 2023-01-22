@@ -4,6 +4,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/com/plasstech/lang/d2/codegen:location",
+        "//src/com/plasstech/lang/d2/codegen:locations",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/type:symbols",

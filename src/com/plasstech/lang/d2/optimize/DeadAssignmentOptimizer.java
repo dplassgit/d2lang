@@ -54,6 +54,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       case LOCAL:
       case PARAM:
       case REGISTER:
+      case LONG_TEMP:
         assignments.put(destination.baseLocation(), ip());
         break;
 
@@ -158,12 +159,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     // TODO: this is too aggressive; if a variable isn't used the rest of the procedure,
     // it can probably be killed.
     assignments.clear();
+    tempAssignments.clear();
   }
 
   @Override
   public void visit(Goto op) {
     // a goto means potentially a loop and we can't rely on unused non-temps
     assignments.clear();
+    tempAssignments.clear();
   }
 
   @Override
@@ -239,6 +242,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   public void visit(IfOp op) {
     assignments.clear();
+    tempAssignments.clear();
     markRead(op.condition());
   }
 

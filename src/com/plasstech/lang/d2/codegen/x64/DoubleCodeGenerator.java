@@ -5,9 +5,7 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
-import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -58,11 +56,6 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
         if (!destName.equals(leftName)) {
           emitter.emit("movsd %s, %s ; double setup", destName, leftName);
         }
-        if (operator == TokenType.DIV) {
-          generateDivByZero(op);
-        }
-        // This fails if dest is not a register?
-        // 
         emitter.emit(
             "%s %s, %s ; double %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
         break;
@@ -83,35 +76,6 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       default:
         fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
         break;
-    }
-  }
-
-  private void generateDivByZero(BinOp op) {
-    Operand rightOperand = op.right();
-    if (rightOperand.isConstant()) {
-      double rightValue = ConstantOperand.valueFromConstOperand(rightOperand).doubleValue();
-      if (rightValue == 0) {
-        fail("Arithmetic", op.position(), "Division by 0");
-      }
-    } else {
-      Register zeroReg = resolver.allocate(VarType.DOUBLE);
-      emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", zeroReg, zeroReg);
-      String right = resolver.resolve(rightOperand);
-      // NOTE: register needs to be on the left.
-      emitter.emit("comisd %s, %s  ; detect division by zero", zeroReg, right);
-      resolver.deallocate(zeroReg);
-      String continueLabel = Labels.nextLabel("not_div_by_zero");
-      emitter.emit("jne %s", continueLabel);
-
-      emitter.emit("");
-      emitter.emit("; division by zero. print error and stop");
-      emitter.addData(Messages.DIV_BY_ZERO_ERR);
-      emitter.emit("mov EDX, %d  ; line number", op.position().line());
-      emitter.emit("mov RCX, DIV_BY_ZERO_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
     }
   }
 

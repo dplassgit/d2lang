@@ -81,26 +81,30 @@ class Resolver implements RegistersInterface {
    */
   String resolve(Operand operand) {
     if (operand.isConstant()) {
+      if (operand.isNull()) {
+        return "0";
+      }
       if (operand.type().isIntegral()) {
         Number value = ConstantOperand.valueFromConstOperand(operand);
         return value.toString();
-      } else if (operand.type() == VarType.BOOL) {
+      }
+      if (operand.type() == VarType.BOOL) {
         if (operand.equals(ConstantOperand.TRUE)) {
           return "1";
         }
         return "0";
-      } else if (operand.type() == VarType.STRING) {
+      }
+      if (operand.type() == VarType.STRING) {
         // look it up in the string table.
         String value = ConstantOperand.stringValueFromConstOperand(operand);
         ConstEntry<String> entry = stringTable.lookup(value);
         return entry.name();
-      } else if (operand.type() == VarType.DOUBLE) {
+      }
+      if (operand.type() == VarType.DOUBLE) {
         // look it up in the double table.
         double doubleValue = ConstantOperand.valueFromConstOperand(operand).doubleValue();
         ConstEntry<Double> entry = doubleTable.lookup(doubleValue);
         return String.format("[%s]", entry.name());
-      } else if (operand.type().isNull()) {
-        return "0";
       }
 
       fail(null, "Cannot generate %s constant %s yet", operand.type().name(), operand);
@@ -279,6 +283,7 @@ class Resolver implements RegistersInterface {
     if (sourceRo.name().equals(destRo.name())) {
       // do nothing!
       emitter.emit("; mov %s, %s is a nop", destination, source);
+      emitter.emit("; source name %s dest name %s", sourceRo.name(), destRo.name());
       return;
     }
 

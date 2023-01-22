@@ -2,7 +2,7 @@ LOCATION_IMPL_SRCS = [
     "ConstantOperand.java",
     "MemoryAddress.java",
     "Location.java",
-    "Operand.java",
+    "LongTempLocation.java",
     "ParamLocation.java",
     "StackLocation.java",
     "TempLocation.java",
@@ -47,7 +47,8 @@ java_library(
     name = "location",
     srcs = LOCATION_SRCS,
     visibility = ["//visibility:public"],
-    deps = [
+    deps=[
+        "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:var_types",
         "@maven//:com_google_guava_guava",
@@ -60,6 +61,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":location",
+        "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",

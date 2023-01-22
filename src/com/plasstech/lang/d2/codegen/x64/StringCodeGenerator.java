@@ -107,12 +107,10 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final NullPointerCheckGenerator npeCheckGenerator;
 
   public StringCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
-    this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
   /** Generate destName = left operator right for +, [ and comparisons. */
@@ -190,7 +188,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     TokenType operator = op.operator();
 
     // Handle literal nulls
-    if (right.type().isNull() || left.type().isNull()) {
+    if (right.isNull() || left.isNull()) {
       generateCompareVsNull(left, right, destName, operator);
       // NOTE RETURN:
       return;
@@ -318,7 +316,6 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     Operand stringOperand = op.left();
     Operand index = op.right();
     Position position = op.position();
-    npeCheckGenerator.generateNullPointerCheck(position, stringOperand);
 
     String indexName = resolver.resolve(index);
     RegisterState registerState =
@@ -432,7 +429,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
     emitter.emit(
-        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.nameByType(VarType.BYTE));
+        "mov BYTE [RAX], %s  ; move the character into the first location",
+        charReg.nameByType(VarType.BYTE));
     resolver.deallocate(charReg);
     emitter.emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
@@ -448,7 +446,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     Operand left = op.left();
     Operand right = op.right();
     Position position = op.position();
-    // Don't need to check for nulls, because generateStringLength will do it.
+
+    // Don't need to check for nulls, because it's already generated
 
     // 1. get left length
     Register leftLengthReg = resolver.allocate(VarType.INT);
@@ -484,7 +483,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
     emitter.emitLabel(justConcatenate);
     emitter.emit(
-        "add %s, %s  ; Total new string length", leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
+        "add %s, %s  ; Total new string length", leftLengthReg.nameByType(VarType.INT),
+        rightLengthReg.nameByType(VarType.INT));
     emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.nameByType(VarType.INT));
     emitter.emit("; deallocating right length from %s", rightLengthReg);
     resolver.deallocate(rightLengthReg);
@@ -567,7 +567,6 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   /** Generate destination = length(source) */
   private void generateStringLength(Position position, Location destination, Operand source) {
-    npeCheckGenerator.generateNullPointerCheck(position, source);
     String destinationName = resolver.resolve(destination);
     if (source.isConstant()) {
       // Constant string has constant length
@@ -629,7 +628,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     resolver.mov(op.operand(), charReg);
     // 4. write source char in first location
     emitter.emit(
-        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.nameByType(VarType.BYTE));
+        "mov BYTE [RAX], %s  ; move the character into the first location",
+        charReg.nameByType(VarType.BYTE));
     emitter.emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
 
     raxState.condPop();
@@ -643,7 +643,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     VARIABLE;
 
     static Nullness from(Operand op) {
-      if (op.type().isNull()) {
+      if (op.isNull()) {
         return NULL;
       } else if (op.isConstant()) {
         return CONSTANT;

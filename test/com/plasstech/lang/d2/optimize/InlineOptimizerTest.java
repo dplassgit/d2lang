@@ -109,9 +109,8 @@ public class InlineOptimizerTest {
                 + "println r.i",
             OPTIMIZER);
 
-    ImmutableList<Op> code = result.code();
-    // show that there are no calls to the procedure
-    assertNoCalls(code);
+    // With the inline NPE checks, this proc is no longer small enough.
+    assertCall(result, "shortProcGlobalRecord");
   }
 
   @Test
@@ -220,19 +219,8 @@ public class InlineOptimizerTest {
                 + "println twoReturns(10) "
                 + "println twoReturns(-10) ",
             OPTIMIZER);
-    ImmutableList<Op> code = result.code();
 
-    // Show that there are still calls to the procedure
-    OpcodeVisitor visitor =
-        new DefaultOpcodeVisitor() {
-          @Override
-          public void visit(Call op) {
-            assertThat(op.procSym().name()).isEqualTo("twoReturns");
-          }
-        };
-    for (Op op : code) {
-      op.accept(visitor);
-    }
+    assertCall(result, "twoReturns");
   }
 
   @Test
@@ -247,6 +235,10 @@ public class InlineOptimizerTest {
                 + "}"
                 + "println longProc(10)",
             OPTIMIZER);
+    assertCall(result, "longProc");
+  }
+
+  private void assertCall(InterpreterResult result, String procName) {
     ImmutableList<Op> code = result.code();
 
     // Show that there are still calls to the procedure
@@ -254,7 +246,7 @@ public class InlineOptimizerTest {
         new DefaultOpcodeVisitor() {
           @Override
           public void visit(Call op) {
-            assertThat(op.procSym().name()).isEqualTo("longProc");
+            assertThat(op.procSym().name()).isEqualTo(procName);
           }
         };
     for (Op op : code) {

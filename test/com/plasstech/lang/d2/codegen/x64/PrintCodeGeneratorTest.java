@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.StringTable;
@@ -21,7 +22,7 @@ public class PrintCodeGeneratorTest {
   private Registers registers = new Registers();
   private StringTable stringTable = new StringTable();
   private Resolver resolver = new Resolver(registers, stringTable, null, emitter);
-  private PrintCodeGenerator sut = new PrintCodeGenerator(resolver, emitter);
+  private PrintCodeGenerator sut = new PrintCodeGenerator(resolver, stringTable, emitter);
 
   @Before
   public void setUp() {
@@ -43,6 +44,19 @@ public class PrintCodeGeneratorTest {
     ImmutableList<String> code = TestUtils.trimComments(emitter.all());
     assertThat(code)
         .containsAtLeast("mov RDX, CONST_hi_0", "mov RCX, PRINTLN_STRING", "call printf")
+        .inOrder();
+  }
+
+  @Test
+  public void printParameterizedMessage() {
+    String message = "Bad call line %d col %d";
+    stringTable.add(message);
+    ConstEntry<String> entry = stringTable.lookup(message);
+    SysCall op = new SysCall(message, 1, 2);
+    sut.visit(op);
+    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    assertThat(code)
+        .containsAtLeast("mov RCX, " + entry.name(), "mov RDX, 1", "mov R8, 2", "call printf")
         .inOrder();
   }
 }

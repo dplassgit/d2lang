@@ -337,7 +337,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case EQEQ:
       case NEQ:
-        List<Object> rightList = Arrays.asList((Object[]) right);
+        List<Object> rightList = right == null ? null : Arrays.asList((Object[]) right);
         boolean same = leftList.equals(rightList);
         return same == (op.operator() == TokenType.EQEQ);
 
@@ -837,6 +837,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
         if (op.call() == SysCall.Call.PRINTLN) {
           rootEnv.addOutput("\n");
         }
+        break;
+
+      case PARAMETERIZED_MESSAGE:
+        String message = String.format(resolved.toString(), op.getLine(), op.getColumn());
+        String output = String.format("ERROR: %s", message);
+        if (interactive) {
+          System.err.println(output);
+        }
+        rootEnv.addOutput(output);
+        rootEnv.addOutput("\n");
         break;
 
       case MESSAGE:

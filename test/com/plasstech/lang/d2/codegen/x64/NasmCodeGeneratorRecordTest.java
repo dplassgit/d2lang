@@ -186,9 +186,9 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void nullCheck() throws Exception {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
-    assertGenerateError(program, "Cannot retrieve field \"s\" of null object", true,
-        PhaseName.ASM_CODEGEN);
-    assertRuntimeError(program, "nullCheck", "Null pointer error");
+    assertGenerateError(program, "Cannot retrieve field \"s\" of NULL RECORD", true,
+        PhaseName.IL_OPTIMIZE);
+    assertRuntimeErrorNoOptimize(program, "nullCheck", "Null pointer error");
   }
 
   @Test
@@ -275,6 +275,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + " a=4"
             + " f:proc:int{return 1}"
             + " bam = foo[3+a].bar.baz[f()].qux"
+            + " println bam"
             + " if bam != 'hi' { exit 'fail, actual ' + bam} ",
         "advancedRValue_bug158");
   }
@@ -297,7 +298,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void loopInvariantError_bug190_arraySetIsAGet() throws Exception {
-    execute(//assertCompiledEqualsInterpreted(
+    execute(
         "      r1:record{amt: double}\r"
             + "rarray:r1[10]\r"
             + "f:proc {"
@@ -313,7 +314,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "  }"
             + "}"
             + "f()",
-        "loopInvariantError_bug190_arraySetIsAGet"); //, 0, true);
+        "loopInvariantError_bug190_arraySetIsAGet");
   }
 
   @Test

@@ -77,6 +77,7 @@ public enum TokenType {
   COMMA(","),
   DOT("."),
   // For future expansion:
+  SHORT(true), // "short" keyword/type 
   CHAR(true), // indicates the "char" keyword
   DELETE(true), // free a new
   FOR(true), // for (x in array/list)

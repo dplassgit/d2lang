@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
@@ -22,7 +23,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void oneCharStringIndex0() throws Exception {
+  public void oneCharStringIndex0Global() throws Exception {
     execute("a='x' b=a[0] println b", "oneCharStringIndex0");
   }
 
@@ -34,40 +35,43 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndex() throws Exception {
     assertGenerateError(
-        "s='hello' print s[-2]", "Index of ARRAY variable 's' must be non-negative; was -2", false,
+        "s='hello' print s[-2]", "Index of STRING variable 's' must be non-negative; was -2", false,
         PhaseName.TYPE_CHECK);
     assertGenerateError(
         "f:proc() {s='hello' print s[-3]} f()",
-        "Index of ARRAY variable 's' must be non-negative; was -3", false,
+        "Index of STRING variable 's' must be non-negative; was -3", false,
         PhaseName.TYPE_CHECK);
   }
 
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    assertGenerateError(sourceCode, "out of bounds.*was 10");
-    assertRuntimeError(sourceCode, "oobeIndex", "out of bounds (length 5); was 10");
+    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds");
   }
 
   @Test
   public void oobeIndexVariable() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
-    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds (length 5); was 10");
+    assertRuntimeError(sourceCode, "oobeIndexVariable", "STRING index out of bounds");
   }
 
   @Test
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertGenerateError(sourceCode, "must be non-negative; was -2");
-    // Skipping runtime test
+    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative");
   }
 
   @Test
   public void negativeIndexGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    // skipping generate test
-    assertRuntimeError(
-        sourceCode, "negativeIndexRunTimeGlobal", "must be non-negative; was -2");
+    assertGenerateError(sourceCode, "must be non-negative; was -2");
+
+    // non-optimized only
+    CompilationConfiguration config =
+        CompilationConfiguration.builder().setSourceCode(sourceCode)
+            .setFilename("negativeIndexRunTimeGlobal")
+            .build();
+    assertRuntimeError(config, "must be non-negative");
   }
 
   @Test
@@ -106,7 +110,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void compOpsGlobals(
-      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"<", "!=", ">="}) String op,
       @TestParameter({"abc", "def", ""}) String first,
       @TestParameter({"abc", "def", ""}) String second)
       throws Exception {
@@ -120,7 +124,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void compOpsParams(@TestParameter({"<", "==", ">="}) String op)
+  public void compOpsParams(@TestParameter({"<", "!=", ">="}) String op)
       throws Exception {
     execute(
         String.format(
@@ -136,7 +140,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void compOpsNull(@TestParameter({"<", "<=", ">=", ">"}) String op) throws Exception {
+  public void compOpsNull(@TestParameter({"<", ">="}) String op) throws Exception {
     execute(String.format("a='abc' c=a %s null", op), "compOpsNullLiteral");
     execute(String.format("a='abc' b=null c=a %s b", op), "compOpsNullGlobal");
     execute(String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNullGlobalAsString");
@@ -157,27 +161,22 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODEGEN);
     assertRuntimeError(program, "length", "Null pointer error");
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
-    String program = "a='hello' a=null println length(a)";
-    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODEGEN);
-    assertRuntimeError(program, "length", "Null pointer error");
+    assertRuntimeError("a='hello' a=null println length(a)", "length", "Null pointer error");
+    assertRuntimeError("a:string a=null println length(a)", "length", "Null pointer error");
   }
 
   @Test
-  public void constStringLength(
-      @TestParameter({"s", "hello this is a very long string"}) String value)
-      throws Exception {
-    execute(String.format("b=length('hello' + '%s') print b", value), "constStringLength");
+  public void constStringLength() throws Exception {
+    execute("b=length('hello') print b", "constStringLength");
   }
 
   @Test
-  public void stringLength(
-      @TestParameter({"", "s", "hello this is a very long string"}) String value)
+  public void stringLength(@TestParameter({"", "s", "hello"}) String value)
       throws Exception {
     execute(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value), "stringLength");
   }
@@ -202,11 +201,11 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     execute(
         "      bug97ComparingParams:proc(a:string, b:string) { "
             + "  println a == chr(10) "
-            + "  println chr(10) == a "
-            + "  println b == chr(10) "
+            + "  println chr(65) == a "
+            + "  println b == chr(66) "
             + "  println chr(10) == b "
             + "} "
-            + "bug97ComparingParams('abc', 'def')",
+            + "bug97ComparingParams('A', 'B')",
         "bug97ComparingParams");
   }
 

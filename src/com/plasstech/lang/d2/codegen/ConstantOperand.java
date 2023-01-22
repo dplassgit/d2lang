@@ -1,8 +1,11 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -79,6 +82,14 @@ public class ConstantOperand<T> implements Operand {
     return value ? TRUE : FALSE;
   }
 
+  public static ConstantOperand<? extends Number> zeroOf(VarType varType) {
+    ConstantOperand<? extends Number> maybeZero = ZEROS.get(varType);
+    if (maybeZero != null) {
+      return maybeZero;
+    }
+    throw new D2RuntimeException("Unknown zero type " + varType, null, "Internal");
+  }
+
   private final T value;
   private final VarType type;
 
@@ -140,6 +151,11 @@ public class ConstantOperand<T> implements Operand {
     return Objects.hash(type(), value());
   }
 
+  @Override
+  public boolean isNull() {
+    return value() == null;
+  }
+
   /** Returns true if the operand is an immediate (constant) that is more than 32 bits */
   public static boolean isImm64(Operand operand) {
     if (operand.type() == VarType.LONG && operand.isConstant()) {
@@ -149,11 +165,15 @@ public class ConstantOperand<T> implements Operand {
     return false;
   }
 
+  private static Map<VarType, ConstantOperand<? extends Number>> ZEROS =
+      ImmutableMap.of(
+          VarType.BYTE, ZERO_BYTE,
+          VarType.INT, ZERO,
+          VarType.LONG, ZERO_LONG,
+          VarType.DOUBLE, ZERO_DBL);
+
   public static boolean isAnyZero(Operand operand) {
-    return operand.equals(ZERO) // int
-        || operand.equals(ZERO_LONG)
-        || operand.equals(ZERO_DBL)
-        || operand.equals(ZERO_BYTE);
+    return ZEROS.containsValue(operand);
   }
 
   public static boolean isAnyIntOne(Operand operand) {

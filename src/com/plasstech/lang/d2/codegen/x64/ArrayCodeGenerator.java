@@ -37,12 +37,10 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final NullPointerCheckGenerator npeCheckGenerator;
 
   ArrayCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
-    this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
   /** Generate dest:type[size] */
@@ -91,7 +89,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
       if (entrySize > 1) {
         emitter.emit(
-            "imul %s, %s ; total size of entries", allocSizeBytesRegister.nameByType(VarType.INT), entrySize);
+            "imul %s, %s ; total size of entries", allocSizeBytesRegister.nameByType(VarType.INT),
+            entrySize);
       }
       emitter.emit(
           "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
@@ -171,11 +170,6 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
   /** Generate array[index]=source */
   @Override
   public void visit(ArraySet op) {
-    if (!op.isArrayLiteral()) {
-      // array literals are by definition never null.
-      npeCheckGenerator.generateNullPointerCheck(op.position(), op.array());
-    }
-
     Operand sourceLoc = op.source();
     String sourceName = resolver.resolve(sourceLoc);
     ArrayType arrayType = op.arrayType();
@@ -277,6 +271,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("mov QWORD %s, %s ; array compare setup", tempReg.name(), leftName);
     emitter.emit("cmp QWORD %s, %s", tempReg.name(), rightName);
     resolver.deallocate(tempReg);
+
     String nextTest = Labels.nextLabel("next_arraycmp_test");
     emitter.emit("jne %s", nextTest);
 
@@ -301,11 +296,12 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     }
     emitter.emit("; left is not null, test right");
     emitter.emitLabel(nextTest);
-    // if right == null: return op == NEQ
     if (rightName.equals("0")) {
+      // if right == null: return op == NEQ
       emitter.emit("; right is literal null");
       emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
       emitter.emit("jmp %s", endLabel);
+      // WE DON"T NEED TO GENERATE ANY MORE CODE
     } else {
       emitter.emit("cmp QWORD %s, 0", rightName);
       emitter.emit("jne %s", nonNullarraycmp);
@@ -336,7 +332,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
 
     String continueLabel = Labels.nextLabel("array_memcmp");
-    emitter.emit("cmp %s, %s", leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
+    emitter.emit("cmp %s, %s", leftLengthReg.nameByType(VarType.INT),
+        rightLengthReg.nameByType(VarType.INT));
     resolver.deallocate(rightLengthReg);
     emitter.emit("je %s", continueLabel);
     emitter.emit("; sizes are different; definitely not equal");
@@ -407,7 +404,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         // this gets the size in the register
         emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
         // 2. compare - NOTE SWAPPED ARGS
-        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.nameByType(VarType.INT), index);
+        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.nameByType(VarType.INT),
+            index);
         // 3. if good, continue
         String continueLabel = Labels.nextLabel("good_array_index");
         emitter.emit("jg %s", continueLabel);
@@ -468,7 +466,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // this gets the size in the register
       emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
       // 2. compare
-      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.nameByType(VarType.INT));
+      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName,
+          lengthReg.nameByType(VarType.INT));
       // 3. if good, continue
       continueLabel = Labels.nextLabel("continue");
       emitter.emit("jl %s", continueLabel);

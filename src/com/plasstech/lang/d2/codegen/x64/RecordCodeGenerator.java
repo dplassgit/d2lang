@@ -33,13 +33,10 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   private final Emitter emitter;
   private final SymbolTable symTab;
 
-  private final NullPointerCheckGenerator npeCheckGenerator;
-
   RecordCodeGenerator(Resolver resolver, SymbolTable symTab, Emitter emitter) {
     this.resolver = resolver;
     this.symTab = symTab;
     this.emitter = emitter;
-    this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
   /** Generate nasm code to allocate and assign a record. */
@@ -59,9 +56,6 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   /** Generate nasm code to set a field value: record.field = source */
   @Override
   public void visit(FieldSetOp op) {
-    npeCheckGenerator.generateNullPointerCheck(op.position(), op.recordLocation());
-
-    // TODO: does this need to be deallocated?
     String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
@@ -116,7 +110,6 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   public void visit(BinOp op) {
     VarType leftType = op.left().type();
     if (!leftType.isRecord()) {
-      //      emitter.fail("Cannot call RecordGenerator with op %s", op.toString());
       return;
     }
     switch (op.operator()) {
@@ -142,7 +135,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     Operand right = op.right();
     TokenType operator = op.operator();
 
-    if (left.type().isNull() || right.type().isNull()) {
+    if (left.isNull() || right.isNull()) {
       generateNullCompare(destName, left, right, operator);
       // NOTE RETURN
       return;
@@ -229,7 +222,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   private void generateNullCompare(
       String destName, Operand left, Operand right, TokenType operator) {
     emitter.emit("; left or right is constant null, can do simple compare");
-    if (left.type().isNull()) {
+    if (left.isNull()) {
       // just compare right to null
       String rightName = resolver.resolve(right);
       emitter.emit("cmp QWORD %s, 0", rightName);
@@ -241,8 +234,6 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   }
 
   private void generateDot(BinOp op) {
-    npeCheckGenerator.generateNullPointerCheck(op.position(), op.left());
-
     Operand record = op.left();
     if (!record.type().isRecord()) {
       fail(op.position(), "Cannot get field of non record %s", record);

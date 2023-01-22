@@ -477,8 +477,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           errors.add(
               new TypeException(
                   String.format(
-                      "Index of ARRAY variable '%s' must be non-negative; was %d",
-                      left, index.value()),
+                      "Index of %s variable '%s' must be non-negative; was %d",
+                      left.varType().name().toUpperCase(), left, index.value()),
                   right.position()));
         }
       }
