@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse.node;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.Position;
@@ -31,9 +32,9 @@ public class IfNode extends AbstractNode implements StatementNode {
   }
 
   private final List<Case> cases;
-  private final BlockNode elseBlock;
+  private final Optional<BlockNode> elseBlock;
 
-  public IfNode(List<Case> cases, BlockNode elseBlock, Position position) {
+  public IfNode(List<Case> cases, Optional<BlockNode> elseBlock, Position position) {
     super(position);
     Preconditions.checkArgument(cases != null, "cases cannot be null");
     this.cases = cases;
@@ -44,7 +45,7 @@ public class IfNode extends AbstractNode implements StatementNode {
     return cases;
   }
 
-  public BlockNode elseBlock() {
+  public Optional<BlockNode> elseBlock() {
     return elseBlock;
   }
 

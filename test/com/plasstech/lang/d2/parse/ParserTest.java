@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -543,7 +544,7 @@ public class ParserTest {
 
     IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock()).isNull();
+    assertThat(ifNode.elseBlock()).isEmpty();
     IfNode.Case first = ifNode.cases().get(0);
     assertThat(first.block().statements()).isEmpty();
   }
@@ -566,7 +567,9 @@ public class ParserTest {
 
     IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock().statements()).hasSize(2);
+    assertThat(ifNode.elseBlock()).isPresent();
+    // there may be a better way to do this but I don't know how.
+    assertThat(ifNode.elseBlock().get().statements()).hasSize(2);
   }
 
   @Test
@@ -578,7 +581,8 @@ public class ParserTest {
 
     IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(1);
-    assertThat(ifNode.elseBlock().statements()).hasSize(2);
+    assertThat(ifNode.elseBlock()).isPresent();
+    assertThat(ifNode.elseBlock().get().statements()).hasSize(2);
   }
 
   @Test
@@ -594,7 +598,7 @@ public class ParserTest {
 
     IfNode ifNode = (IfNode) statements.get(0);
     assertThat(ifNode.cases()).hasSize(3);
-    assertThat(ifNode.elseBlock()).isNotNull();
+    assertThat(ifNode.elseBlock()).isPresent();
   }
 
   @Test

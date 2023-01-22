@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.type;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 
@@ -768,14 +769,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 stmt.accept(this);
               });
     }
-    if (node.elseBlock() != null) {
-      node.elseBlock()
-          .statements()
-          .forEach(
-              stmt -> {
-                stmt.accept(this);
-              });
-    }
+    node.elseBlock()
+        .ifPresent(
+            block ->
+                block
+                    .statements()
+                    .forEach(
+                        stmt -> {
+                          stmt.accept(this);
+                        }));
   }
 
   @Override
@@ -1040,10 +1042,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           // make sure all the "case" arms have a return
           ok &= checkAllPathsHaveReturn(ifCase.block());
         }
-        BlockNode elseBlock = ifNode.elseBlock();
-        if (elseBlock != null) {
+        Optional<BlockNode> elseBlock = ifNode.elseBlock();
+        // It's annoying to use optiona.ifPresent because the "ok" is not effectively final.
+        if (elseBlock.isPresent()) {
           // make sure the "else" has a return
-          ok &= checkAllPathsHaveReturn(elseBlock);
+          ok &= checkAllPathsHaveReturn(elseBlock.get());
         } else {
           // no "else" - no good.
           ok = false;

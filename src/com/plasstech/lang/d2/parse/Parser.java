@@ -514,7 +514,6 @@ public class Parser implements Phase {
     BlockNode statements = block();
     cases.add(new IfNode.Case(condition, statements));
 
-    BlockNode elseStatements = null;
     // while elif: get condition, get statements, add to case list.
     while (token.type() == TokenType.ELIF) {
       advance();
@@ -524,12 +523,13 @@ public class Parser implements Phase {
       cases.add(new IfNode.Case(elifCondition, (BlockNode) elifStatements));
     }
 
+    Optional<BlockNode> elseBlock = Optional.empty();
     if (token.type() == TokenType.ELSE) {
       advance();
-      elseStatements = block();
+      elseBlock = Optional.of(block());
     }
 
-    return new IfNode(cases, elseStatements, kt.start());
+    return new IfNode(cases, elseBlock, kt.start());
   }
 
   private WhileNode whileStmt(Token kt) {

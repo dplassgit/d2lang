@@ -567,9 +567,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
       emit(new Label(nextLabel));
     }
-    if (node.elseBlock() != null) {
-      node.elseBlock().accept(this);
-    }
+    node.elseBlock().ifPresent(block -> block.accept(this));
 
     emit(new Label(after));
   }

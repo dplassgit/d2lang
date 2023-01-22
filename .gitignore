@@ -34,6 +34,7 @@ bazel-testlogs
 *.o
 *.s
 /*.asm
+/*.asm~
 *.as
 *.obj
 *.exe
