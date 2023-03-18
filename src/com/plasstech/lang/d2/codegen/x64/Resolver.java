@@ -17,7 +17,6 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -88,8 +87,7 @@ class Resolver implements RegistersInterface {
         // TODO: this is weird - should be operand.value.toString?
         return operand.toString();
       } else if (operand.type() == VarType.BOOL) {
-        ConstantOperand<Boolean> boolConst = (ConstantOperand<Boolean>) operand;
-        if (boolConst.value().booleanValue()) {
+        if (operand.equals(ConstantOperand.TRUE)) {
           return "1";
         }
         return "0";

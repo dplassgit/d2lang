@@ -36,10 +36,8 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       case NOT:
         if (operand.isConstant() && operand.type() == VarType.BOOL) {
-          ConstantOperand<Boolean> constant = (ConstantOperand<Boolean>) operand;
-          boolean valueBoolean = constant.value();
-          replaceCurrent(
-              new Transfer(op.destination(), ConstantOperand.of(!valueBoolean), op.position()));
+          boolean value = operand.equals(ConstantOperand.TRUE);
+          replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(!value), op.position()));
         }
         return;
       case BIT_NOT:
@@ -998,13 +996,11 @@ class ArithmeticOptimizer extends LineOptimizer {
 
     Location destination = op.destination();
     if (left.isConstant() && right.isConstant() && left.type() == VarType.BOOL) {
-      ConstantOperand<Boolean> leftConstant = (ConstantOperand<Boolean>) left;
-      ConstantOperand<Boolean> rightConstant = (ConstantOperand<Boolean>) right;
-      boolean leftval = leftConstant.value();
-      boolean rightval = rightConstant.value();
+      boolean leftVal = left.equals(ConstantOperand.TRUE);
+      boolean rightVal = right.equals(ConstantOperand.TRUE);
       replaceCurrent(
           new Transfer(
-              destination, ConstantOperand.of(fun.apply(leftval, rightval)), op.position()));
+              destination, ConstantOperand.of(fun.apply(leftVal, rightVal)), op.position()));
       return true;
     }
     return false;

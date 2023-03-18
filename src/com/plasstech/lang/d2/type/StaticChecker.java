@@ -48,7 +48,7 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultNodeVisitor implements Phase {
-  // also works for bytes
+  // also works for bytes and longs
   private static final Set<TokenType> INT_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,

@@ -30,8 +30,16 @@ import com.plasstech.lang.d2.type.VarType;
  */
 class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   private static final Set<TokenType> FIRST_OPERATORS =
-      ImmutableSet.of(TokenType.PLUS, TokenType.MULT, TokenType.MINUS, TokenType.DIV);
+      ImmutableSet.of(
+          TokenType.BIT_AND,
+          TokenType.BIT_OR,
+          TokenType.BIT_XOR,
+          TokenType.DIV,
+          TokenType.MINUS,
+          TokenType.MULT,
+          TokenType.PLUS);
   private static final Set<TokenType> PLUS_MINUS = ImmutableSet.of(TokenType.PLUS, TokenType.MINUS);
   private static final Set<TokenType> MULT_DIV = ImmutableSet.of(TokenType.MULT, TokenType.DIV);
 
@@ -44,7 +52,6 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     TokenType firstOperator = first.operator();
     if (VarType.isNumeric(first.left().type())
         && first.right().isConstant()
-        // TODO: this can be expanded to other operators
         && (FIRST_OPERATORS.contains(firstOperator))) {
 
       // Potential first in sequence: foo=bar+constant
@@ -99,6 +106,12 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     Number secondConst = fromConstOperand(right);
     if (left.type() == VarType.INT) {
       switch (firstOperator) {
+        case BIT_AND:
+          return ConstantOperand.of(firstConst.intValue() & secondConst.intValue());
+        case BIT_OR:
+          return ConstantOperand.of(firstConst.intValue() | secondConst.intValue());
+        case BIT_XOR:
+          return ConstantOperand.of(firstConst.intValue() ^ secondConst.intValue());
         case MINUS:
         case PLUS:
           if (firstOperator == secondOperator) {
@@ -139,6 +152,12 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       }
     } else if (left.type() == VarType.LONG) {
       switch (firstOperator) {
+        case BIT_AND:
+          return ConstantOperand.of(firstConst.longValue() & secondConst.longValue());
+        case BIT_OR:
+          return ConstantOperand.of(firstConst.longValue() | secondConst.longValue());
+        case BIT_XOR:
+          return ConstantOperand.of(firstConst.longValue() ^ secondConst.longValue());
         case PLUS:
         case MINUS:
           if (firstOperator == secondOperator) {
@@ -162,6 +181,12 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       }
     } else if (left.type() == VarType.BYTE) {
       switch (firstOperator) {
+        case BIT_AND:
+          return ConstantOperand.of((byte) (firstConst.byteValue() & secondConst.byteValue()));
+        case BIT_OR:
+          return ConstantOperand.of((byte) (firstConst.byteValue() | secondConst.byteValue()));
+        case BIT_XOR:
+          return ConstantOperand.of((byte) (firstConst.byteValue() ^ secondConst.byteValue()));
         case PLUS:
         case MINUS:
           if (firstOperator == secondOperator) {
