@@ -7,6 +7,8 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
@@ -31,14 +33,12 @@ import com.plasstech.lang.d2.type.VarType;
 class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final Set<TokenType> FIRST_OPERATORS =
-      ImmutableSet.of(
-          TokenType.BIT_AND,
-          TokenType.BIT_OR,
-          TokenType.BIT_XOR,
-          TokenType.DIV,
-          TokenType.MINUS,
-          TokenType.MULT,
+  private static final Set<TokenType> FIRST_OPERATORS = ImmutableSet.of(//
+          TokenType.BIT_AND, TokenType.BIT_OR, //
+          TokenType.BIT_XOR, //
+          TokenType.DIV, //
+          TokenType.MINUS, //
+          TokenType.MULT, //
           TokenType.PLUS);
   private static final Set<TokenType> PLUS_MINUS = ImmutableSet.of(TokenType.PLUS, TokenType.MINUS);
   private static final Set<TokenType> MULT_DIV = ImmutableSet.of(TokenType.MULT, TokenType.DIV);
@@ -48,11 +48,38 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   }
 
   @Override
+  public void visit(Inc first) {
+    Op secondOp = getOpAt(ip() + 1);
+    if (!(secondOp instanceof Dec)) {
+      return;
+    }
+    Dec second = (Dec) secondOp;
+    if (first.target().equals(second.target())) {
+      // delete both
+      deleteCurrent();
+      deleteAt(ip() + 1);
+    }
+  }
+
+  @Override
+  public void visit(Dec first) {
+    Op secondOp = getOpAt(ip() + 1);
+    if (!(secondOp instanceof Inc)) {
+      return;
+    }
+    Inc second = (Inc) secondOp;
+    if (first.target().equals(second.target())) {
+      // delete both
+      deleteCurrent();
+      deleteAt(ip() + 1);
+    }
+  }
+
+  @Override
   public void visit(BinOp first) {
     TokenType firstOperator = first.operator();
-    if (VarType.isNumeric(first.left().type())
-        && first.right().isConstant()
-        && (FIRST_OPERATORS.contains(firstOperator))) {
+    if (VarType.isNumeric(first.left().type()) && first.right().isConstant()
+            && (FIRST_OPERATORS.contains(firstOperator))) {
 
       // Potential first in sequence: foo=bar+constant
       Op secondOp = getOpAt(ip() + 1);
@@ -63,25 +90,18 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       // second in sequence
       BinOp second = (BinOp) secondOp;
       TokenType secondOperator = second.operator();
-      if (second.left().type().equals(first.left().type())
-          && second.right().isConstant()
-          && areCompatible(secondOperator, firstOperator)
-          && second.left().equals(first.destination())) {
+      if (second.left().type().equals(first.left().type()) && second.right().isConstant()
+              && areCompatible(secondOperator, firstOperator)
+              && second.left().equals(first.destination())) {
 
         logger.at(loggingLevel).log("Potential pair: %s and %s", first, second);
 
-        Operand combinedOperand =
-            combine(first.right(), second.right(), firstOperator, secondOperator);
+        Operand combinedOperand = combine(first.right(), second.right(), firstOperator,
+                secondOperator);
         if (combinedOperand != null) {
           deleteCurrent();
-          replaceAt(
-              ip() + 1,
-              new BinOp(
-                  second.destination(),
-                  first.left(),
-                  firstOperator,
-                  combinedOperand,
-                  second.position()));
+          replaceAt(ip() + 1, new BinOp(second.destination(), first.left(), firstOperator,
+                  combinedOperand, second.position()));
         }
       }
     }
@@ -100,8 +120,8 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     return false;
   }
 
-  private Operand combine(
-      Operand left, Operand right, TokenType firstOperator, TokenType secondOperator) {
+  private Operand combine(Operand left, Operand right, TokenType firstOperator,
+          TokenType secondOperator) {
     Number firstConst = fromConstOperand(left);
     Number secondConst = fromConstOperand(right);
     if (left.type() == VarType.INT) {
