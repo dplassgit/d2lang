@@ -8,9 +8,11 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
@@ -50,28 +52,39 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   @Override
   public void visit(Inc first) {
     Op secondOp = getOpAt(ip() + 1);
-    if (!(secondOp instanceof Dec)) {
-      return;
+    if (secondOp instanceof Dec) {
+      Dec second = (Dec) secondOp;
+      if (first.target().equals(second.target())) {
+        // delete both
+        deleteCurrent();
+        deleteAt(ip() + 1);
+        return;
+      }
     }
-    Dec second = (Dec) secondOp;
-    if (first.target().equals(second.target())) {
-      // delete both
-      deleteCurrent();
-      deleteAt(ip() + 1);
+
+    // see if it can be treated as i=i+1
+    BinOp alt = expand(first);
+    if (alt != null) {
+      visit(alt);
     }
   }
 
   @Override
   public void visit(Dec first) {
     Op secondOp = getOpAt(ip() + 1);
-    if (!(secondOp instanceof Inc)) {
-      return;
+    if (secondOp instanceof Inc) {
+      Inc second = (Inc) secondOp;
+      if (first.target().equals(second.target())) {
+        // delete both
+        deleteCurrent();
+        deleteAt(ip() + 1);
+        return;
+      }
     }
-    Inc second = (Inc) secondOp;
-    if (first.target().equals(second.target())) {
-      // delete both
-      deleteCurrent();
-      deleteAt(ip() + 1);
+    // see if it can be treated as i=i-1
+    BinOp alt = expand(first);
+    if (alt != null) {
+      visit(alt);
     }
   }
 
@@ -83,8 +96,12 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
 
       // Potential first in sequence: foo=bar+constant
       Op secondOp = getOpAt(ip() + 1);
+      // if first is plus or minus and second is inc/dec, allow it kind of.
       if (!(secondOp instanceof BinOp)) {
-        return;
+        secondOp = expand(secondOp);
+        if (secondOp == null) {
+          return;
+        }
       }
 
       // second in sequence
@@ -99,9 +116,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
         Operand combinedOperand = combine(first.right(), second.right(), firstOperator,
                 secondOperator);
         if (combinedOperand != null) {
-          deleteCurrent();
-          replaceAt(ip() + 1, new BinOp(second.destination(), first.left(), firstOperator,
-                  combinedOperand, second.position()));
+          if (first.destination().storage() == SymbolStorage.TEMP
+                  && second.destination().storage() == SymbolStorage.TEMP) {
+            // Only do it if all are temps. Otherwise it might nop an assignment
+            deleteCurrent();
+            replaceAt(ip() + 1, new BinOp(second.destination(), first.left(), firstOperator,
+                    combinedOperand, second.position()));
+          }
         }
       }
     }
@@ -259,5 +280,60 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   private Number fromConstOperand(Operand op) {
     ConstantOperand<?> co = (ConstantOperand<?>) op;
     return (Number) co.value();
+  }
+
+  /** "Expand" the given op - Dec becomes i=i-1 and Inc becomes i=i+1 */
+  private static BinOp expand(Op op) {
+    if (op == null) {
+      return null;
+    }
+    Expander expander = new Expander();
+    op.accept(expander);
+    return expander.expanded;
+  }
+
+  private static class Expander extends DefaultOpcodeVisitor {
+    private BinOp expanded;
+
+    @Override
+    public void visit(BinOp op) {
+      expanded = op;
+    }
+
+    @Override
+    public void visit(Dec op) {
+      VarType type = op.target().type();
+      if (type == VarType.INT) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE,
+                op.position());
+      } else if (type == VarType.BYTE) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_BYTE,
+                op.position());
+      } else if (type == VarType.LONG) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_LONG,
+                op.position());
+      } else if (type == VarType.DOUBLE) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_DBL,
+                op.position());
+      }
+    }
+
+    @Override
+    public void visit(Inc op) {
+      VarType type = op.target().type();
+      if (type == VarType.INT) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE,
+                op.position());
+      } else if (type == VarType.BYTE) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_BYTE,
+                op.position());
+      } else if (type == VarType.LONG) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_LONG,
+                op.position());
+      } else if (type == VarType.DOUBLE) {
+        expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_DBL,
+                op.position());
+      }
+    }
   }
 }
