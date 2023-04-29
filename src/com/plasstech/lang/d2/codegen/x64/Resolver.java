@@ -40,14 +40,13 @@ class Resolver implements RegistersInterface {
   private final DelegatingEmitter emitter;
   private final Deque<Emitter> emitters = new ArrayDeque<>();
 
-  private static final Comparator<Register> REGISTER_NAME_COMPARATOR =
-      new Comparator<Register>() {
-        @Override
-        public int compare(Register arg0, Register arg1) {
-          // This doesn't sort in enum order but it doesn't matter.
-          return arg0.name64().compareTo(arg1.name64());
-        }
-      };
+  private static final Comparator<Register> REGISTER_NAME_COMPARATOR = new Comparator<Register>() {
+    @Override
+    public int compare(Register arg0, Register arg1) {
+      // This doesn't sort in enum order but it doesn't matter.
+      return arg0.name64().compareTo(arg1.name64());
+    }
+  };
   private final Set<Register> usedRegisters = new TreeSet<>(REGISTER_NAME_COMPARATOR);
   private boolean inProc;
 
@@ -478,6 +477,11 @@ class Resolver implements RegistersInterface {
       return operand().storage();
     }
 
+    @Override
+    public String toString() {
+      return name();
+    }
+
     public ResolvedOperand setRegister(Register reg) {
       if (reg == null) {
         return this;
@@ -486,8 +490,8 @@ class Resolver implements RegistersInterface {
     }
 
     public static ResolvedOperand create(Operand operand, String name) {
-      Builder builder =
-          new AutoValue_Resolver_ResolvedOperand.Builder().setOperand(operand).setName(name);
+      Builder builder = new AutoValue_Resolver_ResolvedOperand.Builder().setOperand(operand)
+          .setName(name);
       if (operand instanceof Location) {
         // I wish this was easier
         builder.setLocation((Location) operand);

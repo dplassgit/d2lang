@@ -234,4 +234,14 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
       assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
     }
   }
+
+  @Test
+  public void simpleParamBinop() throws Exception {
+    execute("f:proc(a:int):int { a=a+3 print a return a} f(1)", "simpleParamBinop");
+  }
+
+  @Test
+  public void simpleLocalBinop() throws Exception {
+    execute("f:proc(a:int):int { b=a+3 print b return b} f(1)", "simpleLocalBinop");
+  }
 }

@@ -226,4 +226,26 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
             + "print \"Should be 0.0:\" println tod(0)\r\n";
     execute(tod, "tod");
   }
+
+  @Test
+  public void paramPlusConstant() throws Exception {
+    execute("f:proc(d:double):double { d = d + 1.0 return d} print f(2.0)", "paramPlusConstant");
+  }
+
+  @Test
+  public void paramPlusLocal() throws Exception {
+    execute("f:proc(d:double):double { e=1.0 d = d + e return d} print f(2.0)",
+        "paramPlusLocal");
+  }
+
+  @Test
+  public void localPlusParam() throws Exception {
+    execute("f:proc(d:double):double { e=1.0 e = e + d return e} print f(2.0)",
+        "localPlusParam");
+  }
+
+  @Test
+  public void localPlusConstant() throws Exception {
+    execute("f:proc(d:double):double { e = d + 1.0 return e} print f(2.0)", "localPlusConstant");
+  }
 }

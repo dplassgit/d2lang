@@ -29,6 +29,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
+            new TempPropagationOptimizer(debugLevel),
             // This doesn't play well with temps that are reused
             // new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set

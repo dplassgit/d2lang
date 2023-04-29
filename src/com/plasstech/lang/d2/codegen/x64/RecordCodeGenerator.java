@@ -279,7 +279,10 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emit(
           "mov %s %s, %s  ; get value to get",
           size, indirectReg.sizeByType(destination.type()), calcReg.sizeByType(destination.type()));
-      emitter.emit("mov %s, [%s]  ; get it into the destination", size, destName, indirectReg);
+      // this was broken, and now it's broken in a different way.
+      emitter.emit("mov %s, [%s]", indirectReg, indirectReg);
+      emitter.emit("mov %s %s, %s  ; ME get it into the destination", size, destName,
+          indirectReg);
       resolver.deallocate(indirectReg);
     }
     resolver.deallocate(calcReg);

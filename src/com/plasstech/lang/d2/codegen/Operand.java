@@ -17,4 +17,8 @@ public interface Operand {
   default boolean isRegister() {
     return false;
   }
+
+  default boolean isTemp() {
+    return this.storage() == SymbolStorage.TEMP;
+  }
 }

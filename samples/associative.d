@@ -6,7 +6,8 @@ m=1+k-1
 f:proc(ii:int):int {
   jj=2+ii+3
   kk=3*jj*5
-  return jj+kk
+  ii=jj*3
+  return ii+kk
 }
 
 println f(3)

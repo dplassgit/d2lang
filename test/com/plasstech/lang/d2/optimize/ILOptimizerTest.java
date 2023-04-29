@@ -194,7 +194,7 @@ public class ILOptimizerTest {
   }
 
   @Test
-  public void compareConstant(@TestParameter({"<", ">", ">=", "<=", "==", "!="}) String op) {
+  public void compareConstant(@TestParameter({ "<", ">", ">=", "<=", "==", "!=" }) String op) {
     TestUtils.optimizeAssertSameVariables(
         String.format("b=4 println b %s 3 println 3 %s b", op, op));
   }
@@ -379,5 +379,10 @@ public class ILOptimizerTest {
   @Test
   public void adjacentArithmetics() {
     TestUtils.optimizeAssertSameVariables("a=1 b=1+a+1 print b");
+  }
+
+  @Test
+  public void tempPropagation() {
+    TestUtils.optimizeAssertSameVariables("f:proc(a:int) {b=a+1 print b} f(2)");
   }
 }

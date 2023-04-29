@@ -63,8 +63,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private static final Map<TokenType, String> BINARY_OPCODE = ImmutableMap
       .<TokenType, String>builder()
-      .put(TokenType.PLUS, "add").put(TokenType.MINUS, "sub")
-      .put(TokenType.MULT, "imul").put(TokenType.AND, "and") // for boolean
+      .put(TokenType.PLUS, "add")
+      .put(TokenType.MINUS, "sub")
+      .put(TokenType.MULT, "imul")
+      .put(TokenType.AND, "and") // for boolean
       .put(TokenType.OR, "or") // for boolean
       .put(TokenType.XOR, "xor") // for boolean
       .put(TokenType.BIT_AND, "and") // for ints
@@ -348,7 +350,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (!reuse) {
             resolver.mov(op.left(), dest);
           }
-          generateBinOp(rightRo, destName, operator);
+          generateBinOp(rightRo, destRo, operator);
           break;
 
         case EQEQ:
@@ -401,7 +403,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (!reuse) {
             resolver.mov(op.left(), dest);
           }
-          generateBinOp(rightRo, destName, operator);
+          generateBinOp(rightRo, destRo, operator);
           break;
 
         case SHIFT_LEFT:
@@ -413,7 +415,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (!reuse) {
               resolver.mov(op.left(), dest);
             }
-            generateBinOp(rightRo, destName, operator);
+            generateBinOp(rightRo, destRo, operator);
           } else {
             // TODO: this is stupidly complex.
             Register rightReg = null;
@@ -433,6 +435,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (resolver.isInRegister(dest, RCX)) {
               destReg = resolver.allocate(VarType.INT);
               Location destRegLocation = new RegisterLocation(dest.name(), destReg, dest.type());
+              emit("; dest is RCX, have to do an extra mov:");
               resolver.mov(dest, destRegLocation);
               // NOTE: destName IS OVERWRITTEN
               destName = resolver.resolve(destRegLocation);
@@ -451,7 +454,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             }
             // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
             // move right (amount to shift) to RCX
-            emit("mov %s %s, %s ; get amount to shift into rcx",
+            emit("mov %s %s, %s ; get amount to shift into CL",
                 size,
                 RCX.sizeByType(leftType),
                 rightName);
@@ -461,11 +464,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               resolver.deallocate(rightReg);
             }
             if (destReg != null) {
-              // destReg was rcx, copy it out now.
-              resolver.mov(dest, RCX);
+              emit("; destreg was set, copy it out now");
+              resolver.mov(VarType.INT, destReg, RCX);
               resolver.deallocate(destReg);
             } else {
-              // it wasn't in RCX, we already put it in the right place
+              // it wasn't in RCX; we already put it in the right place
               registerState.condPop();
             }
           }
@@ -524,18 +527,26 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.deallocate(op.right());
   }
 
-  private void generateBinOp(ResolvedOperand source, String destName, TokenType operator) {
+  private void generateBinOp(ResolvedOperand source, ResolvedOperand dest, TokenType operator) {
     if (ConstantOperand.isImm64(source.operand())) {
       // adjust for OPCODE REG, imm64 if the constant is too big.
       emitter.emit("; constant is larger than 32 bits, must use intermediary");
-      Register tempReg = resolver.allocate(VarType.INT);
+      Register tempReg = resolver.allocate(source.type());
       resolver.mov(source.operand(), tempReg);
-      emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, tempReg.name());
+      emit("%s %s %s, %s",
+          BINARY_OPCODE.get(operator),
+          Size.of(source.type()).asmType,
+          dest.name(),
+          tempReg.name());
       resolver.deallocate(tempReg);
       // NOTE RETURN
       return;
     }
-    emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, source.name());
+    emit("%s %s %s, %s",
+        BINARY_OPCODE.get(operator),
+        Size.of(source.type()).asmType,
+        dest.name(),
+        source.name());
   }
 
   private Register generateCmp(ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator,
