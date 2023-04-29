@@ -13,22 +13,21 @@ public interface VarType {
   VarType LONG = new SimpleType("LONG", 8);
   VarType NULL = new NullType();
   VarType PROC = new SimpleType("PROC");
-  VarType STRING =
-      new PointerType("STRING") {
-        @Override
-        public boolean compatibleWith(VarType that) {
-          return super.compatibleWith(that) || that.isNull();
-        }
-      };
+  VarType STRING = new PointerType("STRING") {
+    @Override
+    public boolean compatibleWith(VarType that) {
+      return super.compatibleWith(that) || that.isNull();
+    }
+  };
   VarType UNKNOWN = new UnknownType();
   VarType VOID = new SimpleType("VOID");
-  Set<VarType> NUMERIC_TYPES =
-      ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.DOUBLE, VarType.LONG);
+  Set<VarType> NUMERIC_TYPES = ImmutableSet
+      .of(VarType.INT, VarType.BYTE, VarType.DOUBLE, VarType.LONG);
   Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.LONG);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",
-   *     "proc:(int,string):bool", "array:int"
+   *         "proc:(int,string):bool", "array:int"
    */
   String name();
 
@@ -55,7 +54,11 @@ public interface VarType {
     return that == this;
   }
 
-  static boolean isNumeric(VarType type) {
-    return NUMERIC_TYPES.contains(type);
+  default boolean isIntegral() {
+    return INTEGRAL_TYPES.contains(this);
+  }
+
+  default boolean isNumeric() {
+    return NUMERIC_TYPES.contains(this);
   }
 }

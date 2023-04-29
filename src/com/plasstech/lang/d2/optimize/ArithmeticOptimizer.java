@@ -34,12 +34,14 @@ class ArithmeticOptimizer extends LineOptimizer {
               new Transfer(op.destination(), ConstantOperand.of(value.length()), op.position()));
         }
         return;
+
       case NOT:
         if (operand.isConstant() && operand.type() == VarType.BOOL) {
           boolean value = operand.equals(ConstantOperand.TRUE);
           replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(!value), op.position()));
         }
         return;
+
       case BIT_NOT:
         if (operand.isConstant() && operand.type() == VarType.INT) {
           ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
@@ -82,6 +84,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           }
         }
         return;
+
       case ASC:
         if (operand.isConstant()) {
           @SuppressWarnings("unchecked")
@@ -91,6 +94,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(first), op.position()));
         }
         return;
+
       case CHR:
         if (operand.isConstant()) {
           @SuppressWarnings("unchecked")
@@ -103,6 +107,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                   op.position()));
         }
         return;
+
       default:
         return;
     }
@@ -139,7 +144,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (left.isConstant()
         && !right.isConstant()
         && (operator == TokenType.MULT || operator == TokenType.PLUS)
-        && VarType.isNumeric(left.type())) {
+        && left.type().isNumeric()) {
       // swap it so the constant is on the right.
       replaceCurrent(new BinOp(op.destination(), right, operator, left, op.position()));
       return;
@@ -214,33 +219,29 @@ class ArithmeticOptimizer extends LineOptimizer {
       case LEQ:
         optimizeCompare(
             op,
-            (a, b) ->
-                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
-                    <= 0);
+            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                .result() <= 0);
         return;
 
       case LT:
         optimizeCompare(
             op,
-            (a, b) ->
-                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
-                    < 0);
+            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                .result() < 0);
         return;
 
       case GEQ:
         optimizeCompare(
             op,
-            (a, b) ->
-                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
-                    >= 0);
+            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                .result() >= 0);
         return;
 
       case GT:
         optimizeCompare(
             op,
-            (a, b) ->
-                ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst()).result()
-                    > 0);
+            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                .result() > 0);
         return;
 
       case LBRACKET:
@@ -260,7 +261,9 @@ class ArithmeticOptimizer extends LineOptimizer {
           if (index > value.length()) {
             throw new D2RuntimeException(
                 String.format(
-                    "STRING index out of bounds (length %d); was %d", value.length(), index),
+                    "STRING index out of bounds (length %d); was %d",
+                    value.length(),
+                    index),
                 op.position(),
                 "String index");
           }
@@ -860,9 +863,10 @@ class ArithmeticOptimizer extends LineOptimizer {
    * If both operands are constants, apply the given function to the constants and replace the
    * opcode with result. E.g., t = 'a' == 'b' becomes t = false
    *
-   * <p>If both operands are not constants, apply the == function and if they pass, replace the
-   * opcode with true. E.g., t=a==a becomes t=true. This does not work for t=a!=b because it still
-   * has to compare at runtime the values of a and b are the same or not.
+   * <p>
+   * If both operands are not constants, apply the == function and if they pass, replace the opcode
+   * with true. E.g., t=a==a becomes t=true. This does not work for t=a!=b because it still has to
+   * compare at runtime the values of a and b are the same or not.
    *
    * @return true if both objects are constants or they pass fun.test
    */

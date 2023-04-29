@@ -36,12 +36,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Set<TokenType> FIRST_OPERATORS = ImmutableSet.of(//
-          TokenType.BIT_AND, TokenType.BIT_OR, //
-          TokenType.BIT_XOR, //
-          TokenType.DIV, //
-          TokenType.MINUS, //
-          TokenType.MULT, //
-          TokenType.PLUS);
+      TokenType.BIT_AND,
+      TokenType.BIT_OR, //
+      TokenType.BIT_XOR, //
+      TokenType.DIV, //
+      TokenType.MINUS, //
+      TokenType.MULT, //
+      TokenType.PLUS);
   private static final Set<TokenType> PLUS_MINUS = ImmutableSet.of(TokenType.PLUS, TokenType.MINUS);
   private static final Set<TokenType> MULT_DIV = ImmutableSet.of(TokenType.MULT, TokenType.DIV);
 
@@ -91,8 +92,8 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   @Override
   public void visit(BinOp first) {
     TokenType firstOperator = first.operator();
-    if (VarType.isNumeric(first.left().type()) && first.right().isConstant()
-            && (FIRST_OPERATORS.contains(firstOperator))) {
+    if (first.left().type().isNumeric() && first.right().isConstant()
+        && FIRST_OPERATORS.contains(firstOperator)) {
 
       // Potential first in sequence: foo=bar+constant
       Op secondOp = getOpAt(ip() + 1);
@@ -108,19 +109,22 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       BinOp second = (BinOp) secondOp;
       TokenType secondOperator = second.operator();
       if (second.left().type().equals(first.left().type()) && second.right().isConstant()
-              && areCompatible(secondOperator, firstOperator)
-              && second.left().equals(first.destination())) {
+          && areCompatible(secondOperator, firstOperator)
+          && second.left().equals(first.destination())) {
 
         logger.at(loggingLevel).log("Potential pair: %s and %s", first, second);
 
-        Operand combinedOperand = combine(first.right(), second.right(), firstOperator,
-                secondOperator);
+        Operand combinedOperand = combine(first.right(),
+            second.right(),
+            firstOperator,
+            secondOperator);
         if (combinedOperand != null) {
           if (first.destination().storage() == SymbolStorage.TEMP
-                  && second.destination().storage() == SymbolStorage.TEMP) {
+              && second.destination().storage() == SymbolStorage.TEMP) {
             // Only do it if all are temps. Otherwise it might nop an assignment
             deleteCurrent();
-            replaceAt(ip() + 1, new BinOp(second.destination(), first.left(), firstOperator,
+            replaceAt(ip() + 1,
+                new BinOp(second.destination(), first.left(), firstOperator,
                     combinedOperand, second.position()));
           }
         }
@@ -142,17 +146,20 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   }
 
   private Operand combine(Operand left, Operand right, TokenType firstOperator,
-          TokenType secondOperator) {
+      TokenType secondOperator) {
     Number firstConst = fromConstOperand(left);
     Number secondConst = fromConstOperand(right);
     if (left.type() == VarType.INT) {
       switch (firstOperator) {
         case BIT_AND:
           return ConstantOperand.of(firstConst.intValue() & secondConst.intValue());
+
         case BIT_OR:
           return ConstantOperand.of(firstConst.intValue() | secondConst.intValue());
+
         case BIT_XOR:
           return ConstantOperand.of(firstConst.intValue() ^ secondConst.intValue());
+
         case MINUS:
         case PLUS:
           if (firstOperator == secondOperator) {
@@ -195,10 +202,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       switch (firstOperator) {
         case BIT_AND:
           return ConstantOperand.of(firstConst.longValue() & secondConst.longValue());
+
         case BIT_OR:
           return ConstantOperand.of(firstConst.longValue() | secondConst.longValue());
+
         case BIT_XOR:
           return ConstantOperand.of(firstConst.longValue() ^ secondConst.longValue());
+
         case PLUS:
         case MINUS:
           if (firstOperator == secondOperator) {
@@ -224,10 +234,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       switch (firstOperator) {
         case BIT_AND:
           return ConstantOperand.of((byte) (firstConst.byteValue() & secondConst.byteValue()));
+
         case BIT_OR:
           return ConstantOperand.of((byte) (firstConst.byteValue() | secondConst.byteValue()));
+
         case BIT_XOR:
           return ConstantOperand.of((byte) (firstConst.byteValue() ^ secondConst.byteValue()));
+
         case PLUS:
         case MINUS:
           if (firstOperator == secondOperator) {
@@ -305,16 +318,16 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       VarType type = op.target().type();
       if (type == VarType.INT) {
         expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE,
-                op.position());
+            op.position());
       } else if (type == VarType.BYTE) {
         expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_BYTE,
-                op.position());
+            op.position());
       } else if (type == VarType.LONG) {
         expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_LONG,
-                op.position());
+            op.position());
       } else if (type == VarType.DOUBLE) {
         expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, ConstantOperand.ONE_DBL,
-                op.position());
+            op.position());
       }
     }
 
@@ -323,16 +336,16 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       VarType type = op.target().type();
       if (type == VarType.INT) {
         expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE,
-                op.position());
+            op.position());
       } else if (type == VarType.BYTE) {
         expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_BYTE,
-                op.position());
+            op.position());
       } else if (type == VarType.LONG) {
         expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_LONG,
-                op.position());
+            op.position());
       } else if (type == VarType.DOUBLE) {
         expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, ConstantOperand.ONE_DBL,
-                op.position());
+            op.position());
       }
     }
   }

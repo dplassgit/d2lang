@@ -58,29 +58,27 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
-  private static final Escaper ESCAPER =
-      new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ", false);
+  private static final Escaper ESCAPER = new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ",
+      false);
 
-  private static final Map<TokenType, String> BINARY_OPCODE =
-      ImmutableMap.<TokenType, String>builder()
-          .put(TokenType.PLUS, "add")
-          .put(TokenType.MINUS, "sub")
-          .put(TokenType.MULT, "imul")
-          .put(TokenType.AND, "and") // for boolean
-          .put(TokenType.OR, "or") // for boolean
-          .put(TokenType.XOR, "xor") // for boolean
-          .put(TokenType.BIT_AND, "and") // for ints
-          .put(TokenType.BIT_OR, "or") // for ints
-          .put(TokenType.BIT_XOR, "xor") // for ints
-          .put(TokenType.SHIFT_LEFT, "shl")
-          .put(TokenType.SHIFT_RIGHT, "sar")
-          .put(TokenType.EQEQ, "setz") // for both int and boolean
-          .put(TokenType.NEQ, "setnz") // for both int and boolean
-          .put(TokenType.GT, "setg") // for both int and boolean
-          .put(TokenType.GEQ, "setge") // for both int and boolean
-          .put(TokenType.LT, "setl") // for both int and boolean
-          .put(TokenType.LEQ, "setle") // for both intand boolean
-          .build();
+  private static final Map<TokenType, String> BINARY_OPCODE = ImmutableMap
+      .<TokenType, String>builder()
+      .put(TokenType.PLUS, "add").put(TokenType.MINUS, "sub")
+      .put(TokenType.MULT, "imul").put(TokenType.AND, "and") // for boolean
+      .put(TokenType.OR, "or") // for boolean
+      .put(TokenType.XOR, "xor") // for boolean
+      .put(TokenType.BIT_AND, "and") // for ints
+      .put(TokenType.BIT_OR, "or") // for ints
+      .put(TokenType.BIT_XOR, "xor") // for ints
+      .put(TokenType.SHIFT_LEFT, "shl")
+      .put(TokenType.SHIFT_RIGHT, "sar")
+      .put(TokenType.EQEQ, "setz") // for both int and boolean
+      .put(TokenType.NEQ, "setnz") // for both int and boolean
+      .put(TokenType.GT, "setg") // for both int and boolean
+      .put(TokenType.GEQ, "setge") // for both int and boolean
+      .put(TokenType.LT, "setl") // for both int and boolean
+      .put(TokenType.LEQ, "setle") // for both intand boolean
+      .build();
 
   private final List<String> prelude = new ArrayList<>();
   private final Registers registers;
@@ -171,30 +169,19 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         opcode.accept(this);
       }
     } catch (D2RuntimeException e) {
-      ImmutableList<String> allCode =
-          ImmutableList.<String>builder()
-              .add("PARTIAL ASSEMBLY\n\n")
-              .add("================\n\n")
-              .addAll(prelude)
-              .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-              .add("\nsection .data")
-              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-              .add("\nsection .text")
-              .addAll(emitter.all())
-              .build();
+      ImmutableList<String> allCode = ImmutableList.<String>builder().add("PARTIAL ASSEMBLY\n\n")
+          .add("================\n\n").addAll(prelude)
+          .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
+          .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+          .add("\nsection .text").addAll(emitter.all()).build();
       input = input.addAsmCode(allCode).addException(e);
       return input;
     }
 
-    ImmutableList<String> allCode =
-        ImmutableList.<String>builder()
-            .addAll(prelude)
-            .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-            .add("\nsection .data")
-            .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-            .add("\nsection .text")
-            .addAll(emitter.all())
-            .build();
+    ImmutableList<String> allCode = ImmutableList.<String>builder().addAll(prelude)
+        .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
+        .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+        .add("\nsection .text").addAll(emitter.all()).build();
 
     return input.addAsmCode(allCode);
   }
@@ -251,9 +238,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       case PRINTLN:
         printGenerator.visit(op);
         break;
+
       case INPUT:
         inputGenerator.visit(op);
         break;
+
       default:
         fail("Cannot generate %s yet", op);
         break;
@@ -300,16 +289,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Location dest = op.destination();
     boolean reuse = false;
-    if (op.left() instanceof TempLocation
-        && op.destination() instanceof TempLocation
-        && (leftType == VarType.BOOL
-            || leftType == VarType.BYTE
-            || leftType == VarType.DOUBLE
-            || leftType == VarType.INT
-            || leftType == VarType.LONG)
+    if (op.left() instanceof TempLocation && op.destination() instanceof TempLocation
+        && (leftType.isNumeric() || leftType == VarType.BOOL)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now
-        && (leftType.equals(op.destination().type()))) {
+        && leftType.equals(op.destination().type())) {
 
       // reuse left. left = left (op) right.
       Register maybeAlias = resolver.toRegister(op.destination());
@@ -335,10 +319,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case PLUS:
           stringGenerator.generateStringAdd(op.destination(), op.left(), op.right(), op.position());
           break;
+
         case LBRACKET:
-          stringGenerator.generateStringIndex(
-              op.destination(), op.left(), op.right(), op.position());
+          stringGenerator.generateStringIndex(op.destination(),
+              op.left(),
+              op.right(),
+              op.position());
           break;
+
         case EQEQ:
         case NEQ:
         case GT:
@@ -376,7 +364,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
-    } else if (leftType == VarType.BYTE || leftType == VarType.INT || leftType == VarType.LONG) {
+    } else if (leftType.isIntegral()) {
       String size = Size.of(leftType).asmType;
       switch (operator) {
         case MULT:
@@ -434,9 +422,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               // Have to move it
               rightReg = resolver.allocate(VarType.INT);
               Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
-              emit(
-                  "mov %s, %s  ; save right to a different register",
-                  rightReg.sizeByType(leftType), rightName);
+              emit("mov %s, %s  ; save right to a different register",
+                  rightReg.sizeByType(leftType),
+                  rightName);
               // NOTE: rightName IS OVERWRITTEN
               rightName = resolver.resolve(rightOp);
             }
@@ -463,9 +451,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             }
             // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
             // move right (amount to shift) to RCX
-            emit(
-                "mov %s %s, %s ; get amount to shift into rcx",
-                size, RCX.sizeByType(leftType), rightName);
+            emit("mov %s %s, %s ; get amount to shift into rcx",
+                size,
+                RCX.sizeByType(leftType),
+                rightName);
             // NOTE: destName may have been overwritten
             emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
             if (rightReg != null) {
@@ -512,9 +501,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         case NEQ:
           tempReg = generateCmp(leftRo, rightRo, operator, destName);
           break;
+
         case DOT:
           fail("Null pointer error", operator, leftType);
           break;
+
         default:
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
@@ -547,14 +538,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emit("%s %s, %s", BINARY_OPCODE.get(operator), destName, source.name());
   }
 
-  private Register generateCmp(
-      ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
+  private Register generateCmp(ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator,
+      String destName) {
     Register tempReg = null;
     if (directCompare(leftRo, rightRo)) {
       // Direct comparison: reg/anything, mem/reg, mem/imm8, mem/imm32
-      emit(
-          "cmp %s %s, %s  ; direct comparison",
-          Size.of(leftRo.type()).asmType, leftRo.name(), rightRo.name());
+      emit("cmp %s %s, %s  ; direct comparison",
+          Size.of(leftRo.type()).asmType,
+          leftRo.name(),
+          rightRo.name());
     } else if (rightRo.isConstant()) {
       // Normally we'd do a direct comparison, but the RHS was too big. Need to do even worse
       // indirect comparison.
@@ -643,9 +635,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emit("cbw  ; sign extend al to ax");
     }
 
-    emit(
-        "idiv %s  ; %s = %s / %s",
-        temp.sizeByType(operandType), RAX.sizeByType(operandType), leftName, rightName);
+    emit("idiv %s  ; %s = %s / %s",
+        temp.sizeByType(operandType),
+        RAX.sizeByType(operandType),
+        leftName,
+        rightName);
 
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
@@ -688,23 +682,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         resolver.mov(source, destination);
         emit("not %s  ; bit not", destName);
         break;
+
       case NOT:
         // boolean not
-        // 1. compare to 0
-        emit("cmp BYTE %s, 0  ; unary not", sourceName);
-        // 2. setz %s
-        emit("setz %s  ; boolean not", destName);
+        resolver.mov(source, destination);
+        emit("xor %s, 0x01  ; boolean not", destName);
         break;
+
       case MINUS:
-        if (source.type() == VarType.INT
-            || source.type() == VarType.BYTE
-            || source.type() == VarType.LONG) {
+        if (source.type() == VarType.DOUBLE) {
+          doubleGenerator.generate(op, sourceName);
+        } else {
           resolver.mov(source, destination);
           emit("neg %s  ; unary minus", destName);
-        } else {
-          doubleGenerator.generate(op, sourceName);
         }
         break;
+
       case LENGTH:
         if (source.type() == VarType.STRING) {
           stringGenerator.generateStringLength(op.position(), destination, source);
@@ -715,10 +708,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               String.format(
                   "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
                   source.type()),
-              op.position(),
-              "Null pointer");
+              op.position(), "Null pointer");
         }
         break;
+
       case ASC:
         npeCheckGenerator.generateNullPointerCheck(op.position(), source);
         // Just read one byte
@@ -758,9 +751,11 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           emit("and %s, 0xff", destName);
         }
         break;
+
       case CHR:
         stringGenerator.generateChr(op.operand(), op.destination());
         break;
+
       default:
         fail("Cannot generate %s yet", op);
         break;
