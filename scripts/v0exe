@@ -1,0 +1,2 @@
+rm -f temp.* 
+./v0.exe < $PWD/$1 > temp.asm && nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe && ./temp.exe

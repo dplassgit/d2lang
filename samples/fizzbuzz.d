@@ -2,14 +2,14 @@
 fizzbuzz: proc() {
   i=1 while i < 100 do i = i + 1 {
     if (i%15) == 0 {
-      println "Fizz Buzz, "
+      print "Fizz Buzz, \n"
     } elif (i%3) == 0 {
-      println "Fizz, "
+      print "Fizz, \n"
     } elif (i%5) == 0 {
-      println "Buzz, "
+      print "Buzz, \n"
     } else {
       print i
-      println ', '
+      print ", \n"
     }
   }
 }

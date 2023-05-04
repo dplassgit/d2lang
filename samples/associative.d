@@ -10,4 +10,4 @@ f:proc(ii:int):int {
   return ii+kk
 }
 
-println f(3)
+print f(3) print "\n"

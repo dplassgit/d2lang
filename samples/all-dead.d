@@ -4,4 +4,4 @@ f:proc():int {
   return i + 1
 }
 
-println f()
+print f() print "\n"

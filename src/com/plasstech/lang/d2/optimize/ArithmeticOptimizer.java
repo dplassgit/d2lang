@@ -99,7 +99,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         if (operand.isConstant()) {
           @SuppressWarnings("unchecked")
           ConstantOperand<Integer> constant = (ConstantOperand<Integer>) operand;
-          int value = constant.value();
+          int value = constant.value() & 0xff;
           replaceCurrent(
               new Transfer(
                   op.destination(),

@@ -39,3 +39,4 @@ bazel-testlogs
 *.obj
 *.exe
 *.il
+*.out
