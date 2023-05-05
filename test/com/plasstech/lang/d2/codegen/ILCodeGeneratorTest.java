@@ -161,13 +161,13 @@ public class ILCodeGeneratorTest {
   public void printTwo() {
     List<Op> program = generateProgram("print 'a'+'b'");
     assertThat(
-            program
-                .stream()
-                .filter(
-                    op -> {
-                      return op instanceof SysCall;
-                    })
-                .count())
+        program
+            .stream()
+            .filter(
+                op -> {
+                  return op instanceof SysCall;
+                })
+            .count())
         .isEqualTo(2);
   }
 

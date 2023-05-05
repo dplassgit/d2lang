@@ -15,7 +15,7 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void longBinOps(
-      @TestParameter({"+", "-", "*", "&", "|", "^", "/" /*, "%"*/}) String op,
+      @TestParameter({"+", "-", "*", "&", "|", "^", "/" /* , "%" */ }) String op,
       @TestParameter({"1234", "-234567"}) String first,
       @TestParameter({"1234", "-234567"}) String second)
       throws Exception {

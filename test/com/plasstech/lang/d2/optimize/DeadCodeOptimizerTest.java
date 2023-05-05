@@ -24,7 +24,7 @@ public class DeadCodeOptimizerTest {
 
   private static final Optimizer OPTIMIZER =
       new ILOptimizer(
-              ImmutableList.of(new ConstantPropagationOptimizer(2), new DeadCodeOptimizer(2)))
+          ImmutableList.of(new ConstantPropagationOptimizer(2), new DeadCodeOptimizer(2)))
           .setDebugLevel(2);
   private static final Label LABEL = new Label("label");
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);

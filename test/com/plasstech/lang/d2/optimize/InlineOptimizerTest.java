@@ -17,11 +17,11 @@ import com.plasstech.lang.d2.testing.TestUtils;
 public class InlineOptimizerTest {
   private static final Optimizer OPTIMIZER =
       new ILOptimizer(
-              ImmutableList.of(
-                  new ConstantPropagationOptimizer(0),
-                  new DeadCodeOptimizer(0),
-                  new DeadAssignmentOptimizer(0),
-                  new InlineOptimizer(2)))
+          ImmutableList.of(
+              new ConstantPropagationOptimizer(0),
+              new DeadCodeOptimizer(0),
+              new DeadAssignmentOptimizer(0),
+              new InlineOptimizer(2)))
           .setDebugLevel(2);
 
   @Test

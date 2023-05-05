@@ -24,7 +24,7 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void printInt() throws Exception {
-    execute("print 3 print -3 ", "printInt" /*heh*/);
+    execute("print 3 print -3 ", "printInt" /* heh */);
   }
 
   @Test

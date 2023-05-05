@@ -38,11 +38,11 @@ public class ArithmeticOptimizerTest {
   private final Optimizer optimizer = new ArithmeticOptimizer(2);
   private final Optimizer OPTIMIZERS =
       new ILOptimizer(
-              ImmutableList.of(
-                  optimizer,
-                  new ConstantPropagationOptimizer(0),
-                  new NopOptimizer(),
-                  new DeadAssignmentOptimizer(0)))
+          ImmutableList.of(
+              optimizer,
+              new ConstantPropagationOptimizer(0),
+              new NopOptimizer(),
+              new DeadAssignmentOptimizer(0)))
           .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);

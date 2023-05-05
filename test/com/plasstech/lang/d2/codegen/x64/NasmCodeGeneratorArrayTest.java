@@ -18,7 +18,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
           + "assertFalse:proc(b:bool) {if b {exit 'sorry'}  else {println 'false, as expected'}} ";
 
   @Test
-  public void arrayDeclConstantSize(@TestParameter({"string", "int", "bool", "double"}) String type)
+  public void arrayDeclConstantSize(
+      @TestParameter({"string", "int", "bool", "double"}) String type)
       throws Exception {
     execute(String.format("x:%s[%d]", type, type.length()), "arrayDeclConstantSize" + type);
   }
@@ -53,28 +54,30 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayGet(
-      @TestParameter({
-            /*"string", */
+      @TestParameter(
+        {
+            /* "string", */
             "int",
             "bool",
             "double",
             "byte"
-          })
-          String type)
+        }
+      ) String type)
       throws Exception {
     execute(String.format("x:%s[2] print x[0]", type), "arrayGet" + type);
   }
 
   @Test
   public void arrayGetInProc(
-      @TestParameter({
-            /*"string", */
+      @TestParameter(
+        {
+            /* "string", */
             "int",
             "bool",
             "double",
             "byte"
-          })
-          String type)
+        }
+      ) String type)
       throws Exception {
     execute(
         String.format("p:proc() {x:%s[2] println 'Should be 0 or false' print x[0]} p()", type),

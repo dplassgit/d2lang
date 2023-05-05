@@ -12,7 +12,8 @@ import com.plasstech.lang.d2.type.VarType;
 /** A Truth extension that works with VarTypes. */
 public class VarTypeSubject extends Subject {
 
-  @Nullable private final VarType actual;
+  @Nullable
+  private final VarType actual;
 
   private VarTypeSubject(FailureMetadata metadata, @Nullable VarType actual) {
     super(metadata, actual);

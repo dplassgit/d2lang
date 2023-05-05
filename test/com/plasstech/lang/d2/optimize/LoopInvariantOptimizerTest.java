@@ -18,15 +18,15 @@ public class LoopInvariantOptimizerTest {
   private static Optimizer loopOptimizer = new LoopInvariantOptimizer(2);
   private static ILOptimizer ilOptimizer =
       new ILOptimizer(
-              ImmutableList.of(
-                  new NopOptimizer(),
-                  new DeadCodeOptimizer(2), //
-                  new LoopInvariantOptimizer(2) //
-                  ))
+          ImmutableList.of(
+              new NopOptimizer(),
+              new DeadCodeOptimizer(2), //
+              new LoopInvariantOptimizer(2) //
+          ))
           .setDebugLevel(2);
   private static ILOptimizer loopAndConstantOptimizer =
       new ILOptimizer(
-              ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
+          ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
           .setDebugLevel(2);
 
   @Test
@@ -36,9 +36,10 @@ public class LoopInvariantOptimizerTest {
             + "  sum = 0 "
             + "  i = 0 "
             + "  while i < 10 do i = i + 1 {"
-            + "    x = n + 1 " // this can be lifted but... it's temp=n+1 x = temp, and it will only
-                               // move one instruction, not two...
+            // this can be lifted but... it's temp=n+1 x = temp, and it will only
+            // move one instruction, not two...
             + "    sum = sum + 1 "
+            + "    x = n + 1 "
             + "  }"
             + "  return sum"
             + "}"
@@ -57,9 +58,11 @@ public class LoopInvariantOptimizerTest {
             + "}";
     State unoptimized = TestUtils.compile(program, new NopOptimizer());
     // unoptimized:
-    /*
-     *  __loop_begin_2:
-     *  x = 0
+    /**
+     * <pre>
+     * __loop_begin_2: 
+     * x = 0
+     * </pre>
      */
     assertThat(unoptimized.ilCode())
         .containsAtLeast(
@@ -70,9 +73,11 @@ public class LoopInvariantOptimizerTest {
     InterpreterResult optimizedResult =
         TestUtils.optimizeAssertSameVariables(program, loopAndConstantOptimizer);
     // optimized:
-    /*
-     *  __loop_begin_2:
-     *  x = 0
+    /**
+     * <pre>
+     * __loop_begin_2: 
+     * x = 0
+     * </pre>
      */
     assertThat(optimizedResult.code())
         .containsAtLeast(

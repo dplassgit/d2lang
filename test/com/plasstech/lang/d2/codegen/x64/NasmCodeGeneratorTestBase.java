@@ -30,7 +30,8 @@ import com.plasstech.lang.d2.type.StaticChecker;
 public class NasmCodeGeneratorTestBase {
   private static File dir;
 
-  @TestParameter boolean optimize;
+  @TestParameter
+  boolean optimize;
   //  boolean optimize = false;
 
   @SuppressWarnings("deprecation")

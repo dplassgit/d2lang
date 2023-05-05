@@ -17,9 +17,10 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AdjacentArithmeticOptimizerTest {
-  private final Optimizer OPTIMIZERS = new ILOptimizer(
+  private final Optimizer OPTIMIZERS =
+      new ILOptimizer(
           ImmutableList.of(new AdjacentArithmeticOptimizer(2), new NopOptimizer()))
-                  .setDebugLevel(2);
+          .setDebugLevel(2);
 
   private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
@@ -35,14 +36,13 @@ public class AdjacentArithmeticOptimizerTest {
   private static final TempLocation BTEMP3 = new TempLocation("temp3", VarType.BYTE);
   private static final Location VAR1 = new MemoryAddress("a", VarType.INT);
   private static final Location VAR2 = new MemoryAddress("b", VarType.INT);
-  private static final Location VAR3 = new MemoryAddress("c", VarType.INT);
 
   @Test
   public void plusPlus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1+2
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
+        // should become temp3=temp1+2
+        new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -58,9 +58,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusInc() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
-            new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null),
-            new Inc(TEMP2, null));
+        // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
+        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null),
+        new Inc(TEMP2, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -76,9 +76,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusDec() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp2=temp2+0, which yes, isn't possible in the 'real world'
-            new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null),
-            new Dec(TEMP2, null));
+        // should become temp2=temp2+0, which yes, isn't possible in the 'real world'
+        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null),
+        new Dec(TEMP2, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -94,7 +94,7 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void incPlusDifferent_noChange() {
     ImmutableList<Op> program = ImmutableList.of(new Inc(VAR1, null),
-            new BinOp(TEMP2, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
+        new BinOp(TEMP2, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
@@ -103,11 +103,11 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusPlusDifferent_noChange() {
     ImmutableList<Op> program = ImmutableList.of(
-            // var=var+1
-            // temp2=var+1
-            // should have no change.
-            new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP2, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
+        // var=var+1
+        // temp2=var+1
+        // should have no change.
+        new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP2, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
@@ -116,11 +116,11 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusPlusSame() {
     ImmutableList<Op> program = ImmutableList.of(
-            // var=var+1
-            // var=var+1
-            // should become var = var + 2
-            new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null),
-            new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
+        // var=var+1
+        // var=var+1
+        // should become var = var + 2
+        new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null),
+        new BinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ONE, null));
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
@@ -129,9 +129,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void incPlus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
-            new Inc(TEMP2, null),
-            new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
+        // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
+        new Inc(TEMP2, null),
+        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -147,9 +147,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void incMinus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should delete both, because it's just like temp++ tenp--
-            new Inc(TEMP2, null),
-            new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
+        // should delete both, because it's just like temp++ tenp--
+        new Inc(TEMP2, null),
+        new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -165,9 +165,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void decMinus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp2=temp2-2, which yes, isn't possible in the 'real world'
-            new Dec(TEMP2, null),
-            new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
+        // should become temp2=temp2-2, which yes, isn't possible in the 'real world'
+        new Dec(TEMP2, null),
+        new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -183,9 +183,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void decPlus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should delete both, because it's just like temp++ tenp--
-            new Dec(TEMP2, null),
-            new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
+        // should delete both, because it's just like temp++ tenp--
+        new Dec(TEMP2, null),
+        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -201,8 +201,8 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void incDec() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become two nops
-            new Inc(VAR1, null), new Dec(VAR1, null));
+        // should become two nops
+        new Inc(VAR1, null), new Dec(VAR1, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -212,8 +212,8 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void decInc() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become two nops
-            new Dec(VAR1, null), new Inc(VAR1, null));
+        // should become two nops
+        new Dec(VAR1, null), new Inc(VAR1, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -239,8 +239,8 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void incDecByte() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become two nops
-            new Inc(BTEMP2, null), new Dec(BTEMP2, null));
+        // should become two nops
+        new Inc(BTEMP2, null), new Dec(BTEMP2, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -250,9 +250,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusPlusDouble() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1+2
-            new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.ONE_DBL, null),
-            new BinOp(DTEMP3, DTEMP2, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
+        // should become temp3=temp1+2
+        new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.ONE_DBL, null),
+        new BinOp(DTEMP3, DTEMP2, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -268,9 +268,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void orOr() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1|3
-            new BinOp(TEMP2, TEMP1, TokenType.BIT_OR, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.BIT_OR, ConstantOperand.of(3), null));
+        // should become temp3=temp1|3
+        new BinOp(TEMP2, TEMP1, TokenType.BIT_OR, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.BIT_OR, ConstantOperand.of(3), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -286,9 +286,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void andAndByte() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1&1 because 1&3=1. is that right?
-            new BinOp(BTEMP2, BTEMP1, TokenType.BIT_AND, ConstantOperand.ONE_BYTE, null),
-            new BinOp(BTEMP3, BTEMP2, TokenType.BIT_AND, ConstantOperand.of((byte) 3), null));
+        // should become temp3=temp1&1 because 1&3=1. is that right?
+        new BinOp(BTEMP2, BTEMP1, TokenType.BIT_AND, ConstantOperand.ONE_BYTE, null),
+        new BinOp(BTEMP3, BTEMP2, TokenType.BIT_AND, ConstantOperand.of((byte) 3), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -304,9 +304,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void xorXorLong() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1&1 because 1&3=1. is that right?
-            new BinOp(LTEMP2, LTEMP1, TokenType.BIT_XOR, ConstantOperand.ONE_LONG, null),
-            new BinOp(LTEMP3, LTEMP2, TokenType.BIT_XOR, ConstantOperand.of(4L), null));
+        // should become temp3=temp1&1 because 1&3=1. is that right?
+        new BinOp(LTEMP2, LTEMP1, TokenType.BIT_XOR, ConstantOperand.ONE_LONG, null),
+        new BinOp(LTEMP3, LTEMP2, TokenType.BIT_XOR, ConstantOperand.of(4L), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -322,8 +322,8 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void multMultLong() {
     ImmutableList<Op> program = ImmutableList.of(
-            new BinOp(LTEMP2, LTEMP1, TokenType.MULT, ConstantOperand.of(123123L), null),
-            new BinOp(LTEMP3, LTEMP2, TokenType.MULT, ConstantOperand.of(234234L), null));
+        new BinOp(LTEMP2, LTEMP1, TokenType.MULT, ConstantOperand.of(123123L), null),
+        new BinOp(LTEMP3, LTEMP2, TokenType.MULT, ConstantOperand.of(234234L), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -342,9 +342,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void multMult() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1*6
-            new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.of(2), null),
-            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(3), null));
+        // should become temp3=temp1*6
+        new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.of(2), null),
+        new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(3), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -360,9 +360,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusMult() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1+2
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.ONE, null));
+        // should become temp3=temp1+2
+        new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.ONE, null));
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
@@ -371,9 +371,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void plusMinus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1+0
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
+        // should become temp3=temp1+0
+        new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -389,9 +389,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void minusPlus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1+0
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
+        // should become temp3=temp1+0
+        new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -407,9 +407,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void minusPlus2() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should become temp3=temp1=2+1 = -1
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.of(2), null),
-            new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
+        // should become temp3=temp1=2+1 = -1
+        new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.of(2), null),
+        new BinOp(TEMP3, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -425,9 +425,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void minusMinus() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should be temp3 = temp1 - 2
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE, null),
-            new BinOp(TEMP3, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
+        // should be temp3 = temp1 - 2
+        new BinOp(TEMP2, TEMP1, TokenType.MINUS, ConstantOperand.ONE, null),
+        new BinOp(TEMP3, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -443,9 +443,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void divDiv() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should be temp3 = temp1 / 10
-            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(5), null),
-            new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(2), null));
+        // should be temp3 = temp1 / 10
+        new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(5), null),
+        new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(2), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -461,9 +461,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void divMult() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should be temp3 = temp1 / (20/10) = temp1 / 2
-            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(20), null),
-            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
+        // should be temp3 = temp1 / (20/10) = temp1 / 2
+        new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(20), null),
+        new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
@@ -479,9 +479,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void divMultTooSmall() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should be temp3 = temp1 / (2/10) = temp1 / 0 behnt.
-            new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(2), null),
-            new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
+        // should be temp3 = temp1 / (2/10) = temp1 / 0 behnt.
+        new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.of(2), null),
+        new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.of(10), null));
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
@@ -490,9 +490,9 @@ public class AdjacentArithmeticOptimizerTest {
   @Test
   public void multDiv() {
     ImmutableList<Op> program = ImmutableList.of(
-            // should be temp3 = temp1 * (20/5) = temp1 * 4
-            new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.of(20), null),
-            new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(5), null));
+        // should be temp3 = temp1 * (20/5) = temp1 * 4
+        new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.of(20), null),
+        new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.of(5), null));
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();

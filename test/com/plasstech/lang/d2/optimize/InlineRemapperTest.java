@@ -40,7 +40,7 @@ public class InlineRemapperTest {
   public void transferConstantToTemp() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), new SymTab())
+            ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -50,7 +50,8 @@ public class InlineRemapperTest {
   @Test
   public void transferTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE, null)), new SymTab())
+        new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE, null)),
+            new SymTab())
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -70,7 +71,8 @@ public class InlineRemapperTest {
   @Test
   public void transferNoTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), new SymTab()).remap();
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), new SymTab())
+            .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
     assertThat(op.source()).isEqualTo(MEMORY);
@@ -80,7 +82,8 @@ public class InlineRemapperTest {
   public void binOpTempDest() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY, null)), new SymTab())
+            ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY, null)),
+            new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -93,8 +96,8 @@ public class InlineRemapperTest {
   public void binOpTempSource() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT, null)),
-                new SymTab())
+            ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT, null)),
+            new SymTab())
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");
@@ -107,8 +110,8 @@ public class InlineRemapperTest {
   public void unaryOpTempSource_formal() {
     List<Op> mapped =
         new InlineRemapper(
-                ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE, null)),
-                new SymTab())
+            ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE, null)),
+            new SymTab())
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("__stack__inline__");

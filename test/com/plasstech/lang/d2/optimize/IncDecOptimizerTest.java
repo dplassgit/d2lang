@@ -109,7 +109,8 @@ public class IncDecOptimizerTest {
   @Test
   public void optimizeInc2Short() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO, null), new Transfer(STACK, TEMP1, null));
+        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO, null),
+            new Transfer(STACK, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -122,7 +123,8 @@ public class IncDecOptimizerTest {
   @Test
   public void optimizeInc2ShortReversed() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK, null), new Transfer(STACK, TEMP1, null));
+        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK, null),
+            new Transfer(STACK, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
