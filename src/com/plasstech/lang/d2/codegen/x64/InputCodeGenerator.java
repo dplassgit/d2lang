@@ -26,7 +26,8 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
   /**
    * Generates the "input" command by reading up to 1mb from stdin.
    *
-   * <p>TODO(https://github.com/dplassgit/d2lang/issues/105): Make this a function in dlib.
+   * <p>
+   * TODO(https://github.com/dplassgit/d2lang/issues/105): Make this a function in dlib.
    *
    * @param operand destination for the input
    */

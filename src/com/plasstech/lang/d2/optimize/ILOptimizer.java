@@ -34,7 +34,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             // This doesn't work with field set or array set
             new LoopInvariantOptimizer(debugLevel),
             new NopOptimizer() // ,
-            ));
+        ));
     setDebugLevel(debugLevel);
   }
 

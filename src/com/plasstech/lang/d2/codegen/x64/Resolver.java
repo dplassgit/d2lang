@@ -127,14 +127,18 @@ class Resolver implements RegistersInterface {
         aliases.put(location.name(), reg);
         emitter.emit("; Allocating %s to %s", location, reg);
         return reg.sizeByType(location.type());
+
       case GLOBAL:
         return "[_" + location.name() + "]";
+
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
         return generateParamLocationName(paramLoc);
+
       case LOCAL:
         StackLocation stackLoc = (StackLocation) location;
         return "[RBP - " + stackLoc.offset() + "]";
+
       default:
         emitter.fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;
@@ -183,14 +187,18 @@ class Resolver implements RegistersInterface {
     switch (location.storage()) {
       case TEMP:
         return null; // we would have found its alias already.
+
       case GLOBAL:
         return null;
+
       case PARAM:
         ParamLocation paramLoc = (ParamLocation) location;
         Register actualReg = Register.paramRegister(paramLoc.type(), paramLoc.index());
         return actualReg;
+
       case LOCAL:
         return null;
+
       default:
         emitter.fail("Cannot generate %s operand %s yet", location.storage(), location);
         return null;

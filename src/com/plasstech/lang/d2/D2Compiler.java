@@ -88,6 +88,7 @@ public class D2Compiler {
       case x64:
         state = new NasmCodeGenerator().execute(state);
         break;
+
       default:
         state =
             state.addException(

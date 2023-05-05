@@ -45,7 +45,7 @@ public class InterpreterDriver {
       return;
     }
 
-    InterpreterExecutor ee = 
+    InterpreterExecutor ee =
         new InterpreterExecutor(text)
             .setInteractive(true)
             .setLexDebugLevel(options.debuglex)

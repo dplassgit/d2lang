@@ -134,13 +134,16 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       case HEAP:
       case GLOBAL:
         return new MemoryAddress(name, variable.varType());
+
       case LOCAL:
         LocalSymbol local = (LocalSymbol) variable;
         // captures its offset
         return new StackLocation(local.name(), local.varType(), local.offset());
+
       case PARAM:
         ParamSymbol param = (ParamSymbol) variable;
         return new ParamLocation(name, variable.varType(), param.index(), param.offset());
+
       default:
         throw new IllegalStateException(
             String.format(
@@ -384,7 +387,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
    *
    * where both a and b are stack or globals.
    *
-   * <p>The only reason I did this was to get the loop invariant optimizer to work with records,
+   * <p>
+   * The only reason I did this was to get the loop invariant optimizer to work with records,
    * because this is the code it used to generate:
    *
    * <pre>
@@ -395,7 +399,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
    * This was causing the loop optimizer to move BOTH ops out of the loop, because it thought
    * __temp1, and therefore __temp2 was invariant.
    *
-   * <p>So now this version generates:
+   * <p>
+   * So now this version generates:
    *
    * <pre>
    * __temp2 = rec.fieldname
@@ -538,10 +543,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         node.setLocation(destination);
         emit(new UnaryOp(destination, node.operator(), rhs.location(), node.position()));
         break;
+
       case PLUS:
         // tiny optimization: a=+b -> a=b
         node.setLocation(rhs.location());
         break;
+
       default:
         logger.atSevere().log("No code generated for node %s", node);
         break;

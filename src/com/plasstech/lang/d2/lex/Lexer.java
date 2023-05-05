@@ -173,63 +173,85 @@ public class Lexer {
     switch (oc) {
       case '=':
         return startsWithEq(start);
+
       case '<':
         return startsWithLt(start);
+
       case '>':
         return startsWithGt(start);
+
       case '+':
         return startsWithPlus(start);
+
       case '-':
         return startsWithMinus(start);
+
       case '(':
         advance();
         return new Token(TokenType.LPAREN, start, oc);
+
       case ')':
         advance();
         return new Token(TokenType.RPAREN, start, oc);
+
       case '*':
         advance();
         return new Token(TokenType.MULT, start, oc);
+
       case '/':
         return startsWithSlash(start);
+
       case '%':
         advance();
         return new Token(TokenType.MOD, start, oc);
+
       case '&':
         advance();
         return new Token(TokenType.BIT_AND, start, oc);
+
       case '|':
         advance();
         return new Token(TokenType.BIT_OR, start, oc);
+
       case '!':
         return startsWithNot(start);
+
       case '{':
         advance();
         return new Token(TokenType.LBRACE, start, oc);
+
       case '}':
         advance();
         return new Token(TokenType.RBRACE, start, oc);
+
       case ':':
         advance();
         return new Token(TokenType.COLON, start, oc);
+
       case '"':
       case '\'':
         return makeStringToken(start, oc);
+
       case ',':
         advance();
         return new Token(TokenType.COMMA, start, oc);
+
       case '[':
         advance();
         return new Token(TokenType.LBRACKET, start, oc);
+
       case ']':
         advance();
         return new Token(TokenType.RBRACKET, start, oc);
+
       case '^':
         advance();
         return new Token(TokenType.BIT_XOR, start, oc);
+
       case '.':
         advance();
         return new Token(TokenType.DOT, start, oc);
+
       default:
         throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
     }

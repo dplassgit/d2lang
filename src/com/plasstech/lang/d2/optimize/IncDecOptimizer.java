@@ -18,12 +18,14 @@ class IncDecOptimizer extends LineOptimizer {
     super(debugLevel);
   }
 
-  /*
+  /**
+   * <pre>
    * i=i+1: (also, i=i-1, i=i+2, i=i-2)
    *
-   * temp1=i // first
-   * temp2=temp1+1 // secondOp
+   * temp1=i // first 
+   * temp2=temp1+1 // secondOp 
    * i=temp2 // thirdOp
+   * </pre>
    */
   @Override
   public void visit(Transfer first) {
@@ -82,9 +84,11 @@ class IncDecOptimizer extends LineOptimizer {
     }
   }
 
-  /*
-   * temp1=i+1 // (also for minus, or 2)
+  /**
+   * <pre>
+   * temp1=i+1 // (also for minus, or 2) 
    * i=temp1 // secondOp
+   * </pre>
    */
   @Override
   public void visit(BinOp first) {

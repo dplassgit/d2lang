@@ -118,6 +118,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       case DOT:
         generateDot(op);
         break;
+
       case EQEQ:
       case NEQ:
         generateCompare(op);

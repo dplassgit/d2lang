@@ -104,32 +104,25 @@ class ConstFinder<T> implements OpcodeVisitor {
   }
 
   @Override
-  public void visit(Label op) {
-  }
+  public void visit(Label op) {}
 
   @Override
-  public void visit(Stop op) {
-  }
+  public void visit(Stop op) {}
 
   @Override
-  public void visit(Goto op) {
-  }
+  public void visit(Goto op) {}
 
   @Override
-  public void visit(ProcExit op) {
-  }
+  public void visit(ProcExit op) {}
 
   @Override
-  public void visit(ProcEntry op) {
-  }
+  public void visit(ProcEntry op) {}
 
   @Override
-  public void visit(Dec op) {
-  }
+  public void visit(Dec op) {}
 
   @Override
-  public void visit(Inc op) {
-  }
+  public void visit(Inc op) {}
 
   @Override
   public void visit(AllocateOp op) {}

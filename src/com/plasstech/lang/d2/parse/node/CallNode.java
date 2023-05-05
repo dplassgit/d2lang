@@ -39,7 +39,7 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   /**
    * @return {code}true{/code} if this node is a statement (i.e., not part of an expression). Note
-   *     that the proc may return a value but it is going to be ignored.
+   *         that the proc may return a value but it is going to be ignored.
    */
   public boolean isStatement() {
     return isStatement;

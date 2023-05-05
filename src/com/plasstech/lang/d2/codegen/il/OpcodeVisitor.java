@@ -38,4 +38,3 @@ public interface OpcodeVisitor {
 
   void visit(FieldSetOp fieldSetOp);
 }
-

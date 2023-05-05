@@ -199,6 +199,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
         // This is messed up because temps are read once, so dead code optimizer and constant
         // propagation optimizer both create invalid code.
         return new TempLocation(fullName, location.type());
+
       default:
         return operand;
     }

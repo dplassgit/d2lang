@@ -24,7 +24,7 @@ public abstract class Location implements Operand {
   public String toString() {
     return name();
   }
-  
+
   public Location baseLocation() {
     return this;
   }

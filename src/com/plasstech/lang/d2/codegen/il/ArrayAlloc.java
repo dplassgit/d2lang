@@ -12,7 +12,8 @@ public class ArrayAlloc extends Op {
   private final Operand sizeLocation;
   private final Location destination;
 
-  public ArrayAlloc(Location destination, ArrayType arrayType, Operand sizeLocation, Position position) {
+  public ArrayAlloc(Location destination, ArrayType arrayType, Operand sizeLocation,
+      Position position) {
     super(position);
     this.destination = destination;
     this.arrayType = arrayType;

@@ -260,14 +260,14 @@ public class Parser implements Phase {
 
     Token variable = advance(); // eat the variable name
     switch (token.type()) {
-        // Assignment: variable=expression
+      // Assignment: variable=expression
       case ASSIGN:
         advance(); // eat the =
         VariableSetNode var = new VariableSetNode(variable.text(), variable.start());
         ExprNode expr = expr();
         return new AssignmentNode(var, expr);
 
-        // Declaration: variable:type
+      // Declaration: variable:type
       case COLON:
         return declaration(variable);
 
@@ -278,15 +278,15 @@ public class Parser implements Phase {
         VariableSetNode incVar = new VariableSetNode(variable.text(), variable.start());
         return new IncDecNode(incVar, inc);
 
-        // for record field set: field.name=expression
+      // for record field set: field.name=expression
       case DOT:
         return fieldAssignment(variable);
 
-        // bracket for array slot assignment: field[expression] = expression
+      // bracket for array slot assignment: field[expression] = expression
       case LBRACKET:
         return arraySlotAssignment(variable);
 
-        // Procedure call: variable(comma-separated-list)
+      // Procedure call: variable(comma-separated-list)
       case LPAREN:
         return procedureCall(variable, true);
 
@@ -634,13 +634,17 @@ public class Parser implements Phase {
   /**
    * Parse from the current location, repeatedly call "nextRule", e.g.,:
    *
-   * <p>here -> nextRule (tokentype nextRule)*
+   * <p>
+   * here -> nextRule (tokentype nextRule)*
    *
-   * <p>where tokentype is in tokenTypes
+   * <p>
+   * where tokentype is in tokenTypes
    *
-   * <p>Example, in the grammar:
+   * <p>
+   * Example, in the grammar:
    *
-   * <p>expr -> term (+- term)*
+   * <p>
+   * expr -> term (+- term)*
    */
   private ExprNode binOpFn(Set<TokenType> tokenTypes, Supplier<ExprNode> nextRule) {
     ExprNode left = nextRule.get();
@@ -807,18 +811,22 @@ public class Parser implements Phase {
         VariableNode argsNode = new VariableNode(argsToken.type().name(), argsToken.start());
         argsNode.setVarType(new ArrayType(VarType.STRING, 1));
         return argsNode;
+
       case FALSE:
       case TRUE:
         Token booleanToken = token;
         advance();
         return new ConstNode<Boolean>(
             booleanToken.type() == TokenType.TRUE, VarType.BOOL, booleanToken.start());
+
       case INPUT:
         Token inputToken = token;
         advance();
         return new InputNode(inputToken.start());
+
       case LBRACKET:
         return arrayLiteral();
+
       case LITERAL:
         ConstToken<?> ct = (ConstToken<?>) token;
         switch (ct.literalType()) {
@@ -826,22 +834,27 @@ public class Parser implements Phase {
             ConstToken<Byte> bt = (ConstToken<Byte>) token;
             advance();
             return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
+
           case DOUBLE:
             ConstToken<Double> dt = (ConstToken<Double>) token;
             advance();
             return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
+
           case INT:
             ConstToken<Integer> it = (ConstToken<Integer>) token;
             advance();
             return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
+
           case LONG:
             ConstToken<Long> longToken = (ConstToken<Long>) token;
             advance();
             return new ConstNode<Long>(longToken.value(), VarType.LONG, longToken.start());
+
           case STRING:
             ConstToken<String> st = (ConstToken<String>) token;
             advance();
             return new ConstNode<String>(st.value(), VarType.STRING, st.start());
+
           default:
             throw new ParseException(
                 String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
@@ -853,10 +866,12 @@ public class Parser implements Phase {
         expect(TokenType.RPAREN);
         advance(); // eat rparen
         return expr;
+
       case NULL:
         Token nt = token;
         advance();
         return new ConstNode<Void>(null, VarType.NULL, nt.start());
+
       case VARIABLE:
         Token varToken = token;
         advance();

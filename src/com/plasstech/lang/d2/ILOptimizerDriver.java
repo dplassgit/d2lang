@@ -33,7 +33,7 @@ public class ILOptimizerDriver {
     System.out.println("UNOPTIMIZED:");
     System.out.println(Joiner.on("\n").join(unoptimizedCode));
     System.out.println();
-    
+
     ILOptimizer optimizer = new ILOptimizer(2);
     state = optimizer.execute(state);
     System.out.println("OPTIMIZED:");

@@ -48,11 +48,13 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       case TEMP:
         tempAssignments.put(destination.baseLocation(), ip());
         break;
+
       case LOCAL:
       case PARAM:
       case REGISTER:
         assignments.put(destination.baseLocation(), ip());
         break;
+
       default:
         break;
     }

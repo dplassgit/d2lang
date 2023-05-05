@@ -78,9 +78,11 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case 1:
         loggingLevel = Level.CONFIG;
         break;
+
       case 2:
         loggingLevel = Level.INFO;
         break;
+
       default:
       case 0:
         loggingLevel = Level.FINE;
@@ -270,8 +272,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case EQEQ:
         return Objects.equal(left, right);
+
       case NEQ:
         return !Objects.equal(left, right);
+
       default:
         throw new IllegalStateException(
             String.format(
@@ -292,12 +296,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case GEQ:
       case LEQ:
         return leftNull == rightNull;
+
       case NEQ:
         return leftNull != rightNull;
+
       case GT:
         return !leftNull && rightNull;
+
       case LT:
         return false;
+
       default:
         throw new IllegalStateException("Unknown null binop " + op);
     }
@@ -363,14 +371,17 @@ public class Interpreter extends DefaultOpcodeVisitor {
         case GEQ:
           // can only be equal if left == right
           return left == null;
+
         case GT:
           // not null > null
         case NEQ:
           // not null != null
           return left != null;
+
         case LT:
           // nothing can be < null.
           return false;
+
         default:
           throw new IllegalStateException("Unknown string binop " + op.operator());
       }
@@ -378,16 +389,22 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case EQEQ:
         return left.equals(right);
+
       case GEQ:
         return left.compareTo(right) >= 0;
+
       case GT:
         return left.compareTo(right) > 0;
+
       case LEQ:
         return left.compareTo(right) <= 0;
+
       case LT:
         return left.compareTo(right) < 0;
+
       case NEQ:
         return !left.equals(right);
+
       case PLUS:
         return left + right;
 
@@ -400,36 +417,52 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case DIV:
         return left / right;
+
       case EQEQ:
         return left == right;
+
       case GEQ:
         return left >= right;
+
       case GT:
         return left > right;
+
       case LEQ:
         return left <= right;
+
       case LT:
         return left < right;
+
       case MINUS:
         return left - right;
+
       case MOD:
         return left % right;
+
       case MULT:
         return left * right;
+
       case NEQ:
         return left != right;
+
       case PLUS:
         return left + right;
+
       case SHIFT_LEFT:
         return left << right;
+
       case SHIFT_RIGHT:
         return left >> right;
+
       case BIT_AND:
         return left & right;
+
       case BIT_OR:
         return left | right;
+
       case BIT_XOR:
         return left ^ right;
+
       default:
         throw new IllegalStateException("Unknown int binop " + op.operator());
     }
@@ -439,36 +472,52 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case DIV:
         return left / right;
+
       case EQEQ:
         return left == right;
+
       case GEQ:
         return left >= right;
+
       case GT:
         return left > right;
+
       case LEQ:
         return left <= right;
+
       case LT:
         return left < right;
+
       case MINUS:
         return left - right;
+
       case MOD:
         return left % right;
+
       case MULT:
         return left * right;
+
       case NEQ:
         return left != right;
+
       case PLUS:
         return left + right;
+
       case SHIFT_LEFT:
         return left << right;
+
       case SHIFT_RIGHT:
         return left >> right;
+
       case BIT_AND:
         return left & right;
+
       case BIT_OR:
         return left | right;
+
       case BIT_XOR:
         return left ^ right;
+
       default:
         throw new IllegalStateException("Unknown long binop " + op.operator());
     }
@@ -478,36 +527,52 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case DIV:
         return (byte) (left / right);
+
       case EQEQ:
         return left == right;
+
       case GEQ:
         return left >= right;
+
       case GT:
         return left > right;
+
       case LEQ:
         return left <= right;
+
       case LT:
         return left < right;
+
       case MINUS:
         return (byte) (left - right);
+
       case MOD:
         return (byte) (left % right);
+
       case MULT:
         return (byte) (left * right);
+
       case NEQ:
         return left != right;
+
       case PLUS:
         return (byte) (left + right);
+
       case SHIFT_LEFT:
         return (byte) (left << right);
+
       case SHIFT_RIGHT:
         return (byte) (left >> right);
+
       case BIT_AND:
         return (byte) (left & right);
+
       case BIT_OR:
         return (byte) (left | right);
+
       case BIT_XOR:
         return (byte) (left ^ right);
+
       default:
         throw new IllegalStateException("Unknown byte binop " + op.operator());
     }
@@ -517,24 +582,34 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case DIV:
         return left / right;
+
       case EQEQ:
         return left == right;
+
       case GEQ:
         return left >= right;
+
       case GT:
         return left > right;
+
       case LEQ:
         return left <= right;
+
       case LT:
         return left < right;
+
       case MINUS:
         return left - right;
+
       case MULT:
         return left * right;
+
       case NEQ:
         return left != right;
+
       case PLUS:
         return left + right;
+
       default:
         throw new IllegalStateException("Unknown double binop " + op.operator());
     }
@@ -544,22 +619,31 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case AND:
         return left && right;
+
       case OR:
         return left || right;
+
       case XOR:
         return left ^ right;
+
       case EQEQ:
         return left == right;
+
       case NEQ:
         return left != right;
+
       case LT:
         return !left && right;
+
       case GT:
         return left && !right;
+
       case LEQ:
         return (!left && right) || left == right;
+
       case GEQ:
         return (left && !right) || left == right;
+
       default:
         throw new IllegalStateException("Unknown bool binop " + op.operator());
     }
@@ -627,10 +711,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case PLUS:
         return r1;
+
       case MINUS:
         return (byte) -r1;
+
       case BIT_NOT:
         return (byte) ~r1;
+
       default:
         throw new IllegalStateException("Unknown byte unaryop " + op.operator());
     }
@@ -640,6 +727,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case LENGTH:
         return rhs.length;
+
       default:
         throw new IllegalStateException("Unknown array unaryop " + op.operator());
     }
@@ -649,8 +737,10 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case LENGTH:
         return rhs.length();
+
       case ASC:
         return (int) rhs.charAt(0);
+
       default:
         throw new IllegalStateException("Unknown string unaryop " + op.operator());
     }
@@ -669,12 +759,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case PLUS:
         return r1;
+
       case MINUS:
         return 0 - r1;
+
       case BIT_NOT:
         return ~r1;
+
       case CHR:
         return "" + (char) r1;
+
       default:
         throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
     }
@@ -689,10 +783,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.operator()) {
       case PLUS:
         return r1;
+
       case MINUS:
         return 0 - r1;
+
       case BIT_NOT:
         return ~r1;
+
       default:
         throw new IllegalStateException("Unknown long unaryop " + op.operator());
     }
@@ -746,6 +843,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
           rootEnv.addOutput("\n");
         }
         break;
+
       case MESSAGE:
         if (interactive) {
           System.err.println("ERROR: " + resolved);
@@ -753,6 +851,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         rootEnv.addOutput("ERROR: " + resolved);
         rootEnv.addOutput("\n");
         break;
+
       case INPUT:
         assert (op.arg() instanceof Location);
         String input = "";
@@ -769,6 +868,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
         setValue((Location) op.arg(), input);
         break;
+
       default:
         break;
     }

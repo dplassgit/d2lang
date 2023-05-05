@@ -15,8 +15,10 @@ public interface Optimizer {
     switch (debugLevel) {
       case 1:
         return Level.CONFIG;
+
       case 2:
         return Level.INFO;
+
       default:
       case 0:
         return Level.FINE;

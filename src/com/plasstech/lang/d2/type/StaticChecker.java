@@ -91,8 +91,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.NEQ,
           TokenType.PLUS,
           TokenType.LBRACKET
-          // , Token.Type.MOD // eventually
-          );
+      /** Token.Type.MOD // eventually */
+      );
 
   private static final Set<TokenType> BOOL_OPERATORS =
       ImmutableSet.of(
@@ -728,12 +728,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         }
         node.setVarType(VarType.INT);
         break;
+
       case ASC:
         node.setVarType(VarType.INT);
         break;
+
       case CHR:
         node.setVarType(VarType.STRING);
         break;
+
       default:
         // Output type is the same as input type, except for cases, above.
         node.setVarType(exprType);
@@ -771,13 +774,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
     node.elseBlock()
         .ifPresent(
-            block ->
-                block
-                    .statements()
-                    .forEach(
-                        stmt -> {
-                          stmt.accept(this);
-                        }));
+            block -> block
+                .statements()
+                .forEach(
+                    stmt -> {
+                      stmt.accept(this);
+                    }));
   }
 
   @Override
@@ -1014,7 +1016,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   }
 
   private boolean checkAllPathsHaveReturn(BlockNode node) {
-    /*
+    /**
      * <pre>
      * If there's a top-level "return" in this block, return true
      * Else for each statement in the block:

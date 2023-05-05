@@ -241,6 +241,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
         case INPUT:
           setters.add(op.arg());
           break;
+
         default:
           if (!op.arg().isConstant()) {
             getters.add(op.arg());
