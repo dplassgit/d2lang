@@ -346,4 +346,20 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
         "f:proc(s:string) { if s == null {println 'isnull'} else {println 'nope'}} f('hi')",
         "compareToNull");
   }
+
+  @Test
+  public void addChr() throws Exception {
+    execute("f:proc(s:string):string { "
+        + "sb = ''"
+        + "i = 0 while i < length(s) do i++ {"
+        + "  a = asc(s[i])"
+        + "  if a%2==1 {"
+        + "    sb = sb + chr(a)"
+        + "  }"
+        + "}"
+        + "return sb"
+        + "}"
+        + "print f('abcde')",
+        "addChr");
+  }
 }
