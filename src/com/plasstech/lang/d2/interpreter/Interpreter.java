@@ -244,7 +244,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else if (left instanceof Double && right instanceof Double) {
       result = visitDoubleBinOp(op, (Double) left, (Double) right);
     } else if (left instanceof Boolean && right instanceof Boolean) {
-      result = visitBoolBinOp(op, (Boolean) left, (Boolean) right);
+      result = visitBoolBinOp(op, (boolean) left, (boolean) right);
     } else if (left instanceof String && (right instanceof String || right == null)) {
       result = visitStringBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
@@ -615,7 +615,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
   }
 
-  private Object visitBoolBinOp(BinOp op, Boolean left, Boolean right) {
+  private Object visitBoolBinOp(BinOp op, boolean left, boolean right) {
     switch (op.operator()) {
       case AND:
         return left && right;

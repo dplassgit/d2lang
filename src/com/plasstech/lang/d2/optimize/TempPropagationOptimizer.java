@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.optimize;
 
 import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -58,22 +57,14 @@ class TempPropagationOptimizer extends LineOptimizer {
     if (candidate.destination().storage() == SymbolStorage.PARAM) {
       return true;
     }
-    //    if (isGlobalConstant(op.left()) ||
-    //        isGlobalConstant(op.right())) {
-    //      // string and double constants are globals, so we can't typically use them as a right-hand-side
-    //      return false;
-    //    }
     if (!op.right().isConstant()) {
       return false;
     }
     if (op.left().type() == VarType.DOUBLE) {
+      // double constants are globals, so we can't typically use them as a right-hand-side
       return false;
     }
     // we can only do memory = reg <op> constant if the op is allowed.
     return VALID_OPS.contains(op.operator());
-  }
-
-  private static boolean isGlobalConstant(Operand op) {
-    return op.isConstant() && (op.type() == VarType.DOUBLE || op.type() == VarType.STRING);
   }
 }

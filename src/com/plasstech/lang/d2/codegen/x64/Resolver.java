@@ -166,6 +166,9 @@ class Resolver implements RegistersInterface {
         aliases.remove(operandName);
         deallocate(reg);
       }
+    } else if (operand.storage() == SymbolStorage.REGISTER) {
+      RegisterLocation regLoc = (RegisterLocation) operand;
+      deallocate(regLoc.register());
     }
   }
 
@@ -245,17 +248,20 @@ class Resolver implements RegistersInterface {
   }
 
   void mov(Operand source, Register dest) {
-    mov(source, new RegisterLocation("dest", dest, source.type()));
+    mov(source, new RegisterLocation("_destRegister", dest, source.type()));
+  }
+
+  public void mov(Register source, Operand destination) {
+    mov(new RegisterLocation("_sourceRegister", source, destination.type()), destination);
   }
 
   void mov(VarType type, Register source, Register destination) {
-    mov(
-        new RegisterLocation("source", source, type),
-        new RegisterLocation("dest", destination, type));
+    mov(new RegisterLocation("_sourceRegister", source, type),
+        new RegisterLocation("_destRegister", destination, type));
   }
 
   void mov(Register source, Location destination) {
-    mov(new RegisterLocation("source", source, destination.type()), destination);
+    mov(new RegisterLocation("_sourceRegister", source, destination.type()), destination);
   }
 
   void mov(Operand source, Operand destination) {

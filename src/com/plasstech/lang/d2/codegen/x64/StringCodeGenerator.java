@@ -443,24 +443,33 @@ class StringCodeGenerator {
     resolver.deallocate(leftLengthReg);
     // 4. put string into dest
     registerState.condPop(); // this will pop leftlengthreg but it doesn't matter.
+
     // Move malloc'd pointer to destination
-    resolver.mov(RAX, destination);
+    Location newDestination = destination;
+    if (destination.equals(left) || destination.equals(right)) {
+      // if destination is also left or right then we can't overwrite
+      // one of the operands, which would be bad. Use a temp.
+      Register tempDestReg = resolver.allocate(VarType.STRING);
+      newDestination = new RegisterLocation("_tempStringDest", tempDestReg, VarType.STRING);
+      emitter.emit("; temporary destination %s", tempDestReg);
+    }
+    resolver.mov(RAX, newDestination);
 
     // 5. strcpy from left to dest
     emitter.emit0("");
     registerState = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     String leftName = resolver.resolve(left);
-    emitter.emit("; strcpy from %s to %s", leftName, destination);
-    if (resolver.isInRegister(left, RCX) && resolver.isInRegister(destination, RDX)) {
+    emitter.emit("; strcpy from %s to %s", leftName, newDestination);
+    if (resolver.isInRegister(left, RCX) && resolver.isInRegister(newDestination, RDX)) {
       // just swap rdx & rcx
       emitter.emit("; left wants to be in rcx dest in rdx, just swap");
       emitter.emit("xchg RDX, RCX");
     } else if (resolver.isInRegister(left, RCX)) {
       emitter.emit("; opposite order, so that we don't munge rcx");
       resolver.mov(left, RDX);
-      resolver.mov(destination, RCX);
+      resolver.mov(newDestination, RCX);
     } else {
-      resolver.mov(destination, RCX);
+      resolver.mov(newDestination, RCX);
       resolver.mov(left, RDX);
     }
     emitter.emitExternCall("strcpy");
@@ -470,21 +479,28 @@ class StringCodeGenerator {
     emitter.emit0("");
     registerState = RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
     String rightName = resolver.resolve(right);
-    emitter.emit("; strcat from %s to %s", rightName, destination);
-    if (resolver.isInRegister(right, RCX) && resolver.isInRegister(destination, RDX)) {
+    emitter.emit("; strcat from %s to %s", rightName, newDestination);
+    if (resolver.isInRegister(right, RCX) && resolver.isInRegister(newDestination, RDX)) {
       // just swap rdx & rcx
       emitter.emit("; right wants to be in rcx dest in rdx, just swap");
       emitter.emit("xchg RDX, RCX");
     } else if (resolver.isInRegister(right, RCX)) {
       emitter.emit("; opposite order, so that we don't munge rcx");
       resolver.mov(right, RDX);
-      resolver.mov(destination, RCX);
+      resolver.mov(newDestination, RCX);
     } else {
-      resolver.mov(destination, RCX);
+      resolver.mov(newDestination, RCX);
       resolver.mov(right, RDX);
     }
     emitter.emitExternCall("strcat");
+
     registerState.condPop();
+    if (destination != newDestination) {
+      // NOTE != not .equals
+      emitter.emit("; assign to final destination");
+      resolver.mov(newDestination, destination);
+      resolver.deallocate(newDestination);
+    }
     emitter.emitLabel(fin);
   }
 

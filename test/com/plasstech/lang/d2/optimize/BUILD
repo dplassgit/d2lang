@@ -21,6 +21,7 @@ gen_java_tests(name="SmallTests",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:com_google_truth_truth",
+        "@maven//:com_google_truth_extensions_truth_java8_extension",
         "@maven//:junit_junit",
     ],
     runtime_deps=[

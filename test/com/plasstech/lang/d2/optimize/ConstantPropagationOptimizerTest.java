@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
@@ -10,8 +11,12 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ConstantPropagationOptimizerTest {
@@ -50,5 +55,34 @@ public class ConstantPropagationOptimizerTest {
     assertThat(program).hasSize(2);
     assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
     assertThat(program.get(1)).isTransferredFrom(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void destinationOverwrittenInBinOpShouldNotPropagate() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(GLOBAL_INT1, ConstantOperand.ONE, null),
+            // It's overwritten, so it should clear out the previous constant value.
+            new BinOp(GLOBAL_INT1, GLOBAL_INT2, TokenType.PLUS, ConstantOperand.ONE, null),
+            new Return("", GLOBAL_INT1));
+
+    program = OPTIMIZER.optimize(program, null);
+    assertThat(program).hasSize(3);
+    Return returnOp = (Return) program.get(2);
+    assertThat(returnOp.returnValueLocation()).hasValue(GLOBAL_INT1);
+  }
+
+  @Test
+  public void destinationOverwrittenInUnaryShouldNotPropagate() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(GLOBAL_INT1, ConstantOperand.ONE, null),
+            new UnaryOp(GLOBAL_INT1, TokenType.MINUS, GLOBAL_INT1, null),
+            new Return("", GLOBAL_INT1));
+
+    program = OPTIMIZER.optimize(program, null);
+    assertThat(program).hasSize(3);
+    Return returnOp = (Return) program.get(2);
+    assertThat(returnOp.returnValueLocation()).hasValue(GLOBAL_INT1);
   }
 }

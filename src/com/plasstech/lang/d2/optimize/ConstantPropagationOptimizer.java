@@ -163,7 +163,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Goto op) {
-    // a goto means potentially a loop and we can't rely on stack values anymore.
+    // a goto means potentially a loop and we can't rely on values anymore.
     replacements.clear();
     assignmentLocations.clear();
   }
@@ -213,6 +213,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (replacement != null) {
       replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement, op.position()));
     }
+    // This value has changed; remove any old settings
+    replacements.remove(op.destination());
+    assignmentLocations.remove(op.destination());
   }
 
   @Override
@@ -308,6 +311,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (left != op.left() || right != op.right()) {
       replaceCurrent(new BinOp(op.destination(), left, op.operator(), right, op.position()));
     }
+    // This value has changed; remove any old settings
+    replacements.remove(op.destination());
+    assignmentLocations.remove(op.destination());
   }
 
   @Override

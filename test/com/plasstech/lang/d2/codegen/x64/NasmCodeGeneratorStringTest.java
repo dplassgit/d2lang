@@ -348,18 +348,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void addChr() throws Exception {
-    execute("f:proc(s:string):string { "
-        + "sb = ''"
-        + "i = 0 while i < length(s) do i++ {"
-        + "  a = asc(s[i])"
-        + "  if a%2==1 {"
-        + "    sb = sb + chr(a)"
-        + "  }"
-        + "}"
-        + "return sb"
-        + "}"
-        + "print f('abcde')",
+  public void addToItself() throws Exception {
+    execute(
+        "f:proc(s:string):string {\n "
+            + "  sb = ''\n"
+            // This only fails in a loop because otherwise it is optimized to "return 'X'"
+            + "  i = 0 while i < 2 do i++ {\n"
+            + "    sb = sb + 'X'\n"
+            + "  }\n"
+            + "  sb = sb + 'Y'\n"
+            + "  nb = sb + 'Z'\n"
+            + "  return nb\n"
+            + "}\n"
+            + "print f('abcde')\n",
         "addChr");
   }
 }
