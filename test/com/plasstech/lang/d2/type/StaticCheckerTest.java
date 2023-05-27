@@ -40,6 +40,11 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void printVoid() {
+    assertError("f:proc{} print f()", "Cannot print VOID");
+  }
+
+  @Test
   public void assignInt() {
     State state = safeTypeCheck("a=3");
     SymTab types = state.symbolTable();

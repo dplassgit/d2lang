@@ -220,6 +220,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   public void visit(PrintNode node) {
     Node expr = node.expr();
     expr.accept(this);
+    if (expr.varType() == VarType.VOID) {
+      errors.add(
+          new TypeException(
+              String.format("Cannot print VOID expression %s", expr), expr.position()));
+    }
     if (expr.varType().isUnknown()) {
       errors.add(
           new TypeException(String.format("Indeterminable type for %s", expr), expr.position()));
