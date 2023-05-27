@@ -209,9 +209,7 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
             + "  println (3+a)*-b\r\n"
             + "  println 4%6\r\n"
             + "}\r\n"
-            + "main {\r\n"
-            + "  p()\r\n"
-            + "}\r\n",
+            + "p()\r\n",
         "bug32");
   }
 

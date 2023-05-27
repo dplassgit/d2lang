@@ -32,14 +32,11 @@ tester: proc(s:string, expected:bool) {
   }
 }
 
-main {
-  tester("hello", false)
-  tester("Hello", false)
-  tester("racecar", true)
-  tester("RaceCar", true)
-  tester("madamimadam", true)
-  tester("MadamIMAdam", true)
-  tester("Madam, I'm Adam", false)
-}
-
+tester("hello", false)
+tester("Hello", false)
+tester("racecar", true)
+tester("RaceCar", true)
+tester("madamimadam", true)
+tester("MadamIMAdam", true)
+tester("Madam, I'm Adam", false)
 

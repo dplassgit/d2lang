@@ -220,9 +220,7 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
             + "  println 3L+a*-b // 3+(-18*18)\r\n"
             + "  println (3L+a)*-b\r\n"
             + "}\r\n"
-            + "main {\r\n"
-            + "  p()\r\n"
-            + "}\r\n",
+            + "p()\r\n",
         "bug32");
   }
 

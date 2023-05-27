@@ -170,9 +170,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "  a = 'hi'"
             + "  b = 'bee'"
             + "}"
-            + "main {"
-            + "  setup()"
-            + "}",
+            + "setup()",
         "bug39");
   }
 

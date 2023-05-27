@@ -69,10 +69,8 @@ hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
   }
 }
 
-main { // fun fact, “main” is optional.
-  n = 5 // defines global
-  hanoi(n, 1, 2, 3)
-}
+n = 5 // defines global
+hanoi(n, 1, 2, 3)
 ```
 
 See more [samples](samples)

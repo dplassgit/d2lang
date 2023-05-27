@@ -10,13 +10,13 @@ Current keywords (excluding built-in types)
 
 ```
 if else elif do while break continue return proc print println
-main asc chr length exit input record new null extern args
+asc chr length exit input record new null extern args
 ```
 
 Eventually:
 
 ```
-keys?, values?, delete(?)
+delete for of in get this private load save export
 ```
 
 ## Oddities
@@ -237,10 +237,9 @@ To distinguish bytes from ints, byte hexadecimal constants use a `0y` prefix:
 e.g., `0y2f`. Bytes are signed.
 
 
-## `main` and command-line args
+## Order of execution and command-line args
 
-Statements are executed top to bottom, outside of procedures. The `main`
-method, if present, must always be the last method.
+Statements are executed top to bottom, outside of procedures. 
 
 Command-line arguments are provided in the `args` array (1-dimensional
 array of `string`s.)

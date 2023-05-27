@@ -35,7 +35,6 @@ import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
-import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -714,51 +713,7 @@ public class ParserTest {
 
   @Test
   public void mainEmpty() {
-    ProgramNode root = parseProgram("main{}");
-    assertThat(root.statements().statements().get(0)).isInstanceOf(MainNode.class);
-  }
-
-  @Test
-  public void statementThenMainEmpty() {
-    ProgramNode root = parseProgram("print 123 main{}");
-    BlockNode block = root.statements();
-    assertThat(block.statements()).hasSize(2);
-
-    PrintNode node = (PrintNode) block.statements().get(0);
-    assertThat(node.position().line()).isEqualTo(1);
-    assertThat(node.position().column()).isEqualTo(1);
-
-    ExprNode expr = node.expr();
-    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
-    assertThat(intNode.value()).isEqualTo(123);
-    assertThat(intNode.position().line()).isEqualTo(1);
-    assertThat(intNode.position().column()).isEqualTo(7);
-
-    assertThat(block.statements().get(1)).isInstanceOf(MainNode.class);
-  }
-
-  @Test
-  public void mainWithStatement() {
-    ProgramNode root = parseProgram("main{ print 123 }");
-    BlockNode globalBlock = root.statements();
-    assertThat(globalBlock.statements()).hasSize(1);
-    MainNode main = (MainNode) globalBlock.statements().get(0);
-    BlockNode block = main.block();
-
-    PrintNode node = (PrintNode) block.statements().get(0);
-
-    ExprNode expr = node.expr();
-    ConstNode<Integer> intNode = (ConstNode<Integer>) expr;
-    assertThat(intNode.value()).isEqualTo(123);
-  }
-
-  @Test
-  public void mainError() {
-    assertParseError("main", "expected {");
-    assertParseError("main {", "Unexpected start of statement 'EOF'");
-    assertParseError("main {} print ", "expected EOF");
-    assertParseError("main { print ", "expected literal");
-    assertParseError("main: proc() {}", "expected {");
+    assertParseError("main{}", "Unexpected '{'");
   }
 
   @Test

@@ -38,7 +38,6 @@ import com.plasstech.lang.d2.parse.node.FieldSetNode;
 import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
-import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -144,10 +143,9 @@ public class Parser implements Phase {
   }
 
   private ProgramNode program() {
-    // Read statements until EOF or "main"
+    // Read statements until EOF
     BlockNode statements = statements(matchesEof());
 
-    // It's restrictive: must have main at the bottom of the file. Sorry/not sorry.
     return new ProgramNode(statements);
   }
 
@@ -198,13 +196,6 @@ public class Parser implements Phase {
 
       case IF:
         return ifStmt(token);
-
-      case MAIN:
-        Token start = token;
-        advance(); // eat the main
-        BlockNode mainBlock = block();
-        expect(TokenType.EOF);
-        return new MainNode(mainBlock, start.start());
 
       case PRINT:
       case PRINTLN:

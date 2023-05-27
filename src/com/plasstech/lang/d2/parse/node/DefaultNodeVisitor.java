@@ -30,9 +30,6 @@ public class DefaultNodeVisitor implements NodeVisitor {
   public void visit(ExternProcedureNode node) {}
 
   @Override
-  public void visit(MainNode node) {}
-
-  @Override
   public void visit(WhileNode node) {}
 
   @Override

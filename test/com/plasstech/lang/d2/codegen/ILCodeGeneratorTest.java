@@ -77,7 +77,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void main() {
-    generateProgram("a=0 main {print a}");
+    generateProgram("a=0 print a");
   }
 
   @Test
@@ -109,17 +109,17 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void procVoid() {
-    generateProgram("f:proc() {print 'hi'} main{ f() }");
+    generateProgram("f:proc() {print 'hi'} f()");
   }
 
   @Test
   public void procInt() {
-    generateProgram("f:proc():int {return 3} main{ x=f() }");
+    generateProgram("f:proc():int {return 3} x=f() print x");
   }
 
   @Test
   public void procArg() {
-    generateProgram("f:proc(n:int, m:int):int {return n+m} main{ a=3 x=f(1, a) f(2,3) }");
+    generateProgram("f:proc(n:int, m:int):int {return n+m} a=3 x=f(1, a) f(2,3)");
   }
 
   @Test

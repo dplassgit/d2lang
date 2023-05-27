@@ -61,7 +61,5 @@ println ""
 println "y = " + y
 println "first letter of x = " + x[0]
 
-main {
-  f:bool
-  p()
-}
+f:bool
+p()

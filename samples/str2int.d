@@ -11,8 +11,6 @@ str2int: proc(s: string): int {
   return val
 }
 
-main {
-  println "Should be 314159:"
-  pi = str2int("314" + "159 ")
-  println pi
-}
+println "Should be 314159:"
+pi = str2int("314" + "159 ")
+println pi

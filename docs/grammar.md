@@ -4,15 +4,13 @@
 ## Full Grammar
 
 ```
-program -> statements main?
+program -> statements
 
 statements -> statement*
 statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'CONTINUE' | return_stmt | procedure_call | exit
 // reserved, but not implemented:
 // FOR <variable> IN <array>
 // DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXPORT
-
-main -> 'MAIN' '{' statements '}'
 
 assignment -> lvalue '=' expr
 lvalue -> variable | variable '[' expr ']' | variable '.' variable

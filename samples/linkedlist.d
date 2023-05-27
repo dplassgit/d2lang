@@ -25,14 +25,12 @@ print_list: proc(it: intlist) {
 }
 
 
-main {
-  list = new_list()
-  list.value = 0
-  
-  append(list, 1) 
-  append(list, 2) 
-  append(list, 4) 
-  append(list, 8)
-  append(list, 16)
-  print_list(list)
-}
+list = new_list()
+list.value = 0
+
+append(list, 1)
+append(list, 2)
+append(list, 4)
+append(list, 8)
+append(list, 16)
+print_list(list)

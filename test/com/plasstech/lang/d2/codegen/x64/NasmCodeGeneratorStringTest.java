@@ -329,14 +329,12 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "   return 'there ' + s\n"
             + "}\n"
             + "\n"
-            + "main {\n"
             + "  println 'Should print hello there'\n"
             + "  prepend('hello')\n"
             + "  println return_prepend('hello')\n"
             + "  println 'Should print there hello'\n"
             + "  postpend('hello')\n"
-            + "  println return_postpend('hello')\n"
-            + "}\n",
+            + "  println return_postpend('hello')\n",
         "bug83");
   }
 

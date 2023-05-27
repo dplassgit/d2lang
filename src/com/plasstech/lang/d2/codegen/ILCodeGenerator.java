@@ -47,7 +47,6 @@ import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.InputNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
-import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
@@ -154,11 +153,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static <T> ConstantOperand<T> toConstOperand(ConstNode<T> node) {
     return new ConstantOperand<T>(node.value(), node.varType());
-  }
-
-  @Override
-  public void visit(MainNode node) {
-    node.block().accept(this);
   }
 
   @Override

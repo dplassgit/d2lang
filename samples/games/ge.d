@@ -1665,26 +1665,24 @@ mainLoop: proc {
 }
 
 
-main {
-  gameinfo = new GameInfoType
-  gameinfo.num_empire=1
-  gameinfo.num_independent=NUM_PLANETS-1
-  gameinfo.date = 4000*100
+gameinfo = new GameInfoType
+gameinfo.num_empire=1
+gameinfo.num_independent=NUM_PLANETS-1
+gameinfo.date = 4000*100
 
-  // TODO: Ask for difficulty level
-  gameinfo.level = 5
-  gameinfo.leveld = tod(gameinfo.level)
-  print "Difficulty level is " println gameinfo.level
+// TODO: Ask for difficulty level
+gameinfo.level = 5
+gameinfo.leveld = tod(gameinfo.level)
+print "Difficulty level is " println gameinfo.level
 
-  seed = time(0)
-  seed = 1661383298
-  print "Random seed is " println seed
-  srand(seed)
+seed = time(0)
+seed = 1661383298
+print "Random seed is " println seed
+srand(seed)
 
-  help()
-  initPlanets()
-  initFleet()
-  map(planets[0])
-  mainLoop()
-}
+help()
+initPlanets()
+initFleet()
+map(planets[0])
+mainLoop()
 

@@ -8,15 +8,13 @@ make_r: proc(): r {
   return new r
 }
 
-main {
-  an_r = make_r()
-  an_r.i = s
-  an_r.s = i
+an_r = make_r()
+an_r.i = s
+an_r.s = i
 
-  b = an_r.i
-  c= an_r.s
+b = an_r.i
+c= an_r.s
 
-  println an_r.i
-  println an_r.s
-  println b
-}
+println an_r.i
+println an_r.s
+println b

@@ -29,7 +29,6 @@ import com.plasstech.lang.d2.parse.node.IfNode;
 import com.plasstech.lang.d2.parse.node.IfNode.Case;
 import com.plasstech.lang.d2.parse.node.IncDecNode;
 import com.plasstech.lang.d2.parse.node.LValueNode;
-import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.NodeVisitor;
@@ -795,12 +794,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (node.doStatement().isPresent()) {
       node.doStatement().get().accept(this);
     }
-    node.block().accept(this);
-  }
-
-  @Override
-  public void visit(MainNode node) {
-    // TODO: something about arguments? probably add to local symbol table
     node.block().accept(this);
   }
 

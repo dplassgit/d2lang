@@ -20,8 +20,6 @@ public interface NodeVisitor {
 
   void visit(ProcedureNode node);
 
-  void visit(MainNode node);
-
   void visit(WhileNode node);
 
   void visit(BreakNode node);

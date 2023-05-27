@@ -63,11 +63,6 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void exitMain() throws Exception {
-    assertCompiledEqualsInterpreted("main {exit 'exitMain'}", "exitMain", -1);
-  }
-
-  @Test
   public void asc(@TestParameter({"s", "he"}) String value) throws Exception {
     execute(String.format("a='%s' b=asc(a) print b", value), "asc");
     execute(String.format("b=asc('%s') print b", value), "ascConst");

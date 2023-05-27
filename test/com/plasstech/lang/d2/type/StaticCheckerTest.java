@@ -17,7 +17,6 @@ import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.IncDecNode;
-import com.plasstech.lang.d2.parse.node.MainNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
@@ -608,13 +607,8 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void main_error() {
-    assertError("a=1 main { if a==1 {} else {a=b}}", "Indeterminable");
-  }
-
-  @Test
   public void main() {
-    State state = safeTypeCheck("main {a=3 b=a c=b+4 d=b==c e=3<4 f=d==true}");
+    State state = safeTypeCheck("a=3 b=a c=b+4 d=b==c e=3<4 f=d==true");
     SymTab types = state.symbolTable();
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
@@ -623,18 +617,6 @@ public class StaticCheckerTest {
     assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
-
-    ProgramNode root = state.programNode();
-    MainNode mainNode = (MainNode) root.statements().statements().get(0);
-
-    AssignmentNode node = (AssignmentNode) mainNode.block().statements().get(1);
-    VariableSetNode var = (VariableSetNode) node.lvalue();
-    assertThat(var.name()).isEqualTo("b");
-    assertThat(var.varType()).isEqualTo(VarType.INT);
-
-    Node expr = node.expr();
-    VariableNode rhsNode = (VariableNode) expr;
-    assertThat(rhsNode.varType()).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -660,7 +642,6 @@ public class StaticCheckerTest {
     assertError("a:bool a:int", "already declared as BOOL");
     assertError("a:bool a:bool", "already declared as BOOL");
     // This may or may not be an error later
-    assertError("a:bool main {a:int}", "already declared as BOOL");
     assertError("a:int b=a", "'a' used before assign");
     assertError("a:int a=true", "declared type INT to BOOL");
     assertError("a:string a=true", "declared type STRING to BOOL");

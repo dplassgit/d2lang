@@ -18,7 +18,5 @@ hanoi: proc(n: int, fromPeg: int, usingPeg: int, toPeg: int) {
   }
 }
 
-main {
-  n=5
-  hanoi(n, 1, 2, 3)
-}
+n=5
+hanoi(n, 1, 2, 3)

@@ -115,7 +115,7 @@ public class InterpreterTest {
 
   @Test
   public void procCall() {
-    Environment env = execute("f:proc(a:int):int { print a return a+1} main{x=f(3)}");
+    Environment env = execute("f:proc(a:int):int { print a return a+1} x=f(3)");
     assertThat(env.getValue("x")).isEqualTo(4);
   }
 
@@ -136,7 +136,7 @@ public class InterpreterTest {
             "      f:proc(a:int):int { "
                 + "  if a==1 { return a } "
                 + "  else {return a*f(a-1)}} "
-                + "main{x=f(3)}");
+                + "x=f(3)");
     assertThat(env.getValue("x")).isEqualTo(6);
   }
 
@@ -244,9 +244,7 @@ public class InterpreterTest {
                 + "  a = 'hi'"
                 + "  b = 'bee'"
                 + "}"
-                + "main {"
-                + "  setup()"
-                + "}");
+                + "setup()");
     assertThat(env.getValue("a")).isEqualTo("hi");
     assertThat(env.getValue("b")).isNull();
   }

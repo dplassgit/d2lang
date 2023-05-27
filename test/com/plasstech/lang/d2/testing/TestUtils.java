@@ -95,13 +95,11 @@ public class TestUtils {
           + "    print_list(it.next) "
           + "  } "
           + "} "
-          + "main { "
-          + "  thelist = new_list() "
-          + "  thelist.value = 0 "
-          + "  append(thelist, 1)  "
-          + "  append(thelist, 2)  "
-          + "  print_list(thelist) "
-          + "}";
+          + "thelist = new_list() "
+          + "thelist.value = 0 "
+          + "append(thelist, 1)  "
+          + "append(thelist, 2)  "
+          + "print_list(thelist) ";
 
   public static final String RECORD_LOOP_INVARIANT =
       "      rt: record{i:int} "

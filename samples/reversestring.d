@@ -18,7 +18,5 @@ reverse2: proc(start: int, s: string): string {
   }
 }
 
-main {
-  println "Recursive reverse of 'Reverse' is " + reverseRecursive("Reverse")
-  println "Iterative reverse of 'Reverse' is " + reverseIter("Reverse")
-}
+println "Recursive reverse of 'Reverse' is " + reverseRecursive("Reverse")
+println "Iterative reverse of 'Reverse' is " + reverseIter("Reverse")
