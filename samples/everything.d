@@ -1,6 +1,5 @@
 // Integers
 p:proc() {
-  a:int
   a=3
   a=-3
   a=-+-3
@@ -18,7 +17,10 @@ p:proc() {
   e=a<3
   e=a<=3
   e=a>=3
-  e=(a>=3) or not (b<3)
+  print "a=" println a
+  print "b=" println b
+  broken=(a>=3) or not (b<3)
+  print "broken=" println broken
 
   // Print
   println a
@@ -49,7 +51,6 @@ d=c
 d=not c or false
 d=not not c and c
 
-x:string
 x="hi"
 x='hi'
 z=""
@@ -61,5 +62,4 @@ println ""
 println "y = " + y
 println "first letter of x = " + x[0]
 
-f:bool
 p()

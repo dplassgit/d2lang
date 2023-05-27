@@ -1,6 +1,6 @@
 reverseIter: proc(s: string): string {
   reverse = ""
-  i = length(s) - 1 while i >= 0 do i-- {
+  i = length(s) - 1 while i >= 0 do i=i-1 {
     reverse = reverse + s[i]
   }
   return reverse

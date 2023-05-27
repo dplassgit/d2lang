@@ -8,12 +8,12 @@ i = 0 while i < length(program) do i = i + 1 {
 }
 
 p:proc() {
-  program:string
+  //program:string
   program = 'print "hi"'
-  copy:string 
+  //copy:string 
   copy = ""
 
-  i:int
+  //i:int
   i = 0 while i < length(program) do i = i + 1 {
     println program[i]
     copy = copy + program[i]

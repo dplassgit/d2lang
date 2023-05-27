@@ -1,5 +1,3 @@
-
-
 isPrime:proc(n:int):bool {
   m = 2
   while m <= n/2 do m = m + 1 {

@@ -1,4 +1,3 @@
-
 reverse_word_order:proc(s:string):string {
   news = '' // heh
   word = ''

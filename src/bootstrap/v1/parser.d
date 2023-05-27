@@ -1,512 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
-//                           VERSION 1 (WRITTEN IN V0)
-///////////////////////////////////////////////////////////////////////////////
-
-// TODO (in no particular order)
-//   more type checking
-//   records: declare, new, field set, field get
-//   array parameters
-//   increment, decrement?
-
-debug=false
-
-///////////////////////////////////////////////////////////////////////////////
-//                                     LEXER                                 //
-///////////////////////////////////////////////////////////////////////////////
-TOKEN_EOF=0
-TOKEN_PLUS=1
-TOKEN_MINUS=2
-TOKEN_MULT=3
-TOKEN_AND=4 // bit and
-TOKEN_OR=5  // bit or
-TOKEN_DIV=6
-TOKEN_MOD=7
-TOKEN_EQEQ=8
-TOKEN_NEQ=9
-TOKEN_LT=10
-TOKEN_GT=11
-TOKEN_LEQ=12
-TOKEN_GEQ=13
-TOKEN_BIT_NOT=14 // bit not
-TOKEN_INT=15  // int constant
-TOKEN_BOOL=16  // bool constant
-TOKEN_STRING=17 // string constant
-TOKEN_VARIABLE=18
-TOKEN_EQ=19
-TOKEN_LPAREN=20
-TOKEN_RPAREN=21
-TOKEN_LBRACE=22
-TOKEN_RBRACE=23
-TOKEN_COLON=24
-TOKEN_COMMA=25
-TOKEN_KEYWORD=26
-TOKEN_LBRACKET=27
-TOKEN_RBRACKET=28
-//TOKEN_DOT=29
-//TOKEN_SHIFT_LEFT=30
-//TOKEN_SHIFT_RIGHT=31
-//TOKEN_XOR=32 // bit xor
-
-KW_PRINT=0
-KW_IF=1
-KW_ELSE=2
-KW_ELIF=3
-KW_PROC=4
-KW_RETURN=5
-KW_WHILE=6
-KW_DO=7
-KW_BREAK=8
-KW_CONTINUE=9
-KW_INT=10   // int keyword
-KW_BOOL=11  // bool keyword
-KW_STRING=12  // string keyword
-KW_NULL=13
-KW_INPUT=14
-KW_LENGTH=15
-KW_CHR=16
-KW_ASC=17
-KW_EXIT=18
-KW_AND=19 // boolean and
-KW_OR=20  // boolean or
-KW_NOT=21 // boolean not
-// KW_MAIN=SKIPPED
-KW_RECORD=22
-KW_NEW=23
-KW_DELETE=24
-KW_PRINTLN=25
-
-KEYWORDS:string[26]
-KEYWORDS[KW_PRINT]="print"
-KEYWORDS[KW_IF]="if"
-KEYWORDS[KW_ELSE]="else"
-KEYWORDS[KW_ELIF]="elif"
-KEYWORDS[KW_PROC]="proc"
-KEYWORDS[KW_RETURN]="return"
-KEYWORDS[KW_WHILE]="while"
-KEYWORDS[KW_DO]="do"
-KEYWORDS[KW_BREAK]="break"
-KEYWORDS[KW_CONTINUE]="continue"
-KEYWORDS[KW_INT]="int"
-KEYWORDS[KW_BOOL]="bool"
-KEYWORDS[KW_STRING]="string"
-KEYWORDS[KW_NULL]="null"
-KEYWORDS[KW_INPUT]="input"
-KEYWORDS[KW_LENGTH]="length"
-KEYWORDS[KW_CHR]="chr"
-KEYWORDS[KW_ASC]="asc"
-KEYWORDS[KW_EXIT]="exit"
-KEYWORDS[KW_AND]="and"
-KEYWORDS[KW_OR]="or"
-KEYWORDS[KW_NOT]="not"
-KEYWORDS[KW_PRINTLN]="println"
-KEYWORDS[KW_RECORD]="record"
-KEYWORDS[KW_NEW]="new"
-KEYWORDS[KW_DELETE]="delete"
-
-// Global for lexer:
-lexerText=''   // full text
-lexerLoc=0     // index/location inside text
-lexerCc=0      // current character
-
-newLexer: proc(text: string) {
-  lexerText = text
-  resetLexer()
-}
-
-resetLexer: proc() {
-  lexerLoc = 0
-  lexerCc = 0
-  advanceLex()
-}
-
-nextToken: proc(): string {
-  // skip unwanted whitespace
-  while (lexerCc == 32 or lexerCc == 10 or lexerCc == 9 or lexerCc == 13) {
-    advanceLex()
-  }
-  if lexerCc != 0 {
-    if isDigit(lexerCc) {
-      return makeIntToken()
-    } elif isLetter(lexerCc) {
-      // might be string, keyword, boolean constant
-      return makeTextToken()
-    } else {
-      return makeSymbolToken()
-    }
-  }
-
-  return Token(TOKEN_EOF, "")
-}
-
-advanceLex: proc() {
-  if lexerLoc < length(lexerText) {
-    lexerCc=asc(lexerText[lexerLoc])
-  } else {
-    // Indicates no more characters
-    lexerCc=0
-  }
-  lexerLoc = lexerLoc + 1
-  if debug {
-    // print "; Lexer cc " print lexerCc print ":" print chr(lexerCc) print "\n"
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Lexer token values, for external consumption
-///////////////////////////////////////////////////////////////////////////////
-
-lexTokenType=0
-lexTokenString=''
-lexTokenInt=0
-lexTokenKw=0
-lexTokenBool=false
-
-// Bundle the data about the token in a single string of the format
-// 't <type> <value>'
-Token: proc(type: int, value: string): string {
-  lexTokenType = type
-  lexTokenString = value
-  lexTokenInt = -1
-  lexTokenKw = -1
-  lexTokenBool = false
-  if debug {
-    print "; Making token type: " print type print " value: (skipped)\n"
-    // print value print "\n"
-  }
-  return 't ' + toString(type) + ' ' + value
-}
-
-// Bundle the data about the token in a single string of the format
-// 'i <value>'
-IntToken: proc(value: int, valueAsString: string): string {
-  lexTokenType = TOKEN_INT
-  lexTokenString = valueAsString
-  lexTokenInt = value
-  lexTokenKw = -1
-  lexTokenBool = false
-  return 'i ' + valueAsString
-}
-
-// Bundle the data about the token in a single string of the format
-// 'b true/false'
-BoolToken: proc(value: bool, valueAsString: string): string {
-  lexTokenType = TOKEN_BOOL
-  lexTokenString = valueAsString
-  lexTokenInt = -1
-  lexTokenKw = -1
-  lexTokenBool = value
-  return 'b ' + lexTokenString
-}
-
-// Bundle the data about the token in a single string of the format
-// 'k value'
-KeywordToken: proc(value: int, valueAsString: string): string {
-  lexTokenType = TOKEN_KEYWORD
-  lexTokenString = valueAsString
-  lexTokenKw = value
-  lexTokenInt = -1
-  lexTokenBool = false
-  return 'k ' + lexTokenString
-}
-
-toString: proc(i: int): string {
-  if i == 0 {
-    return '0'
-  }
-  val = ''
-  while i > 0 do i = i / 10 {
-    val = chr((i % 10) + 48) + val
-  }
-  return val
-}
-
-isLetter: proc(c: int): bool {
-  // return (c>=asc('a') and c <= asc('z')) or (c>=asc('A') and c<=asc('Z')) or c==asc('_')
-  return (c >= 97 and c <= 122) or (c >= 65 and c <= 90) or c == 95
-}
-
-isDigit: proc(c: int): bool {
-  // return c>=asc('0') and c <= asc('9')
-  return c >= 48 and c <= 57
-}
-
-isLetterOrDigit: proc(c: int): bool {
-  return isLetter(c) or isDigit(c)
-}
-
-makeTextToken: proc(): string {
-  value=''
-  if lexerCc == 95 {
-    // do not allow leading _
-    print "ERROR: Cannot start variable with an underscore\n"
-    exit
-  }
-  if isLetter(lexerCc) {
-    value=value + chr(lexerCc)
-    advanceLex()
-  }
-  while isLetterOrDigit(lexerCc) {
-    value=value + chr(lexerCc)
-    advanceLex()
-  }
-
-  if value == 'true' or value == 'false' {
-    return BoolToken(value == 'true', value)
-  }
-
-  i=0 while i < length(KEYWORDS) do i = i + 1 {
-    if value == KEYWORDS[i] {
-      return KeywordToken(i, value)
-    }
-  }
-
-  return Token(TOKEN_VARIABLE, value)
-}
-
-makeIntToken: proc(): string {
-  value=0
-  value_as_string = ''
-
-  while isDigit(lexerCc) do advanceLex() {
-    // value=value * 10 + lexerCc - asc('0')
-    value=value * 10 + lexerCc - 48
-    value_as_string = value_as_string + chr(lexerCc)
-  }
-  return IntToken(value, value_as_string)
-}
-
-startsWithSlash: proc(): string {
-  advanceLex() // eat the first slash
-  if lexerCc == 47 {
-    // second slash == comment.
-    advanceLex() // eat the second slash
-    // Eat characters until newline
-    while lexerCc != 10 and lexerCc != 0 do advanceLex() {}
-    if lexerCc != 0 {
-      advanceLex() // eat the newline
-    }
-    // TODO figure out if this can be done a different way, maybe with a "comment" token?
-    return nextToken()
-  }
-  return Token(TOKEN_DIV, '/')
-}
-
-startsWithBang: proc(): string {
-  oc=lexerCc
-  advanceLex() // eat the !
-  if lexerCc == 61 {
-    advanceLex()
-    return Token(TOKEN_NEQ, '!=')
-  }
-  print 'Unknown character:' + chr(lexerCc) + ' ASCII code: ' + toString(lexerCc)
-  exit
-  // return Token(TOKEN_BIT_NOT, '!'))
-}
-
-startsWithGt: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
-    return Token(TOKEN_GEQ, '>=')
-  //} elif lexerCc == '>' {
-    // shift right
-    //advanceLex()
-    //return Token(TOKEN_SHIFT_RIGHT, '>>')
-  }
-  return Token(TOKEN_GT, '>')
-}
-
-startsWithLt: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
-    return Token(TOKEN_LEQ, '<=')
-  //} elif lexerCc == '<' {
-    //// shift right
-    //advanceLex()
-    //return Token(TOKEN_SHIFT_LEFT, '<<')
-  }
-  return Token(TOKEN_LT, '<')
-}
-
-startsWithEq: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
-    return Token(TOKEN_EQEQ, '==')
-  }
-  return Token(TOKEN_EQ, '=')
-}
-
-makeStringLiteralToken: proc(firstQuote: int): string {
-  advanceLex() // eat the tick/quote
-  sb=''
-  while lexerCc != firstQuote and lexerCc != 0 {
-    if lexerCc == 92 { // backslash
-      advanceLex()
-      if lexerCc == 110 { // backslash - n
-        sb=sb + chr(10)  // linefeed
-      } elif lexerCc == 92 {
-        sb=sb + chr(92)  // literal backslash
-      }
-    } else {
-      sb=sb + chr(lexerCc)
-    }
-    advanceLex()
-  }
-
-  if lexerCc == 0 {
-    print 'ERROR: Unclosed string literal ' print sb print "\n"
-    exit
-  }
-
-  advanceLex() // eat the closing tick/quote
-  return Token(TOKEN_STRING, sb)
-}
-
-makeSymbolToken: proc(): string {
-  oc = lexerCc
-  if oc == 61 {
-    return startsWithEq()
-  } elif oc == 60 {
-    return startsWithLt()
-  } elif oc == 62 {
-    return startsWithGt()
-  } elif oc == 43 {
-    advanceLex()
-    return Token(TOKEN_PLUS, '+')
-  } elif oc == 45 {
-    advanceLex()
-    return Token(TOKEN_MINUS, '-')
-  } elif oc == 40 {
-    advanceLex()
-    return Token(TOKEN_LPAREN, '(')
-  } elif oc == 41 {
-    advanceLex()
-    return Token(TOKEN_RPAREN, ')')
-  } elif oc == 42 {
-    advanceLex()
-    return Token(TOKEN_MULT, '*')
-  } elif oc == 47 {
-    return startsWithSlash()
-  } elif oc == 37 {
-    advanceLex()
-    return Token(TOKEN_MOD, '%')
-  // } elif oc == asc('&') {
-  //   advanceLex()
-  //   return Token(TOKEN_AND, '&')
-  // } elif oc == asc('|') {
-  //   advanceLex()
-  //   return Token(TOKEN_OR, '|')
-  } elif oc == 33 {
-    return startsWithBang()
-  } elif oc == 123 {
-    advanceLex()
-    return Token(TOKEN_LBRACE, '{')
-  } elif oc == 125 {
-    advanceLex()
-    return Token(TOKEN_RBRACE, '}')
-  } elif oc == 91 {
-    advanceLex()
-    return Token(TOKEN_LBRACKET, '[')
-  } elif oc == 93 {
-    advanceLex()
-    return Token(TOKEN_RBRACKET, ']')
-  } elif oc == 58 {
-    advanceLex()
-    return Token(TOKEN_COLON, ':')
-  } elif oc == 34 or oc == 39 { // double or single quote
-    return makeStringLiteralToken(oc)
-  } elif oc == 44 {
-    advanceLex()
-    return Token(TOKEN_COMMA, ',')
-  // } elif oc == '.' {
-  //   advanceLex()
-  //   return Token(TOKEN_DOT, oc)
-  } else {
-    print 'ERROR: Unknown character:' + chr(lexerCc) + ' ASCII code: ' print lexerCc print "\n"
-    exit
-  }
-}
-
-printToken: proc() {
-  if lexTokenType == TOKEN_EOF {
-    print 'Token: EOF' print "\n"
-  } elif lexTokenType == TOKEN_INT {
-    print 'Int token: ' print lexTokenInt print "\n"
-  } elif lexTokenType == TOKEN_STRING {
-    print 'String token: "' print lexTokenString print '"\n'
-  } elif lexTokenType == TOKEN_BOOL {
-    if lexTokenBool {
-      print 'Bool token: true\n'
-    } else {
-      print 'Bool token: false\n'
-    }
-  } elif lexTokenType == TOKEN_KEYWORD {
-    print 'Keyword token: ' print lexTokenString print "\n"
-  } elif lexTokenType == TOKEN_VARIABLE {
-    print 'Variable: ' print lexTokenString print "\n"
-  } else {
-    print 'Token: ' print lexTokenString print ' type: ' print lexTokenType print '\n'
-  }
-}
-
-//text = input
-//newLexer(text)
-
-//count = 1
-//token = nextToken()
-//printToken(token)
-
-//while lexTokenType != TOKEN_EOF do count = count + 1 {
-  //token = nextToken()
-  //printToken(token)
-//}
-
-//print 'Total number of tokens: '
-//print count print "\n"
-
-
-///////////////////////////////////////////////////////////////////////////////
-//                                    TYPES
-///////////////////////////////////////////////////////////////////////////////
-
-TYPE_UNKNOWN=0
-TYPE_INT=1
-TYPE_BOOL=2
-TYPE_STRING=3
-TYPE_ARRAY=4  // NOTE THIS IS NOT AN OFFICIAL TYPE
-TYPE_INT_ARRAY=5
-TYPE_BOOL_ARRAY=6
-TYPE_STRING_ARRAY=7
-TYPE_VOID=8
-
-TYPE_NAMES:string[9]
-TYPE_NAMES[TYPE_UNKNOWN] = "unknown"
-TYPE_NAMES[TYPE_INT] = "int"
-TYPE_NAMES[TYPE_BOOL] = "bool"
-TYPE_NAMES[TYPE_STRING] = "string"
-TYPE_NAMES[TYPE_INT_ARRAY] = "int[]"
-TYPE_NAMES[TYPE_BOOL_ARRAY] = "bool[]"
-TYPE_NAMES[TYPE_STRING_ARRAY] = "string[]"
-TYPE_NAMES[TYPE_VOID] = "void"
-
-TYPE_SIZES:int[9]
-TYPE_SIZES[TYPE_UNKNOWN] = 0
-TYPE_SIZES[TYPE_INT] = 4
-TYPE_SIZES[TYPE_BOOL] = 1
-TYPE_SIZES[TYPE_STRING] = 8
-TYPE_SIZES[TYPE_INT_ARRAY] = 8
-TYPE_SIZES[TYPE_BOOL_ARRAY] = 8
-TYPE_SIZES[TYPE_STRING_ARRAY] = 8
-TYPE_SIZES[TYPE_VOID] = 0
-
-
-///////////////////////////////////////////////////////////////////////////////
 //                                    PARSER                                 //
+//                           VERSION 1 (COMPILED BY V0)                      //
 ///////////////////////////////////////////////////////////////////////////////
 
 advanceParser: proc() {
@@ -518,15 +12,15 @@ advanceParser: proc() {
 
 expectToken: proc(expectedTokenType: int, tokenStr: string) {
   if lexTokenType != expectedTokenType  {
-    print "ERROR: expected '" + tokenStr + "' but found: " printToken()
+    parserError("Unexpected '" + lexTokenString + "'; expected '" + tokenStr + "'")
     exit
   }
   advanceParser() // eat the expected token
 }
 
-expectKeyword: proc(expectedKwType: int, tokenStr: string) {
+expectKeyword: proc(expectedKwType: int) {
   if lexTokenType != TOKEN_KEYWORD or lexTokenKw != expectedKwType {
-    print "ERROR: expected '" + tokenStr + "' but found: " printToken()
+    parserError("Unexpected '" + lexTokenString + "'; expected '" + KEYWORDS[expectedKwType] + "'")
     exit
   }
   advanceParser() // eat the keyword
@@ -534,193 +28,8 @@ expectKeyword: proc(expectedKwType: int, tokenStr: string) {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// SYMBOL TABLES
+//                                CODEGEN UTILS                              //
 ///////////////////////////////////////////////////////////////////////////////
-
-numStrings = 0
-stringTable: string[400]  // v0.d has 311 strings
-
-// Create a string constant and return its index. If the string already is in the table,
-// will not re-create it.
-addStringConstant: proc(s: string): int  {
-  i = 0 while i < numStrings do i = i + 1 {
-    if stringTable[i] == s {
-      return i
-    }
-  }
-  stringTable[numStrings] = s
-  numStrings = numStrings + 1
-  return numStrings - 1
-}
-
-sizeByType: proc(type: int): int {
-  if type == TYPE_UNKNOWN {
-    print "ERROR: Cannot get size of unknown type\n"
-    exit
-  }
-
-  // TODO: when all the RAX's are fixed, return TYPE_SIZES[type]
-  return 8
-}
-
-
-numGlobals = 0
-MAX_GLOBALS=200 // currently v0.d has > 100 globals
-globalNames: string[MAX_GLOBALS]
-globalTypes: int[MAX_GLOBALS]
-
-registerGlobal: proc(name: string, type: int) {
-  if type == TYPE_UNKNOWN {
-    print "ERROR: Cannot register global '" + name + "' with unknown type\n"
-    exit
-  }
-  i = 0 while i < numGlobals do i = i + 1 {
-    if globalNames[i] == name {
-      return
-    }
-  }
-  if debug {
-    print "; Adding global name " + name print "\n"
-  }
-  globalNames[numGlobals] = name
-  globalTypes[numGlobals] = type
-  numGlobals = numGlobals + 1
-}
-
-lookupGlobal: proc(name: string): int {
-  i = 0 while i < numGlobals do i = i + 1 {
-    if globalNames[i] == name {
-      return globalTypes[i]
-    }
-  }
-  return TYPE_UNKNOWN
-}
-
-
-MAX_NUM_PROCS = 100 // currently v0.d has ~60 procs
-numProcs = 0
-procNames: string[MAX_NUM_PROCS]
-returnTypes: int[MAX_NUM_PROCS]
-
-numParams: int[MAX_NUM_PROCS]
-PARAMS_PER_PROC = 4
-// These are sparse arrays; the start index for the 0th param of each proc is 4 * proc num
-paramNames: string[MAX_NUM_PROCS * PARAMS_PER_PROC]
-paramTypes: int[MAX_NUM_PROCS * PARAMS_PER_PROC]
-paramOffsets: int[MAX_NUM_PROCS * PARAMS_PER_PROC]
-
-numLocals: int[MAX_NUM_PROCS]
-LOCALS_PER_PROC = 10
-// These are sparse arrays; the start index for the 0th local of each proc is 10 * proc num
-localNames: string[MAX_NUM_PROCS * LOCALS_PER_PROC]
-localTypes: int[MAX_NUM_PROCS * LOCALS_PER_PROC]
-localOffsets: int[MAX_NUM_PROCS * LOCALS_PER_PROC]
-
-currentProcNum = -1
-
-
-registerProc: proc(name: string, returnType: int) {
-  if returnType == TYPE_UNKNOWN {
-    print "ERROR: Cannot have unknown proc return type\n"
-    exit
-  }
-  // TODO: make sure it doesn't exist yet
-  procNames[numProcs] = name
-  returnTypes[numProcs] = returnType
-  numProcs = numProcs + 1
-}
-
-setCurrentProcNum: proc(name: string) {
-  i = 0 while i < numProcs do i = i + 1 {
-    if procNames[i] == name {
-      currentProcNum = i
-      return
-    }
-  }
-  print "ERROR: Cannot set current proc num for proc '" print name print "'\n"
-  exit
-}
-
-lookupProcReturnType: proc(name: string): int {
-  i = 0 while i < numProcs do i = i + 1 {
-    if name == procNames[i] {
-      return returnTypes[i]
-    }
-  }
-  print "ERROR: Cannot find proc '" print name print "'\n"
-  exit
-}
-
-// returns the index of the param in the arrays
-lookupParam: proc(name: string): int {
-  if currentProcNum == -1 {
-    print "ERROR: Cannot lookup parameter " print name print " because not in a proc"
-    exit
-  }
-
-  base = currentProcNum * PARAMS_PER_PROC
-  i = 0 while i < numParams[currentProcNum] do i = i + 1 {
-    if paramNames[base] == name {
-      return base
-    }
-    base = base + 1
-  }
-  return -1
-}
-
-// returns the index of the local in the arrays
-lookupLocal: proc(name: string): int {
-  if currentProcNum == -1 {
-    print "ERROR: Cannot lookup local " print name print " because not in a proc"
-    exit
-  }
-  base = currentProcNum * 10
-  i = 0 while i < numLocals[currentProcNum] do i = i + 1 {
-    if localNames[base] == name {
-      return base
-    }
-    base = base + 1
-  }
-
-  return -1
-}
-
-registerParam: proc(name: string, type: int) {
-  // TODO: make sure it's not already defined
-}
-
-// Returns the offset of this local.
-registerLocal: proc(name: string, type: int): int {
-  if type == TYPE_UNKNOWN {
-    print "ERROR: Cannot register local '" + name + "' with unknown type\n"
-    exit
-  }
-  myLocalCount = numLocals[currentProcNum]
-  if myLocalCount == LOCALS_PER_PROC {
-    print "ERROR: Too many locals. Max is " print LOCALS_PER_PROC print "\n"
-    exit
-  }
-
-  // These are sparse arrays; the start index for the 0th local of each proc is 10 * proc num
-  base = currentProcNum * LOCALS_PER_PROC + myLocalCount
-
-  offset = -sizeByType(type)
-  if myLocalCount > 0 {
-    // add our offset to previous offset
-    offset = offset + localOffsets[base - 1]
-  }
-  localOffsets[base] = offset
-  localNames[base] = name
-  localTypes[base] = type
-  numLocals[currentProcNum] = myLocalCount + 1
-  return offset
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// CODEGEN UTILS
-///////////////////////////////////////////////////////////////////////////////
-
 
 labelId=0
 nextLabel: proc(prefix:string) : string {
@@ -755,12 +64,27 @@ emitExtern: proc(name: string) {
   print "  extern " + name + "\n"
   print "  sub RSP, 0x20\n"
   print "  call " + name + "\n"
-  print "  add RSP, 0x20\n"
+  print "  add RSP, 0x20\n\n"
 }
 
+// TODO: make this a procedure?
+generateNpeTest: proc() {
+  oklabel = nextLabel("not_null")
+  print "  cmp RAX, 0\n"
+  print "  jne " print oklabel print "\n"
+
+  npeMessageIndex = addStringConstant("Null pointer error at line %d.\n")
+  print "  mov RCX, CONST_" print npeMessageIndex print "\n"
+  print "  mov RDX, " print lexCurrentLine print "\n"
+  emitExtern("printf")
+  print "  mov RCX, -1\n"
+  emitExtern("exit")
+
+  emitLabel(oklabel)
+}
 
 ///////////////////////////////////////////////////////////////////////////////
-// EXPRESSION RULES
+//                              EXPRESSION RULES                             //
 ///////////////////////////////////////////////////////////////////////////////
 
 // expr
@@ -778,7 +102,7 @@ emitExtern: proc(name: string) {
 //    if minus { eat token; e = parseExpression; generate -e }
 //    if plus { eat token; return parseexpressoin}
 //    else return composite
-// composite -> atom | atom [ int ]
+// composite -> atom | atom [ int ] | atom . field
 // atom -> int constant, bool constant, string constant, variable, '(' expr ')', 'input'
 
 
@@ -789,15 +113,18 @@ expr: proc(): int {
 
 boolOr: proc(): int {
   leftType = boolAnd()
+  // TODO: int/TOKEN_OR
   if lexTokenType == TOKEN_KEYWORD and leftType == TYPE_BOOL {
     while lexTokenKw == KW_OR {
       advanceParser() // eat the symbol
       print "  push RAX\n"
-      // TODO: check types
-      boolAnd()
+
+      rightType = boolAnd()
+      checkTypes(leftType, rightType)
+
       print "  pop RBX\n" // pop the left side
-      // left = left (op) right
-      print "  or BL, AL  ; bool or bool\n"
+      // left = left (bool) OR right
+      print "  or BL, AL\n"
       print "  mov AL, BL\n"
     }
   }
@@ -806,15 +133,18 @@ boolOr: proc(): int {
 
 boolAnd: proc(): int {
   leftType = compare()
+  // TODO: int/TOKEN_AND
   if lexTokenType == TOKEN_KEYWORD and leftType == TYPE_BOOL {
     while lexTokenKw == KW_AND {
       advanceParser() // eat the symbol
       print "  push RAX\n"
-      // TODO: check types
-      compare()
+
+      rightType = compare()
+      checkTypes(leftType, rightType)
+
       print "  pop RBX\n" // pop the left side
-      // left = left (op) right
-      print "  and BL, AL  ; bool and bool\n"
+      // left = left and right
+      print "  and BL, AL\n"
       print "  mov AL, BL\n"
     }
   }
@@ -828,26 +158,57 @@ compare: proc(): int {
     opstring = lexTokenString
     advanceParser() // eat the symbol
     print "  push RAX\n"
-    // TODO: check types
-    addSub()
+
+    rightType = addSub()
+    checkTypes(leftType, rightType)
+
     print "  pop RBX\n" // pop the left side
+
     // left = left (op) right
     // TODO: This is too big for ints, should just use EBX, EAX
     print "  cmp RBX, RAX  ; int " print opstring print " int\n"
     print "  " print OPCODES[op] print " AL\n"
     return TYPE_BOOL
-  }
-  if leftType == TYPE_STRING and (lexTokenType == TOKEN_EQEQ or lexTokenType == TOKEN_NEQ) {
+  } elif leftType == TYPE_STRING and (lexTokenType == TOKEN_EQEQ or lexTokenType == TOKEN_NEQ) {
     op = lexTokenType
-    opstring = lexTokenString
     advanceParser() // eat the symbol
     print "  push RAX\n"
-    // TODO: check types
-    addSub()
+
+    rightType = addSub()
+    checkTypes(leftType, rightType)
+
     print "  mov RDX, RAX  ; right side\n"
     print "  pop RCX  ; left side\n"
     emitExtern("strcmp")
     print "  cmp RAX, 0\n"
+    print "  " print OPCODES[op] print " AL\n"
+    return TYPE_BOOL
+  } elif leftType == TYPE_BOOL and (lexTokenType >= TOKEN_EQEQ and lexTokenType <= TOKEN_GEQ) {
+    op = lexTokenType
+    opstring = lexTokenString
+    advanceParser() // eat the symbol
+    print "  push RAX\n"
+
+    rightType = addSub()
+    checkTypes(leftType, rightType)
+
+    print "  pop RBX\n" // pop the left side
+    print "  cmp BL, AL  ; bool " print opstring print " bool\n"
+    print "  " print OPCODES[op] print " AL\n"
+    return TYPE_BOOL
+  } elif (isRecordType(leftType) or leftType == TYPE_NULL) and
+         (lexTokenType == TOKEN_EQEQ or lexTokenType == TOKEN_NEQ) {
+    op = lexTokenType
+    opstring = lexTokenString
+    advanceParser() // eat the symbol
+    print "  push RAX\n"
+
+    rightType = addSub()
+    checkTypes(leftType, rightType)
+
+    print "  pop RBX\n" // pop the left side
+    // left = left (op) right
+    print "  cmp RBX, RAX  ; record " print opstring print " record\n"
     print "  " print OPCODES[op] print " AL\n"
     return TYPE_BOOL
   }
@@ -861,15 +222,13 @@ addSub: proc(): int {
     opstring = lexTokenString
     advanceParser() // eat the symbol
     print "  push RAX\n"
+
     rightType = mulDiv()
-    if leftType != rightType {
-      print "ERROR: Type mismatch. Left operand is " print TYPE_NAMES[leftType]
-      print ", but right operand is " print TYPE_NAMES[rightType] print "\n"
-      exit
-    }
+    checkTypes(leftType, rightType)
+
     print "  pop RBX\n" // pop the left side
     if leftType == TYPE_BOOL {
-      print "ERROR: Cannot add or subtract booleans\n"
+      typeError("Cannot add or subtract booleans")
       exit
     }
     if leftType == TYPE_STRING {
@@ -903,7 +262,7 @@ addSub: proc(): int {
       continue
     }
     if leftType == TYPE_STRING and lexTokenType == TOKEN_MINUS {
-      print "ERROR: Cannot subtract strings\n"
+      typeError("Cannot subtract strings")
       exit
     }
 
@@ -925,8 +284,10 @@ mulDiv: proc(): int {
     op = lexTokenType
     advanceParser() // eat the symbol
     print "  push RAX\n"
-    // TODO: check types
-    unary()
+
+    rightType = unary()
+    checkTypes(leftType, rightType)
+
     print "  pop RBX\n" // pop the left side
 
     // TODO: This is too big for ints, should just use EAX & EBX
@@ -947,10 +308,16 @@ mulDiv: proc(): int {
   return leftType
 }
 
+// -unary | +unary | length(expr) | asc(expr) | chr(expr) | not expr
 unary: proc(): int {
   if lexTokenType == TOKEN_PLUS {
     advanceParser() // eat the plus
-    return unary()
+    type = unary()
+    if type == TYPE_INT {
+      return type
+    }
+    typeError("Cannot codegen positive non-ints")
+    exit
   } elif lexTokenType == TOKEN_MINUS {
     advanceParser() // eat the minus
     type = unary()
@@ -959,7 +326,7 @@ unary: proc(): int {
       print "  neg RAX  ; unary minus\n"
       return type
     }
-    print "ERROR: cannot codegen negative non-ints yet\n"
+    typeError("Cannot codegen negative non-ints")
     exit
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_LENGTH {
     advanceParser() // eat the length
@@ -970,15 +337,14 @@ unary: proc(): int {
       print "  mov RCX, RAX\n"
       emitExtern("strlen")
     } elif isArrayType(type) {
-      // RAX has location or array
+      // RAX has location of array
       print "  inc RAX               ; skip past # of dimensions\n"
       print "  mov DWORD EAX, [RAX]  ; get length (4 bytes only)\n" // Fun fact: the upper 32 bits are zero-extended
     }
     else {
-      print "ERROR: Cannot take LENGTH of " print TYPE_NAMES[type] print "\n"
+      typeError("Cannot take LENGTH of " + typeName(type))
       exit
     }
-
     return TYPE_INT
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_ASC {
     advanceParser() // eat the asc
@@ -986,7 +352,7 @@ unary: proc(): int {
     type = expr()
     expectToken(TOKEN_RPAREN, ')')
     if type != TYPE_STRING {
-      print "ERROR: Cannot take ASC of " print TYPE_NAMES[type] print "\n"
+      typeError("Cannot take ASC of " + typeName(type))
       exit
     }
 
@@ -995,16 +361,17 @@ unary: proc(): int {
     // clear out the high bytes
     print "  and RAX, 255\n"
     return TYPE_INT
+
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_CHR {
     advanceParser() // eat the chr
 
     expectToken(TOKEN_LPAREN, '(')
     type = expr()
-    print "  push RAX  ; save the int\n"
+    print "  push RAX\n" // save the int to be made into a string
     expectToken(TOKEN_RPAREN, ')')
 
     if type != TYPE_INT {
-      print "ERROR: Cannot take CHR of " print TYPE_NAMES[type] print "\n"
+      typeError("Cannot take CHR of " + typeName(type))
       exit
     }
 
@@ -1012,20 +379,61 @@ unary: proc(): int {
     print "  mov RCX, 2\n"
     print "  mov RDX, 1\n"
     emitExtern("calloc")
-    print "  pop RBX  ; get character\n"
+    print "  pop RBX\n"
     print "  mov BYTE [RAX], BL  ; store byte\n"
     return TYPE_STRING
+  } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NOT {
+    advanceParser() // eat the NOT
+
+    type = expr()
+
+    if type != TYPE_BOOL {
+      typeError("Cannot apply NOT to " + typeName(type))
+      exit
+    }
+
+    print "  xor AL, 0x01  ; NOT\n"
+    return type
+  } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NEW {
+    advanceParser() // eat the NEW
+    recordName = lexTokenString
+    if lexTokenType != TOKEN_VARIABLE {
+      expectToken(TOKEN_VARIABLE, "variable")
+      exit
+    }
+    advanceParser() // eat the variable
+    // make sure it's a record
+    index = lookupRecord(recordName)
+    if index == -1 {
+      typeError("Record '" + recordName + "' not defined")
+      exit
+    }
+    size = recordSizes[index]
+    print "  mov RCX, " print size print " ; size of record type " print recordName print "\n"
+    print "  mov RDX, 1\n"
+    emitExtern("calloc")
+    return TYPE_RECORD_BASE + index
   }
 
   return composite()
 }
 
-isArrayType: proc(type: int): bool {
-  return type > TYPE_ARRAY and type <= TYPE_STRING_ARRAY
-}
 
-toBaseType: proc(arrayType: int): int {
-  return arrayType - TYPE_ARRAY
+// Makes sure RAX as index is >= 0
+// TODO: Make this a subroutine
+generateIndexPositiveCheck: proc() {
+  oklabel = nextLabel("index_ge0")
+  print "  cmp RAX, 0\n"
+  print "  jge " print oklabel print "\n"
+  // TODO: include the line # and index here
+  errorindex = addStringConstant("\nERROR: index cannot be negative\n")
+  print "  mov RCX, CONST_" print errorindex print "\n"
+  emitExtern("printf")
+  emitExtern("_flushall")
+  print "  mov RCX, -1\n"
+  emitExtern("exit")
+
+  emitLabel(oklabel)
 }
 
 
@@ -1037,12 +445,14 @@ generateArrayIndex: proc(arrayType: int): int {
   print "  push RAX  ; save array base location\n"
   indexType = expr()
   if indexType != TYPE_INT {
-    print "ERROR: Array index must be int; was " + TYPE_NAMES[indexType] + "\n"
+    typeError("Array index must be int; was " + typeName(indexType))
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
 
-  // TODO: make sure index > 0 and < length
+  generateIndexPositiveCheck()
+  // TODO: make sure index < length
+
   // 1. multiply index by size
   print "  imul RAX, " print sizeByType(baseType) print "  ; bytes per entry (temporarily 8)\n"
   // 2. add 5
@@ -1059,43 +469,83 @@ generateArrayIndex: proc(arrayType: int): int {
 
 // Generate a "get" of foo[int]
 generateStringIndex: proc() {
-  print "  push RAX  ; save string location\n"
+  print "  push RAX\n"
   indexType = expr()
   if indexType != TYPE_INT {
-    print "ERROR: String index must be int; was " + TYPE_NAMES[indexType] + "\n"
+    typeError("String index must be int; was " + typeName(indexType))
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
-  print "  push RAX  ; save index\n"
+  print "  push RAX\n"
 
-  // TODO: check for index > 0 and index < string length
+  generateIndexPositiveCheck()
+  // TODO: check that index < string length
 
   // allocate a 2-byte string
   print "  mov RCX, 2\n"
   print "  mov RDX, 1\n"
   emitExtern("calloc")
-  print "  pop RBX  ; index\n"
-  print "  pop RCX  ; string base\n"
-  print "  add RCX, RBX  ; calculate offset to source character\n"
+  print "  pop RBX\n"
+  print "  pop RCX\n"
+  print "  add RCX, RBX  ; base+index\n"
   print "  mov BYTE CL, [RCX]  ; get byte\n"
   print "  mov BYTE [RAX], CL  ; store byte\n"
 }
 
+// atom | atom [ index ] | atom . fieldname
 composite: proc(): int {
   leftType = atom()
-  if lexTokenType == TOKEN_LBRACKET {
-    // array index
-    expectToken(TOKEN_LBRACKET, '[')
+  while lexTokenType == TOKEN_LBRACKET or lexTokenType == TOKEN_DOT {
+    generateNpeTest()
 
-    if isArrayType(leftType) {
-      return generateArrayIndex(leftType)
-    } elif leftType == TYPE_STRING {
-      generateStringIndex()
-      return leftType
+    if lexTokenType == TOKEN_LBRACKET {
+      // array or string index
+      expectToken(TOKEN_LBRACKET, '[')
+
+      if isArrayType(leftType) {
+        // Overwrite return type
+        leftType = generateArrayIndex(leftType)
+      } elif leftType == TYPE_STRING {
+        generateStringIndex()
+      } else {
+        typeError("Cannot take index of " + typeName(leftType))
+        exit
+      }
+    } elif lexTokenType == TOKEN_DOT {
+      // field
+      expectToken(TOKEN_DOT, '.')
+      if isRecordType(leftType) {
+        if lexTokenType != TOKEN_VARIABLE {
+          typeError("Expected field name but found: " + lexTokenString)
+          exit
+        }
+        fieldName = lexTokenString
+
+        advanceParser() // eat the field name
+
+        index = leftType - TYPE_RECORD_BASE
+        fieldIndex = lookupField(index, fieldName)
+        if fieldIndex == -1 {
+          typeError("Unknown field '" + fieldName + "' of record type " + recordNames[index])
+          exit
+        }
+
+        fieldType = fieldTypes[fieldIndex]
+        fieldOffset = fieldOffsets[fieldIndex]
+        if fieldOffset > 0 {
+          print "  add RAX, " print fieldOffset print "\n"
+        }
+
+        // TODO: this is too big for ints
+        print "  mov RAX, [RAX]  ; get record." print fieldName print "\n"
+
+        // Overwrite return type to be *this* field's type
+        leftType = fieldType
+      } else {
+        typeError("Cannot take field of " + typeName(leftType))
+        exit
+      }
     }
-
-    print "ERROR: Cannot take index of " + TYPE_NAMES[leftType] + "\n"
-    exit
   }
   return leftType
 }
@@ -1105,12 +555,13 @@ generateGetVariable: proc(variable: string): int {
   if varType != TYPE_UNKNOWN {
     // TODO: This is too big for ints, should just use EAX;
     // also too big for bools
+    // print "  ; source type is " print varType print "\n"
     print "  mov RAX, [_" print variable print "]  ; get global '" print variable print "'\n"
     return varType
   }
   if currentProcNum == -1 {
     // not in a proc, cannot look up local
-    print "ERROR: Cannot find global variable " print variable print "\n"
+    typeError("Cannot find global variable " + variable)
     exit
   }
 
@@ -1125,7 +576,7 @@ generateGetVariable: proc(variable: string): int {
 
   index = lookupParam(variable)
   if index == -1 {
-    print "ERROR: Cannot find param" print variable print "\n"
+    typeError("Cannot find variable " + variable)
     exit
   }
   offset = paramOffsets[index]
@@ -1172,7 +623,9 @@ generateProcCall: proc(procname: string) {
 
   // # of bytes we have to adjust the stack (pseudo-pop)
   bytes = 8 * numArgs
-  print "  add RSP, " print bytes print "  ; adjust stack for pushed params\n\n"
+  if bytes > 0 {
+    print "  add RSP, " print bytes print "  ; adjust stack for pushed params\n\n"
+  }
 }
 
 generateInput: proc() {
@@ -1195,13 +648,17 @@ generateInput: proc() {
   print "  pop RAX\n"
 }
 
-// atom -> constant | variable | variable '(' args ')' | '(' expr ')'
+// atom -> constant | variable | variable '(' args ')' | '(' expr ')' | null
 atom: proc(): int {
-  if lexTokenType == TOKEN_STRING {
+  if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NULL {
+    advanceParser()
+    print "  mov RAX, 0  ; null\n"
+    return TYPE_NULL
+  } elif lexTokenType == TOKEN_STRING {
     // string constant
     index = addStringConstant(lexTokenString)
     advanceParser()
-    print "  mov RAX, CONST_" print index print "  ; string constant\n"
+    print "  mov RAX, CONST_" print index print "\n"
     return TYPE_STRING
 
   } elif lexTokenType == TOKEN_INT {
@@ -1209,7 +666,7 @@ atom: proc(): int {
     intval = lexTokenInt
     advanceParser()
     // TODO: This is too big for ints, should just use EAX
-    print "  mov RAX, " print intval print "  ; int constant\n"
+    print "  mov RAX, " print intval print "\n"
     return TYPE_INT
 
   } elif lexTokenType == TOKEN_BOOL {
@@ -1217,9 +674,9 @@ atom: proc(): int {
     boolval = lexTokenBool
     advanceParser()
     if boolval {
-      print "  mov AL, 1  ; bool constant true\n"
+      print "  mov AL, 1\n"
     } else {
-      print "  xor RAX, RAX  ; bool constant false\n"
+      print "  xor RAX, RAX\n"
     }
     return TYPE_BOOL
 
@@ -1237,7 +694,7 @@ atom: proc(): int {
 
     type = lookupProcReturnType(variable)
     if type == TYPE_VOID {
-      print "ERROR: Return type of " print variable print " is void. Cannot assign it to a variable.\n"
+      typeError("Return type of " + variable + " is void. Cannot assign it to a variable.")
       exit
     }
 
@@ -1258,24 +715,32 @@ atom: proc(): int {
     return TYPE_STRING
   }
 
-  print "ERROR: cannot parse token in atom(): " printToken()
+  parserError("Cannot parse token in atom(): " + lexTokenString)
   exit
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// STATEMENT RULES
+//                               STATEMENT RULES                             //
 ///////////////////////////////////////////////////////////////////////////////
 
 parseType: proc(): int {
   i = 1 while i <= 3 do i = i + 1 {
     if TYPE_NAMES[i] == lexTokenString {
       advanceParser()
+      // TODO: allow arrays here
       return i
     }
   }
-  // TODO: allow arrays here
-  print "ERROR: Unknown type " printToken()
+  // Lookup record here
+  recordIndex = lookupRecord(lexTokenString)
+  if recordIndex != -1 {
+    print "  ; found record type " print lexTokenString print "\n"
+    advanceParser()
+    return TYPE_RECORD_BASE + recordIndex
+  }
+
+  parserError("Unknown type " + lexTokenString)
   exit
 }
 
@@ -1288,7 +753,7 @@ parseArrayDecl: proc(variable: string) {
 
   sizeType = expr()
   if sizeType != TYPE_INT {
-    print "ERROR: Array size must be an int, but was " print TYPE_NAMES[sizeType] print "\n"
+    typeError("Array size must be an int, but was " + typeName(sizeType))
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -1308,33 +773,39 @@ parseArrayDecl: proc(variable: string) {
   generateAssignment(variable, arrayType)
 }
 
+// Whether we have seen a "return" in this proc.
+hasReturn=false
+
 // Procedure declaration
 parseProc: proc(procName: string) {
-  expectKeyword(KW_PROC, 'PROC')
+  hasReturn=false
+
+  expectKeyword(KW_PROC)
   if currentProcNum != -1 {
-    print "ERROR: cannot define nested procs\n"
+    parserError("Cannot define nested procs")
     exit
   }
   setCurrentProcNum(procName)
 
-  // if next token is (, advance parser, read parameters until )
-  // TODO: allow skipping parens if no params
-  expectToken(TOKEN_LPAREN, '(')
+  if lexTokenType == TOKEN_LPAREN {
+    // if next token is (, advance parser, read parameters until )
+    expectToken(TOKEN_LPAREN, '(')
 
-  // Parse params (but not really; they've already been added to the symbol table)
-  while lexTokenType != TOKEN_RPAREN {
-    expectToken(TOKEN_VARIABLE, 'variable')
-    expectToken(TOKEN_COLON, ':')
-    parseType()
+    // Parse params (but not really; they've already been added to the symbol table)
+    while lexTokenType != TOKEN_RPAREN {
+      expectToken(TOKEN_VARIABLE, 'variable')
+      expectToken(TOKEN_COLON, ':')
+      parseType()
 
-    if lexTokenType == TOKEN_COMMA {
-      advanceParser() // eat the comma
-    } else {
-      break
+      if lexTokenType == TOKEN_COMMA {
+        advanceParser() // eat the comma
+      } else {
+        break
+      }
     }
-  }
 
-  expectToken(TOKEN_RPAREN, ')')
+    expectToken(TOKEN_RPAREN, ')')
+  }
 
   // if next token is :, read return type
   returnType = TYPE_VOID
@@ -1357,6 +828,13 @@ parseProc: proc(procName: string) {
   print "  sub RSP, 96  ; space for up to 10 8-byte locals\n\n"
 
   parseBlock()
+  if returnType != TYPE_VOID {
+    if hasReturn {} else {
+      // ugh, v0 doesn't support NOT
+      parserError("No return from proc '" + procName)
+      exit
+    }
+  }
   currentProcNum = -1
 
   print "__exit_of_" print procName print ":\n"
@@ -1367,48 +845,50 @@ parseProc: proc(procName: string) {
 }
 
 parseProcSignature: proc(procName: string) {
-  // if next token is (, advance parser, read parameters until )
-  expectToken(TOKEN_LPAREN, '(')
-
-  // Parse params
-  offset = 8 // first 8 bytes is for return address
   myProcNum = numProcs
-  paramIndex = myProcNum * PARAMS_PER_PROC
-  index = 0
-  while lexTokenType != TOKEN_RPAREN {
-    if lexTokenType != TOKEN_VARIABLE {
-      print "ERROR: expected variable but found: " printToken()
-      exit
+  if lexTokenType == TOKEN_LPAREN {
+    // if next token is (, advance parser, read parameters until )
+    expectToken(TOKEN_LPAREN, '(')
+
+    // Parse params
+    offset = 8 // first 8 bytes is for return address
+    paramIndex = myProcNum * PARAMS_PER_PROC
+    index = 0
+    while lexTokenType != TOKEN_RPAREN {
+      if lexTokenType != TOKEN_VARIABLE {
+        expectToken(TOKEN_VARIABLE, "variable")
+        exit
+      }
+      if numParams[myProcNum] == PARAMS_PER_PROC {
+        typeError("More than 4 parameters declared for proc " + procName)
+        exit
+      }
+      paramName = lexTokenString
+      advanceParser() // eat the param name
+
+      expectToken(TOKEN_COLON, ':')
+
+      type = parseType()
+
+      // store the name and type of the parameter
+      // TODO: detect duplicate parameters
+      // TODO: write registerParam(paramName, type, index)
+      paramNames[paramIndex] = paramName
+      paramTypes[paramIndex] = type
+      offset = offset + 8 // all params start at 8 bytes increments on the stack (?)
+      paramOffsets[paramIndex] = offset
+      paramIndex = paramIndex + 1
+      index = index + 1
+      numParams[myProcNum] = numParams[myProcNum] + 1
+
+      if lexTokenType == TOKEN_COMMA {
+        advanceParser()
+      } else {
+        break
+      }
     }
-    if numParams[myProcNum] == PARAMS_PER_PROC {
-      print "ERROR: More than 4 parameters declared for proc " print procName print "\n"
-      exit
-    }
-    paramName = lexTokenString
-    advanceParser() // eat the param name
-
-    expectToken(TOKEN_COLON, ':')
-
-    type = parseType()
-
-    // store the name and type of the parameter
-    // TODO: detect duplicate parameters
-    // TODO: write registerParam(paramName, type, index)
-    paramNames[paramIndex] = paramName
-    paramTypes[paramIndex] = type
-    offset = offset + 8 // all params start at 8 bytes increments on the stack (?)
-    paramOffsets[paramIndex] = offset
-    paramIndex = paramIndex + 1
-    index = index + 1
-    numParams[myProcNum] = numParams[myProcNum] + 1
-
-    if lexTokenType == TOKEN_COMMA {
-      advanceParser()
-    } else {
-      break
-    }
+    expectToken(TOKEN_RPAREN, ')')
   }
-  expectToken(TOKEN_RPAREN, ')')
 
   // if next token is :, read return type
   returnType = TYPE_VOID
@@ -1417,11 +897,11 @@ parseProcSignature: proc(procName: string) {
     returnType = parseType()
   }
   registerProc(procName, returnType)
-  // print "; procs: " print procNames print "\n"
-  // print "; numParams: " print numParams print "\n"
+  // print "; procs: " print procNames[0] print "\n"
+  // print "; numParams: " print numParams[0] print "\n"
   // print "; return types: " print returnTypes print "\n"
-  // print "; params: " print paramNames print "\n"
-  // print "; param types: " print paramTypes print "\n"
+  // print "; params: " print paramNames[0] print "\n"
+  // print "; param types: " print paramTypes[0] print "\n"
   // print "; offsets    : " print paramOffsets print "\n"
 }
 
@@ -1449,28 +929,33 @@ isAtStartOfExpression: proc(): bool {
 parseReturn: proc() {
   // if we're not in a procedure: error
   if currentProcNum == -1 {
-    print "ERROR: Cannot return outside proc\n"
+    parserError("Cannot return from outside proc")
     exit
   }
 
+  hasReturn=true
+
   currentProcName = procNames[currentProcNum]
-  // if we're at the start of an expression, parse it.
+  actualType = TYPE_VOID
   if isAtStartOfExpression() {
+    // if we're at the start of an expression, parse it.
     actualType = expr()
-    // check that return types match
-    expectedType = returnTypes[currentProcNum]
-    if actualType != expectedType {
-      print "ERROR: Incorrect return type of '" print currentProcName print "'. Expected "
-      print TYPE_NAMES[expectedType]
-      print " but found " print TYPE_NAMES[actualType] print "\n"
-      exit
-    }
+  }
+
+  expectedType = returnTypes[currentProcNum]
+
+  // Check that return types match
+  if actualType != expectedType {
+    typeError("Incorrect return type of '" + currentProcName + "'. Expected "
+      + typeName(expectedType) + " but found " + typeName(actualType))
+    exit
   }
   print "  jmp __exit_of_" print currentProcName print "\n"
 }
 
 generateAssignment: proc(variable: string, exprType: int): int {
   varType = lookupGlobal(variable)
+  // print "  ; in assignment exprType is " print exprType print "\n"
   isGlobal = varType != TYPE_UNKNOWN or currentProcNum == -1
   if isGlobal {
     if varType == TYPE_UNKNOWN {
@@ -1507,27 +992,145 @@ generateAssignment: proc(variable: string, exprType: int): int {
 }
 
 generateArraySet: proc(variable: string) {
-  // TODO: make sure 'variable' is an array
-  expectToken(TOKEN_LBRACKET, '[')
-  indexType = expr()
-  if indexType != TYPE_INT {
-    print "ERROR: Array index must be int; was " + TYPE_NAMES[indexType] + "\n"
+  type = lookupType(variable)
+
+  // Make sure 'variable' is an array
+  if isArrayType(type) { // TODO: flip this logic: if not isArrayType(type)...
+
+    expectToken(TOKEN_LBRACKET, '[')
+    indexType = expr()
+    if indexType != TYPE_INT {
+      typeError("Array index must be INT; was " + typeName(indexType))
+      exit
+    }
+    print "  mov RBX, RAX\n"
+    // TODO: FIX ME
+    print "  shl RBX, 3  ; bytes per element TEMPORARY\n"
+    print "  add RBX, 5  ; header\n"
+    generateGetVariable(variable)
+    print "  add RBX, RAX\n"
+    print "  push RBX\n"
+    expectToken(TOKEN_RBRACKET, ']')
+    expectToken(TOKEN_EQ, '=')
+
+    rightType = expr()
+
+    checkTypes(toBaseType(type), rightType)
+
+    print "  pop RBX\n"
+    print "  mov [RBX], RAX  ; array set\n\n"
+  } else {
+    typeError("Cannot take index of non-array variable " + variable)
     exit
   }
-  print "  mov RBX, RAX\n"
-  print "  shl RBX, 3  ; bytes per element TEMPORARY\n"
-  print "  add RBX, 5  ; header\n"
+}
+
+parseRecordDecl: proc(recordName: string) {
+  recIndex = registerRecord(recordName)
+  expectKeyword(KW_RECORD)
+  expectToken(TOKEN_LBRACE, "{")
+
+  offset = 0
+  fieldIndex = recIndex * FIELDS_PER_RECORD
+  index = 0
+  size = 0
+  // zero or more variable declarations, NOT followed by commas
+  while lexTokenType != TOKEN_RBRACE and lexTokenType != TOKEN_EOF {
+    // record the field names and types
+    if lexTokenType != TOKEN_VARIABLE {
+      expectToken(TOKEN_VARIABLE, 'variable')
+      exit
+    }
+    if numFields[recIndex] == FIELDS_PER_RECORD {
+      typeError("More than 20 parameters declared for record " + recordName)
+      exit
+    }
+    fieldName = lexTokenString
+    advanceParser() // eat the field name
+
+    expectToken(TOKEN_COLON, ':')
+
+    type = parseType()
+
+    // store the name and type of the field
+    // TODO: detect duplicate fields
+    // registerField(fieldName, type)
+    fieldNames[fieldIndex] = fieldName
+    fieldTypes[fieldIndex] = type
+    fieldOffsets[fieldIndex] = offset
+    size = size + sizeByType(type)
+    offset = offset + sizeByType(type)
+    fieldIndex = fieldIndex + 1
+    index = index + 1
+    numFields[recIndex] = numFields[recIndex] + 1
+  }
+  expectToken(TOKEN_RBRACE, "}")
+  recordSizes[recIndex] = size
+
+  if debug {
+    print "; # records: " print numRecords print "\n"
+    print "; record name: " print recordNames[recIndex] print "\n"
+    print "; numFields: " print numFields[recIndex] print "\n"
+    print "; size: " print recordSizes[recIndex] print "\n"
+    print "; fields: " i=0 while i < numFields[recIndex] do i = i + 1 {print fieldNames[recIndex*FIELDS_PER_RECORD+i] print " " }
+    print "\n"
+    print "; field types: " i=0 while i < numFields[recIndex] do i = i + 1 {print typeName(fieldTypes[recIndex*FIELDS_PER_RECORD+i]) print " " }
+    print "\n"
+    print "; offsets: " i=0 while i < numFields[recIndex] do i = i + 1 {print fieldOffsets[recIndex*FIELDS_PER_RECORD+i] print " " }
+    print "\n"
+  }
+}
+
+
+skipRecordDecl: proc(recordName: string) {
+  expectKeyword(KW_RECORD)
+  expectToken(TOKEN_LBRACE, "{")
+  // zero or more variable declarations, NOT followed by commas
+  while lexTokenType != TOKEN_RBRACE and lexTokenType != TOKEN_EOF {
+    expectToken(TOKEN_VARIABLE, 'field')
+    expectToken(TOKEN_COLON, ':')
+    parseType()
+  }
+  expectToken(TOKEN_RBRACE, "}")
+}
+
+generateFieldSet: proc(variable: string) {
   generateGetVariable(variable)
-  print "  add RBX, RAX\n"
-  print "  push RBX\n"
-  expectToken(TOKEN_RBRACKET, ']')
-  expectToken(TOKEN_EQ, '=')
+  generateNpeTest()
+  print "  push RAX\n"  // base of record in memory
 
-  expr()
+  expectToken(TOKEN_DOT, '.')
+  type = lookupType(variable)
 
-  // TODO: make sure exprType matches baseType of the array
+  if lexTokenType != TOKEN_VARIABLE {
+    typeError("Expected field name but found: " + lexTokenString)
+    exit
+  }
+  fieldName = lexTokenString
+
+  advanceParser() // eat the field name
+  expectToken(TOKEN_EQ, "=")
+
+  rhsType = expr()
+
+  index = type - TYPE_RECORD_BASE
+  fieldIndex = lookupField(index, fieldName)
+  if fieldIndex == -1 {
+    typeError("Unknown field '" + fieldName + "' of record " + recordNames[index])
+    exit
+  }
+  fieldType = fieldTypes[fieldIndex]
+
+  checkTypes(fieldType, rhsType)
+  fieldOffset = fieldOffsets[fieldIndex]
+  // print "  ; setting field index " print fieldIndex print " of record type " print recordNames[index] print "\n"
   print "  pop RBX\n"
-  print "  mov [RBX], RAX  ; array set\n\n"
+  if fieldOffset > 0 {
+    print "  add RBX, " print fieldOffset print "  ; add field offset\n"
+  }
+
+  // TODO: this is too big for ints
+  print "  mov [RBX], RAX  ; set " print variable print "." print fieldName print "\n\n" // store it
 }
 
 // variable=expression, procname: proc(), procname(), arrayname:type[intexpr]
@@ -1540,17 +1143,15 @@ parseStartsWithVariable: proc() {
     exprType = expr()
     varType = generateAssignment(variable, exprType)
 
-    if varType != exprType {
-      print "ERROR: Type mismatch: '" print variable print "' is " print TYPE_NAMES[varType]
-      print " but expression is " print TYPE_NAMES[exprType] print "\n"
-      exit
-    }
+    checkTypes(varType, exprType)
 
     return
   } elif lexTokenType == TOKEN_COLON {
     advanceParser() // eat the colon
     if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_PROC {
       parseProc(variable)
+    } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_RECORD {
+      skipRecordDecl(variable)
     } else {
       parseArrayDecl(variable)
     }
@@ -1562,8 +1163,12 @@ parseStartsWithVariable: proc() {
     // array set
     generateArraySet(variable)
     return
+  } elif lexTokenType == TOKEN_DOT {
+    generateFieldSet(variable)
+    return
   }
-  print "ERROR: expected one of '=' ':' '(' '[' but found: " printToken()
+
+  parserError("expected one of '=' ':' '(' '[' but found: " + lexTokenString)
   exit
 }
 
@@ -1582,7 +1187,7 @@ parseIf: proc() {
   condType = expr()
 
   if condType != TYPE_BOOL {
-    print "ERROR: Expected boolean condition in if but found " print TYPE_NAMES[condType] print "\n"
+    typeError("Expected boolean condition in if but found " + typeName(condType))
     exit
   }
 
@@ -1607,7 +1212,7 @@ parseIf: proc() {
     advanceParser() // eat the elif
     condType = expr()
     if condType != TYPE_BOOL {
-      print "ERROR: Expected boolean condition in elif but found " print TYPE_NAMES[condType] print "\n"
+      typeError("Expected boolean condition in elif but found " + typeName(condType))
       exit
     }
 
@@ -1638,7 +1243,7 @@ whileContinueLabels:string[100]
 
 parseBreak: proc() {
   if numWhiles == 0 {
-    print "ERROR: Cannot have break outside while loop\n"
+    parserError("Cannot have break outside while loop")
     exit
   }
   print "  jmp " print whileBreakLabels[numWhiles - 1] print "\n"
@@ -1646,7 +1251,7 @@ parseBreak: proc() {
 
 parseContinue: proc() {
   if numWhiles == 0 {
-    print "ERROR: Cannot have continue outside while loop\n"
+    parserError("Cannot have continue outside loop")
     exit
   }
   print "  jmp " print whileContinueLabels[numWhiles - 1] print "\n"
@@ -1658,7 +1263,7 @@ parseWhile: proc() {
 
   condType = expr()
   if condType != TYPE_BOOL {
-    print "ERROR: Expected boolean as 'while' condition, but found " print TYPE_NAMES[condType] print "\n"
+    typeError("Expected boolean condition in while but found " + typeName(condType))
     exit
   }
   print "  cmp AL, 0\n"
@@ -1719,7 +1324,10 @@ parseWhile: proc() {
 
 parsePrint: proc(isPrintln: bool) {
   exprType = expr()  // puts result in RAX
-  if exprType == TYPE_STRING {
+  if exprType == TYPE_NULL {
+    nullindex = addStringConstant("null")
+    print "  mov RCX, CONST_" print nullindex print "\n"
+  } elif exprType == TYPE_STRING {
     print "  mov RCX, RAX\n"
   } elif exprType == TYPE_BOOL {
     trueindex = addStringConstant("true")
@@ -1733,10 +1341,13 @@ parsePrint: proc(isPrintln: bool) {
     print "  mov RCX, CONST_" print index print "\n"
     // TODO: This is too big for ints, should just use EDX, EAX
     print "  mov RDX, RAX\n"
+  } else {
+    parserError("Cannot generate printing " + typeName(exprType))
+    exit
   }
   print "  sub RSP, 0x20\n"
   print "  extern printf\n"
-  print "  call printf  ; print " print TYPE_NAMES[exprType] print "\n"
+  print "  call printf  ; print " print typeName(exprType) print "\n"
   print "  extern _flushall\n"
   print "  call _flushall\n"
   print "  add RSP, 0x20\n\n"
@@ -1780,13 +1391,13 @@ parseStmt: proc() {
     return
   }
 
-  print "ERROR: Cannot parse start of statement token: "  printToken()
+  parserError("Cannot parse start of statement. Found: " + lexTokenString)
   exit
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// MAIN LOOP & OUTPUT ROUTINES
+//                          MAIN LOOP & OUTPUT ROUTINES                      //
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -1843,28 +1454,50 @@ parseProgram: proc() {
 }
 
 procFinder: proc() {
-  lastVariable=''
   while lexTokenType != TOKEN_EOF {
     if lexTokenType == TOKEN_VARIABLE {
       variable = lexTokenString
       advanceParser() // eat the variable
       if lexTokenType == TOKEN_COLON {
-        advanceParser() // eat th ecolon
-        if lexTokenKw == KW_PROC {
+        advanceParser() // eat the colon
+        if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_PROC {
           advanceParser() // eat "proc"
           parseProcSignature(variable)
-          continue
         }
+        continue
       }
+      continue
     }
     advanceParser()
   }
+  resetLexer()
+  advanceParser()
+}
+
+recordFinder: proc() {
+  while lexTokenType != TOKEN_EOF {
+    if lexTokenType == TOKEN_VARIABLE {
+      variable = lexTokenString
+      advanceParser() // eat the variable
+      if lexTokenType == TOKEN_COLON {
+        advanceParser() // eat the colon
+        if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_RECORD {
+          parseRecordDecl(variable)
+        }
+        continue
+      }
+      continue
+    }
+    advanceParser()
+  }
+  resetLexer()
+  advanceParser()
 }
 
 initParser: proc() {
   text = input
-  if debug {
 //    print "text = " print text print "\n"
+  if debug {
   }
   newLexer(text)
   advanceParser()
@@ -1872,7 +1505,6 @@ initParser: proc() {
 
 
 initParser()
+recordFinder()
 procFinder()
-resetLexer()
-advanceParser()
 parseProgram()

@@ -1,4 +1,18 @@
-data = [2,1,4,5,20,40,1,9,100,0,8,6,98,0]
+data:int[14]
+data[0]=2
+data[1]=1
+data[2]=4
+data[3]=5
+data[4]=20
+data[5]=40
+data[6]=1
+data[7]=9
+data[8]=100
+data[9]=0
+data[10]=8
+data[11]=6
+data[12]=98
+data[13]=0
 
 Node: record {
   left: Node
@@ -39,13 +53,13 @@ i = 1 while i < length(data) do i = i + 1 {
 }
 
 // now print them. LVR FTR
-print_tree: proc(head: Node) {
-  if (head.left != null) {
-    print_tree(head.left)
+print_tree: proc(nod: Node) {
+  if (nod.left != null) {
+    print_tree(nod.left)
   }
-  println head.value
-  if (head.right != null) {
-    print_tree(head.right)
+  println nod.value
+  if (nod.right != null) {
+    print_tree(nod.right)
   }
 }
 

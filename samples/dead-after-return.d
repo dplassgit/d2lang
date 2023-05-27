@@ -1,6 +1,6 @@
 f:proc:int {
-    return 3
-    println 'Hello world'
+  return 3
+  println 'Hello world'
 }
 
 f2:proc:int {
