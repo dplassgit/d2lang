@@ -1,18 +1,24 @@
 rm -f temp.* 
 # compile v1 with v0
 echo "Compiling v1:"
-./src/bootstrap/v0/v0fromv0.exe < src/bootstrap/v1/v1.d > v1.asm && nasm -fwin64 v1.asm && gcc v1.obj -o v1.exe || exit
+./src/bootstrap/v0/v0fromv0.exe < src/bootstrap/v1/v1.d > v1.asm 
+if [ $? -ne 0 ] 
+then
+  cat v1.asm
+  exit -1
+fi
+nasm -fwin64 v1.asm && gcc v1.obj -o v1.exe || exit -1
+
 # compile target with v1
-echo "Compiling target:"
+echo "Compiling target with v1:"
 ./v1.exe < $PWD/$1 > temp.asm 
 if [ $? -ne 0 ] 
 then
-  echo "Compilation error"
   cat temp.asm
   exit -1
 fi
 
-nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe || exit
+nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe || exit -1
 echo "Running target:"
 echo "==============="
 ./temp.exe
