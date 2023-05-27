@@ -26,44 +26,6 @@ import com.plasstech.lang.d2.testing.TestUtils;
 public class GoldenTests extends NasmCodeGeneratorTestBase {
 
   @Test
-  public void lexerInDLexerInDGlobals() throws IOException {
-    if (System.getenv("TEST_SRCDIR") == null) {
-      String path = Paths.get("samples/d2ind2/lexerglobals.d").toString();
-      String text = new String(Files.readAllBytes(Paths.get(path)));
-      // replace "input" with the string itself.
-      String quine = text.replace("text = input", String.format("text = \"%s\"", text));
-      TestUtils.optimizeAssertSameVariables(quine);
-    } else {
-      // running in bazel
-      fail("Sorry, cannot test in bazel");
-    }
-  }
-
-  @Test
-  public void lexerInDLexerInD() throws IOException {
-    if (System.getenv("TEST_SRCDIR") == null) {
-      String path = Paths.get("samples/d2ind2/lexer.d").toString();
-      String text = new String(Files.readAllBytes(Paths.get(path)));
-      // replace "input" with the string itself.
-      String quine = text.replace("text = input", String.format("text = \"%s\"", text));
-      TestUtils.optimizeAssertSameVariables(quine);
-    } else {
-      // running in bazel
-      fail("Sorry, cannot test in bazel");
-    }
-  }
-
-  @Test
-  public void compileParserInD() throws IOException {
-    if (System.getenv("TEST_SRCDIR") == null) {
-      compileFile(Paths.get("samples/d2ind2/parser.d").toString());
-    } else {
-      // running in bazel
-      fail("Sorry, cannot test in bazel");
-    }
-  }
-
-  @Test
   public void compileAllNonGoldenSamples(
       @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {

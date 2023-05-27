@@ -1,2 +1,2 @@
 rm -f temp.* 
-./scripts/dcc samples/d2ind2/v0/v0.d -o v0.exe && ./v0.exe < $PWD/$1 | tee temp.asm && nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe && ./temp.exe
+./scripts/dcc src/bootstrap/v0/v0.d -o v0.exe && ./v0.exe < $PWD/$1 | tee temp.asm && nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe && ./temp.exe
