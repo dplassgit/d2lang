@@ -1,0 +1,7 @@
+rm -f temp.* 
+# compile v1 with v0
+echo "Compiling v1:"
+./src/bootstrap/v0/v0fromv0.exe < src/bootstrap/v1/v1.d > v1.asm && nasm -fwin64 v1.asm && gcc v1.obj -o v1.exe || exit
+# compile target with v1
+echo "Compiling target:"
+./v1.exe < $PWD/$1| tee temp.asm && nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe && ./temp.exe
