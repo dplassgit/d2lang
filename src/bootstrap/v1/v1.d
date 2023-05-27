@@ -1,11 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
-//                                   VERSION 1
+//                           VERSION 1 (WRITTEN IN V0)
 ///////////////////////////////////////////////////////////////////////////////
 
 // TODO (in no particular order)
 //   more type checking
-//   records
+//   records: declare, new, field set, field get
 //   array parameters
+//   increment, decrement?
 
 debug=false
 
@@ -235,7 +236,11 @@ isLetterOrDigit: proc(c: int): bool {
 
 makeTextToken: proc(): string {
   value=''
-  // TODO: do not allow leading _
+  if lexerCc == 95 {
+    // do not allow leading _
+    print "ERROR: Cannot start variable with an underscore\n"
+    exit
+  }
   if isLetter(lexerCc) {
     value=value + chr(lexerCc)
     advanceLex()
