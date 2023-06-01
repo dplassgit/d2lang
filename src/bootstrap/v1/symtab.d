@@ -47,7 +47,8 @@ TYPE_SIZES[TYPE_NULL] = 8  // a null is a pointer, so it's 8.
 ///////////////////////////////////////////////////////////////////////////////
 
 numStrings = 0
-stringTable: string[400]  // v0.d has 311 strings
+MAX_STRINGS=500
+stringTable: string[MAX_STRINGS]  // v0.d has 311 strings
 
 // Create a string constant and return its index. If the string already is in the table,
 // will not re-create it.
@@ -59,6 +60,10 @@ addStringConstant: proc(s: string): int  {
   }
   stringTable[numStrings] = s
   numStrings = numStrings + 1
+  if numStrings == MAX_STRINGS - 1 {
+    typeError("Too many strings")
+    exit
+  }
   return numStrings - 1
 }
 
@@ -90,6 +95,10 @@ registerGlobal: proc(name: string, type: int) {
   if debug {
     print "; Adding global name " + name print "\n"
   }
+  if numGlobals == MAX_GLOBALS - 1 {
+    typeError("Too many globals")
+    exit
+  }
   globalNames[numGlobals] = name
   globalTypes[numGlobals] = type
   numGlobals = numGlobals + 1
@@ -105,7 +114,7 @@ lookupGlobal: proc(name: string): int {
 }
 
 
-MAX_PROCS = 100 // currently v0.d has ~60 procs
+MAX_PROCS = 200 // currently v0.d has ~60 procs
 numProcs = 0
 procNames: string[MAX_PROCS]
 returnTypes: int[MAX_PROCS]
@@ -137,6 +146,10 @@ registerProc: proc(name: string, returnType: int) {
       typeError("Procedure '" + name + "' already declared")
       exit
     }
+  }
+  if numProcs == MAX_PROCS - 1 {
+    typeError("Too many procs")
+    exit
   }
   procNames[numProcs] = name
   returnTypes[numProcs] = returnType
@@ -255,16 +268,20 @@ toBaseType: proc(arrayType: int): int {
 }
 
 checkTypes: proc(leftType: int, rightType: int) {
-  if (isRecordType(leftType) and rightType == TYPE_NULL)
-    or (isRecordType(rightType) and leftType == TYPE_NULL) {
+  if compatibleTypes(leftType, rightType) {
     return
   }
-  if leftType != rightType {
-    typeError("left is " + typeName(leftType) + ", but right is " + typeName(rightType))
-    exit
-  }
+  typeError("left is " + typeName(leftType) + ", but right is " + typeName(rightType))
+  exit
 }
 
+compatibleTypes: proc(leftType: int, rightType: int): bool {
+  if (isRecordType(leftType) and rightType == TYPE_NULL)
+    or (isRecordType(rightType) and leftType == TYPE_NULL) {
+    return true
+  }
+  return leftType == rightType
+}
 
 numRecords = 0
 recordNames: string[MAX_RECORDS]
@@ -298,6 +315,9 @@ registerRecord: proc(name: string): int {
     }
   }
   recordNames[numRecords] = name
+  if debug {
+    print "; registered " print name print " as index " print numRecords print "\n"
+  }
   numRecords = numRecords + 1
   return numRecords - 1
 }

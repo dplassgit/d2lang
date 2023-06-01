@@ -71,3 +71,4 @@ returnvoid: proc(i:int) {
 }
 returnvoid(1)
 returnvoid(-1)
+

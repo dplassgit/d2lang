@@ -1,21 +1,23 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                    LEXER                                  //
-//                           VERSION 1 (COMPILED BY V0)                      //
+//                           VERSION 2 (COMPILED BY V1)                      //
 ///////////////////////////////////////////////////////////////////////////////
 
 // TODO (in no particular order)
+//   unlimited # locals (& patch the correct # of bytes)
+//   unlimited # of types (rewrite types using records)
+
 //   compare string to null
 //   records: declare with array field
 //   array parameters
 //   check negative index on array set
 //   BUG: params (or locals) with the same name as a global gives precedence to the global, unlike D (java)
-//   detect duplicate param names
-//   detect duplicate record fields
 //   ++, --
 //   compare strings fully
 
 debug=false
-VERSION='v1'
+debugLex=false
+VERSION='v2'
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                     LEXER                                 //
@@ -81,8 +83,15 @@ KW_RECORD=22
 KW_NEW=23
 KW_DELETE=24
 KW_PRINTLN=25
+KW_LONG=26
+KW_BYTE=27
+KW_DOUBLE=28
+KW_ARGS=29
+KW_EXTERN=30
+KW_XOR=31
+// TODO: for, in, get, this, private, load, save, export
 
-KEYWORDS:string[26]
+KEYWORDS:string[32]
 KEYWORDS[KW_PRINT]="print"
 KEYWORDS[KW_IF]="if"
 KEYWORDS[KW_ELSE]="else"
@@ -109,57 +118,66 @@ KEYWORDS[KW_PRINTLN]="println"
 KEYWORDS[KW_RECORD]="record"
 KEYWORDS[KW_NEW]="new"
 KEYWORDS[KW_DELETE]="delete"
+KEYWORDS[KW_LONG]="long"
+KEYWORDS[KW_BYTE]="byte"
+KEYWORDS[KW_DOUBLE]="double"
+KEYWORDS[KW_ARGS]="args"
+KEYWORDS[KW_EXTERN]="extern"
+KEYWORDS[KW_XOR]="xor"
 
-// Global for lexer:
-lexerText=''   // full text
-lexerLoc=0     // index/location inside text
-lexerCc=0      // current character
-lexCurrentLine=1
-
-newLexer: proc(text: string) {
-  lexerText = text
-  resetLexer()
+Lexer: record {
+  text: string  // full text
+  loc: int      // index/location inside text
+  cc: int       // current character
+  line: int     // current line
 }
 
-resetLexer: proc() {
-  lexerLoc = 0
-  lexerCc = 0
-  lexCurrentLine=1
-  advanceLex()
+newLexer: proc(text: string): Lexer {
+  lexer = new Lexer
+  lexer.text = text
+  resetLexer(lexer)
+  return lexer
 }
 
-nextToken: proc(): string {
+resetLexer: proc(self: Lexer) {
+  self.loc = 0
+  self.cc = 0
+  self.line = 1
+  advanceLex(self)
+}
+
+nextToken: proc(self: Lexer): string {
   // skip unwanted whitespace
-  while (lexerCc == 32 or lexerCc == 10 or lexerCc == 9 or lexerCc == 13) {
-    if lexerCc == 10 or lexerCc == 13 {
-      lexCurrentLine = lexCurrentLine + 1
+  while (self.cc == 32 or self.cc == 10 or self.cc == 9 or self.cc == 13) {
+    if self.cc == 10 or self.cc == 13 {
+      self.line = self.line + 1
     }
-    advanceLex()
+    advanceLex(self)
   }
-  if lexerCc != 0 {
-    if isDigit(lexerCc) {
-      return makeIntToken()
-    } elif isLetter(lexerCc) {
+  if self.cc != 0 {
+    if isDigit(self.cc) {
+      return makeIntToken(self)
+    } elif isLetter(self.cc) {
       // might be string, keyword, boolean constant
-      return makeTextToken()
+      return makeTextToken(self)
     } else {
-      return makeSymbolToken()
+      return makeSymbolToken(self)
     }
   }
 
   return Token(TOKEN_EOF, "")
 }
 
-advanceLex: proc() {
-  if lexerLoc < length(lexerText) {
-    lexerCc=asc(lexerText[lexerLoc])
+advanceLex: proc(self: Lexer) {
+  if self.loc < length(self.text) {
+    self.cc=asc(self.text[self.loc])
   } else {
     // Indicates no more characters
-    lexerCc=0
+    self.cc=0
   }
-  lexerLoc = lexerLoc + 1
-  if debug {
-    // print "; Lexer cc " print lexerCc print ":" print chr(lexerCc) print "\n"
+  self.loc = self.loc + 1
+  if debugLex {
+    // print "; Lexer cc " print self.cc print ":" println chr(self.cc)
   }
 }
 
@@ -173,59 +191,55 @@ lexTokenInt=0
 lexTokenKw=0
 lexTokenBool=false
 
-// Bundle the data about the token in a single string of the format
-// 't <type> <value>'
+// Build a string token
 Token: proc(type: int, value: string): string {
   lexTokenType = type
   lexTokenString = value
   lexTokenInt = -1
   lexTokenKw = -1
   lexTokenBool = false
-  if debug {
+  if debugLex {
     print "; Making token type: " print type print " value: "
-    print value print "\n"
+    println value
   }
   return lexTokenString
 }
 
-// Bundle the data about the token in a single string of the format
-// 'i <value>'
+// Build an int constant token
 IntToken: proc(value: int, valueAsString: string): string {
   lexTokenType = TOKEN_INT
   lexTokenString = valueAsString
   lexTokenInt = value
   lexTokenKw = -1
   lexTokenBool = false
-  if debug {
-    print "; Making int token: " print value print "\n"
+  if debugLex {
+    print "; Making int token: " println value
   }
   return valueAsString
 }
 
-// Bundle the data about the token in a single string of the format
-// 'b true/false'
+// Build a bool constant token
 BoolToken: proc(value: bool, valueAsString: string): string {
   lexTokenType = TOKEN_BOOL
   lexTokenString = valueAsString
   lexTokenInt = -1
   lexTokenKw = -1
   lexTokenBool = value
-  if debug {
-    print "; Making bool token: " print value print "\n"
+  if debugLex {
+    print "; Making bool token: " println value
   }
   return lexTokenString
 }
 
-// Bundle the data about the token in a single string of the format
-// 'k value'
+// Build a keyword token
 KeywordToken: proc(value: int, valueAsString: string): string {
   lexTokenType = TOKEN_KEYWORD
   lexTokenString = valueAsString
   lexTokenKw = value
   lexTokenInt = -1
   lexTokenBool = false
-  if debug {
-    print "; Making kw token: " print valueAsString print "\n"
+  if debugLex {
+    print "; Making kw token: " println valueAsString
   }
   return lexTokenString
 }
@@ -255,20 +269,21 @@ isLetterOrDigit: proc(c: int): bool {
   return isLetter(c) or isDigit(c)
 }
 
-makeTextToken: proc(): string {
+makeTextToken: proc(self: Lexer): string {
   value=''
-  if lexerCc == 95 {
+  if self.cc == 95 {
     // do not allow leading _
-    print "ERROR: Cannot start variable with an underscore\n"
+    // TODO: Use error framework
+    println "ERROR: Cannot start variable with an underscore"
     exit
   }
-  if isLetter(lexerCc) {
-    value=value + chr(lexerCc)
-    advanceLex()
+  if isLetter(self.cc) {
+    value=value + chr(self.cc)
+    advanceLex(self)
   }
-  while isLetterOrDigit(lexerCc) {
-    value=value + chr(lexerCc)
-    advanceLex()
+  while isLetterOrDigit(self.cc) {
+    value=value + chr(self.cc)
+    advanceLex(self)
   }
 
   if value == 'true' or value == 'false' {
@@ -284,209 +299,210 @@ makeTextToken: proc(): string {
   return Token(TOKEN_VARIABLE, value)
 }
 
-makeIntToken: proc(): string {
+makeIntToken: proc(self: Lexer): string {
   value=0
   value_as_string = ''
 
-  while isDigit(lexerCc) do advanceLex() {
-    // value=value * 10 + lexerCc - asc('0')
-    value=value * 10 + lexerCc - 48
-    value_as_string = value_as_string + chr(lexerCc)
+  while isDigit(self.cc) do advanceLex(self) {
+    // value=value * 10 + self.cc - asc('0')
+    value=value * 10 + self.cc - 48
+    value_as_string = value_as_string + chr(self.cc)
   }
   return IntToken(value, value_as_string)
 }
 
-startsWithSlash: proc(): string {
-  advanceLex() // eat the first slash
-  if lexerCc == 47 {
+startsWithSlash: proc(self: Lexer): string {
+  advanceLex(self) // eat the first slash
+  if self.cc == 47 {
     // second slash == comment.
-    advanceLex() // eat the second slash
+    advanceLex(self) // eat the second slash
     // Eat characters until newline
-    while lexerCc != 10 and lexerCc != 0 do advanceLex() {}
-    if lexerCc != 0 {
-      lexCurrentLine = lexCurrentLine + 1
-      advanceLex() // eat the newline
+    while self.cc != 10 and self.cc != 0 do advanceLex(self) {}
+    if self.cc != 0 {
+      self.line = self.line + 1
+      advanceLex(self) // eat the newline
     }
     // TODO figure out if this can be done a different way, maybe with a "comment" token?
-    return nextToken()
+    return nextToken(self)
   }
   return Token(TOKEN_DIV, '/')
 }
 
-startsWithBang: proc(): string {
-  oc=lexerCc
-  advanceLex() // eat the !
-  if lexerCc == 61 {
-    advanceLex()
+startsWithBang: proc(self: Lexer): string {
+  oc=self.cc
+  advanceLex(self) // eat the !
+  if self.cc == 61 {
+    advanceLex(self)
     return Token(TOKEN_NEQ, '!=')
   }
-  print 'Unknown character:' + chr(lexerCc) + ' ASCII code: ' + toString(lexerCc)
+  // TODO: use error framework
+  print 'ERROR: Unknown character:' + chr(self.cc) + ' ASCII code: ' + toString(self.cc)
   exit
   // return Token(TOKEN_BIT_NOT, '!'))
 }
 
-startsWithGt: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
+startsWithGt: proc(self: Lexer): string {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 {
+    advanceLex(self)
     return Token(TOKEN_GEQ, '>=')
-  //} elif lexerCc == '>' {
+  //} elif self.cc == '>' {
     // shift right
-    //advanceLex()
+    //advanceLex(self)
     //return Token(TOKEN_SHIFT_RIGHT, '>>')
   }
   return Token(TOKEN_GT, '>')
 }
 
-startsWithLt: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
+startsWithLt: proc(self: Lexer): string {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 {
+    advanceLex(self)
     return Token(TOKEN_LEQ, '<=')
-  //} elif lexerCc == '<' {
+  //} elif self.cc == '<' {
     //// shift right
-    //advanceLex()
+    //advanceLex(self)
     //return Token(TOKEN_SHIFT_LEFT, '<<')
   }
   return Token(TOKEN_LT, '<')
 }
 
-startsWithEq: proc(): string {
-  oc=lexerCc
-  advanceLex()
-  if lexerCc == 61 {
-    advanceLex()
+startsWithEq: proc(self: Lexer): string {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 {
+      advanceLex(self)
     return Token(TOKEN_EQEQ, '==')
   }
   return Token(TOKEN_EQ, '=')
 }
 
-makeStringLiteralToken: proc(firstQuote: int): string {
-  advanceLex() // eat the tick/quote
+makeStringLiteralToken: proc(self: Lexer, firstQuote: int): string {
+    advanceLex(self) // eat the tick/quote
   sb=''
-  while lexerCc != firstQuote and lexerCc != 0 {
-    if lexerCc == 92 { // backslash
-      advanceLex()
-      if lexerCc == 110 { // backslash - n
+  while self.cc != firstQuote and self.cc != 0 {
+    if self.cc == 92 { // backslash
+      advanceLex(self)
+      if self.cc == 110 { // backslash - n
         sb=sb + chr(10)  // linefeed
-      } elif lexerCc == 92 {
+      } elif self.cc == 92 {
         sb=sb + chr(92)  // literal backslash
       }
     } else {
-      sb=sb + chr(lexerCc)
+      sb=sb + chr(self.cc)
     }
-    advanceLex()
+    advanceLex(self)
   }
 
-  if lexerCc == 0 {
-    print 'ERROR: Unclosed string literal ' print sb print "\n"
+  if self.cc == 0 {
+    // TODO: Use error framework
+    print 'ERROR: Unclosed string literal ' println sb
     exit
   }
 
-  advanceLex() // eat the closing tick/quote
+  advanceLex(self) // eat the closing tick/quote
   return Token(TOKEN_STRING, sb)
 }
 
-makeSymbolToken: proc(): string {
-  oc = lexerCc
+makeSymbolToken: proc(self: Lexer): string {
+  oc = self.cc
   if oc == 61 {
-    return startsWithEq()
+    return startsWithEq(self)
   } elif oc == 60 {
-    return startsWithLt()
+    return startsWithLt(self)
   } elif oc == 62 {
-    return startsWithGt()
+    return startsWithGt(self)
   } elif oc == 43 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_PLUS, '+')
   } elif oc == 45 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_MINUS, '-')
   } elif oc == 40 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_LPAREN, '(')
   } elif oc == 41 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_RPAREN, ')')
   } elif oc == 42 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_MULT, '*')
   } elif oc == 47 {
-    return startsWithSlash()
+    return startsWithSlash(self)
   } elif oc == 37 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_MOD, '%')
   // } elif oc == asc('&') {
-  //   advanceLex()
+  //   advanceLex(self)
   //   return Token(TOKEN_AND, '&')
   // } elif oc == asc('|') {
-  //   advanceLex()
+  //   advanceLex(self)
   //   return Token(TOKEN_OR, '|')
   } elif oc == 33 {
-    return startsWithBang()
+    return startsWithBang(self)
   } elif oc == 123 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_LBRACE, '{')
   } elif oc == 125 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_RBRACE, '}')
   } elif oc == 91 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_LBRACKET, '[')
   } elif oc == 93 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_RBRACKET, ']')
   } elif oc == 58 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_COLON, ':')
   } elif oc == 34 or oc == 39 { // double or single quote
-    return makeStringLiteralToken(oc)
+    return makeStringLiteralToken(self, oc)
   } elif oc == 44 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_COMMA, ',')
   } elif oc == 46 {
-    advanceLex()
+    advanceLex(self)
     return Token(TOKEN_DOT, '.')
   } else {
-    print 'ERROR: Unknown character:' + chr(lexerCc) + ' ASCII code: ' print lexerCc print "\n"
+    // TODO: use error framework
+    print 'ERROR: Unknown character:' + chr(self.cc) + ' ASCII code: ' println self.cc
     exit
   }
 }
 
-printToken: proc() {
+printToken: proc(self: Lexer) {
   if lexTokenType == TOKEN_EOF {
-    print 'Token: EOF' print "\n"
+    println 'EOF'
   } elif lexTokenType == TOKEN_INT {
-    print 'Int token: ' print lexTokenInt print "\n"
+    print 'Int constant: ' println lexTokenInt
   } elif lexTokenType == TOKEN_STRING {
-    print 'String token: "' print lexTokenString print '"\n'
+    print 'String constant: ' println lexTokenString
   } elif lexTokenType == TOKEN_BOOL {
-    if lexTokenBool {
-      print 'Bool token: true\n'
-    } else {
-      print 'Bool token: false\n'
-    }
+    print 'Bool constant: ' println lexTokenBool
   } elif lexTokenType == TOKEN_KEYWORD {
-    print 'Keyword token: ' print lexTokenString print "\n"
+    print 'Keyword: ' println lexTokenString
   } elif lexTokenType == TOKEN_VARIABLE {
-    print 'Variable: ' print lexTokenString print "\n"
+    print 'Variable: ' println lexTokenString
   } else {
-    print 'Token: ' print lexTokenString print ' type: ' print lexTokenType print '\n'
+    print 'Token: ' print lexTokenString print ' type: ' println lexTokenType
   }
 }
 
-generalError: proc(type: string, message: string) {
-  print type print " error at line " print lexCurrentLine
-  print ": " + message + "\n"
-  exit
-}
+//text = input
+//lex=newLexer(text)
 
-typeError: proc(message: string) {
-  generalError("Type", message)
-}
+//count = 1
+//nextToken(lex)
+//print "; line #:" print lex.line print ":" printToken(lex)
 
-parserError: proc(message: string) {
-  generalError("Parse", message)
-}
+//while lexTokenType != TOKEN_EOF do count = count + 1 {
+//  nextToken(lex)
+//  print "; line #:" print lex.line print ":" printToken(lex)
+//}
+
+//print 'Total number of tokens: '
+//print count print "\n"
+//exit
 

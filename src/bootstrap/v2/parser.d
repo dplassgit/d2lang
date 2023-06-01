@@ -1,18 +1,20 @@
 ///////////////////////////////////////////////////////////////////////////////
 //                                    PARSER                                 //
-//                           VERSION 1 (COMPILED BY V0)                      //
+//                           VERSION 2 (COMPILED BY V1)                      //
 ///////////////////////////////////////////////////////////////////////////////
 
-advanceParser: proc() {
-  nextToken()
+lexer=initParser() // global, temporarily.
+
+advanceParser: proc {
+  nextToken(lexer)
   if debug {
-    //print "; new token is " + lexTokenString print "\n"
+    //println "; new token is " + lexTokenString
   }
 }
 
 expectToken: proc(expectedTokenType: int, tokenStr: string) {
   if lexTokenType != expectedTokenType  {
-    parserError("Unexpected '" + lexTokenString + "'; expected '" + tokenStr + "'")
+    parserError("Unexpected token. Expected: " + tokenStr + ", actual: '" + lexTokenString + "'")
     exit
   }
   advanceParser() // eat the expected token
@@ -20,7 +22,7 @@ expectToken: proc(expectedTokenType: int, tokenStr: string) {
 
 expectKeyword: proc(expectedKwType: int) {
   if lexTokenType != TOKEN_KEYWORD or lexTokenKw != expectedKwType {
-    parserError("Unexpected '" + lexTokenString + "'; expected '" + KEYWORDS[expectedKwType] + "'")
+    parserError("Unexpected token. Expected: " + KEYWORDS[expectedKwType] + ", actual: '" + lexTokenString + "'")
     exit
   }
   advanceParser() // eat the keyword
@@ -38,7 +40,7 @@ nextLabel: proc(prefix:string) : string {
 }
 
 emitLabel: proc(label: string) {
-  print "\n" print label print ":\n"
+  print "\n" print label println ":"
 }
 
 // Map from token to binary opcode
@@ -61,24 +63,30 @@ OPCODES[TOKEN_GEQ]="setge"
 
 emitExtern: proc(name: string) {
   // TODO: don't emit if we already emitted this extern
-  print "  extern " + name + "\n"
-  print "  sub RSP, 0x20\n"
-  print "  call " + name + "\n"
-  print "  add RSP, 0x20\n\n"
+  println "  extern " + name
+  println "  sub RSP, 0x20"
+  println "  call " + name
+  println "  add RSP, 0x20\n"
 }
 
 // TODO: make this a procedure?
-generateNpeTest: proc() {
+generateNpeTest: proc {
   oklabel = nextLabel("not_null")
-  print "  cmp RAX, 0\n"
-  print "  jne " print oklabel print "\n"
+  println "  cmp RAX, 0"
+  print "  jne " println oklabel
 
-  npeMessageIndex = addStringConstant("Null pointer error at line %d.\n")
-  print "  mov RCX, CONST_" print npeMessageIndex print "\n"
-  print "  mov RDX, " print lexCurrentLine print "\n"
-  emitExtern("printf")
-  print "  mov RCX, -1\n"
-  emitExtern("exit")
+  npeMessageIndex = addStringConstant("\nNull pointer error at line %d.\n")
+  print "  mov RCX, CONST_" println npeMessageIndex
+  print "  mov RDX, " print lexer.line println "  ; line #"
+  println "  sub RSP, 0x20"
+  println "  extern printf"
+  println "  call printf"
+  println "  extern _flushall"
+  println "  call _flushall"
+  println "  add RSP, 0x20"
+  println "  mov RCX, -1"
+  println "  extern exit"
+  println "  call exit\n"
 
   emitLabel(oklabel)
 }
@@ -107,156 +115,157 @@ generateNpeTest: proc() {
 
 
 // Each of these returns the type of the expression: TYPE_INT, TYPE_BOOL, TYPE_STRING, etc.
-expr: proc(): int {
+expr: proc: int {
   return boolOr()
 }
 
-boolOr: proc(): int {
+boolOr: proc: int {
   leftType = boolAnd()
   // TODO: int/TOKEN_OR
   if lexTokenType == TOKEN_KEYWORD and leftType == TYPE_BOOL {
     while lexTokenKw == KW_OR {
       advanceParser() // eat the symbol
-      print "  push RAX\n"
+      println "  push RAX"
 
       rightType = boolAnd()
       checkTypes(leftType, rightType)
 
-      print "  pop RBX\n" // pop the left side
+      println "  pop RBX" // pop the left side
       // left = left (bool) OR right
-      print "  or BL, AL\n"
-      print "  mov AL, BL\n"
+      println "  or BL, AL"
+      println "  mov AL, BL"
     }
   }
   return leftType
 }
 
-boolAnd: proc(): int {
+boolAnd: proc: int {
   leftType = compare()
   // TODO: int/TOKEN_AND
   if lexTokenType == TOKEN_KEYWORD and leftType == TYPE_BOOL {
     while lexTokenKw == KW_AND {
       advanceParser() // eat the symbol
-      print "  push RAX\n"
+      println "  push RAX"
 
       rightType = compare()
       checkTypes(leftType, rightType)
 
-      print "  pop RBX\n" // pop the left side
+      println "  pop RBX" // pop the left side
       // left = left and right
-      print "  and BL, AL\n"
-      print "  mov AL, BL\n"
+      println "  and BL, AL"
+      println "  mov AL, BL"
     }
   }
   return leftType
 }
 
-compare: proc(): int {
+compare: proc: int {
   leftType = addSub()
   if leftType == TYPE_INT and (lexTokenType >= TOKEN_EQEQ and lexTokenType <= TOKEN_GEQ) {
     op = lexTokenType
     opstring = lexTokenString
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = addSub()
     checkTypes(leftType, rightType)
 
-    print "  pop RBX\n" // pop the left side
+    println "  pop RBX" // pop the left side
 
     // left = left (op) right
     // TODO: This is too big for ints, should just use EBX, EAX
-    print "  cmp RBX, RAX  ; int " print opstring print " int\n"
-    print "  " print OPCODES[op] print " AL\n"
+    print "  cmp RBX, RAX  ; int " print opstring println " int"
+    print "  " print OPCODES[op] println " AL"
     return TYPE_BOOL
   } elif leftType == TYPE_STRING and (lexTokenType == TOKEN_EQEQ or lexTokenType == TOKEN_NEQ) {
     op = lexTokenType
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = addSub()
     checkTypes(leftType, rightType)
 
-    print "  mov RDX, RAX  ; right side\n"
-    print "  pop RCX  ; left side\n"
+    println "  mov RDX, RAX  ; right side"
+    println "  pop RCX  ; left side"
+    // TODO: this can NPE
     emitExtern("strcmp")
-    print "  cmp RAX, 0\n"
-    print "  " print OPCODES[op] print " AL\n"
+    println "  cmp RAX, 0"
+    print "  " print OPCODES[op] println " AL"
     return TYPE_BOOL
   } elif leftType == TYPE_BOOL and (lexTokenType >= TOKEN_EQEQ and lexTokenType <= TOKEN_GEQ) {
     op = lexTokenType
     opstring = lexTokenString
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = addSub()
     checkTypes(leftType, rightType)
 
-    print "  pop RBX\n" // pop the left side
-    print "  cmp BL, AL  ; bool " print opstring print " bool\n"
-    print "  " print OPCODES[op] print " AL\n"
+    println "  pop RBX" // pop the left side
+    print "  cmp BL, AL  ; bool " print opstring println " bool"
+    print "  " print OPCODES[op] println " AL"
     return TYPE_BOOL
   } elif (isRecordType(leftType) or leftType == TYPE_NULL) and
          (lexTokenType == TOKEN_EQEQ or lexTokenType == TOKEN_NEQ) {
     op = lexTokenType
     opstring = lexTokenString
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = addSub()
     checkTypes(leftType, rightType)
 
-    print "  pop RBX\n" // pop the left side
+    println "  pop RBX" // pop the left side
     // left = left (op) right
-    print "  cmp RBX, RAX  ; record " print opstring print " record\n"
-    print "  " print OPCODES[op] print " AL\n"
+    print "  cmp RBX, RAX  ; record " print opstring println " record"
+    print "  " print OPCODES[op] println " AL"
     return TYPE_BOOL
   }
   return leftType
 }
 
-addSub: proc(): int {
+addSub: proc: int {
   leftType = mulDiv()
   while lexTokenType == TOKEN_PLUS or lexTokenType == TOKEN_MINUS {
     op = lexTokenType
     opstring = lexTokenString
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = mulDiv()
     checkTypes(leftType, rightType)
 
-    print "  pop RBX\n" // pop the left side
+    println "  pop RBX" // pop the left side
     if leftType == TYPE_BOOL {
       typeError("Cannot add or subtract booleans")
       exit
     }
     if leftType == TYPE_STRING {
       // 1. mov rsi, rax. get length of rsi
-      print "  mov RSI, RAX  ; lhs in RSI\n"
-      print "  mov RCX, RSI\n"
+      println "  mov RSI, RAX  ; lhs in RSI"
+      println "  mov RCX, RSI"
       emitExtern("strlen")
-      print "  mov RDI, RAX  ; RHS length in RDI\n"
+      println "  mov RDI, RAX  ; RHS length in RDI"
       // 2. get length of rbx
-      print "  mov RCX, RBX\n"
+      println "  mov RCX, RBX"
       emitExtern("strlen")
-      print "  mov RCX, RAX  ; LHS length in RCX\n"
+      println "  mov RCX, RAX  ; LHS length in RCX"
       // 3. add them
-      print "  add RCX, RDI  ; total length in RCX\n"
-      print "  inc RCX       ; plus one byte for null\n"
+      println "  add RCX, RDI  ; total length in RCX"
+      println "  inc RCX       ; plus one byte for null"
       // 4. allocate new string of new size, result in rax
-      print "   ; new string location in RAX\n"
+      println "   ; new string location in RAX"
       emitExtern("malloc")
       // 5. strcpy rbx to new location
-      print "  push RAX      ; save new location for later\n"
-      print "  mov RCX, RAX  ; dest (new location)\n"
-      print "  mov RDX, RBX  ; source\n"
-      print "  ; copy LHS to new location\n"
+      println "  push RAX      ; save new location for later"
+      println "  mov RCX, RAX  ; dest (new location)"
+      println "  mov RDX, RBX  ; source"
+      println "  ; copy LHS to new location"
       emitExtern("strcpy")
       // 6. strcat rsi to rax
-      print "  pop RCX       ; get new location back into RCX as dest\n"
-      print "  mov RDX, RSI  ; source\n"
-      print "  ; concatenate RHS at new location\n"
+      println "  pop RCX       ; get new location back into RCX as dest"
+      println "  mov RDX, RSI  ; source"
+      println "  ; concatenate RHS at new location"
       emitExtern("strcat")
       print "\n"
       continue
@@ -270,46 +279,46 @@ addSub: proc(): int {
       // TODO: This is too big for ints, should just use EBX, EAX
       // left = left (op) right
       // TODO: If plus, can just do add rax, rbx instead of two lines
-      print "  " print OPCODES[op] print " RBX, RAX  ; int " print opstring print " int\n"
+      print "  " print OPCODES[op] print " RBX, RAX  ; int " print opstring println " int"
     }
-    print "  mov RAX, RBX\n"
+    println "  mov RAX, RBX"
   }
   return leftType
 }
 
-mulDiv: proc(): int {
+mulDiv: proc: int {
   leftType = unary()
   while leftType == TYPE_INT and
       (lexTokenType == TOKEN_MULT or lexTokenType == TOKEN_DIV or lexTokenType == TOKEN_MOD) {
     op = lexTokenType
     advanceParser() // eat the symbol
-    print "  push RAX\n"
+    println "  push RAX"
 
     rightType = unary()
     checkTypes(leftType, rightType)
 
-    print "  pop RBX\n" // pop the left side
+    println "  pop RBX" // pop the left side
 
     // TODO: This is too big for ints, should just use EAX & EBX
     // rax = rax (op) rbx
     if op == TOKEN_DIV or op == TOKEN_MOD {
-      print "  xchg RAX, RBX  ; put numerator in RAX, denominator in EBX\n"
+      println "  xchg RAX, RBX  ; put numerator in RAX, denominator in EBX"
       // TODO: THIS IS TOO BIG FOR INTS
-      print "  cqo  ; sign extend rax to rdx\n"
-      print "  idiv RBX  ; rax=rax/rbx\n"
+      println "  cqo  ; sign extend rax to rdx"
+      println "  idiv RBX  ; rax=rax/rbx"
       if op == TOKEN_MOD {
         // modulo is in rdx
-        print "  mov RAX, RDX  ; modulo is in rdx\n"
+        println "  mov RAX, RDX  ; modulo is in rdx"
       }
     } else {
-      print "  imul RAX, RBX  ; int * int\n"
+      println "  imul RAX, RBX  ; int * int"
     }
   }
   return leftType
 }
 
 // -unary | +unary | length(expr) | asc(expr) | chr(expr) | not expr
-unary: proc(): int {
+unary: proc: int {
   if lexTokenType == TOKEN_PLUS {
     advanceParser() // eat the plus
     type = unary()
@@ -323,7 +332,7 @@ unary: proc(): int {
     type = unary()
     if type == TYPE_INT {
       // TODO: This is too big for ints, should just use EAX
-      print "  neg RAX  ; unary minus\n"
+      println "  neg RAX  ; unary minus"
       return type
     }
     typeError("Cannot codegen negative non-ints")
@@ -334,12 +343,12 @@ unary: proc(): int {
     type = expr()
     expectToken(TOKEN_RPAREN, ')')
     if type == TYPE_STRING {
-      print "  mov RCX, RAX\n"
+      println "  mov RCX, RAX"
       emitExtern("strlen")
     } elif isArrayType(type) {
       // RAX has location of array
-      print "  inc RAX               ; skip past # of dimensions\n"
-      print "  mov DWORD EAX, [RAX]  ; get length (4 bytes only)\n" // Fun fact: the upper 32 bits are zero-extended
+      println "  inc RAX               ; skip past # of dimensions"
+      println "  mov DWORD EAX, [RAX]  ; get length (4 bytes only)" // Fun fact: the upper 32 bits are zero-extended
     }
     else {
       typeError("Cannot take LENGTH of " + typeName(type))
@@ -357,9 +366,9 @@ unary: proc(): int {
     }
 
     // get the first character (byte)
-    print "  mov BYTE AL, [RAX]\n"
+    println "  mov BYTE AL, [RAX]"
     // clear out the high bytes
-    print "  and RAX, 255\n"
+    println "  and RAX, 255"
     return TYPE_INT
 
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_CHR {
@@ -367,7 +376,7 @@ unary: proc(): int {
 
     expectToken(TOKEN_LPAREN, '(')
     type = expr()
-    print "  push RAX\n" // save the int to be made into a string
+    println "  push RAX" // save the int to be made into a string
     expectToken(TOKEN_RPAREN, ')')
 
     if type != TYPE_INT {
@@ -376,11 +385,11 @@ unary: proc(): int {
     }
 
     // allocate a 2-byte string
-    print "  mov RCX, 2\n"
-    print "  mov RDX, 1\n"
+    println "  mov RCX, 2"
+    println "  mov RDX, 1"
     emitExtern("calloc")
-    print "  pop RBX\n"
-    print "  mov BYTE [RAX], BL  ; store byte\n"
+    println "  pop RBX"
+    println "  mov BYTE [RAX], BL  ; store byte"
     return TYPE_STRING
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NOT {
     advanceParser() // eat the NOT
@@ -392,7 +401,7 @@ unary: proc(): int {
       exit
     }
 
-    print "  xor AL, 0x01  ; NOT\n"
+    println "  xor AL, 0x01  ; NOT"
     return type
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NEW {
     advanceParser() // eat the NEW
@@ -403,35 +412,47 @@ unary: proc(): int {
     }
     advanceParser() // eat the variable
     // make sure it's a record
-    index = lookupRecord(recordName)
-    if index == -1 {
+    rec = lookupRecord(recordName)
+    //index = lookupRecord(recordName)
+    //if index == -1 {
+    if rec == null {
       typeError("Record '" + recordName + "' not defined")
       exit
     }
-    size = recordSizes[index]
-    print "  mov RCX, " print size print " ; size of record type " print recordName print "\n"
-    print "  mov RDX, 1\n"
+    // size = recordSizes[index]
+    size = rec.size
+    print "  mov RCX, " print size print " ; size of record type " println recordName
+    println "  mov RDX, 1"
     emitExtern("calloc")
-    return TYPE_RECORD_BASE + index
+    return rec.oldType // TYPE_RECORD_BASE + index
   }
 
   return composite()
 }
 
 
-// Makes sure RAX as index is >= 0
+// Makes sure RAX is >= 0. 'type' is either STRING or ARRAY
 // TODO: Make this a subroutine
-generateIndexPositiveCheck: proc() {
+generateIndexPositiveCheck: proc(type: string) {
   oklabel = nextLabel("index_ge0")
-  print "  cmp RAX, 0\n"
-  print "  jge " print oklabel print "\n"
-  // TODO: include the line # and index here
-  errorindex = addStringConstant("\nERROR: index cannot be negative\n")
-  print "  mov RCX, CONST_" print errorindex print "\n"
-  emitExtern("printf")
-  emitExtern("_flushall")
-  print "  mov RCX, -1\n"
-  emitExtern("exit")
+  println "  cmp RAX, 0"
+  print "  jge " println oklabel
+
+  errorindex = addStringConstant(
+    "\nInvalid index error at line %d: " + type
+    + " index must be non-negative; was %d\n")
+  print "  mov RCX, CONST_" println errorindex
+  print "  mov RDX, " print lexer.line println "  ; line #"
+  println "  mov R8, RAX" // actual index
+  println "  sub RSP, 0x20"
+  println "  extern printf"
+  println "  call printf"
+  println "  extern _flushall"
+  println "  call _flushall"
+  println "  add RSP, 0x20"
+  println "  mov RCX, -1"
+  println "  extern exit"
+  println "  call exit"
 
   emitLabel(oklabel)
 }
@@ -442,7 +463,7 @@ generateIndexPositiveCheck: proc() {
 generateArrayIndex: proc(arrayType: int): int {
   baseType = toBaseType(arrayType)
 
-  print "  push RAX  ; save array base location\n"
+  println "  push RAX  ; save array base location"
   indexType = expr()
   if indexType != TYPE_INT {
     typeError("Array index must be int; was " + typeName(indexType))
@@ -450,50 +471,50 @@ generateArrayIndex: proc(arrayType: int): int {
   }
   expectToken(TOKEN_RBRACKET, ']')
 
-  generateIndexPositiveCheck()
+  generateIndexPositiveCheck('ARRAY')
   // TODO: make sure index < length
 
   // 1. multiply index by size
-  print "  imul RAX, " print sizeByType(baseType) print "  ; bytes per entry (temporarily 8)\n"
+  print "  imul RAX, " print sizeByType(baseType) println "  ; bytes per entry (temporarily 8)"
   // 2. add 5
-  print "  add RAX, 5  ; skip header\n"
+  println "  add RAX, 5  ; skip header"
   // 3. add to base
-  print "  pop RBX  ; base location\n"
-  print "  add RAX, RBX  ; add to base location\n"
+  println "  pop RBX  ; base location"
+  println "  add RAX, RBX  ; add to base location"
   // 4. get value
   // TODO: This is too big for ints or bools
-  print "  mov RAX, [RAX]  ; get value\n"
+  println "  mov RAX, [RAX]  ; get array slot value"
 
   return baseType
 }
 
 // Generate a "get" of foo[int]
-generateStringIndex: proc() {
-  print "  push RAX\n"
+generateStringIndex: proc {
+  println "  push RAX"
   indexType = expr()
   if indexType != TYPE_INT {
     typeError("String index must be int; was " + typeName(indexType))
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
-  print "  push RAX\n"
+  println "  push RAX"
 
-  generateIndexPositiveCheck()
+  generateIndexPositiveCheck('STRING')
   // TODO: check that index < string length
 
   // allocate a 2-byte string
-  print "  mov RCX, 2\n"
-  print "  mov RDX, 1\n"
+  println "  mov RCX, 2"
+  println "  mov RDX, 1"
   emitExtern("calloc")
-  print "  pop RBX\n"
-  print "  pop RCX\n"
-  print "  add RCX, RBX  ; base+index\n"
-  print "  mov BYTE CL, [RCX]  ; get byte\n"
-  print "  mov BYTE [RAX], CL  ; store byte\n"
+  println "  pop RBX"
+  println "  pop RCX"
+  println "  add RCX, RBX  ; base+index"
+  println "  mov BYTE CL, [RCX]  ; get byte"
+  println "  mov BYTE [RAX], CL  ; store byte"
 }
 
 // atom | atom [ index ] | atom . fieldname
-composite: proc(): int {
+composite: proc: int {
   leftType = atom()
   while lexTokenType == TOKEN_LBRACKET or lexTokenType == TOKEN_DOT {
     generateNpeTest()
@@ -519,28 +540,38 @@ composite: proc(): int {
           typeError("Expected field name but found: " + lexTokenString)
           exit
         }
+
+        // TODO: This must check that the record type exists!
+        recType = findTypeById(leftType)
+        if recType == null {
+        }
+        recSym = recType.recordType
+        if recSym == null {
+          print "  ; in field get recordtypename is " print recSym.name println " but it was not found!"
+          exit  
+        } else {
+          print "  ; in field get recordtype is " println recSym.name
+        } 
+        
         fieldName = lexTokenString
 
         advanceParser() // eat the field name
 
-        index = leftType - TYPE_RECORD_BASE
-        fieldIndex = lookupField(index, fieldName)
-        if fieldIndex == -1 {
-          typeError("Unknown field '" + fieldName + "' of record type " + recordNames[index])
-          exit
+        fldSym = lookupField(recSym, fieldName)
+        if fldSym == null {
+          typeError("Unknown field '" + fieldName + "' of record type " + recSym.name)
+          exit  
         }
 
-        fieldType = fieldTypes[fieldIndex]
-        fieldOffset = fieldOffsets[fieldIndex]
-        if fieldOffset > 0 {
-          print "  add RAX, " print fieldOffset print "\n"
+        if fldSym.offset > 0 {
+          print "  add RAX, " println fldSym.offset
         }
 
         // TODO: this is too big for ints
-        print "  mov RAX, [RAX]  ; get record." print fieldName print "\n"
+        print "  mov RAX, [RAX]  ; get record." println fieldName
 
         // Overwrite return type to be *this* field's type
-        leftType = fieldType
+        leftType = fldSym.type.oldType
       } else {
         typeError("Cannot take field of " + typeName(leftType))
         exit
@@ -555,110 +586,130 @@ generateGetVariable: proc(variable: string): int {
   if varType != TYPE_UNKNOWN {
     // TODO: This is too big for ints, should just use EAX;
     // also too big for bools
-    // print "  ; source type is " print varType print "\n"
-    print "  mov RAX, [_" print variable print "]  ; get global '" print variable print "'\n"
+    print "  mov RAX, [_" print variable println "]"
     return varType
   }
-  if currentProcNum == -1 {
-    // not in a proc, cannot look up local
+
+  if currentProc == null {
+    // Not in a proc, cannot look up local.
     typeError("Cannot find global variable " + variable)
     exit
   }
 
-  index = lookupLocal(variable)
-  if index != -1 {
-    offset = localOffsets[index]
+  sym = lookupLocal(variable)
+  if sym != null {
+    offset = sym.offset
     // TODO: This is too big for ints, should just use EAX;
     // also too big for bools
-    print "  mov RAX, [RBP" print offset print "]  ; get local '" print variable print "'\n"
-    return localTypes[index]
+    print "  mov RAX, [RBP" print offset print "]  ; get local " println variable
+    return sym.type
   }
 
-  index = lookupParam(variable)
-  if index == -1 {
+  symbol = lookupParam(variable)
+  if symbol == null {
     typeError("Cannot find variable " + variable)
     exit
   }
-  offset = paramOffsets[index]
+  offset = symbol.offset
   // TODO: This is too big for ints, should just use EAX;
   // also too big for bools
-  print "  mov RAX, [RBP+" print offset print "]  ; get param '" print variable print "'\n"
-  return paramTypes[index]
+  print "  mov RAX, [RBP+" print offset print "]  ; get param " println variable
+  return symbol.type
 }
 
-REGISTERS:string[4]
-REGISTERS[0]="RBX"
-REGISTERS[1]="RCX"
-REGISTERS[2]="RDX"
-REGISTERS[3]="RSI"
-
-generateProcCall: proc(procname: string) {
+generateProcCall: proc(procName: string) {
+  procSym = lookupProc(procName)
   expectToken(TOKEN_LPAREN, '(')
 
   numArgs = 0
+  param = procSym.params
   while lexTokenType != TOKEN_RPAREN and lexTokenType != TOKEN_EOF {
     numArgs = numArgs + 1
     argType = expr()
-    // TODO: check arg type
-    print "  push RAX  ; push arg\n"
+    if numArgs > procSym.numParams {
+      typeError("Too many args to proc '" + procName + "'")
+    }
+    expectedType = param.type
+    param = param.next
+    // check arg type
+    if argType != expectedType {
+      // TODO: print the index and/or the arg name
+      print "expected " print typeName(expectedType) print "(" print expectedType println ")"
+      print "actual " print typeName(argType) print "(" print argType println ")"
+      typeError("Incorrect arg type to proc '" + procName +
+        "'. Expected: " + typeName(expectedType) + ", actual: " + typeName(argType))
+    }
+    println "  push RAX"
     if lexTokenType == TOKEN_COMMA {
       advanceParser() // eat the comma
     }
   }
+  // TODO: print the actual and expected #s of arguments
+  if numArgs < procSym.numParams {
+    typeError("Too few args to proc '" + procName + "'")
+  }
+  if numArgs > procSym.numParams {
+    typeError("Too many args to proc '" + procName + "'")
+  }
 
   // reverse the order of the top of the stack
   if numArgs > 1 {
-    i = 0 while i < numArgs do i = i + 1 {
-      print "  pop " print REGISTERS[i] print "\n"
-    }
-    i = 0 while i < numArgs do i = i + 1 {
-      print "  push " print REGISTERS[i] print "\n"
+    println "  ; swap args on stack"
+    // TODO: will we always push 8 bytes per arg?!
+    destOffset = (numArgs - 1) * 8
+    sourceOffset = 0 i = 0 while i < numArgs do i = i + 2 {
+      // swap arg i with arg numArgs - i
+      print "  mov RBX, [RSP + " print sourceOffset println "]"
+      print "  xchg RBX, [RSP + " print destOffset println "]"
+      print "  mov [RSP + " print sourceOffset println "], RBX"
+      sourceOffset = sourceOffset + 8
+      destOffset = destOffset - 8
     }
   }
 
   expectToken(TOKEN_RPAREN, ')')
 
   // emit call; the return value will be in RAX, EAX, AL
-  print "  call _" print procname print "\n"
+  print "  call _" println procName
 
   // # of bytes we have to adjust the stack (pseudo-pop)
   bytes = 8 * numArgs
   if bytes > 0 {
-    print "  add RSP, " print bytes print "  ; adjust stack for pushed params\n\n"
+    print "  add RSP, " print bytes println "  ; adjust stack for pushed params\n"
   }
 }
 
-generateInput: proc() {
+generateInput: proc {
   emitExtern("_flushall")
 
   // 1. calloc 1mb
-  print "  mov RDX, 1048576  ; allocate 1mb\n"
-  print "  mov RCX, 1\n"
+  println "  mov RCX, 1048576 ; allocate 1mb"
+  println "  mov RDX, 1"
   emitExtern("calloc")
-  print "  push RAX\n"
+  println "  push RAX"
 
   // 3. _read up to 1mb
-  print "  mov RCX, 0  ; 0=stdio\n"
-  print "  mov RDX, RAX  ; destination\n"
-  print "  mov R8, 1048576  ; count\n"
+  println "  xor RCX, RCX     ; 0=stdin"
+  println "  mov RDX, RAX     ; destination"
+  println "  mov R8, 1048576  ; count (1 mb)"
   emitExtern("_read")
 
   // TODO: create a smaller buffer with just the right size, then copy to it,
   // then free the original 1mb buffer.
-  print "  pop RAX\n"
+  println "  pop RAX  ; calloc'ed buffer"
 }
 
 // atom -> constant | variable | variable '(' args ')' | '(' expr ')' | null
-atom: proc(): int {
+atom: proc: int {
   if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NULL {
     advanceParser()
-    print "  mov RAX, 0  ; null\n"
+    println "  xor RAX, RAX"
     return TYPE_NULL
   } elif lexTokenType == TOKEN_STRING {
     // string constant
     index = addStringConstant(lexTokenString)
     advanceParser()
-    print "  mov RAX, CONST_" print index print "\n"
+    print "  mov RAX, CONST_" println index
     return TYPE_STRING
 
   } elif lexTokenType == TOKEN_INT {
@@ -666,7 +717,11 @@ atom: proc(): int {
     intval = lexTokenInt
     advanceParser()
     // TODO: This is too big for ints, should just use EAX
-    print "  mov RAX, " print intval print "\n"
+    if intval != 0 {
+      print "  mov RAX, " println intval
+    } else {
+      println "  xor RAX, RAX"
+    }
     return TYPE_INT
 
   } elif lexTokenType == TOKEN_BOOL {
@@ -674,9 +729,9 @@ atom: proc(): int {
     boolval = lexTokenBool
     advanceParser()
     if boolval {
-      print "  mov AL, 1\n"
+      println "  mov AL, 1"
     } else {
-      print "  xor RAX, RAX\n"
+      println "  xor RAX, RAX"
     }
     return TYPE_BOOL
 
@@ -692,7 +747,7 @@ atom: proc(): int {
     // procedure call
     generateProcCall(variable)
 
-    type = lookupProcReturnType(variable)
+    type = lookupProc(variable).returnType
     if type == TYPE_VOID {
       typeError("Return type of " + variable + " is void. Cannot assign it to a variable.")
       exit
@@ -715,7 +770,7 @@ atom: proc(): int {
     return TYPE_STRING
   }
 
-  parserError("Cannot parse token in atom(): " + lexTokenString)
+  parserError("Unexpected token: " + lexTokenString)
   exit
 }
 
@@ -724,7 +779,8 @@ atom: proc(): int {
 //                               STATEMENT RULES                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-parseType: proc(): int {
+// This parses an arg or field. Not arrays (yet)
+parseType: proc: int {
   i = 1 while i <= 3 do i = i + 1 {
     if TYPE_NAMES[i] == lexTokenString {
       advanceParser()
@@ -733,20 +789,18 @@ parseType: proc(): int {
     }
   }
   // Lookup record here
-  recordIndex = lookupRecord(lexTokenString)
-  if recordIndex != -1 {
-    if debug {
-      print "  ; found record type " print lexTokenString print "\n"
-    }
+  recordType = lookupRecord(lexTokenString)
+  if recordType != null {
     advanceParser()
-    return TYPE_RECORD_BASE + recordIndex
+    // TODO: allow arrays here
+    return recordType.oldType
   }
 
   parserError("Unknown type " + lexTokenString)
   exit
 }
 
-skipType: proc() {
+skipType: proc {
   i = 1 while i <= 3 do i = i + 1 {
     if TYPE_NAMES[i] == lexTokenString {
       advanceParser()
@@ -772,17 +826,18 @@ parseArrayDecl: proc(variable: string) {
   expectToken(TOKEN_RBRACKET, ']')
 
   // allocate "RAX * sizebyType + 5" bytes:
-  print "  mov EBX, EAX  ; save size\n"
-  print "  imul RAX, " print sizeByType(baseType) print "  ; bytes per entry\n"
-  print "  add RAX, 5    ; 5 more bytes for dimensions & # entries\n"
-  print "  mov RCX, RAX  ; num items\n"
-  print "  mov RDX, 1    ; bytes per item\n"
+  println "  mov EBX, EAX  ; save size"
+  print "  imul RAX, " print sizeByType(baseType) println "  ; bytes per entry"
+  println "  add RAX, 5    ; 5 more bytes for dimensions & # entries"
+  println "  mov RCX, RAX  ; num items"
+  println "  mov RDX, 1    ; bytes per item"
   emitExtern("calloc")
-  // byte 1 is for # of dimensions, byte 2 is # of entries
-  print "  mov BYTE [RAX], 1  ; # of dimensions\n"
-  print "  mov DWORD [RAX+1], EBX  ; # of entries\n"
 
-  arrayType = baseType + TYPE_ARRAY
+  // byte 1 is for # of dimensions, byte 2 is # of entries
+  println "  mov BYTE [RAX], 1  ; # of dimensions"
+  println "  mov DWORD [RAX+1], EBX  ; # of entries"
+
+  arrayType = baseType + TYPE_ARRAY_BASE
   generateAssignment(variable, arrayType)
 }
 
@@ -794,11 +849,11 @@ parseProc: proc(procName: string) {
   hasReturn=false
 
   expectKeyword(KW_PROC)
-  if currentProcNum != -1 {
+  if currentProc != null {
     parserError("Cannot define nested procs")
     exit
   }
-  setCurrentProcNum(procName)
+  setCurrentProc(procName)
 
   if lexTokenType == TOKEN_LPAREN {
     // if next token is (, advance parser, read parameters until )
@@ -828,52 +883,47 @@ parseProc: proc(procName: string) {
   }
 
   afterProc = nextLabel("afterProc")
-  print "\n  ; guard around proc\n"
-  print "  jmp " print afterProc print "\n"
+  print "\n  jmp " print afterProc println "; guard around proc"
 
   // start of proc
-  print "\n  ; proc " print procName print ":\n"
+  print "\n  ; " print procName println ": proc {"
   emitLabel("_" + procName)
-  print "  push RBP\n"
-  print "  mov RBP, RSP\n"
+  println "  push RBP"
+  println "  mov RBP, RSP"
   // int bytes = 16 * (op.localBytes() / 16 + 1);
   // assume localbytes = 10*8=80, bytes = 96
-  print "  sub RSP, 96  ; space for up to 10 8-byte locals\n\n"
+  println "  sub RSP, 96  ; space for up to 10 8-byte locals\n"
 
   parseBlock()
   if returnType != TYPE_VOID {
-    if hasReturn {} else {
-      // ugh, v0 doesn't support NOT
-      parserError("No return from proc '" + procName)
+    if not hasReturn {
+      parserError("No RETURN statement from non-void proc: " + procName)
       exit
     }
   }
-  currentProcNum = -1
+  clearCurrentProc()
 
-  print "__exit_of_" print procName print ":\n"
-  print "  mov RSP, RBP\n"
-  print "  pop RBP\n"
-  print "  ret\n"
+  print "__exit_of_" print procName println ":"
+  println "  mov RSP, RBP"
+  println "  pop RBP"
+  println "  ret"
   emitLabel(afterProc)
 }
 
 parseProcSignature: proc(procName: string) {
   myProcNum = numProcs
+  procSymbol = registerProc(procName)
+  setCurrentProc(procName)
+
   if lexTokenType == TOKEN_LPAREN {
     // if next token is (, advance parser, read parameters until )
     expectToken(TOKEN_LPAREN, '(')
 
     // Parse params
-    offset = 8 // first 8 bytes is for return address
-    paramIndex = myProcNum * PARAMS_PER_PROC
     index = 0
     while lexTokenType != TOKEN_RPAREN {
       if lexTokenType != TOKEN_VARIABLE {
         expectToken(TOKEN_VARIABLE, "variable")
-        exit
-      }
-      if numParams[myProcNum] == PARAMS_PER_PROC {
-        typeError("More than 4 parameters declared for proc " + procName)
         exit
       }
       paramName = lexTokenString
@@ -883,16 +933,8 @@ parseProcSignature: proc(procName: string) {
 
       type = parseType()
 
-      // store the name and type of the parameter
-      // TODO: detect duplicate parameters
-      // TODO: write registerParam(paramName, type, index)
-      paramNames[paramIndex] = paramName
-      paramTypes[paramIndex] = type
-      offset = offset + 8 // all params start at 8 bytes increments on the stack (?)
-      paramOffsets[paramIndex] = offset
-      paramIndex = paramIndex + 1
-      index = index + 1
-      numParams[myProcNum] = numParams[myProcNum] + 1
+      // Store the name and type of the parameter
+      registerParam(paramName, type)
 
       if lexTokenType == TOKEN_COMMA {
         advanceParser()
@@ -909,16 +951,11 @@ parseProcSignature: proc(procName: string) {
     advanceParser()  // eat the :
     returnType = parseType()
   }
-  registerProc(procName, returnType)
-  // print "; procs: " print procNames[0] print "\n"
-  // print "; numParams: " print numParams[0] print "\n"
-  // print "; return types: " print returnTypes print "\n"
-  // print "; params: " print paramNames[0] print "\n"
-  // print "; param types: " print paramTypes[0] print "\n"
-  // print "; offsets    : " print paramOffsets print "\n"
+  procSymbol.returnType = returnType
+  clearCurrentProc()
 }
 
-isAtStartOfExpression: proc(): bool {
+isAtStartOfExpression: proc: bool {
   if lexTokenType == TOKEN_KEYWORD {
     return
       lexTokenKw == KW_ASC or
@@ -940,38 +977,36 @@ isAtStartOfExpression: proc(): bool {
     lexTokenType == TOKEN_VARIABLE
 }
 
-parseReturn: proc() {
+parseReturn: proc {
   // if we're not in a procedure: error
-  if currentProcNum == -1 {
+  if currentProc == null {
     parserError("Cannot return from outside proc")
     exit
   }
 
   hasReturn=true
 
-  currentProcName = procNames[currentProcNum]
+  currentProcName = currentProc.name
   actualType = TYPE_VOID
   if isAtStartOfExpression() {
     // if we're at the start of an expression, parse it.
     actualType = expr()
   }
 
-  expectedType = returnTypes[currentProcNum]
+  expectedType = currentProc.returnType
 
   // Check that return types match
-  if compatibleTypes(actualType, expectedType) {
-    print "  jmp __exit_of_" print currentProcName print "\n"
-    return
+  if not compatibleTypes(actualType, expectedType) {
+    typeError("Incorrect return type of '" + currentProcName + "'. Expected "
+      + typeName(expectedType) + " but found " + typeName(actualType))
+    exit
   }
-  typeError("Incorrect return type of '" + currentProcName + "'. Expected "
-    + typeName(expectedType) + " but found " + typeName(actualType))
-  exit
+  print "  jmp __exit_of_" println currentProcName
 }
 
 generateAssignment: proc(variable: string, exprType: int): int {
   varType = lookupGlobal(variable)
-  // print "  ; in assignment exprType is " print exprType print "\n"
-  isGlobal = varType != TYPE_UNKNOWN or currentProcNum == -1
+  isGlobal = varType != TYPE_UNKNOWN or currentProc == null
   if isGlobal {
     if varType == TYPE_UNKNOWN {
       registerGlobal(variable, exprType)
@@ -979,30 +1014,30 @@ generateAssignment: proc(variable: string, exprType: int): int {
     }
 
     // TODO: This is too big for ints, should just use EAX for int, AL for bool
-    print "  mov [_" print variable print "], RAX\n\n"
+    print "  mov [_" print variable println "], RAX"
     return varType
   }
 
   // not global; try param or local
-  index = lookupParam(variable)
+  symbol = lookupParam(variable)
   offset = 0
-  if index != -1 {
+  if symbol != null {
     // found it
-    offset = paramOffsets[index]
-    varType = paramTypes[index]
-    print "  mov [RBP+" print offset print "], RAX  ; assignment to param '" print variable print "'\n\n"
+    offset = symbol.offset ///paramOffsets[index]
+    varType = symbol.type // paramTypes[index]
+    print "  mov [RBP+" print offset print "], RAX" print "  ; set param " println variable
     return varType
   }
 
-  index = lookupLocal(variable)
-  if index != -1 {
-    offset = localOffsets[index]
-    varType = localTypes[index]
+  sym = lookupLocal(variable)
+  if sym != null {
+    offset = sym.offset
+    varType = sym.type
   } else {
     offset = registerLocal(variable, exprType)
     varType = exprType
   }
-  print "  mov [RBP" print offset print "], RAX  ; assignment to local '" print variable print "'\n\n"
+  print "  mov [RBP" print offset print "], RAX" print"  ; set local " println variable
   return varType
 }
 
@@ -1011,20 +1046,22 @@ generateArraySet: proc(variable: string) {
 
   // Make sure 'variable' is an array
   if isArrayType(type) { // TODO: flip this logic: if not isArrayType(type)...
-
     expectToken(TOKEN_LBRACKET, '[')
     indexType = expr()
     if indexType != TYPE_INT {
-      typeError("Array index must be INT; was " + typeName(indexType))
+      typeError("Incorrect type for array index. Expected: int, actual: " + typeName(indexType))
       exit
     }
-    print "  mov RBX, RAX\n"
+
+    // TODO: make sure index is not negative 
+    
+    println "  mov RBX, RAX"
     // TODO: FIX ME
-    print "  shl RBX, 3  ; bytes per element TEMPORARY\n"
-    print "  add RBX, 5  ; header\n"
+    println "  shl RBX, 3  ; bytes per element TEMPORARY"
+    println "  add RBX, 5  ; header"
     generateGetVariable(variable)
-    print "  add RBX, RAX\n"
-    print "  push RBX\n"
+    println "  add RBX, RAX"
+    println "  push RBX"
     expectToken(TOKEN_RBRACKET, ']')
     expectToken(TOKEN_EQ, '=')
 
@@ -1032,8 +1069,8 @@ generateArraySet: proc(variable: string) {
 
     checkTypes(toBaseType(type), rightType)
 
-    print "  pop RBX\n"
-    print "  mov [RBX], RAX  ; array set\n\n"
+    println "  pop RBX"
+    println "  mov [RBX], RAX  ; array set"
   } else {
     typeError("Cannot take index of non-array variable " + variable)
     exit
@@ -1050,7 +1087,7 @@ registerRecordName: proc(recordName: string) {
     expectToken(TOKEN_VARIABLE, 'field')
     expectToken(TOKEN_COLON, ':')
     skipType()
-    // This isn't completely implemented but I fear I'll forget it...
+    // TODO: This isn't completely implemented but I fear I'll forget it...
     if lexTokenType == TOKEN_LBRACKET {
       expectToken(TOKEN_LBRACKET, '[')
       expr() // skip the size
@@ -1060,24 +1097,22 @@ registerRecordName: proc(recordName: string) {
   expectToken(TOKEN_RBRACE, "}")
 }
 
+
+// Gather all the fields
 parseRecordDecl: proc(recordName: string) {
-  recIndex = lookupRecord(recordName)
+  recSym = lookupRecord(recordName)
+  if recSym == null {
+    typeError("Record " + recordName + " not found")
+    exit
+  }
   expectKeyword(KW_RECORD)
   expectToken(TOKEN_LBRACE, "{")
 
-  offset = 0
-  fieldIndex = recIndex * FIELDS_PER_RECORD
-  index = 0
-  size = 0
   // zero or more variable declarations, NOT followed by commas
   while lexTokenType != TOKEN_RBRACE and lexTokenType != TOKEN_EOF {
     // record the field names and types
     if lexTokenType != TOKEN_VARIABLE {
       expectToken(TOKEN_VARIABLE, 'variable')
-      exit
-    }
-    if numFields[recIndex] == FIELDS_PER_RECORD {
-      typeError("More than 20 parameters declared for record " + recordName)
       exit
     }
     fieldName = lexTokenString
@@ -1088,39 +1123,17 @@ parseRecordDecl: proc(recordName: string) {
     type = parseType()
 
     // store the name and type of the field
-    // TODO: detect duplicate fields
-    // registerField(fieldName, type)
-    fieldNames[fieldIndex] = fieldName
-    fieldTypes[fieldIndex] = type
-    fieldOffsets[fieldIndex] = offset
-    size = size + sizeByType(type)
-    offset = offset + sizeByType(type)
-    fieldIndex = fieldIndex + 1
-    index = index + 1
-    numFields[recIndex] = numFields[recIndex] + 1
+    vt = findTypeById(type)
+    registerField(recSym, fieldName, vt)
   }
   expectToken(TOKEN_RBRACE, "}")
-  recordSizes[recIndex] = size
-
-  if debug {
-    print "; # records: " print numRecords print "\n"
-    print "; record name: " print recordNames[recIndex] print "\n"
-    print "; numFields: " print numFields[recIndex] print "\n"
-    print "; size: " print recordSizes[recIndex] print "\n"
-    print "; fields: " i=0 while i < numFields[recIndex] do i = i + 1 {print fieldNames[recIndex*FIELDS_PER_RECORD+i] print " " }
-    print "\n"
-    print "; field types: " i=0 while i < numFields[recIndex] do i = i + 1 {print typeName(fieldTypes[recIndex*FIELDS_PER_RECORD+i]) print " " }
-    print "\n"
-    print "; offsets: " i=0 while i < numFields[recIndex] do i = i + 1 {print fieldOffsets[recIndex*FIELDS_PER_RECORD+i] print " " }
-    print "\n"
-  }
 }
-
 
 generateFieldSet: proc(variable: string) {
   generateGetVariable(variable)
   generateNpeTest()
-  print "  push RAX\n"  // base of record in memory
+
+  println "  push RAX"  // base of record in memory
 
   expectToken(TOKEN_DOT, '.')
   type = lookupType(variable)
@@ -1136,28 +1149,31 @@ generateFieldSet: proc(variable: string) {
 
   rhsType = expr()
 
-  index = type - TYPE_RECORD_BASE
-  fieldIndex = lookupField(index, fieldName)
-  if fieldIndex == -1 {
-    typeError("Unknown field '" + fieldName + "' of record " + recordNames[index])
-    exit
+  recType = findTypeById(type)
+  recSym = recType.recordType
+  if recSym == null {
+    typeError("Record type " + recSym.name + " not found")
+    exit  
+  } 
+  fldSym = lookupField(recSym, fieldName)
+  if fldSym == null {
+    typeError("Field " + fieldName + " of record type " + recSym.name + " not found")
+    exit  
   }
-  fieldType = fieldTypes[fieldIndex]
 
-  checkTypes(fieldType, rhsType)
-  fieldOffset = fieldOffsets[fieldIndex]
-  // print "  ; setting field index " print fieldIndex print " of record type " print recordNames[index] print "\n"
-  print "  pop RBX\n"
-  if fieldOffset > 0 {
-    print "  add RBX, " print fieldOffset print "  ; add field offset\n"
+  checkTypes(fldSym.type.oldType, rhsType)
+
+  println "  pop RBX"
+  if fldSym.offset > 0 {
+    print "  add RBX, " println fldSym.offset
   }
 
   // TODO: this is too big for ints
-  print "  mov [RBX], RAX  ; set " print variable print "." print fieldName print "\n\n" // store it
+  print "  mov [RBX], RAX  ; set " print variable print "." println fieldName
 }
 
-// variable=expression, procname: proc(), procname(), arrayname:type[intexpr]
-parseStartsWithVariable: proc() {
+// variable=expression, procname: proc, procname(), arrayname:type[intexpr]
+parseStartsWithVariable: proc {
   variable = lexTokenString
   advanceParser()  // eat the variable
   if lexTokenType == TOKEN_EQ {
@@ -1191,67 +1207,69 @@ parseStartsWithVariable: proc() {
     return
   }
 
-  parserError("expected one of '=' ':' '(' '[' but found: " + lexTokenString)
+  parserError("Expected one of '=' ':' '(' '[' '.' but found: " + lexTokenString)
   exit
 }
 
 // expect {, parse statements until }
-parseBlock: proc() {
+parseBlock: proc {
   expectToken(TOKEN_LBRACE, '{')
   while lexTokenType != TOKEN_RBRACE and lexTokenType != TOKEN_EOF {
     parseStmt()
+    // newline between statements
+    print "\n"
   }
   expectToken(TOKEN_RBRACE, '}')
 }
 
-parseIf: proc() {
+parseIf: proc {
   // 1. calculate the condition
-  print "  ; 'if' condition\n"
+  println "  ; 'if' condition"
   condType = expr()
 
   if condType != TYPE_BOOL {
-    typeError("Expected boolean condition in if but found " + typeName(condType))
+    typeError("Incorrect type of condition in 'if'. Expected: bool, actual: " + typeName(condType))
     exit
   }
 
   // 2. if false, go to else
   elseLabel = nextLabel('else')
-  print "  cmp AL, 0\n"
-  print "  jz " print elseLabel print "\n\n"
+  println "  cmp AL, 0"
+  print "  jz " println elseLabel
 
   // 3. { parse statements until }
-  print "  ; 'if' block\n"
+  println "  ; 'if' block"
   parseBlock()
 
   // this may not be necessary if there are no elses or elifs
   // after the successful "if" block, jump down to the end.
   afterAllLabel = nextLabel('afterIf')
-  print "  jmp " print afterAllLabel print "\n"
+  print "  jmp " println afterAllLabel
 
   // 4. elseLabel: while token = elif
   emitLabel(elseLabel)
   while lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_ELIF {
-    print "  ; 'elif' block\n"
+    println "  ; 'elif' block"
     advanceParser() // eat the elif
     condType = expr()
     if condType != TYPE_BOOL {
-      typeError("Expected boolean condition in elif but found " + typeName(condType))
+      typeError("Incorrect type of condition in 'elif'. Expected: bool, actual: " + typeName(condType))
       exit
     }
 
     elseLabel = nextLabel('afterElif')
-    print "  cmp AL, 0\n"
+    println "  cmp AL, 0"
     // if the condition is false, go to our local elseLabel
-    print "  jz " print elseLabel print "\n\n"
+    print "  jz " println elseLabel
     parseBlock()
     // after successful "elif" block, jump to the end
-    print "  jmp " print afterAllLabel print "\n"
+    print "  jmp " println afterAllLabel
     emitLabel(elseLabel)
   }
 
   // 5. else:
   if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_ELSE {
-    print "  ; 'else' block\n"
+    println "  ; 'else' block"
     advanceParser() // eat the "else"
     parseBlock()
   }
@@ -1264,34 +1282,34 @@ numWhiles=0
 whileBreakLabels:string[100]
 whileContinueLabels:string[100]
 
-parseBreak: proc() {
+parseBreak: proc {
   if numWhiles == 0 {
-    parserError("Cannot have break outside while loop")
+    parserError("Cannot have 'break' outside 'while' loop")
     exit
   }
-  print "  jmp " print whileBreakLabels[numWhiles - 1] print "\n"
+  print "  jmp " println whileBreakLabels[numWhiles - 1]
 }
 
-parseContinue: proc() {
+parseContinue: proc {
   if numWhiles == 0 {
     parserError("Cannot have continue outside loop")
     exit
   }
-  print "  jmp " print whileContinueLabels[numWhiles - 1] print "\n"
+  print "  jmp " println whileContinueLabels[numWhiles - 1]
 }
 
-parseWhile: proc() {
+parseWhile: proc {
   continueLabel = nextLabel("while_continue")
   emitLabel(continueLabel)
 
   condType = expr()
   if condType != TYPE_BOOL {
-    typeError("Expected boolean condition in while but found " + typeName(condType))
+    typeError("Incorrect type of condition in 'while'. Expected: bool, actual: " + typeName(condType))
     exit
   }
-  print "  cmp AL, 0\n"
+  println "  cmp AL, 0"
   afterLabel = nextLabel("after_while")
-  print "  jz " print afterLabel print "\n"
+  print "  jz " println afterLabel
   // push the "afterLabel" onto the stack
   whileBreakLabels[numWhiles] = afterLabel
 
@@ -1308,7 +1326,7 @@ parseWhile: proc() {
     // We can't emit it at the end, because we have to emit the block first,
     // so we jump past it here, and back to it after the block.
     whileBlockLabel = nextLabel("while_block")
-    print "  jmp " print whileBlockLabel print "\n"
+    print "  jmp " println whileBlockLabel
 
     doStmtLabel = nextLabel("do_stmt")
     // do_stmt:
@@ -1316,11 +1334,11 @@ parseWhile: proc() {
     //    emit do code
     parseStmt()
     //    jmp while_continue
-    print "  jmp " print continueLabel print "\n"
+    print "  jmp " println continueLabel
   }
 
   // whileBlock:
-  print "  ; while block\n"
+  println "  ; while block"
   // Push either "doStmtLabel" or "continueLabel" onto the "continue stack"
   if hasDo {
     emitLabel(whileBlockLabel)
@@ -1335,9 +1353,9 @@ parseWhile: proc() {
 
   if hasDo {
     // jump back to the "do", which will then jump back to the continuelabel
-    print "  jmp " print doStmtLabel print "\n"
+    print "  jmp " println doStmtLabel
   }  else {
-    print "  jmp " print continueLabel print "\n"
+    print "  jmp " println continueLabel
   }
   emitLabel(afterLabel)
 
@@ -1349,38 +1367,63 @@ parsePrint: proc(isPrintln: bool) {
   exprType = expr()  // puts result in RAX
   if exprType == TYPE_NULL {
     nullindex = addStringConstant("null")
-    print "  mov RCX, CONST_" print nullindex print "\n"
+    print "  mov RCX, CONST_" println nullindex
   } elif exprType == TYPE_STRING {
-    print "  mov RCX, RAX\n"
+    println "  mov RCX, RAX"
   } elif exprType == TYPE_BOOL {
     trueindex = addStringConstant("true")
     falseindex = addStringConstant("false")
-    print "  cmp AL, 1\n"
-    print "  mov RCX, CONST_" print falseindex print "\n"
-    print "  mov RDX, CONST_" print trueindex print "\n"
-    print "  cmovz RCX, RDX\n"
+    println "  cmp AL, 1"
+    print "  mov RCX, CONST_" println falseindex
+    print "  mov RDX, CONST_" println trueindex
+    println "  cmovz RCX, RDX"
   } elif exprType == TYPE_INT {
     index = addStringConstant("%d")
-    print "  mov RCX, CONST_" print index print "\n"
+    print "  mov RCX, CONST_" println index
     // TODO: This is too big for ints, should just use EDX, EAX
-    print "  mov RDX, RAX\n"
+    println "  mov RDX, RAX"
   } else {
     parserError("Cannot generate printing " + typeName(exprType))
     exit
   }
-  print "  sub RSP, 0x20\n"
-  print "  extern printf\n"
-  print "  call printf  ; print " print typeName(exprType) print "\n"
-  print "  extern _flushall\n"
-  print "  call _flushall\n"
-  print "  add RSP, 0x20\n\n"
+  println "  sub RSP, 0x20"
+  println "  extern printf"
+  println "  call printf"
   if isPrintln {
-    print "  mov RCX, 10\n"
-    emitExtern("putchar")
+    // char 10=newline
+    println "  mov RCX, 10"
+    println "  extern putchar"
+    println "  call putchar"
   }
+  println "  extern _flushall"
+  println "  call _flushall"
+  println "  add RSP, 0x20"
 }
 
-parseStmt: proc() {
+generateExit: proc {
+  if isAtStartOfExpression() {
+    // if we're at the start of an expression, parse it.
+    exitExprType = expr()
+    if exitExprType != TYPE_STRING {
+      typeError("Incorrect type of 'exit' expression. Expected: string, actual: " + typeName(exitExprType))
+      exit
+    }
+    messageIndex = addStringConstant("ERROR: %s\n")
+    print "  mov RCX, CONST_" println messageIndex
+    println "  mov RDX, RAX"
+    println "  sub RSP, 0x20"
+    println "  extern printf"
+    println "  call printf"
+    println "  extern _flushall"
+    println "  call _flushall"
+    println "  add RSP, 0x20\n"
+  }
+
+  println "  mov RCX, -1"
+  println "  call exit"
+}
+
+parseStmt: proc {
   if lexTokenType == TOKEN_EOF {
     return
   } elif lexTokenType == TOKEN_KEYWORD {
@@ -1390,8 +1433,7 @@ parseStmt: proc() {
       parsePrint(kw==KW_PRINTLN)
       return
     } elif kw == KW_EXIT {
-      print "  mov RCX, -1\n"
-      print "  call exit\n"
+      generateExit()
       return
     } elif kw == KW_IF {
       parseIf()
@@ -1424,10 +1466,11 @@ parseStmt: proc() {
 ///////////////////////////////////////////////////////////////////////////////
 
 
-emitStringTable: proc() {
-  i = 0 while i < numStrings do i = i + 1 {
-    print "  CONST_" print i print ': db "'
-    entry = stringTable[i]
+emitStringTable: proc {
+  head = stringTable.head
+  while head != null do head = head.next {
+    print "  CONST_" print head.index print ': db "'
+    entry = head.value
     j = 0 while j < length(entry) do j = j + 1 {
       ch = asc(entry[j])
       if ch == 10 or ch == 13 or ch == 34 or ch == 37 {
@@ -1437,39 +1480,40 @@ emitStringTable: proc() {
         print entry[j]
       }
     }
-    print '", 0\n'
+    println '", 0'
   }
 }
 
-emitGlobalTable: proc() {
-  i = 0 while i < numGlobals do i = i + 1 {
-    print "  _" print globalNames[i] print ": "
-    if globalTypes[i] == TYPE_STRING {
-      print "dq"
+emitGlobalTable: proc {
+  head = globals while head != null do head = head.next {
+    print "  _" print head.name print ": "
+    if head.type == TYPE_STRING {
+      println "dq 0"
     } else {
       // TODO: this is 64 bits, which is too many for a 32-bit int or a boolean
-      print "dq"
+      println "dq 0"
     }
-    print " 0\n"
   }
 }
 
-parseProgram: proc() {
-  print "; compiled by " print VERSION print "\n"
-  print "global main\n"
-  print "extern exit\n\n"
-  print "section .text\n"
-  print "main:\n"
+parseProgram: proc {
+  println "; compiled by " + VERSION
+  println "global main"
+  println "extern exit\n"
+  println "section .text"
+  println "main:"
   while lexTokenType != TOKEN_EOF {
     parseStmt()
+    // newline between statements
+    print "\n"
   }
-  print "  mov RCX, 0\n"
-  print "  call exit\n\n"
+  println "  xor RCX, RCX"
+  println "  call exit\n"
 
-  if numStrings > 0 or numGlobals > 0 {
-    print "section .data\n"
+  if stringTable.head != null or numGlobals > 0 {
+    println "section .data"
   }
-  if numStrings > 0 {
+  if stringTable.head != null {
     emitStringTable()
   }
   if numGlobals > 0 {
@@ -1477,7 +1521,7 @@ parseProgram: proc() {
   }
 }
 
-procFinder: proc() {
+procFinder: proc {
   while lexTokenType != TOKEN_EOF {
     if lexTokenType == TOKEN_VARIABLE {
       variable = lexTokenString
@@ -1494,11 +1538,11 @@ procFinder: proc() {
     }
     advanceParser()
   }
-  resetLexer()
+  resetLexer(lexer)
   advanceParser()
 }
 
-recordFinder: proc() {
+recordFinder: proc {
   while lexTokenType != TOKEN_EOF {
     if lexTokenType == TOKEN_VARIABLE {
       variable = lexTokenString
@@ -1514,21 +1558,38 @@ recordFinder: proc() {
     }
     advanceParser()
   }
-  resetLexer()
+  resetLexer(lexer)
   advanceParser()
 }
 
-initParser: proc() {
+initParser: proc: Lexer {
   text = input
-//    print "text = " print text print "\n"
+//    print "text = " println text
   if debug {
   }
-  newLexer(text)
+  lexer = newLexer(text)
   advanceParser()
+  return lexer
 }
 
 
-initParser()
 recordFinder()
 procFinder()
 parseProgram()
+
+
+// I don't love this, that it uses the parser global "lexer"
+generalError: proc(type: string, message: string) {
+  print type + " error at line " print lexer.line
+  println ": " + message
+  exit
+}
+
+typeError: proc(message: string) {
+  generalError("Type", message)
+}
+
+parserError: proc(message: string) {
+  generalError("Parse", message)
+}
+
