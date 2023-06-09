@@ -2,7 +2,7 @@
 
 `v1.exe` (not checked in) is the output of the `v0.exe` compiler as run on 
 the concatenation of the source files in this directory. `v1.d` is generated
-by the bazel target `:v1d` in the (BUILD file)[BUILD] file in this directory.
+by the bazel target `:v1d` in the [BUILD file](BUILD) file in this directory.
 
 `v1fromv1.exe` is the output of the v1-written compiler (`v1.exe`) as run
 on `v1.d`.
@@ -11,7 +11,7 @@ They produce identical output!
 
 ## Features
 
-`v1` supports everything that (v0 supports)[../v0/README.md#features], plus:
+`v1` supports everything that [v0 supports](../v0/README.md#features), plus:
    * `record`s (`new`, field references, `null` comparisons)
    * `println`
    * More type-checking, including null-pointer and negative index checks.
