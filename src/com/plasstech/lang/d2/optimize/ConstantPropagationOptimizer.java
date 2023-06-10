@@ -50,6 +50,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   public void visit(Inc op) {
     Operand replacement = findReplacement(op.target(), false);
     if (replacement == null || !replacement.isConstant()) {
+      replacements.remove(op.target());
+      assignmentLocations.remove(op.target());
       return;
     }
     if (op.target().type() == VarType.INT) {
@@ -97,6 +99,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   public void visit(Dec op) {
     Operand replacement = findReplacement(op.target(), false);
     if (replacement == null || !replacement.isConstant()) {
+      replacements.remove(op.target());
+      assignmentLocations.remove(op.target());
       return;
     }
     if (op.target().type() == VarType.INT) {

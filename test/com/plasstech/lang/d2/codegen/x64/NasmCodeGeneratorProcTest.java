@@ -363,4 +363,30 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + " println doit(true, false, true, false, true, false) ",
         "params6");
   }
+
+  @Test
+  public void incDecOfLocal() throws Exception {
+    execute(
+        "      g:proc(arg: int): int {\n"
+            + "  local = arg\n"
+            + "  local++\n"
+            + "  return local\n"
+            + "}\n"
+            + "result = g(3)"
+            + "if result != 4 { exit 'Should have been 4'}",
+        "incDecOfLocal");
+  }
+
+  @Test
+  public void incDecOfConst() throws Exception {
+    execute(
+        "      g:proc: int {\n"
+            + "  local = 3\n"
+            + "  local++\n"
+            + "  return local\n"
+            + "}\n"
+            + "result = g()"
+            + "if result != 4 { exit 'Should have been 4'}",
+        "incDecOfConst");
+  }
 }
