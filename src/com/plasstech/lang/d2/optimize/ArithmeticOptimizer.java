@@ -254,14 +254,14 @@ class ArithmeticOptimizer extends LineOptimizer {
           int index = indexOperand.value();
           if (index < 0) {
             throw new D2RuntimeException(
-                String.format("STRING index must be non-negative; was %d", index),
+                String.format("must be non-negative; was %d", index),
                 op.position(),
                 "String index");
           }
-          if (index > value.length()) {
+          if (index >= value.length()) {
             throw new D2RuntimeException(
                 String.format(
-                    "STRING index out of bounds (length %d); was %d",
+                    "out of bounds (length %d); was %d",
                     value.length(),
                     index),
                 op.position(),

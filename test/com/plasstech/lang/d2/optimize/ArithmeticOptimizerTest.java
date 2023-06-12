@@ -384,6 +384,16 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void stringIndexOutOfRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            // Previously, it was only testing if index was > length, but it needed to be >=
+            new BinOp(STRING_TEMP, CONSTANT_A, TokenType.LBRACKET, ConstantOperand.of(1), null));
+
+    assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
+  }
+
+  @Test
   public void printConstantInt() {
     InterpreterResult result = TestUtils.optimizeAssertSameVariables("print 3", OPTIMIZERS);
 
