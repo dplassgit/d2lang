@@ -321,13 +321,6 @@ It is legal to ignore the return value of a procedure:
 index('hi', ['a', 'b', 'c'])
 ```
 
-
-#### `MAIN`
-
-The procedure `MAIN` is optional and if included, must be the last statement
-in a D2 file. Whether `MAIN` is included or not, statements outside of procedures
-are executed top-to-bottom.
-
 #### Command line arguments
 
 Command-line arguments are provided in the built-in `ARGS` array (a 1-dimensional
