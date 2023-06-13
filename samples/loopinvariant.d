@@ -10,8 +10,8 @@ loopinvariant:proc(n:int):int {
          sum = sum + z
        }
      }
-     println y
      sum = sum + i
+     println sum
    }
    return sum * z - x + y
 }

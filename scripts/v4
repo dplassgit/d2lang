@@ -1,0 +1,11 @@
+rm -f temp.* 
+blaze build src/bootstrap/v4:v4fromv4exe || exit -1
+
+bazel-bin/src/bootstrap/v4/v4fromv4.exe < $1 > temp.asm
+if [ $? -ne 0 ] 
+then
+  tail temp.asm
+  exit -1
+fi
+
+nasm -fwin64 temp.asm && gcc temp.obj -o temp.exe || exit -1

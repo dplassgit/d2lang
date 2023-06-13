@@ -1,3 +1,3 @@
 print 123 print ", " 
 print "should be b:"
-println "abcde"[1]
+Println "abcde"[1]

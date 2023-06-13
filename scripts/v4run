@@ -1,0 +1,1 @@
+rm -f ./temp.* && ./scripts/v4 $PWD/$1 && ./temp.exe
