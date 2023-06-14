@@ -16,11 +16,11 @@ on `v3.d`.
    * Setting strings to null
    * Unlimited number of records
    * Array literals
+   * `extern`
 
 It does not yet support:
    * Unlimited number of locals
    * Arrays within records
    * `>>` `<<` operators
-   * `extern` or `main` keywords
    * "Bit" operators (`&`, `|`, `!`, `^`)
    * `long`, `double`, `byte` data types

@@ -18,10 +18,11 @@ They produce identical output!
    * Fixed bug with arrays of records
 
 It does not yet support:
+   * Array literals
    * Unlimited number of locals
    * Arrays within records
    * Comparing strings via `<` or `>`
    * `>>` `<<` `++` `--` operators
-   * `extern` or `main` keywords
+   * `extern`
    * "Bit" operators (`&`, `|`, `!`, `^`)
    * `long`, `double`, `byte` data types

@@ -14,7 +14,10 @@ They produce identical output!
    * `int`, `bool`, `string`, arrays of `int`, `bool`, `string`
 
 It does not support:
+   * Array literals
+   * `records`
    * Comparing strings via `<` or `>`
    * `>>` `<<` `++` `--` operators
-   * `extern` or `main` keywords
+   * `extern`
    * "Bit" operators (`&`, `|`, `!`, `^`)
+   * `long`, `double`, `byte` data types

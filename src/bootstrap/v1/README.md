@@ -12,15 +12,19 @@ They produce identical output!
 ## Features
 
 `v1` supports everything that [v0 supports](../v0/README.md#features), plus:
-   * `record`s (`new`, field references, `null` comparisons)
+   * Up to 20 `record`s (`new`, field references, `null` comparisons)
    * `println`
    * More type-checking, including null-pointer and negative index checks.
    * Better error messages, including line number
    * Comparing booleans, `not`
 
 It does not support:
+   * Unlimited number of locals
+   * Unlimited number of records
+   * Array literals
    * Arrays within records
    * Comparing strings via `<` or `>`
    * `>>` `<<` `++` `--` operators
-   * `extern` or `main` keywords
+   * `extern`
    * "Bit" operators (`&`, `|`, `!`, `^`)
+   * `long`, `double`, `byte` data types
