@@ -32,16 +32,18 @@ types: VarType
 types=null
 
 TYPE_UNKNOWN = makeVarType('unknown', 0)
-TYPE_INT = makePrimitiveType('int', 4, ' DWORD ', 'dd')
-TYPE_INT.isIntegral = true
 TYPE_BOOL = makePrimitiveType('bool', 1, ' BYTE ', 'db')
 TYPE_STRING = makePrimitiveType('string', 8, ' QWORD ', 'dq')
 TYPE_VOID = makePrimitiveType('void', 0, '', '')
 TYPE_NULL = makePrimitiveType('null', 8, '', '')
+
+TYPE_INT = makePrimitiveType('int', 4, ' DWORD ', 'dd')
+TYPE_INT.isIntegral = true
 TYPE_BYTE = makePrimitiveType('byte', 1, ' BYTE ', 'db')
 TYPE_BYTE.isIntegral = true
 TYPE_LONG = makePrimitiveType('long', 8, ' QWORD ', 'dq')
 TYPE_LONG.isIntegral = true
+
 TYPE_DOUBLE = makePrimitiveType('double', 8, '', 'dq')
 
 

@@ -886,41 +886,38 @@ generateInput: proc {
 
 // atom -> constant | variable | variable '(' args ')' | '(' expr ')' | null
 atom: proc: VarType {
-  if parser.token.type == TOKEN_KEYWORD and parser.token.keyword == KW_NULL {
+  type = parser.token.type
+  if type == TOKEN_KEYWORD and parser.token.keyword == KW_NULL {
     advanceParser()
     emit("xor RAX, RAX")
     return TYPE_NULL
-  } elif parser.token.type == TOKEN_STRING {
+  } elif type == TOKEN_STRING {
     // string constant
     index = addStringConstant(parser.token.stringValue)
     advanceParser()
     emitNum("mov RAX, CONST_", index)
     return TYPE_STRING
 
-  } elif parser.token.type == TOKEN_INT {
-    // int constant
-    intval = parser.token.intValue
+  } elif type == TOKEN_INT or type == TOKEN_LONG {
+    constType: VarType
+    if type == TOKEN_INT {
+      constType = TYPE_INT
+    } elif type == TOKEN_LONG {
+      constType = TYPE_LONG
+    }
+    // int or long constant
+    theValue = parser.token.stringValue
     advanceParser()
-    if intval == 0 {
+    if theValue == '0' {
       emit("xor RAX, RAX")
     } else {
-      // TODO Use the register thing so this works for bytes too.
-      emitNum("mov EAX, ", intval)
+      ax = makeRegister(A_REG, constType)
+      emit("mov " + ax + ", " + theValue)
     }
-    return TYPE_INT
 
-  } elif parser.token.type == TOKEN_LONG {
-    // long constant
-    longValue = parser.token.stringValue
-    advanceParser()
-    if longValue == '0' {
-      emit("xor RAX, RAX")
-    } else {
-      emit("mov RAX, " + longValue)
-    }
-    return TYPE_LONG
+    return constType
 
-  } elif parser.token.type == TOKEN_BOOL {
+  } elif type == TOKEN_BOOL {
     // bool constant
     boolval = parser.token.boolValue
     advanceParser()
@@ -931,7 +928,7 @@ atom: proc: VarType {
     }
     return TYPE_BOOL
 
-  } elif parser.token.type == TOKEN_VARIABLE {
+  } elif type == TOKEN_VARIABLE {
 
     variable = parser.token.stringValue
     advanceParser() // eat the variable

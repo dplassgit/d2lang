@@ -188,7 +188,6 @@ advanceLex: proc(self: Lexer) {
 Token: record {
   type:int
   stringValue:string
-  intValue:int
   keyword:int
   boolValue:bool
   line:int
@@ -198,7 +197,6 @@ makeBasicToken: proc(self: Lexer, type: int, value: string): Token {
   t = new Token
   t.type = type
   t.stringValue = value
-  t.intValue = -1
   t.keyword = -1
   t.line = self.line
   return t
@@ -211,16 +209,6 @@ makeToken: proc(self: Lexer, type: int, value: string): Token {
     println value
   }
   t = makeBasicToken(self, type, value)
-  return t
-}
-
-// Build an int constant token
-IntToken: proc(self: Lexer, value: int, valueAsString: string): Token {
-  t = makeBasicToken(self, TOKEN_INT, valueAsString)
-  t.intValue = value
-  if debugLex {
-    print "; Making int token: " println value
-  }
   return t
 }
 
@@ -311,8 +299,10 @@ makeNumberToken: proc(self: Lexer): Token {
     valueAsString = valueAsString + chr(self.cc)
   }
 
-  if self.cc == 76 { // long
+  if self.cc == 76 { // L for long
     advanceLex(self)
+    // Don't make the constant
+    // Note: it still may overflow a long... shrug.
     return makeToken(self, TOKEN_LONG, valueAsString)
   } else {
     // make an int constant
@@ -326,7 +316,7 @@ makeNumberToken: proc(self: Lexer): Token {
         exit
       }
     }
-    return IntToken(self, value, valueAsString)
+    return makeToken(self, TOKEN_INT, valueAsString)
   }
 }
 
@@ -473,13 +463,13 @@ makeSymbolToken: proc(self: Lexer): Token {
   } elif oc == 37 {
     advanceLex(self)
     return makeToken(self, TOKEN_MOD, '%')
-  } elif oc == 38 { // asc('&') {
+  } elif oc == 38 {
     advanceLex(self)
     return makeToken(self, TOKEN_BIT_AND, '&')
-  } elif oc == 124 { // asc('|') {
+  } elif oc == 124 {
     advanceLex(self)
     return makeToken(self, TOKEN_BIT_OR, '|')
-  } elif oc == 94 { // asc('^') {
+  } elif oc == 94 {
     advanceLex(self)
     return makeToken(self, TOKEN_BIT_XOR, '^')
   } elif oc == 33 {
@@ -513,11 +503,13 @@ makeSymbolToken: proc(self: Lexer): Token {
 }
 
 // for debugging
-printToken: proc(t:Token) {
+printToken: proc(t: Token) {
   if t.type == TOKEN_EOF {
     println 'EOF'
   } elif t.type == TOKEN_INT {
-    print 'Int constant: ' println t.intValue
+    print 'Int constant: ' println t.stringValue
+  } elif t.type == TOKEN_LONG {
+    print 'Long constant: ' println t.stringValue
   } elif t.type == TOKEN_STRING {
     print 'String constant: ' println t.stringValue
   } elif t.type == TOKEN_BOOL {
