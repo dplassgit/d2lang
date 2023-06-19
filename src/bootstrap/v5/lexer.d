@@ -52,6 +52,9 @@ TOKEN_DEC=31
 //TOKEN_SHIFT_LEFT=32
 //TOKEN_SHIFT_RIGHT=33
 TOKEN_BIT_NOT=34 // bit not
+TOKEN_BYTE=35 // byte constant
+TOKEN_LONG=36 // long constant
+TOKEN_DOUBLE=37 // double constant
 
 KW_PRINT=0
 KW_IF=1
@@ -153,7 +156,7 @@ nextToken: proc(self: Lexer): Token {
   }
   if self.cc != 0 {
     if isDigit(self.cc) {
-      return makeIntToken(self)
+      return makeNumberToken(self)
     } elif isLetter(self.cc) {
       // might be string, keyword, boolean constant
       return makeTextToken(self)
@@ -302,16 +305,30 @@ makeTextToken: proc(self: Lexer): Token {
   return makeToken(self, TOKEN_VARIABLE, value)
 }
 
-makeIntToken: proc(self: Lexer): Token {
-  value=0
+makeNumberToken: proc(self: Lexer): Token {
   valueAsString = ''
-
   while isDigit(self.cc) do advanceLex(self) {
-    // value=value * 10 + self.cc - asc('0')
-    value=value * 10 + self.cc - 48
     valueAsString = valueAsString + chr(self.cc)
   }
-  return IntToken(self, value, valueAsString)
+
+  if self.cc == 76 { // long
+    println "; long constant " + valueAsString
+    advanceLex(self)
+    return makeToken(self, TOKEN_LONG, valueAsString)
+  } else {
+    // make an int constant
+    value=0
+    i = 0 while i < length(valueAsString) do i++ {
+      digit = asc(valueAsString[i]) - 48 // asc('0')
+      value=value * 10 + digit
+      if (value % 10) != digit or value < 0 {
+        // overflow
+        lineBasedError("Scanner", "Integer constant too big: " + valueAsString, self.line)
+        exit
+      }
+    }
+    return IntToken(self, value, valueAsString)
+  }
 }
 
 startsWithSlash: proc(self: Lexer): Token {

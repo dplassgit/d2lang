@@ -890,13 +890,24 @@ atom: proc: VarType {
     // int constant
     intval = parser.token.intValue
     advanceParser()
-    if intval != 0 {
+    if intval == 0 {
+      emit("xor RAX, RAX")
+    } else {
       // TODO Use the register thing so this works for bytes too.
       emitNum("mov EAX, ", intval)
-    } else {
-      emit("xor RAX, RAX")
     }
     return TYPE_INT
+
+  } elif parser.token.type == TOKEN_LONG {
+    // long constant
+    longValue = parser.token.stringValue
+    advanceParser()
+    if longValue == '0' {
+      emit("xor RAX, RAX")
+    } else {
+      emit("mov RAX, " + longValue)
+    }
+    return TYPE_LONG
 
   } elif parser.token.type == TOKEN_BOOL {
     // bool constant
@@ -1707,7 +1718,7 @@ parsePrint: proc(isPrintln: bool) {
     emitNum("mov RCX, CONST_", falseindex)
     emitNum("mov RDX, CONST_", trueindex)
     emit("cmovz RCX, RDX")
-  } elif exprType == TYPE_INT {
+  } elif exprType.isIntegral {
     index = addStringConstant("%d")
     emitNum("mov RCX, CONST_", index)
     emit("mov RDX, RAX")
