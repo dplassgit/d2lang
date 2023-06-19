@@ -1,6 +1,6 @@
 toi: proc(d:double): int {
-  neg = false
-  if d < 0.0 {neg = true d = -d}
+  neg = 1
+  if d < 0.0 {neg = -1 d = -d}
   i = 0
   dplace = 100000.0
   iplace = 100000
@@ -12,8 +12,7 @@ toi: proc(d:double): int {
     iplace = iplace / 10
     dplace = dplace / 10.0
   }
-  if neg {i = -i}
-  return i
+  return i * neg
 }
 
 print "should be 123: " println toi(123.45)
