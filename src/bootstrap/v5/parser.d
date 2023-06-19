@@ -220,21 +220,21 @@ expr: proc: VarType {
 
 // Map from token to binary opcode
 OPCODES=[
-    ";nop",  // eof
-    "add",
-    "sub",
-    "imul",
-    "and",
-    "or",
-    "xor",
-    "; div",
-    "; mod",
-    "setz",  // ==
-    "setnz", // !=
-    "setl",  // <
-    "setg",  // >
-    "setle", // <=
-    "setge"  // >=
+    ";nop ",  // eof
+    "add ",
+    "sub ",
+    "imul ",
+    "and ",
+    "or ",
+    "xor ",
+    "; div ",
+    "; mod ",
+    "setz ",  // ==
+    "setnz ", // !=
+    "setl ",  // <
+    "setg ",  // >
+    "setle ", // <=
+    "setge "  // >=
 ]
 
 boolOr: proc: VarType {
@@ -251,7 +251,9 @@ boolOr: proc: VarType {
       // left = right (bool) OR left
       emit("or AL, BL")
     }
-  } elif leftType == TYPE_INT {
+  } elif leftType.isIntegral {
+    ax = makeRegister(A_REG, leftType)
+    bx = makeRegister(B_REG, leftType)
     while parser.token.type == TOKEN_BIT_OR {
       op = parser.token.type
       advanceParser() // eat the symbol
@@ -262,9 +264,7 @@ boolOr: proc: VarType {
 
       emit("pop RBX") // pop the left side
       // left = right (int) OR left
-      // TODO: use the register thing, so this will work for
-      // bytes
-      emit(OPCODES[op] + " EAX, EBX")
+      emit(OPCODES[op] + ax + ", " + bx)
     }
   }
   return leftType
@@ -284,7 +284,9 @@ boolXor: proc: VarType {
       // left = right XOR left
       emit("XOR AL, BL")
     }
-  } elif leftType == TYPE_INT {
+  } elif leftType.isIntegral {
+    ax = makeRegister(A_REG, leftType)
+    bx = makeRegister(B_REG, leftType)
     while parser.token.type == TOKEN_BIT_XOR {
       op = parser.token.type
       advanceParser() // eat the symbol
@@ -295,7 +297,7 @@ boolXor: proc: VarType {
 
       emit("pop RBX") // pop the left side
       // left = right XOR left
-      emit(OPCODES[op] + " EAX, EBX")
+      emit(OPCODES[op] + ax + ", " + bx)
     }
   }
   return leftType
@@ -315,7 +317,9 @@ boolAnd: proc: VarType {
       // left = right and left
       emit("and AL, BL")
     }
-  } elif leftType == TYPE_INT {
+  } elif leftType.isIntegral {
+    ax = makeRegister(A_REG, leftType)
+    bx = makeRegister(B_REG, leftType)
     while parser.token.type == TOKEN_BIT_AND {
       op = parser.token.type
       advanceParser() // eat the symbol
@@ -326,7 +330,7 @@ boolAnd: proc: VarType {
 
       emit("pop RBX") // pop the left side
       // left = right and left
-      emit(OPCODES[op] + " EAX, EBX")
+      emit(OPCODES[op] + ax + ", " + bx)
     }
   }
   return leftType
@@ -334,7 +338,7 @@ boolAnd: proc: VarType {
 
 compare: proc: VarType {
   leftType = addSub()
-  if leftType == TYPE_INT and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
+  if leftType.isIntegral and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
     op = parser.token.type
     opstring = parser.token.stringValue
     advanceParser() // eat the symbol
@@ -346,9 +350,10 @@ compare: proc: VarType {
     emit("pop RBX") // pop the left side
 
     // left = left (op) right
-    // TODO: use the register thing
-    emit("cmp EBX, EAX  ; int " + opstring + " int")
-    emit(OPCODES[op] + " AL")
+    ax = makeRegister(A_REG, leftType)
+    bx = makeRegister(B_REG, leftType)
+    emit("cmp " + bx + ", " + ax + "  ; " + leftType.name)
+    emit(OPCODES[op] + "AL")
     return TYPE_BOOL
   } elif leftType == TYPE_STRING and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
 
@@ -379,7 +384,7 @@ compare: proc: VarType {
     emitExtern("strcmp")
     emit("cmp RAX, 0")
     emitLabel(setAlLabel)
-    emit(OPCODES[op] + " AL")
+    emit(OPCODES[op] + "AL")
     return TYPE_BOOL
 
   } elif leftType == TYPE_BOOL and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
@@ -393,7 +398,7 @@ compare: proc: VarType {
 
     emit("pop RBX") // pop the left side
     emit("cmp BL, AL  ; bool " + opstring + " bool")
-    emit(OPCODES[op] + " AL")
+    emit(OPCODES[op] + "AL")
     return TYPE_BOOL
   } elif (leftType.isRecord or leftType == TYPE_NULL) and
          (parser.token.type == TOKEN_EQEQ or parser.token.type == TOKEN_NEQ) {
@@ -409,7 +414,7 @@ compare: proc: VarType {
     // left = left (op) right
     // TODO: use memcmp
     emit("cmp RBX, RAX  ; record " + opstring + " record")
-    emit(OPCODES[op] + " AL")
+    emit(OPCODES[op] + "AL")
     return TYPE_BOOL
   }
   return leftType
@@ -456,15 +461,15 @@ addSub: proc: VarType {
       emitExtern("strcat")
     } elif leftType.isIntegral {
       // left = left (op) right
+      bx = makeRegister(B_REG, leftType)
+      ax = makeRegister(A_REG, leftType)
       if op == TOKEN_PLUS {
         // If plus, can just do add eax, ebx instead of two lines
-        // TODO: use makeRegister so this works for bytes and longs.
-        emit("add EAX, EBX")
+        emit("add " + ax + ", " + bx)
       } else {
         // minus; have to do sub ebx, eax
-        // TODO: use makeRegister so this works for bytes and longs.
-        emit("sub EBX, EAX  ; int " + opstring + " int")
-        emit("mov EAX, EBX")
+        emit("sub " + bx + ", " + ax)
+        emit("mov RAX, RBX")
       }
     } else {
       typeError("Cannot apply " + parser.token.stringValue + " to " + leftType.name)
@@ -488,19 +493,25 @@ mulDiv: proc: VarType {
 
     emit("pop RBX") // pop the left side
 
-    // eax = eax (op) ebx
+    // xax = xax (op) xbx
+    bx = makeRegister(B_REG, leftType)
+    ax = makeRegister(A_REG, leftType)
     if op == TOKEN_DIV or op == TOKEN_MOD {
       // These are all too big for bytes
-      // TODO: use makeRegister so it also works for longs and bytes
-      emit("xchg RAX, RBX  ; put numerator in RAX, denominator in EBX")
-      emit("cdq  ; sign extend eax to edx")
-      emit("idiv EBX  ; Eax=Eax/Ebx")
+      emit("xchg RAX, RBX  ; put numerator in RAX, denominator in RBX")
+      if leftType == TYPE_INT {
+        emit("cdq  ; sign extend eax to edx")
+      } elif leftType == TYPE_LONG {
+        emit("cqo  ; sign extend rax to rdx")
+      } else {
+        exit "Cannot generate byte division yet"
+      }
+      emit("idiv " + bx + "  ; a=a/b")
       if op == TOKEN_MOD {
-        emit("mov EAX, EDX  ; modulo is in edx")
+        emit("mov RAX, RDX  ; modulo is in edx")
       }
     } else {
-      // TODO: use makeRegister so it also works for longs and bytes
-      emit("imul EAX, EBX  ; int * int")
+      emit("imul " + ax + ", " + bx)
     }
   }
   return leftType
@@ -1718,8 +1729,12 @@ parsePrint: proc(isPrintln: bool) {
     emitNum("mov RCX, CONST_", falseindex)
     emitNum("mov RDX, CONST_", trueindex)
     emit("cmovz RCX, RDX")
-  } elif exprType.isIntegral {
+  } elif exprType == TYPE_INT {
     index = addStringConstant("%d")
+    emitNum("mov RCX, CONST_", index)
+    emit("mov RDX, RAX")
+  } elif exprType == TYPE_LONG {
+    index = addStringConstant("%lld")
     emitNum("mov RCX, CONST_", index)
     emit("mov RDX, RAX")
   } else {

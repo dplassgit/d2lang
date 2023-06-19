@@ -312,7 +312,6 @@ makeNumberToken: proc(self: Lexer): Token {
   }
 
   if self.cc == 76 { // long
-    println "; long constant " + valueAsString
     advanceLex(self)
     return makeToken(self, TOKEN_LONG, valueAsString)
   } else {

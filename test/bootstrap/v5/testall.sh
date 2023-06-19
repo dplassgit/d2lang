@@ -41,7 +41,7 @@ for source in `ls test/bootstrap/v5/*.d`; do testone; done
 files=(
   "samples/all-dead.d"
   "samples/all-ops-globals.d"
-  #"samples/all-ops-locals.d"  # long
+  "samples/all-ops-locals.d"  # long
   #"samples/allOpsLocals.d"    # double
   "samples/arrayiter.d"
   "samples/associative.d"
@@ -72,7 +72,7 @@ files=(
   "samples/inline-no-arg-void.d"
   "samples/inline.d"  # string compare
   "samples/linkedlist.d"
-  #"samples/longComp.d"  # longs
+  "samples/longComp.d"  # longs
   "samples/loopinvariant.d"  # xor
   #"samples/newcomp.d"  # record compare
   "samples/not.d"
