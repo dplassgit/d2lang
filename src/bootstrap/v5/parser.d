@@ -528,11 +528,15 @@ mulDiv: proc: VarType {
       } elif leftType == TYPE_LONG {
         emit("cqo  ; sign extend rax to rdx")
       } else {
-        emit("cwd  ; sign extend rax to rdx")
+        emit("cbw  ; sign extend al to ax")
       }
       emit("idiv " + bx + "  ; a=a/b")
       if op == TOKEN_MOD {
-        emit("mov RAX, RDX  ; modulo is in edx")
+        if leftType == TYPE_BYTE {
+          emit("mov AL, AH  ; remainder in ah")
+        } else {
+          emit("mov RAX, RDX  ; remainder in rdx/edx")
+        }
       }
     } else {
       // multiply: al=al*bl or rax=rax*rbx
