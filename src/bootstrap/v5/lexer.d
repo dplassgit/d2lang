@@ -304,14 +304,32 @@ makeNumberToken: proc(self: Lexer): Token {
     // Don't make the constant
     // Note: it still may overflow a long... shrug.
     return makeToken(self, TOKEN_LONG, valueAsString)
+  } elif self.cc == 121 { // asc('y')
+    // byte constant
+    if valueAsString != '0' {
+      lineBasedError("Scanner", "Invalid byte constant: " + valueAsString, self.line)
+      exit
+    }
+    advanceLex(self)   // eat the 'y'
+
+    first = self.cc
+    advanceLex(self)
+    second = self.cc
+    advanceLex(self)
+    valueAsString = chr(first) + chr(second)
+
+    // TODO: make sure it's a valid hex string
+    return makeToken(self, TOKEN_BYTE, valueAsString)
   } else {
     // make an int constant
     value=0
+    // TODO: when longs are suppoted, make a long and
+    // see it it exceeds 2^31.
     i = 0 while i < length(valueAsString) do i++ {
       digit = asc(valueAsString[i]) - 48 // asc('0')
       value=value * 10 + digit
       if (value % 10) != digit or value < 0 {
-        // overflow
+        // hacky way to detect overflow
         lineBasedError("Scanner", "Integer constant too big: " + valueAsString, self.line)
         exit
       }

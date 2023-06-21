@@ -235,7 +235,7 @@ OPCODES=[
     "setg ",  // >
     "setle ", // <=
     "setge ",  // >=
-    "shl ", 
+    "shl ",
     "shr "
 ]
 
@@ -528,14 +528,15 @@ mulDiv: proc: VarType {
       } elif leftType == TYPE_LONG {
         emit("cqo  ; sign extend rax to rdx")
       } else {
-        exit "Cannot generate byte division yet"
+        emit("cwd  ; sign extend rax to rdx")
       }
       emit("idiv " + bx + "  ; a=a/b")
       if op == TOKEN_MOD {
         emit("mov RAX, RDX  ; modulo is in edx")
       }
     } else {
-      emit("imul " + ax + ", " + bx)
+      // multiply: al=al*bl or rax=rax*rbx
+      emit("imul " + bx)
     }
   }
   return leftType
@@ -922,20 +923,26 @@ atom: proc: VarType {
     emitNum("mov RAX, CONST_", index)
     return TYPE_STRING
 
-  } elif type == TOKEN_INT or type == TOKEN_LONG {
+  } elif type == TOKEN_INT or type == TOKEN_LONG or type == TOKEN_BYTE {
     constType: VarType
+    // TODO: make this a map?
     if type == TOKEN_INT {
       constType = TYPE_INT
     } elif type == TOKEN_LONG {
       constType = TYPE_LONG
+    } elif type == TOKEN_BYTE {
+      constType = TYPE_BYTE
     }
-    // int or long constant
+    // int long or byte constant
     theValue = parser.token.stringValue
     advanceParser()
     if theValue == '0' {
       emit("xor RAX, RAX")
     } else {
       ax = makeRegister(A_REG, constType)
+      if type == TOKEN_BYTE {
+        theValue = "0x" + theValue
+      }
       emit("mov " + ax + ", " + theValue)
     }
 
@@ -991,7 +998,7 @@ atom: proc: VarType {
     return parseArrayLiteral()
   }
 
-  parserError("Unexpected token: " + parser.token.stringValue)
+  parserError("Unexpected token in atom: " + parser.token.stringValue)
   exit
 }
 
@@ -1133,7 +1140,7 @@ parseProc: proc(procName: string) {
 
   afterProc = nextLabel("afterProc")
   emit("; guard around proc")
-  emit("jmp " + afterProc) 
+  emit("jmp " + afterProc)
 
   // start of proc
   emit("; " + procName + ": proc {")
@@ -1267,6 +1274,8 @@ isAtStartOfExpression: proc: bool {
   }
   return
     parser.token.type == TOKEN_INT or
+    parser.token.type == TOKEN_LONG or
+    parser.token.type == TOKEN_BYTE or
     parser.token.type == TOKEN_BOOL or
     parser.token.type == TOKEN_STRING or
     parser.token.type == TOKEN_BIT_NOT or
@@ -1476,14 +1485,13 @@ generateIncDec: proc(variable: string, inc: bool) {
   if inc { op = "inc" }
 
   symbol = lookupVariable(variable)
-  if symbol.varType != TYPE_INT {
+  if not symbol.varType.isIntegral {
     typeError("Cannot " + op + "rement variable '" + variable +
         "'; declared as " + symbol.varType.name)
     exit
   }
   ref = toReference(symbol)
-  // TODO: This is too big for bytes
-  emit(op + " DWORD " + ref)
+  emit(op + symbol.varType.opcodeSize + ref)
 }
 
 
@@ -1524,7 +1532,7 @@ parseArrayLiteral: proc: VarType {
   offset = 5 + slotType.size * (slotCount - 1)
   i = 0 while i < slotCount do i++ {
     emit("pop RBX")
-    emit("mov " + slotType.opcodeSize + "[RAX + " + toString(offset) + "], " + 
+    emit("mov " + slotType.opcodeSize + "[RAX + " + toString(offset) + "], " +
         makeRegister(B_REG, slotType))
     // go to previous one
     offset = offset - slotType.size
@@ -1750,7 +1758,7 @@ parsePrint: proc(isPrintln: bool) {
     emitNum("mov RCX, CONST_", falseindex)
     emitNum("mov RDX, CONST_", trueindex)
     emit("cmovz RCX, RDX")
-  } elif exprType == TYPE_INT {
+  } elif exprType == TYPE_INT or exprType == TYPE_BYTE {
     index = addStringConstant("%d")
     emitNum("mov RCX, CONST_", index)
     emit("mov RDX, RAX")

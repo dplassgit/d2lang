@@ -50,7 +50,7 @@ files=(
   # "samples/bitops.d" # bit not
   "samples/boolops.d"
   "samples/bubblesort.d"  # ++, array params
-  #"samples/bytes.d"
+  "samples/bytes.d"
   "samples/crash.d"
   "samples/dead-after-return.d"
   #"samples/doubleopt.d"
