@@ -32,9 +32,9 @@ TOKEN_LT=11
 TOKEN_GT=12
 TOKEN_LEQ=13
 TOKEN_GEQ=14
-TOKEN_INT=15  // int constant
-TOKEN_BOOL=16  // bool constant
-TOKEN_STRING=17 // string constant
+TOKEN_SHIFT_LEFT=15
+TOKEN_SHIFT_RIGHT=16
+TOKEN_BIT_NOT=17 // bit not
 TOKEN_VARIABLE=18
 TOKEN_EQ=19
 TOKEN_LPAREN=20
@@ -49,12 +49,12 @@ TOKEN_RBRACKET=28
 TOKEN_DOT=29
 TOKEN_INC=30
 TOKEN_DEC=31
-//TOKEN_SHIFT_LEFT=32
-//TOKEN_SHIFT_RIGHT=33
-TOKEN_BIT_NOT=34 // bit not
-TOKEN_BYTE=35 // byte constant
-TOKEN_LONG=36 // long constant
-TOKEN_DOUBLE=37 // double constant
+TOKEN_INT=32  // int constant
+TOKEN_BOOL=33  // bool constant
+TOKEN_BYTE=34 // byte constant
+TOKEN_LONG=35 // long constant
+TOKEN_DOUBLE=36 // double constant
+TOKEN_STRING=37 // string constant
 
 KW_PRINT=0
 KW_IF=1
@@ -375,10 +375,10 @@ startsWithGt: proc(self: Lexer): Token {
   if self.cc == 61 {
     advanceLex(self)
     return makeToken(self, TOKEN_GEQ, '>=')
-  //} elif self.cc == '>' {
+  } elif self.cc == 62 {
     // shift right
-    //advanceLex(self)
-    //return makeToken(TOKEN_SHIFT_RIGHT, '>>')
+    advanceLex(self)
+    return makeToken(self, TOKEN_SHIFT_RIGHT, '>>')
   }
   return makeToken(self, TOKEN_GT, '>')
 }
@@ -389,10 +389,10 @@ startsWithLt: proc(self: Lexer): Token {
   if self.cc == 61 {
     advanceLex(self)
     return makeToken(self, TOKEN_LEQ, '<=')
-  //} elif self.cc == '<' {
-    //// shift right
-    //advanceLex(self)
-    //return makeToken(TOKEN_SHIFT_LEFT, '<<')
+  } elif self.cc == 60 {
+    // shift left
+    advanceLex(self)
+    return makeToken(self, TOKEN_SHIFT_LEFT, '<<')
   }
   return makeToken(self, TOKEN_LT, '<')
 }

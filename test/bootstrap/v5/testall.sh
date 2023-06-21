@@ -97,7 +97,7 @@ files=(
   "samples/return_new_record.d"
   "samples/reverse_sentence.d"
   "samples/reversestring.d"
-  #"samples/shift-ops.d"
+  "samples/shift-ops.d"
   "samples/short-circuits.d"
   "samples/simple-unroll-loop.d" # array literal
   "samples/str2int.d"  # string compare

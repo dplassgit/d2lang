@@ -234,7 +234,9 @@ OPCODES=[
     "setl ",  // <
     "setg ",  // >
     "setle ", // <=
-    "setge "  // >=
+    "setge ",  // >=
+    "shl ", 
+    "shr "
 ]
 
 boolOr: proc: VarType {
@@ -337,14 +339,14 @@ boolAnd: proc: VarType {
 }
 
 compare: proc: VarType {
-  leftType = addSub()
+  leftType = shift()
   if leftType.isIntegral and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
     op = parser.token.type
     opstring = parser.token.stringValue
     advanceParser() // eat the symbol
     emit("push RAX")
 
-    rightType = addSub()
+    rightType = shift()
     checkTypes(leftType, rightType)
 
     emit("pop RBX") // pop the left side
@@ -362,9 +364,8 @@ compare: proc: VarType {
     advanceParser() // eat the symbol
     emit("push RAX")
 
-    rightType = addSub()
+    rightType = shift()
     checkTypes(leftType, rightType)
-
 
     emit("mov RDX, RAX") // right side
     emit("pop RCX") // left side
@@ -393,7 +394,7 @@ compare: proc: VarType {
     advanceParser() // eat the symbol
     emit("push RAX")
 
-    rightType = addSub()
+    rightType = shift()
     checkTypes(leftType, rightType)
 
     emit("pop RBX") // pop the left side
@@ -407,7 +408,7 @@ compare: proc: VarType {
     advanceParser() // eat the symbol
     emit("push RAX")
 
-    rightType = addSub()
+    rightType = shift()
     checkTypes(leftType, rightType)
 
     emit("pop RBX") // pop the left side
@@ -419,6 +420,29 @@ compare: proc: VarType {
   }
   return leftType
 }
+
+shift: proc: VarType {
+  leftType = addSub()
+  while leftType.isIntegral and (parser.token.type == TOKEN_SHIFT_LEFT or parser.token.type == TOKEN_SHIFT_RIGHT) {
+    op = parser.token.type
+    opstring = parser.token.stringValue
+    advanceParser() // eat the symbol
+    emit("push RAX")
+
+    rightType = addSub()
+    checkTypes(leftType, rightType)
+
+    emit("mov RCX, RAX") // amount to shift
+    emit("pop RAX") // pop the left side
+
+    // left = left (op) right
+    ax = makeRegister(A_REG, leftType)
+    emit(OPCODES[op] + ax + ", CL")
+    return leftType
+  }
+  return leftType
+}
+
 
 addSub: proc: VarType {
   leftType = mulDiv()
