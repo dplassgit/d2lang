@@ -563,6 +563,7 @@ unary: proc: VarType {
       typeError("Cannot apply unary minus to " + type.name)
       exit
     }
+    // two's complement
     emit("neg " + makeRegister(A_REG, type))
     return type
   } elif parser.token.keyword == KW_LENGTH {
@@ -633,6 +634,19 @@ unary: proc: VarType {
     }
 
     emit("xor AL, 0x01  ; NOT")
+    return type
+  } elif parser.token.type == TOKEN_BIT_NOT {
+    advanceParser() // eat the !
+
+    type = expr()
+
+    if not type.isIntegral {
+      typeError("Cannot apply ! to " + type.name)
+      exit
+    }
+
+    ax = makeRegister(A_REG, type)
+    emit("not " + ax)
     return type
   } elif parser.token.keyword == KW_NEW {
     advanceParser() // eat the NEW
@@ -1765,7 +1779,8 @@ parsePrint: proc(isPrintln: bool) {
   } elif exprType == TYPE_INT or exprType == TYPE_BYTE {
     index = addStringConstant("%d")
     emitNum("mov RCX, CONST_", index)
-    emit("mov RDX, RAX")
+    ax = makeRegister(A_REG, exprType)
+    emit("movsx RDX, " + ax)
   } elif exprType == TYPE_LONG {
     index = addStringConstant("%lld")
     emitNum("mov RCX, CONST_", index)

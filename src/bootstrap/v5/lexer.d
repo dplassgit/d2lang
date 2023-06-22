@@ -358,19 +358,17 @@ startsWithSlash: proc(self: Lexer): Token {
 startsWithBang: proc(self: Lexer): Token {
   oc=self.cc
   advanceLex(self) // eat the !
-  if self.cc == 61 {
+  if self.cc == 61 { // =
     advanceLex(self)
     return makeToken(self, TOKEN_NEQ, '!=')
   }
-  lineBasedError("Scanner", "Unknown character: " + chr(self.cc) + " ASCII code: " + toString(self.cc), self.line)
-  exit
-  // return makeToken(TOKEN_BIT_NOT, '!'))
+  return makeToken(self, TOKEN_BIT_NOT, '!')
 }
 
 startsWithPlus: proc(self: Lexer): Token {
   oc=self.cc
   advanceLex(self)
-  if self.cc == 43 {
+  if self.cc == 43 { // +
     advanceLex(self)
     return makeToken(self, TOKEN_INC, '++')
   }
@@ -380,7 +378,7 @@ startsWithPlus: proc(self: Lexer): Token {
 startsWithMinus: proc(self: Lexer): Token {
   oc=self.cc
   advanceLex(self)
-  if self.cc == 45 {
+  if self.cc == 45 { // -
     advanceLex(self)
     return makeToken(self, TOKEN_DEC, '--')
   }
@@ -390,7 +388,7 @@ startsWithMinus: proc(self: Lexer): Token {
 startsWithGt: proc(self: Lexer): Token {
   oc=self.cc
   advanceLex(self)
-  if self.cc == 61 {
+  if self.cc == 61 { // =
     advanceLex(self)
     return makeToken(self, TOKEN_GEQ, '>=')
   } elif self.cc == 62 {
