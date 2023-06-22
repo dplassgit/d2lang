@@ -293,6 +293,13 @@ makeTextToken: proc(self: Lexer): Token {
   return makeToken(self, TOKEN_VARIABLE, value)
 }
 
+
+isHexDigit: proc(ch: int): bool {
+  return isDigit(ch) or
+      (ch >= 65 and ch <= 70) or
+      (ch >= 97 and ch <= 102)
+}
+
 makeNumberToken: proc(self: Lexer): Token {
   valueAsString = ''
   while isDigit(self.cc) do advanceLex(self) {
@@ -305,7 +312,8 @@ makeNumberToken: proc(self: Lexer): Token {
     // Note: it still may overflow a long... shrug.
     return makeToken(self, TOKEN_LONG, valueAsString)
   } elif self.cc == 121 { // asc('y')
-    // byte constant
+
+    // Byte constant
     if valueAsString != '0' {
       lineBasedError("Scanner", "Invalid byte constant: " + valueAsString, self.line)
       exit
@@ -317,8 +325,12 @@ makeNumberToken: proc(self: Lexer): Token {
     second = self.cc
     advanceLex(self)
     valueAsString = chr(first) + chr(second)
+    // Make sure it's a valid hex string
+    if not (isHexDigit(first) and isHexDigit(second)) {
+      lineBasedError("Scanner", "Invalid byte constant: " + valueAsString, self.line)
+      exit
+    }
 
-    // TODO: make sure it's a valid hex string
     return makeToken(self, TOKEN_BYTE, valueAsString)
   } else {
     // make an int constant
@@ -326,7 +338,7 @@ makeNumberToken: proc(self: Lexer): Token {
     // TODO: when longs are suppoted, make a long and
     // see it it exceeds 2^31.
     i = 0 while i < length(valueAsString) do i++ {
-      digit = asc(valueAsString[i]) - 48 // asc('0')
+      digit = asc(valueAsString[i]) - 48
       value=value * 10 + digit
       if (value % 10) != digit or value < 0 {
         // hacky way to detect overflow
