@@ -11,9 +11,10 @@ on `v5.d`.
 
 `v5` supports everything that [v4 supports](../v4/README.md#features), plus:
    * Implemented with declarations
+   * `>>` `<<` operators
+   * "Bit" operator `!`
+   * `long`, `byte` data types
 
 It does not yet support:
    * Arrays within records
-   * `>>` `<<` operators
-   * "Bit" operator `!`
-   * `long`, `double`, `byte` data types
+   * `double` data type
