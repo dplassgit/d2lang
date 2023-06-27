@@ -11,11 +11,11 @@ on `v4.d`.
 
 `v4` supports everything that [v3 supports](../v3/README.md#features), plus:
    * Unlimited number of locals
-   * Implemented with array literals, ++, --, externs
+   * Implemented with array literals, `++`, `--`, `extern`s
    * "Bit" operators (`&`, `|`, `^`)
    * Boolean `xor`
    * Ints are stored as 32-bits only, and bools as 8 bits only
-   * Extern bugfix
+   * `Extern` bugfix
    * Keywords are case-insensitive
    * `String`s can be compared to `null`
    * Declarations
