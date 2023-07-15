@@ -88,6 +88,7 @@ KW_DOUBLE=28
 KW_ARGS=29
 KW_EXTERN=30
 KW_XOR=31
+KW_ARGS=32
 // TODO: for, in, get, this, private, load, save, export
 
 KEYWORDS=[
@@ -122,7 +123,8 @@ KEYWORDS=[
     "double",
     "args",
     "extern",
-    "xor"
+    "xor",
+    "args"
     ]
 
 Lexer: record {

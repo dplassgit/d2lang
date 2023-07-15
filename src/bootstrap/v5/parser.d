@@ -210,7 +210,7 @@ generateArrayIndexInRangeCheck: proc {
 //    if plus { eat token; return parseexpressoin}
 //    else return composite
 // composite -> atom | atom [ int ] | atom . field
-// atom -> int constant, bool constant, string constant, variable, '(' expr ')', 'input'
+// atom -> numeric constant, bool constant, string constant, variable, '(' expr ')', 'input', 'args'
 
 
 // Each of these returns the type of the expression
@@ -927,13 +927,30 @@ generateInput: proc {
   emit("pop RAX  ; calloc'ed buffer")
 }
 
-// atom -> constant | variable | variable '(' args ')' | '(' expr ')' | null
+ARGS_NAME='ARGS'
+
+// atom -> constant | variable | variable '(' params ')' | '(' expr ')' | null | ARGS
 atom: proc: VarType {
   type = parser.token.type
   if type == TOKEN_KEYWORD and parser.token.keyword == KW_NULL {
     advanceParser()
     emit("xor RAX, RAX")
     return TYPE_NULL
+
+  } elif type == TOKEN_KEYWORD and parser.token.keyword == KW_ARGS {
+    advanceParser()
+    // args is a global
+    emit("mov RAX, ARGS")
+    argsSym = lookupGlobal(ARGS_NAME)
+    if argsSym != null {
+      return argsSym.varType
+    }
+    // TODO: at this point we know we have 'args', so we have to
+    // generate the code to set up the global
+    argsType = makeArrayType(TYPE_STRING)
+    registerGlobal(ARGS_NAME, argsType)
+    return argsType
+
   } elif type == TOKEN_STRING {
     // string constant
     index = addStringConstant(parser.token.stringValue)
@@ -1900,6 +1917,8 @@ parseProgram: proc(self: Parser) {
   emit0("extern exit\n")
   emit0("section .text")
   emit0("main:")
+
+  tail = emit0("; placeholder for setting up args")
   while parser.token.type != TOKEN_EOF {
     parseStmt()
     // newline between statements
@@ -1914,6 +1933,7 @@ parseProgram: proc(self: Parser) {
   if parser.indexPositiveCheckNeeded {
     emitIndexPositiveCheckProc()
   }
+  // if ARGS was added,  ???
   emitter_printEntries(parser.emitter)
 
   if stringTable.head != null or globals != null {
