@@ -1,4 +1,2 @@
 a=3
-b=args[0]
-println b
-
+a=args[0]

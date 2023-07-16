@@ -940,7 +940,7 @@ atom: proc: VarType {
   } elif type == TOKEN_KEYWORD and parser.token.keyword == KW_ARGS {
     advanceParser() // eat args
     // args is a global
-    emit("mov RAX, ARGS")
+    emit("mov RAX, [_ARGS]")
     argsSym = lookupGlobal(ARGS_NAME)
     if argsSym != null {
       return argsSym.varType
@@ -1880,6 +1880,37 @@ parseStmt: proc {
   exit
 }
 
+emitArgsSetup: proc {
+  emitLabel("__args_setup")
+  emit("; convert argc, argv to ARGS global array")
+  emit("mov DWORD [RSP + 16], ECX")
+  emit("mov QWORD [RSP + 24], RDX")
+  emitExtern("__main")
+
+  // argc is now in [rsp+16] and argv start at [[rsp+24]]
+  // 1. allocate an array of size 8*argc + 5
+  emit("mov edx, DWORD [RSP + 16]  ; edx = argc")
+  emit("imul edx, 8  ; 8 bytes per string")
+  emit("add edx, 5  ; 1 byte for dimensions, 4 for size")
+  emit("mov RCX, 1  ; # of 'entries' for calloc")
+  emitExtern("calloc")
+  // 2. put it at ARGS
+  emit("mov [_ARGS], RAX")
+  // 3. set ARGS[0] to 1, ARGS[1] to argc
+  emit("mov BYTE [RAX], 1  ; # dimensions ")
+  // edx may have been destroyed by calloc.
+  emit("mov r8d, DWORD [RSP + 16]  ; r8d = argc")
+  emit("mov DWORD [RAX + 1], r8d  ; argc")
+  // 4. copy argv to ARGS[5]
+  emit("; copy argv to the ARGS array")
+  // we need to copy argc*8 bytes from argv to args+5
+  emit("mov rcx, [_ARGS]  ; dest")
+  emit("add rcx, 5  ; args+5")
+  emit("mov rdx, [rsp+24] ; location of first entry")
+  emit("imul r8d, 8  ; 8 bytes per string")
+  emitExtern("memcpy")
+  emit("jmp __args_setup_done")
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //                          MAIN LOOP & OUTPUT ROUTINES                      //
@@ -1918,8 +1949,9 @@ parseProgram: proc(self: Parser) {
   emit0("section .text")
   emit0("main:")
 
-  tail = emit("; placeholder for setting up args")
-  while parser.token.type != TOKEN_EOF {
+  entry = emit("")
+  entryLabel = emit("")
+  while self.token.type != TOKEN_EOF {
     parseStmt()
     // newline between statements
     emit0("")
@@ -1927,14 +1959,20 @@ parseProgram: proc(self: Parser) {
   emit("xor RCX, RCX")
   emit("call exit\n")
 
-  if parser.npeCheckNeeded {
+  if self.npeCheckNeeded {
     emitNpeCheckProc()
   }
-  if parser.indexPositiveCheckNeeded {
+  if self.indexPositiveCheckNeeded {
     emitIndexPositiveCheckProc()
   }
   // if ARGS was added,  ???
-  emitter_printEntries(parser.emitter)
+  argsSym = lookupGlobal(ARGS_NAME)
+  if argsSym != null {
+    emitArgsSetup()
+    entry.value = "  jmp __args_setup"
+    entryLabel.value = "__args_setup_done:"
+  }
+  emitter_printEntries(self.emitter)
 
   if stringTable.head != null or globals != null {
     println "section .data"
