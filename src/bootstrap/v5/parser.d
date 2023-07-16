@@ -938,7 +938,7 @@ atom: proc: VarType {
     return TYPE_NULL
 
   } elif type == TOKEN_KEYWORD and parser.token.keyword == KW_ARGS {
-    advanceParser()
+    advanceParser() // eat args
     // args is a global
     emit("mov RAX, ARGS")
     argsSym = lookupGlobal(ARGS_NAME)
@@ -1918,7 +1918,7 @@ parseProgram: proc(self: Parser) {
   emit0("section .text")
   emit0("main:")
 
-  tail = emit0("; placeholder for setting up args")
+  tail = emit("; placeholder for setting up args")
   while parser.token.type != TOKEN_EOF {
     parseStmt()
     // newline between statements
