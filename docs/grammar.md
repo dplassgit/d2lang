@@ -25,8 +25,8 @@ while -> 'WHILE' expr do? '{' statements '}'
 do -> 'DO' statement
 
 declaration -> variable ':' type | variable ':' 'EXTERN'? 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE' | 'BYTE'
-// reserved, but not implemented: CHAR, LONG
+type -> 'INT' | 'BOOL' | 'STRING' | 'LONG' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE' | 'BYTE'
+// reserved, but not implemented: CHAR
 
 procdef -> params? returns? '{' statements '}'
 params -> '(' param (',' param)* ')'
@@ -68,6 +68,7 @@ composite -> atom ('[' expr ']') ('.' atom)*
 atom ->   int_constant
         | double_constant
         | byte_constant
+        | long_constant
         | boolean_constant
         | string_constant
         | 'NULL'
@@ -79,7 +80,7 @@ atom ->   int_constant
         | 'INPUT'
 ```
 
-Not implemented yet: power
+Not implemented yet: power (exponentiation)
 
 See [Java operators](https://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html)
 for reference. Note that the above does not follow the Java order of operations exactly;
