@@ -13,6 +13,7 @@ The following types are built-in:
 
 * `INT`: 32-bit integer
 * `BYTE`: 8-bit integer
+* `LONG`: 64-bit integer
 * `FLOAT`: 64-bit floating point
 * `BOOL`: boolean values (`TRUE`, `FALSE` are the two built-in values)
 * `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
@@ -34,12 +35,14 @@ Similarly, all expressions must be type-consistent.
 
 ### Constants
 
-Integer constants can represent -2^31-1 to 2^31. Example: 1234
+Integer constants can represent -2^31-1 to 2^31. Example: `1234`
+
+Long constants can represent -2^64-1 to 2^64. Example: `1234L`
 
 Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal.
 Example: `0y2f` for 47 decimal.
 
-Floating point constants **must** include a decimal point (dot). Example: 123.4
+Floating point constants **must** include a decimal point (dot). Example: `123.4`
 
 
 ## Strings
@@ -154,13 +157,13 @@ f:proc {
 
 ### Numbers
 
-* `+`, `-`, `*`, `/`: for INT, BYTE, FLOAT
-* `%`: modulo for INT, BYTE
-* `|`: bitwise "or" for INT, BYTE
-* `&`: bitwise "and" for INT, BYTE
-* `^`: bitwise "xor" for INT, BYTE
-* `>>`: shift right for INT, BYTE
-* `<<`: shift left for INT, BYTE
+* `+`, `-`, `*`, `/`: for INT, BYTE, FLOAT, LONG
+* `%`: modulo for INT, BYTE, LONG
+* `|`: bitwise "or" for INT, BYTE, LONG
+* `&`: bitwise "and" for INT, BYTE, LONG
+* `^`: bitwise "xor" for INT, BYTE, LONG
+* `>>`: shift right for INT, BYTE, LONG
+* `<<`: shift left for INT, BYTE, LONG
 
 And all typical comparisons: `== != < <= > >=`.
 
@@ -218,7 +221,7 @@ See above.
 
 ### Arrays
 
-Use `[index]` to retrieve or set a single entry from an array.
+Use `[index]` to retrieve or set a single entry from an array. Array indices must be `INT`s.
 
 
 ## Statements
