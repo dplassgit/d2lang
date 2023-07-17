@@ -14,6 +14,7 @@ on `v5.d`.
    * `>>` `<<` operators
    * "Bit" operator `!`
    * `long`, `byte` data types
+   * `args`
 
 It does not yet support:
    * Arrays within records
