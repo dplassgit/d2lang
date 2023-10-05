@@ -983,6 +983,11 @@ atom: proc: VarType {
 
     return constType
 
+  } elif type == TOKEN_DOUBLE {
+    theValue = parser.token.stringValue
+    advanceParser()
+    // mumble something double
+    return TYPE_DOUBLE
   } elif type == TOKEN_BOOL {
     // bool constant
     boolval = parser.token.boolValue

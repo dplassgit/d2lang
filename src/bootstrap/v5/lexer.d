@@ -332,6 +332,13 @@ makeNumberToken: proc(self: Lexer): Token {
     }
 
     return makeToken(self, TOKEN_BYTE, valueAsString)
+  } elif self.cc == 46 { // dot
+    advanceLex(self)
+    valueAsString = valueAsString + "."
+    while isDigit(self.cc) do advanceLex(self) {
+      valueAsString = valueAsString + chr(self.cc)
+    }
+    return makeToken(self, TOKEN_DOUBLE, valueAsString)
   } else {
     // make an int constant
     value=0
