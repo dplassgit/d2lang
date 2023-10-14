@@ -269,14 +269,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(IfOp op) {
-    String condName = resolver.resolve(op.condition());
-    emit("cmp BYTE %s, 0", condName);
-    if (op.isNot()) {
-      emit("je %s", op.destination());
+    Operand condition = op.condition();
+    String condName = resolver.resolve(condition);
+    if (condition.isConstant()) {
+      int number = Integer.parseInt(condName);
+      if (!((number == 0) ^ op.isNot())) {
+        // If both true or both false, unconditionally jump to destination. 
+        emit("jmp %s", op.destination());
+      }
     } else {
-      emit("jne %s", op.destination());
+      emit("cmp BYTE %s, 0", condName);
+      // I'm not sure about this. It looks opposite to what I expected.
+      // AND I WROTE IT!
+      if (op.isNot()) {
+        emit("je %s", op.destination());
+      } else {
+        emit("jne %s", op.destination());
+      }
     }
-    resolver.deallocate(op.condition());
+    resolver.deallocate(condition);
   }
 
   @Override
