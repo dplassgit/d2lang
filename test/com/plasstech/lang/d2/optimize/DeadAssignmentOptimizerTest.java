@@ -97,4 +97,33 @@ public class DeadAssignmentOptimizerTest {
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimized).hasSize(2);
   }
+
+  @Test
+  public void notDeadFunctionCall_bug249() {
+    TestUtils.optimizeAssertSameVariables(
+        "      pr:proc:int {\n"
+            + "     print 'hi'\n"
+            + "     return 3\n"
+            + "    }\n"
+            + "f:proc {\n"
+            + "  x=pr()\n"
+            + "}\n"
+            + "f()",
+        optimizer);
+  }
+
+  @Test
+  public void notDeadFunctionCall_afterAssignment_bug249() {
+    TestUtils.optimizeAssertSameVariables(
+        "      pr:proc:int {\n"
+            + "     print 'hi'\n"
+            + "     return 3\n"
+            + "    }\n"
+            + "f:proc {\n"
+            + "  x=pr()\n"
+            + "  x=3\n"
+            + "}\n"
+            + "f()",
+        optimizer);
+  }
 }

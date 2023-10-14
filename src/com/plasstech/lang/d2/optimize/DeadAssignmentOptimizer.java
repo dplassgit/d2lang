@@ -13,11 +13,13 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -60,15 +62,68 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     }
   }
 
+  private class CallReplacer extends DefaultOpcodeVisitor {
+    private int loc;
+
+    public CallReplacer(int loc) {
+      this.loc = loc;
+    }
+
+    @Override
+    public void visit(Call op) {
+      // change to a call without a return value
+      if (op.destination().isPresent()) {
+        Call newCall = new Call(op.procSym(), op.actuals(), op.formals(), op.position());
+        replaceAt(loc, newCall);
+      }
+    }
+
+    // I don't love this.
+    @Override
+    public void visit(Transfer op) {
+      deleteAt(loc);
+    }
+
+    @Override
+    public void visit(Return op) {
+      deleteAt(loc);
+    }
+
+    @Override
+    public void visit(AllocateOp op) {
+      deleteAt(loc);
+    }
+
+    @Override
+    public void visit(ArrayAlloc arrayAlloc) {
+      deleteAt(loc);
+    }
+
+    @Override
+    public void visit(ArraySet op) {
+      deleteAt(loc);
+    }
+
+    @Override
+    public void visit(FieldSetOp fieldSetOp) {
+      deleteAt(loc);
+    }
+  }
+
   // This can never be called with a temp, because temps aren't reassigned.
   private boolean killIfReassigned(Location destination) {
     Integer loc = assignments.get(destination.baseLocation());
     if (loc != null) {
       assignments.remove(destination.baseLocation());
-      deleteAt(loc);
+      smartDeleteAt(loc);
       return true;
     }
     return false;
+  }
+
+  private void smartDeleteAt(Integer loc) {
+    Op theOp = code.get(loc);
+    theOp.accept(new CallReplacer(loc));
   }
 
   private void markRead(Operand source) {
@@ -84,14 +139,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     if (!assignments.isEmpty()) {
       logger.at(loggingLevel).log("Killing all unused variables at stop: %s", assignments);
       for (int theIp : assignments.values()) {
-        deleteAt(theIp);
+        smartDeleteAt(theIp);
       }
       assignments.clear();
     }
     if (!tempAssignments.isEmpty()) {
       logger.at(loggingLevel).log("Killing all unused temps at stop: %s", tempAssignments);
       for (int theIp : tempAssignments.values()) {
-        deleteAt(theIp);
+        smartDeleteAt(theIp);
       }
       tempAssignments.clear();
     }
@@ -110,14 +165,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     if (!assignments.isEmpty()) {
       logger.at(loggingLevel).log("Killing all unused variables at end of proc: %s", assignments);
       for (int theIp : assignments.values()) {
-        deleteAt(theIp);
+        smartDeleteAt(theIp);
       }
       assignments.clear();
     }
     if (!tempAssignments.isEmpty()) {
       logger.at(loggingLevel).log("Killing all unused temps at end of proc: %s", tempAssignments);
       for (int theIp : tempAssignments.values()) {
-        deleteAt(theIp);
+        smartDeleteAt(theIp);
       }
       tempAssignments.clear();
     }
