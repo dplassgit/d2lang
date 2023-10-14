@@ -13,9 +13,9 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
-import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.IdentityOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
@@ -62,10 +62,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     }
   }
 
-  private class CallReplacer extends DefaultOpcodeVisitor {
+  private class CallReplacer extends IdentityOpcodeVisitor {
     private int loc;
 
     public CallReplacer(int loc) {
+      super((op) -> {
+        // run this for all ops
+        deleteAt(loc);
+      });
       this.loc = loc;
     }
 
@@ -76,37 +80,6 @@ class DeadAssignmentOptimizer extends LineOptimizer {
         Call newCall = new Call(op.procSym(), op.actuals(), op.formals(), op.position());
         replaceAt(loc, newCall);
       }
-    }
-
-    // I don't love this.
-    @Override
-    public void visit(Transfer op) {
-      deleteAt(loc);
-    }
-
-    @Override
-    public void visit(Return op) {
-      deleteAt(loc);
-    }
-
-    @Override
-    public void visit(AllocateOp op) {
-      deleteAt(loc);
-    }
-
-    @Override
-    public void visit(ArrayAlloc arrayAlloc) {
-      deleteAt(loc);
-    }
-
-    @Override
-    public void visit(ArraySet op) {
-      deleteAt(loc);
-    }
-
-    @Override
-    public void visit(FieldSetOp fieldSetOp) {
-      deleteAt(loc);
     }
   }
 

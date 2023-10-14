@@ -126,4 +126,19 @@ public class DeadAssignmentOptimizerTest {
             + "f()",
         optimizer);
   }
+
+  @Test
+  public void notDeadFunctionCall_beforeAssignment_bug249() {
+    TestUtils.optimizeAssertSameVariables(
+        "      pr:proc:int {\n"
+            + "     print 'hi'\n"
+            + "     return 3\n"
+            + "    }\n"
+            + "f:proc {\n"
+            + "  x=3\n"
+            + "  x=pr()\n"
+            + "}\n"
+            + "f()",
+        optimizer);
+  }
 }

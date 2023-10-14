@@ -32,9 +32,9 @@ public interface OpcodeVisitor {
 
   void visit(AllocateOp op);
 
-  void visit(ArrayAlloc arrayAlloc);
+  void visit(ArrayAlloc op);
 
   void visit(ArraySet op);
 
-  void visit(FieldSetOp fieldSetOp);
+  void visit(FieldSetOp op);
 }
