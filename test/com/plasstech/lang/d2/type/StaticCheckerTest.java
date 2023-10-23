@@ -47,7 +47,7 @@ public class StaticCheckerTest {
   @Test
   public void assignInt() {
     State state = safeTypeCheck("a=3");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -64,7 +64,7 @@ public class StaticCheckerTest {
   @Test
   public void assignLong() {
     State state = safeTypeCheck("a=3L");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.LONG);
 
@@ -81,7 +81,7 @@ public class StaticCheckerTest {
   @Test
   public void assignUnaryIntConst() {
     State state = safeTypeCheck("a=-3");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -98,7 +98,7 @@ public class StaticCheckerTest {
   @Test
   public void assignUnaryVar() {
     State state = safeTypeCheck("a=3 b=-a");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -116,7 +116,7 @@ public class StaticCheckerTest {
   @Test
   public void assignUnaryExpr() {
     State state = safeTypeCheck("a=3 b=-(a+3)");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -134,7 +134,7 @@ public class StaticCheckerTest {
   @Test
   public void assignBool() {
     State state = safeTypeCheck("a=true");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
 
@@ -150,7 +150,7 @@ public class StaticCheckerTest {
 
   @Test
   public void manyBinOps() {
-    SymTab types = checkProgram("a=4 b=5L e=(a>=3) or not (b<3L)");
+    SymbolTable types = checkProgram("a=4 b=5L e=(a>=3) or not (b<3L)");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.LONG);
@@ -169,7 +169,7 @@ public class StaticCheckerTest {
 
   @Test
   public void assignIntUnaryOK() {
-    SymTab types = checkProgram("a=3 b=!a");
+    SymbolTable types = checkProgram("a=3 b=!a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
   }
@@ -177,7 +177,7 @@ public class StaticCheckerTest {
   @Test
   public void assignDouble() {
     State state = safeTypeCheck("a=3.0");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
 
@@ -194,7 +194,7 @@ public class StaticCheckerTest {
   @Test
   public void assignUnaryDoubleConst() {
     State state = safeTypeCheck("a=-3.0");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
 
@@ -213,7 +213,7 @@ public class StaticCheckerTest {
   @Test
   public void assignUnaryVarDouble() {
     State state = safeTypeCheck("a=3.0 b=-a");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.DOUBLE);
@@ -231,7 +231,7 @@ public class StaticCheckerTest {
   @Test
   public void assignDoubleExpr() {
     State state = safeTypeCheck("a=3.1+4.4*9.0/3.14 b=4.0 c=a>b");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -258,7 +258,7 @@ public class StaticCheckerTest {
 
   @Test
   public void lengthString() {
-    SymTab types = checkProgram("a=length('hi')");
+    SymbolTable types = checkProgram("a=length('hi')");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     types = checkProgram("b='hi' a=length(b)");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
@@ -266,7 +266,7 @@ public class StaticCheckerTest {
 
   @Test
   public void lengthArray() {
-    SymTab types = checkProgram("a=length([1,2,3])");
+    SymbolTable types = checkProgram("a=length([1,2,3])");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
@@ -278,7 +278,7 @@ public class StaticCheckerTest {
 
   @Test
   public void asc() {
-    SymTab types = checkProgram("a=asc('h')");
+    SymbolTable types = checkProgram("a=asc('h')");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     types = checkProgram("b='hello' a=asc(b)");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
@@ -292,7 +292,7 @@ public class StaticCheckerTest {
 
   @Test
   public void chr() {
-    SymTab types = checkProgram("a=chr(65)");
+    SymbolTable types = checkProgram("a=chr(65)");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
     types = checkProgram("b=66 a=chr(b)");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
@@ -300,14 +300,14 @@ public class StaticCheckerTest {
 
   @Test
   public void assignBoolConstantUnary() {
-    SymTab types = checkProgram("a=not true");
+    SymbolTable types = checkProgram("a=not true");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void assignBoolUnary() {
-    SymTab types = checkProgram("a=true b=not a");
+    SymbolTable types = checkProgram("a=true b=not a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
   }
@@ -315,7 +315,7 @@ public class StaticCheckerTest {
   @Test
   public void assignExpr() {
     State state = safeTypeCheck("a=3+4-9");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
 
@@ -343,7 +343,7 @@ public class StaticCheckerTest {
   @Test
   public void assignMulti() {
     State state = safeTypeCheck("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
-    SymTab types = state.symbolTable();
+    SymbolTable types = firstSymTab(state);
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -436,13 +436,13 @@ public class StaticCheckerTest {
 
   @Test
   public void stringComparator() {
-    SymTab symTab = checkProgram("b:bool b='hi' == 'bye'");
+    SymbolTable symTab = checkProgram("b:bool b='hi' == 'bye'");
     assertThat(symTab.get("b").varType()).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void stringAdd() {
-    SymTab symTab = checkProgram("b='hi' a='bye' c=a+b");
+    SymbolTable symTab = checkProgram("b='hi' a='bye' c=a+b");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("b").varType()).isEqualTo(VarType.STRING);
     assertThat(symTab.get("c").varType()).isEqualTo(VarType.STRING);
@@ -457,13 +457,13 @@ public class StaticCheckerTest {
 
   @Test
   public void stringIndex() {
-    SymTab symTab = checkProgram("b='hi' a=b[1]");
+    SymbolTable symTab = checkProgram("b='hi' a=b[1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void stringLiteral_index() {
-    SymTab symTab = checkProgram("a='hi'[1]");
+    SymbolTable symTab = checkProgram("a='hi'[1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
@@ -477,19 +477,19 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayIndex() {
-    SymTab symTab = checkProgram("arr=[1,2,3] a=arr[1]");
+    SymbolTable symTab = checkProgram("arr=[1,2,3] a=arr[1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.INT);
   }
 
   @Test
   public void arrayString() {
-    SymTab symTab = checkProgram("arr=['a', 'b', 'c'] a=arr[1 + 1]");
+    SymbolTable symTab = checkProgram("arr=['a', 'b', 'c'] a=arr[1 + 1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void arrayLiteral() {
-    SymTab symTab = checkProgram("a=[1,2,3]");
+    SymbolTable symTab = checkProgram("a=[1,2,3]");
     assertThat(symTab.get("a").varType()).isArray();
   }
 
@@ -503,7 +503,7 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayLiteralGood() {
-    SymTab symTab = checkProgram("f:proc():int {return 1} a=[1,f()]");
+    SymbolTable symTab = checkProgram("f:proc():int {return 1} a=[1,f()]");
     VarType varType = symTab.get("a").varType();
     assertThat(varType).isArray();
     assertThat(varType).hasArrayBaseType(VarType.INT);
@@ -511,7 +511,7 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayLiteral_index() {
-    SymTab symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
+    SymbolTable symTab = checkProgram("a=[1,2,3][1]"); // NO idea if this will work!
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.INT);
   }
 
@@ -522,7 +522,7 @@ public class StaticCheckerTest {
 
   @Test
   public void arraySet() {
-    SymTab symTab = checkProgram("a:int[1] a[0]=1");
+    SymbolTable symTab = checkProgram("a:int[1] a[0]=1");
     assertThat(symTab.get("a").varType()).isArray();
 
     checkProgram("b=3 a:int[1] a[b+1]=1");
@@ -613,8 +613,7 @@ public class StaticCheckerTest {
 
   @Test
   public void main() {
-    State state = safeTypeCheck("a=3 b=a c=b+4 d=b==c e=3<4 f=d==true");
-    SymTab types = state.symbolTable();
+    SymbolTable types = checkProgram("a=3 b=a c=b+4 d=b==c e=3<4 f=d==true");
 
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
@@ -626,7 +625,7 @@ public class StaticCheckerTest {
 
   @Test
   public void whileLoop() {
-    SymTab types = checkProgram("i=0 while i < 30 do b = i == 1 { print i }");
+    SymbolTable types = checkProgram("i=0 while i < 30 do b = i == 1 { print i }");
 
     assertWithMessage("type of i").that(types.lookup("i")).isEqualTo(VarType.INT);
     assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
@@ -670,7 +669,7 @@ public class StaticCheckerTest {
 
   @Test
   public void decl() {
-    SymTab types = checkProgram("a:int a=3 b=a");
+    SymbolTable types = checkProgram("a:int a=3 b=a");
     assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
   }
 
@@ -708,6 +707,7 @@ public class StaticCheckerTest {
         "fib2:proc (n:int) : int {"
             + " n1 = 0 "
             + " n2 = 1 "
+            + " nth = 0 "
             + " i=1 while i < n do i = i + 1 { "
             + "  nth = n1 + n2 "
             + "  n1 = n2 "
@@ -880,34 +880,34 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_empty() {
-    SymTab symTab = checkProgram("r: record{}");
-    assertThat(symTab.get("r")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("r: record{}");
+    assertThat(symTab.getRecursive("r")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
   public void recordDefinition_simple() {
-    SymTab symTab = checkProgram("r2: record{s:string i:int b:bool}");
-    assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("r2: record{s:string i:int b:bool}");
+    assertThat(symTab.getRecursive("r2")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
   public void recordDefinition_recursive() {
-    SymTab symTab = checkProgram("rec: record{r:rec}");
-    assertThat(symTab.get("rec")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("rec: record{r:rec}");
+    assertThat(symTab.getRecursive("rec")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
   public void recordDefinition_forward() {
-    SymTab symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
-    assertThat(symTab.get("rec1")).isInstanceOf(RecordSymbol.class);
-    assertThat(symTab.get("rec2")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
+    assertThat(symTab.getRecursive("rec1")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("rec2")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
   public void recordDefinition_corecursive() {
-    SymTab symTab = checkProgram("rec1: record{r:rec2} rec2: record{r:rec1}");
-    assertThat(symTab.get("rec1")).isInstanceOf(RecordSymbol.class);
-    assertThat(symTab.get("rec2")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{r:rec1}");
+    assertThat(symTab.getRecursive("rec1")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("rec2")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
@@ -934,14 +934,35 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void recordDefinition_redeclared() {
+  public void recordDefinition_redeclaredAsRecord() {
     assertError("r: int r:record{b:bool}", "redeclared as INT");
   }
 
   @Test
+  public void recordDefinition_redeclaredAsInt() {
+    assertError("r:record{b:bool} r: int", "redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_redeclaredInProc() {
+    assertError(
+        "      f:proc{\n"
+            + "  r: int \n"
+            + "  r:record{b:bool}\n"
+            + "}\n",
+        "redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_redeclaredInIf() {
+    assertError("if true {r: int r:record{b:bool}}", "redeclared as INT");
+    assertError("if true {r:record{b:bool} r: int}", "redeclared as INT");
+  }
+
+  @Test
   public void variableDecl_recordType() {
-    SymTab symTab = checkProgram("r2: record{s:string} instance: r2");
-    assertThat(symTab.get("r2")).isInstanceOf(RecordSymbol.class);
+    SymbolTable symTab = checkProgram("r2: record{s:string} instance: r2");
+    assertThat(symTab.getRecursive("r2")).isInstanceOf(RecordSymbol.class);
 
     Symbol rec = symTab.get("instance");
     assertThat(rec.isAssigned()).isFalse();
@@ -962,7 +983,7 @@ public class StaticCheckerTest {
 
   @Test
   public void paramDecl_recordType() {
-    SymTab symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
+    SymbolTable symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
     ParamSymbol instance = proc.formal(0);
     RecordReferenceType r1 = (RecordReferenceType) instance.varType();
@@ -977,7 +998,7 @@ public class StaticCheckerTest {
 
   @Test
   public void returnType_recordType() {
-    SymTab symTab = checkProgram("r1: record{s:string} p:proc:r1{return null}");
+    SymbolTable symTab = checkProgram("r1: record{s:string} p:proc:r1{return null}");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
     RecordReferenceType r1 = (RecordReferenceType) proc.returnType();
     assertThat(r1.name()).isEqualTo("r1");
@@ -993,7 +1014,7 @@ public class StaticCheckerTest {
 
   @Test
   public void assignRecordType() {
-    SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2:r1 var2=var1");
+    SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2:r1 var2=var1");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1005,7 +1026,7 @@ public class StaticCheckerTest {
 
   @Test
   public void recordType_compare() {
-    SymTab symTab =
+    SymbolTable symTab =
         checkProgram("r1:record{s:string} var1=new r1 var2 = new r1 if var1==var2 { print 'same'}");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
@@ -1018,7 +1039,7 @@ public class StaticCheckerTest {
 
   @Test
   public void recordType_compareToNull() {
-    SymTab symTab =
+    SymbolTable symTab =
         checkProgram("r1:record{s:string} var1=new r1 if var1!=null { print 'not null'}");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
@@ -1049,7 +1070,8 @@ public class StaticCheckerTest {
 
   @Test
   public void assignRecordType_inferred() {
-    SymTab symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
+    SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
+    System.err.println(symTab);
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1083,7 +1105,7 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord() {
-    SymTab symTab = checkProgram("r1:record{s:string} var1=new r1");
+    SymbolTable symTab = checkProgram("r1:record{s:string} var1=new r1");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1092,7 +1114,7 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_assign() {
-    SymTab symTab = checkProgram("r1:record{s:string} var1=new r1 var2=var1");
+    SymbolTable symTab = checkProgram("r1:record{s:string} var1=new r1 var2=var1");
 
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
@@ -1107,7 +1129,7 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_procReturnsRecord() {
-    SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
+    SymbolTable symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
 
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
@@ -1135,7 +1157,7 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet() {
-    SymTab symTab = checkProgram("r1:record{s:string i:int} var1=new r1 ii=var1.i");
+    SymbolTable symTab = checkProgram("r1:record{s:string i:int} var1=new r1 ii=var1.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1143,7 +1165,8 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_nested() {
-    SymTab symTab = checkProgram("r1:record{i:int} r2:record{rone:r1} var2=new r2 ii=var2.rone.i");
+    SymbolTable symTab =
+        checkProgram("r1:record{i:int} r2:record{rone:r1} var2=new r2 ii=var2.rone.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1151,7 +1174,7 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_recursive() {
-    SymTab symTab = checkProgram("r1:record{i:int next:r1} var1=new r1 var2=var1.next");
+    SymbolTable symTab = checkProgram("r1:record{i:int next:r1} var1=new r1 var2=var1.next");
 
     Symbol var2 = symTab.get("var2");
     RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
@@ -1161,7 +1184,7 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_procReturn() {
-    SymTab symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p().i");
+    SymbolTable symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p().i");
 
     Symbol var1 = symTab.get("var1");
     assertThat(var1.varType()).isEqualTo(VarType.INT);
@@ -1184,7 +1207,7 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldSet() {
-    SymTab symTab = checkProgram("r1:record{i:int} var1=new r1 var1.i=3 var2=var1.i");
+    SymbolTable symTab = checkProgram("r1:record{i:int} var1=new r1 var1.i=3 var2=var1.i");
     Symbol symbol = symTab.get("var2");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1225,7 +1248,7 @@ public class StaticCheckerTest {
 
   @Test
   public void advancedRValue() {
-    SymTab symtab =
+    SymbolTable symtab =
         checkProgram(
             "      r1:record{bar:r2} r2:record{baz:r3[1]} r3:record{qux:string}"
                 + " foo:r1[3]"
@@ -1253,27 +1276,27 @@ public class StaticCheckerTest {
 
   @Test
   public void noArgs() {
-    SymTab symTab = checkProgram("a=3");
+    SymbolTable symTab = checkProgram("a=3");
     assertThat(symTab.lookup("ARGS")).isEqualTo(VarType.UNKNOWN);
   }
 
   @Test
   public void simpleArgs() {
-    SymTab symTab = checkProgram("println args[0]");
+    SymbolTable symTab = checkProgram("println args[0]");
     assertThat(symTab.lookup("ARGS")).isArray();
     assertThat(symTab.lookup("ARGS")).hasArrayBaseType(VarType.STRING);
   }
 
   @Test
   public void copyArgs() {
-    SymTab symTab = checkProgram("b=args");
+    SymbolTable symTab = checkProgram("b=args");
     assertThat(symTab.lookup("b")).isArray();
     assertThat(symTab.lookup("b")).hasArrayBaseType(VarType.STRING);
   }
 
   @Test
   public void complexArgs() {
-    SymTab symTab =
+    SymbolTable symTab =
         checkProgram(
             "      len=length(args)\r\n"
                 + "print 'length is ' println len\r\n"
@@ -1342,12 +1365,24 @@ public class StaticCheckerTest {
   public void goodIncDec() {
     checkProgram("a=1 a++");
     checkProgram("a=1 a--");
-    //    checkProgram("a=1L a++"); // TODO revive this when longs work.
+    checkProgram("a=1L a++");
 
     State state = safeTypeCheck("a=0y1 a--");
     StatementNode node = state.programNode().statements().statements().get(1);
     assertThat(node).isInstanceOf(IncDecNode.class);
     assertThat(node.varType()).isEqualTo(VarType.BYTE);
+  }
+
+  @Test
+  public void scopes() throws Exception {
+    assertError(""
+        + "f:proc(flag:bool): string {\n"
+        + "   if flag { s = 'hi'}\n"
+        + "   return s\n" // this should be a typecheck error because 's' is in the inner block
+        + "}\n"
+        + "println f(true)\n"
+        + "println f(false)\n",
+        "Indeterminable type for RETURN");
   }
 
   private void assertError(String program, String messageShouldMatch) {
@@ -1358,9 +1393,16 @@ public class StaticCheckerTest {
         .containsMatch(messageShouldMatch);
   }
 
-  private SymTab checkProgram(String program) {
+  private SymbolTable checkProgram(String program) {
     State state = safeTypeCheck(program);
-    return state.symbolTable();
+    // go down a level to the first block's symbol table
+    return firstSymTab(state);
+  }
+
+  private static SymbolTable firstSymTab(State state) {
+    SymbolTable firstBlockSymTab =
+        state.symbolTable().enterBlock(state.programNode().statements()).symTab();
+    return firstBlockSymTab;
   }
 
   private State safeTypeCheck(String program) {

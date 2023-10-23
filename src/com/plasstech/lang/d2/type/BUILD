@@ -2,6 +2,7 @@ java_library(name="type",
              srcs=[
                    "ProcGatherer.java",
                    "RecordGatherer.java",
+                   "RecordTypeAssigner.java",
                    "StaticChecker.java",
              ],
              deps=[
@@ -34,7 +35,10 @@ java_library(name="result",
              )
 
 java_library(name="symbols",
-             srcs=glob(["*Symbol.java"]) + ["SymTab.java"],
+             srcs=glob(["*Symbol.java"]) + [
+                  "SymTab.java", 
+                  "SymbolTable.java",
+             ],
              deps = [
                  ":exception",
                  ":storage",

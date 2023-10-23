@@ -4,13 +4,13 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 public class InterpreterResult {
 
   private final ImmutableList<Op> code;
   private final Environment environment;
-  private final SymTab symbolTable;
+  private final SymbolTable symbolTable;
   private int instructionCycles;
   private int linesOfCode;
   private int gotos;
@@ -33,7 +33,7 @@ public class InterpreterResult {
     return environment;
   }
 
-  public SymTab symbolTable() {
+  public SymbolTable symbolTable() {
     return symbolTable;
   }
 

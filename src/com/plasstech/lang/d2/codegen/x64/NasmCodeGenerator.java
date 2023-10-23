@@ -48,13 +48,16 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.BlockNode;
+import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import com.plasstech.lang.d2.type.BlockSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
@@ -111,18 +114,20 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public State execute(State input) {
+    SymbolTable globals = input.symbolTable();
+
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
     resolver = new Resolver(registers, stringTable, doubleTable, emitter);
     callGenerator = new CallCodeGenerator(resolver, emitter);
-    recordGenerator = new RecordCodeGenerator(resolver, input.symbolTable(), emitter);
+    recordGenerator = new RecordCodeGenerator(resolver, globals, emitter);
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
     stringGenerator = new StringCodeGenerator(resolver, emitter);
     arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
     inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
     printGenerator = new PrintCodeGenerator(resolver, emitter);
     doubleGenerator = new DoubleCodeGenerator(resolver, emitter);
-    argsGenerator = new ArgsCodeGenerator(emitter, input.symbolTable());
+    argsGenerator = new ArgsCodeGenerator(emitter, globals);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -136,16 +141,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     prelude.add("global main\n");
 
-    SymTab globals = input.symbolTable();
     // emit all string constants
-    for (Map.Entry<String, Symbol> entry : globals.variables().entrySet()) {
-      Symbol symbol = entry.getValue();
-      if (symbol.storage() == SymbolStorage.GLOBAL) {
-        // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
-        Size size = Size.of(symbol.varType());
-        emitter.addData(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
-      }
-    }
+    input.programNode().accept(new GlobalVariableEmitter(globals));
     for (ConstEntry<String> entry : stringTable.entries()) {
       emitter.addData(entry.dataEntry());
     }
@@ -186,6 +183,40 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         .add("\nsection .text").addAll(emitter.all()).build();
 
     return input.addAsmCode(allCode);
+  }
+
+  private class GlobalVariableEmitter extends DefaultNodeVisitor {
+    private SymbolTable mySymbolTable;
+
+    private GlobalVariableEmitter(SymbolTable mySymbolTable) {
+      this.mySymbolTable = mySymbolTable;
+      emitGlobals(mySymbolTable);
+    }
+
+    @Override
+    public void visit(BlockNode node) {
+      BlockSymbol blockSymbol = mySymbolTable.enterBlock(node);
+      if (blockSymbol.storage() == SymbolStorage.GLOBAL) {
+        SymbolTable globals = blockSymbol.symTab();
+        emitGlobals(globals);
+        mySymbolTable = globals;
+        // recurse
+        super.visit(node);
+        mySymbolTable = globals.parent();
+      }
+    }
+
+    private void emitGlobals(SymbolTable symbolTable) {
+      // emit all string constants
+      for (Map.Entry<String, Symbol> entry : symbolTable.variables().entrySet()) {
+        Symbol symbol = entry.getValue();
+        if (symbol.storage() == SymbolStorage.GLOBAL) {
+          // reserve (& clear) 1 byte for bool, 4 bytes per int, 8 bytes for string
+          Size size = Size.of(symbol.varType());
+          emitter.addData(String.format("_%s: %s 0", entry.getKey(), size.dataSizeName));
+        }
+      }
+    }
   }
 
   @Override

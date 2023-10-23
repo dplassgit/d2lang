@@ -35,6 +35,7 @@ import com.plasstech.lang.d2.parse.node.NodeVisitor;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
 import com.plasstech.lang.d2.parse.node.StatementNode;
@@ -156,9 +157,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private static final Set<TokenType> ARRAY_OPERATORS =
       ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
 
-  private Node root;
-  private final SymTab symbolTable = new SymTab();
+  private ProgramNode root;
 
+  private SymbolTable symbolTable = new SymTab();
+  private SymbolTable globals = symbolTable;
   private final Stack<ProcSymbol> procedures = new Stack<>();
   private final Set<ProcSymbol> needsReturn = new HashSet<>();
   private final Errors errors = new Errors();
@@ -172,6 +174,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   }
 
   private TypeCheckResult execute() {
+    // this sets up the (local) symbol tables for each procedure.
     NodeVisitor procGatherer = new ProcGatherer(symbolTable);
     try {
       root.accept(procGatherer);
@@ -182,6 +185,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     NodeVisitor recordGatherer = new RecordGatherer(symbolTable);
     try {
       root.accept(recordGatherer);
+    } catch (D2RuntimeException e) {
+      return new TypeCheckResult(e);
+    }
+
+    NodeVisitor recordAssigner = new RecordTypeAssigner(symbolTable);
+    try {
+      root.accept(recordAssigner);
     } catch (D2RuntimeException e) {
       return new TypeCheckResult(e);
     }
@@ -207,13 +217,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       errors.add(new D2RuntimeException(e.getMessage(), root.position(), "INTERNAL ERROR"));
       return new TypeCheckResult(errors);
     }
-  }
-
-  private SymTab symbolTable() {
-    if (procedures.isEmpty()) {
-      return symbolTable;
-    }
-    return procedures.peek().symTab();
   }
 
   @Override
@@ -283,7 +286,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           @Override
           public void visit(FieldSetNode fsn) {
             // Get the record from the symbol table.
-            Symbol variableSymbol = symbolTable().getRecursive(fsn.variableName());
+            Symbol variableSymbol = symbolTable.getRecursive(fsn.variableName());
             if (variableSymbol.varType() == VarType.PROC) {
               // can't assign to a proc
               errors.add(
@@ -305,7 +308,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
               return;
             }
 
-            Symbol recordSymbol = symbolTable().getRecursive(varType.name());
+            Symbol recordSymbol = symbolTable.getRecursive(varType.name());
             if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
               // this should never happen because the varType.isRecord, above, should have caught
               // it.
@@ -344,10 +347,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           @Override
           public void visit(VariableSetNode node) {
             // simple this=that
-            Symbol symbol = symbolTable().getRecursive(lvalue.name());
+            Symbol symbol = symbolTable.getRecursive(lvalue.name());
             if (symbol == null) {
               // Brand new symbol in all scopes. Assign in current scope.
-              symbolTable().assign(lvalue.name(), right.varType());
+              symbolTable.assign(lvalue.name(), right.varType());
             } else {
               // Already known in some scope. Update.
               if (symbol.varType().isUnknown()) {
@@ -384,7 +387,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           public void visit(ArraySetNode asn) {
             // 1. lhs must be known array
             String variableName = asn.variableName();
-            Symbol symbol = symbolTable().getRecursive(variableName);
+            Symbol symbol = symbolTable.getRecursive(variableName);
             if (symbol == null) {
               // this should never happen?
               errors.add(
@@ -449,13 +452,13 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   public void visit(VariableNode node) {
     if (node.varType().isUnknown()) {
       // Look up variable in the (current) symbol table, and set it in the node.
-      VarType existingType = symbolTable().lookup(node.name(), true);
+      VarType existingType = symbolTable.lookup(node.name(), true);
       if (!existingType.isUnknown()) {
         // BUG- parameters can be referenced without being assigned...
-        Symbol symbol = symbolTable().getRecursive(node.name());
+        Symbol symbol = symbolTable.getRecursive(node.name());
         if (symbol.storage() == SymbolStorage.GLOBAL && !procedures.isEmpty()) {
           // Globals can be referenced inside a proc without being assigned.
-        } else if (!symbolTable().isAssigned(node.name())) {
+        } else if (!symbolTable.isAssigned(node.name())) {
           // can't use it
           errors.add(
               new TypeException(
@@ -466,10 +469,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         node.setVarType(existingType);
       }
     } else if (node.name().equals("ARGS")) {
-      VarType type = symbolTable().lookup(node.name());
+      VarType type = globals.lookup(node.name());
       if (type == VarType.UNKNOWN) {
         // put it in the global symbol table
-        symbolTable.declare(node.name(), node.varType());
+        globals.declare(node.name(), node.varType());
       }
     }
   }
@@ -477,7 +480,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(CallNode node) {
     // 1. make sure the function is really a function
-    Symbol maybeProc = symbolTable().getRecursive(node.procName());
+    Symbol maybeProc = symbolTable.getRecursive(node.procName());
     if (maybeProc == null || maybeProc.varType() != VarType.PROC) {
       errors.add(
           new TypeException(
@@ -570,7 +573,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (operator == TokenType.DOT) {
       // Now get the record from the symbol table.
       String recordName = leftType.name();
-      Symbol symbol = symbolTable().getRecursive(recordName);
+      Symbol symbol = symbolTable.getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
         errors.add(
             new TypeException(
@@ -768,22 +771,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 condition.position()));
       }
       conditions.add(condition);
-      ifCase
-          .block()
-          .statements()
-          .forEach(
-              stmt -> {
-                stmt.accept(this);
-              });
+      ifCase.block().accept(this);
     }
-    node.elseBlock()
-        .ifPresent(
-            block -> block
-                .statements()
-                .forEach(
-                    stmt -> {
-                      stmt.accept(this);
-                    }));
+    node.elseBlock().ifPresent(block -> block.accept(this));
   }
 
   @Override
@@ -805,7 +795,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(DeclarationNode node) {
     // Don't go up to the parent symbol table; this allows scoping
-    VarType existingType = symbolTable().lookup(node.name(), false);
+    VarType existingType = symbolTable.lookup(node.name(), false);
     if (!existingType.isUnknown()) {
       errors.add(
           new TypeException(
@@ -816,30 +806,35 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
     }
     // gotta make sure it exists
-    validatePossibleRecordType(node.name(), node.varType(), node.position());
-
-    symbolTable().declare(node.name(), node.varType());
+    if (validatePossibleRecordType(node.name(), node.varType(), node.position())) {
+      symbolTable.declare(node.name(), node.varType());
+    }
   }
 
-  private Symbol validatePossibleRecordType(String name, VarType type, Position position) {
+  /**
+   * Returns false if it's a record type that is invalid, true otherwise (not a record type, or a
+   * valid record)
+   */
+  private boolean validatePossibleRecordType(String name, VarType type, Position position) {
     if (type.isRecord()) {
       String recordName = ((RecordReferenceType) type).name();
-      Symbol symbol = symbolTable().getRecursive(recordName);
+      Symbol symbol = symbolTable.getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
         errors.add(
             new TypeException(
                 String.format(
                     "Cannot declare variable '%s' as unknown RECORD type %s", name, recordName),
                 position));
+        return false;
       }
-      return symbol;
+      return true;
     }
-    return null;
+    return true;
   }
 
   @Override
   public void visit(ArrayDeclarationNode node) {
-    VarType existingType = symbolTable().lookup(node.name(), false);
+    VarType existingType = symbolTable.lookup(node.name(), false);
     if (!existingType.isUnknown()) {
       errors.add(
           new TypeException(
@@ -886,18 +881,14 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     // declaring the array actually assigns it.
-    symbolTable().assign(node.name(), node.varType());
+    symbolTable.assign(node.name(), node.varType());
   }
 
   @Override
   public void visit(RecordDeclarationNode node) {
-    Symbol sym = symbolTable().get(node.name());
+    Symbol sym = symbolTable.getRecursive(node.name());
     if (sym == null) {
-      // Updates the symbol table with this symbol. It might be null because
-      // it's defining a local record (in a procedure). Which, shrug, I'm not even sure
-      // the rest of the codebase supports...
-      new RecordGatherer(symbolTable()).visit(node);
-      sym = symbolTable().get(node.name());
+      throw new IllegalStateException("Cannot find record " + node.name());
     }
 
     // If we got this far, we know that the record doesn't have duplicate fields, or
@@ -909,7 +900,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         // Make sure it exists.
         RecordReferenceType rrt = (RecordReferenceType) fieldType;
         String recordTypeName = rrt.name();
-        Symbol putativeRecordSymbol = symbolTable().getRecursive(recordTypeName);
+        Symbol putativeRecordSymbol = symbolTable.getRecursive(recordTypeName);
         if (putativeRecordSymbol == null) {
           errors.add(
               new TypeException(
@@ -940,14 +931,22 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   }
 
   @Override
+  public void visit(BlockNode node) {
+    BlockSymbol blockSymbol = symbolTable.enterBlock(node);
+    symbolTable = blockSymbol.symTab();
+    super.visit(node);
+    symbolTable = symbolTable.parent();
+  }
+
+  @Override
   public void visit(ProcedureNode node) {
     // Add this procedure to the symbol table if it's a nested proc.
-    Symbol sym = symbolTable().get(node.name());
+    Symbol sym = symbolTable.get(node.name());
     boolean innerProc = sym == null;
     ProcSymbol procSymbol = null;
     if (sym == null) {
       // nested proc; spawn symbol table & assign to the node.
-      procSymbol = symbolTable().declareProc(node);
+      procSymbol = symbolTable.declareProc(node);
     } else if (sym.varType() != VarType.PROC) {
       errors.add(
           new TypeException(
@@ -959,6 +958,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     // push current procedure onto a stack, for symbol table AND return value checking
     procedures.push(procSymbol);
+    // use the proc's symbol table.
+    symbolTable = procSymbol.symTab();
     if (node.returnType() != VarType.VOID) {
       needsReturn.add(procSymbol);
     }
@@ -976,7 +977,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     // make sure args all have a type
     for (Parameter param : node.parameters()) {
-      VarType type = symbolTable().get(param.name()).varType();
+      VarType type = symbolTable.get(param.name()).varType();
       validatePossibleRecordType(param.name(), type, node.position());
       if (type.isUnknown()) {
         errors.add(
@@ -1007,6 +1008,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
     procedures.pop();
+    symbolTable = symbolTable.parent();
   }
 
   private boolean checkAllPathsHaveReturn(ProcedureNode node) {
@@ -1136,7 +1138,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(IncDecNode node) {
     // make sure variable is a byte, int, long.
-    Symbol symbol = symbolTable().getRecursive(node.name());
+    Symbol symbol = symbolTable.getRecursive(node.name());
     if (symbol == null || symbol.varType().isUnknown() || !symbol.isAssigned()) {
       // cannot do this, we do not know what type it is.
       errors.add(

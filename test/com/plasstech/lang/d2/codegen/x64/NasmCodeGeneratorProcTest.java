@@ -218,6 +218,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     execute(
         "      dofact:proc(n:int): int {"
             + "  fact = 1 "
+            + "  unchanged = 0"
             + "  i=1 while i <= 10 do i = i + 1 {"
             + "    unchanged = 0"
             + "    fact = fact * i"

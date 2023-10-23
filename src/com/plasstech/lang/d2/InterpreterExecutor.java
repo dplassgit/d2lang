@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 @SuppressWarnings("unused")
 public class InterpreterExecutor {
@@ -92,7 +92,7 @@ public class InterpreterExecutor {
     }
     state.throwOnError();
 
-    SymTab symbolTable = state.symbolTable();
+    SymbolTable symbolTable = state.symbolTable();
 
     ILCodeGenerator codegen = new ILCodeGenerator();
     state = codegen.execute(state);

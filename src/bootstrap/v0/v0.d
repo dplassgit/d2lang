@@ -1657,6 +1657,7 @@ parseWhile: proc() {
   doLabel = ""
   hasDo = false
   whileBlockLabel = ""
+  doStmtLabel = ""
   if lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_DO {
     hasDo = true
 

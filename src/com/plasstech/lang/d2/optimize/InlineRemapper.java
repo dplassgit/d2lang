@@ -23,8 +23,10 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
 /** For each opcode, remap temps with a new id. Remap any stack variables too. */
 class InlineRemapper extends DefaultOpcodeVisitor {
@@ -32,11 +34,11 @@ class InlineRemapper extends DefaultOpcodeVisitor {
 
   private final List<Op> code;
   private final String suffix;
-  private final SymTab symtab;
+  private final SymbolTable symtab;
 
   private int ip;
 
-  InlineRemapper(List<Op> code, SymTab symtab) {
+  InlineRemapper(List<Op> code, SymbolTable symtab) {
     this.symtab = symtab;
     this.suffix = "__inline__" + (global_counter++);
     this.code = new ArrayList<>(code);
@@ -47,10 +49,16 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (symtab.get(fullName) == null) {
       symtab.declare(fullName, type);
     }
-    System.err.printf("Remapping formal to %s (type %s)\n", fullName, type);
+    //    System.err.printf("Remapping formal to %s (type %s)\n", fullName, type);
     // This is messed up because temps are read once, so dead code optimizer and constant
     // propagation optimizer both create invalid code.
-    return new TempLocation(fullName, type);
+    return newTempLocation(fullName, type);
+  }
+
+  private Location newTempLocation(String fullName, VarType type) {
+    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.TEMP);
+    symbol.setVarType(type);
+    return new TempLocation(symbol);
   }
 
   List<Op> remap() {
@@ -198,7 +206,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
         }
         // This is messed up because temps are read once, so dead code optimizer and constant
         // propagation optimizer both create invalid code.
-        return new TempLocation(fullName, location.type());
+        return newTempLocation(fullName, location.type());
 
       default:
         return operand;

@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 public class ILOptimizer extends DefaultOptimizer implements Phase {
   private int debugLevel;
@@ -63,7 +63,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input, SymTab symbolTable) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symbolTable) {
     setChanged(false);
 
     ImmutableList<Op> program = ImmutableList.copyOf(input);

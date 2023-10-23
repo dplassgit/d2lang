@@ -15,9 +15,9 @@ import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
@@ -29,7 +29,7 @@ public class StringCodeGeneratorTest {
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
   private static final Location LEFT =
       new RegisterLocation("left", IntRegister.RDX, VarType.STRING);
-  private static final Location RIGHT = new StackLocation("right", VarType.STRING, 4);
+  private static final Location RIGHT = LocationUtils.newStackLocation("right", VarType.STRING, 4);
   private static final Operand NULL = new ConstantOperand<Void>(null, VarType.NULL);
   private static final Operand CONSTANT = ConstantOperand.of("hi");
   private static final Operand CONSTANT2 = ConstantOperand.of("hi2");

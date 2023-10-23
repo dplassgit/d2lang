@@ -12,13 +12,14 @@ import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class RecordCodeGeneratorTest {
@@ -26,11 +27,11 @@ public class RecordCodeGeneratorTest {
 
   private static final Joiner NEWLINE_JOINER = Joiner.on("\n");
 
-  private SymTab symTab = new SymTab();
+  private SymbolTable symTab = new SymTab();
 
   private static final VarType RECORD_TYPE = new RecordReferenceType(RECORD_NAME);
   private static final Location LEFT = new RegisterLocation("left", IntRegister.RDX, RECORD_TYPE);
-  private static final Location RIGHT = new StackLocation("right", RECORD_TYPE, 4);
+  private static final Location RIGHT = LocationUtils.newStackLocation("right", RECORD_TYPE, 4);
   private static final Location DESTINATION =
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
 

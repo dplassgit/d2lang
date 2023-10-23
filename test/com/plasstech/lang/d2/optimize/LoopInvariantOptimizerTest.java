@@ -6,9 +6,9 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -51,6 +51,7 @@ public class LoopInvariantOptimizerTest {
   public void simplest() {
     String program =
         "      simplest:proc(n:int) { "
+            + "  x = 0 "
             + "  while n > 0 do n = n - 1 {"
             + "    x = 0 " // this should be lifted out of the loop
             + "  }"
@@ -67,7 +68,8 @@ public class LoopInvariantOptimizerTest {
     assertThat(unoptimized.ilCode())
         .containsAtLeast(
             new Label("__loop_begin_2"),
-            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO, null))
+            new Transfer(LocationUtils.newStackLocation("x", VarType.INT, 4), ConstantOperand.ZERO,
+                null))
         .inOrder();
 
     InterpreterResult optimizedResult =
@@ -81,7 +83,8 @@ public class LoopInvariantOptimizerTest {
      */
     assertThat(optimizedResult.code())
         .containsAtLeast(
-            new Transfer(new StackLocation("x", VarType.INT, 4), ConstantOperand.ZERO, null),
+            new Transfer(LocationUtils.newStackLocation("x", VarType.INT, 4), ConstantOperand.ZERO,
+                null),
             new Label("__loop_begin_2"))
         .inOrder();
   }
@@ -207,6 +210,7 @@ public class LoopInvariantOptimizerTest {
         "      oneLoop:proc(n:int):int { "
             + "  sum = 0 "
             + "  i = 0 "
+            + "  x = 0 "
             + "  while i < 10 do i = i + 1 {"
             + "    x = 1 "
             + "    sum = sum + x "
@@ -311,6 +315,9 @@ public class LoopInvariantOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "      nestedLoopsLocals:proc(n:int):int { "
             + "  sum = 0 "
+            + "  x = 0 "
+            + "  y = 0 "
+            + "  z = 0 "
             + "  i = 0 while i < n do i = i + 1 { "
             + "    y = (n*4)/(n-1) "
             + "    j = 0 while j < n do j = j + 1 { "
@@ -334,6 +341,8 @@ public class LoopInvariantOptimizerTest {
     TestUtils.optimizeAssertSameVariables(
         "      twoNestedLoopsWithInvariants:proc(n:int):int { "
             + "  sum = 0 "
+            + "  x = 0 "
+            + "  y = 0 "
             + "  i = 0 while i < n do i = i + 1 { "
             + "    y = (n*4)/(n-1) "
             + "    j = 0 while j < n do j = j + 1 { "

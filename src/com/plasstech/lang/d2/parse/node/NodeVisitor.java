@@ -2,6 +2,8 @@ package com.plasstech.lang.d2.parse.node;
 
 public interface NodeVisitor {
 
+  void visit(ProgramNode node);
+
   void visit(PrintNode node);
 
   void visit(AssignmentNode node);
@@ -44,5 +46,7 @@ public interface NodeVisitor {
 
   void visit(ExternProcedureNode node);
 
-  void visit(IncDecNode incDecNode);
+  void visit(IncDecNode node);
+
+  void visit(BlockNode node);
 }

@@ -22,7 +22,7 @@ import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -35,14 +35,14 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private Map<String, ProcEntry> procsByName = new HashMap<>();
 
   private int ip;
-  private SymTab symbolTable;
+  private SymbolTable symbolTable;
 
   InlineOptimizer(int debugLevel) {
     loggingLevel = toLoggingLevel(debugLevel);
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> input, SymTab symbolTable) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symbolTable) {
     this.symbolTable = symbolTable;
     code = new ArrayList<>(input);
     for (ip = 0; ip < input.size(); ++ip) {

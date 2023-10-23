@@ -9,11 +9,12 @@ import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ArgsCodeGeneratorTest {
   private Emitter emitter = new ListEmitter();
-  private SymTab symbolTable = new SymTab();
+  private SymbolTable symbolTable = new SymTab();
 
   private ArgsCodeGenerator generator = new ArgsCodeGenerator(emitter, symbolTable);
 

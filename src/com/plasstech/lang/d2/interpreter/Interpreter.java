@@ -17,7 +17,7 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.StackLocation;
+import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
@@ -897,7 +897,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       Operand actualSource = op.actuals().get(i);
       ParamSymbol formalParam = procSymbol.formal(i);
       // formals are not necessarily on the stack...
-      Location formal = new StackLocation(formalParam.name(), formalParam.varType(), 0);
+      Location formal = new ParamLocation(formalParam);
       childEnv.setValue(formal, resolve(actualSource));
     }
 

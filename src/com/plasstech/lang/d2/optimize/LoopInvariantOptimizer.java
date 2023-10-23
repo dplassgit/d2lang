@@ -26,8 +26,8 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 /**
  * If a variable is set in the loop but none of its dependencies are modified in the loop -> it's an
@@ -52,7 +52,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
   }
 
   @Override
-  public ImmutableList<Op> optimize(ImmutableList<Op> program, SymTab symtab) {
+  public ImmutableList<Op> optimize(ImmutableList<Op> program, SymbolTable symtab) {
     code = new ArrayList<>(program);
     setChanged(false);
 

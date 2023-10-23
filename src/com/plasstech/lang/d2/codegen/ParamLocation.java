@@ -2,22 +2,16 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.Objects;
 
-import com.plasstech.lang.d2.type.SymbolStorage;
-import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.ParamSymbol;
 
-public class ParamLocation extends Location {
+public class ParamLocation extends VariableLocation {
   private final int index;
   private final int offset;
 
-  public ParamLocation(String varName, VarType varType, int index, int offset) {
-    super(varName, varType);
-    this.index = index;
-    this.offset = offset;
-  }
-
-  @Override
-  public SymbolStorage storage() {
-    return SymbolStorage.PARAM;
+  public ParamLocation(ParamSymbol param) {
+    super(param);
+    this.index = param.index();
+    this.offset = param.offset();
   }
 
   public int index() {

@@ -1,6 +1,9 @@
 
 loopinvariant:proc(n:int):int {
    sum = 0
+   x=0
+   y=0
+   z=0
    i = 0 while i < n do i = i + 1 {
      y = n + (n*4+5)/(n-1)  // can be lifted
      j = 1 while j < n do j = j + 1 {

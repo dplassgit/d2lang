@@ -10,6 +10,7 @@ gen_java_tests(name="AllTests",
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/codegen:location",
+        "//src/com/plasstech/lang/d2/codegen:locations",
         "//src/com/plasstech/lang/d2/codegen/testing", # for EmitterSubject
         "//src/com/plasstech/lang/d2/codegen/x64",
         "//src/com/plasstech/lang/d2/codegen/x64:registers",

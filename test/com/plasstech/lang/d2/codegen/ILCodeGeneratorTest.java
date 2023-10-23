@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -24,7 +25,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void simpleIf() {
-    System.err.println(generateProgram("i=1 j=i if 1==i {i=2 print i } "));
+    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
   }
 
   @Test
@@ -40,7 +41,7 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void println() {
-    System.err.println(generateProgram("a='world' print 'hello, ' println a"));
+    generateProgram("a='world' print 'hello, ' println a");
   }
 
   @Test
@@ -59,20 +60,34 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void shortCircuitAnd() {
-    System.err.println(generateProgram("bucket=3 if bucket==3 and bucket > 4 { print bucket}"));
+    generateProgram("bucket=3 if bucket==3 and bucket > 4 { print bucket}");
   }
 
   @Test
   public void shortCircuitOr() {
-    System.err.println(
-        Joiner.on('\n')
-            .join(generateProgram("bucket=3 if bucket==3 or bucket > 4 { print bucket}")));
+    generateProgram("bucket=3 if bucket==3 or bucket > 4 { print bucket}");
   }
 
   @Test
   public void ifStmt() {
     generateProgram(
-        "a=0 if a==0 {print 1} elif ((-5) == 6) != true { b=1+2*3} else {print 2} print 3");
+        "      a=0\n"
+            + "if a==0 {\n"
+            + "  b=1+2*3\n"
+            + "}");
+  }
+
+  @Test
+  public void ifStmts() {
+    generateProgram(
+        "      a=0 "
+            + "if a==0 {print 1}"
+            + "elif ((-5) == 6) != true {"
+            + "  b=1+2*3\n"
+            + "} else {\n"
+            + "  print 2\n"
+            + "} \n"
+            + "print 3");
   }
 
   @Test
@@ -98,12 +113,14 @@ public class ILCodeGeneratorTest {
   @Test
   public void whileNestedBreak() {
     generateProgram(
-        "i=0 while i < 30 do i = i+1 { "
-            + "  j = 0 while j < 10 do j = j + 1 { "
-            + "    print j break"
-            + "  }"
-            + "   if i > 10  { break } print i"
-            + "}"
+        "      i=0 while i < 30 do i = i+1 { \n"
+            + "  j = 0 while j < 10 do j = j + 1 { \n"
+            + "    print j \n"
+            + "    break \n"
+            + "  } \n"
+            + "  if i > 10  { break } \n"
+            + "  print i \n"
+            + "} \n"
             + "print -1");
   }
 
@@ -173,18 +190,15 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordFieldSet() {
-    System.err.println(
-        generateProgram(
-            "rec: record {f:string i:int}\n" //
-                + "r = new rec\n" //
-                + "r.f = 'hi'"));
+    generateProgram(
+        "rec: record {f:string i:int}\n" //
+            + "r = new rec\n" //
+            + "r.f = 'hi'");
   }
 
   @Test
   public void recordWithArray() {
-    List<Op> program =
-        generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
-    System.err.println(Joiner.on('\n').join(program));
+    generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
   }
 
   private List<Op> generateProgram(String program) {
@@ -201,6 +215,11 @@ public class ILCodeGeneratorTest {
       fail(state.errorMessage());
     }
     ILCodeGenerator codegen = new ILCodeGenerator();
-    return codegen.execute(state).ilCode();
+    ImmutableList<Op> ilCode = codegen.execute(state).ilCode();
+    System.err.println("\nD CODE:\n-------");
+    System.err.println(program);
+    System.err.println("\nIL CODE:\n--------");
+    System.err.println(Joiner.on("\n").join(ilCode));
+    return ilCode;
   }
 }

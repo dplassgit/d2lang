@@ -2,18 +2,11 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.Objects;
 
-import com.plasstech.lang.d2.type.SymbolStorage;
-import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
-public class MemoryAddress extends Location {
-  // TODO: capture memory location
-  public MemoryAddress(String name, VarType varType) {
-    super(name, varType);
-  }
-
-  @Override
-  public SymbolStorage storage() {
-    return SymbolStorage.GLOBAL;
+public class MemoryAddress extends VariableLocation {
+  public MemoryAddress(VariableSymbol variable) {
+    super(variable);
   }
 
   @Override

@@ -69,8 +69,7 @@ public class InterpreterTest {
                 + "  n1 = n2\n"
                 + "  n2 = nth\n"
                 + "  print nth\n"
-                + "}\n"
-                + "");
+                + "}");
     assertThat(env.getValue("nth")).isEqualTo(55);
     assertThat(env.getValue("i")).isEqualTo(19);
   }

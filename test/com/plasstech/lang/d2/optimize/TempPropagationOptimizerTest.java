@@ -7,27 +7,28 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.ParamLocation;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class TempPropagationOptimizerTest {
-  private static final Location PARAM = new ParamLocation("param", VarType.INT, 0, 0);
-  private static final Location LOCAL = new StackLocation("stack", VarType.INT, 0);
-  private static final Location TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final Location TEMP2 = new TempLocation("temp2", VarType.INT);
-  private static final Location TEMP3 = new TempLocation("temp3", VarType.INT);
-  private static final Location DPARAM = new ParamLocation("dparam", VarType.DOUBLE, 0, 0);
-  private static final Location DLOCAL = new StackLocation("dstack", VarType.DOUBLE, 0);
-  private static final Location DTEMP1 = new TempLocation("dtemp1", VarType.DOUBLE);
-  private static final Location DTEMP2 = new TempLocation("dtemp2", VarType.DOUBLE);
-  private static final Location DTEMP3 = new TempLocation("dtemp3", VarType.DOUBLE);
+  private static final Location PARAM = LocationUtils.newParamLocation("param", VarType.INT, 0, 0);
+  private static final Location LOCAL = LocationUtils.newStackLocation("stack", VarType.INT, 0);
+  private static final Location TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final Location TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
+  private static final Location TEMP3 = LocationUtils.newTempLocation("temp3", VarType.INT);
+  private static final Location DPARAM =
+      LocationUtils.newParamLocation("dparam", VarType.DOUBLE, 0, 0);
+  private static final Location DLOCAL =
+      LocationUtils.newStackLocation("dstack", VarType.DOUBLE, 0);
+  private static final Location DTEMP1 = LocationUtils.newTempLocation("dtemp1", VarType.DOUBLE);
+  private static final Location DTEMP2 = LocationUtils.newTempLocation("dtemp2", VarType.DOUBLE);
+  private static final Location DTEMP3 = LocationUtils.newTempLocation("dtemp3", VarType.DOUBLE);
 
   private Optimizer optimizer =
       new ILOptimizer(ImmutableList.of(new TempPropagationOptimizer(2), new NopOptimizer()));

@@ -3,13 +3,41 @@ package com.plasstech.lang.d2.parse.node;
 public class DefaultNodeVisitor implements NodeVisitor {
 
   @Override
+  public void visit(ProgramNode node) {
+    // default implementation
+    if (node != null) {
+      node.statements().accept(this);
+    }
+  }
+
+  @Override
+  public void visit(IfNode node) {
+    for (IfNode.Case ifCase : node.cases()) {
+      ifCase.block().accept(this);
+    }
+    node.elseBlock().ifPresent(block -> block.accept(this));
+  }
+
+  @Override
+  public void visit(WhileNode node) {
+    node.block().accept(this);
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
+    node.block().accept(this);
+  }
+
+  @Override
+  public void visit(BlockNode node) {
+    node.statements().forEach((s) -> s.accept(this));
+  }
+
+  @Override
   public void visit(PrintNode node) {}
 
   @Override
   public void visit(AssignmentNode node) {}
-
-  @Override
-  public void visit(IfNode node) {}
 
   @Override
   public void visit(BinOpNode node) {}
@@ -24,13 +52,7 @@ public class DefaultNodeVisitor implements NodeVisitor {
   public void visit(UnaryNode node) {}
 
   @Override
-  public void visit(ProcedureNode node) {}
-
-  @Override
   public void visit(ExternProcedureNode node) {}
-
-  @Override
-  public void visit(WhileNode node) {}
 
   @Override
   public void visit(BreakNode node) {}
@@ -66,5 +88,5 @@ public class DefaultNodeVisitor implements NodeVisitor {
   public void visit(ArrayLiteralNode node) {}
 
   @Override
-  public void visit(IncDecNode incDecNode) {}
+  public void visit(IncDecNode node) {}
 }

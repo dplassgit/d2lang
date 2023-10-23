@@ -17,6 +17,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -27,8 +28,8 @@ public class DeadCodeOptimizerTest {
           ImmutableList.of(new ConstantPropagationOptimizer(2), new DeadCodeOptimizer(2)))
           .setDebugLevel(2);
   private static final Label LABEL = new Label("label");
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
 
   @Test
   public void oneLoopBreak() {

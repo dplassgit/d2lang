@@ -30,7 +30,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   private final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -39,14 +39,14 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   protected final Level loggingLevel;
   protected List<Op> code;
-  protected SymTab symtab;
+  protected SymbolTable symtab;
 
   LineOptimizer(int debugLevel) {
     this.loggingLevel = toLoggingLevel(debugLevel);
   }
 
   @Override
-  public final ImmutableList<Op> optimize(ImmutableList<Op> input, SymTab symtab) {
+  public final ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symtab) {
     this.symtab = symtab;
     code = new ArrayList<>(input);
     preProcess();

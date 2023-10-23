@@ -6,11 +6,11 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -91,7 +91,8 @@ public class DeadAssignmentOptimizerTest {
     ImmutableList<Op> code =
         ImmutableList.of(
             new Transfer(
-                new TempLocation("temp", VarType.STRING), ConstantOperand.EMPTY_STRING, null),
+                LocationUtils.newTempLocation("temp", VarType.STRING), ConstantOperand.EMPTY_STRING,
+                null),
             new Call(procSym, ImmutableList.of(), ImmutableList.of(), null),
             new Stop());
     ImmutableList<Op> optimized = optimizer.optimize(code, null);

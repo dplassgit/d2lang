@@ -3,12 +3,12 @@ package com.plasstech.lang.d2.codegen;
 import java.util.Objects;
 
 import com.plasstech.lang.d2.type.SymbolStorage;
-import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
 // can be a register or on the stack. how/where to allocate?
-public class TempLocation extends Location {
-  public TempLocation(String name, VarType varType) {
-    super(name, varType);
+public class TempLocation extends VariableLocation {
+  public TempLocation(VariableSymbol symbol) {
+    super(symbol);
   }
 
   @Override

@@ -15,7 +15,7 @@ public class ProgramNode extends AbstractNode {
 
   @Override
   public void accept(NodeVisitor visitor) {
-    statements.accept(visitor);
+    visitor.visit(this);
   }
 
   @Override

@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AdjacentLabelOptimizerTest {
@@ -23,7 +24,7 @@ public class AdjacentLabelOptimizerTest {
   private static final Label LABEL1 = new Label("l1");
   private static final Label LABEL2 = new Label("l2");
   private static final Label LABEL3 = new Label("l3");
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final Op OP = new Dec(TEMP1);
   private static final Operand CONDITION = ConstantOperand.TRUE;
 

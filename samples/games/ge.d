@@ -680,6 +680,7 @@ buy_one_type: proc(fleet:FleetType, index: int): bool {
       print "How many units to purchase (number or 'max')? "
       samount = input
       trimmed = trim(samount)
+      famount = 0
       if trimmed == 'max' or trimmed == 'MAX' or trimmed == 'all' or trimmed == 'ALL' {
         famount = min(available, min(afford, carry))
         print "Buying max: " println famount
@@ -783,6 +784,7 @@ construct_one_type: proc(fleet: FleetType, index: int): bool {
       print "How many " + RESOURCE_TYPE[index] + "s to construct (number or 'max')? "
       samount = input
       trimmed = trim(samount)
+      famount = 0
       if trimmed == 'max' or trimmed == 'MAX' or trimmed == 'all' or trimmed == 'ALL' {
         famount = min(can_build, afford)
         print "Building max: " println famount
@@ -1235,11 +1237,11 @@ occupy: proc(location: PlanetType, should_elapse: bool) {
   }
 
   println location.name + " occupation status:\n"
+  fighters = 0
   if location.civ_level >= ADVANCED {
     print "Fighters: " println lround(location.fighters)
     print "Troops:   " println lround(location.troops)
 
-    fighters = 0
     while true {
       // get fighters
       print "How many fighters to deploy? (there are " print fleet.fighters println " available): "
@@ -1306,6 +1308,8 @@ attack: proc(location: PlanetType) {
   iters = 0
   casualties = 0.0
   while running {
+    them = 0
+    us = 0
     if battle_location == SPACE {
       us = fleet.fighters
       them = lround(location.fighters)
@@ -1627,8 +1631,6 @@ execute: proc(command: string, full_command: string) {
         map(p)
       }
     }
-    // OOH bug:
-    // map(p) - p might be null because it's out of scope. what are scopes in d?
   } elif command=="EMB" {
     if length(full_command) < 5 {
       println "Must give planet name for EMB, e.g., 'EMB Ootsi'"

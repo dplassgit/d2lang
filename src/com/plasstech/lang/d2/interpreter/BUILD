@@ -4,6 +4,7 @@ java_library(
     deps=[
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen:location",
+        "//src/com/plasstech/lang/d2/codegen:locations",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse",

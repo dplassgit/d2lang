@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -24,11 +25,14 @@ public class ConstantPropagationOptimizerTest {
       new ILOptimizer(ImmutableList.of(new ConstantPropagationOptimizer(2), new NopOptimizer()))
           .setDebugLevel(2);
 
-  private static final TempLocation TEMP_INT1 = new TempLocation("__temp1", VarType.INT);
-  private static final TempLocation TEMP_INT2 = new TempLocation("__temp2", VarType.INT);
-  private static final StackLocation STACK_INT1 = new StackLocation("s1", VarType.INT, 0);
-  private static final MemoryAddress GLOBAL_INT1 = new MemoryAddress("g1", VarType.INT);
-  private static final MemoryAddress GLOBAL_INT2 = new MemoryAddress("g2", VarType.INT);
+  private static final TempLocation TEMP_INT1 = LocationUtils.newTempLocation("__temp1", VarType.INT);
+  private static final TempLocation TEMP_INT2 = LocationUtils.newTempLocation("__temp2", VarType.INT);
+  private static final StackLocation STACK_INT1 =
+      LocationUtils.newStackLocation("s1", VarType.INT, 0);
+  private static final MemoryAddress GLOBAL_INT1 =
+      LocationUtils.newMemoryAddress("g1", VarType.INT);
+  private static final MemoryAddress GLOBAL_INT2 =
+      LocationUtils.newMemoryAddress("g2", VarType.INT);
 
   @Test
   public void twoTransfers() {

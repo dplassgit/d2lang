@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 
 @AutoValue
@@ -54,7 +54,7 @@ public abstract class State {
   public abstract ProgramNode programNode();
 
   @Nullable
-  public SymTab symbolTable() {
+  public SymbolTable symbolTable() {
     TypeCheckResult result = typeCheckResult();
     if (result != null && !result.isError()) {
       return result.symbolTable();

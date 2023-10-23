@@ -15,17 +15,19 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.VarType;
 
 public class InlineRemapperTest {
-  private static final TempLocation TEMP_DEST = new TempLocation("__dest", VarType.INT);
-  private static final TempLocation TEMP_SOURCE = new TempLocation("__source", VarType.INT);
-  private static final TempLocation TEMP_LEFT = new TempLocation("__left", VarType.INT);
-  private static final TempLocation TEMP_RIGHT = new TempLocation("__right", VarType.INT);
-  private static final StackLocation STACK = new StackLocation("stack", VarType.INT, 0);
-  private static final MemoryAddress MEMORY = new MemoryAddress("memory", VarType.INT);
+  private static final TempLocation TEMP_DEST = LocationUtils.newTempLocation("__dest", VarType.INT);
+  private static final TempLocation TEMP_SOURCE = LocationUtils.newTempLocation("__source", VarType.INT);
+  private static final TempLocation TEMP_LEFT = LocationUtils.newTempLocation("__left", VarType.INT);
+  private static final TempLocation TEMP_RIGHT = LocationUtils.newTempLocation("__right", VarType.INT);
+  private static final StackLocation STACK =
+      LocationUtils.newStackLocation("stack", VarType.INT, 0);
+  private static final MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
 
   @Test
   public void transferConstantToStack() {

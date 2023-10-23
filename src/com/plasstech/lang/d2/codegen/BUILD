@@ -1,20 +1,27 @@
-LOCATION_SRCS = [
+LOCATION_IMPL_SRCS = [
   "ConstantOperand.java",
-  "Location.java",
   "MemoryAddress.java",
+  "Location.java",
   "Operand.java",
   "ParamLocation.java",
   "StackLocation.java",
   "TempLocation.java",
+  "VariableLocation.java",
+]
+
+LOCATION_SRCS = [
+  "Location.java",
+  "Operand.java",
 ]
 
 
 java_library(
     name="codegen",
-    srcs=glob(["*.java"], exclude=LOCATION_SRCS),
+    srcs=glob(["*.java"], exclude=LOCATION_SRCS+LOCATION_IMPL_SRCS),
     deps=[
         ":auto",
         ":location",
+        ":locations",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
@@ -33,12 +40,25 @@ java_library(
     visibility=["//visibility:public"],
 )
 
+
 java_library(
     name="location",
     srcs=LOCATION_SRCS,
     visibility=["//visibility:public"],
     deps=[
         "//src/com/plasstech/lang/d2/type:storage",
+        "//src/com/plasstech/lang/d2/type:var_types",
+    ],
+)
+
+java_library(
+    name="locations",
+    srcs=LOCATION_IMPL_SRCS,
+    visibility=["//visibility:public"],
+    deps=[
+        ":location",
+        "//src/com/plasstech/lang/d2/type:storage",
+        "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "@maven//:com_google_guava_guava",
     ],

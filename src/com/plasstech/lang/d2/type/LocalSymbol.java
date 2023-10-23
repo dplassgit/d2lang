@@ -13,7 +13,8 @@ public class LocalSymbol extends VariableSymbol {
     return offset;
   }
 
-  public void setOffset(int offset) {
+  public LocalSymbol setOffset(int offset) {
     this.offset = offset;
+    return this;
   }
 }

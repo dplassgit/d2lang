@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.VariableLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
@@ -18,7 +19,7 @@ import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.Field;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 class RecordCodeGenerator extends DefaultOpcodeVisitor {
@@ -28,11 +29,11 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
   private final Resolver resolver;
   private final Emitter emitter;
-  private final SymTab symTab;
+  private final SymbolTable symTab;
 
   private final NullPointerCheckGenerator npeCheckGenerator;
 
-  RecordCodeGenerator(Resolver resolver, SymTab symTab, Emitter emitter) {
+  RecordCodeGenerator(Resolver resolver, SymbolTable symTab, Emitter emitter) {
     this.resolver = resolver;
     this.symTab = symTab;
     this.emitter = emitter;
@@ -203,9 +204,12 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       resolver.mov(right, RDX);
     }
 
-    // set the size
-    VarType leftType = left.type();
-    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(leftType.name());
+    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(left.type().name());
+    if (recordSymbol == null) {
+      VariableLocation variable = (VariableLocation) left;
+      recordSymbol = variable.symbol().recordSymbol();
+    }
+
     emitter.emit("mov R8, %s  ; size", recordSymbol.allocatedSize());
     emitter.emitExternCall("memcmp");
     emitter.emit("cmp RAX, 0");
@@ -233,8 +237,14 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     npeCheckGenerator.generateNullPointerCheck(op.position(), op.left());
 
     Operand record = op.left();
-    VarType type = record.type();
-    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(type.name());
+    if (!record.type().isRecord()) {
+      emitter.fail("Cannot get field of non record %s", record);
+    }
+    VariableLocation variable = (VariableLocation) record;
+    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(record.type().name());
+    if (recordSymbol == null) {
+      recordSymbol = variable.symbol().recordSymbol();
+    }
 
     String recordLoc = resolver.resolve(op.left());
     Register calcReg = resolver.allocate(VarType.INT);

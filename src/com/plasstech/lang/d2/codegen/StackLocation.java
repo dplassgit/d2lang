@@ -2,21 +2,15 @@ package com.plasstech.lang.d2.codegen;
 
 import java.util.Objects;
 
-import com.plasstech.lang.d2.type.SymbolStorage;
-import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.LocalSymbol;
 
-public class StackLocation extends Location {
+public class StackLocation extends VariableLocation {
 
   private final int offset;
 
-  public StackLocation(String name, VarType varType, int offset) {
-    super(name, varType);
-    this.offset = offset;
-  }
-
-  @Override
-  public SymbolStorage storage() {
-    return SymbolStorage.LOCAL;
+  public StackLocation(LocalSymbol local) {
+    super(local);
+    this.offset = local.offset();
   }
 
   /** this is ALWAYS positive */

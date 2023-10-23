@@ -33,7 +33,7 @@ public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void notProc(@TestParameter boolean bool) throws Exception {
-    execute(String.format("f:proc{a=%s c=not a print a print c} f()", bool), "notProc" + bool);
+    execute(String.format("f:proc{a=%s b=not a print a print b} f()", bool), "notProc" + bool);
   }
 
   @Test

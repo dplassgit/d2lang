@@ -12,18 +12,18 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.ParamLocation;
-import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.BlockNode;
+import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.TypeCheckResult;
@@ -42,9 +42,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftParamParamParamByte() {
-    Operand right = new ParamLocation("right", VarType.BYTE, 0, 0);
-    Operand left = new ParamLocation("left", VarType.BYTE, 0, 0);
-    Location dest = new ParamLocation("dest", VarType.BYTE, 0, 0);
+    Operand right = LocationUtils.newParamLocation("right", VarType.BYTE, 0, 0);
+    Operand left = LocationUtils.newParamLocation("left", VarType.BYTE, 0, 0);
+    Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 0, 0);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -60,9 +60,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftParamParamParam() {
-    Operand right = new ParamLocation("right", VarType.INT, 0, 0);
-    Operand left = new ParamLocation("left", VarType.INT, 0, 0);
-    Location dest = new ParamLocation("dest", VarType.INT, 0, 0);
+    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 0, 0);
+    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 0, 0);
+    Location dest = LocationUtils.newParamLocation("dest", VarType.INT, 0, 0);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -79,9 +79,9 @@ public class NasmCodeGeneratorTest {
   @Test
   public void shiftLeftTempParamParam() {
     registers.reserve(IntRegister.RCX);
-    Operand right = new ParamLocation("right", VarType.INT, 0, 0);
-    Operand left = new ParamLocation("left", VarType.INT, 0, 0);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 0, 0);
+    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 0, 0);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -99,9 +99,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftTempMemoryParam() {
-    Operand right = new ParamLocation("right", VarType.INT, 1, 0);
-    Operand left = new StackLocation("left", VarType.INT, 12);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 1, 0);
+    Operand left = LocationUtils.newStackLocation("left", VarType.INT, 12);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -116,9 +116,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftTempParamStack() {
-    Operand right = new StackLocation("right", VarType.INT, 12);
-    Operand left = new ParamLocation("left", VarType.INT, 2, 0);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newStackLocation("right", VarType.INT, 12);
+    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 2, 0);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -133,9 +133,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftTempStackParam() {
-    Operand right = new ParamLocation("right", VarType.INT, 2, 0);
-    Operand left = new StackLocation("left", VarType.INT, 12);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 2, 0);
+    Operand left = LocationUtils.newStackLocation("left", VarType.INT, 12);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -150,9 +150,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftTempMemoryStack() {
-    Operand right = new StackLocation("right", VarType.INT, 12);
-    Operand left = new MemoryAddress("left", VarType.INT);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newStackLocation("right", VarType.INT, 12);
+    Operand left = LocationUtils.newMemoryAddress("left", VarType.INT);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -167,9 +167,9 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftTempMemoryMemory() {
-    Operand right = new MemoryAddress("right", VarType.INT);
-    Operand left = new MemoryAddress("left", VarType.INT);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand right = LocationUtils.newMemoryAddress("right", VarType.INT);
+    Operand left = LocationUtils.newMemoryAddress("left", VarType.INT);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
 
     generateOne(shiftOp);
@@ -185,7 +185,7 @@ public class NasmCodeGeneratorTest {
   @Test
   public void ascConstantToTemp() {
     Operand source = ConstantOperand.of("hi");
-    Location dest = new TempLocation("dest", VarType.INT);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
 
     generateOne(ascOp);
@@ -197,8 +197,8 @@ public class NasmCodeGeneratorTest {
   @Test
   public void ascParamToTemp() {
     // really, reg to reg
-    Operand source = new ParamLocation("source", VarType.STRING, 0, 0);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand source = LocationUtils.newParamLocation("source", VarType.STRING, 0, 0);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
 
     generateOne(ascOp);
@@ -212,8 +212,8 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void ascStackToTemp() {
-    Operand source = new StackLocation("source", VarType.STRING, 4);
-    Location dest = new TempLocation("dest", VarType.INT);
+    Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
+    Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
     UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
 
     generateOne(ascOp);
@@ -230,9 +230,9 @@ public class NasmCodeGeneratorTest {
   @Test
   @Ignore("Should not pass")
   public void ascStackToStack() {
-    Operand source = new StackLocation("source", VarType.STRING, 4);
+    Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
     // This should never happen; dests are usually temps stored in registers.
-    Location dest = new StackLocation("dest", VarType.INT, 8);
+    Location dest = LocationUtils.newStackLocation("dest", VarType.INT, 8);
     UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
 
     generateOne(ascOp);
@@ -260,7 +260,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void printDoubleGlobal() {
-    Operand doubleReg = new MemoryAddress("double", VarType.DOUBLE);
+    Operand doubleReg = LocationUtils.newMemoryAddress("double", VarType.DOUBLE);
     Op op = new SysCall(Call.PRINT, doubleReg);
     generateOne(op);
     assertThat(emitter)
@@ -269,7 +269,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void printDoubleStack() {
-    Operand doubleReg = new StackLocation("_double", VarType.DOUBLE, 4);
+    Operand doubleReg = LocationUtils.newStackLocation("_double", VarType.DOUBLE, 4);
     Op op = new SysCall(Call.PRINT, doubleReg);
     generateOne(op);
     assertThat(emitter)
@@ -278,7 +278,7 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void printlnDoubleStack() {
-    Operand doubleReg = new StackLocation("_double", VarType.DOUBLE, 4);
+    Operand doubleReg = LocationUtils.newStackLocation("_double", VarType.DOUBLE, 4);
     Op op = new SysCall(Call.PRINTLN, doubleReg);
     generateOne(op);
     assertThat(emitter)
@@ -295,6 +295,7 @@ public class NasmCodeGeneratorTest {
 
   private State generateOne(Op shiftOp) {
     State state = State.create();
+    state = state.addProgramNode(new ProgramNode(BlockNode.EMPTY));
     TypeCheckResult typeCheckResult = new TypeCheckResult(new SymTab());
     state = state.addTypecheckResult(typeCheckResult);
     state = state.addIlCode(ImmutableList.of(shiftOp));

@@ -35,6 +35,7 @@ import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.BreakNode;
 import com.plasstech.lang.d2.parse.node.CallNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
@@ -60,32 +61,35 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.BlockSymbol;
 import com.plasstech.lang.d2.type.LocalSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
 public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private SymTab symbolTable;
-
+  private SymbolTable symbolTable;
+  private SymbolTable globals;
+  private final Stack<ProcSymbol> procedures = new Stack<>();
   private final List<Op> operations = new ArrayList<>();
   private final Stack<String> whileBreaks = new Stack<>();
   private final Stack<String> whileContinues = new Stack<>();
 
   private int id;
-  private Stack<ProcSymbol> procedures = new Stack<>();
 
   @Override
   public State execute(State input) {
     symbolTable = input.symbolTable();
+    globals = symbolTable;
     try {
       ImmutableList<Op> code = generate(input.programNode());
       return input.addIlCode(code);
@@ -105,13 +109,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     operations.add(op);
   }
 
-  private SymTab symbolTable() {
-    if (procedures.isEmpty()) {
-      return symbolTable;
-    }
-    return procedures.peek().symTab();
-  }
-
   private String nextLabel(String prefix) {
     // leading underscore is an illegal character so this will never conflict.
     return String.format("__%s_%d", prefix, ++id);
@@ -119,29 +116,30 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private TempLocation allocateTemp(VarType varType) {
     String name = String.format("__temp%d", ++id);
-    symbolTable().declareTemp(name, varType);
-    return new TempLocation(name, varType);
+    VariableSymbol symbol = symbolTable.declareTemp(name, varType);
+    return new TempLocation(symbol);
   }
 
   private Location lookupLocation(String name) {
-    Symbol variable = symbolTable().getRecursive(name);
-    if (variable == null) {
+    Symbol symbol = symbolTable.getRecursive(name);
+    if (symbol == null) {
       throw new IllegalStateException(
           String.format("Cannot find location of %s in symbol table", name));
     }
+    VariableSymbol variable = (VariableSymbol) symbol;
     switch (variable.storage()) {
       case HEAP:
       case GLOBAL:
-        return new MemoryAddress(name, variable.varType());
+        return new MemoryAddress(variable);
 
       case LOCAL:
         LocalSymbol local = (LocalSymbol) variable;
         // captures its offset
-        return new StackLocation(local.name(), local.varType(), local.offset());
+        return new StackLocation(local);
 
       case PARAM:
         ParamSymbol param = (ParamSymbol) variable;
-        return new ParamLocation(name, variable.varType(), param.index(), param.offset());
+        return new ParamLocation(param);
 
       default:
         throw new IllegalStateException(
@@ -172,16 +170,16 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     expr.accept(this);
     if (expr.varType().isArray()) {
       // Need 2 globals: index and length. Can't use temps, because they're one-time-use.
-      if (symbolTable.lookup("array_print_index") == VarType.UNKNOWN) {
-        symbolTable.declare("array_print_index", VarType.INT);
+      if (globals.lookup("array_print_index") == VarType.UNKNOWN) {
+        globals.declare("array_print_index", VarType.INT);
       }
       Location index = lookupLocation("array_print_index");
       ArrayType arrayType = (ArrayType) expr.varType();
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("[")));
       emit(new Transfer(index, ConstantOperand.of(0), node.position()));
       // length = calculate length of array
-      if (symbolTable.lookup("array_print_length") == VarType.UNKNOWN) {
-        symbolTable.declare("array_print_length", VarType.INT);
+      if (globals.lookup("array_print_length") == VarType.UNKNOWN) {
+        globals.declare("array_print_length", VarType.INT);
       }
       Location length = lookupLocation("array_print_length");
       TempLocation tempLength = allocateTemp(VarType.INT);
@@ -277,7 +275,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
           @Override
           public void visit(FieldSetNode fsn) {
-            Symbol sym = symbolTable().getRecursive(fsn.variableName());
+            Symbol sym = symbolTable.getRecursive(fsn.variableName());
             if (sym != null) {
               Location recordLocation = lookupLocation(fsn.variableName());
               VarType varType = sym.varType();
@@ -287,7 +285,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
                     fsn.position(),
                     "Internal");
               }
-              Symbol hopefullyRecordSymbol = symbolTable().getRecursive(varType.name());
+              Symbol hopefullyRecordSymbol = symbolTable.getRecursive(varType.name());
 
               String fieldName = fsn.fieldName();
 
@@ -306,7 +304,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           @Override
           public void visit(ArraySetNode asn) {
             // Look up storage in current symbol table
-            Symbol sym = symbolTable().getRecursive(asn.variableName());
+            Symbol sym = symbolTable.getRecursive(asn.variableName());
             if (sym != null) {
               Location arrayLocation = lookupLocation(asn.variableName());
 
@@ -340,7 +338,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(NewNode node) {
-    RecordSymbol symbol = (RecordSymbol) symbolTable().getRecursive(node.recordName());
+    RecordSymbol symbol = (RecordSymbol) symbolTable.getRecursive(node.recordName());
     TempLocation recordLocation = allocateTemp(symbol.varType());
     node.setLocation(recordLocation);
     emit(new AllocateOp(recordLocation, symbol, node.position()));
@@ -659,35 +657,67 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   @Override
-  public void visit(ProcedureNode node) {
-    // Look up procedure in current scope
-    ProcSymbol procSym = (ProcSymbol) symbolTable().getRecursive(node.name());
-    assert (procSym != null);
+  public void visit(BlockNode node) {
+    BlockSymbol blockSymbol = symbolTable.enterBlock(node);
+    symbolTable = blockSymbol.symTab();
+    super.visit(node);
+    symbolTable = symbolTable.parent();
+  }
 
-    procedures.push(procSym);
+  /**
+   * Some "locals" are declared in a procedure's child block node's symbol table, so we have to
+   * recursively look at *all* child blocks and make sure the offsets work from top to bottom.
+   */
+  private static class LocalOffsetAssigner extends DefaultNodeVisitor {
+    private int localBytes = 0;
+    private SymbolTable mySymbolTable;
+
+    private LocalOffsetAssigner(SymbolTable mySymbolTable) {
+      this.mySymbolTable = mySymbolTable;
+    }
+
+    @Override
+    public void visit(BlockNode node) {
+      BlockSymbol blockSymbol = mySymbolTable.enterBlock(node);
+      SymbolTable symTab = blockSymbol.symTab();
+      ImmutableList<Symbol> locals =
+          symTab
+              .variables()
+              .values()
+              .stream()
+              .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
+              .collect(ImmutableList.toImmutableList());
+      for (Symbol symbol : locals) {
+        LocalSymbol localSymbol = (LocalSymbol) symbol;
+        localBytes += localSymbol.varType().size();
+        localSymbol.setOffset(localBytes);
+      }
+      mySymbolTable = symTab;
+      super.visit(node);
+      mySymbolTable = symTab.parent();
+    }
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
+    // Look up procedure in current scope. AHA that's the way we need to do it.
+    ProcSymbol procSymbol = (ProcSymbol) symbolTable.getRecursive(node.name());
+    assert (procSymbol != null);
+
+    procedures.push(procSymbol);
+    symbolTable = procSymbol.symTab();
+
     // Guard to prevent just falling into this method
     String afterLabel = nextLabel("after_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 
     // This is the real entry point.
-    emit(new Label(procSym.mungedName()));
-    SymTab symTab = procSym.symTab();
-    ImmutableList<Symbol> locals =
-        symTab
-            .entries()
-            .values()
-            .stream()
-            .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
-            .collect(ImmutableList.toImmutableList());
-    int localBytes = 0;
-    for (Symbol symbol : locals) {
-      LocalSymbol localSymbol = (LocalSymbol) symbol;
-      localBytes += localSymbol.varType().size();
-      localSymbol.setOffset(localBytes);
-    }
+    emit(new Label(procSymbol.mungedName()));
+    LocalOffsetAssigner assigner = new LocalOffsetAssigner(symbolTable);
+    assigner.visit(node);
 
-    ImmutableList<ParamSymbol> formals = procSym.formals();
+    ImmutableList<ParamSymbol> formals = procSymbol.formals();
     int paramBytes = 8; // 8 for the return address on the stack
     for (int i = 0; i < formals.size(); ++i) {
       if (i > 3) {
@@ -697,7 +727,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       }
     }
 
-    emit(new ProcEntry(node.name(), formals, localBytes));
+    emit(new ProcEntry(node.name(), formals, assigner.localBytes));
 
     node.block().accept(this);
 
@@ -707,9 +737,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new Return(node.name()));
     }
 
-    emit(new ProcExit(node.name(), localBytes));
+    emit(new ProcExit(node.name(), assigner.localBytes));
     emit(new Label(afterLabel));
 
+    symbolTable = symbolTable.parent();
     procedures.pop();
   }
 
@@ -727,10 +758,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     // look up the procedure node to get its parameter list to put into the
     // call object
-    Symbol symbol = symbolTable().getRecursive(node.procName());
+    Symbol symbol = symbolTable.getRecursive(node.procName());
     if (!(symbol instanceof ProcSymbol)) {
       throw new RuntimeException(
-          "proc " + node.procName() + " not found in symtab " + symbolTable());
+          "proc " + node.procName() + " not found in symtab " + symbolTable);
     }
     ProcSymbol procSym = (ProcSymbol) symbol;
     ImmutableList<Location> formals = procSymFormals(procSym);
@@ -746,17 +777,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     emit(call);
   }
 
-  private ImmutableList<Location> procSymFormals(ProcSymbol procSym) {
-    ImmutableList<ParamSymbol> formals = procSym.formals();
-
-    ImmutableList.Builder<Location> formalLocations = ImmutableList.builder();
-    int i = 0;
-    for (ParamSymbol formal : formals) {
-      // TODO(bug #194): Why is this here, and also in lookupLocation, where it *really* sets the
-      // offset? Maybe these should just be the symbols?
-      formalLocations.add(new ParamLocation(formal.name(), formal.varType(), i++, -1));
-    }
-    return formalLocations.build();
+  /**
+   * Convert the formals list to a list of Locations (ParamLocations).
+   */
+  private static ImmutableList<Location> procSymFormals(ProcSymbol procSym) {
+    return procSym.formals().stream().map(formal -> new ParamLocation(formal))
+        .collect(toImmutableList());
   }
 
   @Override

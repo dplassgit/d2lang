@@ -14,8 +14,9 @@ public class ParamSymbol extends VariableSymbol {
     return index;
   }
 
-  public void setOffset(int offset) {
+  public ParamSymbol setOffset(int offset) {
     this.offset = offset;
+    return this;
   }
 
   public int offset() {

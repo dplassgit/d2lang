@@ -7,12 +7,12 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
-import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -22,20 +22,20 @@ public class AdjacentArithmeticOptimizerTest {
           ImmutableList.of(new AdjacentArithmeticOptimizer(2), new NopOptimizer()))
           .setDebugLevel(2);
 
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
-  private static final TempLocation TEMP3 = new TempLocation("temp3", VarType.INT);
-  private static final TempLocation LTEMP1 = new TempLocation("temp1", VarType.LONG);
-  private static final TempLocation LTEMP2 = new TempLocation("temp2", VarType.LONG);
-  private static final TempLocation LTEMP3 = new TempLocation("temp3", VarType.LONG);
-  private static final TempLocation DTEMP1 = new TempLocation("temp1", VarType.DOUBLE);
-  private static final TempLocation DTEMP2 = new TempLocation("temp2", VarType.DOUBLE);
-  private static final TempLocation DTEMP3 = new TempLocation("temp3", VarType.DOUBLE);
-  private static final TempLocation BTEMP1 = new TempLocation("temp1", VarType.BYTE);
-  private static final TempLocation BTEMP2 = new TempLocation("temp2", VarType.BYTE);
-  private static final TempLocation BTEMP3 = new TempLocation("temp3", VarType.BYTE);
-  private static final Location VAR1 = new MemoryAddress("a", VarType.INT);
-  private static final Location VAR2 = new MemoryAddress("b", VarType.INT);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
+  private static final TempLocation TEMP3 = LocationUtils.newTempLocation("temp3", VarType.INT);
+  private static final TempLocation LTEMP1 = LocationUtils.newTempLocation("temp1", VarType.LONG);
+  private static final TempLocation LTEMP2 = LocationUtils.newTempLocation("temp2", VarType.LONG);
+  private static final TempLocation LTEMP3 = LocationUtils.newTempLocation("temp3", VarType.LONG);
+  private static final TempLocation DTEMP1 = LocationUtils.newTempLocation("temp1", VarType.DOUBLE);
+  private static final TempLocation DTEMP2 = LocationUtils.newTempLocation("temp2", VarType.DOUBLE);
+  private static final TempLocation DTEMP3 = LocationUtils.newTempLocation("temp3", VarType.DOUBLE);
+  private static final TempLocation BTEMP1 = LocationUtils.newTempLocation("temp1", VarType.BYTE);
+  private static final TempLocation BTEMP2 = LocationUtils.newTempLocation("temp2", VarType.BYTE);
+  private static final TempLocation BTEMP3 = LocationUtils.newTempLocation("temp3", VarType.BYTE);
+  private static final Location VAR1 = LocationUtils.newMemoryAddress("a", VarType.INT);
+  private static final Location VAR2 = LocationUtils.newMemoryAddress("b", VarType.INT);
 
   @Test
   public void plusPlus() {

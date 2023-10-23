@@ -18,6 +18,7 @@ public class NasmCodeGeneratorLogicFlowTest extends NasmCodeGeneratorTestBase {
     execute(
         "      n1 = 0 "
             + "n2 = 1 "
+            + "nth = 0 "
             + "i=1 while i <= 10 do i = i + 1 {"
             + "  nth = n1 + n2"
             + "  n1 = n2"
@@ -33,6 +34,7 @@ public class NasmCodeGeneratorLogicFlowTest extends NasmCodeGeneratorTestBase {
         "n=10\r\n"
             + "n1 = 0\r\n"
             + "n2 = 1\r\n"
+            + "nth = 0\r\n"
             + "i=1 while i <= n do i = i+1 {\r\n"
             + "  nth = n1 + n2\r\n"
             + "  n1 = n2\r\n"

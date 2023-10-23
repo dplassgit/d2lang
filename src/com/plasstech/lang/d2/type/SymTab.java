@@ -6,15 +6,16 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 
 /** Symbol Table. */
-public class SymTab {
+public class SymTab implements SymbolTable {
 
   private final Map<String, Symbol> values = new HashMap<>();
-  private final SymTab parent;
+  private final SymbolTable parent;
   private final SymbolStorage storage;
 
   public SymTab() {
@@ -22,27 +23,30 @@ public class SymTab {
     this.storage = SymbolStorage.GLOBAL;
   }
 
-  private SymTab(SymTab parent) {
+  private SymTab(SymbolTable parent, SymbolStorage storage) {
     this.parent = parent;
-    this.storage = SymbolStorage.LOCAL;
+    this.storage = storage;
   }
 
-  public SymTab spawn() {
-    return new SymTab(this);
+  private SymTab spawn() {
+    return new SymTab(this, SymbolStorage.LOCAL);
   }
 
+  @Override
   public boolean isAssigned(String name) {
-    Symbol sym = values.get(name);
+    Symbol sym = getRecursive(name);
     return sym != null && sym.isAssigned();
   }
 
+  @Override
   public VarType lookup(String name) {
     return lookup(name, true);
   }
 
-  public VarType lookup(String name, boolean inherit) {
+  @Override
+  public VarType lookup(String name, boolean recurse) {
     Symbol sym;
-    if (inherit) {
+    if (recurse) {
       sym = getRecursive(name);
     } else {
       sym = get(name);
@@ -53,6 +57,7 @@ public class SymTab {
     return sym.varType();
   }
 
+  @Override
   public Symbol getRecursive(String name) {
     Symbol sym = values.get(name);
     if (sym == null && parent != null) {
@@ -61,16 +66,19 @@ public class SymTab {
     return sym;
   }
 
+  @Override
   public Symbol get(String name) {
     return values.get(name);
   }
 
   /** Returns all symbols in this level of the table. */
+  @Override
   public ImmutableMap<String, Symbol> entries() {
     return ImmutableMap.copyOf(values);
   }
 
   /** Returns all the variables in this level of the table. */
+  @Override
   public ImmutableMap<String, Symbol> variables() {
     return ImmutableMap.copyOf(
         values
@@ -80,10 +88,12 @@ public class SymTab {
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
   }
 
-  public Symbol declareTemp(String name, VarType varType) {
+  @Override
+  public VariableSymbol declareTemp(String name, VarType varType) {
     return declareVariable(name, varType, SymbolStorage.TEMP);
   }
 
+  @Override
   public ParamSymbol declareParam(String name, VarType varType, int index) {
     Preconditions.checkState(
         !values.containsKey(name),
@@ -97,10 +107,12 @@ public class SymTab {
     // parameters are always assigned, by definition.
     ParamSymbol param = new ParamSymbol(name, index);
     param.setVarType(varType).setAssigned();
+    maybeSetRecordSymbol(varType, param);
     values.put(name, param);
     return param;
   }
 
+  @Override
   public ExternProcSymbol declareProc(ExternProcedureNode node) {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
@@ -116,12 +128,13 @@ public class SymTab {
     return procSymbol;
   }
 
+  @Override
   public ProcSymbol declareProc(ProcedureNode node) {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
       throw new TypeException(
           String.format(
-              "%s already declared as %s. Cannot be redeclared as procedure.",
+              "%s already declared as %s. Cannot be redeclared as PROC.",
               node.name(), sym.varType()),
           node.position());
     }
@@ -131,6 +144,21 @@ public class SymTab {
     return procSymbol;
   }
 
+  @Override
+  public BlockSymbol enterBlock(BlockNode node) {
+    BlockSymbol blockSymbol = (BlockSymbol) getRecursive(node.name());
+    if (blockSymbol != null) {
+      return blockSymbol;
+    }
+    // Don't do a spawn because the block's storage must be the same as its parent's, and spawn 
+    // always creates a "local" symbol table.
+    SymbolTable child = new SymTab(this, this.storage);
+    blockSymbol = new BlockSymbol(node, child);
+    values.put(node.name(), blockSymbol);
+    return blockSymbol;
+  }
+
+  @Override
   public RecordSymbol declareRecord(RecordDeclarationNode node) {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
@@ -146,11 +174,12 @@ public class SymTab {
   }
 
   // It's only declared.
+  @Override
   public Symbol declare(String name, VarType varType) {
     return declareVariable(name, varType, this.storage);
   }
 
-  private Symbol declareVariable(String name, VarType varType, SymbolStorage storage) {
+  private VariableSymbol declareVariable(String name, VarType varType, SymbolStorage storage) {
     Preconditions.checkState(
         !values.containsKey(name),
         "%s already declared as %s. Cannot be redeclared as %s.",
@@ -159,12 +188,14 @@ public class SymTab {
         varType);
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
-    Symbol sym = createVariable(name, storage).setVarType(varType);
+    VariableSymbol sym = createVariable(name, storage);
+    maybeSetRecordSymbol(varType, sym);
+    sym.setVarType(varType);
     values.put(name, sym);
     return sym;
   }
 
-  private static Symbol createVariable(String name, SymbolStorage storage) {
+  private static VariableSymbol createVariable(String name, SymbolStorage storage) {
     if (storage == SymbolStorage.LOCAL) {
       return new LocalSymbol(name, storage);
     } else {
@@ -172,6 +203,7 @@ public class SymTab {
     }
   }
 
+  @Override
   public Symbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
@@ -183,20 +215,35 @@ public class SymTab {
           sym.varType(),
           varType);
     } else {
-      // this is wrong - we need to know if it's a local or a param - wth
       sym = createVariable(name, this.storage).setVarType(varType);
     }
+    maybeSetRecordSymbol(varType, (VariableSymbol) sym);
     sym.setAssigned();
     values.put(name, sym);
     return sym;
   }
 
-  @Override
-  public String toString() {
-    return values.values().toString();
+  private void maybeSetRecordSymbol(VarType varType, VariableSymbol sym) {
+    if (varType.isRecord()) {
+      RecordSymbol recordSymbol = (RecordSymbol) getRecursive(varType.name());
+      if (recordSymbol != null) {
+        sym.setRecordSymbol(recordSymbol);
+      }
+    }
   }
 
+  @Override
+  public String toString() {
+    return values.toString();
+  }
+
+  @Override
   public SymbolStorage storage() {
     return storage;
+  }
+
+  @Override
+  public SymbolTable parent() {
+    return parent;
   }
 }

@@ -4,10 +4,10 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.Errors;
 
 public class TypeCheckResult {
-  private final SymTab symTab;
+  private final SymbolTable symTab;
   private Errors errors;
 
-  public TypeCheckResult(SymTab symTab) {
+  public TypeCheckResult(SymbolTable symTab) {
     this.symTab = symTab;
   }
 
@@ -22,7 +22,7 @@ public class TypeCheckResult {
     this.errors = errors;
   }
 
-  public SymTab symbolTable() {
+  public SymbolTable symbolTable() {
     if (isError()) {
       throw new IllegalStateException("Cannot get symbol table from error result");
     }

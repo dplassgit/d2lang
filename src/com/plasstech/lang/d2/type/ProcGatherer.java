@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -17,10 +18,18 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
  * table.)
  */
 class ProcGatherer extends DefaultNodeVisitor {
-  private final SymTab symbolTable;
+  private SymbolTable symbolTable;
 
-  public ProcGatherer(SymTab symbolTable) {
+  public ProcGatherer(SymbolTable symbolTable) {
     this.symbolTable = symbolTable;
+  }
+
+  @Override
+  public void visit(BlockNode node) {
+    BlockSymbol blockSymbol = symbolTable.enterBlock(node);
+    symbolTable = blockSymbol.symTab();
+    super.visit(node);
+    symbolTable = symbolTable.parent();
   }
 
   @Override
@@ -79,6 +88,10 @@ class ProcGatherer extends DefaultNodeVisitor {
 
     // Add this procedure to the symbol table
     ProcSymbol procSymbol = symbolTable.declareProc(node);
+    symbolTable = procSymbol.symTab();
+    // Recurse, so the block's symbol table has this one as a parent.
+    super.visit(node);
+    symbolTable = symbolTable.parent();
 
     // add all formals to proc's symbol table
     int i = 0;

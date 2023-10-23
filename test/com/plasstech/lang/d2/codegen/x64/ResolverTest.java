@@ -12,33 +12,50 @@ import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ResolverTest {
 
-  private static final MemoryAddress GLOBAL_BYTE = new MemoryAddress("b", VarType.BYTE);
-  private static final MemoryAddress GLOBAL_DOUBLE = new MemoryAddress("d", VarType.DOUBLE);
-  private static final MemoryAddress GLOBAL_INT = new MemoryAddress("i", VarType.INT);
-  private static final MemoryAddress GLOBAL_STRING = new MemoryAddress("s", VarType.STRING);
-  private static final MemoryAddress GLOBAL_BYTE2 = new MemoryAddress("b2", VarType.BYTE);
-  private static final MemoryAddress GLOBAL_DOUBLE2 = new MemoryAddress("d2", VarType.DOUBLE);
-  private static final MemoryAddress GLOBAL_INT2 = new MemoryAddress("i2", VarType.INT);
-  private static final MemoryAddress GLOBAL_STRING2 = new MemoryAddress("s2", VarType.STRING);
+  private static final MemoryAddress GLOBAL_BYTE =
+      LocationUtils.newMemoryAddress("b", VarType.BYTE);
+  private static final MemoryAddress GLOBAL_DOUBLE =
+      LocationUtils.newMemoryAddress("d", VarType.DOUBLE);
+  private static final MemoryAddress GLOBAL_INT = LocationUtils.newMemoryAddress("i", VarType.INT);
+  private static final MemoryAddress GLOBAL_STRING =
+      LocationUtils.newMemoryAddress("s", VarType.STRING);
+  private static final MemoryAddress GLOBAL_BYTE2 =
+      LocationUtils.newMemoryAddress("b2", VarType.BYTE);
+  private static final MemoryAddress GLOBAL_DOUBLE2 =
+      LocationUtils.newMemoryAddress("d2", VarType.DOUBLE);
+  private static final MemoryAddress GLOBAL_INT2 =
+      LocationUtils.newMemoryAddress("i2", VarType.INT);
+  private static final MemoryAddress GLOBAL_STRING2 =
+      LocationUtils.newMemoryAddress("s2", VarType.STRING);
 
-  private static final StackLocation STACK_DOUBLE = new StackLocation("d1", VarType.DOUBLE, 8);
-  private static final StackLocation STACK_BYTE = new StackLocation("p1", VarType.BYTE, 4);
-  private static final StackLocation STACK_INT = new StackLocation("i1", VarType.INT, 12);
-  private static final StackLocation STACK_INT2 = new StackLocation("i1", VarType.INT, 4);
-  private static final StackLocation STACK_STRING = new StackLocation("s2", VarType.STRING, 16);
+  private static final StackLocation STACK_DOUBLE =
+      LocationUtils.newStackLocation("d1", VarType.DOUBLE, 8);
+  private static final StackLocation STACK_BYTE =
+      LocationUtils.newStackLocation("p1", VarType.BYTE, 4);
+  private static final StackLocation STACK_INT =
+      LocationUtils.newStackLocation("i1", VarType.INT, 12);
+  private static final StackLocation STACK_INT2 =
+      LocationUtils.newStackLocation("i1", VarType.INT, 4);
+  private static final StackLocation STACK_STRING =
+      LocationUtils.newStackLocation("s2", VarType.STRING, 16);
 
-  private static final ParamLocation PARAM_BYTE = new ParamLocation("p1", VarType.BYTE, 0, 0);
-  private static final ParamLocation PARAM_DOUBLE = new ParamLocation("d1", VarType.DOUBLE, 1, 0);
-  private static final ParamLocation PARAM_INT = new ParamLocation("i1", VarType.INT, 2, 0);
-  private static final ParamLocation PARAM_STRING = new ParamLocation("s2", VarType.STRING, 3, 0);
-  private static final TempLocation TEMP_BYTE = new TempLocation("__tempb", VarType.BYTE);
-  private static final TempLocation TEMP_DOUBLE = new TempLocation("__tempd", VarType.DOUBLE);
-  private static final TempLocation TEMP_INT = new TempLocation("__tempi", VarType.INT);
-  private static final TempLocation TEMP_STRING = new TempLocation("__temps", VarType.STRING);
+  private static final ParamLocation PARAM_BYTE =
+      LocationUtils.newParamLocation("p1", VarType.BYTE, 0, 0);
+  private static final ParamLocation PARAM_DOUBLE =
+      LocationUtils.newParamLocation("d1", VarType.DOUBLE, 1, 0);
+  private static final ParamLocation PARAM_INT =
+      LocationUtils.newParamLocation("i1", VarType.INT, 2, 0);
+  private static final ParamLocation PARAM_STRING =
+      LocationUtils.newParamLocation("s2", VarType.STRING, 3, 0);
+  private static final TempLocation TEMP_BYTE = LocationUtils.newTempLocation("__tempb", VarType.BYTE);
+  private static final TempLocation TEMP_DOUBLE = LocationUtils.newTempLocation("__tempd", VarType.DOUBLE);
+  private static final TempLocation TEMP_INT = LocationUtils.newTempLocation("__tempi", VarType.INT);
+  private static final TempLocation TEMP_STRING = LocationUtils.newTempLocation("__temps", VarType.STRING);
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new ListEmitter());
   private Registers registers = new Registers();

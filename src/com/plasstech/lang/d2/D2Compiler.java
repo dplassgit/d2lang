@@ -21,7 +21,7 @@ import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 public class D2Compiler {
 
@@ -53,7 +53,7 @@ public class D2Compiler {
     StaticChecker checker = new StaticChecker();
     state = checker.execute(state);
 
-    SymTab symbolTable = state.symbolTable();
+    SymbolTable symbolTable = state.symbolTable();
     if (options.debugint > 0) {
       System.out.println("------------------------------");
       System.out.println("\nSYMBOL TABLE:");

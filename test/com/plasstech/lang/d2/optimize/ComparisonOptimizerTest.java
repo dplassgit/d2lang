@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -17,8 +18,8 @@ public class ComparisonOptimizerTest {
       new ILOptimizer(ImmutableList.of(new ComparisonOptimizer(2), new NopOptimizer()))
           .setDebugLevel(2);
 
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
 
   @Test
   public void plus() {

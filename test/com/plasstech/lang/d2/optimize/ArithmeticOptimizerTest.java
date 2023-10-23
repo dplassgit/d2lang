@@ -25,6 +25,7 @@ import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
@@ -45,11 +46,12 @@ public class ArithmeticOptimizerTest {
               new DeadAssignmentOptimizer(0)))
           .setDebugLevel(2);
 
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
-  private static final TempLocation STRING_TEMP = new TempLocation("temp3", VarType.STRING);
-  private static final TempLocation DBL1 = new TempLocation("temp1", VarType.DOUBLE);
-  private static final StackLocation STACK1 = new StackLocation("stack1", VarType.INT, 4);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
+  private static final TempLocation STRING_TEMP = LocationUtils.newTempLocation("temp3", VarType.STRING);
+  private static final TempLocation DBL1 = LocationUtils.newTempLocation("temp1", VarType.DOUBLE);
+  private static final StackLocation STACK1 =
+      LocationUtils.newStackLocation("stack1", VarType.INT, 4);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
   private static final ConstantOperand<String> NULL_STRING =

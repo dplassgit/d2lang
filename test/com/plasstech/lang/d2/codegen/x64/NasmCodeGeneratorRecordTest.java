@@ -29,6 +29,12 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void declaredInProc_setField() throws Exception {
+    execute("f:proc:int{ rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1 return x.i}\n"
+        + "println f()", "declaredInProc_setField");
+  }
+
+  @Test
   public void setDoubleFieldConstant() throws Exception {
     execute("rt: record{d:double s:string} x=new rt x.d=3.0", "setDoubleFieldConstant");
   }

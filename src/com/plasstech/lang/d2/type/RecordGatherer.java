@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExprNode;
@@ -19,10 +20,26 @@ import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
  * wouldn't be able to add to the symbol table.)
  */
 class RecordGatherer extends DefaultNodeVisitor {
-  private final SymTab symbolTable;
+  private SymbolTable symbolTable;
 
-  public RecordGatherer(SymTab symbolTable) {
+  public RecordGatherer(SymbolTable symbolTable) {
     this.symbolTable = symbolTable;
+  }
+
+  @Override
+  public void visit(ProcedureNode node) {
+    ProcSymbol procSymbol = (ProcSymbol) symbolTable.get(node.name());
+    symbolTable = procSymbol.symTab();
+    super.visit(node);
+    symbolTable = symbolTable.parent();
+  }
+
+  @Override
+  public void visit(BlockNode node) {
+    BlockSymbol blockSymbol = symbolTable.enterBlock(node);
+    symbolTable = blockSymbol.symTab();
+    super.visit(node);
+    symbolTable = symbolTable.parent();
   }
 
   @Override

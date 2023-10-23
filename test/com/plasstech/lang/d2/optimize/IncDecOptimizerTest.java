@@ -15,16 +15,18 @@ import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class IncDecOptimizerTest {
   private static final ConstantOperand<Integer> TWO = ConstantOperand.of(2);
-  private static final TempLocation TEMP1 = new TempLocation("temp1", VarType.INT);
-  private static final TempLocation TEMP2 = new TempLocation("temp2", VarType.INT);
-  private static final StackLocation STACK = new StackLocation("stack", VarType.INT, 0);
-  private static final TempLocation SOURCE = new TempLocation("source", VarType.INT);
-  private static final TempLocation DEST = new TempLocation("dest", VarType.INT);
+  private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
+  private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
+  private static final StackLocation STACK =
+      LocationUtils.newStackLocation("stack", VarType.INT, 0);
+  private static final TempLocation SOURCE = LocationUtils.newTempLocation("source", VarType.INT);
+  private static final TempLocation DEST = LocationUtils.newTempLocation("dest", VarType.INT);
 
   private IncDecOptimizer optimizer = new IncDecOptimizer(2);
 

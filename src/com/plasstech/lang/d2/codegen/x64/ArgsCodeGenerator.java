@@ -1,14 +1,14 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 
 class ArgsCodeGenerator {
 
   private final Emitter emitter;
-  private final SymTab symbolTable;
+  private final SymbolTable symbolTable;
 
-  public ArgsCodeGenerator(Emitter emitter, SymTab symbolTable) {
+  public ArgsCodeGenerator(Emitter emitter, SymbolTable symbolTable) {
     this.emitter = emitter;
     this.symbolTable = symbolTable;
   }
