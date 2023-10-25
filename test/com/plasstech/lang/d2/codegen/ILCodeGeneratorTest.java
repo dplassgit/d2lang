@@ -202,6 +202,36 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void bug_269_variable_with_record_name() throws Exception {
+    expectError("r: record{} r=new r");
+  }
+
+  @Test
+  public void bug_269_variable_with_proc_name() throws Exception {
+    expectError("r: record{} r:proc{} r=new r");
+  }
+
+  private void expectError(String program) {
+    Lexer lexer = new Lexer(program);
+    State state = State.create(program).build();
+    Parser parser = new Parser(lexer);
+    state = parser.execute(state);
+    if (state.error()) {
+      return;
+    }
+    StaticChecker checker = new StaticChecker();
+    state = checker.execute(state);
+    if (state.error()) {
+      return;
+    }
+    ILCodeGenerator codegen = new ILCodeGenerator();
+    state = codegen.execute(state);
+    if (!state.error()) {
+      fail("Should have had an error");
+    }
+  }
+
+  @Test
   public void recordWithArray() {
     generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
   }

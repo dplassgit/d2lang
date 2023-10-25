@@ -29,6 +29,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
@@ -70,6 +71,7 @@ import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
+import com.plasstech.lang.d2.type.TypeException;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
 
@@ -120,11 +122,16 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     return new TempLocation(symbol);
   }
 
-  private Location lookupLocation(String name) {
+  private Location lookupLocation(String name, Position position) {
     Symbol symbol = symbolTable.getRecursive(name);
     if (symbol == null) {
-      throw new IllegalStateException(
-          String.format("Cannot find location of %s in symbol table", name));
+      throw new TypeException(
+          String.format("Cannot find symbol '%s'", name), position);
+    }
+    if (!(symbol instanceof VariableSymbol)) {
+      throw new TypeException(
+          String.format("%s already declared as %s; cannot be redeclared", name, symbol.varType()),
+          position);
     }
     VariableSymbol variable = (VariableSymbol) symbol;
     switch (variable.storage()) {
@@ -173,7 +180,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       if (globals.lookup("array_print_index") == VarType.UNKNOWN) {
         globals.declare("array_print_index", VarType.INT);
       }
-      Location index = lookupLocation("array_print_index");
+      Location index = lookupLocation("array_print_index", expr.position());
       ArrayType arrayType = (ArrayType) expr.varType();
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("[")));
       emit(new Transfer(index, ConstantOperand.of(0), node.position()));
@@ -181,7 +188,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       if (globals.lookup("array_print_length") == VarType.UNKNOWN) {
         globals.declare("array_print_length", VarType.INT);
       }
-      Location length = lookupLocation("array_print_length");
+      Location length = lookupLocation("array_print_length", expr.position());
       TempLocation tempLength = allocateTemp(VarType.INT);
       // can't assign right to the global because it barfs on the 2nd line:
       // mov RBX, [__arr] ; get array location into reg
@@ -268,7 +275,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
           @Override
           public void visit(VariableSetNode variableNode) {
-            Location dest = lookupLocation(variableNode.name());
+            Location dest = lookupLocation(variableNode.name(), variableNode.position());
             variableNode.setLocation(dest);
             emit(new Transfer(dest, rhsLocation, variableNode.position()));
           }
@@ -277,7 +284,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           public void visit(FieldSetNode fsn) {
             Symbol sym = symbolTable.getRecursive(fsn.variableName());
             if (sym != null) {
-              Location recordLocation = lookupLocation(fsn.variableName());
+              Location recordLocation = lookupLocation(fsn.variableName(), null);
               VarType varType = sym.varType();
               if (!varType.isRecord()) {
                 throw new D2RuntimeException(
@@ -306,7 +313,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             // Look up storage in current symbol table
             Symbol sym = symbolTable.getRecursive(asn.variableName());
             if (sym != null) {
-              Location arrayLocation = lookupLocation(asn.variableName());
+              Location arrayLocation = lookupLocation(asn.variableName(), null);
 
               Node indexNode = asn.indexNode();
               indexNode.accept(ILCodeGenerator.this);
@@ -331,7 +338,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(ArrayDeclarationNode node) {
     node.sizeExpr().accept(this);
-    Location dest = lookupLocation(node.name());
+    Location dest = lookupLocation(node.name(), node.position());
     node.setLocation(dest);
     emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location(), node.position()));
   }
@@ -403,7 +410,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(VariableNode node) {
     // This may be a global or a local/parameter (stack)
-    Location source = lookupLocation(node.name());
+    Location source = lookupLocation(node.name(), node.position());
     node.setLocation(source);
   }
 
@@ -787,7 +794,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(IncDecNode node) {
-    Location dest = lookupLocation(node.name());
+    Location dest = lookupLocation(node.name(), node.position());
     node.setLocation(dest);
     if (node.isIncrement()) {
       emit(new Inc(dest, node.position()));

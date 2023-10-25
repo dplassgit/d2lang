@@ -28,6 +28,7 @@ java_library(
         "//src/com/plasstech/lang/d2/phase",
         "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type",
+        "//src/com/plasstech/lang/d2/type:exception",
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
