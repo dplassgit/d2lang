@@ -867,12 +867,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
     if (arraySizeExpr.isConstant()) {
       ConstNode<Integer> size = (ConstNode<Integer>) arraySizeExpr;
-      if (size.value() <= 0) {
+      if (size.value() < 0) {
         // Peephole optimization
         errors.add(
             new D2RuntimeException(
                 String.format(
-                    "Size of ARRAY variable '%s' must be positive; was %d",
+                    "Size of ARRAY variable '%s' must be non-negative; was %d",
                     node.name(), size.value()),
                 arraySizeExpr.position(),
                 "Invalid value"));

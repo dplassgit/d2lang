@@ -1050,6 +1050,20 @@ public class ParserTest {
   }
 
   @Test
+  public void declEmptyArray() {
+    BlockNode root = parseStatements("a:int[0]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    ArrayDeclarationNode node = (ArrayDeclarationNode) statements.get(0);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.varType()).isArray();
+    assertThat(node.sizeExpr()).isInstanceOf(ConstNode.class);
+
+    assertThat(node.varType()).hasArrayBaseType(VarType.INT);
+  }
+
+  @Test
   public void arrayDeclVariableSize() {
     BlockNode root = parseStatements("a:int[b+3]");
     List<StatementNode> statements = root.statements();
@@ -1178,11 +1192,15 @@ public class ParserTest {
 
   @Test
   public void arrayLiteralErrors() {
-    assertParseError("a=[]", "Unexpected ']'");
     assertParseError("a=[a]", "all elements are UNKNOWN");
     assertParseError("a=[a+1]", "all elements are UNKNOWN");
     // this is no longer checked in parser; it's in the static checker now.
     // assertParseError("a=[1,'hi']", "Inconsistent types");
+  }
+
+  @Test
+  public void arrayLiteralEmpty() {
+    assertParseError("a=[]", "Unexpected ']'");
   }
 
   @Test

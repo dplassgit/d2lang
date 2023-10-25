@@ -155,6 +155,11 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void emptyArrayAlloc() {
+    generateProgram("a:int[0]");
+  }
+
+  @Test
   public void arrayGet() {
     generateProgram("a:int[3] print a[0]");
   }

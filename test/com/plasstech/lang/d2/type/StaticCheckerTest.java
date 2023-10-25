@@ -377,12 +377,19 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void arrayDecl() {
+  public void declArray() {
     checkProgram("a:int[3]");
     checkProgram("b=3 a:int[b]");
     checkProgram("b:proc():int {return 0} a:string[b()]");
     checkProgram("a:int[3] b=a");
     checkProgram("a:int[3] b:int[3] b=a");
+  }
+
+  @Test
+  public void declEmptyArray() {
+    // These are both allowed
+    checkProgram("a:int[0]");
+    checkProgram("b=0 a:int[b]");
   }
 
   @Test
@@ -530,8 +537,7 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayDeclError() {
-    assertError("a:int[0]", "must be positive; was 0");
-    assertError("a:int[-1]", "must be positive; was -1");
+    assertError("a:int[-1]", "must be non-negative; was -1");
     assertError("a:int[true]", "must be INT; was BOOL");
   }
 

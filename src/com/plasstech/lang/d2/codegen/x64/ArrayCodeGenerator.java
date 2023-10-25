@@ -32,7 +32,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
   private static final String ARRAY_INDEX_OOB_ERR =
       "ARRAY_INDEX_OOB_ERR: db \"Invalid index error at line %d: ARRAY index out of bounds (length %d); was %d\", 10, 0";
   private static final String ARRAY_SIZE_ERR =
-      "ARRAY_SIZE_ERR: db \"Invalid value error at line %d: ARRAY size must be positive; was %d\", 10, 0";
+      "ARRAY_SIZE_ERR: db \"Invalid value error at line %d: ARRAY size must be non-negative; was %d\", 10, 0";
 
   private final Resolver resolver;
   private final Emitter emitter;
@@ -63,9 +63,9 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // if numEntriesLocName is a constant, pre-calculate storage requirements
       ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
       int numEntries = numEntriesOp.value();
-      if (numEntries <= 0) {
+      if (numEntries < 0) {
         throw new D2RuntimeException(
-            String.format("ARRAY size must be positive; was %d", numEntries),
+            String.format("ARRAY size must be non-negative; was %d", numEntries),
             op.position(),
             "Invalid index");
       }
@@ -77,7 +77,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
           numEntries * entrySize);
     } else {
       // Validate array size is positive.
-      emitter.emit("cmp DWORD %s, 1  ; check for non-positive size", numEntriesLocName);
+      emitter.emit("cmp DWORD %s, 0  ; check for non-negative size", numEntriesLocName);
       String continueLabel = Labels.nextLabel("continue");
       emitter.emit("jge %s", continueLabel);
 
@@ -118,7 +118,16 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       numEntriesLocName = numEntriesReg.name32();
     }
     // TODO(#38): iterate over dimensions.
-    emitter.emit("mov DWORD [RAX+1], %s  ; store size of the first dimension", numEntriesLocName);
+    boolean setSize = true;
+    if (numEntriesLoc.isConstant()) {
+      // Peephole optimization: if size is 0, don't need to set the size, because we already
+      // use calloc.
+      ConstantOperand<Integer> numEntries = (ConstantOperand<Integer>) numEntriesLoc;
+      setSize = numEntries.value() > 0;
+    }
+    if (setSize) {
+      emitter.emit("mov DWORD [RAX+1], %s  ; store size of first dimension", numEntriesLocName);
+    }
     if (numEntriesReg != null) {
       emitter.emit("; deallocating numEntriesLoc from %s", numEntriesReg);
       resolver.deallocate(numEntriesReg);

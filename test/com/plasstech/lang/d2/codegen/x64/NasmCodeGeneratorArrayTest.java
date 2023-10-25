@@ -90,6 +90,20 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void emptyArray() throws Exception {
+    execute("x:string[0]", "emptyArray");
+  }
+
+  @Test
+  public void emptyArrayAsParam() throws Exception {
+    execute("f:proc(a:string[]): int { return length(a)} "
+        + "e:string[0] "
+        + "println f(['hi', 'there']) "
+        + "println f(e)",
+        "emptyArrayAsParam");
+  }
+
+  @Test
   public void arraySetAndGetString() throws Exception {
     execute(
         "x:string[2]\r\n"
@@ -211,10 +225,10 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     assumeTrue(optimize);
     assertGenerateError(
         "f:proc() {size=-3 x:string[size] print length(x)} f()",
-        "ARRAY size must be positive; was -3");
+        "ARRAY size must be non-negative; was -3");
     assertGenerateError(
-        "f:proc() {size=-3 x:string[size-size] print length(x)} f()",
-        "ARRAY size must be positive; was 0");
+        "f:proc() {size=-3 x:string[size+size] print length(x)} f()",
+        "ARRAY size must be non-negative; was -6");
   }
 
   @Test
@@ -222,11 +236,11 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     // If optimized, the proc or constant and it will degenerate to the previous test.
     assumeFalse(optimize);
     assertRuntimeError(
-        "s=-3 x:string[s]", "arrayAllocLengthNegative", "ARRAY size must be positive; was -3");
+        "s=-3 x:string[s]", "arrayAllocLengthNegative", "ARRAY size must be non-negative; was -3");
     assertRuntimeError(
         "x:string[size()] size: proc():int{return -3}",
         "arrayAllocCalLengthNegative",
-        "ARRAY size must be positive; was -3");
+        "ARRAY size must be non-negative; was -3");
   }
 
   @Test
