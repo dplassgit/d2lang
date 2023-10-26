@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -24,7 +23,6 @@ import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
 public class StringCodeGeneratorTest {
-  private static final Joiner NEWLINE_JOINER = Joiner.on("\n");
   private static final Location DESTINATION =
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
   private static final Location LEFT =
@@ -51,32 +49,28 @@ public class StringCodeGeneratorTest {
   public void nullVSConstantIsFalse(@TestParameter({"EQEQ", "GT", "GEQ"}) TokenType operand) {
     BinOp op = new BinOp(DESTINATION, NULL, operand, CONSTANT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    assertThat(code.get(0)).isEqualTo("mov BYTE CL, 0");
+    assertThat(code).isEmpty();
   }
 
   @Test
   public void nullVsConstantIsTrue(@TestParameter({"NEQ", "LT", "LEQ"}) TokenType operand) {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.NEQ, CONSTANT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    assertThat(code.get(0)).isEqualTo("mov BYTE CL, 1");
+    assertThat(code).isEmpty();
   }
 
   @Test
   public void nullEqVariable() {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.EQEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    assertThat(code).hasSize(2);
-    assertThat(code.get(0)).isEqualTo("cmp QWORD [RBP - 4], 0");
-    assertThat(code.get(1)).isEqualTo("setz CL");
+    assertThat(code).isEmpty();
   }
 
   @Test
   public void nullNeqVariable() {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.NEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    assertThat(code).hasSize(2);
-    assertThat(code.get(0)).isEqualTo("cmp QWORD [RBP - 4], 0");
-    assertThat(code.get(1)).isEqualTo("setnz CL");
+    assertThat(code).isEmpty();
   }
 
   @Test
@@ -163,9 +157,9 @@ public class StringCodeGeneratorTest {
   }
 
   private ImmutableList<String> generateUncommentedCode(BinOp op) {
-    sut.generateStringCompare(op);
-    System.err.printf("\nTEST CASE: %s\n\n", op);
-    System.err.println(NEWLINE_JOINER.join(emitter.all()));
+    op.accept(sut);
+    //    System.err.printf("\nTEST CASE: %s\n\n", op);
+    //    System.err.println(NEWLINE_JOINER.join(emitter.all()));
     return TestUtils.trimComments(emitter.all());
   }
 }

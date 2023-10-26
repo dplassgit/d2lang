@@ -111,8 +111,9 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(BinOp op) {
-    if (!op.left().type().isRecord() && !op.left().type().isNull()) {
-      emitter.fail("Cannot call RecordGenerator with op %s", op.toString());
+    VarType leftType = op.left().type();
+    if (!leftType.isRecord()) {
+      //      emitter.fail("Cannot call RecordGenerator with op %s", op.toString());
       return;
     }
     switch (op.operator()) {

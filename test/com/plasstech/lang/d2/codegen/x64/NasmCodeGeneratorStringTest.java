@@ -155,6 +155,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void equalityOpsNull(@TestParameter({"==", "!="}) String op) throws Exception {
     execute(String.format("a='abc' c=a %s null println c", op), "equalityOpsNullLiteral");
+    execute(String.format("a='abc' c=null %s a println c", op), "equalityOpsNullGlobal");
     execute(String.format("a='abc' b=null c=a %s b println c", op), "equalityOpsNullGlobal");
     execute(
         String.format("a='abc' b:string b=null c=b %s a println c", op), "equalityOpsNullAsString");

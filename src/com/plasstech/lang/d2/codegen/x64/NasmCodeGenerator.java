@@ -25,24 +25,16 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringFinder;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.TempLocation;
-import com.plasstech.lang.d2.codegen.il.AllocateOp;
-import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
-import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
-import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
-import com.plasstech.lang.d2.codegen.il.FieldSetOp;
-import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
-import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
-import com.plasstech.lang.d2.codegen.il.Stop;
-import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
@@ -54,7 +46,6 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.BlockSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
-import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
@@ -63,6 +54,16 @@ import com.plasstech.lang.d2.type.VarType;
 public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final Escaper ESCAPER = new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ",
       false);
+
+  static final Map<TokenType, String> COMPARISON_OPCODE =
+      ImmutableMap.<TokenType, String>builder()
+          .put(TokenType.EQEQ, "setz")
+          .put(TokenType.NEQ, "setnz")
+          .put(TokenType.GT, "setg")
+          .put(TokenType.GEQ, "setge")
+          .put(TokenType.LT, "setl")
+          .put(TokenType.LEQ, "setle")
+          .build();
 
   private static final Map<TokenType, String> BINARY_OPCODE = ImmutableMap
       .<TokenType, String>builder()
@@ -77,12 +78,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       .put(TokenType.BIT_XOR, "xor") // for ints
       .put(TokenType.SHIFT_LEFT, "shl")
       .put(TokenType.SHIFT_RIGHT, "sar")
-      .put(TokenType.EQEQ, "setz") // for both int and boolean
-      .put(TokenType.NEQ, "setnz") // for both int and boolean
-      .put(TokenType.GT, "setg") // for both int and boolean
-      .put(TokenType.GEQ, "setge") // for both int and boolean
-      .put(TokenType.LT, "setl") // for both int and boolean
-      .put(TokenType.LEQ, "setle") // for both intand boolean
+      .putAll(COMPARISON_OPCODE)
       .build();
 
   private final List<String> prelude = new ArrayList<>();
@@ -102,15 +98,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private DoubleTable doubleTable;
   private Resolver resolver;
 
-  private CallCodeGenerator callGenerator;
-  private RecordCodeGenerator recordGenerator;
-  private StringCodeGenerator stringGenerator;
   private NullPointerCheckGenerator npeCheckGenerator;
-  private ArrayCodeGenerator arrayGenerator;
-  private InputCodeGenerator inputGenerator;
-  private PrintCodeGenerator printGenerator;
-  private DoubleCodeGenerator doubleGenerator;
-  private ArgsCodeGenerator argsGenerator;
+  private OpcodeVisitor doubleGenerator;
 
   @Override
   public State execute(State input) {
@@ -119,15 +108,26 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
     resolver = new Resolver(registers, stringTable, doubleTable, emitter);
-    callGenerator = new CallCodeGenerator(resolver, emitter);
-    recordGenerator = new RecordCodeGenerator(resolver, globals, emitter);
+
     npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
-    stringGenerator = new StringCodeGenerator(resolver, emitter);
-    arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
-    inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
-    printGenerator = new PrintCodeGenerator(resolver, emitter);
     doubleGenerator = new DoubleCodeGenerator(resolver, emitter);
-    argsGenerator = new ArgsCodeGenerator(emitter, globals);
+
+    OpcodeVisitor arrayGenerator = new ArrayCodeGenerator(resolver, emitter);
+    OpcodeVisitor stringGenerator = new StringCodeGenerator(resolver, emitter);
+    OpcodeVisitor recordGenerator = new RecordCodeGenerator(resolver, globals, emitter);
+    OpcodeVisitor callGenerator = new CallCodeGenerator(resolver, emitter);
+    OpcodeVisitor inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
+    OpcodeVisitor printGenerator = new PrintCodeGenerator(resolver, emitter);
+    OpcodeVisitor labelCodeGenerator = new LabelCodeGenerator(emitter);
+    List<OpcodeVisitor> visitors = ImmutableList.of(
+        labelCodeGenerator,
+        inputGenerator,
+        printGenerator,
+        callGenerator,
+        stringGenerator,
+        arrayGenerator,
+        recordGenerator,
+        this);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -150,8 +150,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.addData(entry.dataEntry());
     }
 
-    emit0("main:");
+    emitter.emit0("main:");
     // Convert command-line arguments to a D-style array of strings
+    ArgsCodeGenerator argsGenerator = new ArgsCodeGenerator(emitter, globals);
     argsGenerator.generate();
 
     try {
@@ -159,13 +160,21 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         // need to escape this!
         String opcodeString = opcode.toString();
         String escaped = ESCAPER.escape(opcodeString);
-        emit0("");
+        emitter.emit0("");
         if (opcode.position() != null) {
           emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
         } else {
           emit("; SOURCE: %s", escaped);
         }
-        opcode.accept(this);
+
+        int length = emitter.all().size();
+        for (OpcodeVisitor visitor : visitors) {
+          opcode.accept(visitor);
+          if (emitter.all().size() > length) {
+            // This visitor handled the opcode, so we're done with this opcode.
+            break;
+          }
+        }
       }
     } catch (D2RuntimeException e) {
       ImmutableList<String> allCode = ImmutableList.<String>builder().add("PARTIAL ASSEMBLY\n\n")
@@ -220,66 +229,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   @Override
-  public void visit(Label op) {
-    emitter.emitLabel(op.label());
-  }
-
-  @Override
-  public void visit(Stop op) {
-    emitter.emitExit(op.exitCode());
-  }
-
-  @Override
-  public void visit(Goto op) {
-    emit("jmp %s", op.label());
-  }
-
-  @Override
-  public void visit(ArraySet op) {
-    arrayGenerator.visit(op);
-  }
-
-  @Override
   public void visit(Transfer op) {
     Operand source = op.source();
     Location destination = op.destination();
 
     resolver.mov(source, destination);
     resolver.deallocate(source);
-  }
-
-  @Override
-  public void visit(AllocateOp op) {
-    recordGenerator.visit(op);
-  }
-
-  @Override
-  public void visit(FieldSetOp op) {
-    recordGenerator.visit(op);
-  }
-
-  @Override
-  public void visit(ArrayAlloc op) {
-    arrayGenerator.visit(op);
-  }
-
-  @Override
-  public void visit(SysCall op) {
-    switch (op.call()) {
-      case MESSAGE:
-      case PRINT:
-      case PRINTLN:
-        printGenerator.visit(op);
-        break;
-
-      case INPUT:
-        inputGenerator.visit(op);
-        break;
-
-      default:
-        fail("Cannot generate %s yet", op);
-        break;
-    }
   }
 
   @Override
@@ -325,10 +280,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(BinOp op) {
     // 1. get left
-    ResolvedOperand leftRo = resolver.resolveFully(op.left());
-    String leftName = leftRo.name();
     VarType leftType = op.left().type();
 
+    ResolvedOperand leftRo = resolver.resolveFully(op.left());
+    String leftName = leftRo.name();
     // 2. get right
     ResolvedOperand rightRo = resolver.resolveFully(op.right());
 
@@ -359,33 +314,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // 5. [op] dest, right
     TokenType operator = op.operator();
-    if (leftType == VarType.STRING) {
-      switch (operator) {
-        case PLUS:
-          stringGenerator.generateStringAdd(op.destination(), op.left(), op.right(), op.position());
-          break;
-
-        case LBRACKET:
-          stringGenerator.generateStringIndex(op.destination(),
-              op.left(),
-              op.right(),
-              op.position());
-          break;
-
-        case EQEQ:
-        case NEQ:
-        case GT:
-        case GEQ:
-        case LT:
-        case LEQ:
-          stringGenerator.generateStringCompare(op);
-          break;
-
-        default:
-          fail("Cannot do %s on %ss (yet?)", operator, leftType);
-          break;
-      }
-    } else if (leftType == VarType.BOOL) {
+    if (leftType == VarType.BOOL) {
       switch (operator) {
         case AND:
         case OR:
@@ -409,6 +338,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
+    } else if (leftType == VarType.DOUBLE) {
+      op.accept(doubleGenerator);
     } else if (leftType.isIntegral()) {
       String size = Size.of(leftType).asmType;
       switch (operator) {
@@ -460,7 +391,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             }
             generateBinOp(rightRo, destRo, operator);
           } else {
-            // TODO: this is stupidly complex.
+            // TODO: bug https://github.com/dplassgit/d2lang/issues/177 - this is stupidly complex.
             Register rightReg = null;
             String rightName = rightRo.name();
             if (rightRo.register() == RCX) {
@@ -535,12 +466,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
-    } else if (leftType.isArray()) {
-      arrayGenerator.visit(op);
-    } else if (leftType.isRecord()) {
-      recordGenerator.visit(op);
-    } else if (leftType == VarType.DOUBLE) {
-      doubleGenerator.generate(op);
     } else if (leftType == VarType.NULL) {
       switch (operator) {
         case EQEQ:
@@ -658,7 +583,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       String continueLabel = Labels.nextLabel("not_div_by_zero");
       emit("jne %s", continueLabel);
 
-      emit0("\n  ; division by zero. print error and stop");
+      emitter.emit0("\n  ; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);
       emit("mov EDX, %d  ; line number", op.position().line());
       emit("mov RCX, DIV_BY_ZERO_ERR");
@@ -724,7 +649,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(UnaryOp op) {
     // 1. get source location name
     Operand source = op.operand();
-    String sourceName = resolver.resolve(source);
     // 2. apply op
     // 3. store in destination
     Location destination = op.destination();
@@ -745,7 +669,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
       case MINUS:
         if (source.type() == VarType.DOUBLE) {
-          doubleGenerator.generate(op, sourceName);
+          op.accept(doubleGenerator);
         } else {
           resolver.mov(source, destination);
           emit("neg %s  ; unary minus", destName);
@@ -753,11 +677,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
 
       case LENGTH:
-        if (source.type() == VarType.STRING) {
-          stringGenerator.generateStringLength(op.position(), destination, source);
-        } else if (source.type().isArray()) {
-          arrayGenerator.generateArrayLength(destination, source);
-        } else {
+        if (source.type() == VarType.NULL) {
+          // This is weird.
           throw new D2RuntimeException(
               String.format(
                   "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
@@ -804,10 +725,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           }
           emit("and %s, 0xff", destName);
         }
-        break;
-
-      case CHR:
-        stringGenerator.generateChr(op.operand(), op.destination());
         break;
 
       default:
@@ -868,70 +785,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       }
     }
 
-    emit0("__exit_of_%s:", op.procName());
+    emitter.emit0("__exit_of_%s:", op.procName());
     resolver.procEnd();
 
     emit("mov RSP, RBP");
     emit("pop RBP");
     emit("ret  ; return from procedure");
-  }
-
-  @Override
-  public void visit(Call op) {
-    RegisterState registerState = condPush(Register.VOLATILE_REGISTERS);
-
-    callGenerator.generate(op);
-    ProcSymbol procSym = op.procSym();
-    if (procSym.isExtern()) {
-      String alignedLabel = Labels.nextLabel("aligned");
-      String afterLabel = Labels.nextLabel("afterExternCall");
-      String externName = procSym.name();
-      emitter.addExtern(externName);
-      emitter.emit("test rsp, 8");
-      emitter.emit("je %s ; not a multiple of 8, it's aligned", alignedLabel);
-      emitter.emit("sub RSP, 0x28");
-      emitter.emit("call %s", externName);
-      emitter.emit("add RSP, 0x28");
-      emitter.emit("jmp %s", afterLabel);
-      emitter.emitLabel(alignedLabel);
-      emitter.emitExternCall(externName);
-      emitter.emitLabel(afterLabel);
-    } else {
-      emit("call %s", procSym.mungedName());
-    }
-    int numArgs = op.actuals().size();
-    if (numArgs > 3) {
-      // # of bytes we have to adjust the stack (pseudo-pop)
-      int bytes = 8 * (numArgs - 4);
-      emit("add RSP, %d  ; adjust for 5th-nth parameters pushed into stack", bytes);
-    }
-    Register tempReg = null;
-    if (op.destination().isPresent()) {
-      Location destination = op.destination().get();
-      Register returnReg = Registers.returnRegister(destination.type());
-      if (resolver.isAllocated(returnReg)) {
-        // it will be overwritten. let's stash it in a temp reg
-        tempReg = resolver.allocate(destination.type());
-        emit("; temporarily putting %s in %s", returnReg, tempReg);
-        resolver.mov(destination.type(), returnReg, tempReg);
-      }
-    }
-    registerState.condPop();
-    if (op.destination().isPresent()) {
-      Location destination = op.destination().get();
-      Register returnReg = Registers.returnRegister(destination.type());
-      if (tempReg == null) {
-        // Didn't have to stash it, just copy.
-        resolver.mov(returnReg, destination);
-      } else {
-        resolver.mov(tempReg, destination);
-        resolver.deallocate(tempReg);
-      }
-    }
-    for (int i = 0; i < op.actuals().size(); ++i) {
-      Operand actual = op.actuals().get(i);
-      resolver.deallocate(actual);
-    }
   }
 
   /** Conditionally push all allocated registers in the list */
@@ -941,10 +800,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void emit(String format, Object... values) {
     emitter.emit(format, values);
-  }
-
-  private void emit0(String format, Object... values) {
-    emitter.emit0(format, values);
   }
 
   private void fail(String format, Object... values) {

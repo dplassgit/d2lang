@@ -26,6 +26,9 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(SysCall op) {
+    if (op.call() != Call.PRINT && op.call() != Call.PRINTLN && op.call() != Call.MESSAGE) {
+      return;
+    }
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
 

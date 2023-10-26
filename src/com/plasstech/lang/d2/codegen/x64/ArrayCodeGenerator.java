@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
@@ -135,8 +136,16 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     resolver.deallocate(op.sizeLocation());
   }
 
+  @Override
+  public void visit(UnaryOp op) {
+    if (!op.operand().type().isArray() || op.operator() != TokenType.LENGTH) {
+      return;
+    }
+    generateArrayLength(op.destination(), op.operand());
+  }
+
   /** Generate destination=length(source) */
-  void generateArrayLength(Location destination, Operand source) {
+  private void generateArrayLength(Location destination, Operand source) {
     String sourceName = resolver.resolve(source);
     String destName = resolver.resolve(destination);
     if (resolver.isInAnyRegister(source)) {
@@ -213,9 +222,12 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(BinOp op) {
+    VarType leftType = op.left().type();
+    if (!leftType.isArray()) {
+      return;
+    }
     String leftName = resolver.resolve(op.left());
     String destName = resolver.resolve(op.destination());
-    VarType leftType = op.left().type();
     TokenType operator = op.operator();
     switch (operator) {
       case LBRACKET:
@@ -368,7 +380,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
    * Generate code that puts the location of the given index into the given array into the register
    * returned. full index=indexLoc*basetype.size() + 1+4*dimensions+arrayLoc
    */
-  Register generateArrayIndex(
+  private Register generateArrayIndex(
       Operand indexLoc,
       ArrayType arrayType,
       String arrayLoc,

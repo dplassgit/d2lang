@@ -10,6 +10,7 @@ import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 
 class InputCodeGenerator extends DefaultOpcodeVisitor {
   private static final int ONE_MB = 1024 * 1024;
@@ -33,6 +34,9 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
    */
   @Override
   public void visit(SysCall op) {
+    if (op.call() != Call.INPUT) {
+      return;
+    }
     Operand arg = op.arg();
     String destName = resolver.resolve(arg);
 

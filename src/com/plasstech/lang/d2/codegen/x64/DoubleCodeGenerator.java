@@ -9,12 +9,13 @@ import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
-class DoubleCodeGenerator {
+class DoubleCodeGenerator extends DefaultOpcodeVisitor {
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.PLUS, "addsd")
@@ -37,10 +38,14 @@ class DoubleCodeGenerator {
     this.emitter = emitter;
   }
 
-  void generate(BinOp op) {
+  @Override
+  public void visit(BinOp op) {
+    VarType leftType = op.left().type();
+    if (leftType != VarType.DOUBLE) {
+      return;
+    }
     TokenType operator = op.operator();
     String leftName = resolver.resolve(op.left());
-    VarType leftType = op.left().type();
     String rightName = resolver.resolve(op.right());
     String destName = resolver.resolve(op.destination());
 
@@ -107,9 +112,16 @@ class DoubleCodeGenerator {
     }
   }
 
-  void generate(UnaryOp op, String sourceName) {
+  @Override
+  public void visit(UnaryOp op) {
+    VarType leftType = op.operand().type();
+    if (leftType != VarType.DOUBLE) {
+      return;
+    }
     if (op.operator() == TokenType.MINUS) {
       Location destination = op.destination();
+      Operand source = op.operand();
+      String sourceName = resolver.resolve(source);
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
         emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);

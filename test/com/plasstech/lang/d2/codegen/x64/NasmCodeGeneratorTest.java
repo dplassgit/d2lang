@@ -13,7 +13,6 @@ import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;

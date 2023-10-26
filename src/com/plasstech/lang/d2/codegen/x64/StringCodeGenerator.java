@@ -7,11 +7,11 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.R9;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
+import static com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator.COMPARISON_OPCODE;
 
 import java.util.Map;
 
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -20,28 +20,20 @@ import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generate nasm code for string operations. */
-class StringCodeGenerator {
+class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   private static final String STRING_INDEX_NEGATIVE_ERR =
       "STRING_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: STRING index must be non-negative; was %d\", 10, 0";
   private static final String STRING_INDEX_OOB_ERR =
       "STRING_INDEX_OOB_ERR: db \"Invalid index error at line %d: STRING index out of bounds (length %d); was %d\", 10, 0";
-
-  private static final Map<TokenType, String> COMPARISION_OPCODE =
-      ImmutableMap.<TokenType, String>builder()
-          .put(TokenType.EQEQ, "setz")
-          .put(TokenType.NEQ, "setnz")
-          .put(TokenType.GT, "setg")
-          .put(TokenType.GEQ, "setge")
-          .put(TokenType.LT, "setl")
-          .put(TokenType.LEQ, "setle")
-          .build();
 
   private static final Map<NullPair, String> LT_CONSTANT_MAP =
       ImmutableMap.of(
@@ -121,14 +113,65 @@ class StringCodeGenerator {
     this.npeCheckGenerator = new NullPointerCheckGenerator(resolver, emitter);
   }
 
-  /** Generate destName = left operator right */
-  void generateStringCompare(BinOp op) {
+  /** Generate destName = left operator right for +, [ and comparisons. */
+  @Override
+  public void visit(BinOp op) {
+    Operand left = op.left();
+    if (left.type() != VarType.STRING) {
+      return;
+    }
+
+    TokenType operator = op.operator();
+    switch (operator) {
+      case PLUS:
+        generateStringAdd(op);
+        break;
+
+      case LBRACKET:
+        generateStringIndex(op);
+        break;
+
+      case EQEQ:
+      case NEQ:
+      case GT:
+      case GEQ:
+      case LT:
+      case LEQ:
+        generateComparison(op);
+        break;
+
+      default:
+        emitter.fail("Cannot do %s on STRINGs (yet?)", operator);
+        break;
+    }
+  }
+
+  /**
+   * Generate:
+   * <p>
+   * dest = chr(source), where source is a number, or
+   * <p>
+   * dest = length(source) whrere source is a string
+   */
+  @Override
+  public void visit(UnaryOp op) {
+    switch (op.operator()) {
+      case CHR:
+        generateChr(op);
+        break;
+
+      case LENGTH:
+        generateStringLength(op.position(), op.destination(), op.operand());
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  private void generateComparison(BinOp op) {
     Operand left = op.left();
     Operand right = op.right();
-    // this should never happen
-    Preconditions.checkState(
-        !(right.type().isNull() && left.type().isNull()),
-        "Left and right cannot both be null type");
 
     String destName = resolver.resolve(op.destination());
     TokenType operator = op.operator();
@@ -211,7 +254,7 @@ class StringCodeGenerator {
     }
     emitter.emitExternCall("strcmp");
     emitter.emit("cmp RAX, 0");
-    emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
+    emitter.emit("%s %s  ; string %s", COMPARISON_OPCODE.get(operator), destName, operator);
     registerState.condPop();
 
     // Fin
@@ -252,13 +295,16 @@ class StringCodeGenerator {
         // see if left is not null
         emitter.emit("cmp QWORD %s, 0  ; see if left is null", leftName);
       }
-      emitter.emit("%s %s  ; string %s", COMPARISION_OPCODE.get(operator), destName, operator);
+      emitter.emit("%s %s  ; string %s", COMPARISON_OPCODE.get(operator), destName, operator);
     }
   }
 
   /** generate dest = stringOperand[index] */
-  void generateStringIndex(
-      Location destination, Operand stringOperand, Operand index, Position position) {
+  private void generateStringIndex(BinOp op) {
+    Location destination = op.destination();
+    Operand stringOperand = op.left();
+    Operand index = op.right();
+    Position position = op.position();
     npeCheckGenerator.generateNullPointerCheck(position, stringOperand);
 
     String indexName = resolver.resolve(index);
@@ -388,7 +434,11 @@ class StringCodeGenerator {
   }
 
   /** Generate dest = leftOperand + rightOperand */
-  void generateStringAdd(Location destination, Operand left, Operand right, Position position) {
+  private void generateStringAdd(BinOp op) {
+    Location destination = op.destination();
+    Operand left = op.left();
+    Operand right = op.right();
+    Position position = op.position();
     // Don't need to check for nulls, because generateStringLength will do it.
 
     // 1. get left length
@@ -505,7 +555,10 @@ class StringCodeGenerator {
   }
 
   /** Generate destination = length(source) */
-  void generateStringLength(Position position, Location destination, Operand source) {
+  private void generateStringLength(Position position, Location destination, Operand source) {
+    if (source.type() != VarType.STRING) {
+      return;
+    }
     npeCheckGenerator.generateNullPointerCheck(position, source);
     String destinationName = resolver.resolve(destination);
     if (source.isConstant()) {
@@ -550,8 +603,7 @@ class StringCodeGenerator {
     }
   }
 
-  /** Generate destName = chr(sourceName), where sourceName is a number */
-  void generateChr(Operand source, Location destination) {
+  private void generateChr(UnaryOp op) {
     // realistically, nothing is ever kept in RAX because it's the return value register...
     RegisterState raxState = RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX));
     RegisterState registerState =
@@ -562,11 +614,11 @@ class StringCodeGenerator {
     emitter.emitExternCall("malloc");
     registerState.condPop();
     // 2. set dest to allocated string
-    resolver.mov(RAX, destination);
+    resolver.mov(RAX, op.destination());
 
     Register charReg = resolver.allocate(VarType.INT);
     // 3. get source char as character
-    resolver.mov(source, charReg);
+    resolver.mov(op.operand(), charReg);
     // 4. write source char in first location
     emitter.emit(
         "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());

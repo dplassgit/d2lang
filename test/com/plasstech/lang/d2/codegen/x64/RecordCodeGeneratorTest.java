@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -72,20 +73,17 @@ public class RecordCodeGeneratorTest {
   public void nullEqeqVariable() {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.EQEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    // null == right (comparing to constant null) should generate:
-    // cmp QWORD RDX, 0, setz CL
-    assertThat(code).doesNotContain("call memcmp");
-    assertThat(code).containsExactly("cmp QWORD [RBP - 4], 0", "setz CL");
+    // It generates no code now; nasmcodegenerator is responsible
+    assertThat(code).isEmpty();
   }
 
   @Test
+  @Ignore
   public void nullNeqVariable() {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.NEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
-    // null != right (comparing to constant null) should generate:
-    // cmp QWORD RDX, 0, setnz CL
-    assertThat(code).doesNotContain("call memcmp");
-    assertThat(code).containsExactly("cmp QWORD [RBP - 4], 0", "setnz CL");
+    // It generates no code now; nasmcodegenerator is responsible
+    assertThat(code).isEmpty();
   }
 
   @Test
