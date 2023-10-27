@@ -178,7 +178,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   public void nullCheck() throws Exception {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
     if (optimize) {
-      assertGenerateError(program, "Null pointer error");
+      assertGenerateError(program, "Cannot retrieve field 's' of null object");
     } else {
       assertRuntimeError(program, "nullCheck", "Null pointer error");
     }

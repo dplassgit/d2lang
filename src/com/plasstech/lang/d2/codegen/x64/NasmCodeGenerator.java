@@ -474,8 +474,10 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         case DOT:
-          fail("Null pointer error", operator, leftType);
-          break;
+          ConstantOperand<String> stringConst = (ConstantOperand<String>) op.right();
+          throw new D2RuntimeException(
+              "Cannot retrieve field '" + stringConst.value() + "' of null object",
+              op.position(), "Null pointer");
 
         default:
           fail("Cannot do %s on %ss (yet?)", operator, leftType);
@@ -678,7 +680,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
       case LENGTH:
         if (source.type() == VarType.NULL) {
-          // This is weird.
           throw new D2RuntimeException(
               String.format(
                   "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
