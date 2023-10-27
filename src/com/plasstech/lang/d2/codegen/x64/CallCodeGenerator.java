@@ -78,7 +78,7 @@ class CallCodeGenerator extends DefaultOpcodeVisitor {
         }
       } else {
         emitter.emit("; at least one conflict; doing complicated case");
-        if (op.actuals().size() > 3) {
+        if (op.actuals().size() > 4) {
           // Push from right to left.
           for (int i = op.actuals().size() - 1; i >= 4; i--) {
             Operand actual = op.actuals().get(i);

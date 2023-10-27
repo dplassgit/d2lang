@@ -84,7 +84,8 @@ In mid 1999, my 2nd kid was born and I stopped all work on it. FOR TWENTY YEARS.
 
 ## Recent history
 
-Then in early 2021 I watched David Callahan's EXCELLENT YouTube series
+Then in early 2021 I watched [David Callanan](https://david.callanan.ie/)'s EXCELLENT YouTube 
+series
 [Make YOUR OWN Programming Language in Python](https://www.youtube.com/playlist?list=PLZQftyCk7_SdoVexSmwy_tBgs7P0b97yD)
 in which he wrote a BASIC-like programming language interpreter from scratch in Python. It was
 inspiring to watch something go from zero to a language in just 14 easy steps. I ate it up and
@@ -94,6 +95,5 @@ So in May 2021 I restarted D, as D2, but instead of VC++ or Python, I wrote it i
 of no tests, I wrote unit and integration tests as I went along. Some of the concepts for the lexer
 and parser I borrowed from David's videos.
 
-As of today (Oct 2022), I have a working, optimizing compiler, with excellent test coverage and
-tons of examples. The language and compiler are complete enough that it can be self-hosted; the
-lexer-in-d is working and I started the parser.
+As of today (Oct 2023), I have a working, optimizing compiler, with excellent test coverage and
+tons of examples. The language and compiler are complete enough that it can be self-hosted.
