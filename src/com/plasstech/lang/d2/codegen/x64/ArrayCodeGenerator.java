@@ -168,6 +168,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         resolver.deallocate(tempReg);
       }
     }
+    // NOTE: DO NOT deallocate "source" so that print arrays or array literals will work (?!)
+    emitter.emit("; not deallocating %s", source);
   }
 
   /** Generate array[index]=source */
@@ -241,6 +243,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
               "mov %s %s, [%s]", Size.of(arrayType.baseType()).asmType, destName, fullIndex);
         }
         resolver.deallocate(fullIndex);
+        resolver.deallocate(op.left());
         break;
 
       case EQEQ:
@@ -374,6 +377,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     registerState.condPop();
 
     emitter.emitLabel(endLabel);
+    resolver.deallocate(left);
+    resolver.deallocate(right);
   }
 
   /**

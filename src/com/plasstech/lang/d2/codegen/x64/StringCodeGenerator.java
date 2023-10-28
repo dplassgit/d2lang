@@ -27,7 +27,9 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
-/** Generate nasm code for string operations. */
+/**
+ * Generate NASM code for string operations. TODO: There may be resolve/deallocate mismatches
+ */
 class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   private static final String STRING_INDEX_NEGATIVE_ERR =

@@ -26,8 +26,23 @@ import com.plasstech.lang.d2.testing.TestUtils;
 public class GoldenTests extends NasmCodeGeneratorTestBase {
 
   @Test
-  public void compileAllNonGoldenSamples(
+  public void compileNonGoldenSample(
       @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
+    compileOneFile(file);
+  }
+
+  @Test
+  public void compileBootstrap() throws IOException {
+    compileOneFile(new File("src/bootstrap/v0/v0.d"));
+  }
+
+  @Test
+  public void compileGames() throws IOException {
+    compileOneFile(new File("samples/games/ge.d"));
+  }
+
+  // Just compile, no running
+  private void compileOneFile(File file) throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
       compileFile(file.getAbsolutePath());
     } else {
@@ -37,7 +52,7 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void runAllSamples(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
+  public void testSample(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
       throws Exception {
     if (System.getenv("TEST_SRCDIR") == null) {
       testFromFile(file.getAbsolutePath());
@@ -84,8 +99,9 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   private void compileFile(String path) throws IOException {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
+    // ohcrap this isn't actually compiling without the optimizer... 
     ImmutableList<Op> ilCode = TestUtils.compile(text).optimizedIlCode();
-    System.out.println("\nOPTIMIZED:");
+    System.out.println("\nCODE:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("\n").join(ilCode));
     System.out.println();

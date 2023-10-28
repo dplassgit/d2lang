@@ -31,7 +31,7 @@ public class RecordCodeGeneratorTest {
   private SymbolTable symTab = new SymTab();
 
   private static final VarType RECORD_TYPE = new RecordReferenceType(RECORD_NAME);
-  private static final Location LEFT = new RegisterLocation("left", IntRegister.RDX, RECORD_TYPE);
+  private static final Location LEFT = LocationUtils.newTempLocation("left", RECORD_TYPE);
   private static final Location RIGHT = LocationUtils.newStackLocation("right", RECORD_TYPE, 4);
   private static final Location DESTINATION =
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
@@ -56,7 +56,7 @@ public class RecordCodeGeneratorTest {
     // left == null (comparing to constant null) should generate:
     // cmp QWORD RDX, 0, setz CL
     assertThat(code).doesNotContain("call memcmp");
-    assertThat(code).containsExactly("cmp QWORD RDX, 0", "setz CL");
+    assertThat(code).containsExactly("cmp QWORD RBX, 0", "setz CL");
   }
 
   @Test
@@ -64,9 +64,9 @@ public class RecordCodeGeneratorTest {
     BinOp op = new BinOp(DESTINATION, LEFT, TokenType.NEQ, NULL, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // left != null (comparing to constant null) should generate:
-    // cmp QWORD RDX, 0, setnz CL
+    // cmp QWORD RBX, 0, setnz CL (allocated)
     assertThat(code).doesNotContain("call memcmp");
-    assertThat(code).containsExactly("cmp QWORD RDX, 0", "setnz CL");
+    assertThat(code).containsExactly("cmp QWORD RBX, 0", "setnz CL");
   }
 
   @Test

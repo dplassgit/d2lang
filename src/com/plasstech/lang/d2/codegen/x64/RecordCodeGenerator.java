@@ -59,6 +59,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   public void visit(FieldSetOp op) {
     npeCheckGenerator.generateNullPointerCheck(op.position(), op.recordLocation());
 
+    // TODO: does this need to be deallocated?
     String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
@@ -218,6 +219,9 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     registerState.condPop();
 
     emitter.emitLabel(endLabel);
+
+    resolver.deallocate(op.left());
+    resolver.deallocate(op.right());
   }
 
   private void generateNullCompare(
@@ -297,5 +301,6 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       resolver.deallocate(indirectReg);
     }
     resolver.deallocate(calcReg);
+    resolver.deallocate(op.left());
   }
 }

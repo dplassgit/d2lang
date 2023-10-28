@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen.x64;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -474,4 +475,46 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
             + "test(1, a1, a2) ",
         "compare");
   }
+
+  @Test
+  public void printManyArraysGlobals() throws Exception {
+    String pattern = "%s=[1,2,3] println %s\n";
+    String program = "";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += String.format(pattern, c, c);
+    }
+    execute(program, "printMany");
+  }
+
+  @Test
+  public void printManyArraysLocals() throws Exception {
+    String pattern = "%s=[1,2,3] println %s\n";
+    String program = "fun:proc {";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += String.format(pattern, c, c);
+    }
+    program += "}\n fun()";
+    execute(program, "printManyLocals");
+  }
+
+  @Test
+  @Ignore // this runs out of registers for the arguments
+  public void printManyArraysParams() throws Exception {
+    String pattern = "%s=[1,2,3] println %s\n";
+    String program = "fun:proc(";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += String.format("%s:int[],", c);
+    }
+    program += "ignored:bool) {\n";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += String.format(pattern, c, c);
+    }
+    program += "}\nfun(";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += "[1],";
+    }
+    program += "true)\n";
+    execute(program, "printManyLocals");
+  }
+
 }

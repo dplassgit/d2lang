@@ -11,7 +11,7 @@ echo "Compiling d2:"
 bazel build //src/com/plasstech/lang/d2:D2Compiler --ui_event_filters=-info,-stdout,-stderr --noshow_progress || exit -1
 
 echo "Compiling v0:"
-$D2EXE samples/d2ind2/v0/v0.d -o v0compiler.exe || exit -1
+$D2EXE src/bootstrap/v0/v0.d -o v0compiler.exe || exit -1
 
 v0source=''
 
@@ -21,4 +21,4 @@ testone() {
   diff d.out v0.out || exit -1
 }
 
-for v0source in `ls samples/v0*`; do echo $v0source; testone; done
+for v0source in `ls test/bootstrap/v0/*.d`; do echo $v0source; testone; done
