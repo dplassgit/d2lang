@@ -17,10 +17,17 @@ append: proc(it:intlist, newvalue:int) {
   head.next = node
 }
 
-print_list: proc(it: intlist) {
+print_list_recursive: proc(it: intlist) {
   if it != null {
     println it.value
-    print_list(it.next)
+    print_list_recursive(it.next)
+  }
+}
+
+print_list_iter: proc(list: intlist) {
+  it = list
+  while it != null do it = it.next {
+    println it.value
   }
 }
 
@@ -33,4 +40,5 @@ append(list, 2)
 append(list, 4)
 append(list, 8)
 append(list, 16)
-print_list(list)
+print_list_recursive(list)
+print_list_iter(list)

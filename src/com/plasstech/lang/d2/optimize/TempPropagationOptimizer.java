@@ -16,6 +16,7 @@ class TempPropagationOptimizer extends LineOptimizer {
           TokenType.NEQ,
           TokenType.LT,
           TokenType.GT,
+          TokenType.DOT,
           TokenType.LEQ,
           TokenType.GEQ,
           TokenType.PLUS,
@@ -25,6 +26,7 @@ class TempPropagationOptimizer extends LineOptimizer {
           TokenType.AND,
           TokenType.OR,
           TokenType.XOR,
+          TokenType.DOT,
           TokenType.SHIFT_LEFT,
           TokenType.SHIFT_RIGHT);
 

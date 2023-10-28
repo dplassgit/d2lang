@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
+import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.Field;
@@ -253,9 +254,10 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
     String recordLoc = resolver.resolve(op.left());
     Register calcReg = resolver.allocate(VarType.INT);
+    emitter.emit("; allocated %s for source location calculation", calcReg);
     // 1. if not already in register, put record location into a register
     emitter.emit(
-        "mov %s, %s  ; put record location in register for calculations", calcReg, recordLoc);
+        "mov %s, %s  ; base record location", calcReg, recordLoc);
 
     // 2. get offset of field
     Operand right = op.right();
@@ -269,38 +271,45 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     // 3. add to get actual field location
     if (offset > 0) {
       if (offset == 1) {
-        emitter.emit("inc %s  ; get actual field location via offset", calcReg);
+        emitter.emit("inc %s  ; field location including offset into record", calcReg);
       } else {
-        emitter.emit("add %s, %d  ; get actual field location via offset", calcReg, offset);
+        emitter.emit("add %s, %d  ; field location including offset into record", calcReg, offset);
       }
     } else {
       emitter.emit("; offset was 0");
     }
 
     Location destination = op.destination();
-    String destName = resolver.resolve(destination);
+    ResolvedOperand destRo = resolver.resolveFully(destination);
     // 4. mov register, source - take heed of size of RHS
     Size size = Size.of(destination.type());
-    if (resolver.isInAnyRegister(destination)) {
+    emitter.emit("\n  ; store it:");
+    if (destRo.isRegister()) {
       if (destination.type() == VarType.DOUBLE) {
-        emitter.emit("movq %s, [%s]  ; store it!", destName, calcReg);
+        emitter.emit("movq %s, [%s]", destRo.name(), calcReg);
       } else {
-        emitter.emit("mov %s %s, [%s]  ; store it!", size, destName, calcReg);
+        emitter.emit("mov %s %s, [%s]", size, destRo.name(), calcReg);
       }
     } else {
-      // need an indirection, ugh.
+      emitter.emit("; use indirection because we can't move from memory to memory");
+      // It's fine to use an int because it's 64 bits, I tink.
       Register indirectReg = resolver.allocate(VarType.INT);
-      emitter.emit("; allocated %s for calculations", indirectReg);
-      emitter.emit(
-          "mov %s %s, %s  ; get value to get",
-          size, indirectReg.sizeByType(destination.type()), calcReg.sizeByType(destination.type()));
-      // this was broken, and now it's broken in a different way.
-      emitter.emit("mov %s, [%s]", indirectReg, indirectReg);
-      emitter.emit("mov %s %s, %s  ; ME get it into the destination", size, destName,
-          indirectReg);
+      emitter.emit("; allocated %s as indirect register", indirectReg);
+
+      // 1. get source into indirectReg, e.g., mov BYTE indirectReg.sized, [calcReg]
+      VarType type = destination.type();
+      emitter.emit("mov %s %s, [%s]  ; load from memory into indirect register", size,
+          indirectReg.sizeByType(type), calcReg);
+      // 2. put indirect reg into destination, e.g., mov BYTE destRo.name(), indirectReg
+      // note, this doesn't need movq because we're not moving to a XMM register 
+      emitter.emit("mov %s %s, %s  ; store into memory from indirect register", size, destRo.name(),
+          indirectReg.sizeByType(type));
+
       resolver.deallocate(indirectReg);
+      emitter.emit("; deallocated %s from indirection", indirectReg);
     }
     resolver.deallocate(calcReg);
+    emitter.emit("; deallocated %s from source calculation", calcReg);
     resolver.deallocate(op.left());
   }
 }

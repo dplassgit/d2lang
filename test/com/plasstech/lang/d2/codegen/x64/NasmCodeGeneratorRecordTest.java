@@ -94,8 +94,15 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void getFieldInProc() throws Exception {
     execute(
-        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return x.i} print f()",
+        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i y=x.i return y} print f()",
         "getFieldInProc");
+  }
+
+  @Test
+  public void getStringFieldInProc() throws Exception {
+    execute(
+        "rt: record{i:int s:string } f:proc:string {s='h' x=new rt x.s=s y=x.s return y} print f()",
+        "getStringFieldInProc");
   }
 
   @Test
@@ -105,7 +112,8 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "f:proc(dd:double):double {"
             + "  x=new rt "
             + "  x.d=dd "
-            + "  return x.d"
+            + "  y=x.d "
+            + "  return y"
             + "}"
             + "print f(3.0)",
         "getFieldInProc");
@@ -322,5 +330,18 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "}\r\n"
             + "println trim('hi \\r')",
         "loopInvariantError_bug190_trim");
+  }
+
+  @Test
+  public void recordParam() throws Exception {
+    execute(""
+        + "r:record{s:string i:int rec:r}\n"
+        + "f:proc(rec:r): int {\n"
+        + "   amt = rec.i\n"
+        + "   return amt * 3\n"
+        + "}\n"
+        + "nr = new r\n"
+        + "nr.i = 100\n"
+        + "println f(nr)\n", "recordParam");
   }
 }

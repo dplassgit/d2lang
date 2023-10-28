@@ -3,7 +3,6 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -15,16 +14,20 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
 public class RecordCodeGeneratorTest {
-  private static final String RECORD_NAME = "rec";
+  private static final String RECORD_NAME = "recordDefinitionName";
 
   private static final Joiner NEWLINE_JOINER = Joiner.on("\n");
 
@@ -78,7 +81,6 @@ public class RecordCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void nullNeqVariable() {
     BinOp op = new BinOp(DESTINATION, NULL, TokenType.NEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
@@ -98,6 +100,93 @@ public class RecordCodeGeneratorTest {
     BinOp op = new BinOp(DESTINATION, LEFT, TokenType.NEQ, RIGHT, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     assertThat(code).containsAtLeast("call memcmp", "cmp RAX, 0", "setnz CL").inOrder();
+  }
+
+  @Test
+  public void dotIntoRegister() {
+    String fieldName = "fieldName";
+    DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
+    DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
+    RecordSymbol recordDecl = symTab
+        .declareRecord(
+            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
+                null));
+    VarType recordRefType = new RecordReferenceType(recordDecl.name());
+    VariableSymbol rec = symTab.declare("source", recordRefType);
+    rec.setRecordSymbol(recordDecl);
+
+    Location source = LocationUtils.newMemoryAddress("source", recordRefType);
+    Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 2, 0);
+    Operand fieldOperand = ConstantOperand.of(fieldName);
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    ImmutableList<String> code = generateUncommentedCode(op);
+    // It's R8 because the dest is the 3rd param.
+    assertThat(code).contains("mov BYTE R8b, [RBX]");
+  }
+
+  @Test
+  public void dotIntoTemp() {
+    String fieldName = "fieldName";
+    DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
+    DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
+    RecordSymbol recordDecl = symTab
+        .declareRecord(
+            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
+                null));
+    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
+    rec.setRecordSymbol(recordDecl);
+
+    Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
+
+    Location dest = LocationUtils.newTempLocation("dest", VarType.BYTE);
+    Operand fieldOperand = ConstantOperand.of(fieldName);
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    ImmutableList<String> code = generateUncommentedCode(op);
+    // It's RSI because it allocated "dest" to RSI
+    assertThat(code).contains("mov BYTE SIL, [RBX]");
+  }
+
+  @Test
+  public void dotIntoMemory() {
+    String fieldName = "fieldName";
+    DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
+    DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
+    RecordSymbol recordDecl = symTab
+        .declareRecord(
+            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
+                null));
+    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
+    rec.setRecordSymbol(recordDecl);
+
+    Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
+
+    Location dest = LocationUtils.newMemoryAddress("dest", VarType.BYTE);
+    Operand fieldOperand = ConstantOperand.of(fieldName);
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    ImmutableList<String> code = generateUncommentedCode(op);
+    // RSI is the indirect register
+    assertThat(code).containsAtLeast("mov BYTE SIL, [RBX]", "mov BYTE [_dest], SIL").inOrder();
+  }
+
+  @Test
+  public void dotIntoStack() {
+    String fieldName = "fieldName";
+    DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
+    DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
+    RecordSymbol recordDecl = symTab
+        .declareRecord(
+            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
+                null));
+    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
+    rec.setRecordSymbol(recordDecl);
+
+    Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
+
+    Location dest = LocationUtils.newStackLocation("dest", VarType.BYTE, 12);
+    Operand fieldOperand = ConstantOperand.of(fieldName);
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    ImmutableList<String> code = generateUncommentedCode(op);
+    assertThat(code).containsAtLeast("mov BYTE SIL, [RBX]", "mov BYTE [RBP - 12], SIL").inOrder();
   }
 
   private ImmutableList<String> generateUncommentedCode(BinOp op) {
