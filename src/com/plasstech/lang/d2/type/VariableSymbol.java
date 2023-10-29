@@ -3,7 +3,9 @@ package com.plasstech.lang.d2.type;
 public class VariableSymbol extends AbstractSymbol {
   private final SymbolStorage storage;
   private RecordSymbol recordSymbol;
+  private String parentName;
 
+  // TODO: give the symbol its enclosing SymbolTable
   public VariableSymbol(String name, SymbolStorage storage) {
     super(name);
     this.storage = storage;
@@ -31,5 +33,13 @@ public class VariableSymbol extends AbstractSymbol {
   @Override
   public boolean isVariable() {
     return true;
+  }
+
+  public void setParentName(String name) {
+    this.parentName = name;
+  }
+
+  public String getParentName() {
+    return parentName;
   }
 }

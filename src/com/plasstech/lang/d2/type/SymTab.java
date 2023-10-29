@@ -175,7 +175,7 @@ public class SymTab implements SymbolTable {
 
   // It's only declared.
   @Override
-  public Symbol declare(String name, VarType varType) {
+  public VariableSymbol declare(String name, VarType varType) {
     return declareVariable(name, varType, this.storage);
   }
 
@@ -204,7 +204,7 @@ public class SymTab implements SymbolTable {
   }
 
   @Override
-  public Symbol assign(String name, VarType varType) {
+  public VariableSymbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
     if (sym != null && !sym.varType().isUnknown()) {
@@ -217,10 +217,11 @@ public class SymTab implements SymbolTable {
     } else {
       sym = createVariable(name, this.storage).setVarType(varType);
     }
-    maybeSetRecordSymbol(varType, (VariableSymbol) sym);
+    VariableSymbol variableSym = (VariableSymbol) sym;
+    maybeSetRecordSymbol(varType, variableSym);
     sym.setAssigned();
     values.put(name, sym);
-    return sym;
+    return variableSym;
   }
 
   private void maybeSetRecordSymbol(VarType varType, VariableSymbol sym) {

@@ -37,9 +37,9 @@ public interface SymbolTable {
   RecordSymbol declareRecord(RecordDeclarationNode node);
 
   // It's only declared.
-  Symbol declare(String name, VarType varType);
+  VariableSymbol declare(String name, VarType varType);
 
-  Symbol assign(String name, VarType varType);
+  VariableSymbol assign(String name, VarType varType);
 
   SymbolStorage storage();
 

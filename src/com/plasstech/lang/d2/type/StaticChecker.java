@@ -350,7 +350,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             Symbol symbol = symbolTable.getRecursive(lvalue.name());
             if (symbol == null) {
               // Brand new symbol in all scopes. Assign in current scope.
-              symbolTable.assign(lvalue.name(), right.varType());
+              VariableSymbol variableSymbol = symbolTable.assign(lvalue.name(), right.varType());
+              if (!procedures.empty()) {
+                // Tell it its parent name.
+                variableSymbol.setParentName(procedures.peek().name());
+              }
             } else {
               // Already known in some scope. Update.
               if (symbol.varType().isUnknown()) {
@@ -807,7 +811,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
     // gotta make sure it exists
     if (validatePossibleRecordType(node.name(), node.varType(), node.position())) {
-      symbolTable.declare(node.name(), node.varType());
+      VariableSymbol symbol = symbolTable.declare(node.name(), node.varType());
+      if (!procedures.empty()) {
+        symbol.setParentName(procedures.peek().name());
+      }
     }
   }
 

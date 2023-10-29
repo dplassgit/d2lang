@@ -4,7 +4,7 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode;
 
 public class ExternProcSymbol extends ProcSymbol {
 
-  public ExternProcSymbol(ProcedureNode node, SymTab symTab) {
+  public ExternProcSymbol(ProcedureNode node, SymbolTable symTab) {
     super(node, symTab);
   }
 

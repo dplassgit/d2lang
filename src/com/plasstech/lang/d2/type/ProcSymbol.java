@@ -11,9 +11,9 @@ public class ProcSymbol extends AbstractSymbol {
 
   private final ProcedureNode node;
   private final List<ParamSymbol> formals = new ArrayList<>();
-  private final SymTab symtab;
+  private final SymbolTable symtab;
 
-  public ProcSymbol(ProcedureNode node, SymTab symTab) {
+  public ProcSymbol(ProcedureNode node, SymbolTable symTab) {
     super(node.name());
     this.node = node;
     symtab = symTab;
@@ -50,11 +50,8 @@ public class ProcSymbol extends AbstractSymbol {
   }
 
   public void declareParam(String name, VarType varType, int index) {
-    // CRAP this winds up having a null record symbol because it's called
-    // before the records are defined.
-    // maybe we should have a post-procgatherer and post-recordgatherer
-    // cleanup?
     ParamSymbol param = symtab.declareParam(name, varType, index);
+    param.setParentName(name());
     // keep a copy!
     formals.add(param);
   }
