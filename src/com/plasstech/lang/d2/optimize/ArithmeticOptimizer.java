@@ -441,6 +441,9 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeIntArith(op, left, right, (t, u) -> t << u)) {
       return;
     }
+    if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t << u))) {
+      return;
+    }
     optimizeLongArith(op, left, right, (t, u) -> (long) (t << u));
   }
 
@@ -450,6 +453,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     if (optimizeIntArith(op, left, right, (t, u) -> t >> u)) {
+      return;
+    }
+    if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t >> u))) {
       return;
     }
     optimizeLongArith(op, left, right, (t, u) -> (long) (t >> u));
