@@ -24,7 +24,6 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringFinder;
 import com.plasstech.lang.d2.codegen.StringTable;
-import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
@@ -289,7 +288,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     Location dest = op.destination();
     boolean reuse = false;
-    if (op.left() instanceof TempLocation && op.destination() instanceof TempLocation
+    if (op.left().isTemp() && op.destination().isTemp()
         && (leftType.isNumeric() || leftType == VarType.BOOL)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now

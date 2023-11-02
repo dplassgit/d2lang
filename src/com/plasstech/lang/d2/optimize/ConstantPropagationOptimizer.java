@@ -8,7 +8,6 @@ import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
-import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -193,7 +192,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (replacement != null) {
       replaceCurrent(new Transfer(dest, replacement, op.position()));
       // we've used the temp, so delete it
-      if (source instanceof TempLocation) {
+      if (source.isTemp()) {
         deleteSource(source);
       }
     }
@@ -207,7 +206,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     // variable = constant: true
     // variable = variable: true (???)
     // variable = temp: FALSE
-    return !(replacement instanceof TempLocation);
+    return !replacement.isTemp();
   }
 
   @Override
@@ -351,7 +350,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   }
 
   private void deleteSource(Operand operand) {
-    if (!(operand instanceof TempLocation)) {
+    if (!operand.isTemp()) {
       return;
     }
 
