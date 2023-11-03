@@ -19,6 +19,8 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
@@ -27,17 +29,21 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
 
   @Test
   public void compileNonGoldenSample(
-      @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
+      @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file,
+      @TestParameter boolean goldenOptimize) throws IOException {
+    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
     compileOneFile(file);
   }
 
   @Test
-  public void compileBootstrap() throws IOException {
+  public void compileBootstrap(@TestParameter boolean goldenOptimize) throws IOException {
+    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
     compileOneFile(new File("src/bootstrap/v0/v0.d"));
   }
 
   @Test
-  public void compileGames() throws IOException {
+  public void compileGames(@TestParameter boolean goldenOptimize) throws IOException {
+    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
     compileOneFile(new File("samples/games/ge.d"));
   }
 
@@ -55,6 +61,7 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   public void testSample(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
       throws Exception {
     if (System.getenv("TEST_SRCDIR") == null) {
+      configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0);
       testFromFile(file.getAbsolutePath());
     } else {
       // running in bazel
@@ -99,8 +106,12 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   private void compileFile(String path) throws IOException {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
-    // ohcrap this isn't actually compiling without the optimizer... 
-    ImmutableList<Op> ilCode = TestUtils.compile(text).optimizedIlCode();
+
+    CompilationConfiguration config =
+        configBuilder.setSourceCode(text).setFilename(path).build();
+    State state = TestUtils.compile(config);
+    ImmutableList<Op> ilCode = state.lastIlCode();
+
     System.out.println("\nCODE:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("\n").join(ilCode));

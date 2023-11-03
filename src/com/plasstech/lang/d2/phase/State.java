@@ -82,6 +82,9 @@ public abstract class State {
   @Nullable
   public abstract ImmutableList<String> asmCode();
 
+  @Nullable
+  public abstract String stdOut();
+
   @AutoValue.Builder
   public abstract static class Builder {
 
@@ -102,6 +105,8 @@ public abstract class State {
     public abstract Builder setAsmCode(ImmutableList<String> asmCode);
 
     public abstract Builder setErrors(Errors errors);
+
+    public abstract Builder setStdOut(String stdout);
 
     public abstract State build();
   }
@@ -141,8 +146,13 @@ public abstract class State {
     return toBuilder().setAsmCode(asmCode).build();
   }
 
+  public State addStdOut(String stdOut) {
+    return toBuilder().setStdOut(stdOut).build();
+  }
+
   abstract Builder toBuilder();
 
+  // This really should be elsewhere
   public void throwOnError() {
     if (error()) {
       if (exception() != null) {

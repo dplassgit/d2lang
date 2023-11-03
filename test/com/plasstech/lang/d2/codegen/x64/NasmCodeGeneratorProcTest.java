@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static org.junit.Assume.assumeTrue;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -203,7 +201,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   @Test
   @Ignore("Bug #188: Runs out of registers, even with optimization")
   public void outOfRegisters() throws Exception {
-    assumeTrue(optimize);
     execute(
         "      fun:proc(a:int, b:int, cc:int, dd:int) {\r"
             + "  c=((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*((a+b)*(a+b))))))))))))))\r"

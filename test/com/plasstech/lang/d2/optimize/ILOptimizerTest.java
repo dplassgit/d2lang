@@ -8,6 +8,7 @@ import org.junit.runner.RunWith;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.SymTab;
@@ -67,8 +68,9 @@ public class ILOptimizerTest {
 
   @Test
   public void divByZero() {
-    InterpreterExecutor ee = new InterpreterExecutor("a = 1 / 0");
+    InterpreterExecutor ee = new InterpreterExecutor(CompilationConfiguration.create("a = 1 / 0"));
     assertThrows(ArithmeticException.class, () -> ee.execute());
+    System.out.println(ee.state());
 
     assertThrows(
         D2RuntimeException.class,
@@ -194,7 +196,7 @@ public class ILOptimizerTest {
   }
 
   @Test
-  public void compareConstant(@TestParameter({ "<", ">", ">=", "<=", "==", "!=" }) String op) {
+  public void compareConstant(@TestParameter({"<", ">", ">=", "<=", "==", "!="}) String op) {
     TestUtils.optimizeAssertSameVariables(
         String.format("b=4 println b %s 3 println 3 %s b", op, op));
   }

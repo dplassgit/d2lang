@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.google.common.base.Joiner;
@@ -16,23 +17,17 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
-import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.plasstech.lang.d2.InterpreterExecutor;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.optimize.ILOptimizer;
-import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.StaticChecker;
 
 public class NasmCodeGeneratorTestBase {
   private static File dir;
-
-  @TestParameter
-  boolean optimize;
-  //  boolean optimize = false;
+  protected CompilationConfiguration.Builder configBuilder;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
@@ -40,56 +35,95 @@ public class NasmCodeGeneratorTestBase {
     dir = Files.createTempDir();
   }
 
-  public void execute(String sourceCode, String filename) throws Exception {
-    assertCompiledEqualsInterpreted(sourceCode, filename, 0);
+  @Before
+  public void setUp() {
+    configBuilder = CompilationConfiguration.builder();
   }
 
-  public State compileToNasm(String sourceCode) {
-    InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
-    //    ee.setParseDebugLevel(2);
-    //    ee.setCodeGenDebugLevel(1);
-    ee.setOptimize(optimize);
-    // Compiles and interprets
-    ee.execute();
-    State state = ee.state();
+  public String execute(String sourceCode, String filename) throws Exception {
+    String notOptimizedStdOut = assertCompiledEqualsInterpreted(sourceCode, filename, 0, false);
+    String optimizedStdOut = assertCompiledEqualsInterpreted(sourceCode, filename, 0, true);
+    // System.out.println("not optimized ");
+    // System.out.println(notOptimizedStdOut);
+    // System.out.println("optimized ");
+    System.out.println("OUTPUT:");
+    System.out.println("-------");
+    System.out.println(optimizedStdOut);
 
-    state = new NasmCodeGenerator().execute(state);
-    System.out.println("\nNASM:");
-    System.out.println("------------------------------");
-    System.out.println(Joiner.on("\n").join(state.asmCode()));
-    System.out.println();
-
-    return state;
+    // Not-optimized is the gold standard.
+    assertThat(optimizedStdOut).isEqualTo(notOptimizedStdOut);
+    return optimizedStdOut;
   }
 
-  public void assertCompiledEqualsInterpreted(String sourceCode, String filename, int exitCode)
-      throws Exception {
+  /**
+   * Compiles down to x64 executable using the existing state of the configBuilder field inluding
+   * the "optimize" flag, runs it through the interpreter and asserts that the compiled output
+   * equals the interpreted output. Asserts that the exit code is as given.
+   */
+  public String assertCompiledEqualsInterpreted(String sourceCode, String filename, int exitCode,
+      boolean optimize) throws Exception {
+
     filename = filename + "_opt_" + String.valueOf(optimize);
 
-    InterpreterExecutor ee = new InterpreterExecutor(sourceCode);
-    ee.setOptimize(optimize);
-    ee.setOptDebugLevel(2);
-    //    ee.setLexDebugLevel(2);
-    //    ee.setParseDebugLevel(2);
-    ee.setCodeGenDebugLevel(2);
-    InterpreterResult result = ee.execute();
-    State state = ee.state();
-    state.throwOnError();
-    state = state.addFilename(filename);
+    CompilationConfiguration config =
+        configBuilder.setFilename(filename).setSourceCode(sourceCode).setOptimize(optimize).build();
+
+    State compiledState = compile(config, exitCode);
+
+    InterpreterExecutor ee = new InterpreterExecutor(config);
+    // This runs the interpreter on the IL code.
+    InterpreterResult result = ee.execute(compiledState);
+    compiledState.throwOnError();
+
+    // The compiler converts \n to \r\n, so we have to do the same.
+    String interpreterOutput =
+        Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
+
+    // System.out.println("compiled optimized " + optimize);
+    // System.out.println(compiledState.stdOut());
+    // System.out.println("interpreter");
+    // System.out.println(interpreterOutput);
+
+    // Compiled is the gold standard.
+    assertThat(interpreterOutput).isEqualTo(compiledState.stdOut());
+    return interpreterOutput;
+  }
+
+  /**
+   * Compiles down to x64 executable using the existing state of the configBuilder field, runs it
+   * and asserts that the exit code is 0.
+   */
+  public State compile(String sourceCode, String filename) throws Exception {
+    CompilationConfiguration config =
+        configBuilder.setSourceCode(sourceCode).setFilename(filename).build();
+    return compile(config, 0);
+  }
+
+  /**
+   * Compiles down to x64 executable, runs it and asserts that the exit code matches.
+   */
+  private State compile(CompilationConfiguration config, int exitCode) throws Exception {
+    // This parses, type checks, generates IL code, and optionally optimizes.
+    YetAnotherCompiler yac = new YetAnotherCompiler();
+    State state = yac.compile(config);
 
     state = new NasmCodeGenerator().execute(state);
+    if (config.expectedErrorPhase() != PhaseName.ASM_CODGEN) {
+      state.throwOnError();
+    } else if (state.error()) {
+      return state;
+    }
 
     String asmCode = Joiner.on('\n').join(state.asmCode());
     System.err.println(asmCode);
-    state.throwOnError();
 
-    File file = new File(dir, filename + ".asm");
+    String sourceFilename = config.filename();
+    File file = new File(dir, sourceFilename + ".asm");
     if (file.exists()) {
       file.delete();
     }
     file.createNewFile();
 
-    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
     CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode());
 
@@ -99,8 +133,8 @@ public class NasmCodeGeneratorTestBase {
     process.waitFor();
     assertNoProcessError(process, "nasm", 0);
 
-    File obj = new File(dir, filename + ".obj");
-    File exe = new File(dir, filename);
+    File obj = new File(dir, sourceFilename + ".obj");
+    File exe = new File(dir, sourceFilename);
     pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
     pb.directory(dir);
     process = pb.start();
@@ -115,79 +149,9 @@ public class NasmCodeGeneratorTestBase {
     assertNoProcessError(process, "Executable", exitCode);
 
     String compiledOutput = new String(ByteStreams.toByteArray(stream));
+    state = state.addStdOut(compiledOutput);
 
-    // the compiler converts \n to \r\n, so we have to do the same.
-    String interpreterOutput =
-        Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
-
-    assertThat(compiledOutput).isEqualTo(interpreterOutput);
-  }
-
-  public void assertCompiledOutput(String sourceCode, String filename, String expectedOutput)
-      throws Exception {
-    String sourceFilename = filename + "_opt_" + String.valueOf(optimize);
-
-    State state = State.create(sourceCode).build();
-    state = state.addFilename(sourceFilename);
-
-    Lexer lexer = new Lexer(state.sourceCode());
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
-    state.throwOnError();
-
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    state.throwOnError();
-
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    state.throwOnError();
-    if (optimize) {
-      // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer();
-      state = optimizer.execute(state);
-      state.throwOnError();
-    }
-    state = new NasmCodeGenerator().execute(state);
-
-    String asmCode = Joiner.on('\n').join(state.asmCode());
-    System.err.println(asmCode);
-    state.throwOnError();
-
-    File file = new File(dir, filename + ".asm");
-    if (file.exists()) {
-      file.delete();
-    }
-    file.createNewFile();
-
-    CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
-    charSink.writeLines(state.asmCode());
-
-    ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
-    pb.directory(dir);
-    Process process = pb.start();
-    process.waitFor();
-    assertNoProcessError(process, "nasm", 0);
-
-    File obj = new File(dir, filename + ".obj");
-    File exe = new File(dir, filename);
-    pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
-    pb.directory(dir);
-    process = pb.start();
-    process.waitFor();
-    assertNoProcessError(process, "Linking", 0);
-
-    pb = new ProcessBuilder(exe.getAbsolutePath());
-    pb.directory(dir);
-    process = pb.start();
-    process.waitFor();
-    InputStream stream = process.getInputStream();
-    assertNoProcessError(process, "Executable", 0);
-
-    String compiledOutput = new String(ByteStreams.toByteArray(stream));
-
-    // the compiler converts \n to \r\n, so we have to do the same.
-    assertThat(compiledOutput).isEqualTo(expectedOutput);
+    return state;
   }
 
   private void assertNoProcessError(Process process, String name, int exitCode) throws IOException {
@@ -205,28 +169,24 @@ public class NasmCodeGeneratorTestBase {
   }
 
   protected void assertGenerateError(String sourceCode, String error) {
-    State state = State.create(sourceCode).build();
-    Lexer lexer = new Lexer(state.sourceCode());
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
+    assertGenerateError(sourceCode, error, true);
+    assertGenerateError(sourceCode, error, false);
+  }
+
+  protected void assertGenerateError(String sourceCode, String error, boolean optimize) {
+    assertGenerateError(sourceCode, error, optimize,
+        optimize ? PhaseName.IL_OPTIMIZE : PhaseName.IL_CODEGEN);
+  }
+
+  protected void assertGenerateError(String sourceCode, String error, boolean optimize,
+      PhaseName expectedPhase) {
+    configBuilder.setSourceCode(sourceCode).setOptimize(optimize)
+        .setExpectedErrorPhase(expectedPhase);
+    YetAnotherCompiler yac = new YetAnotherCompiler();
+    State state = yac.compile(configBuilder.build());
     if (state.error()) {
       assertThat(state.errorMessage()).matches(error);
       return;
-    }
-
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    if (state.error()) {
-      assertThat(state.errorMessage()).matches(error);
-      return;
-    }
-
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    if (optimize) {
-      // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer(2);
-      state = optimizer.execute(state);
     }
 
     System.err.println(
@@ -239,71 +199,15 @@ public class NasmCodeGeneratorTestBase {
 
   public void assertRuntimeError(String sourceCode, String filename, String error)
       throws Exception {
-    filename = filename + "_opt_" + String.valueOf(optimize);
 
-    State state = State.create(sourceCode).build();
-    Lexer lexer = new Lexer(state.sourceCode());
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
-    state.throwOnError();
+    CompilationConfiguration config =
+        configBuilder.setSourceCode(sourceCode).setFilename(filename).build();
+    State state = compile(config, -1);
 
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    state.throwOnError();
-
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    if (optimize) {
-      // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer(2);
-      state = optimizer.execute(state);
-      state.throwOnError();
-    }
-
-    state = new NasmCodeGenerator().execute(state);
-    if (state.error()) {
-      System.err.println(Joiner.on("\n").join(state.lastIlCode()));
-      state.throwOnError();
-    }
-
-    state = state.addFilename(filename);
-
-    state = new NasmCodeGenerator().execute(state);
-    String asmCode = Joiner.on('\n').join(state.asmCode());
-    System.err.println(asmCode);
-
-    File file = new File(dir, filename + ".asm");
-    if (file.exists()) {
-      file.delete();
-    }
-    file.createNewFile();
-
-    System.err.printf("FILE IS AT %s\n", file.getAbsolutePath());
-    CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
-    charSink.writeLines(state.asmCode());
-
-    ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
-    pb.directory(dir);
-    Process process = pb.start();
-    process.waitFor();
-    assertNoProcessError(process, "nasm", 0);
-
-    File obj = new File(dir, filename + ".obj");
-    File exe = new File(dir, filename);
-    pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
-    pb.directory(dir);
-    process = pb.start();
-    process.waitFor();
-    assertNoProcessError(process, "Linking", 0);
-
-    pb = new ProcessBuilder(exe.getAbsolutePath());
-    pb.directory(dir);
-    process = pb.start();
-    process.waitFor();
-    InputStream stream = process.getInputStream();
-    assertNoProcessError(process, "Executable", -1);
-
-    String compiledOutput = new String(ByteStreams.toByteArray(stream));
+    String compiledOutput = state.stdOut();
+    System.out.println("COMPILED OUTPUT (hopefully with error):");
+    System.out.println("------------------------------");
+    System.out.println(compiledOutput);
     assertThat(compiledOutput).contains(error);
   }
 }

@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static org.junit.Assume.assumeFalse;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -54,12 +52,12 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void exitErrorConst() throws Exception {
-    assertCompiledEqualsInterpreted("exit 'exitErrorConst'", "exitErrorConst", -1);
+    assertCompiledEqualsInterpreted("exit 'exitErrorConst'", "exitErrorConst", -1, false);
   }
 
   @Test
   public void exitErrorVariable() throws Exception {
-    assertCompiledEqualsInterpreted("a='exitErrorVariable' exit a", "exitErrorVariable", -1);
+    assertCompiledEqualsInterpreted("a='exitErrorVariable' exit a", "exitErrorVariable", -1, false);
   }
 
   @Test
@@ -71,7 +69,6 @@ public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void constantAsc() throws Exception {
-    assumeFalse(optimize);
     execute("println asc('hi')", "constantAsc");
   }
 

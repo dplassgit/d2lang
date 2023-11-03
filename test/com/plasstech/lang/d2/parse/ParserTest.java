@@ -14,8 +14,9 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.YetAnotherCompiler;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
@@ -47,6 +48,7 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
@@ -1493,17 +1495,21 @@ public class ParserTest {
   }
 
   private ProgramNode parseProgram(String expression) {
-    Lexer lexer = new Lexer(expression);
-    Parser parser = new Parser(lexer);
-    State output = parser.execute(State.create());
-    output.throwOnError();
+    CompilationConfiguration config =
+        CompilationConfiguration.builder().setSourceCode(expression).setLastPhase(PhaseName.PARSE)
+            .build();
+    State output = new YetAnotherCompiler().compile(config);
     return output.programNode();
   }
 
-  private void assertParseError(String expressionToParse, String errorMsgContains) {
-    Lexer lexer = new Lexer(expressionToParse);
-    Parser parser = new Parser(lexer);
-    State output = parser.execute(State.create());
+  private void assertParseError(String expression, String errorMsgContains) {
+    CompilationConfiguration config =
+        CompilationConfiguration.builder()
+            .setSourceCode(expression)
+            .setLastPhase(PhaseName.PARSE)
+            .setExpectedErrorPhase(PhaseName.PARSE)
+            .build();
+    State output = new YetAnotherCompiler().compile(config);
     assertWithMessage("Should be an error node").that(output.error()).isTrue();
     assertThat(output.errorMessage()).contains(errorMsgContains);
   }

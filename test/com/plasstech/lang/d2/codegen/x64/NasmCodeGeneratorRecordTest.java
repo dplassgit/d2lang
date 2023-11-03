@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
@@ -185,11 +186,10 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
   @Test
   public void nullCheck() throws Exception {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
-    if (optimize) {
-      assertGenerateError(program, "Cannot retrieve field 's' of null object");
-    } else {
-      assertRuntimeError(program, "nullCheck", "Null pointer error");
-    }
+    assertGenerateError(program, "Cannot retrieve field 's' of null object", true,
+        PhaseName.ASM_CODGEN);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(program, "nullCheck", "Null pointer error");
   }
 
   @Test
@@ -298,14 +298,14 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void loopInvariantError_bug190_arraySetIsAGet() throws Exception {
-    execute(
+    execute(//assertCompiledEqualsInterpreted(
         "      r1:record{amt: double}\r"
             + "rarray:r1[10]\r"
             + "f:proc {"
-            + "  i = 0 amt = 1.1"
+            + "  i = 0 amt = 1.2"
             + "  while i < 10 do i = i + 1 {"
             + "    p = new r1"
-            + "    amt = amt + 1.1"
+            + "    amt = amt + 1.2"
             + "    p.amt = amt"
             + "    rarray[i] = p"
             + "  }"
@@ -314,7 +314,7 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
             + "  }"
             + "}"
             + "f()",
-        "loopInvariantError_bug190_arraySetIsAGet");
+        "loopInvariantError_bug190_arraySetIsAGet"); //, 0, true);
   }
 
   @Test

@@ -5,6 +5,7 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
@@ -37,20 +38,21 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexCompileTime() throws Exception {
     assertGenerateError(
-        "s='hello' print s[-2]", "Index of ARRAY variable 's' must be non-negative; was -2");
+        "s='hello' print s[-2]", "Index of ARRAY variable 's' must be non-negative; was -2", false,
+        PhaseName.TYPE_CHECK);
     assertGenerateError(
         "f:proc() {s='hello' print s[-3]} f()",
-        "Index of ARRAY variable 's' must be non-negative; was -3");
+        "Index of ARRAY variable 's' must be non-negative; was -3", false,
+        PhaseName.TYPE_CHECK);
   }
 
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    if (optimize) {
-      assertGenerateError(sourceCode, "out of bounds.*was 10");
-    } else {
-      assertRuntimeError(sourceCode, "oobeIndex", "out of bounds (length 5); was 10");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(sourceCode, "out of bounds.*was 10", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(sourceCode, "oobeIndex", "out of bounds (length 5); was 10");
   }
 
   @Test
@@ -62,23 +64,21 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    if (optimize) {
-      assertGenerateError(sourceCode, "must be non-negative; was -2");
-    } else {
-      assertRuntimeError(
-          sourceCode, "negativeIndexRunTime", "must be non-negative; was -2");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(sourceCode, "must be non-negative; was -2", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(
+        sourceCode, "negativeIndexRunTime", "must be non-negative; was -2");
   }
 
   @Test
   public void negativeIndexRunTimeGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    if (optimize) {
-      assertGenerateError(sourceCode, "must be non-negative; was -2");
-    } else {
-      assertRuntimeError(
-          sourceCode, "negativeIndexRunTimeGlobal", "must be non-negative; was -2");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(sourceCode, "must be non-negative; was -2", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(
+        sourceCode, "negativeIndexRunTimeGlobal", "must be non-negative; was -2");
   }
 
   @Test
@@ -178,21 +178,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    if (optimize) {
-      assertGenerateError(program, ".*NULL expression.*");
-    } else {
-      assertRuntimeError(program, "length", "Null pointer error");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(program, "length", "Null pointer error");
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
     String program = "a='hello' a=null println length(a)";
-    if (optimize) {
-      assertGenerateError(program, ".*NULL expression.*");
-    } else {
-      assertRuntimeError(program, "length", "Null pointer error");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(program, "length", "Null pointer error");
   }
 
   @Test

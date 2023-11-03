@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 
 import com.google.common.base.Joiner;
 import com.google.devtools.common.options.OptionsParser;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 
@@ -46,15 +47,17 @@ public class InterpreterDriver {
     }
 
     InterpreterExecutor ee =
-        new InterpreterExecutor(text)
-            .setInteractive(true)
-            .setLexDebugLevel(options.debuglex)
-            .setParseDebugLevel(options.debugparse)
-            .setTypeDebugLevel(options.debugtype)
-            .setCodeGenDebugLevel(options.debugcodegen)
-            .setOptDebugLevel(options.debugopt)
+        new InterpreterExecutor(
+            CompilationConfiguration.builder()
+                .setSourceCode(text)
+                .setLexDebugLevel(options.debuglex)
+                .setParseDebugLevel(options.debugparse)
+                .setTypeDebugLevel(options.debugtype)
+                .setCodeGenDebugLevel(options.debugcodegen)
+                .setOptDebugLevel(options.debugopt)
+                .setOptimize(options.optimize).build())
             .setIntDebugLevel(options.debugint)
-            .setOptimize(options.optimize);
+            .setInteractive(true);
 
     InterpreterResult result = ee.execute();
     if (options.debugparse > 0) {

@@ -41,6 +41,12 @@ java_library(
 )
 
 java_library(
+    name = "phase_name",
+    srcs = ["PhaseName.java"],
+    visibility=["//visibility:public"],
+)
+
+java_library(
     name = "errors",
     srcs = [
         "Errors.java",

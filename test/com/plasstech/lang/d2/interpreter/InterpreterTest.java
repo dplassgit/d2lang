@@ -5,9 +5,11 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.base.Joiner;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 
 @RunWith(TestParameterInjector.class)
 public class InterpreterTest {
@@ -426,21 +428,22 @@ public class InterpreterTest {
   }
 
   private Environment execute(String program, boolean optimize) {
-    InterpreterExecutor ee = new InterpreterExecutor(program);
-    ee.setCodeGenDebugLevel(2);
-    ee.setOptDebugLevel(2);
-    ee.setOptimize(optimize);
+    InterpreterExecutor ee = new InterpreterExecutor(
+        CompilationConfiguration.builder().setSourceCode(program)
+            .setOptimize(optimize)
+            .setCodeGenDebugLevel(2)
+            .setOptDebugLevel(2).build());
     InterpreterResult result = ee.execute();
-    //    System.out.println(ee.programNode());
-    //
-    //    System.out.println("Environment:");
-    //    System.out.println("------------");
-    //    Envionment env = result.environment();
-    //    System.out.println(env.toString());
-    //    System.out.println("------------");
-    //    System.out.println("Sysout:");
-    //    System.out.println("-------");
-    //    System.out.println(Joiner.on('\n').join(env.output()));
+    System.out.println(ee.state().programNode());
+
+    System.out.println("Environment:");
+    System.out.println("------------");
+    Environment env = result.environment();
+    System.out.println(env.toString());
+    System.out.println("------------");
+    System.out.println("Sysout:");
+    System.out.println("-------");
+    System.out.println(Joiner.on('\n').join(env.output()));
     return result.environment();
   }
 

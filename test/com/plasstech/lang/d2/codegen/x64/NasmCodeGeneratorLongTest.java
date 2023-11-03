@@ -69,16 +69,15 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
         String.format(
             "    bb:long g:bool f:proc(a:long, b:long) { " //
                 + "aa=a " // to test locals vs args.
-                //                + "c=a %s b println c " //
-                //                + "d=b %s aa println d " //
-                //                + "e=aa %s %sL println e " //
+                + "c=a %s b println c " //
+                + "d=b %s aa println d " //
+                + "e=aa %s %sL println e " //
                 + "g=%sL %s aa println g " // global g
-                //                + "bb=b "
-                //                + "h=bb < 3L println h"
+                + "bb=b "
+                + "h=bb < 3L println h"
                 + "} "
                 + "f(%sL, %sL)",
-            //            op, op, op, first, second, op, first, second);
-            second, op, first, second);
+            op, op, op, first, second, op, first, second);
     execute(program, "longCompOpsArgs");
   }
 
@@ -227,20 +226,18 @@ public class NasmCodeGeneratorLongTest extends NasmCodeGeneratorTestBase {
   @Test
   public void divisionByZeroGlobal() throws Exception {
     String sourceCode = "a=0L b=1L/a";
-    if (optimize) {
-      assertGenerateError(sourceCode, "Division by 0");
-    } else {
-      assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(sourceCode, "Division by 0", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:long {a=0L b=1L/a return b} f()";
-    if (optimize) {
-      assertGenerateError(sourceCode, "Division by 0");
-    } else {
-      assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(sourceCode, "Division by 0", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 }

@@ -102,7 +102,8 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emitExternCall("printf");
     } else if (arg.type() == VarType.DOUBLE) {
       if (arg.isConstant()) {
-        // Only needed if argName is a constant
+        // this shouldn't happen in optimization mode because the arithmetic optimizer
+        // should have already converted to string.
         Register tempReg = resolver.allocate(VarType.DOUBLE);
         emitter.emit("movsd %s, %s", tempReg, argName);
         emitter.emit("movq RDX, %s", tempReg);
@@ -117,6 +118,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
       }
       setUpFormat(Format.DOUBLE, isNewline);
       emitter.emitExternCall("printf");
+      // TODO: If arg is a round number, print a trailing .0
     } else {
       emitter.fail("Cannot print %ss yet", arg.type());
     }
@@ -129,7 +131,8 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     // TODO: print bytes with 0y prefix?
     INT("%d"),
     LONG("%lld"),
-    DOUBLE("%f"),
+    // this skips ".0", and now the Java implementations do too.
+    DOUBLE("%.16g"), // # of significant digits (note, 0.0003 is ONE.)
     TRUE("true"),
     FALSE("false"),
     STRING("%s"),

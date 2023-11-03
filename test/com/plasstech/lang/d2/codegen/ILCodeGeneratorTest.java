@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -11,13 +10,12 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.StaticChecker;
+import com.plasstech.lang.d2.testing.TestUtils;
 
 public class ILCodeGeneratorTest {
-
   @Test
   public void print() {
     generateProgram("print 123");
@@ -203,32 +201,21 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void bug_269_variable_with_record_name() throws Exception {
-    expectError("r: record{} r=new r");
+    expectError("r: record{} r=new r", PhaseName.IL_CODEGEN);
   }
 
   @Test
   public void bug_269_variable_with_proc_name() throws Exception {
-    expectError("r: record{} r:proc{} r=new r");
+    expectError("r: record{} r:proc{} r=new r", PhaseName.TYPE_CHECK);
   }
 
-  private void expectError(String program) {
-    Lexer lexer = new Lexer(program);
-    State state = State.create(program).build();
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
-    if (state.error()) {
-      return;
-    }
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    if (state.error()) {
-      return;
-    }
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    if (!state.error()) {
-      fail("Should have had an error");
-    }
+  private void expectError(String program, PhaseName expectedErrorPhase) {
+    CompilationConfiguration config = CompilationConfiguration.builder().setSourceCode(program)
+        .setParseDebugLevel(2)
+        .setLastPhase(expectedErrorPhase)
+        .setExpectedErrorPhase(expectedErrorPhase).build();
+    State state = TestUtils.compile(config);
+    assertThat(state.error()).isTrue();
   }
 
   @Test
@@ -236,21 +223,12 @@ public class ILCodeGeneratorTest {
     generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
   }
 
-  private List<Op> generateProgram(String program) {
-    Lexer lexer = new Lexer(program);
-    State state = State.create(program).build();
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    ImmutableList<Op> ilCode = codegen.execute(state).ilCode();
+  private static List<Op> generateProgram(String program) {
+    CompilationConfiguration config = CompilationConfiguration.create(program);
+    State state = TestUtils.compile(config);
+    assertThat(state.error()).isFalse();
+
+    ImmutableList<Op> ilCode = state.ilCode();
     System.err.println("\nD CODE:\n-------");
     System.err.println(program);
     System.err.println("\nIL CODE:\n--------");

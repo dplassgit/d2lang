@@ -4,10 +4,12 @@ gen_java_tests(name="SmallTests",
     srcs=glob(["*.java"],),
     prefix_path="test/",
 	  deps=[
+        "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/lex",
-        "//src/com/plasstech/lang/d2/parse",
+        "//src/com/plasstech/lang/d2/parse", # weird, this is required
         "//src/com/plasstech/lang/d2/parse/node",
+        "//src/com/plasstech/lang/d2/phase:phase_name",
         "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type:var_types",
         "//test/com/plasstech/lang/d2/testing",

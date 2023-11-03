@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -57,7 +58,9 @@ public class LoopInvariantOptimizerTest {
             + "  }"
             + "  print x "
             + "}";
-    State unoptimized = TestUtils.compile(program, new NopOptimizer());
+    CompilationConfiguration config =
+        CompilationConfiguration.builder().setSourceCode(program).setOptimize(false).build();
+    State unoptimized = TestUtils.compile(config);
     // unoptimized:
     /**
      * <pre>

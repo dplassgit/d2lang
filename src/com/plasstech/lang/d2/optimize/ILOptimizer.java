@@ -70,14 +70,14 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     int iterations = 0;
 
     boolean changed = false;
+    if (debugLevel > 0) {
+      System.out.printf("\nPRE-OPTIMIZED:\n");
+      System.out.println(Joiner.on("\n").join(program));
+      System.out.println();
+    }
+
     do {
       changed = false;
-
-      if (debugLevel == 2) {
-        System.out.printf("PRE-OPTIMIZED:\n");
-        System.out.println(Joiner.on("\n").join(program));
-        System.out.println();
-      }
 
       for (Optimizer child : children) {
         program = child.optimize(program, symbolTable);
@@ -94,12 +94,13 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     } while (changed);
 
     if (debugLevel > 0) {
-      System.err.printf("\nITERATIONS: %d\n\n", iterations);
+      System.err.printf("\nITERATIONS: %d\n", iterations);
     }
 
     if (debugLevel > 0) {
-      System.out.println("\nOPTIMIZED:");
+      System.out.println("\nFINAL OPTIMIZED:");
       System.out.println(Joiner.on("\n").join(program));
+      System.out.println();
     }
     return program;
   }

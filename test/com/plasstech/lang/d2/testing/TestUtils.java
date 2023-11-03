@@ -3,22 +3,19 @@ package com.plasstech.lang.d2.testing;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static org.junit.Assert.fail;
 
 import java.util.Map;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.InterpreterExecutor;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
-import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
-import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.StaticChecker;
 
 public class TestUtils {
 
@@ -63,7 +60,7 @@ public class TestUtils {
   }
 
   private static void assertMapsSame(Map<String, Object> actuals, Map<String, Object> expecteds) {
-    assertThat(actuals.size()).isEqualTo(expecteds.size());
+    assertThat(actuals).hasSize(expecteds.size());
     for (Map.Entry<String, Object> entry : actuals.entrySet()) {
       // make sure everything's there.
       Object actual = entry.getValue();
@@ -129,39 +126,8 @@ public class TestUtils {
           + "val = recordloopnoninvariant(new rt) "
           + "println val";
 
-  // Hm, maybe move this to Executor?
-  public static State compile(String text) {
-    return compile(text, new ILOptimizer(0));
-  }
-
-  public static State compile(String text, Optimizer optimizer) {
-    Lexer lex = new Lexer(text);
-    State state = State.create(text).build();
-    Parser parser = new Parser(lex);
-    state = parser.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-
-    // Runs all the optimizers.
-    ILOptimizer opt = new ILOptimizer(ImmutableList.of(optimizer));
-    state = opt.execute(state);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-    return state;
+  public static State compile(CompilationConfiguration config) {
+    return new YetAnotherCompiler().compile(config);
   }
 
   /** Trims all comments from the code, and trims each line. */

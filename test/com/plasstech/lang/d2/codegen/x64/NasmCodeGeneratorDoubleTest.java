@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -155,21 +158,19 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   @Test
   public void divisionByZeroGlobal() throws Exception {
     String program = "a=0.0 b=1.0/a";
-    if (optimize) {
-      assertGenerateError(program, "Division by 0");
-    } else {
-      assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
-    }
+    configBuilder.setOptimize(false);
+    assertGenerateError(program, "Division by 0", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
     String program = "f:proc:double{a=0.0 b=1.0/a return b} f()";
-    if (optimize) {
-      assertGenerateError(program, "Division by 0");
-    } else {
-      assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
-    }
+    configBuilder.setOptimize(true);
+    assertGenerateError(program, "Division by 0", true);
+    configBuilder.setOptimize(false);
+    assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
   }
 
   @Test
@@ -184,13 +185,13 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
             + "print 'bextern Should be 153.045745: ' println bsqrt(23423.0) "
             + "print 'cextern Should be 153.045745: ' println csqrt(23423.0) "
             + "print 'dextern Should be 153.045745: ' println dsqrt(23423.0) ";
-    assertCompiledOutput(
-        sqrt,
-        "sqrt",
-        "aextern Should be 153.045745: 153.045745\r\n"
-            + "bextern Should be 153.045745: 153.045745\r\n"
-            + "cextern Should be 153.045745: 153.045745\r\n"
-            + "dextern Should be 153.045745: 153.045745\r\n");
+    // note: cannot use "execute" because that compares interpreter to compiled, and
+    // the interpreter can't deal with externs.
+    assertThat(compile(sqrt, "sqrt").stdOut()).isEqualTo(
+        "aextern Should be 153.045745: 153.0457447954696\r\n"
+            + "bextern Should be 153.045745: 153.0457447954696\r\n"
+            + "cextern Should be 153.045745: 153.0457447954696\r\n"
+            + "dextern Should be 153.045745: 153.0457447954696\r\n");
   }
 
   @Test
@@ -199,7 +200,8 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
         "      sqrt: extern proc(d:double):double "
             + "bsqrt: proc(a:bool, d:double):double {b=a f=sqrt(d) return f} "
             + "print 'bextern Should be 153.045745: ' println bsqrt(false, 23423.0) ";
-    assertCompiledOutput(sqrt, "sqrt", "bextern Should be 153.045745: 153.045745\r\n");
+    assertThat(compile(sqrt, "sqrt").stdOut()).isEqualTo(
+        "bextern Should be 153.045745: 153.0457447954696\r\n");
   }
 
   @Test
@@ -247,5 +249,12 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   @Test
   public void localPlusConstant() throws Exception {
     execute("f:proc(d:double):double { e = d + 1.0 return e} print f(2.0)", "localPlusConstant");
+  }
+
+  @Test
+  @Ignore("bug 273")
+  public void printingTrailingDotZero() throws Exception {
+    String stdOut = execute("print 3.0", "bug273");
+    assertThat(stdOut).isEqualTo("3.0");
   }
 }

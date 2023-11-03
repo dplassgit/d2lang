@@ -3,6 +3,8 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -825,12 +827,13 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case PRINT:
       case PRINTLN:
         String val;
+        val = String.valueOf(resolved);
         if (op.arg().type() == VarType.DOUBLE) {
-          double resolvedd = (double) resolved;
-          val = String.format("%.6f", resolvedd);
-        } else {
-          val = String.valueOf(resolved);
+          double d = (double) resolved;
+          BigDecimal bd = BigDecimal.valueOf(d).round(MathContext.DECIMAL64).stripTrailingZeros();
+          val = bd.toPlainString();
         }
+
         if (interactive) {
           if (op.call() == SysCall.Call.PRINTLN) {
             System.out.println(val);
@@ -872,6 +875,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         break;
     }
+
   }
 
   @Override

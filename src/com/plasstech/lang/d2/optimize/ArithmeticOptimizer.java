@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
@@ -132,6 +134,11 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     String asString = operand.value().toString();
+    if (operand.type() == VarType.DOUBLE) {
+      double value = (double) operand.value();
+      BigDecimal bd = BigDecimal.valueOf(value).round(MathContext.DECIMAL64).stripTrailingZeros();
+      asString = bd.toPlainString();
+    }
     replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
   }
 
