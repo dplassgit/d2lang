@@ -182,19 +182,24 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     if (canCache(source)) {
       logger.at(loggingLevel).log(
-          "Possible replacement of %s %s = %s",
-          dest.getClass().getSimpleName(), dest.name(), source);
+          "Line %d: Caching replacement of %s %s = %s",
+          ip(), dest.getClass().getSimpleName(), dest.name(), source);
       replacements.put(dest, source);
       assignmentLocations.put(dest, ip());
     }
 
+    // Now that we cached dest=source, let's see if we can replace
+    // source itself with something:
     Operand replacement = findReplacement(source, false);
     if (replacement != null) {
       replaceCurrent(new Transfer(dest, replacement, op.position()));
-      // we've used the temp, so delete it
-      if (source.isTemp()) {
-        deleteSource(source);
-      }
+
+      // We have a NEW replacement for "dest" - "source"s' replacement, so cache that instead.
+      replacements.put(dest, replacement);
+      // We've used the source, so delete it (deleteSource only works on temps)
+      deleteSource(source);
+      // We also used its replacement, so delete IT too. (deleteSource only works on temps)
+      deleteSource(replacement);
     }
   }
 

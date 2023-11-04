@@ -25,8 +25,10 @@ public class ConstantPropagationOptimizerTest {
       new ILOptimizer(ImmutableList.of(new ConstantPropagationOptimizer(2), new NopOptimizer()))
           .setDebugLevel(2);
 
-  private static final TempLocation TEMP_INT1 = LocationUtils.newTempLocation("__temp1", VarType.INT);
-  private static final TempLocation TEMP_INT2 = LocationUtils.newTempLocation("__temp2", VarType.INT);
+  private static final TempLocation TEMP_INT1 =
+      LocationUtils.newTempLocation("__temp1", VarType.INT);
+  private static final TempLocation TEMP_INT2 =
+      LocationUtils.newTempLocation("__temp2", VarType.INT);
   private static final StackLocation STACK_INT1 =
       LocationUtils.newStackLocation("s1", VarType.INT, 0);
   private static final MemoryAddress GLOBAL_INT1 =
@@ -36,15 +38,33 @@ public class ConstantPropagationOptimizerTest {
 
   @Test
   public void twoTransfers() {
+    /**
+     * <pre>
+     * t1 = 1
+     * t2 = t1
+     * s1 = t2
+     * 
+     * should become
+     * // t1 = 1 
+     * t2 = 1
+     * s1 = t2
+     * 
+     * // t2 = 1
+     * s1 = 1
+     * </pre>
+     */
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP_INT1, ConstantOperand.ONE, null),
             new Transfer(TEMP_INT2, TEMP_INT1, null),
             new Transfer(STACK_INT1, TEMP_INT2, null));
 
-    program = OPTIMIZER.optimize(program, null);
-    assertThat(program).hasSize(1);
-    assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    // The second temp assignment won't be rmeoved by this optimizer because
+    // its value will never be read.
+    assertThat(optimized).hasSize(2);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ONE);
+    assertThat(optimized.get(1)).isTransferredFrom(ConstantOperand.ONE);
   }
 
   @Test
@@ -88,5 +108,23 @@ public class ConstantPropagationOptimizerTest {
     assertThat(program).hasSize(3);
     Return returnOp = (Return) program.get(2);
     assertThat(returnOp.returnValueLocation()).hasValue(GLOBAL_INT1);
+  }
+
+  @Test
+  public void sourceAsDestinationShouldPropagate() {
+    /*
+     * a=1 b=a a=2 return b // should return 1.
+     */
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(GLOBAL_INT1, ConstantOperand.ONE, null),
+            new Transfer(GLOBAL_INT2, GLOBAL_INT1, null),
+            new Transfer(GLOBAL_INT1, ConstantOperand.of(2), null),
+            new Return("", GLOBAL_INT2));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(program.size());
+    Return returnOp = (Return) optimized.get(3);
+    assertThat(returnOp.returnValueLocation()).hasValue(ConstantOperand.ONE);
   }
 }

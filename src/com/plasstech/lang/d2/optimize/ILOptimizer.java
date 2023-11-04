@@ -73,6 +73,12 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     do {
       changed = false;
 
+      if (debugLevel == 2) {
+        System.out.printf("PRE-OPTIMIZED:\n");
+        System.out.println(Joiner.on("\n").join(program));
+        System.out.println();
+      }
+
       for (Optimizer child : children) {
         program = child.optimize(program, symbolTable);
         if (child.isChanged()) {
