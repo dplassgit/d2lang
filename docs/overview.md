@@ -11,11 +11,11 @@ CASE. D2 variables are **case sensitive**.
 
 The following types are built-in:
 
-* `INT`: 32-bit integer
+* `BOOL`: boolean values (`TRUE`, `FALSE` are the two built-in values)
 * `BYTE`: 8-bit integer
+* `INT`: 32-bit integer
 * `LONG`: 64-bit integer
 * `FLOAT`: 64-bit floating point
-* `BOOL`: boolean values (`TRUE`, `FALSE` are the two built-in values)
 * `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
 * `RECORD`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
@@ -27,27 +27,28 @@ before definition) are allowed.
 
 ## Arithmetic and expressions
 
-All arithmetic must be type-consistent. As of now there is no implicit (or
-explicit) conversion between arithmetic types, though you can use `gcc` functions
-to convert from float to int (e.g., `round`.)
+All arithmetic must be type-consistent. There is no implicit (or explicit) conversion between
+arithmetic types, though you can use `gcc` functions to convert from FLOAT to INT (e.g., `round`.)
 
 Similarly, all expressions must be type-consistent.
 
+
 ### Constants
+
+Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal.
+Example: `0y2f` for 47 decimal.
 
 Integer constants can represent -2^31-1 to 2^31. Example: `1234`
 
 Long constants can represent -2^64-1 to 2^64. Example: `1234L`
-
-Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal.
-Example: `0y2f` for 47 decimal.
 
 Floating point constants **must** include a decimal point (dot). Example: `123.4`
 
 
 ## Strings
 
-String constants can be created with single or double quotes.
+String constants can be created with single or double quotes. Empty string is permitted.
+Strings can be added, and are immutable. 
 
 
 ## Arrays
@@ -67,6 +68,8 @@ Array literals:
 ```
 lit = [1, 2, 3] // also allocates memory
 ```
+
+Array literals can be used inline as well. 
 
 Use the `LENGTH` function to find the length of an array:
 
@@ -91,7 +94,7 @@ r: record {
 }
 ```
 
-To create:
+To instantiate a RECORD:
 
 ```
 ar = new r
@@ -100,8 +103,8 @@ ar.f2 = 3
 ar.f3 = new r
 ```
 
-Fields that are not set default to their default value (zero for
-numbers, false for boolean, and `NULL` for others.)
+Fields that are not set default to their default value (`0` for
+numbers, `FALSE` for boolean, and `NULL` for others.)
 
 Records can be compared using `==` and `!=`. Two records
 are `==` if every field is `==`, but not recursively. At this
@@ -125,7 +128,8 @@ d: bool
 
 ### Assignment
 
-If a variable is not declared, whatever type it is when first assigned will be
+Variable uses and assignments must match their declared types. If a variable is
+not declared, whatever type is used when first assigned will be
 its type throughout its lifetime.
 
 ```
@@ -142,7 +146,7 @@ A global variable can be defined outside any procedure and can be of any type.
 ### Locals
 
 A local variable can be declared or assigned inside a procedure. You cannot "shadow"
-a global variable with a local variable of the same name
+a global variable with a local variable of the same name.
 
 ```
 a = 3 // global definition
@@ -157,13 +161,13 @@ f:proc {
 
 ### Numbers
 
-* `+`, `-`, `*`, `/`: for INT, BYTE, FLOAT, LONG
-* `%`: modulo for INT, BYTE, LONG
-* `|`: bitwise "or" for INT, BYTE, LONG
-* `&`: bitwise "and" for INT, BYTE, LONG
-* `^`: bitwise "xor" for INT, BYTE, LONG
-* `>>`: shift right for INT, BYTE, LONG
-* `<<`: shift left for INT, BYTE, LONG
+* `+`, `-`, `*`, `/`: for BYTE, INT, LONG, FLOAT
+* `%`: modulo for BYTE, INT, LONG
+* `|`: bitwise "or" for BYTE, INT, LONG
+* `&`: bitwise "and" for BYTE, INT, LONG
+* `^`: bitwise "xor" for BYTE, INT, LONG
+* `>>`: shift right for BYTE, INT, LONG
+* `<<`: shift left for BYTE, INT, LONG
 
 And all typical comparisons: `== != < <= > >=`.
 
@@ -213,7 +217,6 @@ To find the length of a string, use the built-in function `LENGTH`.
 println length("abc") // prints 3 with newline
 ```
 
-
 ### Records
 
 See above.
@@ -250,13 +253,13 @@ if i == 0 {  // must be a boolean expression
 Any number of `ELIF` clauses are allowed. Like Python (and unlike Java and C),
 parentheses are *not required* around the boolean expression.
 
-As in Python, there is no `case` statement in D2.
+As in Python, there is no `CASE` or `SWITCH` statement in D2.
 
 
-#### `WHILE` loop
+#### `WHILE`
 
 ```
-while i < 10 do i = i + 1 {
+i=0 while i < 10 do i++ {
   // loop statements
   println i
 }
@@ -265,12 +268,18 @@ while i < 10 do i = i + 1 {
 `BREAK` and `CONTINUE` work the same as in Java, C, JavaScript, Python, etc.
 
 
+#### `EXIT`
+
+Use `EXIT` to prematurely terminate the program. Its optional `STRING`
+argument will be printed to stdout.
+
+
 ### `PRINT` and `PRINTLN`
 
 `PRINT` prints a variable to stdout. There is limited built-in support for printing
 arrays. There is no built-in support for printing records.
 
-`PRINTLN variable` appends a newline after printing the object.
+`PRINTLN expression` appends a newline after printing the value.
 
 
 ### `INPUT`
@@ -288,9 +297,15 @@ in = input
 `EXIT "Message"` prints the message on stdout and exits with return code -1.
 
 
-### Procedures
+### Command line arguments
 
-#### Procedure definitions
+Command-line arguments are provided in the built-in `ARGS` array (a 1-dimensional
+array of `STRING`s.)
+
+
+## Procedures
+
+### Procedure definitions
 
 This example defines a procedure that takes two parameters: a string and an
 array of strings, and returns an int:
@@ -310,7 +325,7 @@ think: proc { // parentheses are optional for no-arg proces
 ```
 
 
-#### Procedure calls
+### Procedure calls
 
 Just like in C, Java, Python, JavaScript, etc.
 
@@ -324,28 +339,24 @@ It is legal to ignore the return value of a procedure:
 index('hi', ['a', 'b', 'c'])
 ```
 
-#### Command line arguments
+### Externally-defined procedures
 
-Command-line arguments are provided in the built-in `ARGS` array (a 1-dimensional
-array of `STRING`s.)
-
-#### Externally defined procedures
-
-Prepend `EXTERN` before the `PROC` keyword, and don't define the body of the
+To reference a procedure in the `gcc` runtime library, prepend `EXTERN`
+before the `PROC` keyword, and don't define the body of the
 procedure. Example:
 
 ```
 rand: extern proc(n: int): int
 ```
 
-This must be a procedure/function in the `gcc` runtime library.
+The procedure must be a procedure/function in the `gcc` runtime library.
 
 
 ## Runtime Checks
 
 There are runtime checks in place for
-* null pointer dereferences (strings, records, arrays)
-* index out of range for string and array references
+* `NULL` pointer dereferences (`STRING`s, `RECORD`s, arrays)
+* index out of range for `STRING` and array references
 * division by zero and modulo zero
 
-When possible, the optimizer will find division by zero at compile time.
+When possible, the compiler will discover these at compile time.
