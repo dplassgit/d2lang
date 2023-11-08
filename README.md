@@ -3,8 +3,11 @@
 D2 is a strongly-typed, statically-typed, inferred-type compiled language. 
 Its syntax draws from C, Java and Python.
 
-The D2 compiler compiles to X64 assembly language only. It currently uses
-`nasm` and `gcc` to assemble and link, respectively, to Windows executables only.
+The D2 compiler currently compiles to X64 assembly language only. It uses
+`nasm` and `gcc` to assemble and link, respectively, to Windows executables.
+
+There are hooks to support other architectures; the intermediate language
+is (mostly) target-agnostic and a 8085 backend is partially implemented.
 
 See the [overview](docs/overview.md) for a more comprehensive description of the 
 types, control structures, operators and statements in D2.
@@ -53,7 +56,7 @@ println "Hello world"
 
 PEGS = ["", "left", "center", "right"]
 
-printPeg: proc(peg:int) {
+printPeg: proc(peg: int) {
   print PEGS[peg]
 }
 
