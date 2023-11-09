@@ -49,9 +49,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    configBuilder.setOptimize(true);
     assertGenerateError(sourceCode, "out of bounds.*was 10", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(sourceCode, "oobeIndex", "out of bounds (length 5); was 10");
   }
 
@@ -64,9 +62,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    configBuilder.setOptimize(true);
     assertGenerateError(sourceCode, "must be non-negative; was -2", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(
         sourceCode, "negativeIndexRunTime", "must be non-negative; was -2");
   }
@@ -74,9 +70,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    configBuilder.setOptimize(true);
     assertGenerateError(sourceCode, "must be non-negative; was -2", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(
         sourceCode, "negativeIndexRunTimeGlobal", "must be non-negative; was -2");
   }
@@ -178,18 +172,14 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    configBuilder.setOptimize(true);
     assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
-    configBuilder.setOptimize(false);
     assertRuntimeError(program, "length", "Null pointer error");
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
     String program = "a='hello' a=null println length(a)";
-    configBuilder.setOptimize(true);
     assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
-    configBuilder.setOptimize(false);
     assertRuntimeError(program, "length", "Null pointer error");
   }
 
@@ -289,14 +279,11 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void concatNull() throws Exception {
-    assertRuntimeError(
-        "      tester: proc(left:string, right:string) {"
-            + "   t=left+right println t "
-            + "} "
-            + "tester(null, '') "
-            + "tester('', null) ",
-        "concatNull",
-        "Null pointer error");
+    assertRuntimeError("      tester: proc(left:string, right:string) {"
+    + "   t=left+right println t "
+    + "} "
+    + "tester(null, '') "
+    + "tester('', null) ", "concatNull", "Null pointer error");
   }
 
   @Test

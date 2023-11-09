@@ -217,7 +217,6 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   public void divisionByZeroGlobal() throws Exception {
     String sourceCode = "a=0 b=1/a";
     assertGenerateError(sourceCode, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 
@@ -225,7 +224,6 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:int {a=0 b=1/a return b} f()";
     assertGenerateError(sourceCode, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 

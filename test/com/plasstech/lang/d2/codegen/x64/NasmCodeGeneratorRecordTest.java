@@ -188,7 +188,6 @@ public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
     assertGenerateError(program, "Cannot retrieve field 's' of null object", true,
         PhaseName.ASM_CODGEN);
-    configBuilder.setOptimize(false);
     assertRuntimeError(program, "nullCheck", "Null pointer error");
   }
 

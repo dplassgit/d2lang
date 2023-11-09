@@ -31,26 +31,23 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   public void compileNonGoldenSample(
       @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file,
       @TestParameter boolean goldenOptimize) throws IOException {
-    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
-    compileOneFile(file);
+    compileOneFile(file, goldenOptimize);
   }
 
   @Test
   public void compileBootstrap(@TestParameter boolean goldenOptimize) throws IOException {
-    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
-    compileOneFile(new File("src/bootstrap/v0/v0.d"));
+    compileOneFile(new File("src/bootstrap/v0/v0.d"), goldenOptimize);
   }
 
   @Test
   public void compileGames(@TestParameter boolean goldenOptimize) throws IOException {
-    configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0).setOptimize(goldenOptimize);
-    compileOneFile(new File("samples/games/ge.d"));
+    compileOneFile(new File("samples/games/ge.d"), goldenOptimize);
   }
 
   // Just compile, no running
-  private void compileOneFile(File file) throws IOException {
+  private void compileOneFile(File file, boolean goldenOptimize) throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      compileFile(file.getAbsolutePath());
+      compileFile(file.getAbsolutePath(), goldenOptimize);
     } else {
       // running in bazel
       fail("Sorry, cannot test in bazel");
@@ -61,7 +58,6 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
   public void testSample(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
       throws Exception {
     if (System.getenv("TEST_SRCDIR") == null) {
-      configBuilder.setCodeGenDebugLevel(0).setOptDebugLevel(0);
       testFromFile(file.getAbsolutePath());
     } else {
       // running in bazel
@@ -103,12 +99,18 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
     }
   }
 
-  private void compileFile(String path) throws IOException {
+  private void compileFile(String path, boolean goldenOptimize) throws IOException {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
 
     CompilationConfiguration config =
-        configBuilder.setSourceCode(text).setFilename(path).build();
+        CompilationConfiguration.builder()
+            .setSourceCode(text)
+            .setFilename(path)
+            .setOptimize(goldenOptimize)
+            .setCodeGenDebugLevel(0)
+            .setOptDebugLevel(0)
+            .build();
     State state = new YetAnotherCompiler().compile(config);
     ImmutableList<Op> ilCode = state.lastIlCode();
 

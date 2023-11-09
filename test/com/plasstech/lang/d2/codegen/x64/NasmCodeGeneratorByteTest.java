@@ -218,7 +218,6 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   public void divisionByZeroGlobal() throws Exception {
     String sourceCode = "a=0y0 b=0y1/a";
     assertGenerateError(sourceCode, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 
@@ -226,7 +225,6 @@ public class NasmCodeGeneratorByteTest extends NasmCodeGeneratorTestBase {
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:byte {a=0y0 b=0y1/a return b} f()";
     assertGenerateError(sourceCode, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
   }
 }

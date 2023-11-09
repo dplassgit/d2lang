@@ -27,7 +27,7 @@ import com.plasstech.lang.d2.phase.State;
 
 public class NasmCodeGeneratorTestBase {
   private static File dir;
-  protected CompilationConfiguration.Builder configBuilder;
+  //  private CompilationConfiguration.Builder configBuilder;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
@@ -37,7 +37,7 @@ public class NasmCodeGeneratorTestBase {
 
   @Before
   public void setUp() {
-    configBuilder = CompilationConfiguration.builder();
+    //    configBuilder = CompilationConfiguration.builder();
   }
 
   public String execute(String sourceCode, String filename) throws Exception {
@@ -66,7 +66,8 @@ public class NasmCodeGeneratorTestBase {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
     CompilationConfiguration config =
-        configBuilder.setFilename(filename).setSourceCode(sourceCode).setOptimize(optimize).build();
+        CompilationConfiguration.builder().setFilename(filename).setSourceCode(sourceCode)
+            .setOptimize(optimize).build();
 
     State compiledState = compile(config, exitCode);
 
@@ -95,7 +96,7 @@ public class NasmCodeGeneratorTestBase {
    */
   public State compile(String sourceCode, String filename) throws Exception {
     CompilationConfiguration config =
-        configBuilder.setSourceCode(sourceCode).setFilename(filename).build();
+        CompilationConfiguration.builder().setSourceCode(sourceCode).setFilename(filename).build();
     return compile(config, 0);
   }
 
@@ -180,10 +181,11 @@ public class NasmCodeGeneratorTestBase {
 
   protected void assertGenerateError(String sourceCode, String error, boolean optimize,
       PhaseName expectedPhase) {
-    configBuilder.setSourceCode(sourceCode).setOptimize(optimize)
-        .setExpectedErrorPhase(expectedPhase);
+    CompilationConfiguration configBuilder =
+        CompilationConfiguration.builder().setSourceCode(sourceCode).setOptimize(optimize)
+            .setExpectedErrorPhase(expectedPhase).build();
     YetAnotherCompiler yac = new YetAnotherCompiler();
-    State state = yac.compile(configBuilder.build());
+    State state = yac.compile(configBuilder);
     if (state.error()) {
       assertThat(state.errorMessage()).matches(error);
       return;
@@ -201,7 +203,7 @@ public class NasmCodeGeneratorTestBase {
       throws Exception {
 
     CompilationConfiguration config =
-        configBuilder.setSourceCode(sourceCode).setFilename(filename).build();
+        CompilationConfiguration.builder().setSourceCode(sourceCode).setFilename(filename).build();
     State state = compile(config, -1);
 
     String compiledOutput = state.stdOut();

@@ -158,18 +158,14 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   @Test
   public void divisionByZeroGlobal() throws Exception {
     String program = "a=0.0 b=1.0/a";
-    configBuilder.setOptimize(false);
     assertGenerateError(program, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
     String program = "f:proc:double{a=0.0 b=1.0/a return b} f()";
-    configBuilder.setOptimize(true);
     assertGenerateError(program, "Division by 0", true);
-    configBuilder.setOptimize(false);
     assertRuntimeError(program, "divisionByZeroLocal", "Division by 0");
   }
 
