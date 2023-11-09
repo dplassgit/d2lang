@@ -77,6 +77,15 @@ public class YetAnotherCompiler {
         state.throwOnError();
         return false;
       }
+      if (config.expectedErrorMessage() != null
+          && !state.errorMessage().matches(config.expectedErrorMessage())) {
+        // Wrong error message
+        throw new IllegalStateException(
+            String.format("WRONG ERROR MESSAGE: expected '%s' to match '%s'",
+                state.errorMessage(),
+                config.expectedErrorMessage()));
+      }
+
       // error in our phase, good, can stop now.
       return true;
     }

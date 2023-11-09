@@ -9,13 +9,10 @@ import java.util.Map;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.InterpreterExecutor;
-import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
-import com.plasstech.lang.d2.phase.State;
 
 public class TestUtils {
 
@@ -125,10 +122,6 @@ public class TestUtils {
           + "} "
           + "val = recordloopnoninvariant(new rt) "
           + "println val";
-
-  public static State compile(CompilationConfiguration config) {
-    return new YetAnotherCompiler().compile(config);
-  }
 
   /** Trims all comments from the code, and trims each line. */
   public static ImmutableList<String> trimComments(ImmutableList<String> code) {

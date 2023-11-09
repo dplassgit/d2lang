@@ -27,15 +27,15 @@ public class InterpreterExecutor {
     return this;
   }
 
+  public InterpreterExecutor setInteractive(boolean interactive) {
+    this.interactive = interactive;
+    return this;
+  }
+
   public InterpreterResult execute() {
     YetAnotherCompiler yac = new YetAnotherCompiler();
     state = yac.compile(config);
     return execute(state);
-  }
-
-  public InterpreterExecutor setInteractive(boolean interactive) {
-    this.interactive = interactive;
-    return this;
   }
 
   public InterpreterResult execute(State state) {

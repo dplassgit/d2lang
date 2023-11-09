@@ -80,8 +80,25 @@ public abstract class CompilationConfiguration {
 
     public abstract Builder setExpectedErrorMessage(String message);
 
+    public abstract String expectedErrorMessage();
+
     public abstract Builder setFilename(String filename);
 
-    public abstract CompilationConfiguration build();
+    abstract CompilationConfiguration autobuild();
+
+    public CompilationConfiguration build() {
+      String eem = expectedErrorMessage();
+      if (eem != null && eem.length() > 0) {
+        if (!eem.startsWith(".*")) {
+          eem = ".*" + eem;
+        }
+        if (!eem.endsWith(".*")) {
+          eem = eem + ".*";
+        }
+        eem = "(?s)" + eem;
+      }
+      setExpectedErrorMessage(eem);
+      return autobuild();
+    }
   }
 }

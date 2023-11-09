@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -60,7 +61,7 @@ public class LoopInvariantOptimizerTest {
             + "}";
     CompilationConfiguration config =
         CompilationConfiguration.builder().setSourceCode(program).setOptimize(false).build();
-    State unoptimized = TestUtils.compile(config);
+    State state = new YetAnotherCompiler().compile(config);
     // unoptimized:
     /**
      * <pre>
@@ -68,7 +69,7 @@ public class LoopInvariantOptimizerTest {
      * x = 0
      * </pre>
      */
-    assertThat(unoptimized.ilCode())
+    assertThat(state.ilCode())
         .containsAtLeast(
             new Label("__loop_begin_2"),
             new Transfer(LocationUtils.newStackLocation("x", VarType.INT, 4), ConstantOperand.ZERO,

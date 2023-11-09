@@ -18,10 +18,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.testing.TestUtils;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
@@ -109,7 +109,7 @@ public class GoldenTests extends NasmCodeGeneratorTestBase {
 
     CompilationConfiguration config =
         configBuilder.setSourceCode(text).setFilename(path).build();
-    State state = TestUtils.compile(config);
+    State state = new YetAnotherCompiler().compile(config);
     ImmutableList<Op> ilCode = state.lastIlCode();
 
     System.out.println("\nCODE:");

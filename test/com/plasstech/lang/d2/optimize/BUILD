@@ -5,6 +5,7 @@ gen_java_tests(name="SmallTests",
     prefix_path="test/",
     deps=[
         "//src/com/plasstech/lang/d2:executor",
+        "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/codegen:locations",

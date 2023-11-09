@@ -3,15 +3,14 @@ package com.plasstech.lang.d2.type;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
-import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.YetAnotherCompiler;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
 import com.plasstech.lang.d2.parse.node.BinOpNode;
 import com.plasstech.lang.d2.parse.node.ConstNode;
@@ -23,6 +22,7 @@ import com.plasstech.lang.d2.parse.node.StatementNode;
 import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
+import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 
 @RunWith(TestParameterInjector.class)
@@ -1391,15 +1391,17 @@ public class StaticCheckerTest {
         "Indeterminable type for RETURN");
   }
 
-  private void assertError(String program, String messageShouldMatch) {
-    State state = unsafeTypeCheck(program);
-    assertWithMessage("Should have result error for:\n " + program).that(state.error()).isTrue();
-    assertWithMessage("Should have correct error for:\n " + program)
-        .that(state.errorMessage())
-        .containsMatch(messageShouldMatch);
+  private static State assertError(String program, String messageShouldMatch) {
+    CompilationConfiguration config = CompilationConfiguration.builder().setSourceCode(program)
+        .setLastPhase(PhaseName.TYPE_CHECK).setExpectedErrorPhase(PhaseName.TYPE_CHECK)
+        .setExpectedErrorMessage(messageShouldMatch)
+        .build();
+    State state = new YetAnotherCompiler().compile(config);
+    assertThat(state.error()).isTrue();
+    return state;
   }
 
-  private SymbolTable checkProgram(String program) {
+  private static SymbolTable checkProgram(String program) {
     State state = safeTypeCheck(program);
     // go down a level to the first block's symbol table
     return firstSymTab(state);
@@ -1411,31 +1413,9 @@ public class StaticCheckerTest {
     return firstBlockSymTab;
   }
 
-  private State safeTypeCheck(String program) {
-    State state = unsafeTypeCheck(program);
-    if (state.error()) {
-      fail(state.errorMessage());
-    }
-    return state;
-  }
-
-  private State unsafeTypeCheck(String program) {
-    Lexer lexer = new Lexer(program);
-    Parser parser = new Parser(lexer);
-    State state = State.create(program).build();
-    state = parser.execute(state);
-    if (state.error()) {
-      fail(
-          "Should have passed parse for:\n "
-              + program
-              + "\nbut failed with error "
-              + state.errorMessage());
-    }
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    if (state.error()) {
-      System.err.println(state.errorMessage());
-    }
-    return state;
+  private static State safeTypeCheck(String program) {
+    CompilationConfiguration config = CompilationConfiguration.create(program).toBuilder()
+        .setLastPhase(PhaseName.TYPE_CHECK).build();
+    return new YetAnotherCompiler().compile(config);
   }
 }

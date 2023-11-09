@@ -8,12 +8,12 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.testing.TestUtils;
 
 public class ILCodeGeneratorTest {
   @Test
@@ -214,7 +214,7 @@ public class ILCodeGeneratorTest {
         .setParseDebugLevel(2)
         .setLastPhase(expectedErrorPhase)
         .setExpectedErrorPhase(expectedErrorPhase).build();
-    State state = TestUtils.compile(config);
+    State state = new YetAnotherCompiler().compile(config);
     assertThat(state.error()).isTrue();
   }
 
@@ -225,7 +225,7 @@ public class ILCodeGeneratorTest {
 
   private static List<Op> generateProgram(String program) {
     CompilationConfiguration config = CompilationConfiguration.create(program);
-    State state = TestUtils.compile(config);
+    State state = new YetAnotherCompiler().compile(config);
     assertThat(state.error()).isFalse();
 
     ImmutableList<Op> ilCode = state.ilCode();
