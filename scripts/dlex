@@ -1,1 +1,0 @@
-cat $1 | bazel run src/com/plasstech/lang/d2:InterpreterDriver -- $PWD/samples/d2ind2/lexer.d 2>&1 $@

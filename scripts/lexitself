@@ -1,1 +1,0 @@
-scripts/dlex samples/d2ind2/lexer.d $@

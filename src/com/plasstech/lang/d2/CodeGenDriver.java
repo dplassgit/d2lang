@@ -1,34 +1,37 @@
 package com.plasstech.lang.d2;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
-import com.plasstech.lang.d2.codegen.il.Op;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.StaticChecker;
 
+/**
+ * To run:
+ * 
+ * <pre>
+ * bazel run src/com/plasstech/lang/d2:CodeGenDriver -- $PWD/samples/helloworld.d
+ * </pre>
+ */
 public class CodeGenDriver {
-
   public static void main(String[] args) throws Exception {
-    String filename = args[0];
-    // 1. read file
-    String text = new String(Files.readAllBytes(Paths.get(filename)));
-    // 2. lex
-    Lexer lex = new Lexer(text);
-    Parser parser = new Parser(lex);
-    State state = parser.execute(State.create(text).build());
-    state.stopOnError();
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-    state.stopOnError();
-    ILCodeGenerator cg = new ILCodeGenerator();
-    state = cg.execute(state);
-    ImmutableList<Op> code = state.ilCode();
-    System.out.println(Joiner.on("\n").join(code));
+    try {
+      String filename = args[0];
+      // read file
+      String sourceCode = new String(Files.readAllBytes(Paths.get(filename)));
+      YetAnotherCompiler yac = new YetAnotherCompiler();
+      CompilationConfiguration config =
+          CompilationConfiguration.builder().setSourceCode(sourceCode)
+              .setLastPhase(PhaseName.IL_CODEGEN)
+              .setCodeGenDebugLevel(2)
+              .build();
+      State state = yac.compile(config);
+      state.stopOnError();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return;
+    }
   }
 }

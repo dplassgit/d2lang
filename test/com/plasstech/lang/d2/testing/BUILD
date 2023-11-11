@@ -9,7 +9,6 @@ java_library(
         "//src/com/plasstech/lang/d2/interpreter",
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse/node",
-        "//src/com/plasstech/lang/d2/parse",
         "//src/com/plasstech/lang/d2/phase:state",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_truth_truth",

@@ -38,11 +38,17 @@ public class YetAnotherCompiler {
     boolean shouldReturn = shouldReturn(config, state, PhaseName.IL_CODEGEN);
     if (config.codeGenDebugLevel() > 0) {
       System.out.println("------------------------------");
-      System.out.println("\nINITIAL INTERMEDIATE CODE:");
+      if (config.optimize()) {
+        System.out.println("\nINITIAL INTERMEDIATE CODE:");
+      } else {
+        System.out.println("\nINTERMEDIATE CODE:");
+      }
       if (state.ilCode() != null) {
         System.out.println(Joiner.on("\n").join(state.ilCode()));
       }
-      System.out.println("------------------------------");
+      if (config.optimize()) {
+        System.out.println("------------------------------");
+      }
     }
     if (shouldReturn) {
       return state;
@@ -70,7 +76,8 @@ public class YetAnotherCompiler {
   private boolean shouldReturn(CompilationConfiguration config, State state,
       PhaseName currentPhase) {
     if (state.error()) {
-      if (config.expectedErrorPhase() != currentPhase) {
+      if (config.expectedErrorPhase() != PhaseName.PHASE_UNDEFINED
+          && config.expectedErrorPhase() != currentPhase) {
         // error in wrong phase
         System.err.printf("WRONG PHASE: expected %s, was %s\n", config.expectedErrorPhase(),
             currentPhase);

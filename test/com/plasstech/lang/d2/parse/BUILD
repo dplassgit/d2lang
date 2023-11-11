@@ -6,8 +6,6 @@ gen_java_tests(name="SmallTests",
 	  deps=[
         "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/common",
-        "//src/com/plasstech/lang/d2/lex",
-        "//src/com/plasstech/lang/d2/parse", # weird, this is required
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/phase:phase_name",
         "//src/com/plasstech/lang/d2/phase:state",

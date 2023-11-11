@@ -169,7 +169,7 @@ public abstract class State {
 
   public void stopOnError(boolean showStackTrace) {
     if (error()) {
-      if (showStackTrace) {
+      if (showStackTrace && exception() != null) {
         throw exception();
       } else {
         if (exception() != null) {

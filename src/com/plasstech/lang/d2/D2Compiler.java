@@ -12,17 +12,15 @@ import com.google.common.io.CharSource;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.devtools.common.options.OptionsParser;
-import com.plasstech.lang.d2.codegen.ILCodeGenerator;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.lex.Lexer;
-import com.plasstech.lang.d2.optimize.ILOptimizer;
-import com.plasstech.lang.d2.parse.Parser;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymbolTable;
 
+/**
+ * Top-level driver for the compiler. See {@link D2Options} for options.
+ */
 public class D2Compiler {
 
   public static void main(String[] args) throws Exception {
@@ -36,54 +34,38 @@ public class D2Compiler {
     CharSource charSource = Files.asCharSource(sourceFile, Charset.defaultCharset());
     String sourceCode = charSource.read();
 
-    State state = State.create(sourceCode).build();
-    state = state.addFilename(sourceFilename);
-    Lexer lexer = new Lexer(state.sourceCode());
-    Parser parser = new Parser(lexer);
-    state = parser.execute(state);
+    State state = compileToIntermediateLanguage(options, sourceCode);
+    generateAsmAndLink(options, sourceFilename, state);
+  }
 
-    if (options.debugparse > 0) {
-      System.out.println("------------------------------");
-      System.out.println("\nPARSED PROGRAM:");
-      System.out.println(state.programNode());
-      System.out.println("------------------------------");
-    }
-    state.stopOnError(options.debugparse > 0 || options.showStackTraces);
-
-    StaticChecker checker = new StaticChecker();
-    state = checker.execute(state);
-
-    SymbolTable symbolTable = state.symbolTable();
-    if (options.debugint > 0) {
-      System.out.println("------------------------------");
-      System.out.println("\nSYMBOL TABLE:");
-      System.out.println(symbolTable);
-      System.out.println("------------------------------");
-    }
-    state.stopOnError(options.debugtype > 0 || options.showStackTraces);
-
-    ILCodeGenerator codegen = new ILCodeGenerator();
-    state = codegen.execute(state);
-    if (options.debugcodegen > 0) {
-      System.out.println("------------------------------");
-      System.out.println("\nINITIAL INTERMEDIATE CODE:");
-      System.out.println(Joiner.on("\n").join(state.ilCode()));
-      System.out.println("------------------------------");
-    }
-    state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
-    if (options.optimize) {
-      // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer(options.debugopt);
-      state = optimizer.execute(state);
-      if (options.debugcodegen > 0) {
-        System.out.println("------------------------------");
-        System.out.println("\nFINAL INTERMEDIATE CODE:");
-        System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
-        System.out.println("------------------------------");
+  private static State compileToIntermediateLanguage(D2Options options, String sourceCode) {
+    State state = null;
+    try {
+      YetAnotherCompiler yac = new YetAnotherCompiler();
+      CompilationConfiguration config =
+          CompilationConfiguration.builder()
+              .setSourceCode(sourceCode)
+              .setLexDebugLevel(options.debuglex)
+              .setParseDebugLevel(options.debugparse)
+              .setTypeDebugLevel(options.debugtype)
+              .setCodeGenDebugLevel(options.debugcodegen)
+              .setOptDebugLevel(options.debugopt)
+              .setOptimize(options.optimize)
+              .build();
+      state = yac.compile(config);
+    } catch (D2RuntimeException re) {
+      if (state != null) {
+        state.stopOnError(options.showStackTraces);
       }
-      state.stopOnError(options.debugopt > 0 || options.showStackTraces);
     }
+    if (state != null) {
+      state.stopOnError(options.showStackTraces);
+    }
+    return state;
+  }
 
+  private static void generateAsmAndLink(D2Options options, String sourceFilename, State state)
+      throws IOException, InterruptedException {
     switch (options.target) {
       case x64:
         state = new NasmCodeGenerator().execute(state);
