@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 
 import com.google.common.base.Joiner;
@@ -27,17 +26,11 @@ import com.plasstech.lang.d2.phase.State;
 
 public class NasmCodeGeneratorTestBase {
   private static File dir;
-  //  private CompilationConfiguration.Builder configBuilder;
 
   @SuppressWarnings("deprecation")
   @BeforeClass
   public static void setUpClass() throws Exception {
     dir = Files.createTempDir();
-  }
-
-  @Before
-  public void setUp() {
-    //    configBuilder = CompilationConfiguration.builder();
   }
 
   public String execute(String sourceCode, String filename) throws Exception {
@@ -107,6 +100,7 @@ public class NasmCodeGeneratorTestBase {
     // This parses, type checks, generates IL code, and optionally optimizes.
     YetAnotherCompiler yac = new YetAnotherCompiler();
     State state = yac.compile(config);
+    state.throwOnError();
 
     state = new NasmCodeGenerator().execute(state);
     if (config.expectedErrorPhase() != PhaseName.ASM_CODGEN) {
@@ -170,13 +164,7 @@ public class NasmCodeGeneratorTestBase {
   }
 
   protected void assertGenerateError(String sourceCode, String error) {
-    assertGenerateError(sourceCode, error, true);
-    assertGenerateError(sourceCode, error, false);
-  }
-
-  protected void assertGenerateError(String sourceCode, String error, boolean optimize) {
-    assertGenerateError(sourceCode, error, optimize,
-        optimize ? PhaseName.IL_OPTIMIZE : PhaseName.IL_CODEGEN);
+    assertGenerateError(sourceCode, error, true, PhaseName.IL_OPTIMIZE);
   }
 
   protected void assertGenerateError(String sourceCode, String error, boolean optimize,
@@ -199,7 +187,7 @@ public class NasmCodeGeneratorTestBase {
     assertThat(state.errorMessage()).matches(error);
   }
 
-  public void assertRuntimeError(String sourceCode, String filename, String error)
+  protected void assertRuntimeError(String sourceCode, String filename, String error)
       throws Exception {
 
     CompilationConfiguration config =

@@ -49,7 +49,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    assertGenerateError(sourceCode, "out of bounds.*was 10", true);
+    assertGenerateError(sourceCode, "out of bounds.*was 10");
     assertRuntimeError(sourceCode, "oobeIndex", "out of bounds (length 5); was 10");
   }
 
@@ -62,7 +62,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertGenerateError(sourceCode, "must be non-negative; was -2", true);
+    assertGenerateError(sourceCode, "must be non-negative; was -2");
     assertRuntimeError(
         sourceCode, "negativeIndexRunTime", "must be non-negative; was -2");
   }
@@ -70,7 +70,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void negativeIndexRunTimeGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    assertGenerateError(sourceCode, "must be non-negative; was -2", true);
+    assertGenerateError(sourceCode, "must be non-negative; was -2");
     assertRuntimeError(
         sourceCode, "negativeIndexRunTimeGlobal", "must be non-negative; was -2");
   }
@@ -280,10 +280,10 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void concatNull() throws Exception {
     assertRuntimeError("      tester: proc(left:string, right:string) {"
-    + "   t=left+right println t "
-    + "} "
-    + "tester(null, '') "
-    + "tester('', null) ", "concatNull", "Null pointer error");
+        + "   t=left+right println t "
+        + "} "
+        + "tester(null, '') "
+        + "tester('', null) ", "concatNull", "Null pointer error");
   }
 
   @Test

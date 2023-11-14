@@ -232,8 +232,10 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arrayAllocLengthNegative_runtimeError() throws Exception {
     // If optimized, the proc or constant and it will degenerate to the previous test.
-    assertRuntimeError("s=-3 x:string[s]", "arrayAllocLengthNegative", "ARRAY size must be non-negative; was -3");
-    assertRuntimeError("x:string[size()] size: proc():int{return -3}", "arrayAllocCalLengthNegative", "ARRAY size must be non-negative; was -3");
+    assertRuntimeError("s=-3 x:string[s]", "arrayAllocLengthNegative",
+        "ARRAY size must be non-negative; was -3");
+    assertRuntimeError("x:string[size()] size: proc():int{return -3}",
+        "arrayAllocCalLengthNegative", "ARRAY size must be non-negative; was -3");
   }
 
   @Test
@@ -247,13 +249,15 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arraySetIndexLocalNegative_error() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
-    assertRuntimeError("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()", "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative; was -3");
+    assertRuntimeError("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative; was -3");
   }
 
   @Test
   public void arraySetIndexLocalOOBE() throws Exception {
     // If it's not optimized, the size constant won't be propagated.
-    assertRuntimeError("f:proc() {y=3 x:string[1] x[y] = 'hi' print length(x)} f()", "arraySetIndexLocalOOBE", "out of bounds (length 1); was 3");
+    assertRuntimeError("f:proc() {y=3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "arraySetIndexLocalOOBE", "out of bounds (length 1); was 3");
   }
 
   @Test
@@ -269,7 +273,8 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayGetIndexOOBE() throws Exception {
-    assertRuntimeError("f:proc() {y=3 x:string[1] print x[y]} f()", "arrayGetIndexConstOOBE", "out of bounds (length 1); was 3");
+    assertRuntimeError("f:proc() {y=3 x:string[1] print x[y]} f()", "arrayGetIndexConstOOBE",
+        "out of bounds (length 1); was 3");
   }
 
   @Test
