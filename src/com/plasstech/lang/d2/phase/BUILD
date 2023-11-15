@@ -13,37 +13,37 @@ java_library(
 java_library(
     name = "state",
     srcs = [
-        "State.java", 
+        "State.java",
     ],
+    visibility = ["//visibility:public"],
     deps = [
-        ":auto", 
+        ":auto",
         ":errors",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/type:result",
         "//src/com/plasstech/lang/d2/type:symbols",
-        "@maven//:com_google_code_findbugs_jsr305",
-        "@maven//:com_google_guava_guava",
         "@maven//:com_google_auto_value_auto_value",
         "@maven//:com_google_auto_value_auto_value_annotations",
+        "@maven//:com_google_code_findbugs_jsr305",
+        "@maven//:com_google_guava_guava",
     ],
-    visibility=["//visibility:public"],
 )
 
 java_library(
     name = "phase",
     srcs = ["Phase.java"],
+    visibility = ["//visibility:public"],
     deps = [
-        ":state", 
+        ":state",
     ],
-    visibility=["//visibility:public"],
 )
 
 java_library(
     name = "phase_name",
     srcs = ["PhaseName.java"],
-    visibility=["//visibility:public"],
+    visibility = ["//visibility:public"],
 )
 
 java_library(
@@ -51,9 +51,9 @@ java_library(
     srcs = [
         "Errors.java",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//src/com/plasstech/lang/d2/common",
         "@maven//:com_google_guava_guava",
     ],
-    visibility=["//visibility:public"],
 )

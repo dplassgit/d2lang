@@ -1,19 +1,25 @@
 load("@google_bazel_common//testing:test_defs.bzl", "gen_java_tests")
 
-gen_java_tests(name="AllTests",
-    srcs=glob(["*.java"],
-        exclude=[
+gen_java_tests(
+    name = "AllTests",
+    srcs = glob(
+        ["*.java"],
+        exclude = [
             "GoldensTest.java",
-        ]),
-    prefix_path="test/",
-    deps=[
+        ],
+    ),
+    prefix_path = "test/",
+    runtime_deps = [
+        "@maven//:com_google_flogger_flogger_system_backend",
+    ],
+    deps = [
         "//src/com/plasstech/lang/d2:executor",
         "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/codegen",
-        "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/codegen:locations",
-        "//src/com/plasstech/lang/d2/codegen/testing", # for EmitterSubject
+        "//src/com/plasstech/lang/d2/codegen/il",
+        "//src/com/plasstech/lang/d2/codegen/testing",  # for EmitterSubject
         "//src/com/plasstech/lang/d2/codegen/x64",
         "//src/com/plasstech/lang/d2/codegen/x64:registers",
         "//src/com/plasstech/lang/d2/common",
@@ -29,8 +35,5 @@ gen_java_tests(name="AllTests",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",
-    ],
-    runtime_deps=[
-        "@maven//:com_google_flogger_flogger_system_backend",
     ],
 )

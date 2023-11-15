@@ -1,10 +1,11 @@
 java_library(
-    name="optimize",
-    srcs=glob(["*.java"]),
-    deps=[
-        "//src/com/plasstech/lang/d2/codegen/il",
+    name = "optimize",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
         "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/codegen:locations",
+        "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/phase",
@@ -16,5 +17,4 @@ java_library(
         "@maven//:com_google_flogger_flogger",
         "@maven//:com_google_guava_guava",
     ],
-    visibility=["//visibility:public"],
 )
