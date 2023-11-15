@@ -73,6 +73,7 @@ public enum TokenType {
   COMMA(","),
   DOT("."),
   // For future expansion:
+  VOID(true), // no return type
   DELETE(true), // free a new
   FOR(true), // for (x in array/list)
   IN(true),

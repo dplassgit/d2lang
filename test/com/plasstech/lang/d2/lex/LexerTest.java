@@ -611,4 +611,12 @@ public class LexerTest {
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.NULL);
   }
+
+  @Test
+  public void void_constant() {
+    Lexer lexer = new Lexer("void");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.VOID);
+    assertThat(token.type().isKeyword()).isTrue();
+  }
 }
