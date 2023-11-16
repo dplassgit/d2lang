@@ -59,16 +59,19 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class Parser implements Phase {
 
-  private static final ImmutableMap<TokenType, VarType> BUILTINS =
+  private static final ImmutableMap<TokenType, VarType> VARIABLE_TYPES =
       ImmutableMap.<TokenType, VarType>builder()
           .put(TokenType.BOOL, VarType.BOOL)
           .put(TokenType.BYTE, VarType.BYTE)
           .put(TokenType.DOUBLE, VarType.DOUBLE)
           .put(TokenType.INT, VarType.INT)
           .put(TokenType.LONG, VarType.LONG)
-          .put(TokenType.NULL, VarType.NULL)
-          .put(TokenType.PROC, VarType.PROC)
           .put(TokenType.STRING, VarType.STRING)
+          .build();
+
+  private static final ImmutableMap<TokenType, VarType> RETURN_TYPES =
+      ImmutableMap.<TokenType, VarType>builder().putAll(VARIABLE_TYPES)
+          .put(TokenType.VOID, VarType.VOID)
           .build();
 
   private static final Set<TokenType> EXPRESSION_STARTS =
@@ -90,7 +93,7 @@ public class Parser implements Phase {
           TokenType.TRUE,
           TokenType.VARIABLE);
 
-  private static Set<TokenType> BUILTIN_UNARY_KEYWORDS =
+  private static final Set<TokenType> UNARY_KEYWORDS =
       ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
 
   private final Lexer lexer;
@@ -327,29 +330,21 @@ public class Parser implements Phase {
 
       if (declaredType == TokenType.RECORD) {
         return parseRecordDeclaration(varToken);
-      }
-
-      if (declaredType == TokenType.EXTERN) {
-        // extern proc
-        advance(); // eat the extern
-        expect(TokenType.PROC);
-        advance(); // eat the proc
+      } else if (declaredType == TokenType.PROC) {
+        return procedureDecl(varToken);
+      } else if (declaredType == TokenType.EXTERN) {
         return externDecl(varToken);
       }
 
-      VarType varType = BUILTINS.get(declaredType);
+      VarType varType = VARIABLE_TYPES.get(declaredType);
       if (varType != null) {
-        advance(); // int, string, bool, proc
-        if (varType == VarType.PROC) {
-          return procedureDecl(varToken);
-        } else {
-          // See if it's an array declaration and build a "compound type" from the
-          // declaration, e.g., "array of int"
-          if (token.type() == TokenType.LBRACKET) {
-            return arrayDecl(varToken, varType);
-          }
-          return new DeclarationNode(varToken.text(), varType, varToken.start());
+        advance(); // int, string, bool
+        // See if it's an array declaration and build a "compound type" from the
+        // declaration, e.g., "array of int"
+        if (token.type() == TokenType.LBRACKET) {
+          return arrayDecl(varToken, varType);
         }
+        return new DeclarationNode(varToken.text(), varType, varToken.start());
       }
     } else if (token.type() == TokenType.VARIABLE) {
       Token typeToken = advance(); // eat the variable type record reference
@@ -404,22 +399,29 @@ public class Parser implements Phase {
   }
 
   private ProcedureNode procedureDecl(Token varToken) {
+    expect(TokenType.PROC);
+    advance();
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType();
+      returnType = parseVarType(RETURN_TYPES);
     }
     BlockNode statements = block();
     return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
   }
 
   private DeclarationNode externDecl(Token varToken) {
+    expect(TokenType.EXTERN);
+    advance(); // eat the extern
+    expect(TokenType.PROC);
+    advance(); // eat the proc
+
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType();
+      returnType = parseVarType(RETURN_TYPES);
     }
     return new ExternProcedureNode(varToken.text(), params, returnType, varToken.start());
   }
@@ -443,10 +445,9 @@ public class Parser implements Phase {
   }
 
   /**
-   * Parses colon followed by var type. Works for built-in types, record. Does NOT work for proc
-   * params.
+   * Parses colon followed by var type.
    */
-  private VarType parseVarType() {
+  private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap) {
     expect(TokenType.COLON);
     advance();
     if (token.type() == TokenType.VARIABLE) {
@@ -456,8 +457,8 @@ public class Parser implements Phase {
     }
 
     TokenType declaredType = token.type();
-    VarType paramType = BUILTINS.get(declaredType);
-    if (paramType != null && paramType != VarType.PROC) {
+    VarType paramType = allowedVarTypeMap.get(declaredType);
+    if (paramType != null) {
       // We have a param type
       advance(); // eat the param type
       // possibly an array. see if there's an open and close bracket
@@ -480,7 +481,7 @@ public class Parser implements Phase {
 
     Token paramName = advance();
     if (token.type() == TokenType.COLON) {
-      VarType paramType = parseVarType();
+      VarType paramType = parseVarType(VARIABLE_TYPES);
       return new Parameter(paramName.text(), paramType, paramName.start());
     } else {
       // no colon, just an unknown param type
@@ -753,7 +754,7 @@ public class Parser implements Phase {
   }
 
   private static boolean isUnaryKeyword(Token token) {
-    return BUILTIN_UNARY_KEYWORDS.contains(token.type());
+    return UNARY_KEYWORDS.contains(token.type());
   }
 
   /**

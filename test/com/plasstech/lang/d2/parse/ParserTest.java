@@ -766,10 +766,11 @@ public class ParserTest {
   }
 
   @Test
-  public void declarationError() {
+  public void declError() {
     assertParseError("a:", "expected built-in");
     assertParseError("a::", "expected built-in");
     assertParseError("a:print", "expected built-in");
+    assertParseError("a:void", "expected built-in");
   }
 
   @Test
@@ -817,6 +818,8 @@ public class ParserTest {
     assertParseError("fib:proc() {return", "Unexpected start of statement 'EOF'");
     assertParseError("fib:proc() {return {", "Unexpected start of statement '{'");
     assertParseError("fib:proc() {return )}", "Unexpected start of statement ')'");
+    assertParseError("fib:proc(arg:void) {}", "Unexpected 'VOID'");
+    assertParseError("fib:proc(void:arg) {}", "Unexpected 'VOID'");
   }
 
   @Test
@@ -918,6 +921,21 @@ public class ParserTest {
 
     // This is allowed, but the static checker will eventually prevent it
     parseProgram("fib:proc() {return print 'hi'}");
+  }
+
+  @Test
+  public void procReturnVoidExplicit() {
+    ProgramNode root = parseProgram("fib:proc(): void {return}");
+
+    ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
+    assertThat(proc.name()).isEqualTo("fib");
+    assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.block().statements()).hasSize(1);
+    ReturnNode returnNode = (ReturnNode) proc.block().statements().get(0);
+    assertThat(returnNode.expr().isPresent()).isFalse();
+
+    // This is allowed, but the static checker will eventually prevent it
+    parseProgram("fib:proc():void {return print 'hi'}");
   }
 
   @Test
@@ -1499,6 +1517,7 @@ public class ParserTest {
         CompilationConfiguration.builder().setSourceCode(expression).setLastPhase(PhaseName.PARSE)
             .build();
     State output = new YetAnotherCompiler().compile(config);
+    output.throwOnError();
     return output.programNode();
   }
 
