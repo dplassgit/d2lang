@@ -975,7 +975,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private void setValue(Location location, Object value) {
     // If it's a global symbol, write into root environment.
-    if (location.storage() == SymbolStorage.GLOBAL || location.storage() == SymbolStorage.HEAP) {
+    if (location.storage() == SymbolStorage.GLOBAL) {
       rootEnv.setValue(location, value);
       return;
     }

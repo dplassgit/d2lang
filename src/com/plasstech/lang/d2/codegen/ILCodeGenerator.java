@@ -135,7 +135,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
     VariableSymbol variable = (VariableSymbol) symbol;
     switch (variable.storage()) {
-      case HEAP:
       case GLOBAL:
         return new MemoryAddress(variable);
 

@@ -145,12 +145,10 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
         Operand leftOp = op.left();
         boolean leftOk =
             leftOp.storage() != SymbolStorage.GLOBAL
-                && leftOp.storage() != SymbolStorage.HEAP
                 && !finder.setters.contains(leftOp);
         Operand rightOp = op.right();
         boolean rightOk =
             rightOp.storage() != SymbolStorage.GLOBAL
-                && rightOp.storage() != SymbolStorage.HEAP
                 && !finder.setters.contains(rightOp);
         if (leftOk && rightOk) {
           logger.at(loggingLevel).log(
@@ -173,7 +171,6 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
               "Lifting assignment to %s of const: %s", op.destination().storage(), op);
           lifted = true;
         } else if (op.source().storage() != SymbolStorage.GLOBAL
-            && op.source().storage() != SymbolStorage.HEAP
             && finder.setters.count(op.destination()) == 1
             && !finder.setters.contains(op.source())) {
           // Not reading from a global; the only time we are set is here, and our source
