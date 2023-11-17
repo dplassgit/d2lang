@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.R8;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
@@ -17,7 +18,6 @@ import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
@@ -65,10 +65,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
       int numEntries = numEntriesOp.value();
       if (numEntries < 0) {
-        throw new D2RuntimeException(
-            String.format("ARRAY size must be non-negative; was %d", numEntries),
-            op.position(),
-            "Invalid index");
+        fail("Invalid index", op.position(), "ARRAY size must be non-negative; was %d", numEntries);
       }
       emitter.emit(
           "mov %s, %s  ; storage for # dimensions (1), dimension values (%d), actual storage (%d)",
@@ -252,7 +249,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         break;
 
       default:
-        emitter.fail("Cannot do %s on %ss (yet?)", operator, leftType);
+        fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
         break;
     }
   }
@@ -398,10 +395,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
       int index = indexConst.value();
       if (index < 0) {
-        throw new D2RuntimeException(
-            String.format("ARRAY index must be non-negative; was %d", index),
-            position,
-            "Invalid index");
+        fail("Invalid index", position, "ARRAY index must be non-negative; was %d", index);
       }
 
       if (index > 0 && !arrayLiteral) {

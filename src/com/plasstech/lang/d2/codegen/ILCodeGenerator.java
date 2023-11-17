@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -286,10 +287,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
               Location recordLocation = lookupLocation(fsn.variableName(), null);
               VarType varType = sym.varType();
               if (!varType.isRecord()) {
-                throw new D2RuntimeException(
-                    String.format("Can't set field on non-record type; was %s", varType.name()),
-                    fsn.position(),
-                    "Internal");
+                fail(fsn.position(), "Can't set field on non-record type; was %s",
+                    varType.name());
               }
               Symbol hopefullyRecordSymbol = symbolTable.getRecursive(varType.name());
 
@@ -300,10 +299,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
                   new FieldSetOp(
                       recordLocation, recordSymbol, fieldName, rhsLocation, fsn.position()));
             } else {
-              throw new D2RuntimeException(
-                  String.format("Could not find record symbol %s in symtab", fsn.variableName()),
-                  fsn.position(),
-                  "Internal");
+              fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+                  fsn.variableName());
             }
           }
 

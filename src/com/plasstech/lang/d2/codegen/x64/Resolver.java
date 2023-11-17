@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
+
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
@@ -104,7 +106,7 @@ class Resolver implements RegistersInterface {
         return "0";
       }
 
-      emitter.fail("Cannot generate %s constant %s yet", operand.type().name(), operand);
+      fail(null, "Cannot generate %s constant %s yet", operand.type().name(), operand);
       return null;
     }
 
@@ -139,7 +141,7 @@ class Resolver implements RegistersInterface {
         return "[RBP - " + stackLoc.offset() + "]";
 
       default:
-        emitter.fail("Cannot generate %s operand %s yet", location.storage(), location);
+        fail(null, "Cannot generate %s operand %s yet", location.storage(), location);
         return null;
     }
   }
@@ -202,7 +204,7 @@ class Resolver implements RegistersInterface {
         return null;
 
       default:
-        emitter.fail("Cannot generate %s operand %s yet", location.storage(), location);
+        fail(null, "Cannot generate %s operand %s yet", location.storage(), location);
         return null;
     }
   }

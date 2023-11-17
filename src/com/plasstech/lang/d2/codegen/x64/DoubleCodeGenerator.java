@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
+
 import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
@@ -11,7 +13,6 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -78,7 +79,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
         break;
 
       default:
-        emitter.fail("Cannot do %s on %ss (yet?)", operator, leftType);
+        fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
         break;
     }
   }
@@ -89,7 +90,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       ConstantOperand<Double> rightConstOperand = (ConstantOperand<Double>) rightOperand;
       double rightValue = rightConstOperand.value();
       if (rightValue == 0) {
-        throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+        fail("Arithmetic", op.position(), "Division by 0");
       }
     } else {
       Register zeroReg = resolver.allocate(VarType.DOUBLE);
@@ -134,7 +135,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
         resolver.deallocate(tempReg);
       }
     } else {
-      emitter.fail("Cannot generate %s on doubles", op.operator());
+      fail(op.position(), "Cannot generate %s on doubles", op.operator());
     }
   }
 }

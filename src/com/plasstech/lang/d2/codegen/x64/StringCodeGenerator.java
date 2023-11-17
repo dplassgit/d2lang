@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.R10;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.R11;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.R8;
@@ -22,7 +23,6 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
@@ -143,7 +143,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
         break;
 
       default:
-        emitter.fail("Cannot do %s on STRINGs (yet?)", operator);
+        fail(op.position(), "Cannot do %s on STRINGs (yet?)", operator);
         break;
     }
   }
@@ -319,10 +319,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) index;
       int indexValue = indexConst.value();
       if (indexValue < 0) {
-        throw new D2RuntimeException(
-            String.format("STRING index must be non-negative; was %d", indexValue),
-            position,
-            "Invalid index");
+        fail("Invalid index", position, "STRING index must be non-negative; was %d", indexValue);
       }
     } else {
       // TODO: make this an asm function instead of inlining each time?

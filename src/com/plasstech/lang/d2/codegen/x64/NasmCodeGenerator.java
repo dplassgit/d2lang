@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
@@ -334,7 +335,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss (yet?)", operator, leftType);
+          fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else if (leftType == VarType.DOUBLE) {
@@ -462,7 +463,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         default:
-          fail("Cannot do %s on %ss (yet?)", operator, leftType);
+          fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else if (leftType == VarType.NULL) {
@@ -473,17 +474,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           break;
 
         case DOT:
-          ConstantOperand<String> stringConst = (ConstantOperand<String>) op.right();
-          throw new D2RuntimeException(
-              "Cannot retrieve field '" + stringConst.value() + "' of null object",
-              op.position(), "Null pointer");
+          fail("Null pointer", op.position(),
+              "Cannot retrieve field %s of null object", op.right());
+          break;
 
         default:
-          fail("Cannot do %s on %ss (yet?)", operator, leftType);
+          fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
           break;
       }
     } else {
-      fail("Cannot do %s on %ss (yet?)", operator, leftType);
+      fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
     }
 
     if (tempReg != null) {
@@ -577,7 +577,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     String size = Size.of(operandType).asmType;
 
     if (ConstantOperand.isAnyZero(rightOperand)) {
-      throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      fail("Arithmetic", op.position(), "Division by 0");
     }
     if (!rightOperand.isConstant()) {
       emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
@@ -679,11 +679,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
       case LENGTH:
         if (source.type() == VarType.NULL) {
-          throw new D2RuntimeException(
-              String.format(
-                  "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
-                  source.type()),
-              op.position(), "Null pointer");
+          fail("Null pointer", op.position(),
+              "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
+              source.type());
         }
         break;
 
@@ -728,7 +726,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         break;
 
       default:
-        fail("Cannot generate %s yet", op);
+        fail(op.position(), "Cannot generate %s yet", op);
         break;
     }
     // this affects print arrays.
@@ -800,9 +798,5 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private void emit(String format, Object... values) {
     emitter.emit(format, values);
-  }
-
-  private void fail(String format, Object... values) {
-    emitter.fail(format, values);
   }
 }

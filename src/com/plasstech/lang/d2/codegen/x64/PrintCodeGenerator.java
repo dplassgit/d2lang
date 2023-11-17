@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
@@ -120,7 +121,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emitExternCall("printf");
       // TODO: If arg is a round number, print a trailing .0
     } else {
-      emitter.fail("Cannot print %ss yet", arg.type());
+      fail(op.position(), "Cannot print %ss yet", arg.type());
     }
     emitter.emitExternCall("_flushall");
     registerState.condPop();

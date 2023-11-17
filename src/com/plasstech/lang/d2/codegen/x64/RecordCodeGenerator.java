@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
@@ -129,7 +130,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
         break;
 
       default:
-        emitter.fail("Still don't know how to do %s on records", op.operator());
+        fail(op.position(), "Still don't know how to do %s on records", op.operator());
         break;
     }
   }
@@ -244,7 +245,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
     Operand record = op.left();
     if (!record.type().isRecord()) {
-      emitter.fail("Cannot get field of non record %s", record);
+      fail(op.position(), "Cannot get field of non record %s", record);
     }
     VariableLocation variable = (VariableLocation) record;
     RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(record.type().name());
@@ -262,7 +263,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     // 2. get offset of field
     Operand right = op.right();
     if (!right.isConstant()) {
-      emitter.fail("Cannot get field name from right DOT operand: %s", right);
+      fail(op.position(), "Cannot get field name from right DOT operand: %s", right);
     }
     ConstantOperand<String> rightConst = (ConstantOperand<String>) right;
     String fieldName = rightConst.value();

@@ -34,11 +34,6 @@ public class DelegatingEmitter implements Emitter {
   }
 
   @Override
-  public void fail(String format, Object... values) {
-    delegate.fail(format, values);
-  }
-
-  @Override
   public void addExtern(String extern) {
     delegate.addExtern(extern);
   }
