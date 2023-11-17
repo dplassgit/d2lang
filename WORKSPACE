@@ -41,8 +41,6 @@ maven_install(
     ],
 )
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
 # See https://github.com/google/bazel-common for how to update these values
 http_archive(
     name = "google_bazel_common",
