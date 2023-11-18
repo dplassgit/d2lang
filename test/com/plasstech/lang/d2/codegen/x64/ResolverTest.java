@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
@@ -52,12 +51,16 @@ public class ResolverTest {
       LocationUtils.newParamLocation("i1", VarType.INT, 2, 0);
   private static final ParamLocation PARAM_STRING =
       LocationUtils.newParamLocation("s2", VarType.STRING, 3, 0);
-  private static final TempLocation TEMP_BYTE = LocationUtils.newTempLocation("__tempb", VarType.BYTE);
-  private static final TempLocation TEMP_DOUBLE = LocationUtils.newTempLocation("__tempd", VarType.DOUBLE);
-  private static final TempLocation TEMP_INT = LocationUtils.newTempLocation("__tempi", VarType.INT);
-  private static final TempLocation TEMP_STRING = LocationUtils.newTempLocation("__temps", VarType.STRING);
+  private static final TempLocation TEMP_BYTE =
+      LocationUtils.newTempLocation("__tempb", VarType.BYTE);
+  private static final TempLocation TEMP_DOUBLE =
+      LocationUtils.newTempLocation("__tempd", VarType.DOUBLE);
+  private static final TempLocation TEMP_INT =
+      LocationUtils.newTempLocation("__tempi", VarType.INT);
+  private static final TempLocation TEMP_STRING =
+      LocationUtils.newTempLocation("__temps", VarType.STRING);
 
-  private DelegatingEmitter emitter = new DelegatingEmitter(new ListEmitter());
+  private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
   private Resolver resolver = new Resolver(registers, null, null, emitter);
 

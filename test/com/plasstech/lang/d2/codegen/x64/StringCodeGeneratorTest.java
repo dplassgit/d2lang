@@ -11,7 +11,6 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringTable;
@@ -32,7 +31,7 @@ public class StringCodeGeneratorTest {
   private static final Operand CONSTANT = ConstantOperand.of("hi");
   private static final Operand CONSTANT2 = ConstantOperand.of("hi2");
 
-  private DelegatingEmitter emitter = new DelegatingEmitter(new ListEmitter());
+  private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
   private StringTable stringTable = new StringTable();
   private Resolver resolver = new Resolver(registers, stringTable, null, emitter);

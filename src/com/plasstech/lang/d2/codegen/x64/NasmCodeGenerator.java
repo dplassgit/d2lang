@@ -20,7 +20,6 @@ import com.plasstech.lang.d2.codegen.DoubleFinder;
 import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Labels;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringFinder;
@@ -86,7 +85,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private final DelegatingEmitter emitter;
 
   public NasmCodeGenerator() {
-    this(new DelegatingEmitter(new ListEmitter()), new Registers());
+    this(new DelegatingEmitter(new X64Emitter()), new Registers());
   }
 
   NasmCodeGenerator(Emitter emitter, Registers registers) {

@@ -9,7 +9,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -41,7 +40,7 @@ public class RecordCodeGeneratorTest {
 
   private static final Operand NULL = new ConstantOperand<Void>(null, VarType.NULL);
 
-  private DelegatingEmitter emitter = new DelegatingEmitter(new ListEmitter());
+  private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
   private Resolver resolver = new Resolver(registers, null, null, emitter);
 

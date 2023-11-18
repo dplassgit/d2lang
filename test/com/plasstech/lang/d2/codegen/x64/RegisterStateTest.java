@@ -6,13 +6,12 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.type.VarType;
 
 public class RegisterStateTest {
 
   private Registers registers = new Registers();
-  private Emitter emitter = new ListEmitter();
+  private Emitter emitter = new X64Emitter();
 
   @Test
   public void condPushNothingAllocated() {

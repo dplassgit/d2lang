@@ -19,7 +19,6 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
@@ -406,7 +405,7 @@ class Resolver implements RegistersInterface {
     Emitter original = emitter.getDelegate();
     emitters.push(original);
 
-    emitter.setDelegate(new ListEmitter());
+    emitter.setDelegate(new X64Emitter());
   }
 
   void procEnd() {

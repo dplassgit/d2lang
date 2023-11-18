@@ -10,7 +10,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.ListEmitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -30,7 +29,7 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGeneratorTest {
 
-  private Emitter emitter = new ListEmitter();
+  private Emitter emitter = new X64Emitter();
   private Registers registers = new Registers();
   private NasmCodeGenerator codeGen;
 

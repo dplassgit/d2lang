@@ -7,7 +7,10 @@ import java.util.TreeSet;
 
 import com.google.common.collect.ImmutableList;
 
-public class ListEmitter implements Emitter {
+/**
+ * Partial implementation of Emitter that stores most everything in a list. Or a set.
+ */
+public abstract class ListEmitter implements Emitter {
 
   private final List<String> code = new ArrayList<>();
   private final Set<String> externs = new TreeSet<>();
@@ -39,14 +42,6 @@ public class ListEmitter implements Emitter {
   }
 
   @Override
-  public void emitExternCall(String call) {
-    addExtern(call);
-    emit("sub RSP, 0x20");
-    emit("call %s", call);
-    emit("add RSP, 0x20");
-  }
-
-  @Override
   public void addData(String datum) {
     data.add(datum);
   }
@@ -54,19 +49,5 @@ public class ListEmitter implements Emitter {
   @Override
   public ImmutableList<String> data() {
     return ImmutableList.copyOf(data);
-  }
-
-  @Override
-  public void emitExit(int exitCode) {
-    addExtern("exit");
-    emit("mov RCX, %d", exitCode);
-    emit("call exit");
-  }
-
-  @Override
-  public void emitLabel(String label) {
-    if (label != null) {
-      emit0("\n%s:", label);
-    }
   }
 }
