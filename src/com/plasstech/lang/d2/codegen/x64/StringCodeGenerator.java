@@ -123,6 +123,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       return;
     }
 
+    resolver.resolveFully(op.destination()); // to allocate it (?)
     TokenType operator = op.operator();
     switch (operator) {
       case PLUS:
@@ -159,16 +160,26 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
   public void visit(UnaryOp op) {
     switch (op.operator()) {
       case CHR:
+        if (op.operand().type() != VarType.INT) {
+          fail("Code generation", op.position(),
+              "Cannot apply %s to %s expression; must be string", op.operator(),
+              op.operand().type());
+        }
         generateChr(op);
         break;
 
       case LENGTH:
+        if (op.operand().type() != VarType.STRING) {
+          // maybe array codegen can handle this.
+          return;
+        }
         generateStringLength(op.position(), op.destination(), op.operand());
         break;
 
       default:
-        break;
+        return;
     }
+    resolver.deallocate(op.operand());
   }
 
   private void generateComparison(BinOp op) {
@@ -551,13 +562,12 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       resolver.deallocate(newDestination);
     }
     emitter.emitLabel(fin);
+    resolver.deallocate(left);
+    resolver.deallocate(right);
   }
 
   /** Generate destination = length(source) */
   private void generateStringLength(Position position, Location destination, Operand source) {
-    if (source.type() != VarType.STRING) {
-      return;
-    }
     npeCheckGenerator.generateNullPointerCheck(position, source);
     String destinationName = resolver.resolve(destination);
     if (source.isConstant()) {
@@ -613,6 +623,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emitExternCall("malloc");
     registerState.condPop();
     // 2. set dest to allocated string
+    emitter.emit("; chr set dest to allocated string");
     resolver.mov(RAX, op.destination());
 
     Register charReg = resolver.allocate(VarType.INT);
@@ -625,6 +636,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
     raxState.condPop();
     resolver.deallocate(charReg);
+    resolver.deallocate(op.operand());
   }
 
   private enum Nullness {

@@ -4,7 +4,7 @@ calc_pi: proc: double {
   sign=1.0
 
   // #for loop to add terms
-  i = 0 while i < 70 do i = i + 1 {
+  i = 0 while i < 7000 do i = i + 1 {
     pi=pi+(sign*(4.0/((n)*(n+1.0)*(n+2.0))))
 
     // #for addition and subtraction of alternate terms

@@ -7,11 +7,12 @@ DSet: record {
 
 PRIMES = [2,3,5,7,11]
 hashCode: proc(value: string): int {
-  hash = 17 + length(value)
+  hash = length(value) * 53 
   i = 0 while i < length(value) do i = i + 1 {
     ch = value[i]
-    hash = hash + asc(ch) * PRIMES[i%5]
+    hash = hash * 29 + asc(ch)
   }
+  if hash < 0 { return -hash }
   return hash
 }
 
@@ -200,7 +201,6 @@ listEntryContains: proc(head:DEntry, value: string): bool {
 s = new DSet
 print "Should be false: " println setContains(s, 'hi')
 print "Should be false: " println addToSet(s, 'hi')
-printSet(s)
 
 i = 0 while i < 26 do i = i + 1 {
   addToSet(s, chr(i+asc('a')))

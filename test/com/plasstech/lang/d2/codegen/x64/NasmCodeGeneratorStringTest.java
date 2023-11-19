@@ -347,4 +347,19 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
             + "print f('abcde')\n",
         "addChr");
   }
+
+  @Test
+  public void bug289() throws Exception {
+    execute(""
+        + "DSet: record {}"
+        + "addToSet: proc(set: DSet, value: string): bool {\n"
+        + "  return false\n"
+        + "}\n"
+        + "\n"
+        + "s = new DSet\n"
+        + "i = 0\n"
+        + "addToSet(s, 'A')\n"
+        + "e = chr(i+asc('A'))+'B'\n"
+        + "print 'e: ' println e", "bug289");
+  }
 }

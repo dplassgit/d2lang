@@ -657,12 +657,22 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     switch (op.operator()) {
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
+        if (!source.type().isIntegral()) {
+          fail("Code generation", op.position(),
+              "Cannot apply %s to %s expression; must be BYTE, INT or LONG", op.operator(),
+              source.type());
+        }
         resolver.mov(source, destination);
         emit("not %s  ; bit not", destName);
         break;
 
       case NOT:
         // boolean not
+        if (source.type() != VarType.BOOL) {
+          fail("Code generation", op.position(),
+              "Cannot apply %s to %s expression; must be BOOL", op.operator(),
+              source.type());
+        }
         resolver.mov(source, destination);
         emit("xor %s, 0x01  ; boolean not", destName);
         break;
@@ -671,20 +681,28 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         if (source.type() == VarType.DOUBLE) {
           op.accept(doubleGenerator);
         } else {
+          if (!source.type().isIntegral()) {
+            fail("Code generation", op.position(),
+                "Cannot apply %s to %s expression; must be BYTE, INT or LONG", op.operator(),
+                source.type());
+          }
           resolver.mov(source, destination);
           emit("neg %s  ; unary minus", destName);
         }
         break;
 
       case LENGTH:
-        if (source.type() == VarType.NULL) {
-          fail("Null pointer", op.position(),
-              "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
-              source.type());
-        }
+        fail("Null pointer", op.position(),
+            "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
+            source.type());
         break;
 
       case ASC:
+        if (source.type() != VarType.STRING) {
+          fail("Code generation", op.position(),
+              "Cannot apply %s to %s expression; must be STRING", op.operator(),
+              source.type());
+        }
         npeCheckGenerator.generateNullPointerCheck(op.position(), source);
         // Just read one byte
         if (source.isConstant()) {
@@ -695,7 +713,6 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           String value = stringConst.value();
           emit("mov %s, %d ; store a full int (anded to 0xff)", destName, (value.charAt(0)) & 0xff);
         } else {
-
           if (resolver.isInAnyRegister(source) && resolver.isInAnyRegister(destination)) {
             // register to register, don't need extra temp
             Register sourceReg = resolver.toRegister(source);

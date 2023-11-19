@@ -7,7 +7,7 @@ i = 0 while i < length(program) do i = i + 1 {
   println copy
 }
 
-p:proc(): void {
+p:proc() {
   //program:string
   program = 'print "hi"'
   //copy:string 

@@ -37,8 +37,8 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
     if (op.call() != Call.INPUT) {
       return;
     }
-    Operand arg = op.arg();
-    String destName = resolver.resolve(arg);
+    Operand dest = op.arg();
+    String destName = resolver.resolve(dest);
 
     RegisterState state =
         RegisterState.condPush(emitter, registers, ImmutableList.of(RCX, RDX, R8, R9));
@@ -48,7 +48,7 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("mov RDX, %d; allocate 1mb", ONE_MB);
     emitter.emit("mov RCX, 1");
     emitter.emitExternCall("calloc");
-    Register tempReg = resolver.allocate(arg.type());
+    Register tempReg = resolver.allocate(dest.type());
     emitter.emit("; allocated %s as temp reg", tempReg);
     // TODO: this register might be munged by subsequent calls...
     emitter.emit("mov %s, RAX", tempReg.name64());
@@ -88,7 +88,6 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("mov RCX, %s", tempReg.name64());
     emitter.emitExternCall("free");
     resolver.deallocate(tempReg);
-    resolver.deallocate(arg);
     state.condPop();
   }
 }
