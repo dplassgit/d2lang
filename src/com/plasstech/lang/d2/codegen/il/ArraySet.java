@@ -11,17 +11,17 @@ public class ArraySet extends Op {
   private final Operand index;
   private final Operand source;
   private final ArrayType arrayType;
-  private final boolean arrayLiteral;
+  private final boolean isArrayLiteral;
 
   public ArraySet(
-      Location array, ArrayType arrayType, Operand index, Operand source, boolean arrayLiteral,
+      Location array, ArrayType arrayType, Operand index, Operand source, boolean isArrayLiteral,
       Position position) {
     super(position);
     this.arrayType = arrayType;
     this.array = array;
     this.index = index;
     this.source = source;
-    this.arrayLiteral = arrayLiteral;
+    this.isArrayLiteral = isArrayLiteral;
   }
 
   @Override
@@ -52,6 +52,6 @@ public class ArraySet extends Op {
   }
 
   public boolean isArrayLiteral() {
-    return arrayLiteral;
+    return isArrayLiteral;
   }
 }

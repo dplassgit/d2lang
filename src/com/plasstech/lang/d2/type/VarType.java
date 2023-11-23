@@ -21,9 +21,10 @@ public interface VarType {
   };
   VarType UNKNOWN = new UnknownType();
   VarType VOID = new SimpleType("VOID");
-  Set<VarType> NUMERIC_TYPES = ImmutableSet
-      .of(VarType.INT, VarType.BYTE, VarType.DOUBLE, VarType.LONG);
-  Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.INT, VarType.BYTE, VarType.LONG);
+
+  final Set<VarType> NUMERIC_TYPES = ImmutableSet
+      .of(VarType.BYTE, VarType.INT, VarType.LONG, VarType.DOUBLE);
+  final Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",
@@ -39,7 +40,7 @@ public interface VarType {
   }
 
   default boolean isNull() {
-    return false;
+    return this == NULL;
   }
 
   default boolean isArray() {

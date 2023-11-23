@@ -161,9 +161,9 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
         String escaped = ESCAPER.escape(opcodeString);
         emitter.emit0("");
         if (opcode.position() != null) {
-          emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
+          emitter.emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
         } else {
-          emit("; SOURCE: %s", escaped);
+          emitter.emit("; SOURCE: %s", escaped);
         }
 
         int length = emitter.all().size();
@@ -240,7 +240,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Dec op) {
     String target = resolver.resolve(op.target());
     String size = Size.of(op.target().type()).asmType;
-    emit("dec %s %s", size, target);
+    emitter.emit("dec %s %s", size, target);
     resolver.deallocate(op.target());
   }
 
@@ -248,7 +248,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   public void visit(Inc op) {
     String target = resolver.resolve(op.target());
     String size = Size.of(op.target().type()).asmType;
-    emit("inc %s %s", size, target);
+    emitter.emit("inc %s %s", size, target);
     resolver.deallocate(op.target());
   }
 
@@ -261,16 +261,16 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       int condAsNumber = Integer.parseInt(condAsString);
       if (!((condAsNumber == 0) ^ op.isNot())) {
         // If both true or both false, unconditionally jump to destination. 
-        emit("jmp %s", destination);
+        emitter.emit("jmp %s", destination);
       }
     } else {
-      emit("cmp BYTE %s, 0", condAsString);
+      emitter.emit("cmp BYTE %s, 0", condAsString);
       if (op.isNot()) {
         // We want to jump to the destination if cond IS zero, so we use 'je'.
-        emit("je %s", destination);
+        emitter.emit("je %s", destination);
       } else {
         // We want to jump to the destination if cond is NOT zero, so we use 'jne'.
-        emit("jne %s", destination);
+        emitter.emit("jne %s", destination);
       }
     }
     resolver.deallocate(condition);
@@ -359,7 +359,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             }
 
             // 3. temp = left * right
-            emit("imul %s, %s", tempReg.name16(), rightReg.name16());
+            emitter.emit("imul %s, %s", tempReg.name16(), rightReg.name16());
 
             // 4. mov dest, temp
             resolver.mov(tempReg, dest);
@@ -397,7 +397,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               // Have to move it
               rightReg = resolver.allocate(VarType.INT);
               Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
-              emit("mov %s, %s  ; save right to a different register",
+              emitter.emit("mov %s, %s  ; save right to a different register",
                   rightReg.sizeByType(leftType),
                   rightName);
               // NOTE: rightName IS OVERWRITTEN
@@ -408,7 +408,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (resolver.isInRegister(dest, RCX)) {
               destReg = resolver.allocate(VarType.INT);
               Location destRegLocation = new RegisterLocation(dest.name(), destReg, dest.type());
-              emit("; dest is RCX, have to do an extra mov:");
+              emitter.emit("; dest is RCX, have to do an extra mov:");
               resolver.mov(dest, destRegLocation);
               // NOTE: destName IS OVERWRITTEN
               destName = resolver.resolve(destRegLocation);
@@ -417,27 +417,27 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             RegisterState registerState = null;
             if (destReg == null) {
               // it wasn't in rcx, so we have to push now
-              registerState = condPush(ImmutableList.of(RCX));
+              registerState = RegisterState.condPush(emitter, resolver, ImmutableList.of(RCX));
             }
             if (!reuse) {
               // Start with dest = left. CANNOT use destRo.operand because destName might have been
               // overwritten
               // MUST use "size" because it might be memory
-              emit("mov %s %s, %s ; shift setup (source)", size, destName, leftName);
+              emitter.emit("mov %s %s, %s ; shift setup (source)", size, destName, leftName);
             }
             // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
             // move right (amount to shift) to RCX
-            emit("mov %s %s, %s ; get amount to shift into CL",
+            emitter.emit("mov %s %s, %s ; get amount to shift into CL",
                 size,
                 RCX.sizeByType(leftType),
                 rightName);
             // NOTE: destName may have been overwritten
-            emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
+            emitter.emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
             if (rightReg != null) {
               resolver.deallocate(rightReg);
             }
             if (destReg != null) {
-              emit("; destreg was set, copy it out now");
+              emitter.emit("; destreg was set, copy it out now");
               resolver.mov(VarType.INT, destReg, RCX);
               resolver.deallocate(destReg);
             } else {
@@ -501,7 +501,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("; constant is larger than 32 bits, must use intermediary");
       Register tempReg = resolver.allocate(source.type());
       resolver.mov(source.operand(), tempReg);
-      emit("%s %s %s, %s",
+      emitter.emit("%s %s %s, %s",
           BINARY_OPCODE.get(operator),
           Size.of(source.type()).asmType,
           dest.name(),
@@ -510,7 +510,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       // NOTE RETURN
       return;
     }
-    emit("%s %s %s, %s",
+    emitter.emit("%s %s %s, %s",
         BINARY_OPCODE.get(operator),
         Size.of(source.type()).asmType,
         dest.name(),
@@ -522,7 +522,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     Register tempReg = null;
     if (directCompare(leftRo, rightRo)) {
       // Direct comparison: reg/anything, mem/reg, mem/imm8, mem/imm32
-      emit("cmp %s %s, %s  ; direct comparison",
+      emitter.emit("cmp %s %s, %s  ; direct comparison",
           Size.of(leftRo.type()).asmType,
           leftRo.name(),
           rightRo.name());
@@ -534,7 +534,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(leftRo.operand(), tempReg);
       Register rightReg = resolver.allocate(VarType.INT);
       resolver.mov(rightRo.operand(), rightReg);
-      emit("cmp %s, %s  ; imm comparison", tempRegName, rightReg.sizeByType(rightRo.type()));
+      emitter.emit("cmp %s, %s  ; imm comparison", tempRegName,
+          rightReg.sizeByType(rightRo.type()));
       resolver.deallocate(rightReg);
     } else {
       // imm/imm, imm/reg, imm/mem, mem/mem
@@ -543,14 +544,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       tempReg = resolver.allocate(VarType.INT);
       String tempRegName = tempReg.sizeByType(leftRo.type());
       resolver.mov(leftRo.operand(), tempReg);
-      emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
+      emitter.emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
     }
-    emit("%s %s", BINARY_OPCODE.get(operator), destName);
+    emitter.emit("%s %s", BINARY_OPCODE.get(operator), destName);
     return tempReg;
   }
 
   /** returns true if we can directly compare left and right. */
-  private boolean directCompare(ResolvedOperand leftRo, ResolvedOperand rightRo) {
+  private static boolean directCompare(ResolvedOperand leftRo, ResolvedOperand rightRo) {
     // anything vs imm64: false
     if (ConstantOperand.isImm64(rightRo.operand())) {
       return false;
@@ -579,14 +580,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       fail("Arithmetic", op.position(), "Division by 0");
     }
     if (!rightOperand.isConstant()) {
-      emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
+      emitter.emit("cmp %s %s, 0  ; detect division by 0", size, rightName);
       String continueLabel = Labels.nextLabel("not_div_by_zero");
-      emit("jne %s", continueLabel);
+      emitter.emit("jne %s", continueLabel);
 
       emitter.emit0("\n  ; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);
-      emit("mov EDX, %d  ; line number", op.position().line());
-      emit("mov RCX, DIV_BY_ZERO_ERR");
+      emitter.emit("mov EDX, %d  ; line number", op.position().line());
+      emitter.emit("mov RCX, DIV_BY_ZERO_ERR");
       emitter.emitExternCall("printf");
       emitter.emitExit(-1);
 
@@ -597,24 +598,25 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // 4. set up left in EDX:EAX
     // 5. idiv by right, result in eax
     // 6. mov destName, eax
-    RegisterState registerState = condPush(ImmutableList.of(RAX, RDX));
+    RegisterState registerState =
+        RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX, RDX));
     Register temp = resolver.allocate(VarType.INT);
     String leftName = resolver.resolve(leftOperand);
-    emit("xor RAX, RAX");
-    emit("; numerator:");
+    emitter.emit("xor RAX, RAX");
+    emitter.emit("; numerator:");
     resolver.mov(leftOperand, RAX);
-    emit("; denominator:");
+    emitter.emit("; denominator:");
     resolver.mov(rightOperand, temp);
 
     if (operandType == VarType.INT) {
-      emit("cdq  ; sign extend eax to edx");
+      emitter.emit("cdq  ; sign extend eax to edx");
     } else if (operandType == VarType.LONG) {
-      emit("cqo  ; sign extend rax to rdx");
+      emitter.emit("cqo  ; sign extend rax to rdx");
     } else if (operandType == VarType.BYTE) {
-      emit("cbw  ; sign extend al to ax");
+      emitter.emit("cbw  ; sign extend al to ax");
     }
 
-    emit("idiv %s  ; %s = %s / %s",
+    emitter.emit("idiv %s  ; %s = %s / %s",
         temp.sizeByType(operandType),
         RAX.sizeByType(operandType),
         leftName,
@@ -623,13 +625,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
       // EAX (or AL) has quotient
-      emit("; quotient:");
+      emitter.emit("; quotient:");
       resolver.mov(RAX, dest);
     } else if (op.operator() == TokenType.MOD) {
       if (operandType == VarType.BYTE) {
         // remainder is in AH
         String destName = resolver.resolve(dest);
-        emit("mov %s %s, AH  ; remainder", size, destName);
+        emitter.emit("mov %s %s, AH  ; remainder", size, destName);
       } else {
         // remainder is in EDX
         resolver.mov(RDX, dest);
@@ -640,7 +642,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
       registerState.condPop(RDX);
     } else {
       // pseudo pop
-      emit("add RSP, 8  ; pseudo pop RDX");
+      emitter.emit("add RSP, 8  ; pseudo pop RDX");
     }
     registerState.condPop(RAX);
   }
@@ -648,12 +650,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(UnaryOp op) {
     // 1. get source location name
-    Operand source = op.operand();
     // 2. apply op
     // 3. store in destination
+    Operand source = op.operand();
     Location destination = op.destination();
     String destName = resolver.resolve(destination);
-    // apply op
+
     switch (op.operator()) {
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
@@ -663,7 +665,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               source.type());
         }
         resolver.mov(source, destination);
-        emit("not %s  ; bit not", destName);
+        emitter.emit("not %s  ; bit not", destName);
         break;
 
       case NOT:
@@ -674,7 +676,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
               source.type());
         }
         resolver.mov(source, destination);
-        emit("xor %s, 0x01  ; boolean not", destName);
+        emitter.emit("xor %s, 0x01  ; boolean not", destName);
         break;
 
       case MINUS:
@@ -687,7 +689,7 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
                 source.type());
           }
           resolver.mov(source, destination);
-          emit("neg %s  ; unary minus", destName);
+          emitter.emit("neg %s  ; unary minus", destName);
         }
         break;
 
@@ -711,13 +713,14 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // _temp1='hi' _temp2=asc(_temp1) so it's not really asc(constant)...
           ConstantOperand<String> stringConst = (ConstantOperand<String>) source;
           String value = stringConst.value();
-          emit("mov %s, %d ; store a full int (anded to 0xff)", destName, (value.charAt(0)) & 0xff);
+          emitter.emit("mov %s, %d ; store a full int (anded to 0xff)", destName,
+              (value.charAt(0)) & 0xff);
         } else {
           if (resolver.isInAnyRegister(source) && resolver.isInAnyRegister(destination)) {
             // register to register, don't need extra temp
             Register sourceReg = resolver.toRegister(source);
             Register destReg = resolver.toRegister(destination);
-            emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), sourceReg);
+            emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), sourceReg);
           } else {
 
             // Source or dest is in memory; use a temp register.
@@ -729,15 +732,15 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (resolver.isInAnyRegister(destination)) {
               // two regs, good.
               Register destReg = resolver.toRegister(destination);
-              emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), tempReg);
+              emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), tempReg);
             } else {
               // This can't really happen, probably, because destinations
               // are typically temps, which are stored in registers.
-              emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
+              emitter.emit("mov BYTE %s, [%s] ; copy a byte", destName, tempReg);
             }
             resolver.deallocate(tempReg);
           }
-          emit("and %s, 0xff", destName);
+          emitter.emit("and %s, 0xff", destName);
         }
         break;
 
@@ -753,12 +756,12 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(ProcEntry op) {
-    emit("push RBP");
-    emit("mov RBP, RSP");
+    emitter.emit("push RBP");
+    emitter.emit("mov RBP, RSP");
     if (op.localBytes() > 0) {
       // this may over-allocate, but /shrug.
       int bytes = 16 * (op.localBytes() / 16 + 1);
-      emit("sub RSP, %d  ; space for locals", bytes);
+      emitter.emit("sub RSP, %d  ; space for locals", bytes);
     }
     resolver.procEntry();
 
@@ -776,14 +779,13 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Return op) {
     // we can't just "ret" here because there's cleanup we need to do first.
-    if (op.returnValueLocation().isPresent()) {
+    op.returnValueLocation().ifPresent(returnValue -> {
       // transfer from return value to XMM0/RAX
-      Operand returnValue = op.returnValueLocation().get();
       resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
       resolver.deallocate(returnValue);
-    }
+    });
     // NOTYPO
-    emit("jmp __exit_of_%s", op.procName());
+    emitter.emit("jmp __exit_of_%s", op.procName());
   }
 
   @Override
@@ -802,17 +804,8 @@ public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit0("__exit_of_%s:", op.procName());
     resolver.procEnd();
 
-    emit("mov RSP, RBP");
-    emit("pop RBP");
-    emit("ret  ; return from procedure");
-  }
-
-  /** Conditionally push all allocated registers in the list */
-  private RegisterState condPush(ImmutableList<Register> registerList) {
-    return RegisterState.condPush(emitter, resolver, registerList);
-  }
-
-  private void emit(String format, Object... values) {
-    emitter.emit(format, values);
+    emitter.emit("mov RSP, RBP");
+    emitter.emit("pop RBP");
+    emitter.emit("ret");
   }
 }

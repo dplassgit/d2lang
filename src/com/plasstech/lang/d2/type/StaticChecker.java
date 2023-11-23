@@ -107,7 +107,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.XOR);
 
   private static final Set<TokenType> NULL_OPERATORS =
-      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ);
+      ImmutableSet.of(
+          TokenType.EQEQ,
+          TokenType.NEQ);
 
   // NOTE: Does not include arrays or records.
   private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
@@ -282,171 +284,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     LValueNode lvalue = node.lvalue();
     lvalue.accept(
-        new LValueNode.Visitor() {
-          @Override
-          public void visit(FieldSetNode fsn) {
-            // Get the record from the symbol table.
-            Symbol variableSymbol = symbolTable.getRecursive(fsn.variableName());
-            if (variableSymbol.varType() == VarType.PROC) {
-              // can't assign to a proc
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Cannot dereference '%s' as RECORD; already declared as PROC",
-                          lvalue.name()),
-                      lvalue.position()));
-              return;
-            }
-            VarType varType = variableSymbol.varType();
-            if (variableSymbol == null || !varType.isRecord()) {
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Cannot set field of variable '%s' of type %s; not a known RECORD",
-                          lvalue.name(), varType),
-                      lvalue.position()));
-              return;
-            }
-
-            Symbol recordSymbol = symbolTable.getRecursive(varType.name());
-            if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
-              // this should never happen because the varType.isRecord, above, should have caught
-              // it.
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Cannot set field of variable '%s' of type %s; not a known RECORD",
-                          lvalue.name(), varType),
-                      fsn.position()));
-              return;
-            }
-
-            RecordSymbol record = (RecordSymbol) recordSymbol;
-            // make sure string after the dot is a field in record
-            String fieldName = fsn.fieldName();
-            VarType fieldType = record.fieldType(fieldName);
-            if (fieldType == VarType.UNKNOWN) {
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Cannot set unknown field %s of RECORD type %s",
-                          fieldName, record.name()),
-                      fsn.position()));
-              return;
-            } else if (!fieldType.compatibleWith(right.varType())) {
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Field %s of RECORD type %s declared as %s but expression is %s",
-                          fieldName, record.name(), fieldType, right.varType()),
-                      lvalue.position()));
-            }
-            lvalue.setVarType(fieldType);
-          }
-
-          @Override
-          public void visit(VariableSetNode node) {
-            // simple this=that
-            Symbol symbol = symbolTable.getRecursive(lvalue.name());
-            if (symbol == null) {
-              // Brand new symbol in all scopes. Assign in current scope.
-              VariableSymbol variableSymbol = symbolTable.assign(lvalue.name(), right.varType());
-              if (!procedures.empty()) {
-                // Tell it its parent name.
-                variableSymbol.setParentName(procedures.peek().name());
-              }
-            } else {
-              // Already known in some scope. Update.
-              if (symbol.varType().isUnknown()) {
-                symbol.setVarType(right.varType());
-              } else if (symbol.varType() == VarType.PROC) {
-                // can't assign to a proc
-                errors.add(
-                    new TypeException(
-                        String.format(
-                            "Cannot assign '%s' as %s; already declared as PROC",
-                            lvalue.name(), right.varType()),
-                        lvalue.position()));
-                return;
-              } else if (!symbol.varType().compatibleWith(right.varType())) {
-                // It was already in the symbol table. Possible that it's wrong.
-                errors.add(
-                    new TypeException(
-                        String.format(
-                            "Cannot convert variable '%s' from declared type %s to %s",
-                            lvalue.name(), symbol.varType(), right.varType()),
-                        lvalue.position()));
-                return;
-              }
-
-              // TODO(#38): if arrays, the # of dimensions must match.
-
-              symbol.setAssigned();
-            }
-
-            lvalue.setVarType(right.varType());
-          }
-
-          @Override
-          public void visit(ArraySetNode asn) {
-            // 1. lhs must be known array
-            String variableName = asn.variableName();
-            Symbol symbol = symbolTable.getRecursive(variableName);
-            if (symbol == null) {
-              // this should never happen?
-              errors.add(
-                  new TypeException(
-                      String.format("Unknown variable '%s' used as ARRAY", variableName),
-                      lvalue.position()));
-              return;
-            }
-            if (!symbol.varType().isArray()) {
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Variable '%s' used as ARRAY; was %s", variableName, symbol.varType()),
-                      lvalue.position()));
-              return;
-            }
-            asn.setVarType(symbol.varType());
-
-            // 2. index must be int
-            ExprNode indexNode = asn.indexNode();
-            indexNode.accept(StaticChecker.this);
-            VarType indexType = indexNode.varType();
-            if (indexType != VarType.INT) {
-              errors.add(
-                  new TypeException(
-                      String.format("ARRAY index must be INT; was %s", indexType),
-                      indexNode.position()));
-              return;
-            }
-            if (indexNode.isConstant()) {
-              ConstNode<Integer> index = (ConstNode<Integer>) indexNode;
-              if (index.value() < 0) {
-                errors.add(
-                    new TypeException(
-                        String.format("ARRAY index must be non-negative; was %d", index.value()),
-                        indexNode.position()));
-              }
-            }
-
-            ArrayType arrayType = (ArrayType) symbol.varType();
-
-            if (right.varType().isUnknown()) {
-              // should we infer it?
-            }
-            // 3. rhs must match lhs
-            if (!arrayType.baseType().compatibleWith(right.varType())) {
-              errors.add(
-                  new TypeException(
-                      String.format(
-                          "Variable '%s' declared as ARRAY of %s but expression resolved to %s",
-                          variableName, arrayType.baseType(), right.varType()),
-                      lvalue.position()));
-            }
-          }
-        });
+        new LValueNodeVisitor(lvalue, right));
 
     // TODO: why do we need variable.vartype, node.vartype and symbol.type?
     node.setVarType(right.varType());
@@ -1178,5 +1016,179 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
     }
     node.setVarType(type);
+  }
+
+  private class LValueNodeVisitor implements LValueNode.Visitor {
+    private final LValueNode lvalue;
+    private final Node rhs;
+
+    private LValueNodeVisitor(LValueNode lvalue, Node rhs) {
+      this.lvalue = lvalue;
+      this.rhs = rhs;
+    }
+
+    @Override
+    public void visit(FieldSetNode fsn) {
+      // Get the record from the symbol table.
+      Symbol variableSymbol = symbolTable.getRecursive(fsn.variableName());
+      if (variableSymbol.varType() == VarType.PROC) {
+        // can't assign to a proc
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot dereference '%s' as RECORD; already declared as PROC",
+                    lvalue.name()),
+                lvalue.position()));
+        return;
+      }
+      VarType varType = variableSymbol.varType();
+      if (variableSymbol == null || !varType.isRecord()) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot set field of variable '%s' of type %s; not a known RECORD",
+                    lvalue.name(), varType),
+                lvalue.position()));
+        return;
+      }
+
+      Symbol recordSymbol = symbolTable.getRecursive(varType.name());
+      if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
+        // this should never happen because the varType.isRecord, above, should have caught
+        // it.
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot set field of variable '%s' of type %s; not a known RECORD",
+                    lvalue.name(), varType),
+                fsn.position()));
+        return;
+      }
+
+      RecordSymbol record = (RecordSymbol) recordSymbol;
+      // make sure string after the dot is a field in record
+      String fieldName = fsn.fieldName();
+      VarType fieldType = record.fieldType(fieldName);
+      if (fieldType == VarType.UNKNOWN) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot set unknown field %s of RECORD type %s",
+                    fieldName, record.name()),
+                fsn.position()));
+        return;
+      } else if (!fieldType.compatibleWith(rhs.varType())) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Field %s of RECORD type %s declared as %s but expression is %s",
+                    fieldName, record.name(), fieldType, rhs.varType()),
+                lvalue.position()));
+      }
+      lvalue.setVarType(fieldType);
+    }
+
+    @Override
+    public void visit(VariableSetNode node) {
+      // simple this=that
+      Symbol symbol = symbolTable.getRecursive(lvalue.name());
+      if (symbol == null) {
+        // Brand new symbol in all scopes. Assign in current scope.
+        VariableSymbol variableSymbol = symbolTable.assign(lvalue.name(), rhs.varType());
+        if (!procedures.empty()) {
+          // Tell it its parent name.
+          variableSymbol.setParentName(procedures.peek().name());
+        }
+      } else {
+        // Already known in some scope. Update.
+        if (symbol.varType().isUnknown()) {
+          symbol.setVarType(rhs.varType());
+        } else if (symbol.varType() == VarType.PROC) {
+          // can't assign to a proc
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Cannot assign '%s' as %s; already declared as PROC",
+                      lvalue.name(), rhs.varType()),
+                  lvalue.position()));
+          return;
+        } else if (!symbol.varType().compatibleWith(rhs.varType())) {
+          // It was already in the symbol table. Possible that it's wrong.
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Cannot convert variable '%s' from declared type %s to %s",
+                      lvalue.name(), symbol.varType(), rhs.varType()),
+                  lvalue.position()));
+          return;
+        }
+
+        // TODO(#38): if arrays, the # of dimensions must match.
+
+        symbol.setAssigned();
+      }
+
+      lvalue.setVarType(rhs.varType());
+    }
+
+    @Override
+    public void visit(ArraySetNode asn) {
+      // 1. lhs must be known array
+      String variableName = asn.variableName();
+      Symbol symbol = symbolTable.getRecursive(variableName);
+      if (symbol == null) {
+        // this should never happen?
+        errors.add(
+            new TypeException(
+                String.format("Unknown variable '%s' used as ARRAY", variableName),
+                lvalue.position()));
+        return;
+      }
+      if (!symbol.varType().isArray()) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Variable '%s' used as ARRAY; was %s", variableName, symbol.varType()),
+                lvalue.position()));
+        return;
+      }
+      asn.setVarType(symbol.varType());
+
+      // 2. index must be int
+      ExprNode indexNode = asn.indexNode();
+      indexNode.accept(StaticChecker.this);
+      VarType indexType = indexNode.varType();
+      if (indexType != VarType.INT) {
+        errors.add(
+            new TypeException(
+                String.format("ARRAY index must be INT; was %s", indexType),
+                indexNode.position()));
+        return;
+      }
+      if (indexNode.isConstant()) {
+        ConstNode<Integer> index = (ConstNode<Integer>) indexNode;
+        if (index.value() < 0) {
+          errors.add(
+              new TypeException(
+                  String.format("ARRAY index must be non-negative; was %d", index.value()),
+                  indexNode.position()));
+        }
+      }
+
+      ArrayType arrayType = (ArrayType) symbol.varType();
+
+      if (rhs.varType().isUnknown()) {
+        // should we infer it?
+      }
+      // 3. rhs must match lhs
+      if (!arrayType.baseType().compatibleWith(rhs.varType())) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Variable '%s' declared as ARRAY of %s but expression resolved to %s",
+                    variableName, arrayType.baseType(), rhs.varType()),
+                lvalue.position()));
+      }
+    }
   }
 }

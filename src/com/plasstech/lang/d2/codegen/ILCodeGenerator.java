@@ -270,65 +270,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       rhsLocation = rhs.location();
     }
     LValueNode lvalue = node.lvalue();
-    lvalue.accept(
-        new LValueNode.Visitor() {
-
-          @Override
-          public void visit(VariableSetNode variableNode) {
-            Location dest = lookupLocation(variableNode.name(), variableNode.position());
-            variableNode.setLocation(dest);
-            emit(new Transfer(dest, rhsLocation, variableNode.position()));
-          }
-
-          @Override
-          public void visit(FieldSetNode fsn) {
-            Symbol sym = symbolTable.getRecursive(fsn.variableName());
-            if (sym != null) {
-              Location recordLocation = lookupLocation(fsn.variableName(), null);
-              VarType varType = sym.varType();
-              if (!varType.isRecord()) {
-                fail(fsn.position(), "Can't set field on non-record type; was %s",
-                    varType.name());
-              }
-              Symbol hopefullyRecordSymbol = symbolTable.getRecursive(varType.name());
-
-              String fieldName = fsn.fieldName();
-
-              RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
-              emit(
-                  new FieldSetOp(
-                      recordLocation, recordSymbol, fieldName, rhsLocation, fsn.position()));
-            } else {
-              fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
-                  fsn.variableName());
-            }
-          }
-
-          @Override
-          public void visit(ArraySetNode asn) {
-            // Look up storage in current symbol table
-            Symbol sym = symbolTable.getRecursive(asn.variableName());
-            if (sym != null) {
-              Location arrayLocation = lookupLocation(asn.variableName(), null);
-
-              Node indexNode = asn.indexNode();
-              indexNode.accept(ILCodeGenerator.this);
-              Operand indexLocation = indexNode.location();
-
-              emit(
-                  new ArraySet(
-                      arrayLocation,
-                      (ArrayType) asn.varType(),
-                      indexLocation,
-                      rhsLocation,
-                      false,
-                      asn.position()));
-            } else {
-              throw new RuntimeException(
-                  String.format("Could not find record symbol %s in symtab", asn.variableName()));
-            }
-          }
-        });
+    lvalue.accept(new LValueNodeVisitor(rhsLocation));
   }
 
   @Override
@@ -667,40 +609,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     symbolTable = symbolTable.parent();
   }
 
-  /**
-   * Some "locals" are declared in a procedure's child block node's symbol table, so we have to
-   * recursively look at *all* child blocks and make sure the offsets work from top to bottom.
-   */
-  private static class LocalOffsetAssigner extends DefaultNodeVisitor {
-    private int localBytes = 0;
-    private SymbolTable mySymbolTable;
-
-    private LocalOffsetAssigner(SymbolTable mySymbolTable) {
-      this.mySymbolTable = mySymbolTable;
-    }
-
-    @Override
-    public void visit(BlockNode node) {
-      BlockSymbol blockSymbol = mySymbolTable.enterBlock(node);
-      SymbolTable symTab = blockSymbol.symTab();
-      ImmutableList<Symbol> locals =
-          symTab
-              .variables()
-              .values()
-              .stream()
-              .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
-              .collect(ImmutableList.toImmutableList());
-      for (Symbol symbol : locals) {
-        LocalSymbol localSymbol = (LocalSymbol) symbol;
-        localBytes += localSymbol.varType().size();
-        localSymbol.setOffset(localBytes);
-      }
-      mySymbolTable = symTab;
-      super.visit(node);
-      mySymbolTable = symTab.parent();
-    }
-  }
-
   @Override
   public void visit(ProcedureNode node) {
     // Look up procedure in current scope. AHA that's the way we need to do it.
@@ -767,7 +675,11 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           "proc " + node.procName() + " not found in symtab " + symbolTable);
     }
     ProcSymbol procSym = (ProcSymbol) symbol;
-    ImmutableList<Location> formals = procSymFormals(procSym);
+    ImmutableList<Location> formals =
+        procSym.formals()
+            .stream()
+            .map(formal -> new ParamLocation(formal))
+            .collect(toImmutableList());
     if (node.isStatement()) {
       // No return value
       call = new Call(procSym, actuals, formals, node.position());
@@ -780,14 +692,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     emit(call);
   }
 
-  /**
-   * Convert the formals list to a list of Locations (ParamLocations).
-   */
-  private static ImmutableList<Location> procSymFormals(ProcSymbol procSym) {
-    return procSym.formals().stream().map(formal -> new ParamLocation(formal))
-        .collect(toImmutableList());
-  }
-
   @Override
   public void visit(IncDecNode node) {
     Location dest = lookupLocation(node.name(), node.position());
@@ -796,6 +700,103 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new Inc(dest, node.position()));
     } else {
       emit(new Dec(dest, node.position()));
+    }
+  }
+
+  /**
+   * Some "locals" are declared in a procedure's child block node's symbol table, so we have to
+   * recursively look at *all* child blocks and make sure the offsets work from top to bottom.
+   */
+  private static class LocalOffsetAssigner extends DefaultNodeVisitor {
+    private int localBytes = 0;
+    private SymbolTable mySymbolTable;
+
+    private LocalOffsetAssigner(SymbolTable mySymbolTable) {
+      this.mySymbolTable = mySymbolTable;
+    }
+
+    @Override
+    public void visit(BlockNode node) {
+      BlockSymbol blockSymbol = mySymbolTable.enterBlock(node);
+      SymbolTable symTab = blockSymbol.symTab();
+      ImmutableList<Symbol> locals =
+          symTab
+              .variables()
+              .values()
+              .stream()
+              .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
+              .collect(ImmutableList.toImmutableList());
+      for (Symbol symbol : locals) {
+        LocalSymbol localSymbol = (LocalSymbol) symbol;
+        localBytes += localSymbol.varType().size();
+        localSymbol.setOffset(localBytes);
+      }
+      mySymbolTable = symTab;
+      super.visit(node);
+      mySymbolTable = symTab.parent();
+    }
+  }
+
+  private class LValueNodeVisitor implements LValueNode.Visitor {
+    private final Operand rhs;
+
+    private LValueNodeVisitor(Operand rhs) {
+      this.rhs = rhs;
+    }
+
+    @Override
+    public void visit(VariableSetNode variableNode) {
+      Location dest = lookupLocation(variableNode.name(), variableNode.position());
+      variableNode.setLocation(dest);
+      emit(new Transfer(dest, rhs, variableNode.position()));
+    }
+
+    @Override
+    public void visit(FieldSetNode fsn) {
+      Symbol sym = symbolTable.getRecursive(fsn.variableName());
+      if (sym != null) {
+        Location recordLocation = lookupLocation(fsn.variableName(), null);
+        VarType varType = sym.varType();
+        if (!varType.isRecord()) {
+          fail(fsn.position(), "Can't set field on non-record type; was %s",
+              varType.name());
+        }
+        Symbol hopefullyRecordSymbol = symbolTable.getRecursive(varType.name());
+
+        String fieldName = fsn.fieldName();
+
+        RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
+        emit(
+            new FieldSetOp(
+                recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
+      } else {
+        fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+            fsn.variableName());
+      }
+    }
+
+    @Override
+    public void visit(ArraySetNode asn) {
+      // Look up storage in current symbol table
+      Symbol sym = symbolTable.getRecursive(asn.variableName());
+      if (sym != null) {
+        Location arrayLocation = lookupLocation(asn.variableName(), null);
+
+        Node indexNode = asn.indexNode();
+        indexNode.accept(ILCodeGenerator.this);
+        Operand indexLocation = indexNode.location();
+
+        emit(new ArraySet(
+            arrayLocation,
+            (ArrayType) asn.varType(),
+            indexLocation,
+            rhs,
+            /* isArrayLiteral= */ false,
+            asn.position()));
+      } else {
+        throw new RuntimeException(
+            String.format("Could not find record symbol %s in symtab", asn.variableName()));
+      }
     }
   }
 }
