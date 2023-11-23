@@ -2,42 +2,45 @@ workspace(name = "d2lang")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# In Bazel 2.0, Maven rules provided via new rules_jvm_external.
-
 # Get this from https://github.com/bazelbuild/rules_jvm_external/releases
-RULES_JVM_EXTERNAL_TAG = "4.2"
-
-RULES_JVM_EXTERNAL_SHA = "cd1a77b7b02e8e008439ca76fd34f5b07aecb8c752961f9640dea15e9e5ba1ca"
+RULES_JVM_EXTERNAL_TAG = "5.3"
+RULES_JVM_EXTERNAL_SHA ="d31e369b854322ca5098ea12c69d7175ded971435e55c18dd9dd5f29cc5249ac"
 
 http_archive(
     name = "rules_jvm_external",
-    sha256 = RULES_JVM_EXTERNAL_SHA,
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-    url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+    sha256 = RULES_JVM_EXTERNAL_SHA,
+    url = "https://github.com/bazelbuild/rules_jvm_external/releases/download/%s/rules_jvm_external-%s.tar.gz" % (RULES_JVM_EXTERNAL_TAG, RULES_JVM_EXTERNAL_TAG)
 )
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+rules_jvm_external_setup()
+
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 
+# These are at https://repo1.maven.org/maven2
 maven_install(
     artifacts = [
         "junit:junit:4.13.2",
         "com.github.pcj:google-options:jar:1.0.0",
-        "com.google.auto.value:auto-value-annotations:1.8.1",
+        "com.google.auto.value:auto-value-annotations:1.9",
         "com.google.auto.value:auto-value:1.9",
         "com.google.code.findbugs:jsr305:3.0.2",
-        "com.google.guava:guava:31.1-jre",
-        "com.google.flogger:flogger:0.7.4",
-        "com.google.flogger:flogger-system-backend:0.7.4",
-        "com.google.truth:truth:1.1.3",
-        "com.google.truth.extensions:truth-java8-extension:1.1.3",
-        "com.google.testparameterinjector:test-parameter-injector:1.0",
+        "com.google.guava:guava:32.1.3-jre",
+        "com.google.flogger:flogger:0.8",
+        "com.google.flogger:flogger-system-backend:0.8",
+        "com.google.truth:truth:1.1.5",
+        "com.google.truth.extensions:truth-java8-extension:1.1.5",
+        "com.google.testparameterinjector:test-parameter-injector:1.14",
     ],
     fetch_javadoc = True,
     fetch_sources = True,
     repositories = [
-        "https://maven.google.com",
         "https://repo1.maven.org/maven2",
-        "https://jcenter.bintray.com",
     ],
 )
 
