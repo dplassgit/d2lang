@@ -101,7 +101,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
   }
 
   private class TransferMover extends DefaultOpcodeVisitor {
-    private SetterGetterFinder finder;
+    private final SetterGetterFinder finder;
     private boolean lifted;
 
     TransferMover(SetterGetterFinder finder) {
@@ -185,8 +185,8 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
   // Finds all the uses of an operand.
   private class SetterGetterFinder extends DefaultOpcodeVisitor {
-    private Multiset<Operand> setters = HashMultiset.create();
-    private Set<Operand> getters = new HashSet<>();
+    private final Multiset<Operand> setters = HashMultiset.create();
+    private final Set<Operand> getters = new HashSet<>();
 
     @Override
     public void visit(Call op) {

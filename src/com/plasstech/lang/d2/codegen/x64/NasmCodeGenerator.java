@@ -26,8 +26,8 @@ import com.plasstech.lang.d2.codegen.StringFinder;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
-import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.IfOp;
+import com.plasstech.lang.d2.codegen.il.ImplementedOnlyOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
@@ -50,7 +50,7 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
-public class NasmCodeGenerator extends DefaultOpcodeVisitor implements Phase {
+public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements Phase {
   private static final Escaper ESCAPER = new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ",
       false);
 
