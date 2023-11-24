@@ -122,10 +122,11 @@ class Resolver implements RegistersInterface {
     }
     switch (location.storage()) {
       case TEMP:
+      case LONG_TEMP:
         // TODO: deal with out-of-registers
         reg = allocate(location.type());
         aliases.put(location.name(), reg);
-        emitter.emit("; Allocating %s to %s", location, reg);
+        emitter.emit("; Allocating %s (%s) to %s", location, location.storage(), reg);
         return reg.sizeByType(location.type());
 
       case GLOBAL:
@@ -158,18 +159,26 @@ class Resolver implements RegistersInterface {
 
   /** If the operand is a temp and was allocated, deallocate its register. */
   void deallocate(Operand operand) {
-    if (operand.storage() == SymbolStorage.TEMP) {
-      // now that we used the temp, unallocate it
-      String operandName = operand.toString();
-      Register reg = aliases.get(operandName);
-      if (reg != null) {
-        emitter.emit("; Deallocating %s from %s", operand, reg);
-        aliases.remove(operandName);
-        deallocate(reg);
-      }
+    if (operand instanceof ResolvedOperand) {
+      throw new IllegalStateException(
+          "trying to dallocate a fully resovled operand " + operand.toString());
+    }
+    if (operand.isTemp()) {
+      unconditionallyDeallocate(operand);
     } else if (operand.storage() == SymbolStorage.REGISTER) {
       RegisterLocation regLoc = (RegisterLocation) operand;
       deallocate(regLoc.register());
+    }
+  }
+
+  /** Now that we used the temp, deallocate it */
+  void unconditionallyDeallocate(Operand operand) {
+    String operandName = operand.toString();
+    Register reg = aliases.get(operandName);
+    if (reg != null) {
+      emitter.emit("; Deallocating %s from %s", operand, reg);
+      aliases.remove(operandName);
+      deallocate(reg);
     }
   }
 
@@ -189,6 +198,7 @@ class Resolver implements RegistersInterface {
     }
     switch (location.storage()) {
       case TEMP:
+      case LONG_TEMP:
         return null; // we would have found its alias already.
 
       case GLOBAL:

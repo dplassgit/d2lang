@@ -37,4 +37,6 @@ public interface OpcodeVisitor {
   void visit(ArraySet op);
 
   void visit(FieldSetOp op);
+
+  void visit(DeallocateTemp op);
 }

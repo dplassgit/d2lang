@@ -25,6 +25,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringFinder;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.ImplementedOnlyOpcodeVisitor;
@@ -807,5 +808,10 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     emitter.emit("mov RSP, RBP");
     emitter.emit("pop RBP");
     emitter.emit("ret");
+  }
+
+  @Override
+  public void visit(DeallocateTemp op) {
+    resolver.unconditionallyDeallocate(op.temp());
   }
 }

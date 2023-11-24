@@ -103,6 +103,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     if (!source.isConstant()) {
       Location sourceLocation = (Location) source;
       assignments.remove(sourceLocation.baseLocation());
+      // this might have ot change for long lived temps
       tempAssignments.remove(sourceLocation.baseLocation());
     }
   }

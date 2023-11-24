@@ -101,4 +101,9 @@ public abstract class IdentityOpcodeVisitor implements OpcodeVisitor {
   public void visit(FieldSetOp op) {
     fn.accept(op);
   }
+
+  @Override
+  public void visit(DeallocateTemp op) {
+    fn.accept(op);
+  }
 }

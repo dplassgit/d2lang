@@ -5,7 +5,7 @@ import java.util.Objects;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VariableSymbol;
 
-// can be a register or on the stack. how/where to allocate?
+// Can be a register or on the stack
 public class TempLocation extends VariableLocation {
   public TempLocation(VariableSymbol symbol) {
     super(symbol);

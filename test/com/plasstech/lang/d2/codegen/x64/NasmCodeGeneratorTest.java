@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
+import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertWithoutTrimmingThat;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -13,9 +14,11 @@ import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.Position;
@@ -28,6 +31,12 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGeneratorTest {
+
+  private static final Position START = new Position(0, 0);
+  private static final Location TEMP = LocationUtils.newTempLocation("__temp", VarType.INT);
+  private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
+  private static final Location LLTEMP =
+      LocationUtils.newLongTempLocation("__longtemp", VarType.INT);
 
   private Emitter emitter = new X64Emitter();
   private Registers registers = new Registers();
@@ -184,7 +193,7 @@ public class NasmCodeGeneratorTest {
   public void ascConstantToTemp() {
     Operand source = ConstantOperand.of("hi");
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
 
     generateOne(ascOp);
 
@@ -197,7 +206,7 @@ public class NasmCodeGeneratorTest {
     // really, reg to reg
     Operand source = LocationUtils.newParamLocation("source", VarType.STRING, 0, 0);
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
 
     generateOne(ascOp);
 
@@ -212,7 +221,7 @@ public class NasmCodeGeneratorTest {
   public void ascStackToTemp() {
     Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
 
     generateOne(ascOp);
 
@@ -231,7 +240,7 @@ public class NasmCodeGeneratorTest {
     Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
     // This should never happen; dests are usually temps stored in registers.
     Location dest = LocationUtils.newStackLocation("dest", VarType.INT, 8);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, new Position(1, 1));
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
 
     generateOne(ascOp);
 
@@ -291,12 +300,78 @@ public class NasmCodeGeneratorTest {
     assertThat(emitter).containsAtLeast("movq RDX, XMM3", "mov RCX, PRINT_DOUBLE", "call printf");
   }
 
-  private State generateOne(Op shiftOp) {
+  @Test
+  public void deallocateOp_doesNothingForNonTemps() {
+    Location doubleReg = new RegisterLocation("__double", XmmRegister.XMM3, VarType.DOUBLE);
+    Op op = new DeallocateTemp(doubleReg, START);
+    generateOne(op);
+    assertThat(emitter).contains("main:");
+  }
+
+  @Test
+  public void deallocateOp() {
+    // 1. temp=foo
+    // 2. deallocate
+    ImmutableList<Op> program =
+        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, START),
+            new DeallocateTemp(TEMP, START));
+    generate(program);
+    assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
+        "  ; Deallocating __temp from RBX");
+  }
+
+  @Test
+  public void tempAllocation() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, START));
+    generate(program);
+    assertWithoutTrimmingThat(emitter).contains("  ; Allocating __temp (TEMP) to RBX");
+  }
+
+  @Test
+  public void tempAutoDeallocated() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(TEMP, ConstantOperand.ONE, START),
+            new Transfer(GLOBAL, TEMP, START));
+    generate(program);
+    assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
+        "  ; Deallocating __temp from RBX");
+  }
+
+  @Test
+  public void longLivedTempNotAutoDeallocated() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(LLTEMP, ConstantOperand.ONE, START),
+            new Transfer(GLOBAL, LLTEMP, START));
+    generate(program);
+    assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
+    assertWithoutTrimmingThat(emitter).doesNotContain("  ; Deallocating __longtemp from RBX");
+  }
+
+  @Test
+  public void longLivedTempDeallocated() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(LLTEMP, ConstantOperand.ONE, START),
+            new Transfer(GLOBAL, LLTEMP, START),
+            new DeallocateTemp(LLTEMP, START));
+    generate(program);
+    assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
+    assertWithoutTrimmingThat(emitter).contains("  ; Deallocating __longtemp from RBX");
+  }
+
+  private State generateOne(Op op) {
+    return generate(ImmutableList.of(op));
+  }
+
+  private State generate(ImmutableList<Op> ops) {
     State state = State.create();
     state = state.addProgramNode(new ProgramNode(BlockNode.EMPTY));
     TypeCheckResult typeCheckResult = new TypeCheckResult(new SymTab());
     state = state.addTypecheckResult(typeCheckResult);
-    state = state.addIlCode(ImmutableList.of(shiftOp));
+    state = state.addIlCode(ops);
     state = codeGen.execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
     return state;

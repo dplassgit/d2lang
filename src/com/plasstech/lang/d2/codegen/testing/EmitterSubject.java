@@ -13,12 +13,30 @@ import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.codegen.Emitter;
 
 public class EmitterSubject extends Subject {
+  public static EmitterSubject assertThat(Emitter actual) {
+    return assertAbout(EmitterSubject::new).that(actual);
+  }
+
+  public static EmitterSubject assertWithoutTrimmingThat(Emitter actual) {
+    return assertAbout(EmitterSubject::createWithoutTrimming).that(actual);
+  }
 
   private final Emitter actual;
+  private boolean trimIt;
 
   private EmitterSubject(FailureMetadata metadata, Emitter actual) {
     super(metadata, actual);
     this.actual = actual;
+    this.trimIt = true;
+  }
+
+  private static EmitterSubject createWithoutTrimming(FailureMetadata metadata, Emitter actual) {
+    return new EmitterSubject(metadata, actual).withoutTrimming();
+  }
+
+  private EmitterSubject withoutTrimming() {
+    this.trimIt = false;
+    return this;
   }
 
   public void containsExactly(String... lines) {
@@ -34,34 +52,38 @@ public class EmitterSubject extends Subject {
   }
 
   public void doesNotContain(String line) {
-    check("contains").that(trim(actual.all())).doesNotContain(trim(line));
+    check("contains")
+        .that(trim(actual.all()))
+        .doesNotContain(optionallyTrim(line));
   }
 
   public Ordered containsAtLeast(String... lines) {
     List<String> expected = asList(lines);
-    return check("contains").that(trim(actual.all())).containsAtLeastElementsIn(trim(expected));
+    return check("contains")
+        .that(trim(actual.all()))
+        .containsAtLeastElementsIn(trim(expected));
   }
 
   public void isEmpty() {
     check("contains").that(trim(actual.all())).isEmpty();
   }
 
-  private static String trim(String s) {
-    int semi = s.indexOf(';');
-    if (semi != -1) {
-      s = s.substring(0, semi - 1);
-    }
-    return s.trim();
-  }
-
-  private static ImmutableList<String> trim(List<String> all) {
+  private ImmutableList<String> trim(List<String> all) {
     return all.stream()
-        .map(EmitterSubject::trim)
+        .map(s -> optionallyTrim(s))
         .filter(s -> !s.isEmpty())
         .collect(toImmutableList());
   }
 
-  public static EmitterSubject assertThat(Emitter actual) {
-    return assertAbout(EmitterSubject::new).that(actual);
+  private String optionallyTrim(String s) {
+    if (trimIt) {
+      int semi = s.indexOf(';');
+      if (semi > 0) {
+        s = s.substring(0, semi - 1);
+      }
+      return s.trim();
+    } else {
+      return s;
+    }
   }
 }
