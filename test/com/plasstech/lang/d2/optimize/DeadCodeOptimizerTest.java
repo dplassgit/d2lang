@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 
@@ -12,21 +13,18 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeadCodeOptimizerTest {
 
-  private static final Optimizer OPTIMIZER =
-      new ILOptimizer(
-          ImmutableList.of(new ConstantPropagationOptimizer(2), new DeadCodeOptimizer(2)))
-          .setDebugLevel(2);
+  private static final Optimizer OPTIMIZER = new DeadCodeOptimizer(2);
   private static final Label LABEL = new Label("label");
   private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
@@ -53,8 +51,8 @@ public class DeadCodeOptimizerTest {
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
+    assertThat(optimized.get(1)).isNop();
   }
 
   @Test
@@ -74,8 +72,8 @@ public class DeadCodeOptimizerTest {
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
+    assertThat(optimized.get(1)).isNop();
   }
 
   @Test
@@ -85,8 +83,8 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
+    assertThat(optimized.get(1)).isNop();
     assertThat(optimized.get(2)).isInstanceOf(Dec.class);
   }
 
@@ -99,7 +97,7 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Return.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isNop();
     assertThat(optimized.get(2)).isInstanceOf(Label.class);
   }
 
@@ -112,7 +110,7 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Return.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isNop();
     assertThat(optimized.get(2)).isInstanceOf(ProcExit.class);
   }
 
@@ -125,8 +123,8 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Return.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isNop();
+    assertThat(optimized.get(2)).isNop();
   }
 
   @Test
@@ -137,7 +135,7 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Stop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isNop();
     assertThat(optimized.get(2)).isInstanceOf(Label.class);
   }
 
@@ -149,8 +147,8 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized.get(0)).isInstanceOf(Stop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(2)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(1)).isNop();
+    assertThat(optimized.get(2)).isNop();
   }
 
   @Test
@@ -160,7 +158,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
+    assertThat(optimized.get(0)).isGoto("dest");
   }
 
   @Test
@@ -170,7 +168,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
+    assertThat(optimized.get(0)).isGoto("dest");
   }
 
   @Test
@@ -181,7 +179,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
   }
 
   @Test
@@ -191,7 +189,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
   }
 
   @Test
@@ -201,7 +199,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Goto.class);
+    assertThat(optimized.get(0)).isGoto("dest");
   }
 
   @Test
@@ -211,7 +209,7 @@ public class DeadCodeOptimizerTest {
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
+    assertThat(optimized.get(0)).isNop();
     assertThat(optimized.get(1)).isEqualTo(LABEL);
   }
 
@@ -223,5 +221,14 @@ public class DeadCodeOptimizerTest {
 
     assertThat(OPTIMIZER.isChanged()).isFalse();
     assertThat(optimized).isEqualTo(program);
+  }
+
+  @Test
+  public void transferToItself() {
+    ImmutableList<Op> program = ImmutableList.of(new Transfer(TEMP1, TEMP1, null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(OPTIMIZER.isChanged()).isTrue();
+    assertThat(optimized.get(0)).isNop();
   }
 }

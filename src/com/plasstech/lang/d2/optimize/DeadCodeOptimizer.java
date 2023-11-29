@@ -108,7 +108,6 @@ class DeadCodeOptimizer extends LineOptimizer {
     if (op.destination().equals(op.source())) {
       // a=a is dead. unfortunately this almost never happens...
       deleteCurrent();
-      return;
     }
   }
 

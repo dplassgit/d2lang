@@ -5,48 +5,53 @@ import static com.google.common.truth.Truth.assertThat;
 import java.util.List;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 
+@RunWith(TestParameterInjector.class)
 public class PrintOptimizerTest {
 
-  private Optimizer optimizer =
+  private static final Optimizer OPTIMIZER =
       new ILOptimizer(
           ImmutableList.of(
               new ConstantPropagationOptimizer(0),
-              new DeadAssignmentOptimizer(0),
               new NopOptimizer(),
               new PrintOptimizer(2)));
 
   @Test
   public void twoInARow() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables("print 'hello' print 'world'", optimizer);
+        TestUtils.optimizeAssertSameVariables("print 'hello' print 'world'", OPTIMIZER);
     assertTotalPrintCount(result, 1);
   }
 
   @Test
   public void notTwoInARow() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables("print 'hello' print 3", optimizer);
-    assertTotalPrintCount(result, 2);
+        TestUtils.optimizeAssertSameVariables("print 'hello' print 3", OPTIMIZER);
+    assertTotalPrintCount(result, 1);
   }
 
   @Test
   public void twoInARowInAMethod() {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
-            "f:proc {a='hello' print a print 'world'} f()", optimizer);
+            "f:proc {a='hello' print a print 'world'} f()", OPTIMIZER);
     assertTotalPrintCount(result, 1);
   }
 
   @Test
   public void threeInARow() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables("print 'hello' print 'world' print 'bye'", optimizer);
+        TestUtils.optimizeAssertSameVariables("print 'hello' print 'world' print 'bye'", OPTIMIZER);
     assertTotalPrintCount(result, 1);
   }
 
@@ -55,14 +60,14 @@ public class PrintOptimizerTest {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
             // yeah yeah I know this could still be combined because constants but whatevs.
-            "print 'hello' a=3 print 'world' print 'bye'", optimizer);
+            "print 'hello' a=3 print 'world' print 'bye'", OPTIMIZER);
     assertTotalPrintCount(result, 2);
   }
 
   @Test
   public void println() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables("println 'hello' print 'world'", optimizer);
+        TestUtils.optimizeAssertSameVariables("println 'hello' print 'world'", OPTIMIZER);
     List<String> output = result.environment().output();
     assertThat(output.get(0)).isEqualTo("hello\nworld");
     assertTotalPrintCount(result, 1);
@@ -71,7 +76,7 @@ public class PrintOptimizerTest {
   @Test
   public void printlnTwoStrings() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables("println 'hello' println 'world'", optimizer);
+        TestUtils.optimizeAssertSameVariables("println 'hello' println 'world'", OPTIMIZER);
     SysCall call = (SysCall) result.code().get(0);
     assertThat(call.call()).isEqualTo(SysCall.Call.PRINTLN);
     List<String> output = result.environment().output();
@@ -102,12 +107,33 @@ public class PrintOptimizerTest {
 
   @Test
   public void technicallyNotTwoInARowButStillCounts() {
-    InterpreterResult result = TestUtils.optimizeAssertSameVariables("println 'hello'", optimizer);
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("println 'hello'", OPTIMIZER);
     assertTotalPrintCount(result, 1);
   }
 
+  @Test
+  public void printConstantBool(@TestParameter boolean val) {
+    InterpreterResult result =
+        TestUtils.optimizeAssertSameVariables(String.format("print %s", val), OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
+    assertThat(arg.value()).isEqualTo(String.valueOf(val));
+  }
+
+  @Test
+  public void printConstantInt() {
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("print 3", OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
+    assertThat(arg.value()).isEqualTo("3");
+  }
+
   private void assertTotalPrintCount(InterpreterResult result, long expected) {
-    long count = result.code().stream().filter(op -> (op instanceof SysCall)).count();
-    assertThat(count).isEqualTo(expected);
+    long actual = result.code().stream().filter(op -> (op instanceof SysCall)).count();
+    assertThat(actual).isEqualTo(expected);
   }
 }

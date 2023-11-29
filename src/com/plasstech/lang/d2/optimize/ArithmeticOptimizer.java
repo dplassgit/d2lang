@@ -1,18 +1,17 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
-import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -20,6 +19,17 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 class ArithmeticOptimizer extends LineOptimizer {
+  private static final Set<TokenType> ASSOCIATIVE_OPERATORS =
+      ImmutableSet.of(
+          TokenType.MULT,
+          TokenType.PLUS,
+          TokenType.AND,
+          TokenType.OR,
+          TokenType.XOR,
+          TokenType.BIT_XOR,
+          TokenType.BIT_AND,
+          TokenType.BIT_OR);
+
   ArithmeticOptimizer(int debugLevel) {
     super(debugLevel);
   }
@@ -115,49 +125,23 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
   }
 
-  // TODO: Move this to PrintOptimizer
-  @Override
-  public void visit(SysCall op) {
-    if (op.call() != SysCall.Call.PRINT && op.call() != SysCall.Call.PRINTLN) {
-      return;
-    }
-    Operand arg = op.arg();
-    if (!arg.isConstant()) {
-      return;
-    }
-    ConstantOperand<?> operand = (ConstantOperand<?>) arg;
-    if (operand.type() == VarType.STRING) {
-      return;
-    }
-    if (operand.value() == null) {
-      replaceCurrent(new SysCall(op.call(), ConstantOperand.of("null")));
-      return;
-    }
-    String asString = operand.value().toString();
-    if (operand.type() == VarType.DOUBLE) {
-      double value = (double) operand.value();
-      BigDecimal bd = BigDecimal.valueOf(value).round(MathContext.DECIMAL64).stripTrailingZeros();
-      asString = bd.toPlainString();
-    }
-    replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
-  }
-
   @Override
   public void visit(BinOp op) {
     Operand left = op.left();
     Operand right = op.right();
     TokenType operator = op.operator();
 
-    if (left.isConstant()
-        && !right.isConstant()
-        && (operator == TokenType.MULT || operator == TokenType.PLUS)
-        && left.type().isNumeric()) {
-      // swap it so the constant is on the right.
+    if (left.isConstant() && left.type() != VarType.STRING
+        && ASSOCIATIVE_OPERATORS.contains(operator)
+        && !right.isConstant()) {
+      // constant (op) non constant: swap it so the constant is on the right.
       replaceCurrent(new BinOp(op.destination(), right, operator, left, op.position()));
       return;
     }
 
-    switch (operator) {
+    switch (operator)
+
+    {
       case MULT:
         optimizeMultiply(op, left, right);
         return;
@@ -289,6 +273,17 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   /** Bit or (for ints, longs or bytes.) */
   private void optimizeBitOr(BinOp op, Operand left, Operand right) {
+    if (ConstantOperand.isAnyZero(right)) {
+      // a | 0 == a
+      // replace with destination = left
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
+      return;
+    }
+    if (left.equals(right)) {
+      // a|a == a
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
+      return;
+    }
     if (optimizeIntArith(op, left, right, (t, u) -> t | u)) {
       return;
     }
@@ -298,41 +293,10 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t | u))) {
       return;
     }
-
-    // Anything | 0 = the thing
-    if (ConstantOperand.isAnyZero(left)) {
-      // replace with destination = right
-      replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
-      return;
-    }
-    if (ConstantOperand.isAnyZero(right)) {
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
-      return;
-    }
-    if (left.equals(right)) {
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
   }
 
   private void optimizeBitAnd(BinOp op, Operand left, Operand right) {
-    if (optimizeIntArith(op, left, right, (t, u) -> t & u)) {
-      return;
-    }
-    if (optimizeLongArith(op, left, right, (t, u) -> (long) (t & u))) {
-      return;
-    }
-    if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t & u))) {
-      return;
-    }
-
-    // Anything & 0 = 0
-    if (ConstantOperand.isAnyZero(left)) {
-      // replace with destination = 0
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
+    // Anything & 0 = 0. Note: don't have to test for any zero on left
     if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), right, op.position()));
@@ -343,6 +307,16 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
+    if (optimizeIntArith(op, left, right, (t, u) -> t & u)) {
+      return;
+    }
+    if (optimizeLongArith(op, left, right, (t, u) -> (long) (t & u))) {
+      return;
+    }
+    if (optimizeByteArith(op, left, right, (t, u) -> (byte) (t & u))) {
+      return;
+    }
+
   }
 
   private void optimizeModulo(BinOp op, Operand left, Operand right) {
@@ -383,7 +357,7 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   private void optimizeDivide(BinOp op, Operand left, Operand right) {
     if (isAnyOne(right)) {
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
     try {
@@ -442,7 +416,7 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   private void optimizeShiftLeft(BinOp op, Operand left, Operand right) {
     if (ConstantOperand.isAnyZero(right)) {
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
     if (optimizeIntArith(op, left, right, (t, u) -> t << u)) {
@@ -456,7 +430,7 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   private void optimizeShiftRight(BinOp op, Operand left, Operand right) {
     if (ConstantOperand.isAnyZero(right)) {
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
     if (optimizeIntArith(op, left, right, (t, u) -> t >> u)) {
@@ -548,7 +522,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
     if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
     if (left.equals(right) && left.type() == VarType.INT) {
@@ -589,21 +563,22 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       }
       // Strings
-      if (left.type() == VarType.STRING) {
-        if (right.type().isNull()) {
-          throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
-        }
-        @SuppressWarnings("unchecked")
-        ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
-        @SuppressWarnings("unchecked")
-        ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
-        replaceCurrent(
-            new Transfer(
-                op.destination(),
-                ConstantOperand.of(leftConstant.value() + rightConstant.value()),
-                op.position()));
+      if (left.type() != VarType.STRING) {
         return;
       }
+      if (right.type().isNull()) {
+        throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+      }
+      @SuppressWarnings("unchecked")
+      ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
+      @SuppressWarnings("unchecked")
+      ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
+      replaceCurrent(
+          new Transfer(
+              op.destination(),
+              ConstantOperand.of(leftConstant.value() + rightConstant.value()),
+              op.position()));
+      return;
     }
 
     // Replace a + "" with a
@@ -615,7 +590,8 @@ class ArithmeticOptimizer extends LineOptimizer {
           replaceCurrent(new Transfer(op.destination(), right, op.position()));
           return;
         }
-      } else if (right.isConstant()) {
+      }
+      if (right.isConstant()) {
         @SuppressWarnings("unchecked")
         ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
         if (right.type().isNull()) {
@@ -685,14 +661,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       }
     }
 
-    if (ConstantOperand.isAnyZero(left)) {
-      // replace with destination = right
-      replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
-      return;
-    }
     if (ConstantOperand.isAnyZero(right)) {
       // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
     // foo = a+a -> foo = a<<1
@@ -718,47 +689,37 @@ class ArithmeticOptimizer extends LineOptimizer {
       // bytes
       return;
     }
-    if (left.equals(ConstantOperand.ZERO) || right.equals(ConstantOperand.ZERO)) {
+
+    // Don't have to compare left to zero because either:
+    // 1. it's a constant, which means right is also a constant (because we already swapped)
+    //    and we already took care of it above in a call to optimize*Arith
+    // 2. it's not a constant, so we only need to check right
+    if (right.equals(ConstantOperand.ZERO)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO, op.position()));
       return;
     }
-    if (left.equals(ConstantOperand.ZERO_LONG) || right.equals(ConstantOperand.ZERO_LONG)) {
+    if (right.equals(ConstantOperand.ZERO_LONG)) {
       // replace with destination = 0L
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_LONG, op.position()));
       return;
     }
-    if (left.equals(ConstantOperand.ZERO_DBL) || right.equals(ConstantOperand.ZERO_DBL)) {
+    if (right.equals(ConstantOperand.ZERO_DBL)) {
       // replace with destination = 0.0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_DBL, op.position()));
       return;
     }
-    if (left.equals(ConstantOperand.ZERO_BYTE) || right.equals(ConstantOperand.ZERO_BYTE)) {
+    if (right.equals(ConstantOperand.ZERO_BYTE)) {
       // replace with destination = 0
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.ZERO_BYTE, op.position()));
       return;
     }
-    if (isAnyOne(left)) {
-      replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
-      return;
-    }
+    // don't hvae to check left for 1 because of the same reasons as zero, above.
     if (isAnyOne(right)) {
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
-    if (left.isConstant() && left.type() == VarType.INT) {
-      int power = powerOfTwo(left);
-      if (power != 0) {
-        replaceCurrent(
-            new BinOp(
-                op.destination(),
-                right,
-                TokenType.SHIFT_LEFT,
-                ConstantOperand.of(power),
-                op.position()));
-        return;
-      }
-    }
+    // Only deal with shifting ints left. I'm lazy.
     if (right.isConstant() && left.type() == VarType.INT) {
       int power = powerOfTwo(right);
       if (power != 0) {
@@ -769,6 +730,7 @@ class ArithmeticOptimizer extends LineOptimizer {
                 TokenType.SHIFT_LEFT,
                 ConstantOperand.of(power),
                 op.position()));
+        return;
       }
     }
   }
@@ -796,19 +758,14 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeBoolArith(op, left, right, (t, u) -> t && u)) {
       return;
     }
-    if (left.equals(ConstantOperand.FALSE) || right.equals(ConstantOperand.FALSE)) {
+    if (right.equals(ConstantOperand.FALSE)) {
       // replace with destination = FALSE
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.FALSE, op.position()));
       return;
     }
-    if (left.equals(ConstantOperand.TRUE)) {
-      // true and right == right
-      replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
-      return;
-    }
     if (right.equals(ConstantOperand.TRUE)) {
       // left and true == left
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
   }
@@ -818,19 +775,14 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (optimizeBoolArith(op, left, right, (t, u) -> t || u)) {
       return;
     }
-    if (left.equals(ConstantOperand.TRUE) || right.equals(ConstantOperand.TRUE)) {
-      // either one is true, it's true
+    if (right.equals(ConstantOperand.TRUE)) {
+      // anything or true = true
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.TRUE, op.position()));
-      return;
-    }
-    if (left.equals(ConstantOperand.FALSE)) {
-      // false or right = right
-      replaceCurrent(new Transfer(op.destination(), op.right(), op.position()));
       return;
     }
     if (right.equals(ConstantOperand.FALSE)) {
       // left or false = left
-      replaceCurrent(new Transfer(op.destination(), op.left(), op.position()));
+      replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
   }
