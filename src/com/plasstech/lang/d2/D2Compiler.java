@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
@@ -143,7 +144,13 @@ public class D2Compiler {
       if (exeFile.exists()) {
         exeFile.delete();
       }
-      pb = new ProcessBuilder("gcc", objFile.getAbsolutePath(), "-o", exeFile.getAbsolutePath());
+      ImmutableList.Builder<String> command = new ImmutableList.Builder<String>().add("gcc",
+          objFile.getAbsolutePath());
+      if (options.libs != null && options.libs.size() > 0) {
+        command.addAll(options.libs);
+      }
+      command.add("-o", exeFile.getAbsolutePath());
+      pb = new ProcessBuilder(command.build());
       pb.directory(dir);
       if (options.showCommands) {
         System.out.println(Joiner.on(" ").join(pb.command()));

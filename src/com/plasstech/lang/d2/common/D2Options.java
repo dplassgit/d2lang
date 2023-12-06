@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.common;
 
+import java.util.List;
+
+import com.google.devtools.common.options.Converters;
 import com.google.devtools.common.options.EnumConverter;
 import com.google.devtools.common.options.Option;
 import com.google.devtools.common.options.OptionsBase;
@@ -117,6 +120,16 @@ public class D2Options extends OptionsBase {
       converter = TargetConverter.class
   )
   public Target target;
+
+  @Option(
+      name = "libs",
+      help = "Libraries to link",
+      abbrev = 'l',
+      defaultValue = "",
+      allowMultiple = true,
+      converter = Converters.CommaSeparatedOptionListConverter.class
+  )
+  public List<String> libs;
 
   public static class TargetConverter extends EnumConverter<Target> {
     public TargetConverter() {
