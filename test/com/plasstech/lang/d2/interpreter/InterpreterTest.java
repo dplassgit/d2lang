@@ -422,9 +422,16 @@ public class InterpreterTest {
   }
 
   @Test
-  public void assignDouble() throws Exception {
-    execute("a=3.14 b=a print b print a", false);
-    execute("a=3.24 b=a print b print a", true);
+  public void assignDouble(
+      @TestParameter boolean optimize) throws Exception {
+    execute("a=3.14 b=a print b print a", optimize);
+  }
+
+  @Test
+  public void printRange() throws Exception {
+    String code = "a=1:2 print a[0] print ':' println a[1]";
+    Environment env = execute(code, true);
+    assertThat(env.output()).containsExactly("1", ":", "2", "\n").inOrder();
   }
 
   private Environment execute(String program, boolean optimize) {

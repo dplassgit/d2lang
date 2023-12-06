@@ -129,7 +129,7 @@ public class TestUtils {
   /** Trims all comments from the code, and trims each line. */
   public static ImmutableList<String> trimComments(ImmutableList<String> code) {
     return code.stream()
-        .map(s -> s.trim())
+        .map(String::trim)
         .filter(s -> !s.startsWith(";"))
         .map(
             old -> {
@@ -140,7 +140,7 @@ public class TestUtils {
                 return old;
               }
             })
-        .map(s -> s.trim())
+        .map(String::trim)
         .collect(toImmutableList());
   }
 }

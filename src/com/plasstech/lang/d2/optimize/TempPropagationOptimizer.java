@@ -47,7 +47,8 @@ class TempPropagationOptimizer extends LineOptimizer {
           TokenType.XOR,
           TokenType.DOT,
           TokenType.SHIFT_LEFT,
-          TokenType.SHIFT_RIGHT);
+          TokenType.SHIFT_RIGHT,
+          TokenType.COLON);
 
   TempPropagationOptimizer(int debugLevel) {
     super(debugLevel);

@@ -35,8 +35,10 @@ public class NasmCodeGeneratorStringTest {
 
   @Test
   public void negativeIndex() throws Exception {
-    assertThatCompiling("s='hello' print s[-2]").withOptimize(false).hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -2");
-    assertThatCompiling("f:proc() {s='hello' print s[-3]} f()").withOptimize(false).hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -3");
+    assertThatCompiling("s='hello' print s[-2]").withOptimize(false)
+        .hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -2");
+    assertThatCompiling("f:proc() {s='hello' print s[-3]} f()").withOptimize(false)
+        .hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -3");
   }
 
   @Test

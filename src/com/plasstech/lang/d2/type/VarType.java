@@ -17,6 +17,7 @@ public interface VarType {
   VarType STRING = new StringType();
   VarType UNKNOWN = new UnknownType();
   VarType VOID = new SimpleType("VOID");
+  VarType RANGE = new SimpleType("RANGE", 8);
 
   /**
    * @return a name that uniquely describes this type. For example, "string",

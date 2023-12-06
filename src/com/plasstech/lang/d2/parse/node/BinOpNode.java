@@ -32,6 +32,7 @@ public class BinOpNode extends AbstractNode implements ExprNode {
           TokenType.LBRACKET,
           TokenType.SHIFT_LEFT,
           TokenType.SHIFT_RIGHT,
+          TokenType.COLON, // for slices
           TokenType.DOT);
 
   private final TokenType operator;

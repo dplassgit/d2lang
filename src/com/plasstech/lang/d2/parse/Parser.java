@@ -67,6 +67,7 @@ public class Parser implements Phase {
           .put(TokenType.INT, VarType.INT)
           .put(TokenType.LONG, VarType.LONG)
           .put(TokenType.STRING, VarType.STRING)
+          .put(TokenType.RANGE, VarType.RANGE)
           .build();
 
   private static final ImmutableMap<TokenType, VarType> RETURN_TYPES =
@@ -609,7 +610,21 @@ public class Parser implements Phase {
 
   /** EXPRESSIONS */
   private ExprNode expr() {
-    return boolOr();
+    return range();
+  }
+
+  private ExprNode range() {
+    ExprNode left = boolOr();
+
+    // NOT a "while" because ranges cannot be chained.
+    if (token.type() == TokenType.COLON) {
+      TokenType operator = token.type();
+      advance();
+      ExprNode right = boolOr();
+      left = new BinOpNode(left, operator, right);
+    }
+
+    return left;
   }
 
   private ExprNode boolOr() {
@@ -787,7 +802,7 @@ public class Parser implements Phase {
    * Parse an (optional) composite dereference.
    *
    * <pre>
-   * composite dereference -> (atom ('[' expr ']') | ('.' atom)) *
+   * composite dereference -> (atom ('[' range ']') | ('.' atom)) *
    * <p>here -> nextRule (tokentype nextRule)*
    * </pre>
    */

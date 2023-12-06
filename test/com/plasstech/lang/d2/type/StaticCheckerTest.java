@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.type;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -421,6 +422,12 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void intBinOpBad(@TestParameter({"+", "-", "*", "/"}) String op) {
+    assertError(String.format("a=3 %s 0y03", op), "Incompatible types for operator " + op);
+    assertError(String.format("a=3L %s 3", op), "Incompatible types for operator " + op);
+  }
+
+  @Test
   public void booleanSingleCharMismatch(@TestParameter({"+", "-", "|", "&"}) String c) {
     assertError(String.format("a=true %s 3", c), "Cannot apply");
   }
@@ -469,6 +476,73 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void range() {
+    checkProgram("r=2:4 b=r");
+    SymbolTable symbolTable = checkProgram("a=2 b=4 r=a:b s=r");
+    assertThat(symbolTable.get("r").varType()).isEqualTo(VarType.RANGE);
+    assertThat(symbolTable.get("s").varType()).isEqualTo(VarType.RANGE);
+  }
+
+  @Test
+  public void rangeIndex() {
+    SymbolTable symbolTable = checkProgram("r=2:4 a=r[0]");
+    assertThat(symbolTable.get("a").varType()).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void rangeBadIndex() {
+    assertError("r=2:4 a=r[false]", "Index.*RANGE.*INT.*BOOL");
+    assertError("r=2:4 a=r[2]", "index must be 0 or 1; was 2");
+  }
+
+  @Test
+  public void badConstantRange() {
+    assertError("r=1.0:4", "Cannot apply : operator to.*DOUBLE");
+    assertError("r=1:4.0", "Incompatible types.*INT but right is DOUBLE");
+    assertError("r=(1:0):5", "Incompatible types.*RANGE but right is INT");
+  }
+
+  @Test
+  public void badVariableRange() {
+    assertError("a=1.0 r=a:4", "Cannot apply : operator to.*DOUBLE");
+    assertError("a=4.0 r=1:a", "Incompatible types.*INT but right is DOUBLE");
+    assertError("s=0:1 r=s:5", "Incompatible types.*RANGE but right is INT");
+  }
+
+  @Test
+  public void constantStringSlice() {
+    assertError("b='abcde' a=b[2:4]", "was RANGE");
+  }
+
+  @Test
+  public void variableStringSlice() {
+    assertError("r=1:3 b='abcde' c=b[r]", "was RANGE");
+  }
+
+  @Test
+  public void stringSliceBadDescending() {
+    assertError("b='abcde' a=b[4:2]", "must be non-descending; was 4:2");
+  }
+
+  @Test
+  public void stringSliceBadNegative() {
+    assertError("b='abcde' a=b[-1:4]", "must be non-negative; was -1");
+  }
+
+  @Test
+  public void stringSliceBad() {
+    assertError("b='abcde' a=b[b:4]", "Cannot apply : operator");
+    assertError("b='abcde' a=b[4:b]", "Incompatible types");
+    assertError("b='abcde' a=b[4:4.0]", "Incompatible types");
+  }
+
+  @Test
+  public void arraySliceBad() {
+    // can't take a slice of an array yet
+    assertError("b=[1,2,3,4] a=b[0:2]", "was RANGE");
+  }
+
+  @Test
   public void stringLiteral_index() {
     SymbolTable symTab = checkProgram("a='hi'[1]");
     assertThat(symTab.get("a").varType()).isEqualTo(VarType.STRING);
@@ -477,7 +551,7 @@ public class StaticCheckerTest {
   @Test
   public void arrayIndexMismatch() {
     assertError(
-        "arr=[1,2,3] a=arr['bye']", "Index of ARRAY variable 'arr' must be INT; was STRING");
+        "arr=[1,2,3] a=arr['bye']", "Index of variable 'arr' must be INT; was STRING");
     assertError("arr=[1,2,3] a=arr[false]", "must be INT; was BOOL");
     assertError("arr=[1,2,3] b='hi' a=arr[b]", "must be INT; was STRING");
   }
@@ -1415,6 +1489,10 @@ public class StaticCheckerTest {
   private static State safeTypeCheck(String program) {
     CompilationConfiguration config = CompilationConfiguration.create(program).toBuilder()
         .setLastPhase(PhaseName.TYPE_CHECK).build();
-    return new YetAnotherCompiler().compile(config);
+    State state = new YetAnotherCompiler().compile(config);
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
+    return state;
   }
 }

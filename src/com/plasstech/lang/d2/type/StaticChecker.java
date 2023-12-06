@@ -48,8 +48,11 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
 public class StaticChecker extends DefaultNodeVisitor implements Phase {
+  public static final String RANGE_INDEX_OUT_OF_RANGE =
+      "RANGE variable '%s' index must be 0 or 1; was %d";
+
   // also works for bytes and longs
-  private static final Set<TokenType> INT_OPERATORS =
+  private static final Set<TokenType> INTEGRAL_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
           TokenType.LT,
@@ -67,6 +70,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.BIT_OR,
           TokenType.BIT_XOR,
           TokenType.BIT_AND);
+
+  // Can use colon (range) on ints only because reasons.
+  private static final Set<TokenType> INT_OPERATORS =
+      ImmutableSet.<TokenType>builder().addAll(INTEGRAL_OPERATORS).add(TokenType.COLON).build();
 
   private static final Set<TokenType> DOUBLE_OPERATORS =
       ImmutableSet.of(
@@ -115,10 +122,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
       ImmutableMap.<VarType, Set<TokenType>>builder()
           .put(VarType.BOOL, BOOL_OPERATORS)
-          .put(VarType.BYTE, INT_OPERATORS)
+          .put(VarType.BYTE, INTEGRAL_OPERATORS)
           .put(VarType.DOUBLE, DOUBLE_OPERATORS)
           .put(VarType.INT, INT_OPERATORS)
-          .put(VarType.LONG, INT_OPERATORS)
+          .put(VarType.LONG, INTEGRAL_OPERATORS)
           .put(VarType.NULL, NULL_OPERATORS)
           .put(VarType.STRING, STRING_OPERATORS)
           .build();
@@ -270,7 +277,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     Node right = node.expr();
     right.accept(this);
     if (right.varType().isUnknown()) {
-      // TODO: Can we infer anything from this?
       errors.add(
           new TypeException(String.format("Indeterminable type for %s", right), right.position()));
       return;
@@ -399,6 +405,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           new TypeException(
               String.format("Indeterminable type for expression %s", right), right.position()));
       // stop here, because it's only going to get worse
+      return;
     }
 
     // Check that they're not trying to, for example, multiply booleans
@@ -463,11 +470,21 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     if (operator == TokenType.LBRACKET) {
-      // string[int] and array[int]
-      if (rightType != VarType.INT) {
+      // good: ((string or array) and (int or range)) or (range and int)
+      if (leftType == VarType.RANGE && rightType != VarType.INT) {
         errors.add(
             new TypeException(
-                String.format("Index of ARRAY variable '%s' must be INT; was %s", left, rightType),
+                String.format("Index of RANGE variable '%s' must be INT; was %s", left, rightType),
+                right.position()));
+        return;
+      }
+      if (((leftType.isArray() || leftType == VarType.STRING) &&
+          !(rightType == VarType.INT))) { //  || rightType == VarType.RANGE))) {
+        errors.add(
+            new TypeException(
+                // String.format("Index of variable '%s' must be INT or RANGE; was %s", left
+                String.format("Index of variable '%s' must be INT; was %s", left,
+                    rightType),
                 right.position()));
         return;
       }
@@ -482,8 +499,27 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                   right.position()));
         }
       }
+
       if (leftType == VarType.STRING) {
         node.setVarType(VarType.STRING);
+        // NOTE RETURN
+        return;
+      }
+      if (leftType == VarType.RANGE) {
+        // if index is constant, make sure it's 0 or 1
+        Optional<Integer> maybeConstantIndex = assertNotNegativeConst(right, "Range index");
+        maybeConstantIndex.ifPresent(value -> {
+          // we know it's not negative.
+          if (value > 1) {
+            errors.add(
+                new TypeException(
+                    String.format(
+                        RANGE_INDEX_OUT_OF_RANGE,
+                        left, value),
+                    right.position()));
+          }
+        });
+        node.setVarType(VarType.INT);
         // NOTE RETURN
         return;
       }
@@ -515,6 +551,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                   "Incompatible types for operator %s; left operand is %s but right is %s",
                   operator, leftType, rightType),
               left.position()));
+      // All bets are off if left and right are not compatible
+      return;
     }
 
     if ((COMPARABLE_VARTYPES.contains(leftType) && COMPARISION_OPERATORS.contains(operator))
@@ -527,8 +565,41 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
 
+      if (operator == TokenType.COLON) {
+        Optional<Integer> leftConstant = assertNotNegativeConst(left, "RANGE values");
+        Optional<Integer> rightConstant = assertNotNegativeConst(right, "RANGE values");
+        if (leftConstant.isPresent() && rightConstant.isPresent()
+            && leftConstant.get() > rightConstant.get()) {
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "RANGE values must be non-descending; was %d:%d", leftConstant.get(),
+                      rightConstant.get()),
+                  left.position()));
+        }
+        node.setVarType(VarType.RANGE);
+        // Good.
+        return;
+      }
+
       node.setVarType(leftType);
     }
+  }
+
+  private Optional<Integer> assertNotNegativeConst(ExprNode node, String objectType) {
+    if (node.isConstant()) {
+      ConstNode<Integer> constNode = (ConstNode<Integer>) node;
+      int value = constNode.value();
+      if (value < 0) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "%s must be non-negative; was %d", objectType, value),
+                node.position()));
+      }
+      return Optional.of(value);
+    }
+    return Optional.empty();
   }
 
   @Override

@@ -10,6 +10,7 @@ public enum TokenType {
   DOUBLE(true), // indicates the "double" keyword
   LONG(true), // indicates the "long" keyword
   BYTE(true), // indicates the "byte" keyword
+  RANGE(true), // indicates the "range" keyword, for slices etc.
   VOID(true), // no return type
   TRUE(true), // boolean literal
   FALSE(true), // boolean literal
@@ -80,7 +81,7 @@ public enum TokenType {
   SHORT(true), // "short" keyword/type 
   CHAR(true), // indicates the "char" keyword
   DELETE(true), // free a new
-  FOR(true), // for (x in array/list)
+  FOR(true), // for (x in array/list/range)
   IN(true),
   GET(true), // get one character
   THIS(true), // for primitive classes

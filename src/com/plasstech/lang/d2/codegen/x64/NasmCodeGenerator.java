@@ -117,6 +117,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     OpcodeVisitor inputGenerator = new InputCodeGenerator(resolver, registers, emitter);
     OpcodeVisitor printGenerator = new PrintCodeGenerator(resolver, stringTable, emitter);
     OpcodeVisitor labelCodeGenerator = new LabelCodeGenerator(emitter);
+    OpcodeVisitor rangeGenerator = new RangeCodeGenerator(resolver, emitter);
     List<OpcodeVisitor> visitors = ImmutableList.of(
         labelCodeGenerator,
         inputGenerator,
@@ -125,6 +126,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         stringGenerator,
         arrayGenerator,
         recordGenerator,
+        rangeGenerator,
         this);
 
     ImmutableList<Op> code = input.lastIlCode();
@@ -506,7 +508,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           break;
       }
     } else {
-      fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
+      fail(op.position(), "Cannot do anything (%s) on %ss (yet?)", operator, leftType);
     }
 
     if (tempReg != null) {
@@ -519,6 +521,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     resolver.deallocate(op.right());
   }
 
+  // Generate dest=dest (operator) source
   private void generateBinOp(ResolvedOperand source, ResolvedOperand dest, TokenType operator) {
     if (ConstantOperand.isImm64(source.operand())) {
       // adjust for OPCODE REG, imm64 if the constant is too big.

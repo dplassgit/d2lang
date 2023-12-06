@@ -1530,6 +1530,80 @@ public class ParserTest {
     assertThat(node.isIncrement()).isFalse();
   }
 
+  @Test
+  public void stringIndex() {
+    BlockNode root = parseStatements("a=b[3]");
+    assertThat(root.statements()).hasSize(1);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    assertThat(node.lvalue().name()).isEqualTo("a");
+    assertThat(node.expr()).isInstanceOf(BinOpNode.class);
+  }
+
+  @Test
+  public void declareRange() {
+    BlockNode root = parseStatements("a:range");
+    assertThat(root.statements()).hasSize(1);
+
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.varType()).isEqualTo(VarType.RANGE);
+  }
+
+  @Test
+  public void assignRange() {
+    BlockNode root = parseStatements("a=0:1");
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+    BinOpNode expr = (BinOpNode) node.expr();
+    assertThat(expr.left()).isEqualTo(new ConstNode<Integer>(0, VarType.INT, null));
+    assertThat(expr.right()).isEqualTo(new ConstNode<Integer>(1, VarType.INT, null));
+    assertThat(expr.operator()).isEqualTo(TokenType.COLON);
+  }
+
+  @Test
+  public void badRange() {
+    assertParseError("a=0:1:2", "':'");
+    assertParseError("a=0:", "expected literal");
+    // This isn't a parser error, but will be a type check error
+    // assertParseError("a=(0:1):2", "COLON");
+  }
+
+  @Test
+  public void stringSliceSimple() {
+    BlockNode root = parseStatements("c=0 a=b[c+2:3]");
+    assertThat(root.statements()).hasSize(2);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(1);
+    BinOpNode expr = (BinOpNode) node.expr();
+    BinOpNode index = (BinOpNode) expr.right();
+    assertThat(index.right()).isEqualTo(new ConstNode<Integer>(3, VarType.INT, null));
+    assertThat(index.operator()).isEqualTo(TokenType.COLON);
+  }
+
+  @Test
+  public void stringSliceAsExpressions() {
+    BlockNode root = parseStatements("a=b[(a*(3+1)):b+1]");
+    assertThat(root.statements()).hasSize(1);
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    BinOpNode expr = (BinOpNode) node.expr();
+    BinOpNode index = (BinOpNode) expr.right();
+    assertThat(index.operator()).isEqualTo(TokenType.COLON);
+    assertThat(index.left()).isInstanceOf(BinOpNode.class);
+    BinOpNode bPlusOne = (BinOpNode) index.right();
+    assertThat(bPlusOne.left()).isEqualTo(new VariableNode("b", null));
+    assertThat(bPlusOne.right()).isEqualTo(new ConstNode<Integer>(1, VarType.INT, null));
+    System.err.println(expr);
+  }
+
+  @Test
+  public void badStringSlice() {
+    // not allowed yet
+    assertParseError("a=b[1:]", "expected literal");
+    assertParseError("a=b[:2]", "expected literal");
+  }
+
   private BlockNode parseStatements(String expression) {
     ProgramNode node = parseProgram(expression);
     return node.statements();

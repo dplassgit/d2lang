@@ -1,9 +1,11 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -52,8 +54,8 @@ public class ILCodeGeneratorTest {
     generateProgram(
         "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
             + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
-            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
-            + "b=1+2*3-4/5==6!=true or 2-3*4-5/-6<7==not a and 3+4*5+6/-7>=8%2");
+            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
+            + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)");
   }
 
   @Test
@@ -143,6 +145,12 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  @Ignore
+  public void stringSlice() {
+    generateProgram("a='abcde' b=a[1:3]");
+  }
+
+  @Test
   public void constStringIndex() {
     generateProgram("a='hi'[1]");
   }
@@ -209,13 +217,14 @@ public class ILCodeGeneratorTest {
     expectError("r: record{} r:proc{} r=new r", PhaseName.TYPE_CHECK);
   }
 
-  private void expectError(String program, PhaseName expectedErrorPhase) {
-    CompilationConfiguration config = CompilationConfiguration.builder().setSourceCode(program)
-        .setParseDebugLevel(2)
-        .setLastPhase(expectedErrorPhase)
-        .setExpectedErrorPhase(expectedErrorPhase).build();
-    State state = new YetAnotherCompiler().compile(config);
-    assertThat(state.error()).isTrue();
+  @Test
+  public void constantRange() {
+    generateProgram("a=0:3");
+  }
+
+  @Test
+  public void rangeIndex() {
+    generateProgram("a=0:3 b=a[0] b=a[b]");
   }
 
   @Test
@@ -226,7 +235,9 @@ public class ILCodeGeneratorTest {
   private static List<Op> generateProgram(String program) {
     CompilationConfiguration config = CompilationConfiguration.create(program);
     State state = new YetAnotherCompiler().compile(config);
-    assertThat(state.error()).isFalse();
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
 
     ImmutableList<Op> ilCode = state.ilCode();
     System.err.println("\nD CODE:\n-------");
@@ -234,5 +245,14 @@ public class ILCodeGeneratorTest {
     System.err.println("\nIL CODE:\n--------");
     System.err.println(Joiner.on("\n").join(ilCode));
     return ilCode;
+  }
+
+  private void expectError(String program, PhaseName expectedErrorPhase) {
+    CompilationConfiguration config = CompilationConfiguration.builder().setSourceCode(program)
+        .setParseDebugLevel(2)
+        .setLastPhase(expectedErrorPhase)
+        .setExpectedErrorPhase(expectedErrorPhase).build();
+    State state = new YetAnotherCompiler().compile(config);
+    assertThat(state.error()).isTrue();
   }
 }

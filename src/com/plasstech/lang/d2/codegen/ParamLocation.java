@@ -34,4 +34,13 @@ public class ParamLocation extends VariableLocation {
   public int hashCode() {
     return Objects.hash(getClass().getName(), name(), type(), storage(), index, offset);
   }
+
+  @Override
+  public String toString() {
+    if (offset == 0) {
+      return String.format("%s: %s (#%d)", name(), type(), index);
+    } else {
+      return String.format("%s: %s (#%d, %d)", name(), type(), index, offset);
+    }
+  }
 }

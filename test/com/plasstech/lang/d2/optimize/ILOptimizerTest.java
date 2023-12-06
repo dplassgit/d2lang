@@ -443,4 +443,10 @@ public class ILOptimizerTest {
       op.accept(ov);
     }
   }
+
+  @Test
+  public void rangeIndex() {
+    String program = "a=0:3 b=0 println a[b]";
+    TestUtils.optimizeAssertSameVariables(program);
+  }
 }

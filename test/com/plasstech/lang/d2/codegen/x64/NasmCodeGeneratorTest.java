@@ -38,6 +38,14 @@ public class NasmCodeGeneratorTest {
   private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
   private static final Location LONG_TEMP =
       LocationUtils.newLongTempLocation("__longtemp", VarType.INT);
+  private static final Location STACK_RANGE =
+      LocationUtils.newStackLocation("__stackrange", VarType.RANGE, 16);
+  private static final Location PARAM_RANGE =
+      LocationUtils.newParamLocation("__stackrange", VarType.RANGE, 0, 16);
+  private static final Location TEMP_RANGE =
+      LocationUtils.newTempLocation("__rangetemp", VarType.RANGE);
+  private static final Location GLOBAL_RANGE =
+      LocationUtils.newMemoryAddress("globalrange", VarType.RANGE);
 
   private Emitter emitter = new X64Emitter();
   private Registers registers = new Registers();
@@ -392,6 +400,91 @@ public class NasmCodeGeneratorTest {
     generate(program);
     assertThat(emitter).contains("  xor RSI, RSI");
     assertThat(emitter).contains("  xor RDI, RDI");
+  }
+
+  @Test
+  public void fromConstantRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
+                null),
+            new Transfer(GLOBAL_RANGE, TEMP_RANGE, null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD EBX, 12");
+    assertThat(emitter).contains("  shl QWORD RBX, 32");
+    assertThat(emitter).contains("  add RBX, 24");
+    assertThat(emitter).contains("  mov QWORD [_globalrange], RBX");
+  }
+
+  @Test
+  public void toConstantRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(GLOBAL_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
+                null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD [_globalrange], 12");
+    assertThat(emitter).contains("  shl QWORD [_globalrange], 32");
+    assertThat(emitter).contains("  mov DWORD EBX, 24");
+    assertThat(emitter).contains("  add QWORD [_globalrange], RBX");
+  }
+
+  @Test
+  public void toStackRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
+                null),
+            new Transfer(STACK_RANGE, TEMP_RANGE, null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD EBX, 12");
+    assertThat(emitter).contains("  shl QWORD RBX, 32");
+    assertThat(emitter).contains("  add RBX, 24");
+    assertThat(emitter).contains("  mov QWORD [RBP - 16], RBX");
+  }
+
+  @Test
+  public void toParamRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
+                null),
+            new Transfer(PARAM_RANGE, TEMP_RANGE, null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD EBX, 12");
+    assertThat(emitter).contains("  shl QWORD RBX, 32");
+    assertThat(emitter).contains("  add RBX, 24");
+    assertThat(emitter).contains("  mov RCX, RBX");
+  }
+
+  @Test
+  public void fromParamRange() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP_RANGE, TEMP, TokenType.COLON, TEMP,
+                null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD ESI, EBX");
+    assertThat(emitter).contains("  shl QWORD RSI, 32");
+    assertThat(emitter).contains("  add RSI, EBX");
+  }
+
+  @Test
+  public void rangeOfTemps() {
+    Location temp1 = LocationUtils.newTempLocation("__temp1", VarType.INT);
+    Location temp2 = LocationUtils.newTempLocation("__temp2", VarType.INT);
+    Location temp3 = LocationUtils.newTempLocation("__temp3", VarType.RANGE);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(temp1, ConstantOperand.ZERO, TokenType.PLUS, ConstantOperand.of(1), null),
+            new BinOp(temp2, ConstantOperand.of(2), TokenType.PLUS, ConstantOperand.of(3), null),
+            new BinOp(temp3, temp1, TokenType.COLON, temp2, null),
+            new Transfer(GLOBAL_RANGE, temp3, null));
+    generate(program);
+    assertThat(emitter).contains("  mov DWORD EDI, EBX");
+    assertThat(emitter).contains("  shl QWORD RDI, 32");
+    assertThat(emitter).contains("  add RDI, ESI");
+    assertThat(emitter).contains("  mov QWORD [_globalrange], RDI");
   }
 
   private State generateOne(Op op) {

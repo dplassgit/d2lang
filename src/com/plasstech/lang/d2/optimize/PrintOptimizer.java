@@ -72,6 +72,9 @@ public class PrintOptimizer extends LineOptimizer {
     if (format == null) {
       format = PrintFormats.getFormat(operand);
     }
+    if (format == null) {
+      return false;
+    }
     String asString = PrintFormats.formatLiteral(operand.value());
     replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
     return true;

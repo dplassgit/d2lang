@@ -71,6 +71,9 @@ class Resolver implements RegistersInterface {
    * register (nullable)
    */
   ResolvedOperand resolveFully(Operand operand) {
+    if (operand instanceof ResolvedOperand) {
+      return (ResolvedOperand) operand;
+    }
     String name = resolve(operand);
     return ResolvedOperand.create(operand, name).setRegister(toRegister(operand));
   }
@@ -305,6 +308,7 @@ class Resolver implements RegistersInterface {
     VarType type = source.type();
     String size = Size.of(type).asmType;
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
+      // reg to reg or const to reg
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
         emitter.emit("xor %s, %s", destReg.name(), destReg.name());
       } else {

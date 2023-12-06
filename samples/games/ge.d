@@ -428,8 +428,8 @@ calc_distance: proc(p1: PlanetType, p2: PlanetType): double {
 RAND_MAX = 32767
 
 // Get a random number from 0 to 'range' exclusive
-random: proc(range: int): int {
-  return (rand() * range)/RAND_MAX
+random: proc(max: int): int {
+  return (rand() * max)/RAND_MAX
 }
 
 

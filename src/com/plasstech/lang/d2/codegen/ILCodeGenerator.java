@@ -70,6 +70,7 @@ import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
+import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
@@ -93,6 +94,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       "Invalid index error at line %d, column %d: STRING index must be non-negative; was %d";
   private static final String STRING_INDEX_OOB_ERR =
       "Invalid index error at line %d, column %d: STRING index out of bounds (length %d); was %d";
+  private static final String RANGE_INDEX_OOB_ERR =
+      "Invalid index error at line %d, column %d: RANGE index must be 0 or 1; was %d";
 
   private SymbolTable symbolTable;
   private SymbolTable globals;
@@ -478,7 +481,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     switch (operator) {
       case LBRACKET:
         // make sure "left" isn't null
-        left = npeCheck(left, leftNode.position());
+        if (left.type() != VarType.RANGE) {
+          left = npeCheck(left, leftNode.position());
+        }
         // make sure the index is ok
         right = indexChecks(left, right, leftNode.position());
         break;
@@ -595,6 +600,18 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private Operand indexChecks(Operand thingWithIndex, Operand index, Position position) {
+    if (thingWithIndex.type() == VarType.RANGE && index.isConstant()) {
+      // We can do it right here, right now.
+      int indexNum = ConstantOperand.valueFromConstOperand(index).intValue();
+      if (indexNum < 0 || indexNum > 1) {
+        throw new TypeException(
+            String.format(
+                StaticChecker.RANGE_INDEX_OUT_OF_RANGE,
+                thingWithIndex.toString(), indexNum),
+            position);
+      }
+      return index;
+    }
     if (index.storage() == SymbolStorage.TEMP) {
       // Copy index to a long lived temp so we can re-use it
       Location longTemp = allocateLongTemp(VarType.INT);
@@ -603,9 +620,15 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
     // len = length(array)
     Location length = allocateLongTemp(VarType.INT);
-    emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
+    if (thingWithIndex.type() == VarType.RANGE) {
+      emit(new Transfer(length, ConstantOperand.of(2), position));
+    } else {
+      emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
+    }
+
     // indexInBounds = index < length
     Location indexInBounds = allocateTemp(VarType.BOOL);
+
     emit(new BinOp(indexInBounds, index, TokenType.LT, length, position));
     // if indexInBounds, goto good
     String indexInBoundsLabel = nextLabel("index_in_bounds");
@@ -614,6 +637,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new SysCall(STRING_INDEX_OOB_ERR,
           ImmutableList.of(ConstantOperand.of(position.line()),
               ConstantOperand.of(position.column()), length, index)));
+    } else if (thingWithIndex.type() == VarType.RANGE) {
+      emit(new SysCall(RANGE_INDEX_OOB_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), index)));
     } else {
       emit(new SysCall(ARRAY_INDEX_OOB_ERR,
           ImmutableList.of(ConstantOperand.of(position.line()),
@@ -626,12 +653,17 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     // nonNegativeIndex = index >= 0
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
+    // TODO: If index is a constant, don't have to do this whole section.
     emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
     // if nonnegativeindex: goto good
     String nonNegativeIndexLabel = nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
       emit(new SysCall(STRING_INDEX_NEGATIVE_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), index)));
+    } else if (thingWithIndex.type() == VarType.RANGE) {
+      emit(new SysCall(RANGE_INDEX_OOB_ERR,
           ImmutableList.of(ConstantOperand.of(position.line()),
               ConstantOperand.of(position.column()), index)));
     } else {
@@ -656,7 +688,15 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     switch (node.operator()) {
       case ASC:
       case LENGTH:
-        operand = npeCheck(operand, rhsNode.position());
+        if (operand.type() != VarType.RANGE) {
+          operand = npeCheck(operand, rhsNode.position());
+        } else {
+          // just return 2
+          TempLocation destination = allocateTemp(node.varType());
+          node.setLocation(destination);
+          emit(new Transfer(destination, ConstantOperand.of(2), node.position()));
+          return;
+        }
         // fall through:
       case MINUS:
       case BIT_NOT:

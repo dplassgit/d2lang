@@ -254,6 +254,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitArrayBinOp(op, (Object[]) left, right);
     } else if (left instanceof ArrayList && right instanceof Integer) {
       result = visitLiteralArrayBinOp(op, left, (Integer) right);
+    } else if (leftOperand.type() == VarType.RANGE && right instanceof Integer) {
+      result = visitRangeBinOp(op, (Object[]) left, (Integer) right);
     } else if (leftOperand.type().isRecord()
         && (rightOperand.type().isRecord() || rightOperand == null)) {
       result = visitRecordBinop(op, left, right);
@@ -267,6 +269,20 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitRangeBinOp(BinOp op, Object[] left, Integer right) {
+    switch (op.operator()) {
+      case LBRACKET:
+        int index = right;
+        return left[index];
+
+      default:
+        throw new IllegalStateException(
+            String.format(
+                "Unknown range binop %s; left %d:%d, right %s",
+                op, (int) left[0], (int) left[1], right));
+    }
   }
 
   private Object visitRecordBinop(BinOp op, Object left, Object right) {
@@ -416,6 +432,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
   private Object visitIntBinOp(BinOp op, int left, int right) {
     switch (op.operator()) {
+      case COLON:
+        Integer[] range = new Integer[2];
+        range[0] = left;
+        range[1] = right;
+        return range;
+
       case DIV:
         return left / right;
 
@@ -780,7 +802,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
       return rhs.equals(Boolean.FALSE);
     }
     long r1 = (long) rhs;
-    ;
     switch (op.operator()) {
       case PLUS:
         return r1;
@@ -958,6 +979,9 @@ public class Interpreter extends DefaultOpcodeVisitor {
         recordAsMap.put(fieldName, false);
       } else if (type == VarType.DOUBLE) {
         recordAsMap.put(fieldName, 0.0);
+      } else if (type == VarType.RANGE) {
+        Object[] emptyArray = createEmptyArray(VarType.INT, 2);
+        recordAsMap.put(fieldName, emptyArray);
       } else if (type.isArray()) {
         ArrayField arrayField = op.record().getArrayField(fieldName);
         // TODO(#38) support multidimensional arrays
