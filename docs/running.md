@@ -12,7 +12,7 @@ In order for the compiler to generate Windows executables, the following are als
    * GCC
 
 Note: the D2 compiler can *only* generate X64 Assembly language and link against
-Windows (gcc) stdlib.
+the Windows C Standard Library.
 
 ## Compiler
 

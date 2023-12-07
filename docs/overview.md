@@ -27,8 +27,11 @@ before definition) are allowed.
 
 ## Arithmetic and expressions
 
-All arithmetic must be type-consistent. There is no implicit (or explicit) conversion between
-arithmetic types, though you can use `gcc` functions to convert from FLOAT to INT (e.g., `round`.)
+All arithmetic must be type-consistent. There is no implicit (or explicit)
+conversion between arithmetic types, though you can use
+[C Standard Library](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/crt-alphabetical-function-reference?view=msvc-170)
+functions to do so. E.g., to convert from `FLOAT (equivalent to a 64-bit C
+`double`) to `INT` (32 bits) you can use `lround`.
 
 Similarly, all expressions must be type-consistent.
 
@@ -40,7 +43,7 @@ Example: `0y2f` for 47 decimal.
 
 Integer constants can represent -2^31-1 to 2^31. Example: `1234`
 
-Long constants can represent -2^64-1 to 2^64. Example: `1234L`
+Long constants can represent -2^63-1 to 2^63. Example: `1234L`
 
 Floating point constants **must** include a decimal point (dot). Example: `123.4`
 
@@ -48,7 +51,7 @@ Floating point constants **must** include a decimal point (dot). Example: `123.4
 ## Strings
 
 String constants can be created with single or double quotes. Empty string is permitted.
-Strings can be added, and are immutable. 
+Strings can be added, and are immutable.
 
 
 ## Arrays
@@ -69,7 +72,7 @@ Array literals:
 lit = [1, 2, 3] // also allocates memory
 ```
 
-Array literals can be used inline as well. 
+Array literals can be used inline as well.
 
 Use the `LENGTH` function to find the length of an array:
 
@@ -94,7 +97,7 @@ r: record {
 }
 ```
 
-To instantiate a RECORD:
+To instantiate a `RECORD`:
 
 ```
 ar = new r
@@ -103,10 +106,10 @@ ar.f2 = 3
 ar.f3 = new r
 ```
 
-Fields that are not set default to their default value (`0` for
-numbers, `FALSE` for boolean, and `NULL` for others.)
+Fields that are not set default to their default value (zero for
+all numeric types, `FALSE` for `BOOL`, and `NULL` for others.)
 
-Records can be compared using `==` and `!=`. Two records
+`RECORD`s can be compared using `==` and `!=`. Two records
 are `==` if every field is `==`, but not recursively. At this
 time, D2's record comparison is "shallow".
 
@@ -128,13 +131,14 @@ d: bool
 
 ### Assignment
 
-Variable uses and assignments must match their declared types. If a variable is
-not declared, whatever type is used when first assigned will be
-its type throughout its lifetime.
+Variable assignments and references must match their declared types throughout
+their lifetimes. If not explictly declared, whatever type is used when it is first
+assigned will be its type throughout its lifetime.
 
 ```
 a = 3
-// if a==true // this is a compile-time error because int and bool cannot be compared.
+// a = "hi"      // compile-time error beause 'a' is forever an INT
+// b = a == true // compile-time error because int and bool cannot be compared.
 ```
 
 
@@ -145,14 +149,14 @@ A global variable can be defined outside any procedure and can be of any type.
 
 ### Locals
 
-A local variable can be declared or assigned inside a procedure. You cannot "shadow"
-a global variable with a local variable of the same name.
+A local variable can be declared or assigned inside a procedure.
 
 ```
 a = 3 // global definition
 
-f:proc {
-  // a:bool // this is a compile-time error
+f: proc {
+  a: bool // declares a local "a"
+  a = true
 }
 ```
 
@@ -270,8 +274,10 @@ i=0 while i < 10 do i++ {
 
 #### `EXIT`
 
-Use `EXIT` to prematurely terminate the program. Its optional `STRING`
-argument will be printed to stdout.
+Use `EXIT` to terminate the program.
+
+`EXIT "Message"` prints the message to stdout and exits the program with return
+code -1.
 
 
 ### `PRINT` and `PRINTLN`
@@ -291,10 +297,6 @@ toy language in some ways.)
 in: string
 in = input
 ```
-
-### `EXIT`
-
-`EXIT "Message"` prints the message on stdout and exits with return code -1.
 
 
 ### Command line arguments
@@ -322,6 +324,10 @@ Void procedures and no-arg procedures are supported:
 think: proc { // parentheses are optional for no-arg proces
   // no return statement
 }
+
+// this is the same thing:
+thinkv: proc: void {
+}
 ```
 
 
@@ -341,15 +347,16 @@ index('hi', ['a', 'b', 'c'])
 
 ### Externally-defined procedures
 
-To reference a procedure in the `gcc` runtime library, prepend `EXTERN`
+To reference a procedure in the C Standard Library, prepend `EXTERN`
 before the `PROC` keyword, and don't define the body of the
 procedure. Example:
 
 ```
-rand: extern proc(n: int): int
+srand: extern proc(n: int)
+rand: extern proc: int
 ```
 
-The procedure must be a procedure/function in the `gcc` runtime library.
+The procedure must be a procedure/function in the C Standard Library.
 
 
 ## Runtime Checks
@@ -360,3 +367,4 @@ There are runtime checks in place for
 * division by zero and modulo zero
 
 When possible, the compiler will discover these at compile time.
+
