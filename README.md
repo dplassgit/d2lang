@@ -17,26 +17,33 @@ types, control structures, operators and statements in D2.
 
 ## Installing
 
-1. Install Eclipse or [bazel](https://github.com/bazelbuild/bazel).
+The following 4 are required:
 
-2. Install [nasm](https://www.nasm.us/)
+1. [bazel](https://github.com/bazelbuild/bazel)
 
-3. Install [gcc](https://gcc.gnu.org/install/binaries.html)
+2. [nasm](https://www.nasm.us/)
 
-4. Optional: Install git bash shell (mingw64)
+3. [gcc](https://gcc.gnu.org/install/binaries.html)
+
+4. Java 11 or higher
+
+5. Optional: Eclipse and git bash shell (mingw64)
 
 
 ## Running Tests
 
-`bazel test ...`
+Run `bazel test ...` from the root directory.
 
-See also [docs/running.md](docs/running.md)
+
+## Running the compiler
+
+See [docs/running.md](docs/running.md).
 
 
 ## Caveats
 
-Only compiles to Intel x64. Only links the Windows version of the `gcc` runtime 
-library. Only uses `nasm` and `gcc`. 
+Only compiles to Intel x64. Only links against the Windows version of the `gcc`
+C Runtime Library. Can only use `nasm` and `gcc`. 
 
 There are [various bugs](https://github.com/dplassgit/d2lang/labels/bug).
 

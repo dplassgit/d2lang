@@ -24,6 +24,8 @@ import com.plasstech.lang.d2.phase.State;
  */
 public class D2Compiler {
 
+  private static final String D2PATH = System.getenv("D2PATH");
+
   public static void main(String[] args) throws Exception {
     OptionsParser optionsParser = OptionsParser.newOptionsParser(D2Options.class);
     optionsParser.parseAndExitUponError(args);
@@ -149,6 +151,13 @@ public class D2Compiler {
       if (options.libs != null && options.libs.size() > 0) {
         command.addAll(options.libs);
       }
+      if (D2PATH != null) {
+        String dlib = String.format("%s/dlib/dlib.obj", D2PATH);
+        File dlibFile = new File(dlib);
+        if (dlibFile.exists()) {
+          command.add(dlib);
+        }
+      }
       command.add("-o", exeFile.getAbsolutePath());
       pb = new ProcessBuilder(command.build());
       pb.directory(dir);
@@ -162,6 +171,7 @@ public class D2Compiler {
         objFile.delete();
       }
     }
+
   }
 
   private static void assertNoProcessError(Process process, String name) throws IOException {
