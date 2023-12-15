@@ -14,6 +14,7 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",
         "//src/com/plasstech/lang/d2/parse/node",
+        "@maven//:com_google_guava_guava",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",

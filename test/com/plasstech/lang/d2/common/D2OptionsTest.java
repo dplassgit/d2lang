@@ -11,7 +11,7 @@ import com.google.devtools.common.options.OptionsParser;
 import com.google.devtools.common.options.OptionsParsingException;
 
 public class D2OptionsTest {
-  OptionsParser optionsParser = OptionsParser.newOptionsParser(D2Options.class);
+  private OptionsParser optionsParser = OptionsParser.newOptionsParser(D2Options.class);
 
   @Test
   public void noFlags() throws Exception {

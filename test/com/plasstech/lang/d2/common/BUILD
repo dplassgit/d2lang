@@ -7,6 +7,7 @@ gen_java_tests(
     deps = [
         "//src/com/plasstech/lang/d2/common",
         "@maven//:com_github_pcj_google_options",
+        "@maven//:com_google_guava_guava",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",
     ],
