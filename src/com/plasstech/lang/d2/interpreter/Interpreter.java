@@ -3,8 +3,6 @@ package com.plasstech.lang.d2.interpreter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,6 +42,7 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ParamSymbol;
+import com.plasstech.lang.d2.type.PrintFormats;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymbolStorage;
@@ -826,14 +825,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     switch (op.call()) {
       case PRINT:
       case PRINTLN:
-        String val;
-        val = String.valueOf(resolved);
-        if (op.arg().type() == VarType.DOUBLE) {
-          double d = (double) resolved;
-          BigDecimal bd = BigDecimal.valueOf(d).round(MathContext.DECIMAL64).stripTrailingZeros();
-          val = bd.toPlainString();
-        }
-
+        String val = PrintFormats.formatLiteral(resolved);
         if (interactive) {
           if (op.call() == SysCall.Call.PRINTLN) {
             System.out.println(val);

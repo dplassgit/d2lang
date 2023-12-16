@@ -11,6 +11,8 @@ import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
+import com.plasstech.lang.d2.type.PrintFormats;
+import com.plasstech.lang.d2.type.PrintFormats.Format;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Generates NASM code for printing things. */
@@ -37,40 +39,47 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
     ResolvedOperand argRo = resolver.resolveFully(arg);
     String argName = argRo.name();
     boolean isNewline = op.call() == Call.PRINTLN || op.call() == Call.MESSAGE;
-    if (arg.type() == VarType.INT || arg.type() == VarType.BYTE) {
+    Format format = PrintFormats.getFormat(arg.type());
+    if (arg.type() == VarType.INT) {
+
       // Move with sign extend. Intentionally set rdx first, in case the arg is in ecx
       Size size = Size.of(arg.type());
       emitter.emit("movsx RDX, %s %s  ; parameter", size.asmType, argName);
-      setUpFormat(Format.INT, isNewline);
-      emitter.emitExternCall("printf");
+      setUpFormat(format, isNewline);
+
+    } else if (arg.type() == VarType.BYTE) {
+
+      emitter.emit("xor RDX, RDX");
+      // note: no sign extend; otherwise it will prepend ffffs
+      emitter.emit("mov DL, BYTE %s  ; parameter", argName);
+      setUpFormat(format, isNewline);
+
     } else if (arg.type() == VarType.LONG) {
+
       emitter.emit("mov RDX, %s  ; parameter", argName);
-      setUpFormat(Format.LONG, isNewline);
-      emitter.emitExternCall("printf");
+      setUpFormat(format, isNewline);
 
     } else if (arg.type() == VarType.BOOL) {
 
       if (argName.equals("1")) {
+        // This usually wouldn't happen; the print optimizer would have already translated
+        // 1 to "true" and 0 to "false".
         setUpFormat(Format.TRUE, isNewline);
       } else if (argName.equals("0")) {
         setUpFormat(Format.FALSE, isNewline);
       } else {
-
         // Translate dynamically from 0/1 to false/true
         emitter.emit("cmp BYTE %s, 1", argName);
         setUpFormat(Format.FALSE, isNewline);
 
         // This puts pattern into RDX
-        emitter.addData(Format.TRUE.constData(isNewline));
-        emitter.emit("mov RDX, %s  ; pattern", Format.TRUE.constName(isNewline));
+        emitter.addData(constData(Format.TRUE, isNewline));
+        emitter.emit("mov RDX, %s  ; pattern", constName(Format.TRUE, isNewline));
         // Conditionally move the pattern from either RCX or RDS
         emitter.emit("cmovz RCX, RDX");
       }
 
-      emitter.emitExternCall("printf");
-
     } else if (arg.type() == VarType.STRING) {
-
       if (op.call() == SysCall.Call.MESSAGE) {
         // Intentionally set rdx first in case the arg is in rcx
         resolver.mov(arg, RDX);
@@ -96,11 +105,11 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
           }
         }
       }
-      emitter.emitExternCall("printf");
 
     } else if (arg.type() == VarType.NULL) {
-      setUpFormat(Format.NULL, isNewline);
-      emitter.emitExternCall("printf");
+
+      setUpFormat(format, isNewline);
+
     } else if (arg.type() == VarType.DOUBLE) {
       if (arg.isConstant()) {
         // this shouldn't happen in optimization mode because the arithmetic optimizer
@@ -118,52 +127,34 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         emitter.emit("mov RDX, %s", argName);
       }
       setUpFormat(Format.DOUBLE, isNewline);
-      emitter.emitExternCall("printf");
       // TODO: If arg is a round number, print a trailing .0
     } else {
       fail(op.position(), "Cannot print %ss yet", arg.type());
     }
+    emitter.emitExternCall("printf");
     emitter.emitExternCall("_flushall");
     registerState.condPop();
     resolver.deallocate(arg);
   }
 
-  private enum Format {
-    // TODO: print bytes with 0y prefix?
-    INT("%d"),
-    LONG("%lld"),
-    // this skips ".0", and now the Java implementations do too.
-    DOUBLE("%.16g"), // # of significant digits (note, 0.0003 is ONE.)
-    TRUE("true"),
-    FALSE("false"),
-    STRING("%s"),
-    NULL("null");
-
-    private final String spec;
-
-    Format(String spec) {
-      this.spec = spec;
-    }
-
-    String constName(boolean newline) {
-      if (newline) {
-        return String.format("PRINTLN_%s", this.name());
-      } else {
-        return String.format("PRINT_%s", this.name());
-      }
-    }
-
-    String constData(boolean newline) {
-      String suffix = "0";
-      if (newline) {
-        suffix = "10, 0";
-      }
-      return String.format("%s: db \"%s\", %s", constName(newline), this.spec, suffix);
+  private static String constName(Format format, boolean newline) {
+    if (newline) {
+      return String.format("PRINTLN_%s", format.name());
+    } else {
+      return String.format("PRINT_%s", format.name());
     }
   }
 
+  private static String constData(Format format, boolean newline) {
+    String suffix = "0";
+    if (newline) {
+      suffix = "10, 0";
+    }
+    return String.format("%s: db \"%s\", %s", constName(format, newline), format.spec, suffix);
+  }
+
   private void setUpFormat(Format format, boolean isNewline) {
-    emitter.addData(format.constData(isNewline));
-    emitter.emit("mov RCX, %s  ; pattern", format.constName(isNewline));
+    emitter.addData(constData(format, isNewline));
+    emitter.emit("mov RCX, %s  ; pattern", constName(format, isNewline));
   }
 }

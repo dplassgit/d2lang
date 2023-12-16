@@ -132,6 +132,36 @@ public class PrintOptimizerTest {
     assertThat(arg.value()).isEqualTo("3");
   }
 
+  @Test
+  public void printConstantLong() {
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("print 3L", OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
+    assertThat(arg.value()).isEqualTo("3L");
+  }
+
+  @Test
+  public void printConstantNull() {
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("print null", OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
+    assertThat(arg.value()).isEqualTo("null");
+  }
+
+  @Test
+  public void printConstantByte() {
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("print 0y03", OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    SysCall first = (SysCall) code.get(0);
+    ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
+    assertThat(arg.value()).isEqualTo("0y03");
+  }
+
   private void assertTotalPrintCount(InterpreterResult result, long expected) {
     long actual = result.code().stream().filter(op -> (op instanceof SysCall)).count();
     assertThat(actual).isEqualTo(expected);

@@ -72,6 +72,18 @@ java_library(
 )
 
 java_library(
+    name = "print_formats",
+    srcs = [
+        "PrintFormats.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+       ":var_types",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+java_library(
     name = "storage",
     srcs = ["SymbolStorage.java"],
     visibility = ["//visibility:public"],

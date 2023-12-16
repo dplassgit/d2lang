@@ -1,13 +1,12 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
-
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
+import com.plasstech.lang.d2.type.PrintFormats;
+import com.plasstech.lang.d2.type.PrintFormats.Format;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Optimizes printing constants, and consecutive print statements, if they're constant strings. */
@@ -68,12 +67,12 @@ public class PrintOptimizer extends LineOptimizer {
       return true;
     }
 
-    String asString = operand.value().toString();
-    if (operand.type() == VarType.DOUBLE) {
-      double value = (double) operand.value();
-      BigDecimal bd = BigDecimal.valueOf(value).round(MathContext.DECIMAL64).stripTrailingZeros();
-      asString = bd.toPlainString();
+    // This isn't right, because of formats.
+    Format format = PrintFormats.getFormat(operand.type());
+    if (format == null) {
+      format = PrintFormats.getFormat(operand);
     }
+    String asString = PrintFormats.formatLiteral(operand.value());
     replaceCurrent(new SysCall(op.call(), ConstantOperand.of(asString)));
     return true;
   }
