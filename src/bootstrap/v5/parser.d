@@ -1798,13 +1798,18 @@ parsePrint: proc(isPrintln: bool) {
     emitNum("mov RCX, CONST_", falseindex)
     emitNum("mov RDX, CONST_", trueindex)
     emit("cmovz RCX, RDX")
-  } elif exprType == TYPE_INT or exprType == TYPE_BYTE {
+  } elif exprType == TYPE_INT  {
     index = addStringConstant("%d")
     emitNum("mov RCX, CONST_", index)
     ax = makeRegister(A_REG, exprType)
     emit("movsx RDX, " + ax)
+  } elif exprType == TYPE_BYTE {
+    index = addStringConstant("0y%02x")
+    emitNum("mov RCX, CONST_", index)
+    ax = makeRegister(A_REG, exprType)
+    emit("mov DL, " + ax)
   } elif exprType == TYPE_LONG {
-    index = addStringConstant("%lld")
+    index = addStringConstant("%lldL")
     emitNum("mov RCX, CONST_", index)
     emit("mov RDX, RAX")
   } else {
