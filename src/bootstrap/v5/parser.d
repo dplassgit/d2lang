@@ -239,6 +239,26 @@ OPCODES=[
     "shr "
 ]
 
+DOUBLE_OPCODES=[
+    ";nop ",  // eof
+    "addsd ",
+    "subsd ",
+    "mulsd ",
+    "; and ",
+    "; or ",
+    "; xor ",
+    "divsd ",
+    "; mod ",
+    "setz ",  // ==
+    "setnz ", // !=
+    "setb ",  // <
+    "seta ",  // >
+    "setbe ", // <=
+    "setae ",  // >=
+    "; shl ",
+    "; shr "
+]
+
 boolOr: proc: VarType {
   leftType = boolXor()
   if leftType == TYPE_BOOL {
@@ -357,6 +377,23 @@ compare: proc: VarType {
     emit("cmp " + bx + ", " + ax + "  ; " + leftType.name)
     emit(OPCODES[op] + "AL")
     return TYPE_BOOL
+  } elif leftType == TYPE_DOUBLE and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
+    op = parser.token.type
+    opstring = parser.token.stringValue
+    advanceParser() // eat the symbol
+    // push xmm0
+    push(XMM0, TYPE_DOUBLE, parser.emitter)
+
+    rightType = shift()
+    checkTypes(leftType, rightType)
+
+    // pop into xmm1
+    pop(XMM1, TYPE_DOUBLE, parser.emitter)
+
+    // left = left (op) right
+    emit("comisd XMM0, XMM1")
+    emit(DOUBLE_OPCODES[op] + "AL")
+    return TYPE_BOOL
   } elif leftType == TYPE_STRING and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
 
     op = parser.token.type
@@ -450,12 +487,12 @@ addSub: proc: VarType {
     op = parser.token.type
     opstring = parser.token.stringValue
     advanceParser() // eat the symbol
-    emit("push RAX")
+    push(0, leftType, parser.emitter) // push left from rax or xmm0
 
     rightType = mulDiv()
     checkTypes(leftType, rightType)
 
-    emit("pop RBX") // pop the left side
+    pop(1, leftType, parser.emitter) // pop left into rbx or xmm1
     if leftType == TYPE_STRING and op == TOKEN_PLUS {
       // 1. mov rsi, rax. get length of rsi
       emit("mov RSI, RAX  ; lhs in RSI")
@@ -495,6 +532,17 @@ addSub: proc: VarType {
         emit("sub " + bx + ", " + ax)
         emit("mov RAX, RBX")
       }
+    } elif leftType == TYPE_DOUBLE {
+      // left = left (op) right
+      if op == TOKEN_PLUS {
+        // If plus, can just do add xmm0,xmm1 instead of two lines
+        emit(DOUBLE_OPCODES[op] + "XMM0, XMM1")
+      } else {
+        // minus; have to do sub ebx, eax
+        // xmm1=xmm1 (op) xmm0
+        emit(DOUBLE_OPCODES[op] + "XMM1, XMM0")
+        emit("movsd XMM0, XMM1")
+      }
     } else {
       typeError("Cannot apply " + parser.token.stringValue + " to " + leftType.name)
       exit
@@ -505,42 +553,57 @@ addSub: proc: VarType {
 
 mulDiv: proc: VarType {
   leftType = unary()
-  while leftType.isIntegral and
+  while (leftType.isIntegral or leftType == TYPE_DOUBLE) and
       (parser.token.type == TOKEN_MULT or parser.token.type == TOKEN_DIV or parser.token.type == TOKEN_MOD) {
     op = parser.token.type
 
     advanceParser() // eat the symbol
-    emit("push RAX")
+    push(0, leftType, parser.emitter) // push left from rax or xmm0
 
     rightType = unary()
     checkTypes(leftType, rightType)
 
-    emit("pop RBX") // pop the left side
+    pop(1, leftType, parser.emitter) // pop left into rbx or xmm1
 
-    // xax = xax (op) xbx
-    bx = makeRegister(B_REG, leftType)
-    ax = makeRegister(A_REG, leftType)
-    if op == TOKEN_DIV or op == TOKEN_MOD {
-      // These are all too big for bytes
-      emit("xchg RAX, RBX  ; put numerator in RAX, denominator in RBX")
-      if leftType == TYPE_INT {
-        emit("cdq  ; sign extend eax to edx")
-      } elif leftType == TYPE_LONG {
-        emit("cqo  ; sign extend rax to rdx")
-      } else {
-        emit("cbw  ; sign extend al to ax")
-      }
-      emit("idiv " + bx + "  ; a=a/b")
-      if op == TOKEN_MOD {
-        if leftType == TYPE_BYTE {
-          emit("mov AL, AH  ; remainder in ah")
+    if leftType.isIntegral {
+      // xax = xax (op) xbx
+      bx = makeRegister(B_REG, leftType)
+      ax = makeRegister(A_REG, leftType)
+      if op == TOKEN_DIV or op == TOKEN_MOD {
+        // These are all too big for bytes
+        emit("xchg RAX, RBX  ; put numerator in RAX, denominator in RBX")
+        if leftType == TYPE_INT {
+          emit("cdq  ; sign extend eax to edx")
+        } elif leftType == TYPE_LONG {
+          emit("cqo  ; sign extend rax to rdx")
         } else {
-          emit("mov RAX, RDX  ; remainder in rdx/edx")
+          emit("cbw  ; sign extend al to ax")
         }
+        emit("idiv " + bx + "  ; a=a/b")
+        if op == TOKEN_MOD {
+          if leftType == TYPE_BYTE {
+            emit("mov AL, AH  ; remainder in ah")
+          } else {
+            emit("mov RAX, RDX  ; remainder in rdx/edx")
+          }
+        }
+      } else {
+        // multiply: al=al*bl or rax=rax*rbx
+        emit("imul " + bx)
       }
     } else {
-      // multiply: al=al*bl or rax=rax*rbx
-      emit("imul " + bx)
+      if op == TOKEN_MOD {
+        exit "Cannot apply % to DOUBLEs"
+      }
+      if op == TOKEN_MULT {
+        // If plus, can just do mulsd xmm0,xmm1 instead of two lines
+        emit(DOUBLE_OPCODES[op] + "XMM0, XMM1")
+      } else {
+        // division; have to do divsd ebx, eax
+        // xmm1=xmm1 (op) xmm0
+        emit(DOUBLE_OPCODES[op] + "XMM1, XMM0")
+        emit("movsd XMM0, XMM1")
+      }
     }
   }
   return leftType
@@ -822,7 +885,11 @@ generateGetVariable: proc(variable: string): VarType {
   symbol = lookupVariable(variable)
   ref = toReference(symbol)
   reg = makeRegister(A_REG, symbol.varType)
-  emit("mov " + symbol.varType.opcodeSize + reg + ", " + ref + "  ; get variable " + variable)
+  movSuffix = " "
+  if symbol.varType == TYPE_DOUBLE {
+    movSuffix = "q "
+  }
+  emit("mov" + movSuffix + symbol.varType.opcodeSize + reg + ", " + ref + "  ; get variable " + variable)
   return symbol.varType
 }
 
@@ -960,7 +1027,6 @@ atom: proc: VarType {
 
   } elif type == TOKEN_INT or type == TOKEN_LONG or type == TOKEN_BYTE {
     constType: VarType
-    // TODO: make this a map?
     if type == TOKEN_INT {
       constType = TYPE_INT
     } elif type == TOKEN_LONG {
@@ -968,7 +1034,7 @@ atom: proc: VarType {
     } elif type == TOKEN_BYTE {
       constType = TYPE_BYTE
     }
-    // int long or byte constant
+    // int, long or byte constant
     theValue = parser.token.stringValue
     advanceParser()
     if theValue == '0' {
@@ -984,10 +1050,15 @@ atom: proc: VarType {
     return constType
 
   } elif type == TOKEN_DOUBLE {
+
+    // treating doubles as strings because v5 is compiled by v4 which doesn't have doubles
     theValue = parser.token.stringValue
     advanceParser()
-    // mumble something double
+    index = addDoubleConstant(theValue)
+    line = "movq XMM0, [DOUBLE_" + toString(index) + "]"
+    emit(line)
     return TYPE_DOUBLE
+
   } elif type == TOKEN_BOOL {
     // bool constant
     boolval = parser.token.boolValue
@@ -1379,7 +1450,11 @@ generateAssignment: proc(variable: string, exprType: VarType): VarType {
 
   ref = toReference(symbol)
   reg = makeRegister(A_REG, symbol.varType)
-  emit("mov " + symbol.varType.opcodeSize + ref + ", " + reg + "  ; set variable " + variable)
+  movSuffix = " "
+  if symbol.varType == TYPE_DOUBLE {
+    movSuffix = "q "
+  }
+  emit("mov" + movSuffix + symbol.varType.opcodeSize + ref + ", " + reg + "  ; set variable " + variable)
   return symbol.varType
 }
 
@@ -1780,10 +1855,12 @@ parseWhile: proc {
 }
 
 parsePrint: proc(isPrintln: bool) {
-  exprType = expr()  // puts result in RAX
+  exprType = expr()  // puts result in RAX or XMM
   if exprType == TYPE_NULL {
+
     nullindex = addStringConstant("null")
     emitNum("mov RCX, CONST_", nullindex)
+
   } elif exprType == TYPE_STRING {
 
     emit("cmp RAX, 0")
@@ -1792,26 +1869,40 @@ parsePrint: proc(isPrintln: bool) {
     emit("cmovnz RCX, RAX") // copy RAX to RCX if not null
 
   } elif exprType == TYPE_BOOL {
+
     trueindex = addStringConstant("true")
     falseindex = addStringConstant("false")
     emit("cmp AL, 1")
     emitNum("mov RCX, CONST_", falseindex)
     emitNum("mov RDX, CONST_", trueindex)
     emit("cmovz RCX, RDX")
+
   } elif exprType == TYPE_INT  {
+
     index = addStringConstant("%d")
     emitNum("mov RCX, CONST_", index)
     ax = makeRegister(A_REG, exprType)
     emit("movsx RDX, " + ax)
+
   } elif exprType == TYPE_BYTE {
+
     index = addStringConstant("0y%02x")
     emitNum("mov RCX, CONST_", index)
     ax = makeRegister(A_REG, exprType)
     emit("mov DL, " + ax)
+
   } elif exprType == TYPE_LONG {
+
     index = addStringConstant("%lldL")
     emitNum("mov RCX, CONST_", index)
     emit("mov RDX, RAX")
+
+  } elif exprType == TYPE_DOUBLE {
+
+    index = addStringConstant("%.16g")
+    emitNum("mov RCX, CONST_", index)
+    emit("movq RDX, XMM0")
+
   } else {
     parserError("Cannot generate printing " + exprType.name)
     exit
@@ -1945,6 +2036,13 @@ emitStringTable: proc {
   }
 }
 
+emitDoubleTable: proc {
+  head = doubleTable.head
+  while head != null do head = head.next {
+    print "  DOUBLE_" print head.index print ": dq " println head.value
+  }
+}
+
 emitGlobalTable: proc {
   head = globals while head != null do head = head.next {
     print "  _" print head.name print ": "
@@ -1984,11 +2082,14 @@ parseProgram: proc(self: Parser) {
   }
   emitter_printEntries(self.emitter)
 
-  if stringTable.head != null or globals != null {
+  if stringTable.head != null or globals != null or doubleTable.head != null {
     println "section .data"
   }
   if stringTable.head != null {
     emitStringTable()
+  }
+  if doubleTable.head != null {
+    emitDoubleTable()
   }
   emitGlobalTable()
 }

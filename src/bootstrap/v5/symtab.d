@@ -167,11 +167,17 @@ compatibleTypes: proc(expected: VarType, actual: VarType): bool {
 
 // TODO: this could be a map (string -> int)
 stringTable=new StringList
+doubleTable=new StringList
 
 // Create a string constant and return its index. If the string already is in the table,
 // will not re-create it.
 addStringConstant: proc(s: string): int  {
   node = append(stringTable, s)
+  return node.index
+}
+
+addDoubleConstant: proc(d: string): int  {
+  node = append(doubleTable, d)
   return node.index
 }
 
