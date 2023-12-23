@@ -391,7 +391,7 @@ compare: proc: VarType {
     pop(XMM1, TYPE_DOUBLE, parser.emitter)
 
     // left = left (op) right
-    emit("comisd XMM0, XMM1")
+    emit("comisd XMM1, XMM0")
     emit(DOUBLE_OPCODES[op] + "AL")
     return TYPE_BOOL
   } elif leftType == TYPE_STRING and (parser.token.type >= TOKEN_EQEQ and parser.token.type <= TOKEN_GEQ) {
@@ -596,7 +596,7 @@ mulDiv: proc: VarType {
         exit "Cannot apply % to DOUBLEs"
       }
       if op == TOKEN_MULT {
-        // If plus, can just do mulsd xmm0,xmm1 instead of two lines
+        // If mult, can just do mulsd xmm0,xmm1 instead of two lines
         emit(DOUBLE_OPCODES[op] + "XMM0, XMM1")
       } else {
         // division; have to do divsd ebx, eax
@@ -614,7 +614,7 @@ unary: proc: VarType {
   if parser.token.type == TOKEN_PLUS {
     advanceParser() // eat the plus
     type = unary()
-    if not type.isIntegral {
+    if not (type.isIntegral or type == TYPE_DOUBLE) {
       typeError("Cannot apply unary plus to " + type.name)
       exit
     }
@@ -622,12 +622,17 @@ unary: proc: VarType {
   } elif parser.token.type == TOKEN_MINUS {
     advanceParser() // eat the minus
     type = unary()
-    if not type.isIntegral {
+    if type == TYPE_DOUBLE {
+      emit("xorpd XMM1, XMM1  ; instead of mov xmm1, 0")
+      emit("subsd XMM1, XMM0  ; xmm1=-xmm0")
+      emit("movsd XMM0, XMM1")
+    } elif type.isIntegral {
+      // two's complement
+      emit("neg " + makeRegister(A_REG, type))
+    }  else {
       typeError("Cannot apply unary minus to " + type.name)
       exit
     }
-    // two's complement
-    emit("neg " + makeRegister(A_REG, type))
     return type
   } elif parser.token.keyword == KW_LENGTH {
     advanceParser() // eat the length
@@ -919,8 +924,9 @@ generateProcCall: proc(procName: string) {
       generalError("Internal", "too many args to extern " + procSym.name)
       exit
     }
+
     // NOTE: Always using 8 bytes per arg.
-    emit("push RAX")
+    push(0, actualArgType, parser.emitter)
     if parser.token.type == TOKEN_COMMA {
       advanceParser() // eat the comma
     }

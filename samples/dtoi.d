@@ -1,6 +1,6 @@
 toi: proc(d:double): int {
-  neg = false
-  if d < 0.0 {neg = true d = -d}
+  neg = d < 0.0
+  if d < 0.0 {d = -d}
   i = 0
   dplace = 100000.0
   iplace = 100000
