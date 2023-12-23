@@ -42,7 +42,7 @@ files=(
   "samples/all-dead.d"
   "samples/all-ops-globals.d"
   "samples/all-ops-locals.d"  # long
-  #"samples/allOpsLocals.d"    # double
+  "samples/allOpsLocals.d"    # double
   "samples/arrayiter.d"
   "samples/associative.d"
   "samples/backslash.d"
@@ -53,9 +53,9 @@ files=(
   "samples/bytes.d"
   "samples/crash.d"
   "samples/dead-after-return.d"
-  #"samples/doubleopt.d"
-  #"samples/doubles.d"
-  #"samples/dtoi.d"
+  "samples/doubleopt.d"
+  "samples/doubles.d"
+  "samples/dtoi.d"
   "samples/dumbsort.d"
   "samples/everything.d"
   "samples/fact.d"
@@ -84,7 +84,7 @@ files=(
   "samples/power2.d"
   "samples/primes.d"
   #"samples/printarray.d"
-  #"samples/printdouble.d"
+  "samples/printdouble.d"
   "samples/printhello.d"
   "samples/printint.d"
   "samples/printparse.d"  # string literal index
@@ -103,7 +103,7 @@ files=(
   "samples/str2int.d"  # string compare
   "samples/stringescaped.d"
   "samples/stringiter.d"
-  #"samples/tod.d"
+  "samples/tod.d"
   "samples/tolower.d"  # string compare
   "samples/toomanyregs.d"
   "samples/tostring.d"

@@ -768,7 +768,8 @@ generateArrayIndex: proc(arrayType: VarType): VarType {
   // 4. get value
 
   emit("; get array slot value:")
-  emit("mov " + baseType.opcodeSize + makeRegister(A_REG, baseType) + ", [RAX]")
+  mov = makeMov(baseType)
+  emit(mov + baseType.opcodeSize + makeRegister(A_REG, baseType) + ", [RAX]")
 
   return baseType
 }
@@ -890,11 +891,8 @@ generateGetVariable: proc(variable: string): VarType {
   symbol = lookupVariable(variable)
   ref = toReference(symbol)
   reg = makeRegister(A_REG, symbol.varType)
-  movSuffix = " "
-  if symbol.varType == TYPE_DOUBLE {
-    movSuffix = "q "
-  }
-  emit("mov" + movSuffix + symbol.varType.opcodeSize + reg + ", " + ref + "  ; get variable " + variable)
+  mov = makeMov(symbol.varType)
+  emit(mov + symbol.varType.opcodeSize + reg + ", " + ref + "  ; get variable " + variable)
   return symbol.varType
 }
 
@@ -1456,11 +1454,8 @@ generateAssignment: proc(variable: string, exprType: VarType): VarType {
 
   ref = toReference(symbol)
   reg = makeRegister(A_REG, symbol.varType)
-  movSuffix = " "
-  if symbol.varType == TYPE_DOUBLE {
-    movSuffix = "q "
-  }
-  emit("mov" + movSuffix + symbol.varType.opcodeSize + ref + ", " + reg + "  ; set variable " + variable)
+  mov = makeMov(symbol.varType)
+  emit(mov + symbol.varType.opcodeSize + ref + ", " + reg + "  ; set variable " + variable)
   return symbol.varType
 }
 
@@ -1616,6 +1611,14 @@ generateIncDec: proc(variable: string, inc: bool) {
 }
 
 
+makeMov: proc(vt: VarType): string {
+  if vt == TYPE_DOUBLE {
+    return "movq "
+  } else {
+    return "mov "
+  }
+}
+
 // Allocates and populates an array literal. Returns the array type.
 parseArrayLiteral: proc: VarType {
   expectToken(TOKEN_LBRACKET, '[')
@@ -1625,7 +1628,8 @@ parseArrayLiteral: proc: VarType {
   emit("; collect array literal entries")
   while parser.token.type != TOKEN_RBRACKET and parser.token.type != TOKEN_EOF {
     thisSlotType = expr()
-    emit("push RAX")
+    // pushes xmm0 or rax
+    push(0, thisSlotType, parser.emitter) 
     slotCount++
     if slotType == TYPE_UNKNOWN {
       slotType = thisSlotType
@@ -1652,9 +1656,11 @@ parseArrayLiteral: proc: VarType {
   // Start at the last one
   offset = 5 + slotType.size * (slotCount - 1)
   i = 0 while i < slotCount do i++ {
-    emit("pop RBX")
-    emit("mov " + slotType.opcodeSize + "[RAX + " + toString(offset) + "], " +
-        makeRegister(B_REG, slotType))
+    // pop into rbx or xmm1
+    pop(1, slotType, parser.emitter) 
+    mov = makeMov(slotType)
+    emit(mov + slotType.opcodeSize + "[RAX + " + toString(offset) + "], " +
+        makeRegister(1, slotType))
     // go to previous one
     offset = offset - slotType.size
   }
