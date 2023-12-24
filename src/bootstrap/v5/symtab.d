@@ -297,7 +297,7 @@ clearCurrentProc: proc {
 registerProc: proc(name: string): ProcSymbol {
   head = procs last = head while head != null do head = head.next {
     if head.name == name {
-      typeError("Proc '" + name + "' already declared")
+      typeError("PROC '" + name + "' already declared")
       exit
     }
     last = head
@@ -321,14 +321,14 @@ lookupProc: proc(name: string): ProcSymbol {
       return head
     }
   }
-  typeError("Cannot find proc '" + name + "'")
+  typeError("Cannot find PROC '" + name + "'")
   exit
 }
 
 // returns the param VarSymbol, or null if not found.
 lookupParam: proc(name: string): VarSymbol {
   if currentProc == null {
-    typeError("Cannot lookup parameter '" + name + "' because not in a proc")
+    typeError("Cannot lookup parameter '" + name + "' because not in a PROC")
     exit
   }
 
@@ -343,7 +343,7 @@ lookupParam: proc(name: string): VarSymbol {
 // returns the local VarSymbol, or null if not found.
 lookupLocal: proc(name: string): VarSymbol {
   if currentProc == null {
-    typeError("Cannot lookup local '" + name + "' because not in a proc")
+    typeError("Cannot lookup local '" + name + "' because not in a PROC")
     exit
   }
 
@@ -389,7 +389,7 @@ registerLocal: proc(name: string, varType: VarType): VarSymbol {
     exit
   }
   if currentProc == null {
-    typeError("Cannot add local '" + name + "' because not in a proc")
+    typeError("Cannot add local '" + name + "' because not in a PROC")
     exit
   }
 
@@ -398,7 +398,7 @@ registerLocal: proc(name: string, varType: VarType): VarSymbol {
     if head.name == name {
       // TODO: improve this message:
       // Type error at line 2: Variable 'a' already declared as INT, cannot be redeclared as BOOL
-      typeError("Duplicate local '" + name + "' in proc '" + currentProc.name + "'")
+      typeError("Duplicate local '" + name + "' in PROC '" + currentProc.name + "'")
       exit
     }
     offset = head.offset
@@ -429,7 +429,7 @@ registerParam: proc(name: string, varType: VarType) {
   // add up param offsets
   head = currentProc.params last = head while head != null do head = head.next {
     if head.name == name {
-      typeError("Duplicate parameter '" + name + "' to proc '" + currentProc.name + "'")
+      typeError("Duplicate parameter '" + name + "' to PROC '" + currentProc.name + "'")
       exit
     }
     offset = head.offset
@@ -499,7 +499,7 @@ records=null
 registerRecord: proc(name: string): RecordType {
   head = records last = head while head != null do head=head.next {
     if head.name == name {
-      typeError("Record '" + name + "' already declared")
+      typeError("RECORD type '" + name + "' already declared")
       exit
     }
     last = head
@@ -547,13 +547,14 @@ lookupField: proc(rt: RecordType, name: string): FieldSymbol {
 
 registerField: proc(rt: RecordType, name: string, varType: VarType): FieldSymbol {
   if varType == null {
-    generalError("Internal error", "Vartype is null for record type " +rt.name + " field " + name)
+    generalError("Internal error", "Variable type is null for RECORD type '" +rt.name + 
+                 "', field " + name)
     exit
   }
 
   offset = 0 head = rt.fields last = head while head != null do head=head.next {
     if head.name == name {
-      typeError("Duplicate field " + name + " in record " + rt.name)
+      typeError("Duplicate field " + name + " in RECORD " + rt.name)
       exit
     }
     if head.type != null {
@@ -574,7 +575,7 @@ registerField: proc(rt: RecordType, name: string, varType: VarType): FieldSymbol
     last.next = newField
   }
   if varType == null {
-    generalError("Internal", "Vartype is null, cannot update size of " + rt.name)
+    generalError("Internal", "VarType is null, cannot update size of " + rt.name)
     exit
   } else {
     rt.size = rt.size + varType.size

@@ -315,7 +315,7 @@ makeNumberToken: proc(self: Lexer): Token {
 
     // Byte constant
     if valueAsString != '0' {
-      lineBasedError("Scanner", "Invalid byte constant: " + valueAsString, self.line)
+      lineBasedError("Scanner", "Invalid BYTE constant: " + valueAsString, self.line)
       exit
     }
     advanceLex(self)   // eat the 'y'
@@ -327,7 +327,7 @@ makeNumberToken: proc(self: Lexer): Token {
     valueAsString = chr(first) + chr(second)
     // Make sure it's a valid hex string
     if not (isHexDigit(first) and isHexDigit(second)) {
-      lineBasedError("Scanner", "Invalid byte constant: " + valueAsString, self.line)
+      lineBasedError("Scanner", "Invalid BYTE constant: " + valueAsString, self.line)
       exit
     }
 
@@ -349,7 +349,7 @@ makeNumberToken: proc(self: Lexer): Token {
       value=value * 10 + digit
       if (value % 10) != digit or value < 0 {
         // hacky way to detect overflow
-        lineBasedError("Scanner", "Integer constant too big: " + valueAsString, self.line)
+        lineBasedError("Scanner", "INT constant too big: " + valueAsString, self.line)
         exit
       }
     }
@@ -464,7 +464,7 @@ makeStringLiteralToken: proc(self: Lexer, firstQuote: int): Token {
   }
 
   if self.cc == 0 {
-    lineBasedError("Scanner", "Unclosed string literal " + sb, self.line)
+    lineBasedError("Scanner", "Unclosed STRING literal " + sb, self.line)
     exit
   }
 

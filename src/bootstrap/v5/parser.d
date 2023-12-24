@@ -727,7 +727,7 @@ unary: proc: VarType {
     // make sure it's a record
     recVarType = lookupRecord(recordName)
     if recVarType == null {
-      typeError("Record '" + recordName + "' not defined")
+      typeError("RECORD '" + recordName + "' not defined")
       exit
     }
     size = recVarType.recordType.size
@@ -750,7 +750,7 @@ generateArrayIndex: proc(arrayType: VarType): VarType {
   emit("push RAX  ; save array base location")
   indexType = expr()
   if indexType != TYPE_INT {
-    typeError("Array index must be int; was " + indexType.name)
+    typeError("Array index must be INT; was " + indexType.name)
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -779,7 +779,7 @@ generateStringIndex: proc {
   emit("push RAX  ; string location")
   indexType = expr()
   if indexType != TYPE_INT {
-    typeError("String index must be int; was " + indexType.name)
+    typeError("STRING index must be INT; was " + indexType.name)
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -864,7 +864,7 @@ composite: proc: VarType {
 
         fldSym = lookupField(recSym, fieldName)
         if fldSym == null {
-          typeError("Unknown field '" + fieldName + "' of record type " + recSym.name)
+          typeError("Unknown field '" + fieldName + "' of RECORD type " + recSym.name)
           exit
         }
 
@@ -909,17 +909,17 @@ generateProcCall: proc(procName: string) {
     numArgs++
     actualArgType = expr()
     if numArgs > procSym.numParams {
-      typeError("Too many args to proc '" + procName + "'")
+      typeError("Too many arguments to PROC '" + procName + "'")
     }
     expectedType = param.varType
 
     if not compatibleTypes(expectedType, actualArgType) {
-      typeError("Incorrect type for arg '" + param.name + "' to proc '" + procName +
+      typeError("Incorrect type for actual '" + param.name + "' to PROC '" + procName +
         "'. Expected: " + expectedType.name + ", actual: " + actualArgType.name)
     }
     param = param.next
     if procSym.isExtern and numArgs > 4 {
-      generalError("Internal", "too many args to extern " + procSym.name)
+      generalError("Internal", "too many arguments to EXTERN " + procSym.name)
       exit
     }
 
@@ -931,10 +931,10 @@ generateProcCall: proc(procName: string) {
   }
   // TODO: print the actual and expected #s of arguments
   if numArgs < procSym.numParams {
-    typeError("Too few args to proc '" + procName + "'")
+    typeError("Too few arguments to PROC '" + procName + "'")
   }
   if numArgs > procSym.numParams {
-    typeError("Too many args to proc '" + procName + "'")
+    typeError("Too many arguments to PROC '" + procName + "'")
   }
 
   // reverse the order of the top of the stack
@@ -1088,7 +1088,7 @@ atom: proc: VarType {
 
     returnType = lookupProc(variable).returnType
     if returnType == TYPE_VOID {
-      typeError("Return type of " + variable + " is void. Cannot assign it to a variable.")
+      typeError("Return type of " + variable + " is VOID. Cannot assign it to a variable.")
       exit
     }
 
@@ -1188,7 +1188,7 @@ parseDecl: proc(variable: string) {
 
   sizeType = expr()
   if sizeType != TYPE_INT {
-    typeError("Array size must be an int, but was " + sizeType.name)
+    typeError("Array size must be an INT, but was " + sizeType.name)
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -1221,7 +1221,7 @@ parseProc: proc(procName: string) {
 
   expectKeyword(KW_PROC)
   if currentProc != null {
-    parserError("Cannot define nested procs")
+    parserError("Cannot define nested PROCs")
     exit
   }
   setCurrentProc(procName)
@@ -1270,7 +1270,7 @@ parseProc: proc(procName: string) {
   parseBlock()
   if returnType != TYPE_VOID {
     if not hasReturn {
-      parserError("No RETURN statement from non-void proc: " + procName)
+      parserError("No RETURN statement from non-VOID PROC: " + procName)
       exit
     }
   }
@@ -1297,7 +1297,7 @@ parseExtern: proc(procName: string) {
   expectKeyword(KW_EXTERN)
   expectKeyword(KW_PROC)
   if currentProc != null {
-    parserError("Cannot define nested procs")
+    parserError("Cannot define nested PROCs")
     exit
   }
   setCurrentProc(procName)
@@ -1403,7 +1403,7 @@ isAtStartOfExpression: proc: bool {
 parseReturn: proc {
   // if we're not in a procedure: error
   if currentProc == null {
-    parserError("Cannot return from outside proc")
+    parserError("Cannot RETURN from outside PROC")
     exit
   }
 
@@ -1420,7 +1420,7 @@ parseReturn: proc {
 
   // Check that return types match
   if not compatibleTypes(actualType, expectedType) {
-    typeError("Incorrect return type to '" + currentProcName + "'. Expected "
+    typeError("Incorrect RETURN type of PROC '" + currentProcName + "'. Expected "
       + expectedType.name + " but found " + actualType.name)
     exit
   }
@@ -1470,7 +1470,7 @@ generateArraySet: proc(variable: string) {
   expectToken(TOKEN_LBRACKET, '[')
   indexType = expr()
   if indexType != TYPE_INT {
-    typeError("Incorrect type for array index. Expected: int, actual: " + indexType.name)
+    typeError("Incorrect type for array index. Expected: INT, actual: " + indexType.name)
     exit
   }
 
@@ -1525,7 +1525,7 @@ registerRecordName: proc(recordName: string) {
 parseRecordDecl: proc(recordName: string) {
   recSym = lookupRecord(recordName)
   if recSym == null {
-    typeError("Record " + recordName + " not found")
+    typeError("RECORD type '" + recordName + "' not found")
     exit
   }
   expectKeyword(KW_RECORD)
@@ -1573,12 +1573,12 @@ generateFieldSet: proc(variable: string) {
 
   recSym = recType.recordType
   if recSym == null {
-    typeError("Record type " + recSym.name + " not found")
+    typeError("RECORD type '" + recSym.name + "' not found")
     exit
   }
   fldSym = lookupField(recSym, fieldName)
   if fldSym == null {
-    typeError("Field " + fieldName + " of record type " + recSym.name + " not found")
+    typeError("Field " + fieldName + " of RECORD type '" + recSym.name + "' not found")
     exit
   }
 
@@ -1730,7 +1730,7 @@ parseIf: proc {
   condType = expr()
 
   if condType != TYPE_BOOL {
-    typeError("Incorrect type of condition in 'if'. Expected: bool, actual: " + condType.name)
+    typeError("Incorrect type of condition in IF. Expected: BOOL, actual: " + condType.name)
     exit
   }
 
@@ -1755,7 +1755,7 @@ parseIf: proc {
     advanceParser() // eat the elif
     condType = expr()
     if condType != TYPE_BOOL {
-      typeError("Incorrect type of condition in 'elif'. Expected: bool, actual: " + condType.name)
+      typeError("Incorrect type of condition in ELIF. Expected: BOOL, actual: " + condType.name)
       exit
     }
 
@@ -1787,7 +1787,7 @@ whileContinueLabels:string[100]
 
 parseBreak: proc {
   if parser.numWhiles == 0 {
-    parserError("Cannot have 'break' outside 'while' loop")
+    parserError("Cannot have BREAK outside WHILE loop")
     exit
   }
   emit("jmp " + whileBreakLabels[parser.numWhiles - 1])
@@ -1795,7 +1795,7 @@ parseBreak: proc {
 
 parseContinue: proc {
   if parser.numWhiles == 0 {
-    parserError("Cannot have continue outside loop")
+    parserError("Cannot have CONTINUE outside WHILE loop")
     exit
   }
   emit("jmp " + whileContinueLabels[parser.numWhiles - 1])
@@ -1807,7 +1807,7 @@ parseWhile: proc {
 
   condType = expr()
   if condType != TYPE_BOOL {
-    typeError("Incorrect type of condition in 'while'. Expected: bool, actual: " + condType.name)
+    typeError("Incorrect type of condition in WHILE. Expected: BOOL, actual: " + condType.name)
     exit
   }
   emit("cmp AL, 0")
