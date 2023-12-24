@@ -342,7 +342,7 @@ makeNumberToken: proc(self: Lexer): Token {
   } else {
     // make an int constant
     value=0
-    // TODO: when longs are suppoted, make a long and
+    // TODO: when longs are supported, make a long and
     // see it it exceeds 2^31.
     i = 0 while i < length(valueAsString) do i++ {
       digit = asc(valueAsString[i]) - 48

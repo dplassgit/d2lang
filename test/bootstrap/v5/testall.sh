@@ -47,7 +47,7 @@ files=(
   "samples/associative.d"
   "samples/backslash.d"
   "samples/binary-sort.d"
-  # "samples/bitops.d" # bit not
+  "samples/bitops.d" # bit not
   "samples/boolops.d"
   "samples/bubblesort.d"  # ++, array params
   "samples/bytes.d"
@@ -83,7 +83,7 @@ files=(
   "samples/pal.d"  # string compare
   "samples/power2.d"
   "samples/primes.d"
-  #"samples/printarray.d"
+  "samples/printarray.d"
   "samples/printdouble.d"
   "samples/printhello.d"
   "samples/printint.d"
