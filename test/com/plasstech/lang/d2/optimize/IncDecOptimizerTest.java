@@ -20,7 +20,6 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class IncDecOptimizerTest {
-  private static final ConstantOperand<Integer> TWO = ConstantOperand.of(2);
   private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
   private static final StackLocation STACK =
@@ -109,34 +108,6 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeInc2Short() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, STACK, TokenType.PLUS, TWO, null),
-            new Transfer(STACK, TEMP1, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-    assertThat(optimized.get(0)).isInstanceOf(Inc.class);
-    assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
-  }
-
-  @Test
-  public void optimizeInc2ShortReversed() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP1, TWO, TokenType.PLUS, STACK, null),
-            new Transfer(STACK, TEMP1, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-    assertThat(optimized.get(0)).isInstanceOf(Inc.class);
-    assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
-  }
-
-  @Test
   public void optimizeDecShort() {
     ImmutableList<Op> program =
         ImmutableList.of(
@@ -161,56 +132,6 @@ public class IncDecOptimizerTest {
     optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isFalse();
-  }
-
-  @Test
-  public void optimizeMinus2Short() {
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(TEMP1, STACK, TokenType.MINUS, TWO, null), new Transfer(STACK, TEMP1, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-    assertThat(optimized.get(0)).isInstanceOf(Dec.class);
-    assertThat(optimized.get(1)).isInstanceOf(Dec.class);
-    assertThat(optimizer.isChanged()).isTrue();
-  }
-
-  @Test
-  public void optimizePlus2() {
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(TEMP1, STACK, null),
-            new BinOp(TEMP2, TEMP1, TokenType.PLUS, TWO, null),
-            new Transfer(STACK, TEMP2, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimized.get(2)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
-  }
-
-  @Test
-  public void optimizePlus2Reversed() {
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(TEMP1, STACK, null),
-            new BinOp(TEMP2, TWO, TokenType.PLUS, TEMP1, null),
-            new Transfer(STACK, TEMP2, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimized.get(2)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
   }
 
   @Test
@@ -241,23 +162,5 @@ public class IncDecOptimizerTest {
     optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isFalse();
-  }
-
-  @Test
-  public void optimizeMinus2() {
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(TEMP1, STACK, null),
-            new BinOp(TEMP2, TEMP1, TokenType.MINUS, TWO, null),
-            new Transfer(STACK, TEMP2, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    System.out.println(Joiner.on('\n').join(optimized));
-
-    assertThat(optimized.get(0)).isInstanceOf(Nop.class);
-    assertThat(optimized.get(1)).isInstanceOf(Dec.class);
-    assertThat(optimized.get(2)).isInstanceOf(Dec.class);
-    assertThat(optimizer.isChanged()).isTrue();
   }
 }

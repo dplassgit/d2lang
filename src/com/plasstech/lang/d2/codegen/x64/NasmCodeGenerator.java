@@ -511,6 +511,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       // NOTE RETURN
       return;
     }
+    // This may fail if both source and dest are offsets
     emitter.emit("%s %s %s, %s",
         BINARY_OPCODE.get(operator),
         Size.of(source.type()).asmType,

@@ -127,100 +127,6 @@ public class AdjacentArithmeticOptimizerTest {
   }
 
   @Test
-  public void incPlus() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
-        new Inc(TEMP2, null),
-        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
-  }
-
-  @Test
-  public void incMinus() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should delete both, because it's just like temp++ tenp--
-        new Inc(TEMP2, null),
-        new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
-  }
-
-  @Test
-  public void decMinus() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should become temp2=temp2-2, which yes, isn't possible in the 'real world'
-        new Dec(TEMP2, null),
-        new BinOp(TEMP2, TEMP2, TokenType.MINUS, ConstantOperand.ONE, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.MINUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
-  }
-
-  @Test
-  public void decPlus() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should delete both, because it's just like temp++ tenp--
-        new Dec(TEMP2, null),
-        new BinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ONE, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.MINUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
-  }
-
-  @Test
-  public void incDec() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should become two nops
-        new Inc(VAR1, null), new Dec(VAR1, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(0);
-  }
-
-  @Test
-  public void decInc() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should become two nops
-        new Dec(VAR1, null), new Inc(VAR1, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(0);
-  }
-
-  @Test
   public void decIncDifferent() {
     ImmutableList<Op> program = ImmutableList.of(new Dec(VAR1, null), new Inc(VAR2, null));
 
@@ -234,17 +140,6 @@ public class AdjacentArithmeticOptimizerTest {
 
     OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isFalse();
-  }
-
-  @Test
-  public void incDecByte() {
-    ImmutableList<Op> program = ImmutableList.of(
-        // should become two nops
-        new Inc(BTEMP2, null), new Dec(BTEMP2, null));
-
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
-    assertThat(optimized).hasSize(0);
   }
 
   @Test

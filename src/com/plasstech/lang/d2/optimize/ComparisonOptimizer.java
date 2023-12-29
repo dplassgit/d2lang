@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.common.TokenType;
@@ -19,13 +18,15 @@ import com.plasstech.lang.d2.common.TokenType;
  * </pre>
  */
 public class ComparisonOptimizer extends LineOptimizer {
-  private static final BiMap<TokenType, TokenType> OPPOSITE_OPS =
-      ImmutableBiMap.of(
-          TokenType.EQEQ, TokenType.EQEQ, //
-          TokenType.NEQ, TokenType.NEQ, //
-          TokenType.LT, TokenType.GT, //
-          TokenType.GEQ, TokenType.LEQ);
-  private static final BiMap<TokenType, TokenType> INVERSED_OPPOSITE_OPS = OPPOSITE_OPS.inverse();
+  private static final ImmutableBiMap<TokenType, TokenType> OPPOSITE_OPS =
+      ImmutableBiMap.<TokenType, TokenType>builder()
+          .put(TokenType.EQEQ, TokenType.EQEQ)
+          .put(TokenType.NEQ, TokenType.NEQ)
+          .put(TokenType.LT, TokenType.GT)
+          .put(TokenType.GT, TokenType.LT)
+          .put(TokenType.GEQ, TokenType.LEQ)
+          .put(TokenType.LEQ, TokenType.GEQ)
+          .build();
 
   ComparisonOptimizer(int debugLevel) {
     super(debugLevel);
@@ -38,12 +39,8 @@ public class ComparisonOptimizer extends LineOptimizer {
     }
     TokenType opposite = OPPOSITE_OPS.get(opcode.operator());
     if (opposite == null) {
-      opposite = INVERSED_OPPOSITE_OPS.get(opcode.operator());
-    }
-    if (opposite == null) {
       return;
     }
-    // fix it!
     replaceCurrent(
         new BinOp(
             opcode.destination(), opcode.right(), opposite, opcode.left(), opcode.position()));

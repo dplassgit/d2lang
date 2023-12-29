@@ -26,6 +26,20 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Optimizes
+ * 
+ * <pre>
+ * temp1 = 3
+ * b = temp1 + 1
+ * </pre>
+ * 
+ * into:
+ * 
+ * <pre>
+ * b = 3 + 1
+ * </pre>
+ */
 class ConstantPropagationOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

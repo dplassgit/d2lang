@@ -14,9 +14,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ComparisonOptimizerTest {
-  private final Optimizer OPTIMIZERS =
-      new ILOptimizer(ImmutableList.of(new ComparisonOptimizer(2), new NopOptimizer()))
-          .setDebugLevel(2);
+  private Optimizer optimizer = new ComparisonOptimizer(2);
 
   private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
@@ -26,8 +24,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, TEMP1, TokenType.PLUS, ConstantOperand.ONE, null));
 
-    OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -35,8 +33,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, TEMP1, TokenType.GT, ConstantOperand.ONE, null));
 
-    OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -44,8 +42,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.GT, TEMP1, null));
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     BinOp first = (BinOp) optimized.get(0);
     assertThat(first.destination()).isEqualTo(TEMP2);
     assertThat(first.left()).isEqualTo(TEMP1);
@@ -58,8 +56,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.LT, TEMP1, null));
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     BinOp first = (BinOp) optimized.get(0);
     assertThat(first.destination()).isEqualTo(TEMP2);
     assertThat(first.left()).isEqualTo(TEMP1);
@@ -72,8 +70,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.LEQ, TEMP1, null));
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     BinOp first = (BinOp) optimized.get(0);
     assertThat(first.destination()).isEqualTo(TEMP2);
     assertThat(first.left()).isEqualTo(TEMP1);
@@ -86,8 +84,8 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.EQEQ, TEMP1, null));
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     BinOp first = (BinOp) optimized.get(0);
     assertThat(first.destination()).isEqualTo(TEMP2);
     assertThat(first.left()).isEqualTo(TEMP1);
@@ -100,7 +98,7 @@ public class ComparisonOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP2, TEMP1, TokenType.EQEQ, ConstantOperand.ONE, null));
 
-    OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 }

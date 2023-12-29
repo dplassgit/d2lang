@@ -20,8 +20,12 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     this(
         ImmutableList.of(
             new ConstantPropagationOptimizer(debugLevel),
-            new ArithmeticOptimizer(debugLevel),
+            new TempPropagationOptimizer(debugLevel),
+            new NormalizeNegativesOptimizer(debugLevel),
             new ComparisonOptimizer(debugLevel),
+            new IncDecOptimizer(debugLevel),
+            new AdjacentIncDecOptimizer(debugLevel),
+            new ArithmeticOptimizer(debugLevel),
             new AdjacentArithmeticOptimizer(debugLevel),
             new AdjacentLabelOptimizer(debugLevel),
             new PrintOptimizer(debugLevel),
@@ -29,8 +33,6 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
-            new IncDecOptimizer(debugLevel),
-            new TempPropagationOptimizer(debugLevel),
             // This doesn't play well with temps that are reused
             // new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set

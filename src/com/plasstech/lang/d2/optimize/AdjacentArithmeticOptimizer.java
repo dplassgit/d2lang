@@ -51,45 +51,6 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   }
 
   @Override
-  public void visit(Inc first) {
-    Op secondOp = getOpAt(ip() + 1);
-    if (secondOp instanceof Dec) {
-      Dec second = (Dec) secondOp;
-      if (first.target().equals(second.target())) {
-        // delete both
-        deleteCurrent();
-        deleteAt(ip() + 1);
-        return;
-      }
-    }
-
-    // see if it can be treated as i=i+1
-    BinOp alt = expand(first);
-    if (alt != null) {
-      visit(alt);
-    }
-  }
-
-  @Override
-  public void visit(Dec first) {
-    Op secondOp = getOpAt(ip() + 1);
-    if (secondOp instanceof Inc) {
-      Inc second = (Inc) secondOp;
-      if (first.target().equals(second.target())) {
-        // delete both
-        deleteCurrent();
-        deleteAt(ip() + 1);
-        return;
-      }
-    }
-    // see if it can be treated as i=i-1
-    BinOp alt = expand(first);
-    if (alt != null) {
-      visit(alt);
-    }
-  }
-
-  @Override
   public void visit(BinOp first) {
     TokenType firstOperator = first.operator();
     if (first.left().type().isNumeric() && first.right().isConstant()
@@ -147,8 +108,8 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
 
   private Operand combine(Operand left, Operand right, TokenType firstOperator,
       TokenType secondOperator) {
-    Number firstConst = fromConstOperand(left);
-    Number secondConst = fromConstOperand(right);
+    Number firstConst = ConstantOperand.valueFromConstOperand(left);
+    Number secondConst = ConstantOperand.valueFromConstOperand(right);
     if (left.type() == VarType.INT) {
       switch (firstOperator) {
         case BIT_AND:
@@ -288,11 +249,6 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     }
     logger.at(loggingLevel).log("Cannot optimize operator %s yet", firstOperator);
     return null;
-  }
-
-  private Number fromConstOperand(Operand op) {
-    ConstantOperand<?> co = (ConstantOperand<?>) op;
-    return (Number) co.value();
   }
 
   /** "Expand" the given op - Dec becomes i=i-1 and Inc becomes i=i+1 */

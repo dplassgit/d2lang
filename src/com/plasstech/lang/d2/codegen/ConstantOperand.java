@@ -109,18 +109,19 @@ public class ConstantOperand<T> implements Operand {
   public String toString() {
     if (value == null) {
       return "__null";
-    } else if (type() == VarType.STRING) {
+    }
+    if (type() == VarType.STRING) {
       String valueString = value.toString();
       if (valueString.length() > 40) {
         valueString = valueString.substring(0, 40) + "...";
       }
       return String.format("\"%s\"", valueString);
-    } else if (type().isArray()) {
-      Object[] valArray = (Object[]) value;
-      return String.format("[%s]", Joiner.on(", ").join(valArray));
-    } else {
-      return value.toString();
     }
+    if (type().isArray()) {
+      Object[] valArray = (Object[]) value;
+      return String.format("[%s] [array const]", Joiner.on(", ").join(valArray));
+    }
+    return String.format("%s [%s const]", value.toString(), type().toString());
   }
 
   @Override
@@ -157,5 +158,20 @@ public class ConstantOperand<T> implements Operand {
         || operand.equals(ZERO_LONG)
         || operand.equals(ZERO_DBL)
         || operand.equals(ZERO_BYTE);
+  }
+
+  public static Number valueFromConstOperand(Operand operand) {
+    ConstantOperand<? extends Number> constant = (ConstantOperand<? extends Number>) operand;
+    return constant.value();
+  }
+
+  public static ConstantOperand<? extends Number> fromValue(long value, VarType type) {
+    if (type == VarType.INT) {
+      return ConstantOperand.of((int) value);
+    } else if (type == VarType.BYTE) {
+      return ConstantOperand.of((byte) value);
+    } else {
+      return ConstantOperand.of(value);
+    }
   }
 }

@@ -50,6 +50,7 @@ java_library(
     deps = [
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:var_types",
+        "@maven//:com_google_guava_guava",
     ],
 )
 

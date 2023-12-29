@@ -20,11 +20,15 @@ class IncDecOptimizer extends LineOptimizer {
 
   /**
    * <pre>
-   * i=i+1: (also, i=i-1, i=i+2, i=i-2)
-   *
-   * temp1=i // first 
-   * temp2=temp1+1 // secondOp 
-   * i=temp2 // thirdOp
+   * temp1=i       // first 
+   * temp2=temp1+1 // second 
+   * i=temp2       // third
+   * </pre>
+   * 
+   * becomes
+   * 
+   * <pre>
+   * i=i+1: (also, i=i-1)
    * </pre>
    */
   @Override
@@ -41,6 +45,9 @@ class IncDecOptimizer extends LineOptimizer {
         || (!left.isConstant() && right.isConstant()))) {
       return;
     }
+    if (!left.type().isIntegral() || !right.type().isIntegral()) {
+      return;
+    }
     boolean plus = second.operator() == TokenType.PLUS;
     boolean minus = second.operator() == TokenType.MINUS;
     if (!(plus || minus)) {
@@ -51,7 +58,7 @@ class IncDecOptimizer extends LineOptimizer {
       return;
     }
     Transfer third = (Transfer) thirdOp;
-    if (plus && left.isConstant()) {
+    if (plus && left.isConstant()) { // why only plus?
       // swap them
       left = second.right();
       right = second.left();
@@ -60,9 +67,8 @@ class IncDecOptimizer extends LineOptimizer {
     if (!right.isConstant()) {
       return;
     }
-    ConstantOperand<?> delta = (ConstantOperand<?>) right;
-    Object value = delta.value();
-    if ((value.equals(1) || value.equals(2) || value.equals((byte) 1))
+    Number value = ConstantOperand.valueFromConstOperand(right);
+    if ((value.equals(1) || value.equals(1L) || value.equals((byte) 1))
         && first.destination().equals(left)
         && second.destination().equals(third.source())
         && first.source().equals(third.destination())) {
@@ -72,22 +78,23 @@ class IncDecOptimizer extends LineOptimizer {
 
       deleteCurrent();
 
-      Inc increment = new Inc(third.destination(), third.position());
-      Dec decrement = new Dec(third.destination(), third.position());
-      if (value.equals(2)) {
-        // +/- 2
-        replaceAt(ip() + 1, plus ? increment : decrement);
-      } else {
-        deleteAt(ip() + 1);
-      }
-      replaceAt(ip() + 2, plus ? increment : decrement);
+      replaceAt(ip() + 2,
+          plus ? new Inc(third.destination(), third.position())
+              : new Dec(third.destination(), third.position()));
+      deleteAt(ip() + 1);
     }
   }
 
   /**
    * <pre>
-   * temp1=i+1 // (also for minus, or 2) 
+   * temp1=i+1 // (also for minus) 
    * i=temp1 // secondOp
+   * </pre>
+   * 
+   * becomes
+   * 
+   * <pre>
+   * i++
    * </pre>
    */
   @Override
@@ -101,6 +108,9 @@ class IncDecOptimizer extends LineOptimizer {
     Operand right = first.right();
     if (!((left.isConstant() && !right.isConstant())
         || (!left.isConstant() && right.isConstant()))) {
+      return;
+    }
+    if (!left.type().isIntegral() || !right.type().isIntegral()) {
       return;
     }
     Op secondOp = getOpAt(ip() + 1);
@@ -118,9 +128,8 @@ class IncDecOptimizer extends LineOptimizer {
     if (!right.isConstant()) {
       return;
     }
-    ConstantOperand<?> delta = (ConstantOperand<?>) right;
-    Object value = delta.value();
-    if ((value.equals(1) || value.equals(2) || value.equals((byte) 1))
+    Number value = ConstantOperand.valueFromConstOperand(right);
+    if ((value.equals(1) || value.equals(1L) || value.equals((byte) 1))
         && first.destination().equals(second.source())
         && left.equals(second.destination())) {
 
@@ -128,14 +137,9 @@ class IncDecOptimizer extends LineOptimizer {
       logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip());
 
       deleteCurrent();
-
-      Inc increment = new Inc(second.destination(), first.position());
-      Dec decrement = new Dec(second.destination(), first.position());
-      if (value.equals(2)) {
-        // +/- 2
-        replaceAt(ip(), plus ? increment : decrement);
-      }
-      replaceAt(ip() + 1, plus ? increment : decrement);
+      replaceAt(ip() + 1,
+          plus ? new Inc(second.destination(), first.position())
+              : new Dec(second.destination(), first.position()));
     }
   }
 }

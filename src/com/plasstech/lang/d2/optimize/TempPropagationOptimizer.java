@@ -8,6 +8,20 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Optimizes
+ * 
+ * <pre>
+ * temp1 = a + 3
+ * b = temp1
+ * </pre>
+ * 
+ * into:
+ * 
+ * <pre>
+ * b = a + 3
+ * </pre>
+ */
 class TempPropagationOptimizer extends LineOptimizer {
 
   private static final ImmutableList<TokenType> VALID_OPS =

@@ -139,9 +139,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
 
-    switch (operator)
-
-    {
+    switch (operator) {
       case MULT:
         optimizeMultiply(op, left, right);
         return;
