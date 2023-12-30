@@ -160,7 +160,7 @@ public class ConstantOperand<T> implements Operand {
         || operand.equals(ZERO_BYTE);
   }
 
-  public static boolean isAnyOne(Operand operand) {
+  public static boolean isAnyIntOne(Operand operand) {
     return operand.equals(ONE) // int
         || operand.equals(ONE_LONG)
         || operand.equals(ONE_BYTE);

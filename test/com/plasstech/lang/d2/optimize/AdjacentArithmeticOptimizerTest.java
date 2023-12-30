@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 
@@ -25,15 +26,18 @@ public class AdjacentArithmeticOptimizerTest {
   private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
   private static final TempLocation TEMP3 = LocationUtils.newTempLocation("temp3", VarType.INT);
-  private static final TempLocation LTEMP1 = LocationUtils.newTempLocation("temp1", VarType.LONG);
-  private static final TempLocation LTEMP2 = LocationUtils.newTempLocation("temp2", VarType.LONG);
-  private static final TempLocation LTEMP3 = LocationUtils.newTempLocation("temp3", VarType.LONG);
-  private static final TempLocation DTEMP1 = LocationUtils.newTempLocation("temp1", VarType.DOUBLE);
-  private static final TempLocation DTEMP2 = LocationUtils.newTempLocation("temp2", VarType.DOUBLE);
-  private static final TempLocation DTEMP3 = LocationUtils.newTempLocation("temp3", VarType.DOUBLE);
-  private static final TempLocation BTEMP1 = LocationUtils.newTempLocation("temp1", VarType.BYTE);
-  private static final TempLocation BTEMP2 = LocationUtils.newTempLocation("temp2", VarType.BYTE);
-  private static final TempLocation BTEMP3 = LocationUtils.newTempLocation("temp3", VarType.BYTE);
+  private static final TempLocation LTEMP1 = LocationUtils.newTempLocation("ltemp1", VarType.LONG);
+  private static final TempLocation LTEMP2 = LocationUtils.newTempLocation("ltemp2", VarType.LONG);
+  private static final TempLocation LTEMP3 = LocationUtils.newTempLocation("ltemp3", VarType.LONG);
+  private static final TempLocation DTEMP1 =
+      LocationUtils.newTempLocation("dtemp1", VarType.DOUBLE);
+  private static final TempLocation DTEMP2 =
+      LocationUtils.newTempLocation("dtemp2", VarType.DOUBLE);
+  private static final TempLocation DTEMP3 =
+      LocationUtils.newTempLocation("dtemp3", VarType.DOUBLE);
+  private static final TempLocation BTEMP1 = LocationUtils.newTempLocation("btemp1", VarType.BYTE);
+  private static final TempLocation BTEMP2 = LocationUtils.newTempLocation("btemp2", VarType.BYTE);
+  private static final TempLocation BTEMP3 = LocationUtils.newTempLocation("btemp3", VarType.BYTE);
   private static final Location VAR1 = LocationUtils.newMemoryAddress("a", VarType.INT);
   private static final Location VAR2 = LocationUtils.newMemoryAddress("b", VarType.INT);
 
@@ -48,11 +52,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.PLUS, ConstantOperand.of(2));
   }
 
   @Test
@@ -66,11 +66,21 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.of(2));
+  }
+
+  @Test
+  public void plusIncLong() {
+    ImmutableList<Op> program = ImmutableList.of(
+        // should become temp2=temp2+2, which yes, isn't possible in the 'real world'
+        new BinOp(LTEMP2, LTEMP2, TokenType.PLUS, ConstantOperand.ONE_LONG, null),
+        new Inc(LTEMP2, null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    assertThat(optimized.get(0)).isBinOp(LTEMP2, LTEMP2, TokenType.PLUS, ConstantOperand.of(2L));
   }
 
   @Test
@@ -84,11 +94,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP2);
-    assertThat(first.left()).isEqualTo(TEMP2);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
+    assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP2, TokenType.PLUS, ConstantOperand.ZERO);
   }
 
   @Test
@@ -153,11 +159,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(DTEMP3);
-    assertThat(first.left()).isEqualTo(DTEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2.0));
+    assertThat(optimized.get(0)).isBinOp(DTEMP3, DTEMP1, TokenType.PLUS, ConstantOperand.of(2.0));
   }
 
   @Test
@@ -171,11 +173,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.BIT_OR);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(3));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.BIT_OR, ConstantOperand.of(3));
   }
 
   @Test
@@ -189,11 +187,8 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(BTEMP3);
-    assertThat(first.left()).isEqualTo(BTEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.BIT_AND);
-    assertThat(first.right()).isEqualTo(ConstantOperand.ONE_BYTE);
+    assertThat(optimized.get(0)).isBinOp(BTEMP3, BTEMP1, TokenType.BIT_AND,
+        ConstantOperand.ONE_BYTE);
   }
 
   @Test
@@ -207,11 +202,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(LTEMP3);
-    assertThat(first.left()).isEqualTo(LTEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.BIT_XOR);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(5L));
+    assertThat(optimized.get(0)).isBinOp(LTEMP3, LTEMP1, TokenType.BIT_XOR, ConstantOperand.of(5L));
   }
 
   @Test
@@ -224,14 +215,8 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(LTEMP3);
-    assertThat(first.left()).isEqualTo(LTEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.MULT);
-
-    ConstantOperand<Long> right = (ConstantOperand<Long>) first.right();
-    assertThat(right.value()).isGreaterThan(Integer.MAX_VALUE);
-    assertThat(right.value()).isEqualTo(123123L * 234234L);
+    assertThat(optimized.get(0)).isBinOp(LTEMP3, LTEMP1, TokenType.MULT,
+        ConstantOperand.of(123123L * 234234L));
   }
 
   @Test
@@ -245,11 +230,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.MULT);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(6));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MULT, ConstantOperand.of(6));
   }
 
   @Test
@@ -274,11 +255,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    // it can be temp1+0 or temp1-0, so we don't care.
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.PLUS, ConstantOperand.ZERO);
   }
 
   @Test
@@ -292,11 +269,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    // it can be temp1+0 or temp1-0, so we don't care.
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, ConstantOperand.ZERO);
   }
 
   @Test
@@ -310,11 +283,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.MINUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(1));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, ConstantOperand.of(1));
   }
 
   @Test
@@ -328,11 +297,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.MINUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, ConstantOperand.of(2));
   }
 
   @Test
@@ -346,11 +311,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.DIV);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(10));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.DIV, ConstantOperand.of(10));
   }
 
   @Test
@@ -364,11 +325,7 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.DIV);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.DIV, ConstantOperand.of(2));
   }
 
   @Test
@@ -393,10 +350,6 @@ public class AdjacentArithmeticOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(TEMP3);
-    assertThat(first.left()).isEqualTo(TEMP1);
-    assertThat(first.operator()).isEqualTo(TokenType.MULT);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(4));
+    assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MULT, ConstantOperand.of(4));
   }
 }

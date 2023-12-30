@@ -147,7 +147,7 @@ class IncDecOptimizer extends LineOptimizer {
   }
 
   /**
-   * replace i=i+1 with i++. Isn't there another optimizer that does this?!
+   * Replaces i=i+1 with i++.
    */
   private boolean trySimpleIncDec(BinOp op) {
     if (!op.destination().equals(op.left())) {
@@ -157,10 +157,11 @@ class IncDecOptimizer extends LineOptimizer {
       return false;
     }
     Operand right = op.right();
-    if (!ConstantOperand.isAnyOne(right)) {
+    if (!ConstantOperand.isAnyIntOne(right)) {
       return false;
     }
     // do it!
+    logger.at(loggingLevel).log("Found shortest Inc/Dec pattern at ip %d", ip());
     replaceCurrent(
         (op.operator() == TokenType.PLUS)
             ? new Inc(op.destination(), op.position())

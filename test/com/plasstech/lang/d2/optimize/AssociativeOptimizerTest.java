@@ -31,10 +31,9 @@ public class AssociativeOptimizerTest {
   public void constOpVar_doesNotSwap(
       @TestParameter(
         {"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
-      ) String operator) {
+      ) TokenType operator) {
 
-    TokenType op = TokenType.valueOf(operator);
-    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP1, op, ONE, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP1, operator, ONE, null));
 
     optimizer.optimize(program, null);
 
@@ -45,21 +44,19 @@ public class AssociativeOptimizerTest {
   public void constOpVar_swapsInts(
       @TestParameter(
         {"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
-      ) String operator) {
+      ) TokenType operator) {
 
-    TokenType op = TokenType.valueOf(operator);
-    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, op, TEMP1, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
 
-    assertThat(optimized.get(0)).isBinOp(TEMP1, TEMP1, op, ONE);
+    assertThat(optimized.get(0)).isBinOp(TEMP1, TEMP1, operator, ONE);
   }
 
   @Test
-  public void constOpVar_swapsBools(@TestParameter({"AND", "OR", "XOR"}) String operator) {
+  public void constOpVar_swapsBools(@TestParameter({"AND", "OR", "XOR"}) TokenType op) {
 
-    TokenType op = TokenType.valueOf(operator);
     Location booltemp = LocationUtils.newTempLocation("booltemp", VarType.BOOL);
     Location booltemp2 = LocationUtils.newTempLocation("booltemp2", VarType.BOOL);
     ImmutableList<Op> program =
@@ -83,19 +80,18 @@ public class AssociativeOptimizerTest {
   }
 
   @Test
-  public void constOpVar_swapsStrings(@TestParameter({"EQEQ", "NEQ"}) String operator) {
+  public void constOpVar_swapsStrings(@TestParameter({"EQEQ", "NEQ"}) TokenType operator) {
 
-    TokenType op = TokenType.valueOf(operator);
     Location booltemp = LocationUtils.newTempLocation("booltemp", VarType.BOOL);
     ConstantOperand<String> hi = ConstantOperand.of("hi");
     ImmutableList<Op> program =
         ImmutableList
-            .of(new BinOp(booltemp, hi, op, STRING_TEMP, null));
+            .of(new BinOp(booltemp, hi, operator, STRING_TEMP, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isBinOp(booltemp, STRING_TEMP, op, hi);
+    assertThat(optimized.get(0)).isBinOp(booltemp, STRING_TEMP, operator, hi);
   }
 
   @Test
