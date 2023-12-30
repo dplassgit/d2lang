@@ -236,4 +236,14 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   public void simpleLocalBinop() throws Exception {
     execute("f:proc(a:int):int { b=a+3 print b return b} f(1)", "simpleLocalBinop");
   }
+
+  @Test
+  public void opEquals(
+      @TestParameter({"+=", "-=", "*=", "/="}) String op)
+      throws Exception {
+    execute(
+        String.format("f:proc(a: int, b:int) { a %s b c=b c %s a println a println c} f(100, 10)",
+            op, op),
+        "opEquals");
+  }
 }

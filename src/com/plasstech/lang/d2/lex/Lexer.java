@@ -195,8 +195,7 @@ public class Lexer {
         return new Token(TokenType.RPAREN, start, oc);
 
       case '*':
-        advance();
-        return new Token(TokenType.MULT, start, oc);
+        return startsWithStar(start);
 
       case '/':
         return startsWithSlash(start);
@@ -257,6 +256,17 @@ public class Lexer {
     }
   }
 
+  private Token startsWithStar(Position start) {
+    char oc = cc;
+    advance(); // eat the first *
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      advance(); // eat the =
+      return new Token(TokenType.MULT_EQ, start, end, "*=");
+    }
+    return new Token(TokenType.MULT, start, oc);
+  }
+
   private Token startsWithPlus(Position start) {
     char oc = cc;
     advance(); // eat the first +
@@ -264,9 +274,13 @@ public class Lexer {
       Position end = new Position(line, col);
       advance(); // eat the second +
       return new Token(TokenType.INCREMENT, start, end, "++");
-    } else {
-      return new Token(TokenType.PLUS, start, oc);
     }
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      advance(); // eat the =
+      return new Token(TokenType.PLUS_EQ, start, end, "+=");
+    }
+    return new Token(TokenType.PLUS, start, oc);
   }
 
   private Token startsWithMinus(Position start) {
@@ -276,9 +290,14 @@ public class Lexer {
       Position end = new Position(line, col);
       advance(); // eat the second -
       return new Token(TokenType.DECREMENT, start, end, "--");
-    } else {
-      return new Token(TokenType.MINUS, start, oc);
     }
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      advance(); // eat the =
+      return new Token(TokenType.MINUS_EQ, start, end, "-=");
+    }
+
+    return new Token(TokenType.MINUS, start, oc);
   }
 
   private Token startsWithSlash(Position start) {
@@ -295,6 +314,11 @@ public class Lexer {
       line++;
       col = 0;
       return nextToken(); // risky, but /shrug.
+    }
+    if (cc == '=') {
+      Position end = new Position(line, col);
+      advance(); // eat the =
+      return new Token(TokenType.DIV_EQ, start, end, "/=");
     }
     return new Token(TokenType.DIV, start, '/');
   }

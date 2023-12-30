@@ -12,8 +12,9 @@ statement -> assignment | print | if | while | proc | declaration | 'BREAK' | 'C
 // FOR <variable> IN <array>
 // DELETE, GET, THIS, PRIVATE, LOAD, SAVE, EXPORT
 
-assignment -> lvalue '=' expr
+assignment -> lvalue '=' expr | lvalue OP_EQ expr
 lvalue -> variable | variable '[' expr ']' | variable '.' variable
+OP_EQ -> '+=' | '-=' | '*=' | '/='
 
 print -> 'PRINT' expr | 'PRINTLN' expr
 

@@ -96,6 +96,12 @@ public class Parser implements Phase {
   private static final Set<TokenType> UNARY_KEYWORDS =
       ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
 
+  private static final ImmutableMap<TokenType, TokenType> OP_EQ_TO_OP =
+      ImmutableMap.of(TokenType.PLUS_EQ, TokenType.PLUS,
+          TokenType.MINUS_EQ, TokenType.MINUS,
+          TokenType.MULT_EQ, TokenType.MULT,
+          TokenType.DIV_EQ, TokenType.DIV);
+
   private final Lexer lexer;
   private Token token;
   private int inWhile;
@@ -271,6 +277,18 @@ public class Parser implements Phase {
         advance(); // eat the ++ or --
         VariableSetNode incVar = new VariableSetNode(variable.text(), variable.start());
         return new IncDecNode(incVar, inc);
+
+      case PLUS_EQ:
+      case MINUS_EQ:
+      case MULT_EQ:
+      case DIV_EQ:
+        Token opEq = token;
+        advance(); // eat the token
+        VariableSetNode vsn = new VariableSetNode(variable.text(), variable.start());
+        ExprNode rhs = expr();
+        ExprNode left = new VariableNode(variable.text(), variable.start());
+        ExprNode foo = new BinOpNode(left, OP_EQ_TO_OP.get(opEq.type()), rhs);
+        return new AssignmentNode(vsn, foo);
 
       // for record field set: field.name=expression
       case DOT:

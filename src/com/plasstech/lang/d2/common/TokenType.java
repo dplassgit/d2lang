@@ -9,8 +9,8 @@ public enum TokenType {
   STRING(true), // indicates the "string" keyword
   DOUBLE(true), // indicates the "double" keyword
   LONG(true), // indicates the "long" keyword
-  CHAR(true), // indicates the "char" keyword
   BYTE(true), // indicates the "byte" keyword
+  VOID(true), // no return type
   TRUE(true), // boolean literal
   FALSE(true), // boolean literal
   PRINT(true),
@@ -37,6 +37,10 @@ public enum TokenType {
   ASC(true),
   INCREMENT("++"),
   DECREMENT("--"),
+  PLUS_EQ("+="),
+  MINUS_EQ("-="),
+  MULT_EQ("*="),
+  DIV_EQ("/="),
   // Comparisons:
   ASSIGN("="),
   EQEQ("=="),
@@ -46,7 +50,7 @@ public enum TokenType {
   GEQ(">="),
   NEQ("!="),
   // Boolean operators (& keywords)
-  NOT(true), // it won't accept ! as not boolean anymore.
+  NOT(true),
   AND(true),
   OR(true),
   XOR(true),
@@ -73,7 +77,7 @@ public enum TokenType {
   COMMA(","),
   DOT("."),
   // For future expansion:
-  VOID(true), // no return type
+  CHAR(true), // indicates the "char" keyword
   DELETE(true), // free a new
   FOR(true), // for (x in array/list)
   IN(true),
