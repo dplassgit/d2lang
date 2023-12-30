@@ -8,10 +8,13 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Dec;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -126,5 +129,47 @@ public class ConstantPropagationOptimizerTest {
     assertThat(optimized).hasSize(program.size());
     Return returnOp = (Return) optimized.get(3);
     assertThat(returnOp.returnValueLocation()).hasValue(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void inc() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(GLOBAL_INT1, ConstantOperand.ZERO, null),
+            new Inc(GLOBAL_INT1, null));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(2);
+    Transfer op = (Transfer) optimized.get(1);
+    assertThat(op.source()).isEqualTo(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void inc_long() {
+    Location longGlobal = LocationUtils.newMemoryAddress("g1", VarType.LONG);
+
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(longGlobal, ConstantOperand.ZERO_LONG, null),
+            new Inc(longGlobal, null));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(2);
+    Transfer op = (Transfer) optimized.get(1);
+    assertThat(op.source()).isEqualTo(ConstantOperand.ONE_LONG);
+  }
+
+  @Test
+  public void dec_byte() {
+    Location byteLocal = LocationUtils.newStackLocation("loc", VarType.BYTE, 0);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(byteLocal, ConstantOperand.ONE_BYTE, null),
+            new Dec(byteLocal, null));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(2);
+    Transfer op = (Transfer) optimized.get(1);
+    assertThat(op.source()).isEqualTo(ConstantOperand.ZERO_BYTE);
   }
 }

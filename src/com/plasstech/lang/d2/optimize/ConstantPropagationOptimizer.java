@@ -67,45 +67,24 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       assignmentLocations.remove(op.target());
       return;
     }
+    deleteSource(op.target());
+    ConstantOperand<? extends Number> newConst = null;
     if (op.target().type() == VarType.INT) {
-      deleteSource(op.target());
-
-      ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
-      int value = replacmentConst.value();
-      ConstantOperand<Integer> decrementedConst = ConstantOperand.of(value + 1);
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Integer> oldConst = (ConstantOperand<Integer>) replacement;
+      newConst = ConstantOperand.of(oldConst.value() + 1);
     }
     if (op.target().type() == VarType.LONG) {
-      deleteSource(op.target());
-
-      ConstantOperand<Long> replacmentConst = (ConstantOperand<Long>) replacement;
-      long value = replacmentConst.value();
-      ConstantOperand<Long> decrementedConst = ConstantOperand.of(value + 1);
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Long> oldConst = (ConstantOperand<Long>) replacement;
+      newConst = ConstantOperand.of(oldConst.value() + 1);
     }
     if (op.target().type() == VarType.BYTE) {
-      deleteSource(op.target());
-
-      ConstantOperand<Byte> replacmentConst = (ConstantOperand<Byte>) replacement;
-      byte value = replacmentConst.value();
-      ConstantOperand<Byte> decrementedConst = ConstantOperand.of((byte) (value + 1));
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Byte> oldConst = (ConstantOperand<Byte>) replacement;
+      newConst = ConstantOperand.of((byte) (oldConst.value() + 1));
     }
+    replacements.put(op.target(), newConst);
+    assignmentLocations.put(op.target(), ip());
+    // Replace with a constant of the new value
+    replaceCurrent(new Transfer(op.target(), newConst, op.position()));
   }
 
   @Override
@@ -116,45 +95,24 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       assignmentLocations.remove(op.target());
       return;
     }
+    deleteSource(op.target());
+    ConstantOperand<? extends Number> newConst = null;
     if (op.target().type() == VarType.INT) {
-      deleteSource(op.target());
-
-      ConstantOperand<Integer> replacmentConst = (ConstantOperand<Integer>) replacement;
-      int value = replacmentConst.value();
-      ConstantOperand<Integer> decrementedConst = ConstantOperand.of(value - 1);
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Integer> oldConst = (ConstantOperand<Integer>) replacement;
+      newConst = ConstantOperand.of(oldConst.value() - 1);
     }
     if (op.target().type() == VarType.LONG) {
-      deleteSource(op.target());
-
-      ConstantOperand<Long> replacmentConst = (ConstantOperand<Long>) replacement;
-      long value = replacmentConst.value();
-      ConstantOperand<Long> decrementedConst = ConstantOperand.of(value - 1);
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Long> oldConst = (ConstantOperand<Long>) replacement;
+      newConst = ConstantOperand.of(oldConst.value() - 1);
     }
     if (op.target().type() == VarType.BYTE) {
-      deleteSource(op.target());
-
-      ConstantOperand<Byte> replacmentConst = (ConstantOperand<Byte>) replacement;
-      byte value = replacmentConst.value();
-      ConstantOperand<Byte> decrementedConst = ConstantOperand.of((byte) (value - 1));
-      // Replace with a constant of the new value (!)
-      replaceCurrent(new Transfer(op.target(), decrementedConst, op.position()));
-
-      replacements.put(op.target(), decrementedConst);
-      assignmentLocations.put(op.target(), ip());
-      return;
+      ConstantOperand<Byte> oldConst = (ConstantOperand<Byte>) replacement;
+      newConst = ConstantOperand.of((byte) (oldConst.value() - 1));
     }
+    replacements.put(op.target(), newConst);
+    assignmentLocations.put(op.target(), ip());
+    // Replace with a constant of the new value
+    replaceCurrent(new Transfer(op.target(), newConst, op.position()));
   }
 
   @Override
