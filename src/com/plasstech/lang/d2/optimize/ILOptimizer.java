@@ -19,13 +19,13 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   public ILOptimizer(int debugLevel) {
     this(
         ImmutableList.of(
+            new NormalizeNegativesOptimizer(debugLevel),
+            new AssociativeOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
             new TempPropagationOptimizer(debugLevel),
-            new NormalizeNegativesOptimizer(debugLevel),
-            new ComparisonOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
-            new AdjacentIncDecOptimizer(debugLevel),
             new ArithmeticOptimizer(debugLevel),
+            new AdjacentIncDecOptimizer(debugLevel),
             new AdjacentArithmeticOptimizer(debugLevel),
             new AdjacentLabelOptimizer(debugLevel),
             new PrintOptimizer(debugLevel),
@@ -37,8 +37,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             // new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set
             new LoopInvariantOptimizer(debugLevel),
-            new NopOptimizer() // ,
-        ));
+            new NopOptimizer()));
     setDebugLevel(debugLevel);
   }
 

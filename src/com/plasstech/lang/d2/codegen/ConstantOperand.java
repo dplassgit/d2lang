@@ -160,6 +160,12 @@ public class ConstantOperand<T> implements Operand {
         || operand.equals(ZERO_BYTE);
   }
 
+  public static boolean isAnyOne(Operand operand) {
+    return operand.equals(ONE) // int
+        || operand.equals(ONE_LONG)
+        || operand.equals(ONE_BYTE);
+  }
+
   public static Number valueFromConstOperand(Operand operand) {
     ConstantOperand<? extends Number> constant = (ConstantOperand<? extends Number>) operand;
     return constant.value();

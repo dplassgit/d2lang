@@ -44,7 +44,44 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeInc() {
+  public void incSimple() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STACK, STACK, TokenType.PLUS, ConstantOperand.ONE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized.get(0)).isInstanceOf(Inc.class);
+  }
+
+  @Test
+  public void noOptimizeDouble() {
+    StackLocation dbl =
+        LocationUtils.newStackLocation("stack", VarType.DOUBLE, 0);
+
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(dbl, dbl, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
+
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void decSimple() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STACK, STACK, TokenType.MINUS, ConstantOperand.ONE_BYTE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized.get(0)).isInstanceOf(Dec.class);
+  }
+
+  @Test
+  public void inc() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK, null),
@@ -53,7 +90,6 @@ public class IncDecOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Inc.class);
@@ -61,7 +97,7 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeIncReversed() {
+  public void incReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK, null),
@@ -70,7 +106,6 @@ public class IncDecOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Inc.class);
@@ -78,7 +113,7 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeIncShort() {
+  public void incShort() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(TEMP1, STACK, TokenType.PLUS, ConstantOperand.ONE, null),
@@ -86,14 +121,13 @@ public class IncDecOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Inc.class);
     assertThat(optimizer.isChanged()).isTrue();
   }
 
   @Test
-  public void optimizeIncShortReversed() {
+  public void incShortReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.PLUS, STACK, null),
@@ -108,7 +142,7 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeDecShort() {
+  public void decShort() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(TEMP1, STACK, TokenType.MINUS, ConstantOperand.ONE, null),
@@ -116,14 +150,13 @@ public class IncDecOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Dec.class);
     assertThat(optimizer.isChanged()).isTrue();
   }
 
   @Test
-  public void optimizeDecShortReversed() {
+  public void decShortReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(TEMP1, ConstantOperand.ONE, TokenType.MINUS, STACK, null),
@@ -135,7 +168,7 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeDec() {
+  public void dec() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK, null),
@@ -144,7 +177,6 @@ public class IncDecOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Dec.class);
@@ -152,7 +184,7 @@ public class IncDecOptimizerTest {
   }
 
   @Test
-  public void optimizeDecReversed() {
+  public void decReversed() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(TEMP1, STACK, null),

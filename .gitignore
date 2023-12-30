@@ -40,5 +40,6 @@ bazel-testlogs
 *.exe
 *.il
 *.out
+*.orig
 *.com
 *.lst

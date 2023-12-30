@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
@@ -59,47 +58,6 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP1, TEMP2, TokenType.SHIFT_LEFT, ONE);
-  }
-
-  @Test
-  public void constOpVar_swapsInts(
-      @TestParameter({"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR"}) String operator) {
-
-    TokenType op = TokenType.valueOf(operator);
-    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, op, TEMP1, null));
-
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
-
-    assertThat(OPTIMIZER.isChanged()).isTrue();
-
-    assertThat(optimized.get(0)).isBinOp(TEMP1, TEMP1, op, ONE);
-  }
-
-  @Test
-  public void constOpVar_swapsBools(@TestParameter({"AND", "OR", "XOR"}) String operator) {
-
-    TokenType op = TokenType.valueOf(operator);
-    Location booltemp = LocationUtils.newTempLocation("boooltemp", VarType.BOOL);
-    Location booltemp2 = LocationUtils.newTempLocation("boooltemp2", VarType.BOOL);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(booltemp, ConstantOperand.TRUE, op, booltemp2, null));
-
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
-
-    assertThat(OPTIMIZER.isChanged()).isTrue();
-
-    assertThat(optimized.get(0)).isBinOp(booltemp, booltemp2, op, ConstantOperand.TRUE);
-  }
-
-  @Test
-  public void constOpVar_doesNotSwapStrings() {
-
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(STRING_TEMP, CONSTANT_A, TokenType.PLUS, STRING_TEMP, null));
-
-    OPTIMIZER.optimize(program, null);
-
-    assertThat(OPTIMIZER.isChanged()).isFalse();
   }
 
   @Test

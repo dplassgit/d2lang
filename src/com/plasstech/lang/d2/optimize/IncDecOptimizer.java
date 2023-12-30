@@ -113,6 +113,9 @@ class IncDecOptimizer extends LineOptimizer {
     if (!left.type().isIntegral() || !right.type().isIntegral()) {
       return;
     }
+    if (trySimpleIncDec(first)) {
+      return;
+    }
     Op secondOp = getOpAt(ip() + 1);
     if (!(secondOp instanceof Transfer)) {
       return;
@@ -141,5 +144,27 @@ class IncDecOptimizer extends LineOptimizer {
           plus ? new Inc(second.destination(), first.position())
               : new Dec(second.destination(), first.position()));
     }
+  }
+
+  /**
+   * replace i=i+1 with i++. Isn't there another optimizer that does this?!
+   */
+  private boolean trySimpleIncDec(BinOp op) {
+    if (!op.destination().equals(op.left())) {
+      return false;
+    }
+    if (!op.right().isConstant()) {
+      return false;
+    }
+    Operand right = op.right();
+    if (!ConstantOperand.isAnyOne(right)) {
+      return false;
+    }
+    // do it!
+    replaceCurrent(
+        (op.operator() == TokenType.PLUS)
+            ? new Inc(op.destination(), op.position())
+            : new Dec(op.destination(), op.position()));
+    return true;
   }
 }

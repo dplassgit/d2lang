@@ -1,12 +1,10 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -19,17 +17,6 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 class ArithmeticOptimizer extends LineOptimizer {
-  private static final Set<TokenType> ASSOCIATIVE_OPERATORS =
-      ImmutableSet.of(
-          TokenType.MULT,
-          TokenType.PLUS,
-          TokenType.AND,
-          TokenType.OR,
-          TokenType.XOR,
-          TokenType.BIT_XOR,
-          TokenType.BIT_AND,
-          TokenType.BIT_OR);
-
   ArithmeticOptimizer(int debugLevel) {
     super(debugLevel);
   }
@@ -130,14 +117,6 @@ class ArithmeticOptimizer extends LineOptimizer {
     Operand left = op.left();
     Operand right = op.right();
     TokenType operator = op.operator();
-
-    if (left.isConstant() && left.type() != VarType.STRING
-        && ASSOCIATIVE_OPERATORS.contains(operator)
-        && !right.isConstant()) {
-      // constant (op) non constant: swap it so the constant is on the right.
-      replaceCurrent(new BinOp(op.destination(), right, operator, left, op.position()));
-      return;
-    }
 
     switch (operator) {
       case MULT:
