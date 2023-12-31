@@ -6,11 +6,11 @@ toi: proc(d:double): int {
   iplace = 100000
   while iplace > 0 {
     while d > dplace {
-      d -= dplace
-      i += iplace
+      d = d- dplace
+      i = i+ iplace
     }
-    iplace /= 10
-    dplace /= 10.0
+    iplace = iplace / 10
+    dplace = dplace / 10.0
   }
   return i * neg
 }

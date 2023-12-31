@@ -723,6 +723,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 "Invalid value"));
         return;
       }
+
+      node.arrayType().setKnownLength(size.value());
     }
 
     // declaring the array actually assigns it.

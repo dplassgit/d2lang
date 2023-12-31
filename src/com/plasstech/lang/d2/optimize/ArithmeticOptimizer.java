@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 
 class ArithmeticOptimizer extends LineOptimizer {
@@ -31,6 +32,15 @@ class ArithmeticOptimizer extends LineOptimizer {
           String value = constant.value();
           replaceCurrent(
               new Transfer(op.destination(), ConstantOperand.of(value.length()), op.position()));
+          return;
+        }
+        if (operand.type().isArray()) {
+          ArrayType arrayType = (ArrayType) operand.type();
+          arrayType.knownLength().ifPresent(length -> {
+            replaceCurrent(
+                new Transfer(op.destination(), ConstantOperand.of(length), op.position()));
+          });
+          return;
         }
         return;
 

@@ -60,6 +60,7 @@ public class NasmCodeGeneratorTestBase {
 
     CompilationConfiguration config =
         CompilationConfiguration.builder().setFilename(filename).setSourceCode(sourceCode)
+            // .setOptDebugLevel(2)
             .setOptimize(optimize).build();
 
     State compiledState = compile(config, exitCode);

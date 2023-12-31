@@ -24,10 +24,12 @@ import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
@@ -455,5 +457,30 @@ public class ArithmeticOptimizerTest {
     assertThat(OPTIMIZER.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ZERO_LONG);
+  }
+
+  @Test
+  public void constantArrayLength() {
+    ArrayType arrayType = new ArrayType(VarType.INT, 1).setKnownLength(3);
+    Operand constArray = LocationUtils.newMemoryAddress("array", arrayType);
+    ImmutableList<Op> program =
+        ImmutableList.of(new UnaryOp(TEMP1, TokenType.LENGTH, constArray, null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(OPTIMIZER.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(3));
+  }
+
+  @Test
+  public void variableArrayLength() {
+    ArrayType arrayType = new ArrayType(VarType.INT, 1);
+    Operand constArray = LocationUtils.newMemoryAddress("array", arrayType);
+    ImmutableList<Op> program =
+        ImmutableList.of(new UnaryOp(TEMP1, TokenType.LENGTH, constArray, null));
+
+    OPTIMIZER.optimize(program, null);
+
+    assertThat(OPTIMIZER.isChanged()).isFalse();
   }
 }

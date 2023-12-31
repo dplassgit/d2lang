@@ -542,6 +542,11 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void arrayDecl() {
+    checkProgram("a:int[1]");
+  }
+
+  @Test
   public void arraySetTypeError() {
     assertError("a:int[1] a[0]='hi'", "declared as ARRAY of INT but.*STRING");
     assertError("a:bool[1] a[0]=3", "declared as ARRAY of BOOL but.*INT");

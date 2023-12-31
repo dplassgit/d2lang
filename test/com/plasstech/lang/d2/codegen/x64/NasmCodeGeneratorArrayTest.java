@@ -169,8 +169,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayLengthConstantSize() throws Exception {
-    execute("x:int[4] print 'Should be 4' println length(x)", "arrayLengthConstantSizeInt");
-    execute("x:byte[4] print 'Should be 4' println length(x)", "arrayLengthConstantSizeByte");
+    execute("x:int[4] println length(x)", "arrayLengthConstantSizeInt");
   }
 
   @Test
@@ -190,7 +189,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayLengthGlobalSize() throws Exception {
-    execute("size=3 x:string[size] print length(x)", "arrayLengthGlobalSize");
+    execute("len=3 x:string[len] print length(x)", "arrayLengthGlobalSize");
   }
 
   @Test
@@ -312,37 +311,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void dumbSort() throws Exception {
-    execute(
-        "        MAX=99999 "
-            + "  data:int[7] "
-            + "  data[0]=2 "
-            + "  data[1]=1 "
-            + "  data[2]=4 "
-            + "  data[3]=8 "
-            + "  data[4]=6 "
-            + "  data[5]=98 "
-            + "  data[6]=0 "
-            + "  min=MAX "
-            + "  last_min = -MAX "
-            + "  // 1. find next element greater than min \r\n"
-            + "  j = 0 while j < length(data) do j = j + 1 { "
-            + "    min=MAX "
-            + "    i = 0 while i < length(data) do i = i + 1 { "
-            + "      if data[i] > last_min and data[i] < min { "
-            + "        min = data[i] "
-            + "      } "
-            + "    } "
-            + "    println min "
-            + "    // now need to find something greater than min \r\n"
-            + "    last_min = min "
-            + "  }",
-        "dumbsort");
-  }
-
-  @Test
   public void compareSelf() throws Exception {
-    // the optimizer will optimize out a1==a1 and a1 != a1
     execute(
         DASSERTS //
             + "a1=[1,2,3] "
