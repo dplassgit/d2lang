@@ -479,15 +479,15 @@ public class ResolverTest {
     assertThat(emitter)
         .containsExactly(
             "push RBX", //
-            "sub RSP, 8",
+            "sub RSP, 0x08",
             "movq [RSP], XMM6",
-            "sub RSP, 8",
+            "sub RSP, 0x08",
             "movq [RSP], XMM7",
             "mov RCX, 0",
             "movq XMM7, [RSP]",
-            "add RSP, 8",
+            "add RSP, 0x08",
             "movq XMM6, [RSP]",
-            "add RSP, 8",
+            "add RSP, 0x08",
             "pop RBX");
   }
 

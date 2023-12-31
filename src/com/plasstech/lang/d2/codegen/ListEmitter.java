@@ -23,6 +23,9 @@ public abstract class ListEmitter implements Emitter {
 
   @Override
   public void emit(String string, Object... values) {
+    if (string.length() == 0) {
+      return;
+    }
     emit0("  " + string, values);
   }
 

@@ -303,7 +303,7 @@ class Resolver implements RegistersInterface {
     String size = Size.of(type).asmType;
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
+        emitter.emit("xor %s, %s", destReg.name64(), destReg.name64());
       } else {
         if (sourceReg != null && destReg != null) {
           // Fixed Issue #170: if register to register, don't need "size"
@@ -349,7 +349,7 @@ class Resolver implements RegistersInterface {
 
     if (destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s  ; instead of mov reg, 0", destReg.name64(), destReg.name64());
+        emitter.emit("xor %s, %s", destReg.name64(), destReg.name64());
       } else {
         // go right from source to dest
         emitter.emit("mov %s, %s", destName, sourceName);
@@ -375,7 +375,7 @@ class Resolver implements RegistersInterface {
       double sourceDub = doubleOp.value();
       if (sourceDub == 0.0) {
         // Constant zero to register
-        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);
+        emitter.emit("xorpd %s, %s", destReg, destReg);
         return;
       }
     }

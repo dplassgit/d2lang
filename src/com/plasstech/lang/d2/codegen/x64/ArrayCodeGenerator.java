@@ -124,7 +124,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       setSize = numEntries.value() > 0;
     }
     if (setSize) {
-      emitter.emit("mov DWORD [RAX+1], %s  ; store size of first dimension", numEntriesLocName);
+      emitter.emit("mov DWORD [RAX + 1], %s  ; store size of first dimension", numEntriesLocName);
     }
     if (numEntriesReg != null) {
       emitter.emit("; deallocating numEntriesLoc from %s", numEntriesReg);
@@ -402,7 +402,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         // fun fact, we never have to calculate this for index 0, because all arrays
         // are at least size 1.
         // 1. get size from arrayloc
-        emitter.emit0("\n  ; make sure index is < length");
+        emitter.emit("");
+        emitter.emit("; make sure index is < length");
         emitter.emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
         emitter.emit("inc %s  ; skip past # dimensions", lengthReg);
         // this gets the size in the register
@@ -413,7 +414,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         String continueLabel = Labels.nextLabel("good_array_index");
         emitter.emit("jg %s", continueLabel);
 
-        emitter.emit0("\n  ; no good. print error and stop");
+        emitter.emit("");
+        emitter.emit("; no good. print error and stop");
         emitter.addData(ARRAY_INDEX_OOB_ERR);
         emitter.emit("mov R8d, %s  ; length ", lengthReg.name32());
         emitter.emit("mov R9d, %s  ; index", index);
@@ -443,7 +445,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emit("jge %s", continueLabel);
 
       // print error and stop.
-      emitter.emit0("\n  ; negative. no good. print error and stop");
+      emitter.emit("");
+      emitter.emit("; negative. no good. print error and stop");
       emitter.addData(ARRAY_INDEX_NEGATIVE_ERR);
       // TODO: Pretty sure this is wrong
       if (lengthReg == R8) {
@@ -460,7 +463,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emitLabel(continueLabel);
 
       // 1. get size from arrayloc
-      emitter.emit0("\n  ; make sure index is < length");
+      emitter.emit("");
+      emitter.emit("; make sure index is < length");
       emitter.emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
       emitter.emit("inc %s  ; skip past # dimensions", lengthReg);
       // this gets the size in the register
@@ -471,7 +475,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       continueLabel = Labels.nextLabel("continue");
       emitter.emit("jl %s", continueLabel);
 
-      emitter.emit0("\n  ; no good. print error and stop");
+      emitter.emit("");
+      emitter.emit("; no good. print error and stop");
       emitter.addData(ARRAY_INDEX_OOB_ERR);
       if (lengthReg == R8) {
         emitter.emit("; index already in R8");
@@ -486,7 +491,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
       emitter.emitLabel(continueLabel);
 
-      emitter.emit0("\n  ; calculate index*base size+1+dims*4");
+      emitter.emit("");
+      emitter.emit("; calculate index*base size+1+dims*4");
       // index is always a dword/int because I said so.
       resolver.mov(indexLoc, lengthReg);
       emitter.emit("imul %s, %s  ; ...*base size ...", lengthReg, arrayType.baseType().size());

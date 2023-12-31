@@ -126,7 +126,7 @@ class CallCodeGenerator extends DefaultOpcodeVisitor {
       String afterLabel = Labels.nextLabel("afterExternCall");
       String externName = procSym.name();
       emitter.addExtern(externName);
-      emitter.emit("test rsp, 8");
+      emitter.emit("test RSP, 0x08");
       emitter.emit("je %s ; not a multiple of 8, it's aligned", alignedLabel);
       emitter.emit("sub RSP, 0x28");
       emitter.emit("call %s", externName);
@@ -142,7 +142,7 @@ class CallCodeGenerator extends DefaultOpcodeVisitor {
     if (numArgs > 3) {
       // # of bytes we have to adjust the stack (pseudo-pop)
       int bytes = 8 * (numArgs - 4);
-      emitter.emit("add RSP, %d  ; adjust for 5th-nth parameters pushed into stack", bytes);
+      emitter.emit("add RSP, 0x%02x  ; adjust for 5th-nth parameters pushed into stack", bytes);
     }
     Register tempReg = null;
     if (op.destination().isPresent()) {

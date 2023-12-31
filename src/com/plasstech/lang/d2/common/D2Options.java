@@ -61,10 +61,17 @@ public class D2Options extends OptionsBase {
 
   @Option(
       name = "optimize",
-      help = "Turns on the optimizer.",
+      help = "Turns on the intermediate language optimizer.",
       defaultValue = "true"
   )
   public boolean optimize;
+
+  @Option(
+      name = "optimizeAsm",
+      help = "Turns on the assembly language optimizer.",
+      defaultValue = "true"
+  )
+  public boolean optimizeAsm;
 
   @Option(
       name = "exe",

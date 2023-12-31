@@ -44,19 +44,19 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
 
       // Move with sign extend. Intentionally set rdx first, in case the arg is in ecx
       Size size = Size.of(arg.type());
-      emitter.emit("movsx RDX, %s %s  ; parameter", size.asmType, argName);
+      emitter.emit("movsx RDX, %s %s", size.asmType, argName);
       setUpFormat(format, isNewline);
 
     } else if (arg.type() == VarType.BYTE) {
 
       emitter.emit("xor RDX, RDX");
       // note: no sign extend; otherwise it will prepend ffffs
-      emitter.emit("mov DL, BYTE %s  ; parameter", argName);
+      emitter.emit("mov DL, BYTE %s", argName);
       setUpFormat(format, isNewline);
 
     } else if (arg.type() == VarType.LONG) {
 
-      emitter.emit("mov RDX, %s  ; parameter", argName);
+      emitter.emit("mov RDX, %s", argName);
       setUpFormat(format, isNewline);
 
     } else if (arg.type() == VarType.BOOL) {
@@ -74,7 +74,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
 
         // This puts pattern into RDX
         emitter.addData(constData(Format.TRUE, isNewline));
-        emitter.emit("mov RDX, %s  ; pattern", constName(Format.TRUE, isNewline));
+        emitter.emit("mov RDX, %s", constName(Format.TRUE, isNewline));
         // Conditionally move the pattern from either RCX or RDS
         emitter.emit("cmovz RCX, RDX");
       }
@@ -84,7 +84,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         // Intentionally set rdx first in case the arg is in rcx
         resolver.mov(arg, RDX);
         emitter.addData(EXIT_MSG);
-        emitter.emit("mov RCX, EXIT_MSG  ; pattern");
+        emitter.emit("mov RCX, EXIT_MSG");
       } else {
         // arg may not be in rcx (or rdx) yet
         if (arg.isConstant() && op.call() == SysCall.Call.PRINT) {
@@ -97,7 +97,7 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
 
           if (!arg.isConstant()) {
             // check for null; if null, change format to printing null
-            emitter.emit("cmp QWORD %s, 0", RDX);
+            emitter.emit("cmp QWORD RDX, 0");
             String notNullLabel = Labels.nextLabel("not_null");
             emitter.emit("jne %s", notNullLabel);
             setUpFormat(Format.NULL, isNewline);
@@ -155,6 +155,6 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
 
   private void setUpFormat(Format format, boolean isNewline) {
     emitter.addData(constData(format, isNewline));
-    emitter.emit("mov RCX, %s  ; pattern", constName(format, isNewline));
+    emitter.emit("mov RCX, %s", constName(format, isNewline));
   }
 }

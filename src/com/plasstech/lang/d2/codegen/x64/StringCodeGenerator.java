@@ -594,7 +594,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       // pseudo pop
       emitter.emit("; pseudo-pop; destination was already %s", destination);
       if (raxRcxState.wasPushed(RCX)) {
-        emitter.emit("add RSP, 8");
+        emitter.emit("add RSP, 0x08");
       }
     } else {
       raxRcxState.condPop(RCX);
@@ -603,7 +603,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       // pseudo pop; eax already has the length.
       emitter.emit("; pseudo-pop; destination was already RAX");
       if (raxRcxState.wasPushed(RAX)) {
-        emitter.emit("add RSP, 8");
+        emitter.emit("add RSP, 0x08");
       }
     } else {
       emitter.emit("; %s = strlen(%s)", destinationName, sourceName);

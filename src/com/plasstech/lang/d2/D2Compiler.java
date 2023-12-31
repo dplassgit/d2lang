@@ -14,6 +14,7 @@ import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
+import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -87,6 +88,17 @@ public class D2Compiler {
       System.out.println("\nASM CODE:");
       System.out.println(Joiner.on("\n").join(state.asmCode()));
       System.out.println("------------------------------");
+    }
+
+    if (options.optimizeAsm) {
+      state = new NasmOptimizer().execute(state);
+
+      if (options.debugcodegen > 0) {
+        System.out.println("------------------------------");
+        System.out.println("\nOPTIMIZED ASM CODE:");
+        System.out.println(Joiner.on("\n").join(state.asmCode()));
+        System.out.println("------------------------------");
+      }
     }
 
     File dir = new File(System.getProperty("user.dir"));

@@ -137,9 +137,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
     prelude.add("; To execute:");
     // -Ox = optimize
-    prelude.add(String.format("; nasm -fwin64 %s.asm && gcc %s.obj -o %s && ./%s\n", f, f, f, f));
+    prelude.add(String.format("; nasm -fwin64 %s.asm && gcc %s.obj -o %s && ./%s", f, f, f, f));
+    prelude.add("");
 
-    prelude.add("global main\n");
+    prelude.add("global main");
+    prelude.add("");
 
     // emit all string constants
     input.programNode().accept(new GlobalVariableEmitter(globals));
@@ -188,8 +190,10 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
     ImmutableList<String> allCode = ImmutableList.<String>builder().addAll(prelude)
         .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-        .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-        .add("\nsection .text").addAll(emitter.all()).build();
+        .add("")
+        .add("section .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+        .add("")
+        .add("section .text").addAll(emitter.all()).build();
 
     return input.addAsmCode(allCode);
   }
@@ -586,7 +590,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       String continueLabel = Labels.nextLabel("not_div_by_zero");
       emitter.emit("jne %s", continueLabel);
 
-      emitter.emit0("\n  ; division by zero. print error and stop");
+      emitter.emit("");
+      emitter.emit("; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);
       emitter.emit("mov EDX, %d  ; line number", op.position().line());
       emitter.emit("mov RCX, DIV_BY_ZERO_ERR");
@@ -644,7 +649,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       registerState.condPop(RDX);
     } else {
       // pseudo pop
-      emitter.emit("add RSP, 8  ; pseudo pop RDX");
+      emitter.emit("add RSP, 0x08  ; pseudo pop RDX");
     }
     registerState.condPop(RAX);
   }
@@ -765,7 +770,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     // this over-allocates, but /shrug.
     if (op.localBytes() > 0) {
       int bytes = 16 * (op.localBytes() / 16 + 1);
-      emitter.emit("sub RSP, %d  ; space for locals", bytes);
+      emitter.emit("sub RSP, 0x%02x  ; space for locals", bytes);
     }
     resolver.procEntry();
 

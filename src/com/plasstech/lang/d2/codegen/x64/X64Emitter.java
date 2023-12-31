@@ -15,16 +15,22 @@ class X64Emitter extends ListEmitter {
   }
 
   @Override
+  // Why is this a thing?
   public void emitExit(int exitCode) {
     addExtern("exit");
-    emit("mov RCX, %d", exitCode);
+    if (exitCode == 0) {
+      emit("xor RCX, RCX");
+    } else {
+      emit("mov RCX, %d", exitCode);
+    }
     emit("call exit");
   }
 
   @Override
   public void emitLabel(String label) {
     if (label != null) {
-      emit0("\n%s:", label);
+      emit("");
+      emit0("%s:", label);
     }
   }
 }

@@ -1,4 +1,1306 @@
 ///////////////////////////////////////////////////////////////////////////////
+//                                    LEXER                                  //
+//                           VERSION 5 (COMPILED BY V4)                      //
+///////////////////////////////////////////////////////////////////////////////
+
+//   BUG: params with the same name as a global gives precedence to the global, unlike D (java)
+
+debug=false
+debugLex=false
+VERSION='v5'
+
+lineBasedError: proc(type: string, message: string, line: int) {
+  print type + " error at line " print line println ": " + message
+  exit
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                     LEXER                                 //
+///////////////////////////////////////////////////////////////////////////////
+TOKEN_EOF=0
+TOKEN_PLUS=1
+TOKEN_MINUS=2
+TOKEN_MULT=3
+TOKEN_BIT_AND=4 // bit and
+TOKEN_BIT_OR=5  // bit or
+TOKEN_BIT_XOR=6 // bit xor
+TOKEN_DIV=7
+TOKEN_MOD=8
+TOKEN_EQEQ=9
+TOKEN_NEQ=10
+TOKEN_LT=11
+TOKEN_GT=12
+TOKEN_LEQ=13
+TOKEN_GEQ=14
+TOKEN_SHIFT_LEFT=15
+TOKEN_SHIFT_RIGHT=16
+TOKEN_BIT_NOT=17 // bit not
+TOKEN_VARIABLE=18
+TOKEN_EQ=19
+TOKEN_LPAREN=20
+TOKEN_RPAREN=21
+TOKEN_LBRACE=22
+TOKEN_RBRACE=23
+TOKEN_COLON=24
+TOKEN_COMMA=25
+TOKEN_KEYWORD=26
+TOKEN_LBRACKET=27
+TOKEN_RBRACKET=28
+TOKEN_DOT=29
+TOKEN_INC=30
+TOKEN_DEC=31
+TOKEN_INT=32  // int constant
+TOKEN_BOOL=33  // bool constant
+TOKEN_BYTE=34 // byte constant
+TOKEN_LONG=35 // long constant
+TOKEN_DOUBLE=36 // double constant
+TOKEN_STRING=37 // string constant
+
+KW_PRINT=0
+KW_IF=1
+KW_ELSE=2
+KW_ELIF=3
+KW_PROC=4
+KW_RETURN=5
+KW_WHILE=6
+KW_DO=7
+KW_BREAK=8
+KW_CONTINUE=9
+KW_INT=10   // int keyword
+KW_BOOL=11  // bool keyword
+KW_STRING=12  // string keyword
+KW_NULL=13
+KW_INPUT=14
+KW_LENGTH=15
+KW_CHR=16
+KW_ASC=17
+KW_EXIT=18
+KW_AND=19 // boolean and
+KW_OR=20  // boolean or
+KW_NOT=21 // boolean not
+KW_RECORD=22
+KW_NEW=23
+KW_DELETE=24
+KW_PRINTLN=25
+KW_LONG=26
+KW_BYTE=27
+KW_DOUBLE=28
+KW_ARGS=29
+KW_EXTERN=30
+KW_XOR=31
+// TODO: for, in, get, this, private, load, save, export
+
+KEYWORDS=[
+    "print",
+    "if",
+    "else",
+    "elif",
+    "proc",
+    "return",
+    "while",
+    "do",
+    "break",
+    "continue",
+    "int",
+    "bool",
+    "string",
+    "null",
+    "input",
+    "length",
+    "chr",
+    "asc",
+    "exit",
+    "and",
+    "or",
+    "not",
+    "record",
+    "new",
+    "delete",
+    "println",
+    "long",
+    "byte",
+    "double",
+    "args",
+    "extern",
+    "xor"
+    ]
+
+Lexer: record {
+  text: string  // full text
+  loc: int      // index/location inside text
+  cc: int       // current character
+  line: int     // current line
+}
+
+newLexer: proc(text: string): Lexer {
+  lexer = new Lexer
+  lexer.text = text
+  resetLexer(lexer)
+  return lexer
+}
+
+resetLexer: proc(self: Lexer) {
+  self.loc = 0
+  self.cc = 0
+  self.line = 1
+  advanceLex(self)
+}
+
+nextToken: proc(self: Lexer): Token {
+  // skip unwanted whitespace
+  while (self.cc == 32 or self.cc == 10 or self.cc == 9 or self.cc == 13) {
+    if self.cc == 10 or self.cc == 13 {
+      self.line = self.line + 1
+    }
+    advanceLex(self)
+  }
+  if self.cc != 0 {
+    if isDigit(self.cc) {
+      return makeNumberToken(self)
+    } elif isLetter(self.cc) {
+      // might be string, keyword, boolean constant
+      return makeTextToken(self)
+    } else {
+      return makeSymbolToken(self)
+    }
+  }
+
+  return makeToken(self, TOKEN_EOF, "")
+}
+
+advanceLex: proc(self: Lexer) {
+  if self.loc < length(self.text) {
+    self.cc=asc(self.text[self.loc])
+  } else {
+    // Indicates no more characters
+    self.cc=0
+  }
+  self.loc = self.loc + 1
+  if debugLex {
+    // print "; Lexer cc " print self.cc print ":" println chr(self.cc)
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                   Token record, for external consumption                  //
+///////////////////////////////////////////////////////////////////////////////
+
+Token: record {
+  type:int
+  stringValue:string
+  keyword:int
+  boolValue:bool
+  line:int
+}
+
+makeBasicToken: proc(self: Lexer, type: int, value: string): Token {
+  t = new Token
+  t.type = type
+  t.stringValue = value
+  t.keyword = -1
+  t.line = self.line
+  return t
+}
+
+// Build a string token
+makeToken: proc(self: Lexer, type: int, value: string): Token {
+  if debugLex {
+    print "; Making token type: " print type print " value: "
+    println value
+  }
+  t = makeBasicToken(self, type, value)
+  return t
+}
+
+// Build a bool constant token
+BoolToken: proc(self: Lexer, value: bool, valueAsString: string): Token {
+  t = makeBasicToken(self, TOKEN_BOOL, valueAsString)
+  t.boolValue = value
+  if debugLex {
+    print "; Making bool token: " println value
+  }
+  return t
+}
+
+// Build a keyword token
+KeywordToken: proc(self: Lexer, value: int, valueAsString: string): Token {
+  t = makeBasicToken(self, TOKEN_KEYWORD, valueAsString)
+  t.keyword = value
+  if debugLex {
+    print "; Making kw token: " println valueAsString
+  }
+  return t
+}
+
+// Convert an int into a string.
+toString: proc(i: int): string {
+  if i == 0 {
+    return '0'
+  }
+  val = ''
+  while i > 0 do i = i / 10 {
+    val = chr((i % 10) + 48) + val
+  }
+  return val
+}
+
+
+isalpha: extern proc(c: int): int
+isLetter: proc(c: int): bool {
+  // return (c>=asc('a') and c <= asc('z')) or (c>=asc('A') and c<=asc('Z')) or c==asc('_')
+  return isalpha(c) != 0 or c == 95
+}
+
+isdigit: extern proc(c: int): int
+isDigit: proc(c: int): bool {
+  // return c>=asc('0') and c <= asc('9')
+  return isdigit(c) != 0
+}
+
+isLetterOrDigit: proc(c: int): bool {
+  return isLetter(c) or isDigit(c)
+}
+
+stricmp: extern proc(s1:string, s2:string): int
+
+makeTextToken: proc(self: Lexer): Token {
+  value=''
+  first = self.cc
+  if isLetter(self.cc) {
+    value=value + chr(self.cc)
+    advanceLex(self)
+  }
+  while isLetterOrDigit(self.cc) {
+    value=value + chr(self.cc)
+    advanceLex(self)
+  }
+
+  if first == 95 {
+    // do not allow leading _
+    lineBasedError("Scanner", "Illegal variable name " + value, self.line)
+    exit
+  }
+  if value == 'true' or value == 'false' {
+    return BoolToken(self, value == 'true', value)
+  }
+
+  i=0 while i < length(KEYWORDS) do i++ {
+    if stricmp(value, KEYWORDS[i]) == 0 {
+      return KeywordToken(self, i, value)
+    }
+  }
+
+  return makeToken(self, TOKEN_VARIABLE, value)
+}
+
+
+isHexDigit: proc(ch: int): bool {
+  return isDigit(ch) or
+      (ch >= 65 and ch <= 70) or
+      (ch >= 97 and ch <= 102)
+}
+
+makeNumberToken: proc(self: Lexer): Token {
+  valueAsString = ''
+  while isDigit(self.cc) do advanceLex(self) {
+    valueAsString = valueAsString + chr(self.cc)
+  }
+
+  if self.cc == 76 { // L for long
+    advanceLex(self)
+    // Don't make the constant
+    // Note: it still may overflow a long... shrug.
+    return makeToken(self, TOKEN_LONG, valueAsString)
+  } elif self.cc == 121 { // asc('y')
+
+    // Byte constant
+    if valueAsString != '0' {
+      lineBasedError("Scanner", "Invalid BYTE constant: " + valueAsString, self.line)
+      exit
+    }
+    advanceLex(self)   // eat the 'y'
+
+    first = self.cc
+    advanceLex(self)
+    second = self.cc
+    advanceLex(self)
+    valueAsString = chr(first) + chr(second)
+    // Make sure it's a valid hex string
+    if not (isHexDigit(first) and isHexDigit(second)) {
+      lineBasedError("Scanner", "Invalid BYTE constant: " + valueAsString, self.line)
+      exit
+    }
+
+    return makeToken(self, TOKEN_BYTE, valueAsString)
+  } elif self.cc == 46 { // dot
+    advanceLex(self)
+    valueAsString = valueAsString + "."
+    while isDigit(self.cc) do advanceLex(self) {
+      valueAsString = valueAsString + chr(self.cc)
+    }
+    return makeToken(self, TOKEN_DOUBLE, valueAsString)
+  } else {
+    // make an int constant
+    value=0
+    // TODO: when longs are supported, make a long and
+    // see it it exceeds 2^31.
+    i = 0 while i < length(valueAsString) do i++ {
+      digit = asc(valueAsString[i]) - 48
+      value=value * 10 + digit
+      if (value % 10) != digit or value < 0 {
+        // hacky way to detect overflow
+        lineBasedError("Scanner", "INT constant too big: " + valueAsString, self.line)
+        exit
+      }
+    }
+    return makeToken(self, TOKEN_INT, valueAsString)
+  }
+}
+
+startsWithSlash: proc(self: Lexer): Token {
+  advanceLex(self) // eat the first slash
+  if self.cc == 47 {
+    // second slash == comment.
+    advanceLex(self) // eat the second slash
+    // Eat characters until newline
+    while self.cc != 10 and self.cc != 0 do advanceLex(self) {}
+    if self.cc != 0 {
+      self.line = self.line + 1
+      advanceLex(self) // eat the newline
+    }
+    // TODO figure out if this can be done a different way, maybe with a "comment" token?
+    return nextToken(self)
+  }
+  return makeToken(self, TOKEN_DIV, '/')
+}
+
+startsWithBang: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self) // eat the !
+  if self.cc == 61 { // =
+    advanceLex(self)
+    return makeToken(self, TOKEN_NEQ, '!=')
+  }
+  return makeToken(self, TOKEN_BIT_NOT, '!')
+}
+
+startsWithPlus: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 43 { // +
+    advanceLex(self)
+    return makeToken(self, TOKEN_INC, '++')
+  }
+  return makeToken(self, TOKEN_PLUS, '+')
+}
+
+startsWithMinus: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 45 { // -
+    advanceLex(self)
+    return makeToken(self, TOKEN_DEC, '--')
+  }
+  return makeToken(self, TOKEN_MINUS, '-')
+}
+
+startsWithGt: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 { // =
+    advanceLex(self)
+    return makeToken(self, TOKEN_GEQ, '>=')
+  } elif self.cc == 62 {
+    // shift right
+    advanceLex(self)
+    return makeToken(self, TOKEN_SHIFT_RIGHT, '>>')
+  }
+  return makeToken(self, TOKEN_GT, '>')
+}
+
+startsWithLt: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_LEQ, '<=')
+  } elif self.cc == 60 {
+    // shift left
+    advanceLex(self)
+    return makeToken(self, TOKEN_SHIFT_LEFT, '<<')
+  }
+  return makeToken(self, TOKEN_LT, '<')
+}
+
+startsWithEq: proc(self: Lexer): Token {
+  oc=self.cc
+  advanceLex(self)
+  if self.cc == 61 {
+      advanceLex(self)
+    return makeToken(self, TOKEN_EQEQ, '==')
+  }
+  return makeToken(self, TOKEN_EQ, '=')
+}
+
+makeStringLiteralToken: proc(self: Lexer, firstQuote: int): Token {
+  advanceLex(self) // eat the tick/quote
+  sb=''
+  while self.cc != firstQuote and self.cc != 0 {
+    if self.cc == 92 { // backslash
+      advanceLex(self)
+      if self.cc == 110 { // backslash - n
+        sb=sb + chr(10)  // linefeed
+      } elif self.cc == 114 { // backslash-r
+        sb=sb + chr(13)  // carriage-return
+      } elif self.cc == 116 { // backslash-t
+        sb=sb + chr(9)  // tab
+      } elif self.cc == 34 or self.cc == 39 or self.cc == 92 {
+        sb=sb + chr(self.cc)  // tick/quote/backslash
+      }
+    } else {
+      sb=sb + chr(self.cc)
+    }
+    advanceLex(self)
+  }
+
+  if self.cc == 0 {
+    lineBasedError("Scanner", "Unclosed STRING literal " + sb, self.line)
+    exit
+  }
+
+  advanceLex(self) // eat the closing tick/quote
+  return makeToken(self, TOKEN_STRING, sb)
+}
+
+makeSymbolToken: proc(self: Lexer): Token {
+  oc = self.cc
+  if oc == 61 {
+    return startsWithEq(self)
+  } elif oc == 60 {
+    return startsWithLt(self)
+  } elif oc == 62 {
+    return startsWithGt(self)
+  } elif oc == 43 {
+    return startsWithPlus(self)
+  } elif oc == 45 {
+    return startsWithMinus(self)
+  } elif oc == 40 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_LPAREN, '(')
+  } elif oc == 41 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_RPAREN, ')')
+  } elif oc == 42 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_MULT, '*')
+  } elif oc == 47 {
+    return startsWithSlash(self)
+  } elif oc == 37 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_MOD, '%')
+  } elif oc == 38 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_BIT_AND, '&')
+  } elif oc == 124 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_BIT_OR, '|')
+  } elif oc == 94 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_BIT_XOR, '^')
+  } elif oc == 33 {
+    return startsWithBang(self)
+  } elif oc == 123 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_LBRACE, '{')
+  } elif oc == 125 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_RBRACE, '}')
+  } elif oc == 91 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_LBRACKET, '[')
+  } elif oc == 93 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_RBRACKET, ']')
+  } elif oc == 58 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_COLON, ':')
+  } elif oc == 34 or oc == 39 { // double or single quote
+    return makeStringLiteralToken(self, oc)
+  } elif oc == 44 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_COMMA, ',')
+  } elif oc == 46 {
+    advanceLex(self)
+    return makeToken(self, TOKEN_DOT, '.')
+  }
+  lineBasedError("Scanner", "Unknown character: " + chr(self.cc) + " ASCII code: " + toString(self.cc), self.line)
+  exit
+}
+
+// for debugging
+printToken: proc(t: Token) {
+  if t.type == TOKEN_EOF {
+    println 'EOF'
+  } elif t.type == TOKEN_INT {
+    print 'Int constant: ' println t.stringValue
+  } elif t.type == TOKEN_LONG {
+    print 'Long constant: ' println t.stringValue
+  } elif t.type == TOKEN_STRING {
+    print 'String constant: ' println t.stringValue
+  } elif t.type == TOKEN_BOOL {
+    print 'Bool constant: ' println t.boolValue
+  } elif t.type == TOKEN_KEYWORD {
+    print 'Keyword: ' println t.stringValue
+  } elif t.type == TOKEN_VARIABLE {
+    print 'Variable: ' println t.stringValue
+  } else {
+    print 'Token: ' print t.stringValue print ' type: ' println t.type
+  }
+}
+
+//text = input
+//lex=newLexer(text)
+
+//count = 1
+//t=nextToken(lex)
+//print "; line #:" print lex.line print ":" printToken(t)
+
+//while t.type != TOKEN_EOF do count++ {
+//  t=nextToken(lex)
+//  print "; line #:" print lex.line print ":" printToken(t)
+//}
+
+//print 'Total number of tokens: '
+//print count print "\n"
+//exit
+
+StringListEntry: record {
+  value: string
+  index: int
+  next: StringListEntry
+}
+StringList: record {
+  head: StringListEntry
+}
+
+// Append the given string to the list. Returns the entry. If the string
+// was already on the list, does not append.
+append: proc(self: StringList, newvalue: string): StringListEntry {
+  node = new StringListEntry
+  node.value = newvalue
+  if self.head == null {
+    // no entries, make one
+    self.head = node
+    return node
+  }
+  head = self.head last = head while head != null do head = head.next {
+    if head.value == newvalue {
+      // duplicate
+      return head
+    }
+    last = head
+  }
+  
+  // new entry
+  node.index = last.index + 1
+  last.next = node
+  return node
+}
+///////////////////////////////////////////////////////////////////////////////
+//                                    EMITTER                                //
+///////////////////////////////////////////////////////////////////////////////
+
+Emitter: record {
+  head: StringListEntry  // set once
+  tail: StringListEntry  // set once, but updated
+}
+
+
+emitter_emit0: proc(self: Emitter, s: string): StringListEntry {
+  entry = new StringListEntry
+  entry.value = s
+  if self.head == null {
+    self.head = entry
+    self.tail = entry
+  } else {
+    // self.tail.next = entry
+    tail = self.tail
+    tail.next = entry
+    self.tail = entry
+  }
+  return entry
+}
+
+emitter_emit: proc(self: Emitter, s: string): StringListEntry {
+  return emitter_emit0(self, "  " + s)
+}
+
+emitter_emitLabel: proc(self: Emitter, label: string): StringListEntry {
+  return emitter_emit0(self, "\n" + label + ":")
+}
+
+emitter_emitNum: proc(self: Emitter, s: string, num: int): StringListEntry {
+  return emitter_emit(self, s + toString(num))
+}
+
+emitter_printEntries: proc(self: Emitter) {
+  head = self.head while head != null do head = head.next {
+    println head.value
+  }
+  println ""
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                    TYPES                                  //
+///////////////////////////////////////////////////////////////////////////////
+
+
+// This record declaration has to be before its first use because
+// the record finder only registers the NAME not the FIELDS. So the first
+// time a field was attempted to be set, it failed. Similarly, it does not
+// set the SIZE of the record to malloc...
+
+VarType: record {
+  name: string
+  size: int // bytes
+
+  isPrimitive: bool
+  isIntegral: bool
+
+  isArray: bool
+  baseType: VarType
+
+  isRecord: bool
+  recordType: RecordType
+
+  opcodeSize: string // BYTE, DWORD, QWORD
+  dataSize: string // db, dw, dq
+
+  next: VarType
+}
+
+// This really should be a map of name to VarType
+types: VarType
+types=null
+
+TYPE_UNKNOWN = makeVarType('unknown', 0)
+TYPE_BOOL = makePrimitiveType('bool', 1, ' BYTE ', 'db')
+TYPE_STRING = makePrimitiveType('string', 8, ' QWORD ', 'dq')
+TYPE_VOID = makePrimitiveType('void', 0, '', '')
+TYPE_NULL = makePrimitiveType('null', 8, '', '')
+
+TYPE_INT = makePrimitiveType('int', 4, ' DWORD ', 'dd')
+TYPE_INT.isIntegral = true
+TYPE_BYTE = makePrimitiveType('byte', 1, ' BYTE ', 'db')
+TYPE_BYTE.isIntegral = true
+TYPE_LONG = makePrimitiveType('long', 8, ' QWORD ', 'dq')
+TYPE_LONG.isIntegral = true
+
+TYPE_DOUBLE = makePrimitiveType('double', 8, '', 'dq')
+
+
+findType: proc(name: string): VarType {
+  head = types while head != null do head = head.next {
+    headname = head.name
+    if head.isPrimitive and stricmp(headname, name) == 0 {
+      return head
+    } elif head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+makeVarType: proc(name: string, size: int): VarType {
+  newType = new VarType
+  newType.name = name
+  newType.size = size
+  addVarType(newType)
+  return newType
+}
+
+makePrimitiveType: proc(name: string, size: int, opcodeSize: string, dataSize: string): VarType {
+  vt = makeVarType(name, size)
+  vt.isPrimitive = true
+  vt.dataSize = dataSize
+  vt.opcodeSize = opcodeSize
+  return vt
+}
+
+addVarType: proc(varType: VarType) {
+  if types == null {
+    // first one.
+    types = varType
+    return
+  }
+  name = varType.name
+  head = types last = head while head != null do head = head.next {
+    if head.name == name {
+      typeError("Cannot re-define type " + name)
+      exit
+    }
+    last = head
+  }
+  last.next = varType
+}
+
+makeArrayType: proc(baseType: VarType): VarType {
+  arrayName = baseType.name + "[]"
+  existingVarType = findType(arrayName)
+  if existingVarType != null {
+    return existingVarType
+  }
+
+  at = new VarType
+  at.name = arrayName
+  at.isArray = true
+  at.baseType = baseType
+  at.size = 8
+  at.dataSize = "dq"
+  at.opcodeSize = " QWORD "
+
+  // Insert in the list after the base type
+  oldNext = baseType.next
+  baseType.next = at
+  at.next = oldNext
+  return at
+}
+
+sameTypes: proc(expected: VarType, actual: VarType): bool {
+  if expected == actual {
+    // I-DENTICAL
+    return true
+  }
+  if expected == null {
+    generalError("Internal", "expected is null")
+    return false
+  }
+  if actual == null {
+    generalError("Internal", "actual is null")
+    return false
+  }
+  if expected.isArray and actual.isArray {
+    // NOTE: cannot write
+    // expected.isArray and actual.isArray and sameTypes(...
+    // because there is no short-circuit in v3.
+    return sameTypes(expected.baseType, actual.baseType)
+  }
+  // anything else?
+  return false
+}
+
+checkTypes: proc(expected: VarType, actual: VarType) {
+  if compatibleTypes(expected, actual) {
+    return
+  }
+  typeError("Expected " + expected.name + ", but found " + actual.name)
+  exit
+}
+
+compatibleTypes: proc(expected: VarType, actual: VarType): bool {
+  if (expected.isRecord and actual == TYPE_NULL)
+    or (actual.isRecord and expected == TYPE_NULL)
+    or (expected == TYPE_STRING and actual == TYPE_NULL)
+    or (actual == TYPE_STRING and expected == TYPE_NULL) {
+    return true
+  }
+  return sameTypes(expected, actual)
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                              SYMBOL TABLES                                //
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////
+// STRINGS
+///////////////////////////////////////
+
+// TODO: this could be a map (string -> int)
+stringTable=new StringList
+doubleTable=new StringList
+
+// Create a string constant and return its index. If the string already is in the table,
+// will not re-create it.
+addStringConstant: proc(s: string): int  {
+  node = append(stringTable, s)
+  return node.index
+}
+
+addDoubleConstant: proc(d: string): int  {
+  node = append(doubleTable, d)
+  return node.index
+}
+
+
+///////////////////////////////////////
+// GLOBALS
+///////////////////////////////////////
+
+// TODO: This could be a map from name to VarSymbol
+VarSymbol: record {
+  name: string
+  varType: VarType
+  isGlobal: bool
+  offset: int
+  next: VarSymbol
+}
+
+globals:VarSymbol
+globals=null
+
+registerGlobal: proc(name: string, varType: VarType): VarSymbol {
+  if varType == TYPE_UNKNOWN {
+    // TODO: improve this message
+    typeError("Cannot register global '" + name + "' with unknown type")
+    exit
+  }
+
+  head = globals last = head while head != null do head = head.next {
+    if head.name == name {
+      // TODO: improve this message:
+      // Type error at line 2: Variable 'a' already declared as INT, cannot be redeclared as BOOL
+      typeError("Duplicate global: " + name)
+      exit
+    }
+    last = head
+  }
+
+  newEntry = new VarSymbol
+  newEntry.name = name
+  newEntry.varType = varType
+  newEntry.isGlobal = true
+
+  if last == null {
+    // first one
+    globals = newEntry
+  } else {
+    // last = old head
+    last.next = newEntry
+  }
+  if debug {
+    println "; Adding global" + name
+  }
+
+  return newEntry
+}
+
+lookupGlobal: proc(name: string): VarSymbol {
+  head = globals while head != null do head = head.next {
+    if head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+// Returns a string that can be used to reference the variable
+// e.g., [_global], [RBP-4] for a local, [RBP+8] for a param
+toReference: proc(symbol : VarSymbol): string {
+  if symbol.isGlobal {
+    return "[_" + symbol.name + "]"
+  }
+  offset = symbol.offset
+  if offset == 0 {
+    return "[RBP]"
+  } elif offset < 0 {
+    return "[RBP - " + toString(-offset) + "]"
+  } else {
+    return "[RBP + " + toString(offset) + "]"
+  }
+}
+
+
+///////////////////////////////////////
+// PROCS
+///////////////////////////////////////
+
+// TODO: This really should be a map from proc name to ProcSymbol
+ProcSymbol: record {
+  name: string
+  returnType: VarType
+
+  numParams: int   // for type checking
+  params: VarSymbol
+
+  // TODO: This really should be a map from name to VarSymbol
+  locals: VarSymbol
+
+  isExtern: bool
+
+  next: ProcSymbol
+}
+
+procs:ProcSymbol
+procs=null
+
+currentProc:ProcSymbol
+currentProc=null
+
+setCurrentProc: proc(name: string) {
+  currentProc = lookupProc(name)
+}
+
+clearCurrentProc: proc {
+  currentProc = null
+}
+
+registerProc: proc(name: string): ProcSymbol {
+  head = procs last = head while head != null do head = head.next {
+    if head.name == name {
+      typeError("PROC '" + name + "' already declared")
+      exit
+    }
+    last = head
+  }
+
+  newEntry = new ProcSymbol
+  newEntry.name = name
+
+  if last == null {
+    // first one
+    procs = newEntry
+  } else {
+    last.next = newEntry
+  }
+  return newEntry
+}
+
+lookupProc: proc(name: string): ProcSymbol {
+  head=procs while head != null do head=head.next {
+    if head.name == name {
+      return head
+    }
+  }
+  typeError("Cannot find PROC '" + name + "'")
+  exit
+}
+
+// returns the param VarSymbol, or null if not found.
+lookupParam: proc(name: string): VarSymbol {
+  if currentProc == null {
+    typeError("Cannot lookup parameter '" + name + "' because not in a PROC")
+    exit
+  }
+
+  head = currentProc.params while head != null do head=head.next {
+    if head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+// returns the local VarSymbol, or null if not found.
+lookupLocal: proc(name: string): VarSymbol {
+  if currentProc == null {
+    typeError("Cannot lookup local '" + name + "' because not in a PROC")
+    exit
+  }
+
+  head = currentProc.locals while head != null do head=head.next {
+    if head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+// add up the locals sizes instead of using the last offset.
+localsSize: proc(p: ProcSymbol): int {
+  offset = 0
+  head = p.locals while head != null do head=head.next {
+    offset = offset + head.varType.size
+  }
+  return offset
+}
+
+// Lookup the type of the given global, param or local.
+lookupType: proc(name: string): VarType {
+  sym = lookupGlobal(name)
+  if sym == null {
+    // not a global, try to find as param or local
+    if currentProc != null {
+      sym = lookupParam(name)
+      if sym == null {
+        sym = lookupLocal(name)
+      }
+    }
+  }
+  if sym != null {
+    return sym.varType
+  }
+  return TYPE_UNKNOWN
+}
+
+// Returns the symbol of this local.
+registerLocal: proc(name: string, varType: VarType): VarSymbol {
+  if varType == TYPE_UNKNOWN {
+    typeError("Cannot register local '" + name + "' with unknown type")
+    exit
+  }
+  if currentProc == null {
+    typeError("Cannot add local '" + name + "' because not in a PROC")
+    exit
+  }
+
+  offset = 0
+  head = currentProc.locals last = head while head != null do head = head.next {
+    if head.name == name {
+      // TODO: improve this message:
+      // Type error at line 2: Variable 'a' already declared as INT, cannot be redeclared as BOOL
+      typeError("Duplicate local '" + name + "' in PROC '" + currentProc.name + "'")
+      exit
+    }
+    offset = head.offset
+    last = head
+  }
+
+  newLocal = new VarSymbol
+  newLocal.name = name
+  newLocal.varType = varType
+  newLocal.offset = offset - varType.size
+  if last == null {
+    currentProc.locals = newLocal
+  } else {
+    last.next = newLocal
+  }
+
+  return newLocal
+}
+
+registerParam: proc(name: string, varType: VarType) {
+  if varType == TYPE_UNKNOWN {
+    typeError("Cannot register param '" + name + "' with unknown type")
+    exit
+  }
+
+  currentProc.numParams = currentProc.numParams + 1
+  offset = 8
+  // add up param offsets
+  head = currentProc.params last = head while head != null do head = head.next {
+    if head.name == name {
+      typeError("Duplicate parameter '" + name + "' to PROC '" + currentProc.name + "'")
+      exit
+    }
+    offset = head.offset
+    last = head
+  }
+
+  newParam = new VarSymbol
+  newParam.name = name
+  newParam.varType = varType
+  newParam.offset = offset + 8 // always pushes 8 bytes. varType.size
+  if last == null {
+    currentProc.params = newParam
+  } else {
+    last.next = newParam
+  }
+}
+
+lookupVariable: proc(variable: string): VarSymbol {
+  symbol = lookupGlobal(variable)
+  if symbol != null {
+    return symbol
+  }
+
+  if currentProc == null {
+    // Not in a proc, cannot look up local.
+    typeError("Unknown global '" + variable + "'")
+    exit
+  }
+
+  symbol = lookupLocal(variable)
+  if symbol != null {
+    return symbol
+  }
+
+  symbol = lookupParam(variable)
+  if symbol != null {
+    return symbol
+  }
+  typeError("Unknown local or param '" + variable + "'")
+  exit
+}
+
+
+///////////////////////////////////////
+// RECORDS
+///////////////////////////////////////
+
+
+FieldSymbol: record {
+  name: string
+  // TODO: rename this "varType"
+  type: VarType
+  offset: int
+  next: FieldSymbol
+}
+
+RecordType: record {
+  name: string  // name of this type, redundant with the VarType field "name"
+  size: int
+  fields: FieldSymbol
+  next: RecordType
+}
+
+records:RecordType
+records=null
+
+registerRecord: proc(name: string): RecordType {
+  head = records last = head while head != null do head=head.next {
+    if head.name == name {
+      typeError("RECORD type '" + name + "' already declared")
+      exit
+    }
+    last = head
+  }
+
+  newRec = new RecordType
+  newRec.name = name
+
+  if last == null {
+    // first one
+    records = last
+  } else {
+    last.next = newRec
+  }
+
+  recVarType = new VarType
+  recVarType.isRecord = true
+  recVarType.name = name
+  recVarType.recordType = newRec
+  recVarType.size = 8 // 8 bytes per pointer, not 8 bytes per record!
+  recVarType.dataSize = "dq"
+  recVarType.opcodeSize = " QWORD "
+  addVarType(recVarType)
+
+  return newRec
+}
+
+lookupRecord: proc(name: string): VarType {
+  head = types while head != null do head=head.next {
+    if head.isRecord and head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+lookupField: proc(rt: RecordType, name: string): FieldSymbol {
+  head = rt.fields while head != null do head=head.next {
+    if head.name == name {
+      return head
+    }
+  }
+  return null
+}
+
+registerField: proc(rt: RecordType, name: string, varType: VarType): FieldSymbol {
+  if varType == null {
+    generalError("Internal error", "Variable type is null for RECORD type '" +rt.name + 
+                 "', field " + name)
+    exit
+  }
+
+  offset = 0 head = rt.fields last = head while head != null do head=head.next {
+    if head.name == name {
+      typeError("Duplicate field " + name + " in RECORD " + rt.name)
+      exit
+    }
+    if head.type != null {
+      offset = offset + head.type.size
+    }
+    last = head
+  }
+
+  newField = new FieldSymbol
+  newField.name = name
+  newField.type = varType
+  newField.offset = offset
+
+  if last == null {
+    // first one
+    rt.fields = newField
+  } else {
+    last.next = newField
+  }
+  if varType == null {
+    generalError("Internal", "VarType is null, cannot update size of " + rt.name)
+    exit
+  } else {
+    rt.size = rt.size + varType.size
+  }
+  return newField
+}
+
+A_REG=0
+B_REG=1
+C_REG=2
+D_REG=3
+XMM0=0
+XMM1=1
+XMM2=2
+XMM3=3
+
+DOUBLE_REGISTERS=[
+  'XMM0',
+  'XMM1',
+  'XMM2',
+  'XMM3'
+]
+
+REGISTERS=[
+  'AL',
+  'BL',
+  'CL',
+  'DL',
+  'AX',
+  'BX',
+  'CX',
+  'DX',
+  'EAX',
+  'EBX',
+  'ECX',
+  'EDX',
+  'RAX',
+  'RBX',
+  'RCX',
+  'RDX'
+]
+
+makeRegister: proc(base: int, varType: VarType): string {
+  if varType == TYPE_DOUBLE {
+    return DOUBLE_REGISTERS[base]
+  }
+  index = base
+  bytes = varType.size
+  if bytes == 2 { index = index + 4}
+  elif bytes == 4 { index = index + 8}
+  elif bytes == 8 { index = index + 12}
+  return REGISTERS[index]
+}
+
+push: proc(register: int, type: VarType, emitter: Emitter) {
+  if type != TYPE_DOUBLE {
+    emitter_emit(emitter, "push " + REGISTERS[register + 12]) // makeRegister(register, TYPE_LONG))
+  } else {
+    emitter_emit(emitter, "sub RSP, 8")
+    emitter_emit(emitter, "movq [RSP], " + makeRegister(register, TYPE_DOUBLE))
+  }
+  
+}
+
+pop: proc(register: int, type: VarType, emitter: Emitter) {
+  if type != TYPE_DOUBLE {
+    emitter_emit(emitter, "pop " + REGISTERS[register + 12]) // makeRegister(register, TYPE_LONG))
+  } else {
+    emitter_emit(emitter, "movq " + makeRegister(register, TYPE_DOUBLE) + ", [RSP]")
+    emitter_emit(emitter, "add RSP, 8")
+  }
+}
+///////////////////////////////////////////////////////////////////////////////
 //                                    PARSER                                 //
 ///////////////////////////////////////////////////////////////////////////////
 

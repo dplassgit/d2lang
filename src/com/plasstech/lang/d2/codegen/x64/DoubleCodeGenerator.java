@@ -104,7 +104,8 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       String continueLabel = Labels.nextLabel("not_div_by_zero");
       emitter.emit("jne %s", continueLabel);
 
-      emitter.emit0("\n  ; division by zero. print error and stop");
+      emitter.emit("");
+      emitter.emit("; division by zero. print error and stop");
       emitter.addData(Messages.DIV_BY_ZERO_ERR);
       emitter.emit("mov EDX, %d  ; line number", op.position().line());
       emitter.emit("mov RCX, DIV_BY_ZERO_ERR");
@@ -125,17 +126,17 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       Location destination = op.destination();
       Operand source = op.operand();
       String sourceName = resolver.resolve(source);
-      if (resolver.isInAnyRegister(destination)) {
+      if (resolver.isInAnyRegister(destination) && !source.equals(destination)) {
         Register destReg = resolver.toRegister(destination);
-        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", destReg, destReg);
+        emitter.emit("xorpd %s, %s", destReg, destReg);
         emitter.emit("subsd %s, %s", destReg, sourceName);
-      } else {
-        Register tempReg = resolver.allocate(VarType.DOUBLE);
-        emitter.emit("xorpd %s, %s  ; instead of mov reg, 0", tempReg, tempReg);
-        emitter.emit("subsd %s, %s", tempReg, sourceName);
-        resolver.mov(tempReg, destination);
-        resolver.deallocate(tempReg);
+        return;
       }
+      Register tempReg = resolver.allocate(VarType.DOUBLE);
+      emitter.emit("xorpd %s, %s", tempReg, tempReg);
+      emitter.emit("subsd %s, %s", tempReg, sourceName);
+      resolver.mov(tempReg, destination);
+      resolver.deallocate(tempReg);
     } else {
       fail(op.position(), "Cannot generate %s on doubles", op.operator());
     }

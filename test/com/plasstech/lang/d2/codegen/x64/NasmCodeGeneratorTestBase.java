@@ -19,6 +19,7 @@ import com.google.common.io.Files;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.PhaseName;
@@ -61,7 +62,8 @@ public class NasmCodeGeneratorTestBase {
     CompilationConfiguration config =
         CompilationConfiguration.builder().setFilename(filename).setSourceCode(sourceCode)
             // .setOptDebugLevel(2)
-            .setOptimize(optimize).build();
+            .setOptimize(optimize)
+            .build();
 
     State compiledState = compile(config, exitCode);
 
@@ -108,6 +110,10 @@ public class NasmCodeGeneratorTestBase {
       state.throwOnError();
     } else if (state.error()) {
       return state;
+    }
+
+    if (config.optimize()) {
+      state = new NasmOptimizer().execute(state);
     }
 
     String asmCode = Joiner.on('\n').join(state.asmCode());
