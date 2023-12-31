@@ -66,7 +66,7 @@ public class ConstantOperand<T> implements Operand {
     return new ConstantOperand<Byte>(value, VarType.BYTE);
   }
 
-  public static Operand of(double value) {
+  public static ConstantOperand<Double> of(double value) {
     if (value == 0.0) {
       return ZERO_DBL;
     } else if (value == 1.0) {
@@ -76,11 +76,7 @@ public class ConstantOperand<T> implements Operand {
   }
 
   public static ConstantOperand<Boolean> of(boolean value) {
-    if (value) {
-      return TRUE;
-    } else {
-      return FALSE;
-    }
+    return value ? TRUE : FALSE;
   }
 
   private final T value;
@@ -163,6 +159,7 @@ public class ConstantOperand<T> implements Operand {
   public static boolean isAnyIntOne(Operand operand) {
     return operand.equals(ONE) // int
         || operand.equals(ONE_LONG)
+        // NOTE NO DBL
         || operand.equals(ONE_BYTE);
   }
 
@@ -172,12 +169,18 @@ public class ConstantOperand<T> implements Operand {
   }
 
   public static ConstantOperand<? extends Number> fromValue(long value, VarType type) {
-    if (type == VarType.INT) {
-      return ConstantOperand.of((int) value);
-    } else if (type == VarType.BYTE) {
-      return ConstantOperand.of((byte) value);
-    } else {
+    if (type == VarType.LONG) {
       return ConstantOperand.of(value);
     }
+    if (type == VarType.INT) {
+      return ConstantOperand.of((int) value);
+    }
+    if (type == VarType.BYTE) {
+      return ConstantOperand.of((byte) value);
+    }
+    if (type != VarType.DOUBLE) {
+      throw new IllegalStateException("Cannot take fromValue of type " + type);
+    }
+    return ConstantOperand.of((double) value);
   }
 }

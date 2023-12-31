@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 
@@ -23,7 +24,8 @@ public class AdjacentIncDecOptimizerTest {
 
   private static final Location VAR1 = LocationUtils.newMemoryAddress("a", VarType.INT);
   private static final Location VAR2 = LocationUtils.newParamLocation("b", VarType.INT, 0, 0);
-  private static final Location LVAR1 = LocationUtils.newMemoryAddress("a", VarType.LONG);
+  private static final Location LVAR1 = LocationUtils.newMemoryAddress("la", VarType.LONG);
+  private static final Location DVAR1 = LocationUtils.newMemoryAddress("da", VarType.DOUBLE);
 
   @Test
   public void twoIncs_differentVarsUnchanged() {
@@ -54,11 +56,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(2));
   }
 
   @Test
@@ -71,11 +69,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(3));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(3));
   }
 
   @Test
@@ -88,11 +82,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(3));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(3));
   }
 
   @Test
@@ -105,11 +95,20 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(5));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(5));
+  }
+
+  @Test
+  public void addAdd_double() {
+    ImmutableList<Op> program = ImmutableList.of(
+        new BinOp(DVAR1, DVAR1, TokenType.PLUS, ConstantOperand.of(2.0), null),
+        new BinOp(DVAR1, DVAR1, TokenType.PLUS, ConstantOperand.of(3.0), null));
+
+    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
+    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    assertThat(optimized.get(0)).isBinOp(DVAR1, DVAR1, TokenType.PLUS, ConstantOperand.of(5.0));
   }
 
   @Test
@@ -122,11 +121,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(1));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(1));
   }
 
   @Test
@@ -137,11 +132,8 @@ public class AdjacentIncDecOptimizerTest {
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(-2));
+
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(-2));
   }
 
   @Test
@@ -152,11 +144,8 @@ public class AdjacentIncDecOptimizerTest {
 
     ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
     assertThat(OPTIMIZERS.isChanged()).isTrue();
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(-1));
+
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(-1));
   }
 
   @Test
@@ -169,11 +158,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(LVAR1);
-    assertThat(first.left()).isEqualTo(LVAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(5L));
+    assertThat(optimized.get(0)).isBinOp(LVAR1, LVAR1, TokenType.PLUS, ConstantOperand.of(5L));
   }
 
   @Test
@@ -186,11 +171,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(-2));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(-2));
   }
 
   @Test
@@ -203,11 +184,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(-4));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(-4));
   }
 
   @Test
@@ -220,11 +197,7 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.of(2));
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.of(2));
   }
 
   @Test
@@ -237,10 +210,6 @@ public class AdjacentIncDecOptimizerTest {
     assertThat(OPTIMIZERS.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    BinOp first = (BinOp) optimized.get(0);
-    assertThat(first.destination()).isEqualTo(VAR1);
-    assertThat(first.left()).isEqualTo(VAR1);
-    assertThat(first.operator()).isEqualTo(TokenType.PLUS);
-    assertThat(first.right()).isEqualTo(ConstantOperand.ZERO);
+    assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, ConstantOperand.ZERO);
   }
 }

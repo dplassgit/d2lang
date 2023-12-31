@@ -34,7 +34,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
 
   @Override
   public void visit(BinOp first) {
-    if (!isVarPlusEquals(first) || !first.destination().type().isIntegral()) {
+    if (!isVarPlusEquals(first) || !first.destination().type().isNumeric()) {
       return;
     }
     Op second = getOpAt(ip() + 1);
@@ -113,17 +113,27 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
     return null;
   }
 
-  private boolean isVarPlusEquals(BinOp binOp) {
-    return binOp.left().equals(binOp.destination())
-        && binOp.operator() == TokenType.PLUS
-        && binOp.right().isConstant()
-        && binOp.right().type().isIntegral();
+  /**
+   * @return true if binop is a=a + integral constant
+   */
+  private static boolean isVarPlusEquals(BinOp binOp) {
+    return isVarPlusMinus(binOp, TokenType.PLUS);
   }
 
+  /**
+   * @return true if binop is a=a - integral constant
+   */
   private boolean isVarMinusEquals(BinOp binOp) {
+    return isVarPlusMinus(binOp, TokenType.MINUS);
+  }
+
+  /**
+   * @return true if binop is a=a (op) integral constant
+   */
+  private static boolean isVarPlusMinus(BinOp binOp, TokenType tokenType) {
     return binOp.left().equals(binOp.destination())
-        && binOp.operator() == TokenType.MINUS
+        && binOp.operator() == tokenType
         && binOp.right().isConstant()
-        && binOp.right().type().isIntegral();
+        && binOp.right().type().isNumeric();
   }
 }

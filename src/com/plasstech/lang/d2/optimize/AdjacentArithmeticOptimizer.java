@@ -16,7 +16,8 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
- * Optimizer that optimizes TEMPS of the pattern:
+ * Optimizer that optimizes TEMPS of the pattern: But there's really no reason why it can't also
+ * deal with non-temps...
  *
  * <pre>
  *  __temp2 = __temp1 + 2
