@@ -14,6 +14,11 @@ public class NasmCodeGeneratorIntTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void intParamUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
+    execute(String.format("f:proc(a:int, b:int) {b=%sa println b} f(2,3)", op), "intUnaryOps");
+  }
+
+  @Test
   public void intBinOps(
       @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
       @TestParameter({"1234", "-234567"}) int first,
