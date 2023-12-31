@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -94,7 +95,9 @@ class TempPropagationOptimizer extends LineOptimizer {
     // only allow params (stored in registers), because all other destinations do not play
     // nicely with binary operations.
     if (candidate.destination().storage() == SymbolStorage.PARAM) {
-      return true;
+      // only return true if it's param 0-3, which will be in a register.
+      ParamLocation param = (ParamLocation) candidate.destination();
+      return param.index() <= 3;
     }
     if (!op.right().isConstant()) {
       return false;
@@ -108,12 +111,17 @@ class TempPropagationOptimizer extends LineOptimizer {
   }
 
   private boolean canApply(Operand source, Transfer candidate) {
+    // only allow params (stored in registers), because all other destinations do not play
+    // nicely with binary operations.
+    if (candidate.destination().storage() == SymbolStorage.PARAM) {
+      // only return true if it's param 0-3, which will be in a register.
+      ParamLocation param = (ParamLocation) candidate.destination();
+      return param.index() <= 3;
+    }
     if (source.type() == VarType.DOUBLE) {
       // double constants are globals, so we can't typically use them as a right-hand-side
       return false;
     }
-    // only allow params (stored in registers), because all other destinations do not play
-    // nicely with binary operations.
-    return candidate.destination().storage() == SymbolStorage.PARAM;
+    return false;
   }
 }

@@ -61,6 +61,8 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
         if (operator == TokenType.DIV) {
           generateDivByZero(op);
         }
+        // This fails if dest is not a register?
+        // 
         emitter.emit(
             "%s %s, %s ; double %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
         break;
