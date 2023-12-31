@@ -147,13 +147,13 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   public void recursion() throws Exception {
     execute(
         "      reverseRecursive: proc(s: string): string {"
-            + "  return reverse2(s, length(s), 0, false)"
+            + "  return reverse2(s, length(s))"
             + "} "
-            + "reverse2: proc(s: string, start: int, ignored: int, ignored2: bool): string {"
+            + "reverse2: proc(s: string, start: int): string {"
             + "  if start == 0 {"
             + "    return '' "
             + "  } else {"
-            + "    return s[start - 1] + reverse2(s, start - 1, start + 1, start==1) "
+            + "    return s[start - 1] + reverse2(s, start - 1) "
             + "  } "
             + "} "
             + "  println 'Recursive reverse ' + reverseRecursive('Reverse')",

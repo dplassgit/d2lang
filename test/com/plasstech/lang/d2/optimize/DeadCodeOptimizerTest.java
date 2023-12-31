@@ -104,7 +104,9 @@ public class DeadCodeOptimizerTest {
   @Test
   public void returnThenStuffThenProcEnd() {
     ImmutableList<Op> program =
-        ImmutableList.of(new Return("name"), new Dec(TEMP1), new ProcExit("proc", 0));
+        ImmutableList.of(
+            new Return("name"), new Dec(TEMP1),
+            new ProcExit("proc", 0, 0));
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
 

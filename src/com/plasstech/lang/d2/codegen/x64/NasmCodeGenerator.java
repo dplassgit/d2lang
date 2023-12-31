@@ -758,10 +758,12 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
   @Override
   public void visit(ProcEntry op) {
-    emitter.emit("push RBP");
-    emitter.emit("mov RBP, RSP");
+    if (op.localBytes() > 0 || op.formals().size() > 4) {
+      emitter.emit("push RBP");
+      emitter.emit("mov RBP, RSP");
+    }
+    // this over-allocates, but /shrug.
     if (op.localBytes() > 0) {
-      // this may over-allocate, but /shrug.
       int bytes = 16 * (op.localBytes() / 16 + 1);
       emitter.emit("sub RSP, %d  ; space for locals", bytes);
     }
@@ -776,18 +778,6 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       }
       i++;
     }
-  }
-
-  @Override
-  public void visit(Return op) {
-    // we can't just "ret" here because there's cleanup we need to do first.
-    op.returnValueLocation().ifPresent(returnValue -> {
-      // transfer from return value to XMM0/RAX
-      resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
-      resolver.deallocate(returnValue);
-    });
-    // NOTYPO
-    emitter.emit("jmp __exit_of_%s", op.procName());
   }
 
   @Override
@@ -806,9 +796,23 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     emitter.emit0("__exit_of_%s:", op.procName());
     resolver.procEnd();
 
-    emitter.emit("mov RSP, RBP");
-    emitter.emit("pop RBP");
+    if (op.localBytes() > 0 || op.numFormals() > 4) {
+      emitter.emit("mov RSP, RBP");
+      emitter.emit("pop RBP");
+    }
     emitter.emit("ret");
+  }
+
+  @Override
+  public void visit(Return op) {
+    // we can't just "ret" here because there's cleanup we need to do first.
+    op.returnValueLocation().ifPresent(returnValue -> {
+      // transfer from return value to XMM0/RAX
+      resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
+      resolver.deallocate(returnValue);
+    });
+    // NOTYPO
+    emitter.emit("jmp __exit_of_%s", op.procName());
   }
 
   @Override

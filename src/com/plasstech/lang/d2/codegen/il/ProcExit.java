@@ -4,9 +4,11 @@ public class ProcExit extends Op {
 
   private final String procName;
   private final int localBytes;
+  private final int numFormals;
 
-  public ProcExit(String procName, int localBytes) {
+  public ProcExit(String procName, int localBytes, int numFormals) {
     this.procName = procName;
+    this.numFormals = numFormals;
     this.localBytes = localBytes;
   }
 
@@ -26,5 +28,9 @@ public class ProcExit extends Op {
 
   public int localBytes() {
     return localBytes;
+  }
+
+  public int numFormals() {
+    return numFormals;
   }
 }

@@ -648,7 +648,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new Return(node.name()));
     }
 
-    emit(new ProcExit(node.name(), assigner.localBytes));
+    emit(new ProcExit(node.name(), assigner.localBytes, formals.size()));
     emit(new Label(afterLabel));
 
     symbolTable = symbolTable.parent();
