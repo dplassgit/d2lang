@@ -73,7 +73,7 @@ public class RecordSymbol extends AbstractSymbol {
   }
 
   private final ImmutableMap<String, Field> fields;
-  private int allocatedSize;
+  private final int allocatedSize;
 
   public RecordSymbol(RecordDeclarationNode node) {
     super(node.name());
@@ -81,7 +81,7 @@ public class RecordSymbol extends AbstractSymbol {
     this.setVarType(new RecordReferenceType(node.name()));
 
     ImmutableMap.Builder<String, Field> fieldBuilder = ImmutableMap.builder();
-    allocatedSize = 0;
+    int sizeToAllocate = 0;
     for (DeclarationNode decl : node.fields()) {
       Field field;
       if (decl.varType().isArray()) {
@@ -93,14 +93,15 @@ public class RecordSymbol extends AbstractSymbol {
             new ArrayField(
                 decl.name(),
                 arrayType,
-                allocatedSize,
+                sizeToAllocate,
                 ImmutableList.of(constSize.value()));
       } else {
-        field = new Field(decl.name(), decl.varType(), allocatedSize);
+        field = new Field(decl.name(), decl.varType(), sizeToAllocate);
       }
       fieldBuilder.put(decl.name(), field);
-      allocatedSize += decl.varType().size();
+      sizeToAllocate += decl.varType().size();
     }
+    allocatedSize = sizeToAllocate;
     fields = fieldBuilder.build();
   }
 
