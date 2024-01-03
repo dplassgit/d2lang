@@ -222,10 +222,10 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     // If it's not optimized, the size constant won't be propagated.
     assertGenerateError(
         "f:proc() {size=-3 x:string[size] print length(x)} f()",
-        "ARRAY size must be non-negative; was -3", true, PhaseName.ASM_CODGEN);
+        "ARRAY size must be non-negative; was -3", true, PhaseName.ASM_CODEGEN);
     assertGenerateError(
         "f:proc() {size=-3 x:string[size+size] print length(x)} f()",
-        "ARRAY size must be non-negative; was -6", true, PhaseName.ASM_CODGEN);
+        "ARRAY size must be non-negative; was -6", true, PhaseName.ASM_CODEGEN);
   }
 
   @Test
@@ -242,7 +242,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     // If it's not optimized, the size constant won't be propagated.
     assertGenerateError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "ARRAY index must be non-negative; was -3", true, PhaseName.ASM_CODGEN);
+        "ARRAY index must be non-negative; was -3", true, PhaseName.ASM_CODEGEN);
   }
 
   @Test
@@ -263,7 +263,7 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   public void arrayGetIndexConstNegative_error() throws Exception {
     assertGenerateError(
         "f:proc() {y=-3 x:string[1] print x[y]} f()", "ARRAY index must be non-negative; was -3",
-        true, PhaseName.ASM_CODGEN);
+        true, PhaseName.ASM_CODEGEN);
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] print x[y]} f()",
         "arrayGetIndexLocalNegative",

@@ -7,6 +7,6 @@ public enum PhaseName {
   TYPE_CHECK,
   IL_CODEGEN,
   IL_OPTIMIZE,
-  ASM_CODGEN,
+  ASM_CODEGEN,
   ASM_OPTIMIZE,
 }

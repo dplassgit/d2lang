@@ -172,14 +172,14 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
+    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODEGEN);
     assertRuntimeError(program, "length", "Null pointer error");
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
     String program = "a='hello' a=null println length(a)";
-    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODGEN);
+    assertGenerateError(program, ".*NULL expression.*", true, PhaseName.ASM_CODEGEN);
     assertRuntimeError(program, "length", "Null pointer error");
   }
 
