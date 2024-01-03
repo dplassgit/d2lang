@@ -14,6 +14,9 @@ types, control structures, operators and statements in D2.
 
 <tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
 
+**NOTE: D2 is not related in ANY way to ["The D Programming Language"](https://dlang.org/)
+except by coincidence of name.**
+
 
 ## Installing
 
