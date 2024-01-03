@@ -106,7 +106,7 @@ public class NasmCodeGeneratorTestBase {
     state.throwOnError();
 
     state = new NasmCodeGenerator().execute(state);
-    if (config.expectedErrorPhase() != PhaseName.ASM_CODGEN) {
+    if (config.expectedErrorPhase() != PhaseName.ASM_CODEGEN) {
       state.throwOnError();
     } else if (state.error()) {
       return state;
