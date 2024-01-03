@@ -1,14 +1,23 @@
 package com.plasstech.lang.d2.optimize;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.SymTab;
 
@@ -385,5 +394,49 @@ public class ILOptimizerTest {
   @Test
   public void tempPropagation() {
     TestUtils.optimizeAssertSameVariables("f:proc(a:int) {b=a+1 print b} f(2)");
+  }
+
+  @Test
+  public void arrayLiteralLength() {
+    // Note: this returns the optimized result.
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables("a=[1,2] println length(a)");
+    OpcodeVisitor ov = new DefaultOpcodeVisitor() {
+      @Override
+      public void visit(SysCall op) {
+        assertThat(op.arg().isConstant()).isTrue();
+      }
+
+      @Override
+      public void visit(UnaryOp op) {
+        assertThat(op.operator()).isNotEqualTo(TokenType.LENGTH);
+      }
+    };
+
+    ImmutableList<Op> code = result.code();
+    for (Op op : code) {
+      op.accept(ov);
+    }
+  }
+
+  @Test
+  public void arrayParamLength() {
+    InterpreterResult result = TestUtils.optimizeAssertSameVariables(
+        "f:proc(a:int[]) { println length(a)} f([1,2])");
+    OpcodeVisitor ov = new DefaultOpcodeVisitor() {
+      @Override
+      public void visit(SysCall op) {
+        assertThat(op.arg().isConstant()).isFalse();
+      }
+
+      @Override
+      public void visit(UnaryOp op) {
+        assertThat(op.operator()).isEqualTo(TokenType.LENGTH);
+      }
+    };
+
+    ImmutableList<Op> code = result.code();
+    for (Op op : code) {
+      op.accept(ov);
+    }
   }
 }
