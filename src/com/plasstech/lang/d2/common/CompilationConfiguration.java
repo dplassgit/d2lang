@@ -17,7 +17,7 @@ public abstract class CompilationConfiguration {
 
   public static Builder builder() {
     return new AutoValue_CompilationConfiguration.Builder()
-        .setLastPhase(PhaseName.ASM_CODGEN) // maximum
+        .setLastPhase(PhaseName.ASM_OPTIMIZE) // maximum
         .setLexDebugLevel(0)
         .setParseDebugLevel(0)
         .setTypeDebugLevel(0)
