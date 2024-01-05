@@ -285,9 +285,9 @@ public class Parser implements Phase {
         Token opEq = token;
         advance(); // eat the token
         VariableSetNode vsn = new VariableSetNode(variable.text(), variable.start());
-        ExprNode rhs = expr();
+        ExprNode originalRhs = expr();
         ExprNode left = new VariableNode(variable.text(), variable.start());
-        ExprNode foo = new BinOpNode(left, OP_EQ_TO_OP.get(opEq.type()), rhs);
+        ExprNode newRhs = new BinOpNode(left, OP_EQ_TO_OP.get(opEq.type()), rhs);
         return new AssignmentNode(vsn, foo);
 
       // for record field set: field.name=expression
