@@ -108,10 +108,10 @@ Enhancement suggestions are tracked as [GitHub issues](/issues).
 
 ### Your First Code Contribution
 
-Review the [documentation](https://github.com/dplassgit/d2lang/blob/4b3268c4593335c855eabc0d19bc6a91688f8e36/docs/running.md)
+Review the [documentation](/docs/running.md)
 which includes installation instructions.
 
-There are various issues marked `good first issue` that you can peruse
+There are various issues marked [good first issue](/labels/good%20first%20issue) that you can peruse
 
 ## Styleguides
 
@@ -119,7 +119,7 @@ There are various issues marked `good first issue` that you can peruse
 
 **Except for documentation or extremely trivial changes, all PRs must include tests.** 
 
-You can optionally include a "sample" file in the [samples](https://github.com/dplassgit/d2lang/tree/trunk/samples) directory
+You can optionally include a "sample" file in the [samples](/tree/trunk/samples) directory
 that exercises the code in the PR.
 
 You should "squash" multiple commits into a single commit for a PR.
