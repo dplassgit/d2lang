@@ -1,6 +1,6 @@
 # d2lang
 
-D2 is a strongly-typed, statically-typed, inferred-type compiled language. 
+D2 (d2lang) is a strongly-typed, statically-typed, inferred-type compiled language. 
 Its syntax draws from C, Java and Python.
 
 The D2 compiler currently compiles to X64 assembly language only. It uses
@@ -12,13 +12,18 @@ is (mostly) target-agnostic and a 8085 backend is partially implemented.
 See the [overview](docs/overview.md) for a more comprehensive description of the 
 types, control structures, operators and statements in D2.
 
-<tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
-
 **NOTE: D2 is not related in ANY way to ["The D Programming Language"](https://dlang.org/)
 except by coincidence of name.**
 
+<tt>A <a href="http://www.plasstech.com/a-plass-program">PLASS</a> Program</tt>
 
-## Installing
+
+## Contributing
+
+See the [contributor's guide](CONTRIBUTING.md).
+
+
+### Installing
 
 The following 4 are required:
 
@@ -33,7 +38,7 @@ The following 4 are required:
 5. Optional: Eclipse and git bash shell (mingw64)
 
 
-## Running Tests
+### Running Tests
 
 Run `bazel test ...` from the root directory.
 
