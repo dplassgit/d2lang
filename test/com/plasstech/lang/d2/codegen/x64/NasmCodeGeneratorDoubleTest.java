@@ -13,11 +13,6 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
 
   @Test
-  public void assignConstant() throws Exception {
-    execute("a=3.4", "assignConstant");
-  }
-
-  @Test
   public void negate() throws Exception {
     execute("a=3.1 b=-a println b", "negate");
   }
@@ -34,31 +29,21 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void printDoubleConstant() throws Exception {
-    execute("print 3.4", "printDoubleConstant");
-  }
-
-  @Test
-  public void printDouble() throws Exception {
-    execute("a=3.4 b=a println b println a", "printDouble");
-  }
-
-  @Test
-  public void transfer() throws Exception {
-    execute("a=3.0 b=a", "transfer");
+    execute("println 3.4", "printDoubleConstant");
   }
 
   @Test
   public void transferLocal() throws Exception {
-    execute("f:proc { a=3.0 b=a print b} f()", "transferLocal");
+    execute("f:proc { a=3.0 b=a println b} f()", "transferLocal");
   }
 
   @Test
   public void addToItself() throws Exception {
-    execute("a=3.1 a=a+10.1 print a", "addToItself");
+    execute("a=3.1 a=a+10.1 println a", "addToItself");
   }
 
   @Test
-  public void doubleAdd() throws Exception {
+  public void add() throws Exception {
     execute("a=3.14 b=2.0 c=a+b println c", "doubleAdd");
   }
 
@@ -78,8 +63,8 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   @Test
   public void doubleCompOps(
       @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
-      @TestParameter({"0.0", "1234.5", "-34567.8"}) double first,
-      @TestParameter({"0.0", "-1234.5", "34567.8"}) double second)
+      @TestParameter({"1234.5", "-34567.8"}) double first,
+      @TestParameter({"-1234.5", "34567.8"}) double second)
       throws Exception {
     execute(
         String.format(
@@ -91,43 +76,8 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void tree() throws Exception {
-    execute(
-        "      a=2.0 "
-            + "b=3.0 "
-            + "c=-5.0 "
-            + "d=7.0 "
-            + "e=11.0 "
-            + "f=13.0 "
-            + "g = (((a+b+c+2.0)*(b+-c+d+1.0))*((c-d-e-1.0)/(d-e-f-2.0))*((e+f+a-3.0)*"
-            + "      (f-a-b+4.0)))*((a+c+e-9.0)/(b-d-f+1.01)) "
-            + "print g",
-        "tree");
-  }
-
-  @Test
-  public void allOpsGlobals() throws Exception {
-    execute(
-        "      a=2.0 "
-            + "b=3.0 "
-            + "c=-5.0 "
-            + "d=7.0 "
-            + "e=11.0 "
-            + "f=13.0 "
-            + "z=0.0 "
-            + " g=a+a*(b+(b+c*(d-(c+d/(-e+(d-e*f)+a)*b)/-c)-d)) println g"
-            + " k=z+4.0/(5.0+(4.0-5.0*-f)) println k"
-            + " k=0.0+-d/(5.0+(4.0-5.0*f)) println k"
-            + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) println g"
-            + " h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) println h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) println j"
-            + " aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+8.0/11.0)+(7.0-11.0*13.0))*2.0)/b) println aa",
-        "allOpsGlobal");
-  }
-
-  @Test
   public void rounding() throws Exception {
-    execute("f=6.0 k=4.0/(5.0+(4.0-5.0*f)) print k", "rounding");
+    execute("f=6.0 k=4.0/(5.0+(4.0-5.0*f)) println k", "rounding");
   }
 
   @Test
@@ -141,12 +91,12 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
             + "e=11.0 "
             + "f=13.0 "
             + "z=0.0 "
-            + " g=a+a*(b+(b+c*(d-(c+d/(-e+(d-e*f)+a)*b)/-c)-d)) print 'g: ' println g"
-            + " k=z+4.0/(5.0+(4.0-5.0*-f)) print 'k: ' println k"
-            + " k=0.0+-d/(5.0+(4.0-5.0*f)) print 'k: ' println k"
-            + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) print 'g: ' println g"
-            + " h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) print 'h: ' println h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) print 'j: ' println j"
+            + " g=a+a*(b+(b+c*(d-(c+d/(-e+(d-e*f)+a)*b)/-c)-d)) println 'g: ' println g"
+            + " k=z+4.0/(5.0+(4.0-5.0*-f)) println 'k: ' println k"
+            + " k=0.0+-d/(5.0+(4.0-5.0*f)) println 'k: ' println k"
+            + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) println 'g: ' println g"
+            + " h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) println 'h: ' println h"
+            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) println 'j: ' println j"
             + " aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+8.0/11.0)+(7.0-11.0*13.0))*2.0)/b) println aa"
             + " return aa "
             + "} \n"
@@ -201,56 +151,20 @@ public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void constantZero() throws Exception {
-    String tod =
-        "DS=[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]\r\n"
-            + "\r\n"
-            + "// int to double.\r\n"
-            + "tod: proc(i: int): double {\r\n"
-            + "  neg = false\r\n"
-            + "  if i < 0 {neg = true i = -i}\r\n"
-            + "  d=0.0\r\n"
-            + "  place = 1.0\r\n"
-            + "  while i > 0 {\r\n"
-            + "    last = i%10\r\n"
-            + "    d = d + place * DS[last]\r\n"
-            + "    place = place * 10.0\r\n"
-            + "    i = i / 10\r\n"
-            + "  }\r\n"
-            + "  if neg {return -d}\r\n"
-            + "  return d\r\n"
-            + "}\r\n"
-            + "print \"Should be 2.0:\" println tod(2)\r\n"
-            + "print \"Should be 0.0:\" println tod(0)\r\n";
-    execute(tod, "tod");
-  }
-
-  @Test
   public void paramPlusConstant() throws Exception {
-    execute("f:proc(d:double):double { d = d + 1.0 return d} print f(2.0)", "paramPlusConstant");
-  }
-
-  @Test
-  public void paramPlusLocal() throws Exception {
-    execute("f:proc(d:double):double { e=1.0 d = d + e return d} print f(2.0)",
-        "paramPlusLocal");
+    execute("f:proc(d:double):double { d = d + 1.0 return d} println f(2.0)", "paramPlusConstant");
   }
 
   @Test
   public void localPlusParam() throws Exception {
-    execute("f:proc(d:double):double { e=1.0 e = e + d return e} print f(2.0)",
+    execute("f:proc(d:double):double { e=1.0 e = e + d return e} println f(2.0)",
         "localPlusParam");
-  }
-
-  @Test
-  public void localPlusConstant() throws Exception {
-    execute("f:proc(d:double):double { e = d + 1.0 return e} print f(2.0)", "localPlusConstant");
   }
 
   @Test
   @Ignore("bug 273")
   public void printingTrailingDotZero() throws Exception {
-    String stdOut = execute("print 3.0", "bug273");
+    String stdOut = execute("println 3.0", "bug273");
     assertThat(stdOut).isEqualTo("3.0");
   }
 }

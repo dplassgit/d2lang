@@ -40,9 +40,9 @@ public class NasmCodeGeneratorTestBase {
     // System.out.println("not optimized ");
     // System.out.println(notOptimizedStdOut);
     // System.out.println("optimized ");
-    System.out.println("OUTPUT:");
-    System.out.println("-------");
-    System.out.println(optimizedStdOut);
+    // System.out.println("OUTPUT:");
+    // System.out.println("-------");
+    // System.out.println(optimizedStdOut);
 
     // Not-optimized is the gold standard.
     assertThat(optimizedStdOut).isEqualTo(notOptimizedStdOut);
@@ -60,8 +60,11 @@ public class NasmCodeGeneratorTestBase {
     filename = filename + "_opt_" + String.valueOf(optimize);
 
     CompilationConfiguration config =
-        CompilationConfiguration.builder().setFilename(filename).setSourceCode(sourceCode)
-            //            .setOptDebugLevel(2)
+        CompilationConfiguration.builder()
+            // .setOptDebugLevel(2)
+            // .setCodeGenDebugLevel(2)
+            .setFilename(filename)
+            .setSourceCode(sourceCode)
             .setOptimize(optimize)
             .build();
 
@@ -70,19 +73,20 @@ public class NasmCodeGeneratorTestBase {
     InterpreterExecutor ee = new InterpreterExecutor(config);
     // This runs the interpreter on the IL code.
     InterpreterResult result = ee.execute(compiledState);
+
     compiledState.throwOnError();
 
     // The compiler converts \n to \r\n, so we have to do the same.
     String interpreterOutput =
         Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
 
-    // System.out.println("compiled optimized " + optimize);
-    // System.out.println(compiledState.stdOut());
+    // Compiled is the gold standard.
+    assertThat(interpreterOutput).isEqualTo(compiledState.stdOut());
+    System.out.println("COMPILED OUTPUT:");
+    System.out.println(compiledState.stdOut());
     // System.out.println("interpreter");
     // System.out.println(interpreterOutput);
 
-    // Compiled is the gold standard.
-    assertThat(interpreterOutput).isEqualTo(compiledState.stdOut());
     return interpreterOutput;
   }
 
@@ -116,8 +120,10 @@ public class NasmCodeGeneratorTestBase {
       state = new NasmOptimizer().execute(state);
     }
 
-    String asmCode = Joiner.on('\n').join(state.asmCode());
-    System.err.println(asmCode);
+    if (config.codeGenDebugLevel() > 1) {
+      String asmCode = Joiner.on('\n').join(state.asmCode());
+      System.err.println(asmCode);
+    }
 
     String sourceFilename = config.filename();
     File file = new File(dir, sourceFilename + ".asm");
@@ -176,19 +182,21 @@ public class NasmCodeGeneratorTestBase {
 
   protected void assertGenerateError(String sourceCode, String error, boolean optimize,
       PhaseName expectedPhase) {
-    CompilationConfiguration configBuilder =
+    CompilationConfiguration config =
         CompilationConfiguration.builder().setSourceCode(sourceCode).setOptimize(optimize)
             .setExpectedErrorPhase(expectedPhase).build();
     YetAnotherCompiler yac = new YetAnotherCompiler();
-    State state = yac.compile(configBuilder);
+    State state = yac.compile(config);
     if (state.error()) {
       assertThat(state.errorMessage()).matches(error);
       return;
     }
 
-    System.err.println(
-        String.join(
-            "\n", state.lastIlCode().stream().map(Op::toString).collect(toImmutableList())));
+    if (config.codeGenDebugLevel() > 1) {
+      System.err.println(
+          String.join(
+              "\n", state.lastIlCode().stream().map(Op::toString).collect(toImmutableList())));
+    }
     state = new NasmCodeGenerator().execute(state);
     assertThat(state.error()).isTrue();
     assertThat(state.errorMessage()).matches(error);

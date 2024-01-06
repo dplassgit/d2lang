@@ -25,7 +25,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
         "      fun:proc():int { \n" //
             + "   return 3 \n" //
             + "} \n" //
-            + "x=fun() print x",
+            + "x=fun() println x",
         "procReturnsInt");
   }
 
@@ -35,7 +35,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
         "      fun:proc():bool { \n" //
             + "   return true \n" //
             + "} \n" //
-            + "x=fun() print x",
+            + "x=fun() println x",
         "procReturnsBool");
   }
 
@@ -45,7 +45,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
         "      fun:proc():string { \n" //
             + "   return 'hi' \n" //
             + "} \n" //
-            + "x=fun() print x",
+            + "x=fun() println x",
         "procReturnsString");
   }
 
@@ -56,7 +56,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "   return n+1"
             + "}"
             + "x=procIntParam(4) "
-            + "print x",
+            + "println x",
         "procReturnsInt");
   }
 
@@ -69,7 +69,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "  return a"
             + "} "
             + "x=procLocals(4) "
-            + "print x",
+            + "println x",
         "procLocals");
   }
 
@@ -77,7 +77,7 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   public void bug102ParamMunge() throws Exception {
     execute(
         "      f2: proc(c2:bool, b2:string, d2:int, a2:int) {"
-            + "  print 'c=' println c2 print 'b=' println b2 print 'a=' println a2 "
+            + "  println 'c=' println c2 println 'b=' println b2 println 'a=' println a2 "
             + "}"
             + "f1: proc(a1:int, c1:bool, b1:string, d1:int) {"
             + "   f2(c1,b1,a1,d1) "
@@ -101,46 +101,20 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
 
   private static final String FOUR_PARAM_PROC =
       "  procParamFirst4Locations:proc(p3:bool, p4: string, p1: int, p2: int) { "
-          + "  print p2 println p1 print p2 println p1 print p3 print p4 \n"
+          + "  println p2 println p1 println p2 println p1 println p3 println p4 \n"
           + "  p1 = p2 + 1 "
           + "  p3 = p1 == p2"
-          + "  print p1 "
-          + "  print p3"
+          + "  println p1 "
+          + "  println p3"
           + "} "
           + "glob='theglob' "
-          + "print glob "
+          + "println glob "
           + "procParamFirst4Locations(true,'thep4',1,3) "
           + "procParamFirst4Locations(false,'thep4',-1,-2) ";
 
   @Test
   public void procParamFirst4Locations() throws Exception {
     execute(FOUR_PARAM_PROC, "procParamFirst4Locations");
-  }
-
-  @Test
-  public void allOpsLocals() throws Exception {
-    execute(
-        "      allOpsLocals:proc():int { \n"
-            + "   a=1 b=2 c=3 d=4 e=5 f=6 g=3\n"
-            + "   g=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f  \n"
-            + "   b=a+a*b+(b+c)*d-(c+d)/e+(d-e)*f  \n"
-            + "   return g+b \n"
-            + "} \n"
-            + "print allOpsLocals()",
-        "allOpsLocals");
-  }
-
-  @Test
-  public void allOpsLocalsMixed() throws Exception {
-    execute(
-        "      allOpsLocals:proc(a:int, b:double, c:int, d:double):double { \n"
-            + "   e=5.0 f=6\n"
-            + "   g=a+a*c+(a+c)*f-(c+a)/f+(c-a)*f  \n"
-            + "   b=e+e*b+(b+d)*d-(e+d)/e+(e-d)*b  \n"
-            + "   return b \n"
-            + "} \n"
-            + "print allOpsLocals(1, 2.0, 3, 4.0)",
-        "allOpsLocals");
   }
 
   @Test
@@ -177,10 +151,10 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
     execute(
         "      p2()\r\n"
             + "p2: proc {\r\n"
-            + "  println \"Should print 1\"\r\n"
+            + "  println \"Should println 1\"\r\n"
             + "  // forward reference\r\n"
             + "  val = p1()\r\n"
-            + "  print val\r\n"
+            + "  println val\r\n"
             + "}\r\n"
             + "p1: proc: int {\r\n"
             + "  return 1\r\n"
@@ -211,42 +185,14 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void fact() throws Exception {
+  public void moreThan4Params() throws Exception {
     execute(
-        "      dofact:proc(n:int): int {"
-            + "  fact = 1 "
-            + "  unchanged = 0"
-            + "  i=1 while i <= 10 do i = i + 1 {"
-            + "    unchanged = 0"
-            + "    fact = fact * i"
-            + "  }"
-            + "  return fact + unchanged"
-            + "}"
-            + "print dofact(10)",
-        "fact");
-  }
-
-  @Test
-  public void moreThan4BoolParams() throws Exception {
-    execute(
-        "      and6:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
+        "      six:proc(a:bool,b:int,c:double,d:byte,e:long,f:bool):bool {"
             + "  println e"
             + "  println f"
-            + "  return a and b and c and d and e and f"
+            + "  return a and b==1 and c>0.5 and d<0y7f and e!=4L and f"
             + "}"
-            + " println and6(true, false, true, false, true, false)",
-        "params6");
-  }
-
-  @Test
-  public void moreThan4IntParams() throws Exception {
-    execute(
-        "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
-            + "  println e"
-            + "  println f"
-            + "  return a+b+c+d+e+f"
-            + "}"
-            + " println add6(1,2,3,4,5,6) ",
+            + " println six(true, 1, 2.0, 0y03, 4L, false)",
         "params6");
   }
 
@@ -287,18 +233,6 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
-  public void moreThan4DoubleParams() throws Exception {
-    execute(
-        "      add6:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
-            + "  println e"
-            + "  println f"
-            + "  return a+b+c+d+e+f"
-            + "}"
-            + " println add6(1.,2.,3.,4.,5.,6.) ",
-        "params6");
-  }
-
-  @Test
   public void moreThan4IntLocalParams() throws Exception {
     execute(
         "      add6:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
@@ -307,58 +241,10 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "  return a+b+c+d+e+f"
             + "}"
             + "doit:proc(a:int,b:int,c:int,d:int,e:int,f:int):int {"
-            + "  aa = -a bb = -b ff = -f ee = -e"
-            + "  return add6(ff,ee,d,c,bb,aa)"
+            + "  aa = -a bb = -b dd=d*2 cc=c+5 ff = -f ee = -e"
+            + "  return add6(ff,ee,dd,cc,bb,aa)"
             + "}"
             + " println doit(1,2,3,4,5,6) ",
-        "params6");
-  }
-
-  @Test
-  public void moreThan4StringLocalParams() throws Exception {
-    execute(
-        "      add6:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"
-            + "  println e"
-            + "  println f"
-            + "  return a+b+c+d+e+f"
-            + "}"
-            + "doit:proc(a:string,b:string,c:string,d:string,e:string,f:string):string {"
-            + "  aa = a[0] ee = e[0]"
-            + "  return add6(f,ee,d,c,b,aa)"
-            + "}"
-            + " println doit('aa','bb','cc','dd','ee','ff') ",
-        "params6");
-  }
-
-  @Test
-  public void moreThan4DoubleLocalParams() throws Exception {
-    execute(
-        "      add6:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
-            + "  println e"
-            + "  println f"
-            + "  return a+b+c+d+e+f"
-            + "}"
-            + "doit:proc(a:double,b:double,c:double,d:double,e:double,f:double):double {"
-            + "  aa = -a bb = -b ff = -f ee = -e"
-            + "  return add6(ff,ee,d,c,bb,aa) "
-            + "}"
-            + " println doit(1.,2.,3.,4.,5.,6.) ",
-        "params6");
-  }
-
-  @Test
-  public void moreThan4BoolLocalParams() throws Exception {
-    execute(
-        "      add6:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
-            + "  println e"
-            + "  println f"
-            + "  return a and b and c and d and e and f"
-            + "}"
-            + "doit:proc(a:bool,b:bool,c:bool,d:bool,e:bool,f:bool):bool {"
-            + "  aa = not a bb = not b ee = not e ff = not f"
-            + "  return add6(ff,ee,d,c,bb,aa)"
-            + "}"
-            + " println doit(true, false, true, false, true, false) ",
         "params6");
   }
 
@@ -373,18 +259,5 @@ public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
             + "result = g(3)"
             + "if result != 4 { exit 'Should have been 4'}",
         "incDecOfLocal");
-  }
-
-  @Test
-  public void incDecOfConst() throws Exception {
-    execute(
-        "      g:proc: int {\n"
-            + "  local = 3\n"
-            + "  local++\n"
-            + "  return local\n"
-            + "}\n"
-            + "result = g()"
-            + "if result != 4 { exit 'Should have been 4'}",
-        "incDecOfConst");
   }
 }

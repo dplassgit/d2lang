@@ -21,8 +21,8 @@ public abstract class CompilationConfiguration {
         .setLexDebugLevel(0)
         .setParseDebugLevel(0)
         .setTypeDebugLevel(0)
-        .setOptDebugLevel(1)
-        .setCodeGenDebugLevel(1)
+        .setOptDebugLevel(0)
+        .setCodeGenDebugLevel(0)
         .setOptimize(false)
         // no error phase means all should succeed
         .setExpectedErrorPhase(PhaseName.PHASE_UNDEFINED);

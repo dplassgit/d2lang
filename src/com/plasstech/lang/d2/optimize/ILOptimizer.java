@@ -95,7 +95,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
       }
     } while (changed);
 
-    if (debugLevel > 0) {
+    if (debugLevel > 1) {
       System.err.printf("\nITERATIONS: %d\n", iterations);
     }
 
