@@ -24,7 +24,6 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.type.VarType;
 
 /**
  * Optimizes
@@ -68,19 +67,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       return;
     }
     deleteSource(op.target());
-    ConstantOperand<? extends Number> newConst = null;
-    if (op.target().type() == VarType.INT) {
-      ConstantOperand<Integer> oldConst = (ConstantOperand<Integer>) replacement;
-      newConst = ConstantOperand.of(oldConst.value() + 1);
-    }
-    if (op.target().type() == VarType.LONG) {
-      ConstantOperand<Long> oldConst = (ConstantOperand<Long>) replacement;
-      newConst = ConstantOperand.of(oldConst.value() + 1);
-    }
-    if (op.target().type() == VarType.BYTE) {
-      ConstantOperand<Byte> oldConst = (ConstantOperand<Byte>) replacement;
-      newConst = ConstantOperand.of((byte) (oldConst.value() + 1));
-    }
+    long newValue = ConstantOperand.valueFromConstOperand(replacement).longValue() + 1;
+    ConstantOperand<? extends Number> newConst =
+        ConstantOperand.fromValue(newValue, op.target().type());
     replacements.put(op.target(), newConst);
     assignmentLocations.put(op.target(), ip());
     // Replace with a constant of the new value
@@ -96,19 +85,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       return;
     }
     deleteSource(op.target());
-    ConstantOperand<? extends Number> newConst = null;
-    if (op.target().type() == VarType.INT) {
-      ConstantOperand<Integer> oldConst = (ConstantOperand<Integer>) replacement;
-      newConst = ConstantOperand.of(oldConst.value() - 1);
-    }
-    if (op.target().type() == VarType.LONG) {
-      ConstantOperand<Long> oldConst = (ConstantOperand<Long>) replacement;
-      newConst = ConstantOperand.of(oldConst.value() - 1);
-    }
-    if (op.target().type() == VarType.BYTE) {
-      ConstantOperand<Byte> oldConst = (ConstantOperand<Byte>) replacement;
-      newConst = ConstantOperand.of((byte) (oldConst.value() - 1));
-    }
+    long newValue = ConstantOperand.valueFromConstOperand(replacement).longValue() - 1;
+    ConstantOperand<? extends Number> newConst =
+        ConstantOperand.fromValue(newValue, op.target().type());
     replacements.put(op.target(), newConst);
     assignmentLocations.put(op.target(), ip());
     // Replace with a constant of the new value

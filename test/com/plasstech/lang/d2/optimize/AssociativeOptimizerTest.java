@@ -28,7 +28,7 @@ public class AssociativeOptimizerTest {
       LocationUtils.newTempLocation("stringtemp", VarType.STRING);
 
   @Test
-  public void constOpVar_doesNotSwap(
+  public void varOpConst_doesNotSwap(
       @TestParameter(
         {"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
       ) TokenType operator) {

@@ -126,12 +126,13 @@ public class ConstantOperand<T> implements Operand {
   }
 
   @Override
-  public boolean equals(Object that) {
-    if (that == null || !(that instanceof ConstantOperand)) {
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof ConstantOperand)) {
       return false;
     }
+    ConstantOperand<?> that = (ConstantOperand<?>) obj;
 
-    return this.hashCode() == that.hashCode();
+    return this.type().equals(that.type()) && Objects.equals(this.value(), that.value());
   }
 
   @Override

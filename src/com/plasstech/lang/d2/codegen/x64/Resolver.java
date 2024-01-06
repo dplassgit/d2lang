@@ -81,9 +81,7 @@ class Resolver implements RegistersInterface {
    */
   String resolve(Operand operand) {
     if (operand.isConstant()) {
-      if (operand.type() == VarType.BYTE
-          || operand.type() == VarType.INT
-          || operand.type() == VarType.LONG) {
+      if (operand.type().isIntegral()) {
         Number value = ConstantOperand.valueFromConstOperand(operand);
         return value.toString();
       } else if (operand.type() == VarType.BOOL) {

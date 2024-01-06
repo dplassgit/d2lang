@@ -5,8 +5,11 @@ import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
@@ -22,7 +25,9 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 
+@RunWith(TestParameterInjector.class)
 public class ConstantPropagationOptimizerTest {
   private static final Optimizer OPTIMIZER =
       new ILOptimizer(ImmutableList.of(new ConstantPropagationOptimizer(2), new NopOptimizer()))
@@ -132,44 +137,38 @@ public class ConstantPropagationOptimizerTest {
   }
 
   @Test
-  public void inc() {
+  public void inc(
+      @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
+
+    ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
+    Location global = LocationUtils.newMemoryAddress("global", varType);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(GLOBAL_INT1, ConstantOperand.ZERO, null),
-            new Inc(GLOBAL_INT1, null));
+            new Transfer(global, zero, null),
+            new Inc(global, null));
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
     assertThat(optimized).hasSize(2);
-    Transfer op = (Transfer) optimized.get(1);
-    assertThat(op.source()).isEqualTo(ConstantOperand.ONE);
+
+    ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
+    assertThat(optimized.get(1)).isTransferredFrom(one);
   }
 
   @Test
-  public void inc_long() {
-    Location longGlobal = LocationUtils.newMemoryAddress("g1", VarType.LONG);
+  public void dec(
+      @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
+    ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
+    Location global = LocationUtils.newMemoryAddress("global", varType);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(longGlobal, ConstantOperand.ZERO_LONG, null),
-            new Inc(longGlobal, null));
+            new Transfer(global, one, null),
+            new Dec(global, null));
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
     assertThat(optimized).hasSize(2);
-    Transfer op = (Transfer) optimized.get(1);
-    assertThat(op.source()).isEqualTo(ConstantOperand.ONE_LONG);
-  }
 
-  @Test
-  public void dec_byte() {
-    Location byteLocal = LocationUtils.newStackLocation("loc", VarType.BYTE, 0);
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(byteLocal, ConstantOperand.ONE_BYTE, null),
-            new Dec(byteLocal, null));
-
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
-    assertThat(optimized).hasSize(2);
-    Transfer op = (Transfer) optimized.get(1);
-    assertThat(op.source()).isEqualTo(ConstantOperand.ZERO_BYTE);
+    ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
+    assertThat(optimized.get(1)).isTransferredFrom(zero);
   }
 }

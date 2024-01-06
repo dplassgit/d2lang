@@ -113,26 +113,29 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
    * 
    * @return the new constant operand, or null if they can't be combined.
    */
-  private Operand combine(Operand left, Operand right, TokenType firstOperator,
+  private Operand combine(Operand firstOperand, Operand secondOperand, TokenType firstOperator,
       TokenType secondOperator) {
-    Number firstConst = ConstantOperand.valueFromConstOperand(left);
-    Number secondConst = ConstantOperand.valueFromConstOperand(right);
-    if (left.type() == VarType.INT) {
+    Number firstConst = ConstantOperand.valueFromConstOperand(firstOperand);
+    Number secondConst = ConstantOperand.valueFromConstOperand(secondOperand);
+
+    if (firstOperand.type().isIntegral()) {
+      long first = firstConst.longValue();
+      long second = secondConst.longValue();
       switch (firstOperator) {
         case BIT_AND:
-          return ConstantOperand.of(firstConst.intValue() & secondConst.intValue());
+          return ConstantOperand.fromValue(first & second, firstOperand.type());
 
         case BIT_OR:
-          return ConstantOperand.of(firstConst.intValue() | secondConst.intValue());
+          return ConstantOperand.fromValue(first | second, firstOperand.type());
 
         case BIT_XOR:
-          return ConstantOperand.of(firstConst.intValue() ^ secondConst.intValue());
+          return ConstantOperand.fromValue(first ^ second, firstOperand.type());
 
         case MINUS:
         case PLUS:
           if (firstOperator == secondOperator) {
             // NOTE + for MINUS, because we're subtracting twice (e.g., -1 + -1 = -2)
-            return ConstantOperand.of(firstConst.intValue() + secondConst.intValue());
+            return ConstantOperand.fromValue(first + second, firstOperand.type());
           } else {
             // minus then plus:
             // temp2=temp1+first, temp3=temp2-second
@@ -141,13 +144,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
             // temp2=temp1-first, temp3=temp2+second
             // temp3=temp1-first+second
             // =temp3=temp1-(first-second) (it uses MINUS)
-            return ConstantOperand.of(firstConst.intValue() - secondConst.intValue());
+            return ConstantOperand.fromValue(first - second, firstOperand.type());
           }
         case DIV:
         case MULT:
           if (firstOperator == secondOperator) {
             // NOTE * for DIV too, because we're dividing twice (e.g., /5/2 = /10)
-            return ConstantOperand.of(firstConst.intValue() * secondConst.intValue());
+            return ConstantOperand.fromValue(first * second, firstOperand.type());
           } else {
             // div, then mult
             // temp2=temp1/first, temp3=temp2*second
@@ -161,76 +164,14 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
               logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0");
               return null;
             }
-            return ConstantOperand.of(firstConst.intValue() / secondConst.intValue());
+            return ConstantOperand.fromValue(first / second, firstOperand.type());
           }
         default:
           break;
       }
-    } else if (left.type() == VarType.LONG) {
-      switch (firstOperator) {
-        case BIT_AND:
-          return ConstantOperand.of(firstConst.longValue() & secondConst.longValue());
+    }
 
-        case BIT_OR:
-          return ConstantOperand.of(firstConst.longValue() | secondConst.longValue());
-
-        case BIT_XOR:
-          return ConstantOperand.of(firstConst.longValue() ^ secondConst.longValue());
-
-        case PLUS:
-        case MINUS:
-          if (firstOperator == secondOperator) {
-            return ConstantOperand.of(firstConst.longValue() + secondConst.longValue());
-          } else {
-            return ConstantOperand.of(firstConst.longValue() - secondConst.longValue());
-          }
-        case DIV:
-        case MULT:
-          if (firstOperator == secondOperator) {
-            return ConstantOperand.of(firstConst.longValue() * secondConst.longValue());
-          } else {
-            if (firstConst.longValue() < secondConst.longValue() || secondConst.longValue() == 0) {
-              logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0L");
-              return null;
-            }
-            return ConstantOperand.of(firstConst.longValue() / secondConst.longValue());
-          }
-        default:
-          break;
-      }
-    } else if (left.type() == VarType.BYTE) {
-      switch (firstOperator) {
-        case BIT_AND:
-          return ConstantOperand.of((byte) (firstConst.byteValue() & secondConst.byteValue()));
-
-        case BIT_OR:
-          return ConstantOperand.of((byte) (firstConst.byteValue() | secondConst.byteValue()));
-
-        case BIT_XOR:
-          return ConstantOperand.of((byte) (firstConst.byteValue() ^ secondConst.byteValue()));
-
-        case PLUS:
-        case MINUS:
-          if (firstOperator == secondOperator) {
-            return ConstantOperand.of((byte) (firstConst.byteValue() + secondConst.byteValue()));
-          } else {
-            return ConstantOperand.of((byte) (firstConst.byteValue() - secondConst.byteValue()));
-          }
-        case DIV:
-        case MULT:
-          if (firstOperator == secondOperator) {
-            return ConstantOperand.of((byte) (firstConst.byteValue() * secondConst.byteValue()));
-          } else {
-            if (firstConst.byteValue() < secondConst.byteValue() || secondConst.byteValue() == 0) {
-              logger.at(loggingLevel).log("Refusing to optimize due to rounding or div by 0y0");
-              return null;
-            }
-            return ConstantOperand.of((byte) (firstConst.byteValue() / secondConst.byteValue()));
-          }
-        default:
-          break;
-      }
-    } else if (left.type() == VarType.DOUBLE) {
+    if (firstOperand.type() == VarType.DOUBLE) {
       switch (firstOperator) {
         case PLUS:
         case MINUS:
@@ -278,13 +219,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
 
     @Override
     public void visit(Dec op) {
-      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1L, op.target().type());
+      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, op.target().type());
       expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, one, op.position());
     }
 
     @Override
     public void visit(Inc op) {
-      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1L, op.target().type());
+      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, op.target().type());
       expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, one, op.position());
     }
   }
