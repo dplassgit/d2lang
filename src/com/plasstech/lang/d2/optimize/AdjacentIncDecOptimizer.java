@@ -42,7 +42,8 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
     if (nextConst == null) {
       return;
     }
-    nextConst = addConsts(nextConst, (ConstantOperand<? extends Number>) first.right());
+    nextConst =
+        addConsts(nextConst, ConstantOperand.valueFromConstOperand(first.right()).longValue());
     logger.at(loggingLevel).log("Found pair: %s and %s", first, second);
     replaceCurrent(
         new BinOp(first.destination(), first.destination(), TokenType.PLUS, nextConst,
@@ -57,7 +58,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
     if (nextConst == null) {
       return;
     }
-    nextConst = addConsts(nextConst, ConstantOperand.fromValue(1L, first.target().type()));
+    nextConst = addConsts(nextConst, 1L);
     logger.at(loggingLevel).log("Found pair: %s and %s", first, second);
     replaceCurrent(
         new BinOp(first.target(), first.target(), TokenType.PLUS, nextConst, first.position()));
@@ -71,22 +72,19 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
     if (nextConst == null) {
       return;
     }
-    nextConst = addConsts(nextConst, ConstantOperand.fromValue(-1L, first.target().type()));
+    nextConst = addConsts(nextConst, -1L);
     logger.at(loggingLevel).log("Found pair: %s and %s", first, second);
     replaceCurrent(
         new BinOp(first.target(), first.target(), TokenType.PLUS, nextConst, first.position()));
     deleteAt(ip() + 1);
   }
 
-  private ConstantOperand<? extends Number> addConsts(
-      ConstantOperand<? extends Number> leftConst,
-      ConstantOperand<? extends Number> rightConst) {
-    Number left = leftConst.value();
-    Number right = rightConst.value();
-    return ConstantOperand.fromValue(left.longValue() + right.longValue(), leftConst.type());
+  private static ConstantOperand<? extends Number> addConsts(
+      ConstantOperand<? extends Number> leftConst, long right) {
+    return ConstantOperand.fromValue(leftConst.value().longValue() + right, leftConst.type());
   }
 
-  private ConstantOperand<? extends Number> getCompatibleConst(Location target, Op op) {
+  private static ConstantOperand<? extends Number> getCompatibleConst(Location target, Op op) {
     if (op instanceof BinOp) {
       BinOp binOp = (BinOp) op;
       if (binOp.destination().equals(target) && isVarPlusEquals(binOp)) {
@@ -123,7 +121,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
   /**
    * @return true if binop is a=a - integral constant
    */
-  private boolean isVarMinusEquals(BinOp binOp) {
+  private static boolean isVarMinusEquals(BinOp binOp) {
     return isVarPlusMinus(binOp, TokenType.MINUS);
   }
 

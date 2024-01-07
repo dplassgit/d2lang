@@ -62,8 +62,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     int entrySize = op.arrayType().baseType().size();
     if (numEntriesLoc.isConstant()) {
       // if numEntriesLocName is a constant, pre-calculate storage requirements
-      ConstantOperand<Integer> numEntriesOp = (ConstantOperand<Integer>) numEntriesLoc;
-      int numEntries = numEntriesOp.value();
+      int numEntries = ConstantOperand.valueFromConstOperand(numEntriesLoc).intValue();
       if (numEntries < 0) {
         fail("Invalid index", op.position(), "ARRAY size must be non-negative; was %d", numEntries);
       }
@@ -120,8 +119,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     if (numEntriesLoc.isConstant()) {
       // Peephole optimization: if size is 0, don't need to set the size, because we already
       // use calloc.
-      ConstantOperand<Integer> numEntries = (ConstantOperand<Integer>) numEntriesLoc;
-      setSize = numEntries.value() > 0;
+      int numEntries = ConstantOperand.valueFromConstOperand(numEntriesLoc).intValue();
+      setSize = numEntries > 0;
     }
     if (setSize) {
       emitter.emit("mov DWORD [RAX + 1], %s  ; store size of first dimension", numEntriesLocName);
@@ -392,8 +391,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("; allocated %s for calculations", lengthReg);
     if (indexLoc.isConstant()) {
       // if index is constant, can skip some of this calculation.
-      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) indexLoc;
-      int index = indexConst.value();
+      int index = ConstantOperand.valueFromConstOperand(indexLoc).intValue();
       if (index < 0) {
         fail("Invalid index", position, "ARRAY index must be non-negative; was %d", index);
       }

@@ -265,8 +265,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     if (!right.isConstant()) {
       fail(op.position(), "Cannot get field name from right DOT operand: %s", right);
     }
-    ConstantOperand<String> rightConst = (ConstantOperand<String>) right;
-    String fieldName = rightConst.value();
+    String fieldName = ConstantOperand.stringValueFromConstOperand(right);
     Field field = recordSymbol.getField(fieldName);
     int offset = field.offset();
     // 3. add to get actual field location

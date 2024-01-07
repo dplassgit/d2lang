@@ -143,8 +143,7 @@ public class ConstantOperand<T> implements Operand {
   /** Returns true if the operand is an immediate (constant) that is more than 32 bits */
   public static boolean isImm64(Operand operand) {
     if (operand.type() == VarType.LONG && operand.isConstant()) {
-      ConstantOperand<Long> longOperand = (ConstantOperand<Long>) operand;
-      long value = longOperand.value();
+      long value = valueFromConstOperand(operand).longValue();
       return value > Integer.MAX_VALUE || value < Integer.MIN_VALUE;
     }
     return false;
@@ -165,8 +164,29 @@ public class ConstantOperand<T> implements Operand {
   }
 
   public static Number valueFromConstOperand(Operand operand) {
-    ConstantOperand<? extends Number> constant = (ConstantOperand<? extends Number>) operand;
-    return constant.value();
+    if (!(operand instanceof ConstantOperand)) {
+      throw new IllegalArgumentException(
+          "Cannot get String const from non-ConstantOperand: " + operand);
+    }
+    ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+    if (!(constant.value() instanceof Number)) {
+      throw new IllegalArgumentException(
+          "Cannot get String const from non-Number ConstantOperand: " + operand);
+    }
+    return (Number) constant.value();
+  }
+
+  public static String stringValueFromConstOperand(Operand operand) {
+    if (!(operand instanceof ConstantOperand)) {
+      throw new IllegalArgumentException(
+          "Cannot get String const from non-ConstOperand: " + operand);
+    }
+    ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+    if (!(constant.value() instanceof String)) {
+      throw new IllegalArgumentException(
+          "Cannot get String const from non-String ConstOperand: " + operand);
+    }
+    return constant.value().toString();
   }
 
   public static ConstantOperand<? extends Number> fromValue(long value, VarType type) {
@@ -179,9 +199,9 @@ public class ConstantOperand<T> implements Operand {
     if (type == VarType.BYTE) {
       return ConstantOperand.of((byte) value);
     }
-    if (type != VarType.DOUBLE) {
-      throw new IllegalStateException("Cannot take fromValue of type " + type);
+    if (type == VarType.DOUBLE) {
+      return ConstantOperand.of((double) value);
     }
-    return ConstantOperand.of((double) value);
+    throw new IllegalStateException("Cannot take fromValue of type " + type);
   }
 }

@@ -32,12 +32,12 @@ public class PrintOptimizer extends LineOptimizer {
     }
     // Both constant strings!
     SysCall nextPrint = (SysCall) next;
-    String combined = getConstValue(op.arg());
+    String combined = ConstantOperand.stringValueFromConstOperand(op.arg());
     if (op.call() == Call.PRINTLN) {
       // retain our println'ness.
       combined += "\n";
     }
-    combined += getConstValue(nextPrint.arg());
+    combined += ConstantOperand.stringValueFromConstOperand(nextPrint.arg());
     // Use the next one's call (PRINT or PRINTLN)
     SysCall newOp = new SysCall(nextPrint.call(), ConstantOperand.of(combined));
     replaceCurrent(newOp);
@@ -88,10 +88,5 @@ public class PrintOptimizer extends LineOptimizer {
     }
     Operand operand = sysCall.arg();
     return operand.isConstant() && operand.type() == VarType.STRING;
-  }
-
-  private static String getConstValue(Operand operand) {
-    ConstantOperand<String> constOp = (ConstantOperand<String>) operand;
-    return constOp.value();
   }
 }

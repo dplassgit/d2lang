@@ -327,8 +327,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     // Issue #94: Check index to be >= 0 and < length
     if (index.isConstant()) {
       // if index is constant, can skip some of this calculation.
-      ConstantOperand<Integer> indexConst = (ConstantOperand<Integer>) index;
-      int indexValue = indexConst.value();
+      int indexValue = ConstantOperand.valueFromConstOperand(index).intValue();
       if (indexValue < 0) {
         fail("Invalid index", position, "STRING index must be non-negative; was %d", indexValue);
       }
@@ -572,8 +571,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     String destinationName = resolver.resolve(destination);
     if (source.isConstant()) {
       // Constant string has constant length
-      ConstantOperand<String> stringConst = (ConstantOperand<String>) source;
-      String value = stringConst.value();
+      String value = ConstantOperand.stringValueFromConstOperand(source);
       emitter.emit("mov %s, %d  ; constant string", destinationName, value.length());
       return;
     }

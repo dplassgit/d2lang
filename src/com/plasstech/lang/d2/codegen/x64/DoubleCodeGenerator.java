@@ -89,8 +89,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
   private void generateDivByZero(BinOp op) {
     Operand rightOperand = op.right();
     if (rightOperand.isConstant()) {
-      ConstantOperand<Double> rightConstOperand = (ConstantOperand<Double>) rightOperand;
-      double rightValue = rightConstOperand.value();
+      double rightValue = ConstantOperand.valueFromConstOperand(rightOperand).doubleValue();
       if (rightValue == 0) {
         fail("Arithmetic", op.position(), "Division by 0");
       }

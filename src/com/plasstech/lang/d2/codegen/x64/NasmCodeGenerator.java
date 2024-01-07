@@ -718,8 +718,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           // This can't really happen, because asc(constant) is optimized out;
           // if we turn off optimizations, asc('hi') generates
           // _temp1='hi' _temp2=asc(_temp1) so it's not really asc(constant)...
-          ConstantOperand<String> stringConst = (ConstantOperand<String>) source;
-          String value = stringConst.value();
+          String value = ConstantOperand.stringValueFromConstOperand(source);
           emitter.emit("mov %s, %d ; store a full int (anded to 0xff)", destName,
               (value.charAt(0)) & 0xff);
         } else {

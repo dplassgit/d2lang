@@ -91,13 +91,13 @@ class Resolver implements RegistersInterface {
         return "0";
       } else if (operand.type() == VarType.STRING) {
         // look it up in the string table.
-        ConstantOperand<String> stringConst = (ConstantOperand<String>) operand;
-        ConstEntry<String> entry = stringTable.lookup(stringConst.value());
+        String value = ConstantOperand.stringValueFromConstOperand(operand);
+        ConstEntry<String> entry = stringTable.lookup(value);
         return entry.name();
       } else if (operand.type() == VarType.DOUBLE) {
         // look it up in the double table.
-        ConstantOperand<Double> doubleConst = (ConstantOperand<Double>) operand;
-        ConstEntry<Double> entry = doubleTable.lookup(doubleConst.value());
+        double doubleValue = ConstantOperand.valueFromConstOperand(operand).doubleValue();
+        ConstEntry<Double> entry = doubleTable.lookup(doubleValue);
         return String.format("[%s]", entry.name());
       } else if (operand.type().isNull()) {
         return "0";
@@ -310,8 +310,7 @@ class Resolver implements RegistersInterface {
           // if source is a constant and it's bigger than a 32-bit int, AND we're moving to
           // memory, we need to use an intermediary
           if (type == VarType.LONG && source.isConstant() && destReg == null) {
-            ConstantOperand<Long> longOp = (ConstantOperand<Long>) source.operand();
-            long value = longOp.value();
+            long value = ConstantOperand.valueFromConstOperand(source.operand()).longValue();
             if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
               emitter.emit("; constant is larger than 32 bits, must use intermediary");
               Register tempReg = allocate(VarType.INT);
@@ -369,8 +368,7 @@ class Resolver implements RegistersInterface {
     String sourceName = source.name();
 
     if (source.isConstant() && destReg != null) {
-      ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source.operand();
-      double sourceDub = doubleOp.value();
+      double sourceDub = ConstantOperand.valueFromConstOperand(source.operand()).doubleValue();
       if (sourceDub == 0.0) {
         // Constant zero to register
         emitter.emit("xorpd %s, %s", destReg, destReg);
