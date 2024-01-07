@@ -15,7 +15,7 @@ The following types are built-in:
 * `BYTE`: 8-bit integer
 * `INT`: 32-bit integer
 * `LONG`: 64-bit integer
-* `FLOAT`: 64-bit floating point
+* `DOUBLE`: 64-bit floating point
 * `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
 * `RECORD`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
@@ -30,7 +30,7 @@ before definition) are allowed.
 All arithmetic must be type-consistent. There is no implicit (or explicit)
 conversion between arithmetic types, though you can use
 [C Standard Library](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/crt-alphabetical-function-reference?view=msvc-170)
-functions to do so. E.g., to convert from `FLOAT (equivalent to a 64-bit C
+functions to do so. E.g., to convert from `DOUBLE (equivalent to a 64-bit C
 `double`) to `INT` (32 bits) you can use `lround`.
 
 Similarly, all expressions must be type-consistent.
@@ -165,7 +165,7 @@ f: proc {
 
 ### Numbers
 
-* `+`, `-`, `*`, `/`: for BYTE, INT, LONG, FLOAT
+* `+`, `-`, `*`, `/`: for BYTE, INT, LONG, DOUBLE
 * `%`: modulo for BYTE, INT, LONG
 * `|`: bitwise "or" for BYTE, INT, LONG
 * `&`: bitwise "and" for BYTE, INT, LONG
