@@ -15,7 +15,7 @@ The following types are built-in:
 * `BYTE`: 8-bit integer
 * `INT`: 32-bit integer
 * `LONG`: 64-bit integer
-* `FLOAT`: 64-bit floating point
+* `DOUBLE`: 64-bit floating point
 * `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
 * `RECORD`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
@@ -165,7 +165,7 @@ f: proc {
 
 ### Numbers
 
-* `+`, `-`, `*`, `/`: for BYTE, INT, LONG, FLOAT
+* `+`, `-`, `*`, `/`: for BYTE, INT, LONG, DOUBLE
 * `%`: modulo for BYTE, INT, LONG
 * `|`: bitwise "or" for BYTE, INT, LONG
 * `&`: bitwise "and" for BYTE, INT, LONG
