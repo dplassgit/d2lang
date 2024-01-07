@@ -11,47 +11,45 @@ CASE. D2 variables are **case sensitive**.
 
 The following types are built-in:
 
-* `BOOL`: boolean values (`TRUE`, `FALSE` are the two built-in values)
+* `BOOL`: boolean (`TRUE`, `FALSE` are the two built-in values)
 * `BYTE`: 8-bit integer
 * `INT`: 32-bit integer
 * `LONG`: 64-bit integer
 * `DOUBLE`: 64-bit floating point
-* `STRING`: immutable sequence of characters. There is no separate "character" type (as in Python)
+* `STRING`: immutable sequence of characters. There is no separate "character" type (similar to Python)
 * `RECORD`: user-defined structure (akin to C `struct`)
 * Arrays of any of the above types (except array)
-* `NULL`: an un-set value that can be used in place of a string, record or array.
+* `NULL`: an un-set value that can be used in place of a `STRING`, `RECORD` or array
 
-When defining or using an array, record or procedure, "forward references" (reference
+When defining or using an array, `RECORD` or `PROC`, "forward references" (reference
 before definition) are allowed.
 
 
 ## Arithmetic and expressions
 
-All arithmetic must be type-consistent. There is no implicit (or explicit)
+All arithmetic and expressions must be type-consistent. There is no implicit (or explicit)
 conversion between arithmetic types, though you can use
 [C Standard Library](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/crt-alphabetical-function-reference?view=msvc-170)
-functions to do so. E.g., to convert from `DOUBLE (equivalent to a 64-bit C
+functions to do so. E.g., to convert from `DOUBLE` (equivalent to a 64-bit C
 `double`) to `INT` (32 bits) you can use `lround`.
-
-Similarly, all expressions must be type-consistent.
 
 
 ### Constants
 
-Byte constants can represent -128 to +127, via a leading `0y` and hexadecimal.
+`BYTE` constants can represent -128 to +127, via a leading `0y` and hexadecimal.
 Example: `0y2f` for 47 decimal.
 
-Integer constants can represent -2^31-1 to 2^31. Example: `1234`
+`INT` constants can represent -2^31-1 to 2^31. Example: `1234`
 
-Long constants can represent -2^63-1 to 2^63. Example: `1234L`
+`LONG` constants can represent -2^63-1 to 2^63. Example: `1234L`
 
-Floating point constants **must** include a decimal point (dot). Example: `123.4`
+`DOUBLE` constants **must** include a decimal point (dot). Example: `123.4`
 
 
 ## Strings
 
-String constants can be created with single or double quotes. Empty string is permitted.
-Strings can be added, and are immutable.
+`STRING` constants can be created with single or double quotes. The empty `STRING` is permitted.
+`STRING`s are immutable, but can be appended (a new `STRING` will be returned.)
 
 
 ## Arrays
@@ -97,7 +95,7 @@ r: record {
 }
 ```
 
-To instantiate a `RECORD`:
+To instantiate a `RECORD` use the `NEW` keyword:
 
 ```
 ar = new r
@@ -106,8 +104,9 @@ ar.f2 = 3
 ar.f3 = new r
 ```
 
-Fields that are not set default to their default value (zero for
-all numeric types, `FALSE` for `BOOL`, and `NULL` for others.)
+All fields default to their default value (zero for
+all numeric types, `FALSE` for `BOOL`, and `NULL` for others) 
+when the `RECORD` is instantiated.
 
 `RECORD`s can be compared using `==` and `!=`. Two records
 are `==` if every field is `==`, but not recursively. At this
@@ -124,7 +123,7 @@ still declare variables before use if you want:
 ```
 a: int
 b: string
-c: r  // record type, either previously or subsequently defined
+c: r  // RECORD type, either previously or subsequently defined
 d: bool
 ```
 
@@ -138,7 +137,7 @@ assigned will be its type throughout its lifetime.
 ```
 a = 3
 // a = "hi"      // compile-time error beause 'a' is forever an INT
-// b = a == true // compile-time error because int and bool cannot be compared.
+// b = a == true // compile-time error because INT and BOOL cannot be compared.
 ```
 
 
@@ -167,13 +166,11 @@ f: proc {
 
 * `+`, `-`, `*`, `/`: for BYTE, INT, LONG, DOUBLE
 * `%`: modulo for BYTE, INT, LONG
-* `|`: bitwise "or" for BYTE, INT, LONG
-* `&`: bitwise "and" for BYTE, INT, LONG
-* `^`: bitwise "xor" for BYTE, INT, LONG
+* `|`, `&`, `^`: bitwise "or", "and" and "xor" for BYTE, INT, LONG
 * `>>`: shift right for BYTE, INT, LONG
 * `<<`: shift left for BYTE, INT, LONG
 
-And all typical comparisons: `== != < <= > >=`.
+And all typical comparisons: `==` `!=` `<` `<=` `>` `>=`.
 
 
 ### Boolean
@@ -183,14 +180,15 @@ And all typical comparisons: `== != < <= > >=`.
 * `NOT` boolean not
 * `XOR` boolean xor
 
-Booleans can be compared using `== != < <= > >=`. By definition, `TRUE > FALSE`.
+Booleans can be compared using `==` `!=` `<` `<=` `>` `>=`. By definition, `TRUE > FALSE`.
 
 
 ### Strings
 
-Strings are immutable. Strings can be concatenated via the `+` operator, which
-usually creates a new string in memory. Substrings (via `[index]`) may or may
-not create a new string.
+`STRING` constants can be created with single or double quotes. The empty `STRING` is permitted.
+`STRING`s are immutable, but can be concatenated via the `+` operator, which
+usually creates a new string in memory. A single-character substring (via `[index]`) may or may
+not create a new `STRING`.
 
 Examples:
 
@@ -201,12 +199,12 @@ s3 = s + s2
 s4 = s3[0]
 ```
 
-Strings can be compared using the usual operators `== != < <= > >=`.
-Two strings are `==` if all their characters are `==`. Inequality (comparisons)
+`STRING`s can be compared using the usual operators `==` `!=` `<` `<=` `>` `>=`.
+Two `STRING`s are `==` if all their characters are `==`. Inequality (comparisons)
 use the same semantics as C's `strcmp`.
 
-Use `ASC` to get the ASCII int value of the first letter of a string, and `CHR` to
-create a 1-character string from the ASCII int argument. (D2 does not support
+Use `ASC` to get the ASCII `INT` value of the first character of a `STRING`, and `CHR` to
+create a 1-character `STRING` from the ASCII `INT` argument. (D2 does not support
 Unicode yet.)
 
 ```
@@ -215,7 +213,7 @@ a = asc(s) // 65
 b = chr(a) // a one-character string 'A'
 ```
 
-To find the length of a string, use the built-in function `LENGTH`.
+To find the length of a `STRING`, use the built-in function `LENGTH`.
 
 ```
 println length("abc") // prints 3 with newline
@@ -274,7 +272,7 @@ i=0 while i < 10 do i++ {
 
 #### `EXIT`
 
-Use `EXIT` to terminate the program.
+Use `EXIT` to terminate the program with return code 0.
 
 `EXIT "Message"` prints the message to stdout and exits the program with return
 code -1.
@@ -283,14 +281,14 @@ code -1.
 ### `PRINT` and `PRINTLN`
 
 `PRINT` prints a variable to stdout. There is limited built-in support for printing
-arrays. There is no built-in support for printing records.
+arrays. There is no built-in support for printing `RECORD`s.
 
 `PRINTLN expression` appends a newline after printing the value.
 
 
 ### `INPUT`
 
-Reads a string from `stdin` until EOF, or 1 MB of data is read. (D2 is still a
+Reads a string from stdin until EOF, or 1 MB of data is read. (D2 is still a
 toy language in some ways.)
 
 ```
@@ -309,8 +307,8 @@ array of `STRING`s.)
 
 ### Procedure definitions
 
-This example defines a procedure that takes two parameters: a string and an
-array of strings, and returns an int:
+This example defines a `PROC` that takes two parameters: a `STRING` and an
+array of `STRING`s, and returns an `INT`:
 
 ```
 index: proc(arg1: string, arg2: string[]): int {
@@ -318,7 +316,7 @@ index: proc(arg1: string, arg2: string[]): int {
 }
 ```
 
-Void procedures and no-arg procedures are supported:
+`VOID` `PROC`s and no-arg `PROC`s are supported:
 
 ```
 think: proc { // parentheses are optional for no-arg proces
@@ -339,7 +337,7 @@ Just like in C, Java, Python, JavaScript, etc.
 x = index('hi', ['a', 'b', 'c'])
 ```
 
-It is legal to ignore the return value of a procedure:
+It is legal to ignore the return value of a `PROC`:
 
 ```
 index('hi', ['a', 'b', 'c'])
@@ -367,4 +365,3 @@ There are runtime checks in place for
 * division by zero and modulo zero
 
 When possible, the compiler will discover these at compile time.
-
