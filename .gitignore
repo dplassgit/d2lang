@@ -43,3 +43,5 @@ bazel-testlogs
 *.orig
 *.com
 *.lst
+*.bas
+
