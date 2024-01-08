@@ -5,7 +5,7 @@
 From the time I took a compiler class in college in 1989, I wanted to write a compiler.
 
 Here are some notes from the first iteration of D (the original name; it was a play on "C"
-and because my name starts with D):
+and because my name starts with D): 
 
 ```
 2/91 Mac Wrote in Think C: lex, RD [recursive-descent] parser with no attributes.
@@ -95,5 +95,34 @@ So in May 2021 I restarted D, as D2, but instead of VC++ or Python, I wrote it i
 of no tests, I wrote unit and integration tests as I went along. Some of the concepts for the lexer
 and parser I borrowed from David's videos.
 
-As of today (Oct 2023), I have a working, optimizing compiler, with excellent test coverage and
+As of today (Oct 2023), there is a working, optimizing compiler, with excellent test coverage and
 tons of examples. The language and compiler are complete enough that it can be self-hosted.
+
+
+### Sample in "modern" D2
+
+The above sample would be written like this in D2:
+
+```
+// comment
+c: int
+
+foo: proc: int {
+  i: int
+  i = 0
+
+  while i < 10 {
+    i++
+    if i < 7 {
+      i += 2
+    }
+  }
+  return i
+}
+
+main: proc(bar: int) {
+  c: int
+  c = bar + 3  // 3 forces bar: int
+  i = bar      // forces i: int
+}
+```
