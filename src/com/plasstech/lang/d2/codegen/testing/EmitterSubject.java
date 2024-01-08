@@ -45,7 +45,7 @@ public class EmitterSubject extends Subject {
   private List<String> allEmitterOutputTrimmed() {
     return Stream.of(actual.externs(), actual.data(), actual.all())
         .flatMap(Collection::stream)
-        .map(EmitterSubject::trim)
+        .map(s -> optionallyTrim(s))
         .filter(s -> !s.isEmpty())
         .collect(toImmutableList());
   }
