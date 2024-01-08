@@ -57,12 +57,15 @@ java_library(
     name = "var_types",
     srcs = [
         "ArrayType.java",
+        "DefaultVarType.java",
         "NullType.java",
         "PointerType.java",
         "RecordReferenceType.java",
         "SimpleType.java",
+        "StringType.java",
         "UnknownType.java",
         "VarType.java",
+        "VarTypeRegistry.java",
     ],
     visibility = ["//visibility:public"],
     deps = [

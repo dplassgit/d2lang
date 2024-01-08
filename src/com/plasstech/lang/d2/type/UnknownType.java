@@ -3,30 +3,29 @@ package com.plasstech.lang.d2.type;
 import java.util.Objects;
 
 /** Represents the one and only UNKNOWN type. */
-final class UnknownType implements VarType {
-  @Override
-  public String name() {
-    return "UNKNOWN";
+final class UnknownType extends DefaultVarType {
+  UnknownType() {
+    super("UNKNOWN");
   }
 
   @Override
-  public int size() {
+  final public int size() {
     throw new IllegalStateException("Should not try to get size of UNKNOWN");
   }
 
   @Override
-  public String toString() {
+  final public String toString() {
     return name();
   }
 
   @Override
-  public boolean equals(Object obj) {
+  final public boolean equals(Object obj) {
     // Yes this is intentionally strict.
     return this == obj;
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash("UNKNOWN", 2);
+  final public int hashCode() {
+    return Objects.hash(name(), 16);
   }
 }

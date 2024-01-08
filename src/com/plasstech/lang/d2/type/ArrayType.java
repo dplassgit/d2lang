@@ -16,22 +16,31 @@ public class ArrayType extends PointerType {
     this.dimensions = dimensions;
   }
 
-  public int dimensions() {
+  final public int dimensions() {
     return dimensions;
   }
 
   @Override
-  public boolean isArray() {
+  final public boolean isArray() {
     return true;
   }
 
-  public VarType baseType() {
+  final public VarType baseType() {
     return baseType;
   }
 
   @Override
-  public boolean compatibleWith(VarType thatType) {
+  final public boolean compatibleWith(VarType thatType) {
     return this.equals(thatType);
+  }
+
+  final public ArrayType setKnownLength(int length) {
+    this.knownLength = Optional.of(length);
+    return this;
+  }
+
+  final public Optional<Integer> knownLength() {
+    return knownLength;
   }
 
   @Override
@@ -50,14 +59,5 @@ public class ArrayType extends PointerType {
   @Override
   public String toString() {
     return String.format("%d-d %s", dimensions(), name());
-  }
-
-  public ArrayType setKnownLength(int length) {
-    this.knownLength = Optional.of(length);
-    return this;
-  }
-
-  public Optional<Integer> knownLength() {
-    return knownLength;
   }
 }

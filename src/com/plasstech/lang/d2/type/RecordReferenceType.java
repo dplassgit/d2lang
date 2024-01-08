@@ -9,8 +9,13 @@ public class RecordReferenceType extends PointerType {
   }
 
   @Override
-  public boolean isRecord() {
+  final public boolean isRecord() {
     return true;
+  }
+
+  @Override
+  final public boolean compatibleWith(VarType that) {
+    return that.equals(this) || that.isNull();
   }
 
   @Override
@@ -24,11 +29,6 @@ public class RecordReferenceType extends PointerType {
       return false;
     }
     return this.hashCode() == obj.hashCode();
-  }
-
-  @Override
-  public boolean compatibleWith(VarType that) {
-    return that.equals(this) || that.isNull();
   }
 
   @Override

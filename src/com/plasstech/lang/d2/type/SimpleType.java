@@ -3,8 +3,7 @@ package com.plasstech.lang.d2.type;
 import java.util.Objects;
 
 /** Simple (primitive) type: int, bool, string, void. */
-class SimpleType implements VarType {
-  private final String name;
+class SimpleType extends DefaultVarType {
   private final int size;
 
   SimpleType(String name) {
@@ -13,17 +12,12 @@ class SimpleType implements VarType {
 
   // size in bytes
   SimpleType(String name, int size) {
-    this.name = name;
+    super(name);
     this.size = size;
   }
 
   @Override
-  public String name() {
-    return name;
-  }
-
-  @Override
-  public int size() {
+  final public int size() {
     return size;
   }
 
