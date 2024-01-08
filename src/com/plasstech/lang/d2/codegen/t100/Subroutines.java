@@ -5,9 +5,36 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.TokenType;
 
 class Subroutines {
+
+  private static String trimComment(String s) {
+    int semi = s.indexOf(';');
+    if (semi > 0) {
+      s = s.substring(0, semi - 1);
+    }
+    return s.trim();
+  }
+
+  private static class Subroutine {
+    private final String name;
+    final ImmutableList<String> code;
+    final ImmutableSet<String> dependencies;
+
+    Subroutine(String name, ImmutableList<String> code) {
+      this.name = name;
+      this.code = code;
+      this.dependencies = code.stream()
+          // remove trailing comment
+          .map(Subroutines::trimComment)
+          .filter(line -> line.startsWith("call D_"))
+          .map(extern -> extern.substring(8))
+          .collect(ImmutableSet.toImmutableSet());
+    }
+  }
+
   static final String PRINT32 = "D_print32";
   static final String COPY32 = "D_copy32";
   static final String SUB32 = "D_sub32";
@@ -27,6 +54,7 @@ class Subroutines {
   static final String OR32 = "D_bitor32";
   static final String XOR32 = "D_bitxor32";
   static final String NOT32 = "D_bitnot32";
+  static final String DIV32 = "D_div32";
 
   private static final List<String> PRINT32_CODE =
       ImmutableList.<String>builder()
@@ -109,7 +137,7 @@ class Subroutines {
           .add("  push B")
           .add("  push D")
           .add("  push H")
-          .add("  mvi D, 0x04  ; compare 4 bytes")
+          .add("  mvi D, 0x04  ; copy 4 bytes")
           .add(COPY32 + "_loop:")
           .add("  ldax B  ; read from source")
           .add("  mov M, A  ; write to dest")
@@ -385,7 +413,7 @@ class Subroutines {
           .add(SHIFT_RIGHT32 + ":")
           .add("  push D")
           .add("  push H")
-          .add("  mvi D, 0x04")
+          .add("  mvi D, 0x04  ; shift 4 bytes")
           .add("  inx H")
           .add("  inx H")
           .add("  inx H ; move to highest byte")
@@ -461,9 +489,10 @@ class Subroutines {
   private static final ImmutableList<String> INC32_CODE =
       ImmutableList.<String>builder()
           .add("\n; Increment the 4 bytes at BC")
-          .add("; Destroys: A, D")
+          .add("; Destroys: A")
           .add(INC32 + ":")
           .add("  push B")
+          .add("  push D")
           .add("  stc")
           .add("  mvi D, 0x04  ; counter")
           .add(INC32 + "_loop:")
@@ -476,6 +505,7 @@ class Subroutines {
           .add("  dcr D")
           .add("  jnz " + INC32 + "_loop")
           .add(INC32 + "_end:")
+          .add("  pop D")
           .add("  pop B")
           .add("  ret")
           .build();
@@ -483,9 +513,10 @@ class Subroutines {
   private static final ImmutableList<String> DEC32_CODE =
       ImmutableList.<String>builder()
           .add("\n; Decrement the 4 bytes at BC")
-          .add("; Destroys A, D")
+          .add("; Destroys A")
           .add(DEC32 + ":")
           .add("  push B")
+          .add("  push D")
           .add("  stc")
           .add("  mvi D, 0x04  ; counter")
           .add(DEC32 + "_loop:")
@@ -498,6 +529,7 @@ class Subroutines {
           .add("  dcr D")
           .add("  jnz " + DEC32 + "_loop")
           .add(DEC32 + "_end:")
+          .add("  pop D")
           .add("  pop B")
           .add("  ret")
           .build();
@@ -547,6 +579,77 @@ class Subroutines {
           .add("  ret")
           .build();
 
+  private static final ImmutableList<String> DIV32_CODE =
+      // this routine uses regular d2 call semantics... hm...
+      ImmutableList.<String>builder()
+          .add("  DIV32_PARAM_num: db 0x00,0x00,0x00,0x00")
+          .add("  DIV32_PARAM_denom: db 0x00,0x00,0x00,0x00")
+          .add("  DIV32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
+          .add("  DIV32_LOCAL_remainder: db 0x00,0x00,0x00,0x00")
+          .add(DIV32 + ":")
+          .add("  push B")
+          .add("  push D")
+          .add("  push H")
+          .add("  ; answer = 0")
+          .add("  lxi H, 0x0000")
+          .add("  shld DIV32_RETURN_SLOT ; store low word (LSByte first)")
+          .add("  shld DIV32_RETURN_SLOT + 0x02  ; store high word")
+          .add("  ; remainder = 0")
+          .add("  shld DIV32_LOCAL_remainder")
+          .add("  shld DIV32_LOCAL_remainder + 0x02")
+          .add("  mvi D, 0x21  ; D=33 / bit counter\n")
+          .add("D_div32_loop:")
+          .add("  ; answer=answer << 1")
+          .add("  lxi H, DIV32_RETURN_SLOT")
+          .add("  stc")
+          .add("  cmc  ; clear carry")
+          .add("  call D_shift_left32")
+          .add("  ; SOURCE LINE 16: __temp16 = remainder: INT (13) > denom")
+          .add("  lxi B, DIV32_LOCAL_remainder")
+          .add("  lxi H, DIV32_PARAM_denom")
+          .add("  call D_comp32")
+          .add("  ; if carry and zero are set: remainder > denom is false, jumps to elif_15")
+          .add("  jz D_div32_remainder_too_big")
+          .add("  jc D_div32_remainder_too_big")
+          .add("  ; SOURCE LINE 18: answer: INT (4)++")
+          .add("  lxi B, DIV32_RETURN_SLOT")
+          .add("  call D_inc32")
+          .add("  ; remainder -= denom")
+          .add("  lxi B, DIV32_LOCAL_remainder")
+          .add("  lxi H, DIV32_PARAM_denom")
+          .add("  call D_sub32  ; bc=bc-hl\n")
+          .add("D_div32_remainder_too_big:")
+          .add("  ; SOURCE LINE 24: __temp20 = num & topbit: INT (9)")
+          .add("  lda DIV32_PARAM_num + 0x03 ; high byte")
+          .add("  ani 0x80")
+          .add("  push PSW ; store hibit")
+          .add("  ; num=num << 1")
+          .add("  lxi H, DIV32_PARAM_num")
+          .add("  stc")
+          .add("  cmc  ; clear carry")
+          .add("  call D_shift_left32")
+          .add("  ; remainder = remainder << 1")
+          .add("  lxi H, DIV32_LOCAL_remainder")
+          .add("  stc")
+          .add("  cmc  ; clear carry")
+          .add("  call D_shift_left32")
+          .add("  ; if hibit != 0")
+          .add("  pop PSW")
+          .add("  cpi 0x00")
+          .add("  jz D_div32_hi_bit_zero")
+          .add("  ; remainder++")
+          .add("  lxi B, DIV32_LOCAL_remainder")
+          .add("  call D_inc32\n")
+          .add("D_div32_hi_bit_zero:")
+          .add("  dcr D")
+          .add("  jnz D_div32_loop")
+          .add("  pop H")
+          .add("  pop D")
+          .add("  pop B")
+          .add("  ret")
+          .build();
+  private static final Subroutine DIV32_SUB = new Subroutine(DIV32, DIV32_CODE);
+
   /** Map between the name and the code. */
   public static final ImmutableMap<String, List<String>> routines =
       ImmutableMap.<String, List<String>>builder()
@@ -569,6 +672,7 @@ class Subroutines {
           .put(OR32, OR32_CODE)
           .put(XOR32, XOR32_CODE)
           .put(NOT32, NOT32_CODE)
+          .put(DIV32, DIV32_CODE)
           .build();
 
   private static final Map<TokenType, String> LOOKUP_BY_TYPE =

@@ -520,6 +520,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           generateIntMult(destination, left, right);
           break;
 
+        case DIV:
+          generateIntDiv(destination, left, right);
+          break;
+
         case SHIFT_LEFT:
         case SHIFT_RIGHT:
           generateIntShift(destination, left, op.operator(), right);
@@ -543,6 +547,28 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     resolver.deallocate(left);
     resolver.deallocate(right);
+  }
+
+  private void generateIntDiv(Location destination, Operand left, Operand right) {
+    // transform dest = left / right
+    // into:
+    // dest = left
+    // dest = dest / right
+    emitter.emit("; copy left to dest");
+    resolver.mov(left, Register.BC);
+    resolver.mov(destination, Register.M);
+    callSubroutine(Subroutines.COPY32);
+
+    // now we need to copy dest to numerator and right to denominator. This is different
+    // than usual t100 32-bit routines, but I might like it.
+    resolver.mov(destination, "DIV32_PARAM_num");
+    resolver.mov(right, "DIV32_PARAM_denom");
+    callSubroutine(Subroutines.DIV32);
+    addSubroutine(Subroutines.SHIFT_LEFT32);
+    addSubroutine(Subroutines.COMP32);
+    addSubroutine(Subroutines.INC32);
+    addSubroutine(Subroutines.SUB32);
+    resolver.mov("DIV32_RETURN_SLOT", destination);
   }
 
   private void generateIntBitOp(Location destination, Operand left, TokenType operator,
