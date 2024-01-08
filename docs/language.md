@@ -2,9 +2,9 @@
 
 ## Types & Keywords
 
-Built-in types: int, string, boolean, float, byte, arrays, records
+Built-in types: int, string, boolean, double, byte, arrays, records, long
 
-Eventually: long, n-dimensional arrays, map, lambda (but not closures)
+Eventually: n-dimensional arrays, map, lambda (but not closures)
 
 Current keywords (excluding built-in types)
 
@@ -16,14 +16,12 @@ asc chr length exit input record new null extern args
 Eventually:
 
 ```
-delete for of in get this private load save export
+delete for of in get this private load save export char
 ```
 
 ## Oddities
 
 No semicolons.
-
-I want `*=` (& siblings) **, but not implemented yet.**
 
 Blocks MUST start/end with `{}`. BUT expressions don't need parens, so an
 `if` statement looks like:
@@ -52,9 +50,11 @@ a=foo(3) // a will be of type int
 `//` to end of line is considered a comment.
 
 
-## `for` loops
+## Loops
 
 ### Possible syntaxes
+
+I considered the following possible `for` loop syntax:
 
 ```
 for i = 1 to 20 step 3
@@ -78,9 +78,9 @@ i=0 while i < 30 do i =i+1 {
 ```
 
 
-## Procedure definition explorations
+## Procedure definitions
 
-Original:
+Original (D1):
 
 ```
 proc foo(a:map,b,c) returns int {
@@ -99,7 +99,7 @@ foo:proc(a:map,b,c) returns int
 }
 ```
 
-Now:
+Final:
 
 ```
 foo:proc(a:map,b,c) : int {
@@ -117,10 +117,10 @@ No "character" type - only strings, like Python. I *really* like the Python synt
 
 ```
 "foo"[3]
-"foo"[1:3]
+"foo"[1:3] // not implemented
 "foo"+"bar"
-"foo%d" % 3
-"foo%s" % "bar"
+"foo%d" % 3  // not implemented
+"foo%s" % "bar"  // not implemented
 length("foo")
 ```
 
@@ -235,6 +235,11 @@ There's no separation between allocation and declaration of arrays.
 
 To distinguish bytes from ints, byte hexadecimal constants use a `0y` prefix:
 e.g., `0y2f`. Bytes are signed.
+
+
+## Longs
+
+To distinguish longs from ints, long constants use an `L` suffix: `1234567890L`.
 
 
 ## Order of execution and command-line args
