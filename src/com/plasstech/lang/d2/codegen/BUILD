@@ -67,6 +67,17 @@ java_library(
     ],
 )
 
+java_library(
+    name = "trimmers",
+    srcs = ["Trimmers.java"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+
+
 java_plugin(
     name = "auto_plugin",
     processor_class = "com.google.auto.value.processor.AutoValueProcessor",

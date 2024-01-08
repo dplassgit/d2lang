@@ -11,6 +11,7 @@ import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Ordered;
 import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.Trimmers;
 
 public class EmitterSubject extends Subject {
   public static EmitterSubject assertThat(Emitter actual) {
@@ -42,8 +43,8 @@ public class EmitterSubject extends Subject {
   public void containsExactly(String... lines) {
     List<String> expected = asList(lines);
     check("containsExactly")
-        .that(trim(actual.all()))
-        .containsExactlyElementsIn(trim(expected))
+        .that(trimAll(actual.all()))
+        .containsExactlyElementsIn(trimAll(expected))
         .inOrder();
   }
 
@@ -53,35 +54,34 @@ public class EmitterSubject extends Subject {
 
   public void doesNotContain(String line) {
     check("contains")
-        .that(trim(actual.all()))
+        .that(trimAll(actual.all()))
         .doesNotContain(optionallyTrim(line));
   }
 
   public Ordered containsAtLeast(String... lines) {
     List<String> expected = asList(lines);
     return check("contains")
-        .that(trim(actual.all()))
-        .containsAtLeastElementsIn(trim(expected));
+        .that(trimAll(actual.all()))
+        .containsAtLeastElementsIn(trimAll(expected));
   }
 
   public void isEmpty() {
-    check("contains").that(trim(actual.all())).isEmpty();
+    check("contains").that(trimAll(actual.all())).isEmpty();
   }
 
-  private ImmutableList<String> trim(List<String> all) {
-    return all.stream()
-        .map(s -> optionallyTrim(s))
-        .filter(s -> !s.isEmpty())
-        .collect(toImmutableList());
+  private ImmutableList<String> trimAll(List<String> all) {
+    if (trimIt) {
+      return Trimmers.trim(all);
+    } else {
+      return all.stream()
+          .filter(s -> !s.isEmpty())
+          .collect(toImmutableList());
+    }
   }
 
   private String optionallyTrim(String s) {
     if (trimIt) {
-      int semi = s.indexOf(';');
-      if (semi > 0) {
-        s = s.substring(0, semi - 1);
-      }
-      return s.trim();
+      return Trimmers.trim(s);
     } else {
       return s;
     }

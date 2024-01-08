@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.codegen.Trimmers;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 
@@ -44,6 +45,7 @@ public class NasmOptimizer implements Phase {
           // can't map to trimmed, because non-labels must start in column 2
           .filter(line -> line.trim().length() > 0)
           .filter(line -> !line.trim().startsWith(";"))
+          .map(line -> Trimmers.rightTrim(line))
           .collect(ImmutableList.toImmutableList());
     }
   }

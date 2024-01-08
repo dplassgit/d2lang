@@ -25,6 +25,16 @@ public class NasmOptimizerTest {
   }
 
   @Test
+  public void retainsStringConstants() {
+    String input =
+        "  ARRAY_INDEX_NEGATIVE_ERR: db \"Invalid index err non-negative; was %d\", 10, 0";
+    ImmutableList<String> code = ImmutableList.of(input);
+    State state = State.create().addAsmCode(code);
+    state = optimizer.execute(state);
+    assertThat(state.asmCode()).isEqualTo(code);
+  }
+
+  @Test
   public void removesEmptyLines() {
     ImmutableList<String> code = ImmutableList.of(" ", "");
     State state = State.create().addAsmCode(code);
@@ -101,7 +111,7 @@ public class NasmOptimizerTest {
     ImmutableList<String> code = ImmutableList.of("  add RBX, 10  ; get");
     State state = State.create().addAsmCode(code);
     state = optimizer.execute(state);
-    assertThat(state.asmCode()).containsExactly("  add RBX, 10  ");
+    assertThat(state.asmCode()).containsExactly("  add RBX, 10");
   }
 
   @Test

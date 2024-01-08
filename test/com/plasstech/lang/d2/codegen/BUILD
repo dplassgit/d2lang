@@ -22,6 +22,7 @@ gen_java_tests(
         "//test/com/plasstech/lang/d2/testing:test_utils",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
+        "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",
     ],
