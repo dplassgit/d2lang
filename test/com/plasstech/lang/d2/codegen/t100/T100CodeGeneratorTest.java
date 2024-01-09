@@ -15,6 +15,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -306,8 +307,18 @@ public class T100CodeGeneratorTest {
     assertThat(emitter).containsAtLeast("call D_bitand32", "ana M");
   }
 
+  @Test
+  public void divInts() {
+    Location glob = newMemoryAddress("glob", VarType.INT);
+    Location left = newMemoryAddress("left", VarType.INT);
+    Location right = newMemoryAddress("right", VarType.INT);
+    BinOp op = new BinOp(glob, left, TokenType.DIV, right, null);
+    generate(op);
+    assertThat(emitter).containsAtLeast("call D_div32", "call D_copy32", "call D_inc32");
+  }
+
   private State generate(Op op) {
-    return generate(ImmutableList.of(op));
+    return generate(ImmutableList.of(op, new Stop()));
   }
 
   private State generate(ImmutableList<Op> ops) {

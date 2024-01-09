@@ -1,9 +1,12 @@
-
-doit:proc(num:int, denum:int) {
-  println num/denum
+div:proc(num:int, denum:int):int {
+  return num/denum
 }
 
- left=12345600
-right=23450
-print left print "/" print right print "=" println left/right
-doit(left, right)
+c=1234560
+d=2340
+
+result = div(c, d)
+mod = c - result * d
+print "calculated = " println result
+print "mod= " println mod
+print "check = " println result * d + mod

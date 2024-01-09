@@ -36,6 +36,7 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.codegen.t100.Subroutine.Name;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.Phase;
@@ -218,20 +219,24 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     return input.addAsmCode(allCode);
   }
 
-  private void addSubroutine(String name) {
+  private void addSubroutine(Name nameEnum) {
+    String name = nameEnum.name();
     if (!subroutines.containsKey(name)) {
-      List<String> code = Subroutines.routines.get(name);
-      if (code != null) {
-        subroutines.put(name, code);
-      } else {
+      Subroutine sub = Subroutines.get(name);
+      if (sub == null) {
         fail(null, "No code for subroutine %s", name);
+      }
+      subroutines.put(name, sub.code());
+      // ALSO add its deps
+      for (Name dep : sub.dependencies()) {
+        addSubroutine(dep);
       }
     }
   }
 
-  private void callSubroutine(String subroutineName) {
-    addSubroutine(subroutineName);
-    emitter.emit("call %s", subroutineName);
+  private void callSubroutine(Name name) {
+    addSubroutine(name);
+    emitter.emit("call %s", name.name());
   }
 
   @Override
@@ -242,7 +247,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Stop op) {
     emitter.emitExit(0);
-    resolver.debug();
   }
 
   @Override
@@ -263,7 +267,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // See
     // http://bitchin100.com/wiki/index.php?title=Model_100_System_Map_Part_2_(0DAB-290F)
     // for system calls.
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     switch (op.call()) {
       case MESSAGE:
         emitter.addData(ERROR_MESSAGE.dataEntry());
@@ -298,7 +301,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL (destroys all)");
           } else {
             emitter.emit("lda %s", name);
-            callSubroutine(Subroutines.PRINT8);
+            callSubroutine(Name.D_print8);
           }
         } else if (arg.type() == VarType.BOOL) {
           if (arg.equals(ConstantOperand.TRUE)) {
@@ -343,7 +346,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail(op.position(), "Cannot print %s of type %s", arg, arg.type());
           return;
         }
-        state.condPop();
 
         if (op.call() == SysCall.Call.PRINTLN || op.call() == SysCall.Call.MESSAGE) {
           // print a CRLF, destroys A
@@ -363,39 +365,20 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void printInt(Operand arg) {
-    emitter.addData("PLACES_1b:   db 0x00,0xca,0x9a,0x3b");
-    emitter.addData("PLACES_100m: db 0x00,0xe1,0xf5,0x05");
-    emitter.addData("PLACES_10m:  db 0x80,0x96,0x98,0x00");
-    emitter.addData("PLACES_1m:   db 0x40,0x42,0x0f,0x00");
-    emitter.addData("PLACES_100k: db 0xa0,0x86,0x01,0x00");
-    emitter.addData("PLACES_10k:  db 0x10,0x27,0x00,0x00");
-    emitter.addData("PLACES_1k:   db 0xe8,0x03,0x00,0x00");
-    emitter.addData("PLACES_100:  db 0x64,0x00,0x00,0x00");
-    emitter.addData("PLACES_10:   db 0x0a,0x00,0x00,0x00");
-    emitter.addData("PLACES_1:    db 0x01,0x00,0x00,0x00");
-    emitter.addData("LAST_PLACE:  db 0xff  ; sentinel");
-    emitter.addData("TEMP:        db 0x00,0x00,0x00,0x00");
-
-    addSubroutine(Subroutines.COPY32);
-    addSubroutine(Subroutines.COMP32);
-    addSubroutine(Subroutines.SUB32);
     resolver.mov(arg, Register.BC);
     emitter.emit("; prints the int that BC points at");
     // emit the code that prints the int
-    callSubroutine(Subroutines.PRINT32);
+    callSubroutine(Name.D_print32);
   }
 
   @Override
   public void visit(Dec op) {
     if (op.target().type() == VarType.BYTE) {
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       resolver.mov(op.target(), Register.M);
       emitter.emit("dcr M");
-      state.condPop();
     } else if (op.target().type() == VarType.INT) {
       resolver.mov(op.target(), Register.BC);
-      callSubroutine(Subroutines.DEC32);
+      callSubroutine(Name.D_dec32);
     } else {
       emitter.emit("Cannot decrement %s", op.target().type());
     }
@@ -404,15 +387,12 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public void visit(Inc op) {
     if (op.target().type() == VarType.BYTE) {
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       // maybe do this with B&C?
       resolver.mov(op.target(), Register.M);
       emitter.emit("inr M");
-      state.condPop();
     } else if (op.target().type() == VarType.INT) {
       resolver.mov(op.target(), Register.BC);
-      callSubroutine(Subroutines.INC32);
+      callSubroutine(Name.D_inc32);
     } else {
       emitter.emit("Cannot increment %s", op.target().type());
     }
@@ -425,12 +405,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       fail(op.position(), "Do not want to build if constant");
     }
     // op.condition is always a boolean type
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     resolver.mov(op.condition(), Register.M);
     emitter.emit("xra A  ; instead of mvi A, 0");
     // compare
     emitter.emit("cmp M  ; compare %s (now in [HL]) against 0", op.condition());
-    state.condPop();
     if (op.isNot()) {
       emitter.emit("jz %s", op.destination());
     } else {
@@ -557,17 +535,13 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
 
     // now we need to copy dest to numerator and right to denominator. This is different
     // than usual t100 32-bit routines, but I might like it.
     resolver.mov(destination, "DIV32_PARAM_num");
     resolver.mov(right, "DIV32_PARAM_denom");
-    callSubroutine(Subroutines.DIV32);
-    addSubroutine(Subroutines.SHIFT_LEFT32);
-    addSubroutine(Subroutines.COMP32);
-    addSubroutine(Subroutines.INC32);
-    addSubroutine(Subroutines.SUB32);
+    callSubroutine(Name.D_div32);
     resolver.mov("DIV32_RETURN_SLOT", destination);
   }
 
@@ -580,7 +554,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest&right");
     // do dest=dest(left)&right: BC=BC&HL (dest=dest&hl)
     resolver.mov(destination, Register.BC);
@@ -589,22 +563,19 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   }
 
   private void generateIntSub(Location destination, Operand left, Operand right) {
-    RegisterState state;
     // transform dest = left - right into
     // dest = left
     // dest = dest - right
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
-    state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest-right");
     // do dest=dest(left)-right: BC=BC-HL (dest=dest-hl)
     resolver.mov(destination, Register.BC);
     resolver.mov(right, Register.M);
-    callSubroutine(Subroutines.SUB32);
-    state.condPop();
+    callSubroutine(Name.D_sub32);
   }
 
   private void generateIntAdd(Location destination, Operand left, Operand right) {
@@ -614,17 +585,15 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("; copy left to dest");
     // this fails when "left" is a constant
     resolver.mov(left, Register.BC);
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest+right");
     // do dest=dest(left)+right: BC=BC+HL
     resolver.mov(destination, Register.BC);
     // this fails when "right" is a constant
     resolver.mov(right, Register.M);
-    callSubroutine(Subroutines.ADD32);
-    state.condPop();
+    callSubroutine(Name.D_add32);
   }
 
   private void generateByteDiv(Location destination, Operand left, Operand right) {
@@ -635,7 +604,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(left, Register.C);
       resolver.mov(right, Register.D);
       // a=c/d
-      callSubroutine(Subroutines.DIV8);
+      callSubroutine(Name.D_div8);
     }
     resolver.mov(Register.A, destination);
   }
@@ -645,27 +614,18 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // into:
     // dest = left
     // dest = dest * right
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
 
     emitter.emit("; dest=dest*right");
     // do dest=dest(left)*right: BC=BC*HL
     resolver.mov(destination, Register.BC);
     resolver.mov(right, Register.M);
 
-    emitter.addData("MULT_TEMP:   db 0x00,0x00,0x00,0x00");
-    emitter.addData("LEFT_TEMP:   db 0x00,0x00,0x00,0x00");
-    emitter.addData("RIGHT_TEMP:  db 0x00,0x00,0x00,0x00");
-
-    addSubroutine(Subroutines.ADD32);
-    addSubroutine(Subroutines.SHIFT_RIGHT32);
-    addSubroutine(Subroutines.SHIFT_LEFT32);
-    callSubroutine(Subroutines.MULT32);
-    state.condPop();
+    callSubroutine(Name.D_mult32);
   }
 
   private void generateByteMult(Location destination, Operand left, Operand right) {
@@ -676,7 +636,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(right, Register.D);
     }
     // a=c*d
-    callSubroutine(Subroutines.MULT8);
+    callSubroutine(Name.D_mult8);
     resolver.mov(Register.A, destination);
   }
 
@@ -699,11 +659,8 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("%s %s", IMMEDIATE_BINARY_OPCODE.get(operation), rightVal);
     } else {
       // put into M first to retrieve from memory
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       resolver.mov(right, Register.M);
       emitter.emit("%s M", BINARY_OPCODE.get(operation));
-      state.condPop();
     }
     resolver.mov(Register.A, destination);
   }
@@ -719,9 +676,9 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // set the count in D
     resolver.mov(count, Register.D);
     if (operation == TokenType.SHIFT_LEFT) {
-      callSubroutine(Subroutines.SHIFT_LEFT8);
+      callSubroutine(Name.D_shift_left8);
     } else {
-      callSubroutine(Subroutines.SHIFT_RIGHT8);
+      callSubroutine(Name.D_shift_right8);
     }
     resolver.mov(Register.A, destination);
   }
@@ -741,12 +698,11 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // dest = left
     // dest = dest << right or dest >> right
 
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Subroutines.COPY32);
+    callSubroutine(Name.D_copy32);
 
     // repeat the shift "D times."
     ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
@@ -761,15 +717,14 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("stc");
     emitter.emit("cmc  ; clear carry");
     if (operator == TokenType.SHIFT_LEFT) {
-      callSubroutine(Subroutines.SHIFT_LEFT32);
+      callSubroutine(Name.D_shift_left32);
     } else {
-      callSubroutine(Subroutines.SHIFT_RIGHT32);
+      callSubroutine(Name.D_shift_right32);
     }
     if (count != 1) {
       emitter.emit("dcr D");
       emitter.emit("jnz %s", loopLabel);
     }
-    state.condPop();
 
     return;
   }
@@ -784,11 +739,8 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("cpi %s", resolver.resolve(right));
     } else {
       // put into M first to retrieve "right" from memory
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       resolver.mov(right, Register.M);
       emitter.emit("cmp M");
-      state.condPop();
     }
     String continueLabel = Labels.nextLabel("continue_compare");
     /*
@@ -816,10 +768,8 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // Compare BC and H
     resolver.mov(left, Register.BC);
-    RegisterState state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     resolver.mov(right, Register.M);
-    callSubroutine(Subroutines.COMP32);
-    state.condPop();
+    callSubroutine(Name.D_comp32);
     String continueLabel = Labels.nextLabel("continue_compare");
     /*
      * If A less than 8-bit data, the CY flag is set AND Zero flag is reset. < jc AND jz If A equals
@@ -874,8 +824,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             resolver.mov(neg, destination);
           } else {
             // set destination to 0, then do dest-operand
-            RegisterState state =
-                RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
             emitter.emit("lxi H, 0x0000");
             String destName = resolver.resolve(destination);
             emitter.emit("shld %s ; store low word (LSByte first)", destName);
@@ -883,8 +831,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             // sub = bc=bc-hl
             resolver.mov(op.operand(), Register.M);
             resolver.mov(op.destination(), Register.BC);
-            callSubroutine(Subroutines.SUB32);
-            state.condPop();
+            callSubroutine(Name.D_sub32);
           }
         } else {
           fail(op.position(), "Cannot generate %s yet", op);
@@ -910,7 +857,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // bc=dest
           resolver.mov(op.destination(), Register.BC);
           // bc=~hl
-          callSubroutine(Subroutines.NOT32);
+          callSubroutine(Name.D_bitnot32);
         }
         break;
 
@@ -971,7 +918,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(actual, formal);
       resolver.deallocate(actual);
     }
-    emitter.emit("; push active temps");
     List<PseudoReg> temps = resolver.temps();
     for (PseudoReg preg : temps) {
       if (preg.type().size() == 1) {
@@ -988,9 +934,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
         }
       }
     }
-    resolver.debug();
     emitter.emit("call _%s", op.procSym().name());
-    emitter.emit("; pop active temps");
     for (PseudoReg preg : temps) {
       if (preg.type().size() == 1) {
         emitter.emit("pop PSW");
