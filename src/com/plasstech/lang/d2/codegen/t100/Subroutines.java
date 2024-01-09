@@ -2,64 +2,53 @@ package com.plasstech.lang.d2.codegen.t100;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.plasstech.lang.d2.codegen.t100.Subroutine.Name;
 import com.plasstech.lang.d2.common.TokenType;
 
 class Subroutines {
-
-  private static String trimComment(String s) {
-    int semi = s.indexOf(';');
-    if (semi > 0) {
-      s = s.substring(0, semi - 1);
-    }
-    return s.trim();
-  }
-
-  private static class Subroutine {
-    private final String name;
-    final ImmutableList<String> code;
-    final ImmutableSet<String> dependencies;
-
-    Subroutine(String name, ImmutableList<String> code) {
-      this.name = name;
-      this.code = code;
-      this.dependencies = code.stream()
-          // remove trailing comment
-          .map(Subroutines::trimComment)
-          .filter(line -> line.startsWith("call D_"))
-          .map(extern -> extern.substring(8))
-          .collect(ImmutableSet.toImmutableSet());
-    }
-  }
-
-  static final String PRINT32 = "D_print32";
-  static final String COPY32 = "D_copy32";
-  static final String SUB32 = "D_sub32";
-  static final String COMP32 = "D_comp32";
-  static final String ADD32 = "D_add32";
-  static final String MULT8 = "D_mult8";
-  static final String MULT32 = "D_mult32";
-  static final String PRINT8 = "D_print8";
-  static final String SHIFT_LEFT8 = "D_shift_left8";
-  static final String SHIFT_RIGHT8 = "D_shift_right8";
-  static final String SHIFT_LEFT32 = "D_shift_left32";
-  static final String SHIFT_RIGHT32 = "D_shift_right32";
-  static final String INC32 = "D_inc32";
-  static final String DEC32 = "D_dec32";
-  static final String DIV8 = "D_div8";
-  static final String AND32 = "D_bitand32";
-  static final String OR32 = "D_bitor32";
-  static final String XOR32 = "D_bitxor32";
-  static final String NOT32 = "D_bitnot32";
-  static final String DIV32 = "D_div32";
+  private static final String DIV32 = Name.D_div32.name();
+  private static final String COPY32 = Name.D_copy32.name();
+  private static final String PRINT32 = Name.D_print32.name();
+  private static final String SUB32 = Name.D_sub32.name();
+  private static final String COMP32 = Name.D_comp32.name();
+  private static final String ADD32 = Name.D_add32.name();
+  private static final String MULT8 = Name.D_mult8.name();
+  private static final String MULT32 = Name.D_mult32.name();
+  private static final String PRINT8 = Name.D_print8.name();
+  private static final String SHIFT_LEFT8 = Name.D_shift_left8.name();
+  private static final String SHIFT_RIGHT8 = Name.D_shift_right8.name();
+  private static final String SHIFT_LEFT32 = Name.D_shift_left32.name();
+  private static final String SHIFT_RIGHT32 = Name.D_shift_right32.name();
+  private static final String INC32 = Name.D_inc32.name();
+  private static final String DEC32 = Name.D_dec32.name();
+  private static final String DIV8 = Name.D_div8.name();
+  private static final String AND32 = Name.D_bitand32.name();
+  private static final String OR32 = Name.D_bitor32.name();
+  private static final String XOR32 = Name.D_bitxor32.name();
+  private static final String NOT32 = Name.D_bitnot32.name();
 
   private static final List<String> PRINT32_CODE =
       ImmutableList.<String>builder()
           .add("\n; Prints the 4 bytes at BC")
           .add("; Destroys: A, B, C, D, E")
+          .add("PLACES_1b:   db 0x00,0xca,0x9a,0x3b")
+          .add("PLACES_100m: db 0x00,0xe1,0xf5,0x05")
+          .add("PLACES_10m:  db 0x80,0x96,0x98,0x00")
+          .add("PLACES_1m:   db 0x40,0x42,0x0f,0x00")
+          .add("PLACES_100k: db 0xa0,0x86,0x01,0x00")
+          .add("PLACES_10k:  db 0x10,0x27,0x00,0x00")
+          .add("PLACES_1k:   db 0xe8,0x03,0x00,0x00")
+          .add("PLACES_100:  db 0x64,0x00,0x00,0x00")
+          .add("PLACES_10:   db 0x0a,0x00,0x00,0x00")
+          .add("PLACES_1:    db 0x01,0x00,0x00,0x00")
+          .add("LAST_PLACE:  db 0xff  ; sentinel")
+          .add("TEMP:        db 0x00,0x00,0x00,0x00\n")
           .add(PRINT32 + ":")
           .add("  push H")
           .add("  push B")
@@ -264,6 +253,7 @@ class Subroutines {
       makeSimple32Bit(OR32, "ora");
   private static final List<String> XOR32_CODE =
       makeSimple32Bit(XOR32, "xra");
+
   private static final List<String> NOT32_CODE =
       ImmutableList.<String>builder()
           .add("\n; Nots 4 bytes BC=~HL")
@@ -443,6 +433,9 @@ class Subroutines {
           .add("; 1. LEFT_TEMP: For shifting BC left")
           .add("; 2. RIGHT_TEMP: For shifting HL right")
           .add("; 3. MULT_TEMP: For adding/intermediate result")
+          .add("MULT_TEMP:   db 0x00,0x00,0x00,0x00")
+          .add("LEFT_TEMP:   db 0x00,0x00,0x00,0x00")
+          .add("RIGHT_TEMP:  db 0x00,0x00,0x00,0x00")
           .add(MULT32 + ":")
           .add("  push B")
           .add("  push H")
@@ -452,7 +445,8 @@ class Subroutines {
           .add("  pop B		; BC = old HL")
           .add("  push B	; put HL back on the stack")
           .add("  lxi H, RIGHT_TEMP")
-          .add("  call " + COPY32 + "  ; copies from BC to HL (from old HL (right) to RIGHT_TEMP)")
+          .add("  call " + COPY32
+              + "  ; copies from BC to HL (from old HL (right) to RIGHT_TEMP)")
           .add("  mvi D, 0x20	; index/number of bits (32)")
           .add("  lxi H, 0x0000")
           .add("  shld MULT_TEMP  ; clear mult temp")
@@ -580,7 +574,7 @@ class Subroutines {
           .build();
 
   private static final ImmutableList<String> DIV32_CODE =
-      // this routine uses regular d2 call semantics... hm...
+      // Note: this routine uses regular d2 call semantics..., not BC/HL as input/output
       ImmutableList.<String>builder()
           .add("  DIV32_PARAM_num: db 0x00,0x00,0x00,0x00")
           .add("  DIV32_PARAM_denom: db 0x00,0x00,0x00,0x00")
@@ -598,27 +592,27 @@ class Subroutines {
           .add("  shld DIV32_LOCAL_remainder")
           .add("  shld DIV32_LOCAL_remainder + 0x02")
           .add("  mvi D, 0x21  ; D=33 / bit counter\n")
-          .add("D_div32_loop:")
+          .add(DIV32 + "_loop:")
           .add("  ; answer=answer << 1")
           .add("  lxi H, DIV32_RETURN_SLOT")
           .add("  stc")
           .add("  cmc  ; clear carry")
-          .add("  call D_shift_left32")
+          .add("  call " + Name.D_shift_left32)
           .add("  ; SOURCE LINE 16: __temp16 = remainder: INT (13) > denom")
           .add("  lxi B, DIV32_LOCAL_remainder")
           .add("  lxi H, DIV32_PARAM_denom")
-          .add("  call D_comp32")
+          .add("  call " + Name.D_comp32)
           .add("  ; if carry and zero are set: remainder > denom is false, jumps to elif_15")
-          .add("  jz D_div32_remainder_too_big")
-          .add("  jc D_div32_remainder_too_big")
+          .add("  jz " + DIV32 + "_remainder_too_big")
+          .add("  jc " + DIV32 + "_remainder_too_big")
           .add("  ; SOURCE LINE 18: answer: INT (4)++")
           .add("  lxi B, DIV32_RETURN_SLOT")
-          .add("  call D_inc32")
+          .add("  call " + Name.D_inc32)
           .add("  ; remainder -= denom")
           .add("  lxi B, DIV32_LOCAL_remainder")
           .add("  lxi H, DIV32_PARAM_denom")
           .add("  call D_sub32  ; bc=bc-hl\n")
-          .add("D_div32_remainder_too_big:")
+          .add(DIV32 + "_remainder_too_big:")
           .add("  ; SOURCE LINE 24: __temp20 = num & topbit: INT (9)")
           .add("  lda DIV32_PARAM_num + 0x03 ; high byte")
           .add("  ani 0x80")
@@ -627,20 +621,20 @@ class Subroutines {
           .add("  lxi H, DIV32_PARAM_num")
           .add("  stc")
           .add("  cmc  ; clear carry")
-          .add("  call D_shift_left32")
+          .add("  call " + Name.D_shift_left32)
           .add("  ; remainder = remainder << 1")
           .add("  lxi H, DIV32_LOCAL_remainder")
           .add("  stc")
           .add("  cmc  ; clear carry")
-          .add("  call D_shift_left32")
+          .add("  call " + Name.D_shift_left32)
           .add("  ; if hibit != 0")
           .add("  pop PSW")
           .add("  cpi 0x00")
-          .add("  jz D_div32_hi_bit_zero")
+          .add("  jz " + DIV32 + "_hi_bit_zero")
           .add("  ; remainder++")
           .add("  lxi B, DIV32_LOCAL_remainder")
-          .add("  call D_inc32\n")
-          .add("D_div32_hi_bit_zero:")
+          .add("  call " + Name.D_inc32)
+          .add(DIV32 + "_hi_bit_zero:")
           .add("  dcr D")
           .add("  jnz D_div32_loop")
           .add("  pop H")
@@ -648,40 +642,53 @@ class Subroutines {
           .add("  pop B")
           .add("  ret")
           .build();
-  private static final Subroutine DIV32_SUB = new Subroutine(DIV32, DIV32_CODE);
 
-  /** Map between the name and the code. */
-  public static final ImmutableMap<String, List<String>> routines =
-      ImmutableMap.<String, List<String>>builder()
-          .put(PRINT32, PRINT32_CODE)
-          .put(PRINT8, PRINT8_CODE)
-          .put(COPY32, COPY32_CODE)
-          .put(SUB32, SUB32_CODE)
-          .put(COMP32, COMP32_CODE)
-          .put(ADD32, ADD32_CODE)
-          .put(MULT8, MULT8_CODE)
-          .put(MULT32, MULT32_CODE)
-          .put(SHIFT_LEFT8, SHIFT_LEFT8_CODE)
-          .put(SHIFT_RIGHT8, SHIFT_RIGHT8_CODE)
-          .put(SHIFT_LEFT32, SHIFT_LEFT32_CODE)
-          .put(SHIFT_RIGHT32, SHIFT_RIGHT32_CODE)
-          .put(INC32, INC32_CODE)
-          .put(DEC32, DEC32_CODE)
-          .put(DIV8, DIV8_CODE)
-          .put(AND32, AND32_CODE)
-          .put(OR32, OR32_CODE)
-          .put(XOR32, XOR32_CODE)
-          .put(NOT32, NOT32_CODE)
-          .put(DIV32, DIV32_CODE)
+  /** Map between the name and the Subroutine. */
+  private static final ImmutableSet<Subroutine> SUBROUTINE_SET =
+      ImmutableSet.<Subroutine>builder()
+          .add(new Subroutine(Name.D_div32, DIV32_CODE))
+          .add(new Subroutine(Name.D_print32, PRINT32_CODE))
+          .add(new Subroutine(Name.D_copy32, COPY32_CODE))
+          .add(new Subroutine(Name.D_sub32, SUB32_CODE))
+          .add(new Subroutine(Name.D_comp32, COMP32_CODE))
+          .add(new Subroutine(Name.D_add32, ADD32_CODE))
+          .add(new Subroutine(Name.D_mult8, MULT8_CODE))
+          .add(new Subroutine(Name.D_mult32, MULT32_CODE))
+          .add(new Subroutine(Name.D_print8, PRINT8_CODE))
+          .add(new Subroutine(Name.D_shift_left8, SHIFT_LEFT8_CODE))
+          .add(new Subroutine(Name.D_shift_right8, SHIFT_RIGHT8_CODE))
+          .add(new Subroutine(Name.D_shift_left32, SHIFT_LEFT32_CODE))
+          .add(new Subroutine(Name.D_shift_right32, SHIFT_RIGHT32_CODE))
+          .add(new Subroutine(Name.D_inc32, INC32_CODE))
+          .add(new Subroutine(Name.D_dec32, DEC32_CODE))
+          .add(new Subroutine(Name.D_div8, DIV8_CODE))
+          .add(new Subroutine(Name.D_bitand32, AND32_CODE))
+          .add(new Subroutine(Name.D_bitor32, OR32_CODE))
+          .add(new Subroutine(Name.D_bitxor32, XOR32_CODE))
+          .add(new Subroutine(Name.D_bitnot32, NOT32_CODE))
           .build();
 
-  private static final Map<TokenType, String> LOOKUP_BY_TYPE =
-      ImmutableMap.of(
-          TokenType.BIT_AND, AND32,
-          TokenType.BIT_OR, OR32,
-          TokenType.BIT_XOR, XOR32);
+  /** Map between the name and the code. */
+  private static final ImmutableMap<Name, Subroutine> SUBROUTINES =
+      ImmutableMap.copyOf(SUBROUTINE_SET.stream()
+          .collect(Collectors.toMap(
+              Subroutine::name, Function.identity())));
 
-  public static String lookupSimple(TokenType operator) {
-    return LOOKUP_BY_TYPE.get(operator);
+  public static final Subroutine get(String name) {
+    return SUBROUTINES.get(Name.valueOf(name));
+  }
+
+  public static final Subroutine get(Name name) {
+    return SUBROUTINES.get(name);
+  }
+
+  private static final Map<TokenType, Name> SIMPLE_LOOKUP_BY_TYPE =
+      ImmutableMap.of(
+          TokenType.BIT_AND, Name.D_bitand32,
+          TokenType.BIT_OR, Name.D_bitor32,
+          TokenType.BIT_XOR, Name.D_bitxor32);
+
+  public static Name lookupSimple(TokenType operator) {
+    return SIMPLE_LOOKUP_BY_TYPE.get(operator);
   }
 }
