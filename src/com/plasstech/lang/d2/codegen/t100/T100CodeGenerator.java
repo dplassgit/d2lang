@@ -222,7 +222,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private void addSubroutine(Name nameEnum) {
     String name = nameEnum.name();
     if (!subroutines.containsKey(name)) {
-      Subroutine sub = Subroutines.get(name);
+      Subroutine sub = Subroutines.get(nameEnum);
       if (sub == null) {
         fail(null, "No code for subroutine %s", name);
       }
@@ -539,6 +539,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
     // now we need to copy dest to numerator and right to denominator. This is different
     // than usual t100 32-bit routines, but I might like it.
+    emitter.emit("; dest=dest/right");
     resolver.mov(destination, "DIV32_PARAM_num");
     resolver.mov(right, "DIV32_PARAM_denom");
     callSubroutine(Name.D_div32);
@@ -617,15 +618,13 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
-    // Copies 4 bytes from BC to HL (from left to destination)
     callSubroutine(Name.D_copy32);
 
     emitter.emit("; dest=dest*right");
-    // do dest=dest(left)*right: BC=BC*HL
-    resolver.mov(destination, Register.BC);
-    resolver.mov(right, Register.M);
-
+    resolver.mov(destination, "MULT32_PARAM_left");
+    resolver.mov(right, "MULT32_PARAM_right");
     callSubroutine(Name.D_mult32);
+    resolver.mov("MULT32_RETURN_SLOT", destination);
   }
 
   private void generateByteMult(Location destination, Operand left, Operand right) {
@@ -714,8 +713,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       loopLabel = Labels.nextLabel("shift_loop");
       emitter.emitLabel(loopLabel);
     }
-    emitter.emit("stc");
-    emitter.emit("cmc  ; clear carry");
+    emitter.emit("ana A  ; clear carry");
     if (operator == TokenType.SHIFT_LEFT) {
       callSubroutine(Name.D_shift_left32);
     } else {

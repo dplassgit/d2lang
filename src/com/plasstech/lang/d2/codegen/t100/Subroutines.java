@@ -12,6 +12,14 @@ import com.plasstech.lang.d2.codegen.t100.Subroutine.Name;
 import com.plasstech.lang.d2.common.TokenType;
 
 class Subroutines {
+  public static final Subroutine get(Name name) {
+    return SUBROUTINES.get(name);
+  }
+
+  public static Name lookupSimple(TokenType operator) {
+    return SIMPLE_LOOKUP_BY_TYPE.get(operator);
+  }
+
   private static final String DIV32 = Name.D_div32.name();
   private static final String COPY32 = Name.D_copy32.name();
   private static final String PRINT32 = Name.D_print32.name();
@@ -162,10 +170,8 @@ class Subroutines {
           .add("  ldax B ; a <-[BC]")
           .add("  cmp M ; compare A with [HL], i.e., [BC] and [HL]")
           .add("  jc " + COMP32 + "_end  ; carry set: means BC<HL, done")
-          .add(
-              "  jnz "
-                  + COMP32
-                  + "_end  ; not BC<HL, and not zero: means BC>HL, otherwise, continue")
+          .add("  jnz " + COMP32
+              + "_end  ; not BC<HL, and not zero: means BC>HL, otherwise, continue")
           .add("  dcx B ; next lower byte in LHS (goes right to left because little-endian)")
           .add("  dcx H ; next lower byte in RHS")
           .add("  dcr D ; decrement counter (# bytes to compare)")
@@ -207,9 +213,6 @@ class Subroutines {
           .add("; Destroys: A")
           .add(ADD32 + ":")
           .add("  ana A  ; clear carry")
-          .add("  push B")
-          .add("  push D")
-          .add("  push H")
           .add("  mvi D, 0x04  ; add 4 bytes")
           .add(ADD32 + "_loop:  ldax B ; loads acc from [BC]")
           .add("  adc M ; adds the contents at [HL] with from acc, with borrow")
@@ -218,9 +221,6 @@ class Subroutines {
           .add("  inx B ; next higher byte")
           .add("  dcr D ; index")
           .add("  jnz " + ADD32 + "_loop")
-          .add("  pop H")
-          .add("  pop D")
-          .add("  pop B")
           .add("  ret")
           .build();
 
@@ -229,20 +229,14 @@ class Subroutines {
         .add("\n; " + instr + " 4 bytes BC=BC " + instr + " HL")
         .add("; Destroys: A")
         .add(name + ":")
-        .add("  push B")
-        .add("  push D")
-        .add("  push H")
         .add("  mvi D, 0x04  ; counter (4 bytes)")
         .add(name + "_loop:  ldax B ; load acc from [BC]")
-        .add("  " + instr + " M  ; mutate BC[d]=BC[d] (op) HL[d]")
+        .add("  " + instr + " M  ; mutate BC[D]=BC[D] " + instr + " HL[D]")
         .add("  stax B; store acc into [BC]")
         .add("  inx H ; next higher byte")
         .add("  inx B ; next higher byte")
         .add("  dcr D ; counter")
         .add("  jnz " + name + "_loop")
-        .add("  pop H")
-        .add("  pop D")
-        .add("  pop B")
         .add("  ret")
         .build();
   }
@@ -259,9 +253,6 @@ class Subroutines {
           .add("\n; Nots 4 bytes BC=~HL")
           .add("; Destroys: A")
           .add(NOT32 + ":")
-          .add("  push B")
-          .add("  push D")
-          .add("  push H")
           .add("  mvi D, 0x04  ; 4 bytes")
           .add(NOT32 + "_loop:  mov A, M ; loads acc from [HL]")
           .add("  cma   ; 1-s complement")
@@ -270,9 +261,6 @@ class Subroutines {
           .add("  inx B ; next higher byte")
           .add("  dcr D ; index")
           .add("  jnz " + NOT32 + "_loop")
-          .add("  pop H")
-          .add("  pop D")
-          .add("  pop B")
           .add("  ret")
           .build();
 
@@ -280,33 +268,30 @@ class Subroutines {
       ImmutableList.<String>builder()
           .add("\n; A=C*D")
           .add("; C has first number (shifting left), destroyed")
-          .add("; D has second number (shifting right), destroyed")
-          .add("; Destroys: A")
+          .add("; D has second number (shifting right)")
+          .add("; E has result")
+          .add("; Destroys: A, C, E")
+          .add("; Returns: A")
           .add(MULT8 + ":")
-          .add("  push D")
-          .add("  push B")
           .add("  mvi B, 0x08  ; index/counter/number of bits")
           .add("  mvi E, 0x00  ; result")
-          .add(MULT8 + "_loop: mov A, D  ; shifting D right")
-          .add("  ana A  ; clear carry")
+          .add(MULT8 + "_loop: ana A  ; clear carry")
+          .add("  mov A, D  ; shift D right")
           .add("  rar   ; shift right")
-          .add("  mov D, A ; store it")
+          .add("  mov D, A ; store it back in D")
           .add("  jnc " + MULT8 + "_skipadd")
           .add("  ; bit was 1, so we add")
           .add("  cmc  ; clear carry (we know it was set)")
           .add("  mov A, C  ; get first number")
-          .add("  add E   ; running total in e")
+          .add("  add E   ; running total in E")
           .add("  mov E, A")
           .add(MULT8 + "_skipadd:  ; we didn't have to add. ")
-          .add("  ; shift c left")
           .add("  mov A, C")
-          .add("  ral")
+          .add("  ral  ; shift c left")
           .add("  mov C, A")
-          .add("  dcr B ; dcr sets z")
+          .add("  dcr B")
           .add("  jnz " + MULT8 + "_loop")
           .add("  mov A, E")
-          .add("  pop B")
-          .add("  pop D")
           .add("  ret")
           .build();
 
@@ -315,14 +300,11 @@ class Subroutines {
           .add("\n; Print the byte in A")
           .add("; Destroys: A")
           .add(PRINT8 + ":")
-          .add("  push H")
           .add("  mvi H, 0x00")
           .add("  mov L, A")
           .add("  cpi 0x00  ; check for negative")
-          // if negative, fix A
           .add("  jp " + PRINT8 + "_positive")
-          .add("  ; negates A")
-          // negate it and recopy to L
+          .add("  ; negate A")
           .add("  cma")
           .add("  inr A")
           .add("  mov L, A")
@@ -330,7 +312,6 @@ class Subroutines {
           .add("  call 0x0020  ; print a minus sign before the negative byte")
           .add(PRINT8 + "_positive:")
           .add("  call 0x39D4  ; print the ASCII value of the number in HL (destroys all)")
-          .add("  pop H")
           .add("  ret")
           .build();
 
@@ -348,15 +329,13 @@ class Subroutines {
 
   private static final ImmutableList<String> SHIFT_LEFT32_CODE =
       ImmutableList.<String>builder()
-          .add("\n; Shifts HL left once.")
-          .add("; Destroys: A")
+          .add("\n; Shifts [HL] left once.")
+          .add("; Destroys: ADM")
           .add("; Sets: Carry if carried out")
           .add("; ALWAYS SHIFTS *IN* CARRY. It is the responsibility of the caller")
           .add("; to clear or set the carry as needed.")
           .add(SHIFT_LEFT32 + ":")
-          .add("  push H")
-          .add("  push D")
-          .add("  mvi D, 0x04 ; # of bytes to shift")
+          .add("  mvi D, 0x04 ; counter")
           .add(SHIFT_LEFT32 + "_loop:")
           .add("  mov A, M")
           .add("  ral ; shifts in carry, shifts out carry")
@@ -364,8 +343,6 @@ class Subroutines {
           .add("  inx H")
           .add("  dcr D")
           .add("  jnz " + SHIFT_LEFT32 + "_loop")
-          .add("  pop D")
-          .add("  pop H")
           .add("  ret")
           .build();
 
@@ -377,7 +354,6 @@ class Subroutines {
           .add(SHIFT_RIGHT8 + ":")
           .add("  cpi 0x00")
           .add("  jm " + SHIFT_RIGHT8 + "_negative")
-          // shift right "d" times
           .add(SHIFT_RIGHT8 + "_positive:")
           // positive: always clear carry
           .add("  ana A  ; clear carry")
@@ -396,13 +372,11 @@ class Subroutines {
 
   private static final ImmutableList<String> SHIFT_RIGHT32_CODE =
       ImmutableList.<String>builder()
-          .add("\n; Shifts the 32 bits pointed at HL one bit right. If HL points to a negative")
-          .add("; number, it shifts in a 1")
+          .add("\n; Shifts the 32 bits at [HL] one bit right. If [HL] is negative, ")
+          .add("; shifts in a 1")
           .add("; Destroys: A")
           .add("; Sets: carry if carried out, clears carry if no carry out")
           .add(SHIFT_RIGHT32 + ":")
-          .add("  push D")
-          .add("  push H")
           .add("  mvi D, 0x04  ; shift 4 bytes")
           .add("  inx H")
           .add("  inx H")
@@ -420,73 +394,47 @@ class Subroutines {
           .add("  dcr D")
           .add("  ; dcr doesn't affect carry so the carry out is retained from rar")
           .add("  jnz " + SHIFT_RIGHT32 + "_loop")
-          .add("  pop H")
-          .add("  pop D")
           .add("  ret")
           .build();
 
   private static final ImmutableList<String> MULT32_CODE =
+      // Note: this routine uses regular d2 call semantics..., not BC/HL as input/output
       ImmutableList.<String>builder()
-          .add("; BC=BC*HL")
-          .add("; Destroys: A")
-          .add("; Temps:")
-          .add("; 1. LEFT_TEMP: For shifting BC left")
-          .add("; 2. RIGHT_TEMP: For shifting HL right")
-          .add("; 3. MULT_TEMP: For adding/intermediate result")
-          .add("MULT_TEMP:   db 0x00,0x00,0x00,0x00")
-          .add("LEFT_TEMP:   db 0x00,0x00,0x00,0x00")
-          .add("RIGHT_TEMP:  db 0x00,0x00,0x00,0x00")
+          .add("; 32-bit multiply: MULT32_RETURN_SLOT = MULT32_PARAM_left * MULT32_PARAM_right")
+          .add("MULT32_PARAM_left: db 0x00,0x00,0x00,0x00")
+          .add("MULT32_PARAM_right: db 0x00,0x00,0x00,0x00")
+          .add("MULT32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
+          .add("; Destroys: all")
           .add(MULT32 + ":")
-          .add("  push B")
-          .add("  push H")
-          .add("  lxi H, LEFT_TEMP")
-          .add("  call " + COPY32 + "  ; copies from BC to HL (from old BC (left) to LEFT_TEMP)")
-          // surely this can be done with fewer pushes & pops
-          .add("  pop B		; BC = old HL")
-          .add("  push B	; put HL back on the stack")
-          .add("  lxi H, RIGHT_TEMP")
-          .add("  call " + COPY32
-              + "  ; copies from BC to HL (from old HL (right) to RIGHT_TEMP)")
-          .add("  mvi D, 0x20	; index/number of bits (32)")
           .add("  lxi H, 0x0000")
-          .add("  shld MULT_TEMP  ; clear mult temp")
-          .add("  shld MULT_TEMP + 0x02")
+          .add("  shld MULT32_RETURN_SLOT  ; clear 4 bytes of return value")
+          .add("  shld MULT32_RETURN_SLOT + 0x02")
+          .add("  mvi E, 0x20   ; counter ")
           .add(MULT32 + "_loop:")
-          .add("	lxi H, RIGHT_TEMP")
-          .add("  call " + SHIFT_RIGHT32 + " ; shift 'right' 1 bit right. Always shifts in 0")
-          .add("  jnc " + MULT32 + "_skipadd")
-          .add("  ; bit was 1, so we add: temp=temp+left")
-          .add("  lxi B, MULT_TEMP")
-          .add("  lxi H, LEFT_TEMP")
-          .add("  call " + ADD32 + "  ; bc=bc+hl / temp=temp+left")
-          .add(MULT32 + "_skipadd:")
-          .add("  ana A  ; clear carry so we shift in a 0")
-          .add("  ; shift left")
-          .add("  lxi H, LEFT_TEMP")
-          .add("  call " + SHIFT_LEFT32)
-          .add("  dcr D	 ; dcr sets z")
+          .add("  lda MULT32_PARAM_right")
+          .add("  ani 0x01")
+          .add("  cpi 0x01 ; if right & 0x01 == 0x01:")
+          .add("  jnz " + MULT32 + "_skip_add")
+          .add("  lxi B, MULT32_RETURN_SLOT ")
+          .add("  lxi H, MULT32_PARAM_left")
+          .add("  call D_add32  ; return slot += left")
+          .add(MULT32 + "_skip_add:")
+          .add("  lxi H, MULT32_PARAM_left")
+          .add("  ana A  ; clear carry")
+          .add("  call " + Name.D_shift_left32 + "  ; left <<= 1")
+          .add("  ana A  ; clear carry")
+          .add("  lxi H, MULT32_PARAM_right")
+          .add("  call " + Name.D_shift_right32 + "  ; right <<= 1")
+          .add("  dcr E")
           .add("  jnz " + MULT32 + "_loop")
-          // set BC=TEMP, HL to original BC
-          // surely this can be done with fewer pushes & pops
-          .add("  pop B  ; BC = old HL")
-          .add("  pop H  ; HL = old BC")
-          .add("  push H  ; push old BC")
-          .add("  push B  ; push old HL")
-          .add("  lxi B, MULT_TEMP  ; source")
-          // copy from TEMP to (old) BC
-          .add("  call " + COPY32 + "  ; copy from TEMP to original BC. ")
-          .add("  pop B")
-          .add("  pop H")
           .add("  ret")
           .build();
 
   private static final ImmutableList<String> INC32_CODE =
       ImmutableList.<String>builder()
-          .add("\n; Increment the 4 bytes at BC")
+          .add("\n; Increment the 4 bytes at [BC]")
           .add("; Destroys: A")
           .add(INC32 + ":")
-          .add("  push B")
-          .add("  push D")
           .add("  stc")
           .add("  mvi D, 0x04  ; counter")
           .add(INC32 + "_loop:")
@@ -494,23 +442,19 @@ class Subroutines {
           .add("  aci 0x00 ; adds with carry, sets carry ")
           .add("  stax B")
           // if there's no carry anymore we can stop now
-          .add("  jnc " + INC32 + "_end")
+          .add("  rnc") // was: ; jnc " + INC32 + "_end")
           .add("  inx B")
           .add("  dcr D")
           .add("  jnz " + INC32 + "_loop")
           .add(INC32 + "_end:")
-          .add("  pop D")
-          .add("  pop B")
           .add("  ret")
           .build();
 
   private static final ImmutableList<String> DEC32_CODE =
       ImmutableList.<String>builder()
-          .add("\n; Decrement the 4 bytes at BC")
+          .add("\n; Decrement the 4 bytes at [BC]")
           .add("; Destroys A")
           .add(DEC32 + ":")
-          .add("  push B")
-          .add("  push D")
           .add("  stc")
           .add("  mvi D, 0x04  ; counter")
           .add(DEC32 + "_loop:")
@@ -518,13 +462,11 @@ class Subroutines {
           .add("  sbi 0x00 ; subtract with carry, sets carry")
           .add("  stax B")
           // if there's still a carry we can stop now
-          .add("  jnc " + DEC32 + "_end")
+          .add("  rnc") // IS THIS RIGHT? should it be rc? was: ; jnc " + DEC32 + "_end")
           .add("  inx B")
           .add("  dcr D")
           .add("  jnz " + DEC32 + "_loop")
           .add(DEC32 + "_end:")
-          .add("  pop D")
-          .add("  pop B")
           .add("  ret")
           .build();
 
@@ -537,7 +479,6 @@ class Subroutines {
           .add("; H stores shifted version of C (not destroyed)")
           .add("; Destroys: A, B, C, E")
           .add(DIV8 + ":")
-          .add("  push H")
           .add("  mvi B, 0x09	 ; number of bits, plus 1 for setup")
           .add("  mvi E, 0x00	 ; result")
           .add("  mov H, E     ; shifted version of C")
@@ -569,21 +510,18 @@ class Subroutines {
           .add("  dcr B")
           .add("  jnz " + DIV8 + "_loop")
           .add("  mov A, E")
-          .add("  pop H")
           .add("  ret")
           .build();
 
   private static final ImmutableList<String> DIV32_CODE =
       // Note: this routine uses regular d2 call semantics..., not BC/HL as input/output
       ImmutableList.<String>builder()
-          .add("  DIV32_PARAM_num: db 0x00,0x00,0x00,0x00")
-          .add("  DIV32_PARAM_denom: db 0x00,0x00,0x00,0x00")
-          .add("  DIV32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
-          .add("  DIV32_LOCAL_remainder: db 0x00,0x00,0x00,0x00")
+          .add("; 32-bit divide: DIV32_RETURN_SLOT = DIV32_PARAM_num / DIV32_PARAM_denom")
+          .add("DIV32_PARAM_num: db 0x00,0x00,0x00,0x00")
+          .add("DIV32_PARAM_denom: db 0x00,0x00,0x00,0x00")
+          .add("DIV32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
+          .add("DIV32_LOCAL_remainder: db 0x00,0x00,0x00,0x00")
           .add(DIV32 + ":")
-          .add("  push B")
-          .add("  push D")
-          .add("  push H")
           .add("  ; answer = 0")
           .add("  lxi H, 0x0000")
           .add("  shld DIV32_RETURN_SLOT ; store low word (LSByte first)")
@@ -591,12 +529,11 @@ class Subroutines {
           .add("  ; remainder = 0")
           .add("  shld DIV32_LOCAL_remainder")
           .add("  shld DIV32_LOCAL_remainder + 0x02")
-          .add("  mvi D, 0x21  ; D=33 / bit counter\n")
+          .add("  mvi E, 0x21  ; D=33 / bit counter\n")
           .add(DIV32 + "_loop:")
           .add("  ; answer=answer << 1")
+          .add("  ana A  ; clear carry")
           .add("  lxi H, DIV32_RETURN_SLOT")
-          .add("  stc")
-          .add("  cmc  ; clear carry")
           .add("  call " + Name.D_shift_left32)
           .add("  ; SOURCE LINE 16: __temp16 = remainder: INT (13) > denom")
           .add("  lxi B, DIV32_LOCAL_remainder")
@@ -618,14 +555,12 @@ class Subroutines {
           .add("  ani 0x80")
           .add("  push PSW ; store hibit")
           .add("  ; num=num << 1")
+          .add("  ana A  ; clear carry")
           .add("  lxi H, DIV32_PARAM_num")
-          .add("  stc")
-          .add("  cmc  ; clear carry")
           .add("  call " + Name.D_shift_left32)
           .add("  ; remainder = remainder << 1")
           .add("  lxi H, DIV32_LOCAL_remainder")
-          .add("  stc")
-          .add("  cmc  ; clear carry")
+          .add("  ana A  ; clear carry")
           .add("  call " + Name.D_shift_left32)
           .add("  ; if hibit != 0")
           .add("  pop PSW")
@@ -635,11 +570,8 @@ class Subroutines {
           .add("  lxi B, DIV32_LOCAL_remainder")
           .add("  call " + Name.D_inc32)
           .add(DIV32 + "_hi_bit_zero:")
-          .add("  dcr D")
-          .add("  jnz D_div32_loop")
-          .add("  pop H")
-          .add("  pop D")
-          .add("  pop B")
+          .add("  dcr E")
+          .add("  jnz " + DIV32 + "_loop:")
           .add("  ret")
           .build();
 
@@ -674,21 +606,9 @@ class Subroutines {
           .collect(Collectors.toMap(
               Subroutine::name, Function.identity())));
 
-  public static final Subroutine get(String name) {
-    return SUBROUTINES.get(Name.valueOf(name));
-  }
-
-  public static final Subroutine get(Name name) {
-    return SUBROUTINES.get(name);
-  }
-
   private static final Map<TokenType, Name> SIMPLE_LOOKUP_BY_TYPE =
       ImmutableMap.of(
           TokenType.BIT_AND, Name.D_bitand32,
           TokenType.BIT_OR, Name.D_bitor32,
           TokenType.BIT_XOR, Name.D_bitxor32);
-
-  public static Name lookupSimple(TokenType operator) {
-    return SIMPLE_LOOKUP_BY_TYPE.get(operator);
-  }
 }
