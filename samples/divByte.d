@@ -1,18 +1,20 @@
- left=0y64
-right=0y0a
+div:proc(num:byte, denum:byte):byte {
+  return num/denum
+}
 
-glob = left / right
-print "left / right: s/b 10: "
-println glob
-print "left / left: s/b 1: "
-println left / left
-print "right / right: s/b 1:"
-println right / right
-print "left / 10: s/b 20: "
-println left / 0y05
-print "left / 3: s/b 33: "
-println left / 0y03
-print "20 / right: s/b 2: "
-println 0y14 / right
-print "-20 / right: s/b -2: "
-println (-0y14) / right
+c=-0y73
+d=0y06
+result = div(c, d)
+println result
+print c print "/" print d print " = " print result
+println " (s/b) = -19 / 0yed"
+
+c=-c
+result = div(c, d)
+print c print "/" print d print " = " print result
+println " (s/b) = 19 / 0y13"
+
+d=-d
+result = div(c, d)
+print c print "/" print d print " = " print result
+println " (s/b) = -19 / 0yed"

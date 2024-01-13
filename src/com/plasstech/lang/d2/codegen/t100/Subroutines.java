@@ -36,9 +36,6 @@ class Subroutines {
   private static final String INC32 = Name.D_inc32.name();
   private static final String DEC32 = Name.D_dec32.name();
   private static final String DIV8 = Name.D_div8.name();
-  private static final String AND32 = Name.D_bitand32.name();
-  private static final String OR32 = Name.D_bitor32.name();
-  private static final String XOR32 = Name.D_bitxor32.name();
   private static final String NOT32 = Name.D_bitnot32.name();
 
   private static final List<String> PRINT32_CODE =
@@ -167,11 +164,10 @@ class Subroutines {
           .add("  inx H")
           .add("  mvi D, 0x04  ; compare 4 bytes")
           .add(COMP32 + "_loop:")
-          .add("  ldax B ; a <-[BC]")
+          .add("  ldax B ; A = [BC]")
           .add("  cmp M ; compare A with [HL], i.e., [BC] and [HL]")
-          .add("  jc " + COMP32 + "_end  ; carry set: means BC<HL, done")
-          .add("  jnz " + COMP32
-              + "_end  ; not BC<HL, and not zero: means BC>HL, otherwise, continue")
+          // if not the same, we're done. Flags will be set.
+          .add("  jnz " + COMP32 + "_end")
           .add("  dcx B ; next lower byte in LHS (goes right to left because little-endian)")
           .add("  dcx H ; next lower byte in RHS")
           .add("  dcr D ; decrement counter (# bytes to compare)")
@@ -242,11 +238,11 @@ class Subroutines {
   }
 
   private static final List<String> AND32_CODE =
-      makeSimple32Bit(AND32, "ana");
+      makeSimple32Bit(Name.D_bitand32.name(), "ana");
   private static final List<String> OR32_CODE =
-      makeSimple32Bit(OR32, "ora");
+      makeSimple32Bit(Name.D_bitor32.name(), "ora");
   private static final List<String> XOR32_CODE =
-      makeSimple32Bit(XOR32, "xra");
+      makeSimple32Bit(Name.D_bitxor32.name(), "xra");
 
   private static final List<String> NOT32_CODE =
       ImmutableList.<String>builder()
@@ -400,7 +396,7 @@ class Subroutines {
   private static final ImmutableList<String> MULT32_CODE =
       // Note: this routine uses regular d2 call semantics..., not BC/HL as input/output
       ImmutableList.<String>builder()
-          .add("; 32-bit multiply: MULT32_RETURN_SLOT = MULT32_PARAM_left * MULT32_PARAM_right")
+          .add("\n; 32-bit multiply: MULT32_RETURN_SLOT = MULT32_PARAM_left * MULT32_PARAM_right")
           .add("MULT32_PARAM_left: db 0x00,0x00,0x00,0x00")
           .add("MULT32_PARAM_right: db 0x00,0x00,0x00,0x00")
           .add("MULT32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
@@ -446,7 +442,6 @@ class Subroutines {
           .add("  inx B")
           .add("  dcr D")
           .add("  jnz " + INC32 + "_loop")
-          .add(INC32 + "_end:")
           .add("  ret")
           .build();
 
@@ -470,6 +465,26 @@ class Subroutines {
           .add("  ret")
           .build();
 
+  private static final ImmutableList<String> NEG32_CODE =
+      ImmutableList.<String>builder()
+          .add("\n; Negate the 4 bytes at [BC]")
+          .add("; Destroys: AD")
+          .add(Name.D_neg32 + ":")
+          .add("  push B")
+          .add("  mvi D, 0x04  ; counter")
+          .add(Name.D_neg32 + "_loop:")
+          .add("  ldax B")
+          .add("  cma ")
+          .add("  stax B")
+          .add("  inx B")
+          .add("  dcr D")
+          .add("  jnz " + Name.D_neg32 + "_loop")
+          // now increment it
+          .add("  pop B")
+          .add("  call " + Name.D_inc32)
+          .add("  ret")
+          .build();
+
   // This is ridiculously long
   private static final ImmutableList<String> DIV8_CODE =
       ImmutableList.<String>builder()
@@ -478,7 +493,32 @@ class Subroutines {
           .add("; E stores running total")
           .add("; H stores shifted version of C (not destroyed)")
           .add("; Destroys: A, B, C, E")
+          // TODO: maybe use L for this?
+          .add("DIV8_LOCAL_neg: db 0x00")
           .add(DIV8 + ":")
+          .add("  mvi A, 0x00")
+          .add("  sta DIV8_LOCAL_neg   ; clear flag\n")
+          .add("  mov A, C  ; if C is negative, C=-C")
+          .add("  ani 0x80")
+          .add("  jz " + DIV8 + "_num_positive")
+          .add("  mvi A, 0x01")
+          .add("  sta DIV8_LOCAL_neg  ; num is negative, set the flag")
+          .add("  mov A, C")
+          .add("  cma")
+          .add("  inr A  ; A=-A")
+          .add("  mov C, A  ; C=-C\n")
+          .add(DIV8 + "_num_positive:")
+          .add("  mov A, D  ; if D is negative, D=-D")
+          .add("  ani 0x80")
+          .add("  jz " + DIV8 + "_denom_positive")
+          .add("  lda DIV8_LOCAL_neg")
+          .add("  xri 0x01  ; denom is negative, flip the neg flag")
+          .add("  sta DIV8_LOCAL_neg")
+          .add("  mov A, D")
+          .add("  cma")
+          .add("  inr A  ; A=-A")
+          .add("  mov D, A  ; D=-D\n")
+          .add(DIV8 + "_denom_positive:")
           .add("  mvi B, 0x09	 ; number of bits, plus 1 for setup")
           .add("  mvi E, 0x00	 ; result")
           .add("  mov H, E     ; shifted version of C")
@@ -509,48 +549,74 @@ class Subroutines {
           .add("  mov H, A")
           .add("  dcr B")
           .add("  jnz " + DIV8 + "_loop")
+          .add("\n  ; see if we have to negate the result")
+          .add("  lda DIV8_LOCAL_neg")
+          .add("  cpi 0x01")
           .add("  mov A, E")
+          .add("  rnz  ; not negative, done.")
+          .add("  cma")
+          .add("  inr A  ; A=-A")
           .add("  ret")
           .build();
 
   private static final ImmutableList<String> DIV32_CODE =
       // Note: this routine uses regular d2 call semantics..., not BC/HL as input/output
       ImmutableList.<String>builder()
-          .add("; 32-bit divide: DIV32_RETURN_SLOT = DIV32_PARAM_num / DIV32_PARAM_denom")
+          .add("\n; 32-bit divide: DIV32_RETURN_SLOT = DIV32_PARAM_num / DIV32_PARAM_denom")
           .add("DIV32_PARAM_num: db 0x00,0x00,0x00,0x00")
           .add("DIV32_PARAM_denom: db 0x00,0x00,0x00,0x00")
           .add("DIV32_RETURN_SLOT: db 0x00,0x00,0x00,0x00")
           .add("DIV32_LOCAL_remainder: db 0x00,0x00,0x00,0x00")
+          .add("DIV32_LOCAL_neg: db 0x00")
           .add(DIV32 + ":")
-          .add("  ; answer = 0")
           .add("  lxi H, 0x0000")
-          .add("  shld DIV32_RETURN_SLOT ; store low word (LSByte first)")
-          .add("  shld DIV32_RETURN_SLOT + 0x02  ; store high word")
-          .add("  ; remainder = 0")
-          .add("  shld DIV32_LOCAL_remainder")
+          .add("  shld DIV32_RETURN_SLOT  ; answer = 0")
+          .add("  shld DIV32_RETURN_SLOT + 0x02")
+          .add("  shld DIV32_LOCAL_remainder  ; remainder = 0")
           .add("  shld DIV32_LOCAL_remainder + 0x02")
+          .add("  lxi H, DIV32_LOCAL_neg")
+          .add("  mvi M, 0x00  ; neg=False")
+          .add("\n  ; deal with negative numerator or denominator")
+          .add("  lda DIV32_PARAM_num + 0x03  ; get high byte of num")
+          .add("  ani 0x80")
+          .add("  jz " + DIV32 + "_numerator_positive")
+          .add("  mvi A, 0x01")
+          .add("  sta DIV32_LOCAL_neg  ; numerator is negative, set the flag")
+          .add("  ; negate num")
+          .add("  lxi B, DIV32_PARAM_num")
+          .add("  call " + Name.D_neg32)
+          .add(DIV32 + "_numerator_positive:")
+          .add("  lda DIV32_PARAM_denom + 0x03  ; get high byte of denom")
+          .add("  ani 0x80")
+          .add("  jz " + DIV32 + "_denom_positive")
+          .add("  lda DIV32_LOCAL_neg")
+          .add("  xri 0x01  ; denom is negative, flip the neg flag")
+          .add("  sta DIV32_LOCAL_neg")
+          .add("  ; negate denom")
+          .add("  lxi B, DIV32_PARAM_denom")
+          .add("  call " + Name.D_neg32)
+          .add(DIV32 + "_denom_positive:")
           .add("  mvi E, 0x21  ; D=33 / bit counter\n")
           .add(DIV32 + "_loop:")
-          .add("  ; answer=answer << 1")
+          .add("  ; answer = answer << 1")
           .add("  ana A  ; clear carry")
           .add("  lxi H, DIV32_RETURN_SLOT")
           .add("  call " + Name.D_shift_left32)
-          .add("  ; SOURCE LINE 16: __temp16 = remainder: INT (13) > denom")
+          .add("  ; __temp16 = remainder > denom")
           .add("  lxi B, DIV32_LOCAL_remainder")
           .add("  lxi H, DIV32_PARAM_denom")
           .add("  call " + Name.D_comp32)
-          .add("  ; if carry and zero are set: remainder > denom is false, jumps to elif_15")
-          .add("  jz " + DIV32 + "_remainder_too_big")
-          .add("  jc " + DIV32 + "_remainder_too_big")
-          .add("  ; SOURCE LINE 18: answer: INT (4)++")
+          .add("  ; if remainder < denom, do not add")
+          .add("  jm " + DIV32 + "_remainder_too_big")
+          .add("  ; answer++")
           .add("  lxi B, DIV32_RETURN_SLOT")
           .add("  call " + Name.D_inc32)
           .add("  ; remainder -= denom")
           .add("  lxi B, DIV32_LOCAL_remainder")
           .add("  lxi H, DIV32_PARAM_denom")
-          .add("  call D_sub32  ; bc=bc-hl\n")
+          .add("  call D_sub32\n")
           .add(DIV32 + "_remainder_too_big:")
-          .add("  ; SOURCE LINE 24: __temp20 = num & topbit: INT (9)")
+          .add("  ; __temp20 = num & topbit")
           .add("  lda DIV32_PARAM_num + 0x03 ; high byte")
           .add("  ani 0x80")
           .add("  push PSW ; store hibit")
@@ -571,9 +637,14 @@ class Subroutines {
           .add("  call " + Name.D_inc32)
           .add(DIV32 + "_hi_bit_zero:")
           .add("  dcr E")
-          .add("  jnz " + DIV32 + "_loop:")
-          .add("  ret")
-          .build();
+          .add("  jnz " + DIV32 + "_loop")
+          .add("\n  ; see if we have to negate the result")
+          .add("  lda DIV32_LOCAL_neg")
+          .add("  cpi 0x01")
+          .add("  rnz  ; not negative, done.")
+          .add("  lxi B, DIV32_RETURN_SLOT")
+          .add("  call " + Name.D_neg32)
+          .add("  ret").build();
 
   /** Map between the name and the Subroutine. */
   private static final ImmutableSet<Subroutine> SUBROUTINE_SET =
@@ -598,6 +669,7 @@ class Subroutines {
           .add(new Subroutine(Name.D_bitor32, OR32_CODE))
           .add(new Subroutine(Name.D_bitxor32, XOR32_CODE))
           .add(new Subroutine(Name.D_bitnot32, NOT32_CODE))
+          .add(new Subroutine(Name.D_neg32, NEG32_CODE))
           .build();
 
   /** Map between the name and the code. */

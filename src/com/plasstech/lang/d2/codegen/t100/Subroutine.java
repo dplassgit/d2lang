@@ -27,7 +27,8 @@ class Subroutine {
     D_bitor32,
     D_bitxor32,
     D_bitnot32,
-    D_div32
+    D_div32,
+    D_neg32
   }
 
   private final Name name;

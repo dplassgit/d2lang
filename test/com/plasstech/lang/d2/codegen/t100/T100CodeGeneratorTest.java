@@ -273,7 +273,7 @@ public class T100CodeGeneratorTest {
     UnaryOp op = new UnaryOp(glob, TokenType.MINUS, operand, null);
     generate(op);
     assertThat(emitter)
-        .containsAtLeast("lxi H, 0x0000", "shld _glob", "lxi H, _operand", "call D_sub32")
+        .containsAtLeast("lxi B, _operand", "call D_neg32")
         .inOrder();
   }
 

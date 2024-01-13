@@ -1,11 +1,16 @@
 // Manually divide answer=c/d. This works, and can the basis for the assembly language version.
 
-c=1234560
-d=2340
-
-print c print "/" print d print "=" print c/d println " (hard-coded, hopefully by the optimizer)"
-
 div:proc(num:int, denom:int): int {
+  neg = False
+  if num < 0  {
+    num = -num
+    neg = True
+  }
+  if denom < 0 {
+    denom = -denom 
+    neg = not neg
+  }
+
   answer = 0 // we’ll be shifting left and then setting the low bit to 1
   remainder = 0
 
@@ -17,8 +22,6 @@ div:proc(num:int, denom:int): int {
       // shift in a 1
       answer++  // set the low bit
       remainder = remainder - denom
-    //} else {
-      // shift in a 0, which we did already
     }
     // get the high bit of ‘num’
     hibit = num & topbit
@@ -30,11 +33,24 @@ div:proc(num:int, denom:int): int {
       remainder++
     }
   }
+  if neg {
+    return -answer
+  }
   return answer
 }
 
+c=-1234560
+d=2340
+opt=c/d
+
 result = div(c, d)
-mod = c - result * d
+print c print "/" print d print "=" print opt println " (hard-coded)"
 print "calculated = " println result
-print "mod= " println mod
-print "check = " println result * d + mod
+
+c=-1234560
+d=-2340
+opt=c/d
+result = div(c, d)
+print c print "/" print d print "=" print opt println " (hard-coded)"
+print "calculated = " println result
+
