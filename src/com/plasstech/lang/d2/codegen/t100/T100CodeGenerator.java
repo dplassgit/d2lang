@@ -78,10 +78,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.EQEQ, "jz")
           .put(TokenType.NEQ, "jz")
-          .put(TokenType.LT, "jnc")
-          .put(TokenType.GT, "jc")
-          .put(TokenType.LEQ, "jc")
-          .put(TokenType.GEQ, "jnc")
+          .put(TokenType.LT, "jp")
+          .put(TokenType.GT, "jm")
+          .put(TokenType.LEQ, "jp")
+          .put(TokenType.GEQ, "jm")
           .build();
   private static final Map<TokenType, String> COMPARISON_OPCODE2 =
       ImmutableMap.<TokenType, String>builder()
@@ -818,18 +818,17 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             // hard-coded negation
             ConstantOperand<Integer> integerOp = (ConstantOperand<Integer>) operand;
             ConstantOperand<Integer> neg = ConstantOperand.of(-integerOp.value());
-            // will this work?
             resolver.mov(neg, destination);
           } else {
-            // set destination to 0, then do dest-operand
-            emitter.emit("lxi H, 0x0000");
-            String destName = resolver.resolve(destination);
-            emitter.emit("shld %s ; store low word (LSByte first)", destName);
-            emitter.emit("shld %s + 0x02  ; store high word", destName);
-            // sub = bc=bc-hl
-            resolver.mov(op.operand(), Register.M);
+            // copy source to dest, then negate dest.
+            if (!op.operand().equals(destination)) {
+              resolver.mov(op.operand(), Register.BC);
+              resolver.mov(destination, Register.M);
+              callSubroutine(Name.D_copy32);
+            }
+
             resolver.mov(op.destination(), Register.BC);
-            callSubroutine(Name.D_sub32);
+            callSubroutine(Name.D_neg32);
           }
         } else {
           fail(op.position(), "Cannot generate %s yet", op);
