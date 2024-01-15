@@ -294,7 +294,6 @@ ADCx: proc(other: byte): void {
 //
 //////////////////////////////////////////////////////
 
-
 ACI: proc() { ADCx(NextPC(cpu)) }
 ADCA: proc() { ADCx(cpu.A.v) }
 ADCB: proc() { ADCx(cpu.B.v) }
@@ -317,12 +316,11 @@ ADI: proc() { ADDx(NextPC(cpu)) }
 
 // Bitwise And Register A with another number.
 ANDx: proc(other: byte): void {
-  A = cpu.A.v
-  result = A & other
+  result = cpu.A.v & other
   SetFlags(cpu,
           (result & 0y80) != 0y00, // sign
           result == 0y00, // zero
-          false // carry
+          false // clear carry
       )
   SetValue(cpu.A, result)
 }
@@ -739,7 +737,7 @@ LXISP: proc() {
   //cpu->SP->Set(val)
 }
 
-// Move from from to to
+// Move from 'from' to 'to'
 MOV: proc(to: Register, from: Register) {
   SetValue(to, from.v)
 }
@@ -822,33 +820,21 @@ MVID: proc() { SetValue(cpu.D, NextPC(cpu)) }
 MVIE: proc() { SetValue(cpu.E, NextPC(cpu)) }
 MVIH: proc() { SetValue(cpu.H, NextPC(cpu)) }
 MVIL: proc() { SetValue(cpu.L, NextPC(cpu)) }
-
-MVIM: proc() {
-  val = NextPC(cpu)
-  SetMemory(cpu, GetHLUnsigned(), val)
-}
+MVIM: proc() { SetMemory(cpu, GetHLUnsigned(), NextPC(cpu)) }
 
 NOP: proc() { }
-
-SetOrFlags: proc(cpu: CPU, result: byte) {
-  SetFlags(cpu,
-    (result & 0y80) > 0y00,  // sign
-    result == 0y00, // zero
-    false  // carry
-  )
-}
 
 ORAx: proc(other: byte) {
   result = cpu.A.v | other
   SetValue(cpu.A, result)
-  SetOrFlags(cpu, result)
+  SetFlags(cpu,
+    (result & 0y80) != 0y00,  // sign
+    result == 0y00,           // zero
+    false                     // always clear carry
+  )
 }
 
-ORAA: proc() {
-  result = cpu.A.v
-  SetOrFlags(cpu, result)
-}
-
+ORAA: proc() { ORAx(cpu.A.v) }
 ORAB: proc() { ORAx(cpu.B.v) }
 ORAC: proc() { ORAx(cpu.C.v) }
 ORAD: proc() { ORAx(cpu.D.v) }
@@ -856,7 +842,6 @@ ORAE: proc() { ORAx(cpu.E.v) }
 ORAH: proc() { ORAx(cpu.H.v) }
 ORAL: proc() { ORAx(cpu.L.v) }
 ORAM: proc() { ORAx(GetM(cpu)) }
-
 ORI: proc() { ORAx(NextPC(cpu)) }
 
 PCHL: proc() {
@@ -1144,6 +1129,7 @@ XCHG: proc() {
 
 // XOR A with the given other
 XRAx: proc(other: byte) {
+  // TODO: set flags. 
   SetValue(cpu.A, cpu.A.v ^ other)
 }
 
