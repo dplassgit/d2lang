@@ -27,6 +27,8 @@ Returns the substring of the soruce from `start` to `end.
 
 `itod: extern proc(i: int): double`: `INT` to `DOUBLE`
 
+`itob: extern proc(i: int): byte`: `INT` to `BYTE`
+
 `ltod: extern proc(el: long): double`: `LONG` to `DOUBLE`
 
 
@@ -42,5 +44,3 @@ not in dlib:
 `llround: extern proc(d: double): long`
 
 (Note: in the C Runtime Library, `long long` is 64 bits, `int` is 32 bits.)
-
-
