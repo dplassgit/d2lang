@@ -78,10 +78,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       ImmutableMap.<TokenType, String>builder()
           .put(TokenType.EQEQ, "jz")
           .put(TokenType.NEQ, "jz")
-          .put(TokenType.LT, "jc")
-          .put(TokenType.GT, "jnc")
-          .put(TokenType.LEQ, "jc")
-          .put(TokenType.GEQ, "jnc")
+          .put(TokenType.LT, "jp")
+          .put(TokenType.GT, "jm")
+          .put(TokenType.LEQ, "jp")
+          .put(TokenType.GEQ, "jm")
           .build();
   private static final Map<TokenType, String> COMPARISON_OPCODE2 =
       ImmutableMap.<TokenType, String>builder()
@@ -733,7 +733,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // lda left OR mvi a, left
     resolver.mov(left, Register.A);
     if (right.isConstant()) {
-      // TODO: this will fail if right is a param or local
       emitter.emit("cpi %s", resolver.resolve(right));
     } else {
       // put into M first to retrieve "right" from memory
