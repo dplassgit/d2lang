@@ -51,3 +51,4 @@ bazel-testlogs
 *.lst
 *~
 *.out
+*.bin
