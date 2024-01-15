@@ -116,6 +116,11 @@ public class ParserTest {
   }
 
   @Test
+  public void invalidVariableName() {
+    assertParseError("_hi=3", "Illegal variable name _hi");
+  }
+
+  @Test
   public void assignInt() {
     BlockNode root = parseStatements("a=3");
     assertThat(root.statements()).hasSize(1);

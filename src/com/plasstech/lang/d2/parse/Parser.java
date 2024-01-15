@@ -108,7 +108,6 @@ public class Parser implements Phase {
 
   public Parser(Lexer lexer) {
     this.lexer = lexer;
-    this.advance();
   }
 
   private Token advance() {
@@ -130,6 +129,7 @@ public class Parser implements Phase {
   }
 
   private ProgramNode parse() {
+    this.advance();
     return program();
   }
 
