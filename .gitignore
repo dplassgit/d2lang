@@ -52,3 +52,5 @@ bazel-testlogs
 *~
 *.out
 *.bin
+*.8085
+*.as85
