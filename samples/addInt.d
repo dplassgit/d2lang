@@ -1,7 +1,8 @@
  left=23456
 right=11111
-print left
-print " (23456), 11111: "
+print "left s/b 23456: " 
+println left
+print " right s/b 11111: "
 println right
 
 glob = left + right

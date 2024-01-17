@@ -57,3 +57,5 @@ v1out.java
 v2out.java
 
 MODULE.bazel.lock
+*.8085
+*.as85

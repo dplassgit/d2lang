@@ -54,3 +54,11 @@ result = div(c, d)
 print c print "/" print d print "=" print opt println " (hard-coded)"
 print "calculated = " println result
 
+
+c=1234560
+d=2340
+opt=c/d
+result = div(c, d)
+print c print "/" print d print "=" print opt println " (hard-coded)"
+print "calculated = " println result
+

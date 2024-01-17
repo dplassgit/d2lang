@@ -1,0 +1,1 @@
+python $PYTHONPATH/assembler.py $1 -s > `basename $1`.8085
