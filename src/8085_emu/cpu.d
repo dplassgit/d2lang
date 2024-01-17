@@ -13,29 +13,34 @@ SetValueI: proc(r: Register8, v: int) { r.v = itob(v) }
 SetValue: proc(r: Register8, v: byte) { r.v = v }
 
 // set bit number b to value v (low bit)
-SetBit: proc(r: Register8, b: byte, v: byte) {
-  // TODO: DO THIS
-  exit("SetBit not done")
+SetBit: proc(r: Register8, bit: byte, v: byte) {
+  if v != 0y01 and v != 0y00 {
+    print "Invalid v in setbit: " println v
+    exit
+  }
+  if v == 0y01 {
+    r.v = r.v | (0y01 << bit)
+  } else {
+    ClearBit(r, bit)
+  }
 }
 
-SetBitB: proc(r: Register8, b: byte, v: bool) {
+SetBitB: proc(r: Register8, bit: byte, v: bool) {
   if v {
-    SetBit(r, b, 0y01)
+    SetBit(r, bit, 0y01)
   } else {
-    SetBit(r, b, 0y00)
+    SetBit(r, bit, 0y00)
   }
 }
 
 // Returning an int so we can do math
-GetBit: proc(r: Register8, b: byte): int {
-  // TODO: DO THIS
-  exit("GetBit not done")
-  return 0
+GetBit: proc(r: Register8, bit: byte): int {
+  return btoi((r.v >> bit) & 0y01)
 }
 
 // clear bit number b
-ClearBit: proc(r: Register8, b: byte) {
-  SetBit(r, b, 0y00)
+ClearBit: proc(r: Register8, bit: byte) {
+  r.v = r.v & (!(0y01 << bit))
 }
 
 STACK_START = 65534 // why not 65535?
@@ -90,6 +95,7 @@ CPU: record {
   running: bool
   memory: byte[65536]
   stack: Stack
+  debug: bool
 }
 
 
@@ -102,6 +108,7 @@ newCpu: proc: CPU {
   cpu.E = new Register8
   cpu.H = new Register8
   cpu.L = new Register8
+  cpu.Flags = new Register8
 
   cpu.PC = 0
   cpu.stack = newStack()
@@ -139,14 +146,6 @@ GetM: proc(cpu: CPU): byte {
   return cpu.memory[GetHLUnsigned()]
 }
 
-
-Step: proc(cpu: CPU) {
-  if cpu.running {
-    op = cpu.memory[cpu.PC]
-    runOneOp(op)
-    cpu.PC = cpu.PC + 1
-  }
-}
 
 
 
@@ -430,6 +429,8 @@ CALL: proc() {
   HIGH = itob(cpu.PC >> 8)
   LOW = itob(cpu.PC & 255)
 
+  // TODO: If this is a ROM call, emulate it.
+
   Push(cpu.stack, HIGH)
   Push(cpu.stack, LOW)
 
@@ -438,8 +439,7 @@ CALL: proc() {
 
 CC: proc() {
   if (0==GetBit(cpu.Flags, CARRY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -458,8 +458,7 @@ CC: proc() {
 
 CM: proc() {
   if (0 == GetBit(cpu.Flags, SIGN_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -528,8 +527,7 @@ CMPM: proc() {
 
 CNC: proc() {
   if (1==GetBit(cpu.Flags, CARRY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -548,8 +546,7 @@ CNC: proc() {
 
 CNZ: proc() {
   if (1==GetBit(cpu.Flags, ZERO_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -568,8 +565,7 @@ CNZ: proc() {
 
 CP: proc() {
   if (1==GetBit(cpu.Flags, SIGN_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -588,8 +584,8 @@ CP: proc() {
 
 CPE: proc() {
   if (0 == GetBit(cpu.Flags, PARITY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    // this won't parse. cpu.PC += 2
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -613,8 +609,7 @@ CPI: proc() {
 
 CPO: proc() {
   if (1==GetBit(cpu.Flags, PARITY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -633,8 +628,7 @@ CPO: proc() {
 
 CZ: proc() {
   if (0 == GetBit(cpu.Flags, ZERO_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -865,8 +859,7 @@ INXSP: proc() {
 
 JC: proc() {
   if (0 == GetBit(cpu.Flags, CARRY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -877,8 +870,7 @@ JC: proc() {
 
 JM: proc() {
   if (0 == GetBit(cpu.Flags, SIGN_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -894,8 +886,7 @@ JMP: proc() {
 
 JNC: proc() {
   if (1 == GetBit(cpu.Flags, CARRY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -906,8 +897,7 @@ JNC: proc() {
 
 JNZ: proc() {
   if (1 == GetBit(cpu.Flags, ZERO_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -918,8 +908,7 @@ JNZ: proc() {
 
 JP: proc() {
   if (1==GetBit(cpu.Flags, SIGN_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -930,8 +919,7 @@ JP: proc() {
 
 JPE: proc() {
   if (0 == GetBit(cpu.Flags, PARITY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -942,8 +930,7 @@ JPE: proc() {
 
 JPO: proc() {
   if (1==GetBit(cpu.Flags, PARITY_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -954,8 +941,7 @@ JPO: proc() {
 
 JZ: proc() {
   if (0 == GetBit(cpu.Flags, ZERO_FLAG)) {
-    cpu.PC = cpu.PC + 1
-    cpu.PC = cpu.PC + 1
+    cpu.PC = cpu.PC + 2
     return
   }
 
@@ -1947,12 +1933,10 @@ XTHL: proc() {
   //Push(cpu.stack, cpu.L.v)
 }
 
-Increment(cpu.A)
-Increment(cpu.A)
-println cpu.A.v
-
-
 runOneOp: proc(op: byte) {
+  if cpu.debug {
+    print "\top: " println op
+  }
   if op == 0y00 { NOP() }
   if op == 0y02 { STAXB() }
   if op == 0y03 { INXB() }
@@ -2184,4 +2168,41 @@ runOneOp: proc(op: byte) {
   if op == 0yfa { JM() }
   if op == 0yfc { CM() }
 }
+
+debug: proc(cpu: CPU) {
+  if cpu.debug {
+
+    println "\t-------------------------------------------------------"
+    // A: 0y00 B: 0y00 C: 0y00 D: 0y00 E: 0y00 H: 0y00 L: 0y00
+    // PC: 0 Flags: 0y00 
+    print "\tA: " print cpu.A.v
+    print " B: " print cpu.B.v
+    print " C: " print cpu.C.v
+    print " D: " print cpu.D.v
+    print " E: " print cpu.E.v
+    print " H: " print cpu.H.v
+    print " L: " println cpu.L.v
+    print "\tPC: " print cpu.PC
+    print " Flags: " println cpu.Flags.v
+  }
+}
+
+run: proc(cpu: CPU) {
+  while cpu.running {
+    debug(cpu)
+    op = cpu.memory[cpu.PC]
+    runOneOp(op)
+    cpu.PC = cpu.PC + 1
+  }
+  debug(cpu)
+}
+
+
+cpu.debug = true
+cpu.running = true
+mem = cpu.memory
+mem[0] = 0y3c  // inra
+mem[1] = 0y76  // hlt
+run(cpu)
+
 
