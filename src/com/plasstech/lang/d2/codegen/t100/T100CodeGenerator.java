@@ -733,7 +733,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // lda left OR mvi a, left
     resolver.mov(left, Register.A);
     if (right.isConstant()) {
-      // TODO: this will fail if right is a param or local
       emitter.emit("cpi %s", resolver.resolve(right));
     } else {
       // put into M first to retrieve "right" from memory

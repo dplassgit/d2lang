@@ -51,3 +51,6 @@ bazel-testlogs
 *.lst
 *~
 *.out
+*.bin
+*.8085
+*.as85

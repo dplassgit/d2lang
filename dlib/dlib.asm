@@ -7,6 +7,7 @@ global btoi
 global btos
 global ifind
 global itod
+global itob
 global itos
 global ltod
 global ltos
@@ -75,6 +76,11 @@ btoi:
   xor rax, rax
   ; sign-extend 
   movsx eax, cl
+  ret
+
+; itob: extern proc(i: int): byte
+itob:
+  mov al, cl
   ret
 
 ; itod: extern proc(i: int): double
