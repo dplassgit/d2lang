@@ -170,7 +170,8 @@ public class Resolver {
           emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
         }
         return;
-      } else if (source.type() == VarType.INT) {
+      }
+      if (source.type() == VarType.INT) {
         ConstantOperand<Integer> intOp = (ConstantOperand<Integer>) source;
         int value = intOp.value();
         emitter.emit("; 32-bit value 0x%08x (NOTE LITTLE ENDIAN-NESS)", value);
@@ -192,7 +193,8 @@ public class Resolver {
         emitter.emit("shld %s + 0x02  ; store high word", destName);
         state.condPop();
         return;
-      } else if (source.type() == VarType.STRING) {
+      }
+      if (source.type() == VarType.STRING) {
         // look it up
         ConstantOperand<String> stringOp = (ConstantOperand<String>) source;
         String value = stringOp.value();
@@ -203,12 +205,17 @@ public class Resolver {
         emitter.emit("shld %s  ; [HL] <- literal string", destName);
         state.condPop();
         return;
-      } else if (source.type() == VarType.BOOL) {
+      }
+      if (source.type() == VarType.BOOL) {
         boolean set = source.equals(ConstantOperand.TRUE);
         if (registers.isAllocated(Register.M)) {
           // Don't use H if it's reserved
+          if (!set) {
+            emitter.emit("xra A  ; A <- false");
+          } else {
+            emitter.emit("mvi A, 0x01  ; A <- true");
+          }
           emitter.emit("lxi B, %s  ; location to store literal byte", destName);
-          emitter.emit("mvi A, 0x0%s  ; A <- literal boolean", set ? "1" : "0");
           emitter.emit("stax B  ; [BC] <- literal byte");
         } else {
           emitter.emit("lxi H, %s  ; location to store boolean", destName);
@@ -216,32 +223,32 @@ public class Resolver {
         }
         return;
       }
-    } else {
-      // source is not a constant.
-      // have to copy 1,2, or 4 bytes
-      String sourceName = resolve(source);
-      int sourceSize = source.type().size();
-      if (sourceSize == 1) {
-        // load one byte from source
-        emitter.emit("lda %s  ; read byte at source", sourceName);
-        // write one byte to dest
-        emitter.emit("sta %s  ; write byte to dest", destName);
-        return;
-      } else if (sourceSize == 2 || sourceSize == 4) {
-        // load 2 bytes
-        RegisterState state =
-            RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
-        // Transfer low word
-        emitter.emit("lhld %s  ; read word at source", sourceName);
-        emitter.emit("shld %s  ; write word to dest", destName);
-        if (sourceSize == 4) {
-          // Transfer high word
-          emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
-          emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
-        }
-        state.condPop();
-        return;
+    }
+    // source is not a constant.
+    // have to copy 1,2, or 4 bytes
+    String sourceName = resolve(source);
+    int sourceSize = source.type().size();
+    if (sourceSize == 1) {
+      // load one byte from source
+      emitter.emit("lda %s  ; read byte at source", sourceName);
+      // write one byte to dest
+      emitter.emit("sta %s  ; write byte to dest", destName);
+      return;
+    }
+    if (sourceSize == 2 || sourceSize == 4) {
+      // load 2 bytes
+      RegisterState state =
+          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
+      // Transfer low word
+      emitter.emit("lhld %s  ; read word at source", sourceName);
+      emitter.emit("shld %s  ; write word to dest", destName);
+      if (sourceSize == 4) {
+        // Transfer high word
+        emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
+        emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
       }
+      state.condPop();
+      return;
     }
     fail(null, "Cannot generate mov from %s to %s", source, destName);
   }
@@ -257,7 +264,8 @@ public class Resolver {
       // write one byte to dest
       emitter.emit("sta %s  ; write byte to dest", destName);
       return;
-    } else if (sourceSize == 2 || sourceSize == 4) {
+    }
+    if (sourceSize == 2 || sourceSize == 4) {
       // load 2 bytes
       RegisterState state =
           RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
@@ -385,6 +393,10 @@ public class Resolver {
     String sourceName = resolve(source);
     if (source.isConstant()) {
       if (source.equals(ConstantOperand.FALSE) || source.equals(ConstantOperand.ZERO_BYTE)) {
+        if (destination == Register.A) {
+          emitter.emit("xra A");
+          return;
+        }
         emitter.emit("mvi %s, 0x00", destination.name());
         return;
       } else if (source.equals(ConstantOperand.TRUE) || source.equals(ConstantOperand.ONE_BYTE)) {
@@ -406,34 +418,33 @@ public class Resolver {
         deallocate(temp);
         return;
       }
-    } else {
-      // source is memory.
-      if (destination.isPair()) {
-        // use the 1-letter alias
-        emitter.emit("lxi %s, %s", destination.alias, sourceName);
-        return;
-      }
-      if (destination == Register.A) {
-        emitter.emit("lda %s", sourceName);
-        return;
-      }
-      // for other registers we need to use an intermediary:
-      // this may be broken if source is a pair
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
-      emitter.emit("lxi H, %s", sourceName);
-      emitter.emit("mov %s, M", destination);
-      state.condPop();
+      fail(null, "Cannot mov %s to %s", source, destination);
+    }
+    // source is memory.
+    if (destination.isPair()) {
+      // use the 1-letter alias
+      emitter.emit("lxi %s, %s", destination.alias, sourceName);
       return;
     }
-    fail(null, "Cannot mov %s to %s", source, destination);
+    if (destination == Register.A) {
+      emitter.emit("lda %s", sourceName);
+      return;
+    }
+    // for other registers we need to use an intermediary:
+    // this may be broken if source is a pair
+    RegisterState state =
+        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
+    emitter.emit("lxi H, %s", sourceName);
+    emitter.emit("mov %s, M", destination);
+    state.condPop();
   }
 
   public void mov(Register source, Location destination) {
     if (source == Register.A) {
       emitter.emit("sta %s", resolve(destination));
       return;
-    } else if (source.isPair()) {
+    }
+    if (source.isPair()) {
       if (destination.type() == VarType.BYTE || destination.type() == VarType.BOOL) {
         // the register pair points to a byte in memory.
         // get value into A, then write it to destination.

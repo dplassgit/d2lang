@@ -82,7 +82,7 @@ public class TestUtils {
     process = pb.start();
     process.waitFor();
     InputStream stream = process.getInputStream();
-    ProcessUtils.assertNoProcessError(process, "emulator", 0);
+    ProcessUtils.assertNoProcessError(process, "cpu.exe", 0);
 
     String compiledOutput = new String(ByteStreams.toByteArray(stream));
     state = state.addStdOut(compiledOutput);
@@ -100,7 +100,7 @@ public class TestUtils {
     InterpreterExecutor executor = new InterpreterExecutor(config);
     executor.state().throwOnError();
     InterpreterResult interpreterResult = executor.execute();
-    System.err.println(Joiner.on('\n').join(executor.state().ilCode()));
+    //    System.err.println(Joiner.on('\n').join(executor.state().ilCode()));
     System.err.println(Joiner.on("").join(interpreterResult.environment().output()));
     return interpreterResult;
   }

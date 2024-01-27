@@ -281,10 +281,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // TODO: If null, output "null".
           if (arg.isConstant()) {
             // load the value of the constant string
-            emitter.emit("lxi H, %s  ; prepare to print HL", name);
+            emitter.emit("lxi H, %s", name);
           } else {
             // load the location where the string is.
-            emitter.emit("lhld %s  ; prepare to print HL", name);
+            emitter.emit("lhld %s", name);
           }
           emitter.emit("call 0x11A2  ; print HL (destroys HL, A)");
         } else if (arg.type() == VarType.BYTE) {

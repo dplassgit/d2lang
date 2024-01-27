@@ -4,7 +4,7 @@ i=0y01
 
 // cls, heh
 print chr(27) print "j"
-while i < n {
+while i <= n {
   fact = fact * i
   print i print "! = " println fact
   i++

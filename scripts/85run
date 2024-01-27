@@ -1,0 +1,2 @@
+BASE=`basename -s .d $1`
+./scripts/dcc $1 --target=t100 -S $* --save-temps && python $PYTHONPATH/assembler.py $BASE.as -s > $BASE.8085 && cpu.exe < $BASE.8085
