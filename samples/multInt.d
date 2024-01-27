@@ -1,4 +1,4 @@
- left=504
+left=504
 right=1711
 
 mult: proc(left: int, right: int): int {

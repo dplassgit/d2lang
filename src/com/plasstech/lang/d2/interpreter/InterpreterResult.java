@@ -11,6 +11,7 @@ public class InterpreterResult {
   private final ImmutableList<Op> code;
   private final Environment environment;
   private final SymbolTable symbolTable;
+  private final State state;
   private int instructionCycles;
   private int linesOfCode;
   private int gotos;
@@ -23,6 +24,7 @@ public class InterpreterResult {
     this.environment = environment;
     this.symbolTable = state.symbolTable();
     this.linesOfCode = (int) code.stream().filter(op -> !(op instanceof Nop)).count();
+    this.state = state;
   }
 
   public ImmutableList<Op> code() {
@@ -79,5 +81,9 @@ public class InterpreterResult {
 
   public void incCalls() {
     this.calls++;
+  }
+
+  public State state() {
+    return state;
   }
 }

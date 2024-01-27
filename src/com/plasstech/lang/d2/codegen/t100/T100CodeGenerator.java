@@ -80,8 +80,8 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           .put(TokenType.NEQ, "jz")
           .put(TokenType.LT, "jp")
           .put(TokenType.GT, "jm")
-          .put(TokenType.LEQ, "jp")
-          .put(TokenType.GEQ, "jm")
+          .put(TokenType.LEQ, "jm") // THIS MAKES NO SENSE!
+          .put(TokenType.GEQ, "jp")
           .build();
   private static final Map<TokenType, String> COMPARISON_OPCODE2 =
       ImmutableMap.<TokenType, String>builder()

@@ -65,7 +65,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private int iterations;
   private boolean running = true;
 
-  private Level loggingLevel;
+  private Level loggingLevel = Level.FINE;
   private InterpreterResult result;
 
   public Interpreter(State state, boolean interactive) {

@@ -1,10 +1,11 @@
 java_library(
     name = "testing",
-    testonly = 1,
+    testonly = True,
     srcs = [
         "EmitterSubject.java",
         "ILCodeGeneratorSubject.java",
         "LocationUtils.java",
+        "ProcessUtils.java",
     ],
     visibility = ["//visibility:public"],
     deps = [

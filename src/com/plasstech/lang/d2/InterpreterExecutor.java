@@ -52,4 +52,8 @@ public class InterpreterExecutor {
   public State state() {
     return state;
   }
+
+  public InterpreterResult result() {
+    return result;
+  }
 }

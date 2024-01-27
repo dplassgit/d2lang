@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -21,12 +23,17 @@ import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.State;
 
-/** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
 public class GoldenTests {
 
   @TestParameter
   boolean optimize;
+
+  @Before
+  public void setUp() {
+    /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
+    assumeTrue(System.getenv("TEST_SRCDIR") == null);
+  }
 
   @Test
   public void compileNonGoldenSample(
@@ -45,24 +52,14 @@ public class GoldenTests {
   }
 
   // Just compile, no running
-  private void compileOneFile(File file) throws IOException {
-    if (System.getenv("TEST_SRCDIR") == null) {
-      compileFile(file.getAbsolutePath());
-    } else {
-      // running in bazel
-      fail("Sorry, cannot test in bazel");
-    }
+  private void compileOneFile(File file, boolean goldenOptimize) throws IOException {
+    compileFile(file.getAbsolutePath(), goldenOptimize);
   }
 
   @Test
   public void testSample(@TestParameter(valuesProvider = GoldenFilesProvider.class) File file)
       throws Exception {
-    if (System.getenv("TEST_SRCDIR") == null) {
-      testFromFile(file.getAbsolutePath());
-    } else {
-      // running in bazel
-      fail("Sorry, cannot test in bazel");
-    }
+    testFromFile(file.getAbsolutePath());
   }
 
   private abstract static class FilesProvider extends TestParameterValuesProvider {
