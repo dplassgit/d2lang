@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
@@ -67,10 +66,6 @@ public class Resolver {
 
       } else if (sourceSize == 2 || sourceSize == 4) {
 
-        // load 2 bytes
-        RegisterState state =
-            RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
-
         // Transfer low word
         emitter.emit("lhld %s  ; read word at source", sourceName);
         emitter.emit("shld %s  ; write word to dest", destName);
@@ -79,17 +74,12 @@ public class Resolver {
           emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
           emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
         }
-        state.condPop();
-
       }
     }
   }
 
   private void movConstant(Operand source, String dest) {
-    RegisterState state = null;
-
     if (source.type() == VarType.BYTE) {
-
       ConstantOperand<Byte> byteOp = (ConstantOperand<Byte>) source;
       if (registers.isAllocated(Register.M)) {
         emitter.emit("lxi B, %s  ; location to store literal byte", dest);
@@ -106,8 +96,6 @@ public class Resolver {
       int value = intOp.value();
       emitter.emit("; 32-bit value 0x%08x (NOTE LITTLE ENDIAN-NESS)", value);
       int low = value & 0x0000ffff;
-      state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       emitter.emit("lxi H, 0x%04x  ; put low word of 32-bit literal into HL", low);
       emitter.emit("shld %s  ; store low word (LSByte first)", dest);
 
@@ -143,14 +131,10 @@ public class Resolver {
       String value = stringOp.value();
       // look it up
       ConstEntry<String> entry = stringTable.lookup(value);
-      state = RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       emitter.emit("lxi H, %s  ; location to store literal string", entry.name());
       emitter.emit("shld %s  ; [HL] <- literal string", dest);
     }
 
-    if (state != null) {
-      state.condPop();
-    }
   }
 
   // TODO: Fold this into mov(source, dest)
@@ -176,8 +160,6 @@ public class Resolver {
         int value = intOp.value();
         emitter.emit("; 32-bit value 0x%08x (NOTE LITTLE ENDIAN-NESS)", value);
         int low = value & 0x0000ffff;
-        RegisterState state =
-            RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
         emitter.emit("lxi H, 0x%04x  ; get low word of 32-bit literal into HL", low);
         emitter.emit("shld %s  ; store low word (LSByte first)", destName);
         int high = (value >> 16) & 0x0000ffff;
@@ -191,7 +173,6 @@ public class Resolver {
           emitter.emit("lxi H, 0x%04x  ; put high word into HL", high);
         }
         emitter.emit("shld %s + 0x02  ; store high word", destName);
-        state.condPop();
         return;
       }
       if (source.type() == VarType.STRING) {
@@ -199,28 +180,14 @@ public class Resolver {
         ConstantOperand<String> stringOp = (ConstantOperand<String>) source;
         String value = stringOp.value();
         ConstEntry<String> entry = stringTable.lookup(value);
-        RegisterState state =
-            RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
         emitter.emit("lxi H, %s  ; location to store literal string", entry.name());
         emitter.emit("shld %s  ; [HL] <- literal string", destName);
-        state.condPop();
         return;
       }
       if (source.type() == VarType.BOOL) {
         boolean set = source.equals(ConstantOperand.TRUE);
-        if (registers.isAllocated(Register.M)) {
-          // Don't use H if it's reserved
-          if (!set) {
-            emitter.emit("xra A  ; A <- false");
-          } else {
-            emitter.emit("mvi A, 0x01  ; A <- true");
-          }
-          emitter.emit("lxi B, %s  ; location to store literal byte", destName);
-          emitter.emit("stax B  ; [BC] <- literal byte");
-        } else {
-          emitter.emit("lxi H, %s  ; location to store boolean", destName);
-          emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", set ? "1" : "0");
-        }
+        emitter.emit("lxi H, %s  ; location to store boolean", destName);
+        emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", set ? "1" : "0");
         return;
       }
     }
@@ -237,8 +204,6 @@ public class Resolver {
     }
     if (sourceSize == 2 || sourceSize == 4) {
       // load 2 bytes
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       // Transfer low word
       emitter.emit("lhld %s  ; read word at source", sourceName);
       emitter.emit("shld %s  ; write word to dest", destName);
@@ -247,7 +212,6 @@ public class Resolver {
         emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
         emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
       }
-      state.condPop();
       return;
     }
     fail(null, "Cannot generate mov from %s to %s", source, destName);
@@ -267,8 +231,6 @@ public class Resolver {
     }
     if (sourceSize == 2 || sourceSize == 4) {
       // load 2 bytes
-      RegisterState state =
-          RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
       // Transfer low word
       emitter.emit("lhld %s  ; read word at source", sourceName);
       emitter.emit("shld %s  ; write word to dest", destName);
@@ -277,7 +239,6 @@ public class Resolver {
         emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
         emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
       }
-      state.condPop();
       return;
     }
     fail(null, "Cannot generate mov from %s to %s", sourceName, destination);
@@ -432,15 +393,21 @@ public class Resolver {
     }
     // for other registers we need to use an intermediary:
     // this may be broken if source is a pair
-    RegisterState state =
-        RegisterState.condPush(emitter, registers, ImmutableList.of(Register.M));
     emitter.emit("lxi H, %s", sourceName);
     emitter.emit("mov %s, M", destination);
-    state.condPop();
   }
 
   public void mov(Register source, Location destination) {
+    if (destination.isConstant()) {
+      fail(null, "Cannot mov %s to constant %s", source, destination);
+      return;
+    }
     if (source == Register.A) {
+      if (destination.isRegister()) {
+        emitter.emit("mov %s, A", destination);
+        return;
+      }
+      // must be memory
       emitter.emit("sta %s", resolve(destination));
       return;
     }
@@ -451,7 +418,8 @@ public class Resolver {
         emitter.emit(source.lda);
         mov(Register.A, destination);
         return;
-      } else if (destination.type() == VarType.INT) {
+      }
+      if (destination.type() == VarType.INT) {
         // copy 4 bytes to global
       }
     }

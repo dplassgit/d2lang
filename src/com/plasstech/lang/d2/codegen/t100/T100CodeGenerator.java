@@ -802,7 +802,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (operand.isConstant()) {
             // hard-coded negation
             ConstantOperand<Byte> byteOp = (ConstantOperand<Byte>) operand;
-            byte newValue = (byte) (0 - byteOp.value());
+            byte newValue = (byte) -byteOp.value();
             emitter.emit("mvi A, 0x%02x", newValue);
           } else {
             // negate via twos-complement
@@ -845,7 +845,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             resolver.mov(operand, Register.A);
             emitter.emit("cma  ; bit not A");
           }
-          // store 1-operand
+          // store ~operand
           resolver.mov(Register.A, destination);
         } else {
           // m=source
@@ -863,7 +863,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           if (operand.isConstant()) {
             // hard-coded negation
             if (operand.equals(ConstantOperand.TRUE)) {
-              emitter.emit("mvi A, 0x00");
+              emitter.emit("xra A");
             } else {
               emitter.emit("mvi A, 0x01");
             }
@@ -907,7 +907,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
 
   @Override
   public void visit(Call op) {
-    emitter.emit("; set arguments");
     for (int i = 0; i < op.actuals().size(); ++i) {
       Location formal = op.formals().get(i);
       Operand actual = op.actuals().get(i);

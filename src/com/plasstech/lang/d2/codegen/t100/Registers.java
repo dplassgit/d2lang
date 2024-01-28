@@ -12,6 +12,7 @@ class Registers {
 
   /** Allocate and return a register of the given type. */
   Register allocate(VarType varType) {
+    // WHOA...
     return null;
   }
 
