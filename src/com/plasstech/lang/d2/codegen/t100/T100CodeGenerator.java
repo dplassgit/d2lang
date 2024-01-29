@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.codegen.t100;
 
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -118,7 +117,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final T100StringData TRUE_MESSAGE = new T100StringData("TRUE_MSG", "true");
   private static final T100StringData FALSE_MESSAGE = new T100StringData("FALSE_MSG", "false");
 
-  private final List<String> prelude = new ArrayList<>();
   private final Registers registers;
   private final Emitter emitter;
   private SymbolTable symTab;
@@ -151,14 +149,40 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       f = input.filename();
     }
 
-    prelude.add(String.format("; To assemble: python [path]/assembler.py %s.as -t", f));
-    prelude.add(String.format("; in BASIC, call 'clear 256,%d' before loading", BASE));
-    prelude.add(String.format("  org 0x%x", BASE));
-    prelude.add("  jmp main");
-    prelude.add("");
+    emitter.emit0(String.format("; To assemble: python [path]/assembler.py %s.as -t", f));
+    emitter.emit0(String.format("; in BASIC, call 'clear 256,%d' before loading", BASE));
+    emitter.emit0(String.format("  org 0x%x  ; call %d", BASE, BASE));
 
     symTab = input.symbolTable();
 
+    try {
+      for (Op opcode : code) {
+        String opcodeString = opcode.toString();
+        String escaped = ESCAPER.escape(opcodeString);
+        emitter.emit0("");
+        if (opcode.position() != null) {
+          emitter.emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
+        } else {
+          emitter.emit("; SOURCE: %s", escaped);
+        }
+        opcode.accept(this);
+      }
+    } catch (D2RuntimeException e) {
+      ImmutableList<String> allCode =
+          ImmutableList.<String>builder()
+              .add("PARTIAL ASSEMBLY\n\n")
+              .add("================\n\n")
+              .addAll(emitter.all())
+              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+              .build();
+      input = input.addAsmCode(allCode).addException(e);
+      throw e;
+      //      return input;
+    }
+
+    // for each subroutine, add to the emitter.
+    subroutines.values().stream().flatMap(Collection::stream)
+        .forEach(line -> emitter.emit0(line));
     // emit all globals
     input.programNode().accept(new GlobalVariableEmitter(symTab, emitter));
 
@@ -178,42 +202,10 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     //      emitter.addData(entry.dataEntry());
     //    }
 
-    emitter.emit0("");
-    emitter.emitLabel("main");
-    try {
-      for (Op opcode : code) {
-        String opcodeString = opcode.toString();
-        String escaped = ESCAPER.escape(opcodeString);
-        emitter.emit0("");
-        if (opcode.position() != null) {
-          emitter.emit("; SOURCE LINE %d: %s", opcode.position().line(), escaped);
-        } else {
-          emitter.emit("; SOURCE: %s", escaped);
-        }
-        opcode.accept(this);
-      }
-    } catch (D2RuntimeException e) {
-      ImmutableList<String> allCode =
-          ImmutableList.<String>builder()
-              .add("PARTIAL ASSEMBLY\n\n")
-              .add("================\n\n")
-              .addAll(prelude)
-              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-              .addAll(emitter.all())
-              .build();
-      input = input.addAsmCode(allCode).addException(e);
-      throw e;
-      //      return input;
-    }
-
-    // for each subroutine, add to the emitter.
-    subroutines.values().stream().flatMap(Collection::stream)
-        .forEach(line -> emitter.emit0(line));
     ImmutableList<String> allCode =
         ImmutableList.<String>builder()
-            .addAll(prelude)
-            .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
             .addAll(emitter.all())
+            .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
             .build();
 
     return input.addAsmCode(allCode);
@@ -327,18 +319,13 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
         } else if (arg.type() == VarType.INT) {
           if (arg.isConstant()) {
             int value = ((ConstantOperand<Integer>) arg).value();
-            if (Math.abs(value) < 32768) {
-              if (value < 0) {
-                // I'm just too lazy.
-                fail(op.position(), "Cannot print negative int constant %s of type %s", arg,
-                    arg.type());
-              } else {
-                emitter.emit("lxi H, 0x%04x", value);
-              }
+            if (value >= 0 && value < 32768) {
+              emitter.emit("lxi H, 0x%04x", value);
+              emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL");
             } else {
               fail(op.position(), "Cannot print 32-bit constant int %s", arg);
+              return;
             }
-            emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL (destroys all)");
           } else {
             printInt(arg);
           }

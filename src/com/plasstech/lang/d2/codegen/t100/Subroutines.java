@@ -474,7 +474,7 @@ class Subroutines {
           .add("  mvi D, 0x04  ; counter")
           .add(Name.D_neg32 + "_loop:")
           .add("  ldax B")
-          .add("  cma ")
+          .add("  cma")
           .add("  stax B")
           .add("  inx B")
           .add("  dcr D")
