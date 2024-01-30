@@ -5,13 +5,10 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.Target;
 import com.plasstech.lang.d2.type.VarType;
 
-@RunWith(TestParameterInjector.class)
 public class T100LocationsTest {
 
   private Target oldTarget;

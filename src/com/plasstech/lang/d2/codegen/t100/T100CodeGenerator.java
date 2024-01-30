@@ -13,6 +13,8 @@ import com.google.common.escape.Escaper;
 import com.google.common.net.PercentEscaper;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.DoubleFinder;
+import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
@@ -122,7 +124,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private SymbolTable symTab;
   private Resolver resolver;
   private StringTable stringTable;
-  // private DoubleTable doubleTable;
+  private DoubleTable doubleTable;
 
   // don't add the same subroutine multiple times.
   private final Map<String, List<String>> subroutines = new HashMap<>();
@@ -139,7 +141,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   @Override
   public State execute(State input) {
     stringTable = new StringFinder().execute(input.lastIlCode());
-    //  doubleTable = new DoubleFinder().execute(input.lastIlCode());
+    doubleTable = new DoubleFinder().execute(input.lastIlCode());
 
     resolver = new Resolver(stringTable, registers, emitter);
 
@@ -198,9 +200,15 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("; %s=\"%s\"", entry.name(), escaped);
       emitter.emit(t100entry.dataEntry());
     }
-    //    for (ConstEntry<Double> entry : doubleTable.entries()) {
-    //      emitter.addData(entry.dataEntry());
-    //    }
+    for (ConstEntry<Double> entry : doubleTable.entries()) {
+      // convert to a type we can deal with. FTR I hate this. Instead of making a new entry
+      // there probably should be an entry creator adapter, or maybe even not have an
+      // abstract method on ConstEntry called "dataEntry" at all - it should be up to the
+      // code generator -slash-assembler to decide how to create a data entry
+      T100DoubleData t100entry = new T100DoubleData(entry);
+      emitter.emit("; %s = %f", entry.name(), entry.value());
+      emitter.emit(t100entry.dataEntry());
+    }
 
     ImmutableList<String> allCode =
         ImmutableList.<String>builder()

@@ -52,20 +52,19 @@ public class Resolver {
     String destName = resolve(destination);
     if (source.isConstant()) {
       movConstant(source, destName);
+      return;
     } else {
       // source is not a constant.
       // have to copy 1,2, or 4 bytes
       String sourceName = resolve(source);
       int sourceSize = source.type().size();
       if (sourceSize == 1) {
-
         // load one byte from source
         emitter.emit("lda %s  ; read byte at source", sourceName);
         // write one byte to dest
         emitter.emit("sta %s  ; write byte to dest", destName);
-
+        return;
       } else if (sourceSize == 2 || sourceSize == 4) {
-
         // Transfer low word
         emitter.emit("lhld %s  ; read word at source", sourceName);
         emitter.emit("shld %s  ; write word to dest", destName);
@@ -73,9 +72,11 @@ public class Resolver {
           // Transfer high word
           emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
           emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
+          return;
         }
       }
     }
+    fail(null, "Cannot mov from " + source + " to " + destination);
   }
 
   private void movConstant(Operand source, String dest) {
@@ -89,9 +90,10 @@ public class Resolver {
         emitter.emit("lxi H, %s  ; location to store literal byte", dest);
         emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
       }
+      return;
+    }
 
-    } else if (source.type() == VarType.INT) {
-
+    if (source.type() == VarType.INT) {
       ConstantOperand<Integer> intOp = (ConstantOperand<Integer>) source;
       int value = intOp.value();
       emitter.emit("; 32-bit value 0x%08x (NOTE LITTLE ENDIAN-NESS)", value);
@@ -111,30 +113,24 @@ public class Resolver {
         emitter.emit("lxi H, 0x%04x  ; put high word into HL", high);
       }
       emitter.emit("shld %s + 0x02  ; store high word", dest);
-
-    } else if (source.type() == VarType.BOOL) {
-
+      return;
+    }
+    if (source.type() == VarType.BOOL) {
       String value = source.equals(ConstantOperand.TRUE) ? "1" : "0";
-      if (registers.isAllocated(Register.M)) {
-        // Don't use H if it's reserved
-        emitter.emit("lxi B, %s  ; location to store literal byte", dest);
-        emitter.emit("mvi A, 0x0%s  ; A <- literal boolean", value);
-        emitter.emit("stax B  ; [BC] <- literal byte");
-      } else {
-        emitter.emit("lxi H, %s  ; location to store boolean", dest);
-        emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", value);
-      }
-
-    } else if (source.type() == VarType.STRING) {
-
+      emitter.emit("lxi H, %s  ; location to store boolean", dest);
+      emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", value);
+      return;
+    }
+    if (source.type() == VarType.STRING) {
       ConstantOperand<String> stringOp = (ConstantOperand<String>) source;
       String value = stringOp.value();
       // look it up
       ConstEntry<String> entry = stringTable.lookup(value);
       emitter.emit("lxi H, %s  ; location to store literal string", entry.name());
       emitter.emit("shld %s  ; [HL] <- literal string", dest);
+      return;
     }
-
+    fail(null, "Cannot mov from " + source + " to " + dest);
   }
 
   // TODO: Fold this into mov(source, dest)
@@ -190,6 +186,7 @@ public class Resolver {
         emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", set ? "1" : "0");
         return;
       }
+      fail(null, "Cannot mov from " + source + " to " + globalDestination);
     }
     // source is not a constant.
     // have to copy 1,2, or 4 bytes
