@@ -5,15 +5,14 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class ResolverTest {
 
-  private Emitter emitter = new T100Emitter();
-  private Resolver resolver = new Resolver(null, null, emitter);
+  private T100Emitter emitter = new T100Emitter();
+  private Resolver resolver = new Resolver(emitter, null, null);
 
   private static final TempLocation TEMP_BOOL =
       LocationUtils.newTempLocation("__tempboo", VarType.BOOL);

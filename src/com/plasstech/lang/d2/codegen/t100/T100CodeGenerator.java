@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.codegen.t100;
 
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +13,6 @@ import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DoubleFinder;
 import com.plasstech.lang.d2.codegen.DoubleTable;
-import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -120,20 +117,17 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
   private static final T100StringData FALSE_MESSAGE = new T100StringData("FALSE_MSG", "false");
 
   private final Registers registers;
-  private final Emitter emitter;
+  private final T100Emitter emitter;
   private SymbolTable symTab;
   private Resolver resolver;
   private StringTable stringTable;
   private DoubleTable doubleTable;
 
-  // don't add the same subroutine multiple times.
-  private final Map<String, List<String>> subroutines = new HashMap<>();
-
   public T100CodeGenerator() {
     this(new T100Emitter(), new Registers());
   }
 
-  T100CodeGenerator(Emitter emitter, Registers registers) {
+  T100CodeGenerator(T100Emitter emitter, Registers registers) {
     this.emitter = emitter;
     this.registers = registers;
   }
@@ -143,7 +137,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     stringTable = new StringFinder().execute(input.lastIlCode());
     doubleTable = new DoubleFinder().execute(input.lastIlCode());
 
-    resolver = new Resolver(stringTable, registers, emitter);
+    resolver = new Resolver(emitter, stringTable, doubleTable);
 
     ImmutableList<Op> code = input.lastIlCode();
     String f = "dcode";
@@ -183,8 +177,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
 
     // for each subroutine, add to the emitter.
-    subroutines.values().stream().flatMap(Collection::stream)
-        .forEach(line -> emitter.emit0(line));
+    emitter.emitSubroutines();
     // emit all globals
     input.programNode().accept(new GlobalVariableEmitter(symTab, emitter));
 
@@ -217,26 +210,6 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             .build();
 
     return input.addAsmCode(allCode);
-  }
-
-  private void addSubroutine(Name nameEnum) {
-    String name = nameEnum.name();
-    if (!subroutines.containsKey(name)) {
-      Subroutine sub = Subroutines.get(nameEnum);
-      if (sub == null) {
-        fail(null, "No code for subroutine %s", name);
-      }
-      subroutines.put(name, sub.code());
-      // ALSO add its deps
-      for (Name dep : sub.dependencies()) {
-        addSubroutine(dep);
-      }
-    }
-  }
-
-  private void callSubroutine(Name name) {
-    addSubroutine(name);
-    emitter.emit("call %s", name.name());
   }
 
   @Override
@@ -278,65 +251,15 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
         Operand arg = op.arg();
         String name = resolver.resolve(arg);
         if (arg.type() == VarType.STRING) {
-          // TODO: If null, output "null".
-          if (arg.isConstant()) {
-            // load the value of the constant string
-            emitter.emit("lxi H, %s", name);
-          } else {
-            // load the location where the string is.
-            emitter.emit("lhld %s", name);
-          }
-          emitter.emit("call 0x11A2  ; print HL (destroys HL, A)");
+          printString(arg, name);
         } else if (arg.type() == VarType.BYTE) {
-          // use a call to print a byte. clear H.
-          if (arg.isConstant()) {
-            byte value = ((ConstantOperand<Byte>) arg).value();
-            if (value < 0) {
-              // print '-' and then convert to positive
-              emitter.emit("mvi A, 0x2d");
-              emitter.emit("call 0x0020  ; print a negative sign before the negative byte");
-              value = (byte) ((-value) + 1);
-            }
-            emitter.emit("lxi H, 0x00%02x", value);
-            emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL (destroys all)");
-          } else {
-            emitter.emit("lda %s", name);
-            callSubroutine(Name.D_print8);
-          }
+          printByte(arg, name);
         } else if (arg.type() == VarType.BOOL) {
-          if (arg.equals(ConstantOperand.TRUE)) {
-            emitter.addData(TRUE_MESSAGE.dataEntry());
-            emitter.emit("lxi H, %s", TRUE_MESSAGE.name());
-          } else if (arg.equals(ConstantOperand.FALSE)) {
-            emitter.addData(FALSE_MESSAGE.dataEntry());
-            emitter.emit("lxi H, %s", FALSE_MESSAGE.name());
-          } else {
-            emitter.addData(TRUE_MESSAGE.dataEntry());
-            emitter.addData(FALSE_MESSAGE.dataEntry());
-            // compare to 0
-            resolver.mov(arg, Register.A);
-            // pre-set to false
-            emitter.emit("lxi H, %s  ; preset to false string", FALSE_MESSAGE.name());
-            emitter.emit("cpi 0x00  ; see if in fact false");
-            String falseLabel = Labels.nextLabel("false");
-            emitter.emit("jz %s  ; is in fact false", falseLabel); // it's indeed false.
-            emitter.emit("lxi H, %s  ; set to true string", TRUE_MESSAGE.name());
-            emitter.emitLabel(falseLabel);
-          }
-          emitter.emit("call 0x11A2  ; print HL (destroys HL, A)");
+          printBool(arg);
         } else if (arg.type() == VarType.INT) {
-          if (arg.isConstant()) {
-            int value = ((ConstantOperand<Integer>) arg).value();
-            if (value >= 0 && value < 32768) {
-              emitter.emit("lxi H, 0x%04x", value);
-              emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL");
-            } else {
-              fail(op.position(), "Cannot print 32-bit constant int %s", arg);
-              return;
-            }
-          } else {
-            printInt(arg);
-          }
+          printInt(op, arg);
+        } else if (arg.type() == VarType.DOUBLE) {
+          printDouble(op, arg);
         } else {
           fail(op.position(), "Cannot print %s of type %s", arg, arg.type());
           return;
@@ -359,11 +282,91 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
   }
 
-  private void printInt(Operand arg) {
+  private void printBool(Operand arg) {
+    if (arg.equals(ConstantOperand.TRUE)) {
+      emitter.addData(TRUE_MESSAGE.dataEntry());
+      emitter.emit("lxi H, %s", TRUE_MESSAGE.name());
+    } else if (arg.equals(ConstantOperand.FALSE)) {
+      emitter.addData(FALSE_MESSAGE.dataEntry());
+      emitter.emit("lxi H, %s", FALSE_MESSAGE.name());
+    } else {
+      emitter.addData(TRUE_MESSAGE.dataEntry());
+      emitter.addData(FALSE_MESSAGE.dataEntry());
+      // compare to 0
+      resolver.mov(arg, Register.A);
+      // pre-set to false
+      emitter.emit("lxi H, %s  ; preset to false string", FALSE_MESSAGE.name());
+      emitter.emit("cpi 0x00  ; see if in fact false");
+      String falseLabel = Labels.nextLabel("false");
+      emitter.emit("jz %s  ; is in fact false", falseLabel); // it's indeed false.
+      emitter.emit("lxi H, %s  ; set to true string", TRUE_MESSAGE.name());
+      emitter.emitLabel(falseLabel);
+    }
+    emitter.emit("call 0x11A2  ; print HL (destroys HL, A)");
+  }
+
+  private void printByte(Operand arg, String name) {
+    // use a call to print a byte. clear H.
+    if (arg.isConstant()) {
+      byte value = ((ConstantOperand<Byte>) arg).value();
+      if (value < 0) {
+        // print '-' and then convert to positive
+        emitter.emit("mvi A, 0x2d");
+        emitter.emit("call 0x0020  ; print a negative sign before the negative byte");
+        value = (byte) ((-value) + 1);
+      }
+      emitter.emit("lxi H, 0x00%02x", value);
+      emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL (destroys all)");
+    } else {
+      emitter.emit("lda %s", name);
+      emitter.callSubroutine(Name.D_print8);
+    }
+  }
+
+  private void printString(Operand arg, String name) {
+    // TODO: If null, output "null".
+    if (arg.isConstant()) {
+      // load the value of the constant string
+      emitter.emit("lxi H, %s", name);
+    } else {
+      // load the location where the string is.
+      emitter.emit("lhld %s", name);
+    }
+    emitter.emit("call 0x11A2  ; print HL (destroys HL, A)");
+  }
+
+  private void printDouble(Op op, Operand arg) {
+    if (arg.isConstant()) {
+      // this shouldn't happen (printoptimizer)
+      fail(op.position(), "Cannot print constant double %s", arg);
+      return;
+    }
+    emitter.emit("lxi H, %s", resolver.resolve(arg));
+    emitter.emit("call 0x31C4  ; HL -> FAC1");
+    // maximum 14 digits, plus dot, plus leading negative, plus trailing 0.
+    emitter.addData("PRINT_BUFFER: db " + T100Locations.zeros(17));
+    emitter.emit("lxi H, PRINT_BUFFER");
+    emitter.emit("call 0x39E8  ; sprintf FAC1 into PRINT_BUFFER");
+    emitter.emit("lxi H, PRINT_BUFFER");
+    emitter.emit("call 0x11A2  ; print PRINT_BUFFER");
+  }
+
+  private void printInt(Op op, Operand arg) {
+    if (arg.isConstant()) {
+      // this shouldn't happen (printoptimizer)
+      int value = ((ConstantOperand<Integer>) arg).value();
+      if (value >= 0 && value < 32768) {
+        emitter.emit("lxi H, 0x%04x", value);
+        emitter.emit("call 0x39D4  ; print the ASCII value of the number in HL");
+      } else {
+        fail(op.position(), "Cannot print 32-bit constant int %s", arg);
+      }
+      return;
+    }
     resolver.mov(arg, Register.BC);
     emitter.emit("; prints the int that BC points at");
     // emit the code that prints the int
-    callSubroutine(Name.D_print32);
+    emitter.callSubroutine(Name.D_print32);
   }
 
   @Override
@@ -373,7 +376,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("dcr M");
     } else if (op.target().type() == VarType.INT) {
       resolver.mov(op.target(), Register.BC);
-      callSubroutine(Name.D_dec32);
+      emitter.callSubroutine(Name.D_dec32);
     } else {
       emitter.emit("Cannot decrement %s", op.target().type());
     }
@@ -387,7 +390,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       emitter.emit("inr M");
     } else if (op.target().type() == VarType.INT) {
       resolver.mov(op.target(), Register.BC);
-      callSubroutine(Name.D_inc32);
+      emitter.callSubroutine(Name.D_inc32);
     } else {
       emitter.emit("Cannot increment %s", op.target().type());
     }
@@ -515,11 +518,36 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           fail(op.position(), "Cannot generate %s yet", op);
           break;
       }
+    } else if (left.type() == VarType.DOUBLE) {
+      switch (op.operator()) {
+        case PLUS:
+          generateDoubleAdd(destination, left, right);
+          break;
+
+        default:
+          fail(op.position(), "Cannot generate %s yet", op);
+          break;
+      }
     } else {
       fail(op.position(), "Cannot generate %s yet", op);
     }
     resolver.deallocate(left);
     resolver.deallocate(right);
+  }
+
+  private void generateDoubleAdd(Location destination, Operand left, Operand right) {
+    // what about constants? This should Just Work.
+    // 1. copy left to FAC1 // 31C4H (HL->FAC1)
+    emitter.emit("lxi H, %s", resolver.resolve(left));
+    emitter.emit("call 0x31C4  ; HL -> FAC1");
+    // 2. copy right to FAC2 31B8H -  HL to FAC2.
+    emitter.emit("lxi H, %s", resolver.resolve(right));
+    emitter.emit("call 0x31B8  ; HL -> FAC2");
+    // 3. call 2B78
+    emitter.emit("call 0x2B78 ; FAC1=FAC1+FAC2");
+    // 4. copy FAC1 to destination // 31CAH (FAC1->HL)
+    emitter.emit("lxi H, %s", resolver.resolve(destination));
+    emitter.emit("call 0x31CA  ; FAC1->HL");
   }
 
   private void generateIntDiv(Location destination, Operand left, Operand right) {
@@ -530,14 +558,14 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
 
     // now we need to copy dest to numerator and right to denominator. This is different
     // than usual t100 32-bit routines, but I might like it.
     emitter.emit("; dest=dest/right");
     resolver.mov(destination, "DIV32_PARAM_num");
     resolver.mov(right, "DIV32_PARAM_denom");
-    callSubroutine(Name.D_div32);
+    emitter.callSubroutine(Name.D_div32);
     resolver.mov("DIV32_RETURN_SLOT", destination);
   }
 
@@ -550,12 +578,12 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest&right");
     // do dest=dest(left)&right: BC=BC&HL (dest=dest&hl)
     resolver.mov(destination, Register.BC);
     resolver.mov(right, Register.M);
-    callSubroutine(Subroutines.lookupSimple(operator));
+    emitter.callSubroutine(Subroutines.lookupSimple(operator));
   }
 
   private void generateIntSub(Location destination, Operand left, Operand right) {
@@ -566,12 +594,12 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest-right");
     // do dest=dest(left)-right: BC=BC-HL (dest=dest-hl)
     resolver.mov(destination, Register.BC);
     resolver.mov(right, Register.M);
-    callSubroutine(Name.D_sub32);
+    emitter.callSubroutine(Name.D_sub32);
   }
 
   private void generateIntAdd(Location destination, Operand left, Operand right) {
@@ -583,13 +611,13 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
     emitter.emit("; dest=dest+right");
     // do dest=dest(left)+right: BC=BC+HL
     resolver.mov(destination, Register.BC);
     // this fails when "right" is a constant
     resolver.mov(right, Register.M);
-    callSubroutine(Name.D_add32);
+    emitter.callSubroutine(Name.D_add32);
   }
 
   private void generateByteDiv(Location destination, Operand left, Operand right) {
@@ -600,7 +628,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(left, Register.C);
       resolver.mov(right, Register.D);
       // a=c/d
-      callSubroutine(Name.D_div8);
+      emitter.callSubroutine(Name.D_div8);
     }
     resolver.mov(Register.A, destination);
   }
@@ -613,12 +641,12 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     emitter.emit("; copy left to dest");
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
 
     emitter.emit("; dest=dest*right");
     resolver.mov(destination, "MULT32_PARAM_left");
     resolver.mov(right, "MULT32_PARAM_right");
-    callSubroutine(Name.D_mult32);
+    emitter.callSubroutine(Name.D_mult32);
     resolver.mov("MULT32_RETURN_SLOT", destination);
   }
 
@@ -630,7 +658,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
       resolver.mov(right, Register.D);
     }
     // a=c*d
-    callSubroutine(Name.D_mult8);
+    emitter.callSubroutine(Name.D_mult8);
     resolver.mov(Register.A, destination);
   }
 
@@ -670,9 +698,9 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // set the count in D
     resolver.mov(count, Register.D);
     if (operation == TokenType.SHIFT_LEFT) {
-      callSubroutine(Name.D_shift_left8);
+      emitter.callSubroutine(Name.D_shift_left8);
     } else {
-      callSubroutine(Name.D_shift_right8);
+      emitter.callSubroutine(Name.D_shift_right8);
     }
     resolver.mov(Register.A, destination);
   }
@@ -696,7 +724,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     resolver.mov(left, Register.BC);
     resolver.mov(destination, Register.M);
     // Copies 4 bytes from BC to HL (from left to destination)
-    callSubroutine(Name.D_copy32);
+    emitter.callSubroutine(Name.D_copy32);
 
     // repeat the shift "D times."
     ConstantOperand<Integer> rightConstant = (ConstantOperand<Integer>) right;
@@ -710,9 +738,9 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     }
     emitter.emit("ana A  ; clear carry");
     if (operator == TokenType.SHIFT_LEFT) {
-      callSubroutine(Name.D_shift_left32);
+      emitter.callSubroutine(Name.D_shift_left32);
     } else {
-      callSubroutine(Name.D_shift_right32);
+      emitter.callSubroutine(Name.D_shift_right32);
     }
     if (count != 1) {
       emitter.emit("dcr D");
@@ -761,7 +789,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
     // Compare BC and H
     resolver.mov(left, Register.BC);
     resolver.mov(right, Register.M);
-    callSubroutine(Name.D_comp32);
+    emitter.callSubroutine(Name.D_comp32);
     String continueLabel = Labels.nextLabel("continue_compare");
     /*
      * If A less than 8-bit data, the CY flag is set AND Zero flag is reset. < jc AND jz If A equals
@@ -818,11 +846,11 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
             if (!op.operand().equals(destination)) {
               resolver.mov(op.operand(), Register.BC);
               resolver.mov(destination, Register.M);
-              callSubroutine(Name.D_copy32);
+              emitter.callSubroutine(Name.D_copy32);
             }
 
             resolver.mov(op.destination(), Register.BC);
-            callSubroutine(Name.D_neg32);
+            emitter.callSubroutine(Name.D_neg32);
           }
         } else {
           fail(op.position(), "Cannot generate %s yet", op);
@@ -848,7 +876,7 @@ public class T100CodeGenerator extends DefaultOpcodeVisitor implements Phase {
           // bc=dest
           resolver.mov(op.destination(), Register.BC);
           // bc=~hl
-          callSubroutine(Name.D_bitnot32);
+          emitter.callSubroutine(Name.D_bitnot32);
         }
         break;
 

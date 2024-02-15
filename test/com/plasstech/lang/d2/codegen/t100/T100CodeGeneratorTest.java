@@ -10,7 +10,6 @@ import org.junit.Test;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -29,7 +28,7 @@ import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
 
 public class T100CodeGeneratorTest {
-  private Emitter emitter = new T100Emitter();
+  private T100Emitter emitter = new T100Emitter();
   private Registers registers = new Registers();
   private SymbolTable symTab = new SymTab();
   private T100CodeGenerator codeGen = new T100CodeGenerator(emitter, registers);

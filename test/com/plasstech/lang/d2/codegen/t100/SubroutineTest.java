@@ -22,6 +22,18 @@ public class SubroutineTest {
   }
 
   @Test
+  public void jmpDep() {
+    Subroutine oneDep = new Subroutine(Name.D_copy32, ImmutableList.of("jmp D_copyN"));
+    assertThat(oneDep.dependencies()).containsExactly(Name.D_copyN);
+  }
+
+  @Test
+  public void localJmpDep() {
+    Subroutine oneDep = new Subroutine(Name.D_copy32, ImmutableList.of("jmp D_copyN_loop"));
+    assertThat(oneDep.dependencies()).isEmpty();
+  }
+
+  @Test
   public void duplicateDeps() {
     Subroutine dupDeps = new Subroutine(Name.D_add32,
         ImmutableList.of("call D_inc32", " call D_inc32 ", "  call D_inc32  ; comment"));

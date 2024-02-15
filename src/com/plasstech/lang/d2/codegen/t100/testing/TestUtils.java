@@ -40,6 +40,7 @@ public class TestUtils {
         Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
 
     State state = compile(result.state());
+    System.err.println(Joiner.on("\n").join(state.asmCode()));
     assertThat(interpretedOutput).isEqualTo(state.stdOut());
   }
 
@@ -57,7 +58,7 @@ public class TestUtils {
       file.delete();
     }
     file.createNewFile();
-    //    System.err.println(file.toString());
+    System.err.println(file.toString());
 
     File assembled = new File(dir, sourceFilename + ".8085");
     if (assembled.exists()) {
@@ -67,7 +68,7 @@ public class TestUtils {
 
     CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode());
-    System.err.println(Joiner.on('\n').join(state.asmCode()));
+    //    System.err.println(Joiner.on('\n').join(state.asmCode()));
 
     ProcessBuilder pb =
         new ProcessBuilder("python", ASSEMBLER_PATH + "/assembler.py", file.getAbsolutePath(),

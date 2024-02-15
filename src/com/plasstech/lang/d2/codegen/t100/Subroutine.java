@@ -9,6 +9,7 @@ import com.plasstech.lang.d2.codegen.Trimmers;
 class Subroutine {
   enum Name {
     D_print32,
+    D_copyN,
     D_copy32,
     D_sub32,
     D_comp32,
@@ -28,7 +29,7 @@ class Subroutine {
     D_bitxor32,
     D_bitnot32,
     D_div32,
-    D_neg32
+    D_neg32,
   }
 
   private final Name name;
@@ -40,8 +41,16 @@ class Subroutine {
     this.code = ImmutableList.copyOf(code);
     this.dependencies = code.stream()
         .map(Trimmers::trim)
-        .filter(line -> line.startsWith("call D_"))
-        .map(extern -> extern.substring(5))
+        .filter(line -> line.startsWith("call D_") || line.startsWith("jmp D_"))
+        .map(extern -> extern.substring(extern.indexOf(' ') + 1))
+        .filter(maybeCall -> {
+          try {
+            Name.valueOf(maybeCall);
+            return true;
+          } catch (IllegalArgumentException bad) {
+            return false;
+          }
+        })
         .map(dep -> Name.valueOf(dep))
         .collect(ImmutableSet.toImmutableSet());
   }

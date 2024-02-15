@@ -6,7 +6,11 @@ import com.plasstech.lang.d2.type.VariableSymbol;
 
 final class T100Locations {
   static String zeros(VarType type) {
-    return "0x00,".repeat(type.size() - 1) + "0x00";
+    return zeros(type.size());
+  }
+
+  static String zeros(int count) {
+    return "0x00,".repeat(count - 1) + "0x00";
   }
 
   static String returnSlot(String procName) {

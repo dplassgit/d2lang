@@ -11,27 +11,28 @@ import java.util.Set;
 
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Emitter;
+import com.plasstech.lang.d2.codegen.DoubleTable;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.VariableLocation;
+import com.plasstech.lang.d2.codegen.t100.Subroutine.Name;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
 
-public class Resolver {
+class Resolver {
   private final StringTable stringTable;
-  private final Registers registers;
-  private final Emitter emitter;
+  private final DoubleTable doubleTable;
+  private final T100Emitter emitter;
   private final Map<String, PseudoReg> aliases = new HashMap<>();
   private final Map<VarType, Set<PseudoReg>> regsByType = new HashMap<>();
 
-  public Resolver(StringTable stringTable, Registers registers, Emitter emitter) {
+  Resolver(T100Emitter emitter, StringTable stringTable, DoubleTable doubleTable) {
     this.stringTable = stringTable;
-    this.registers = registers;
     this.emitter = emitter;
+    this.doubleTable = doubleTable;
   }
 
   void debug() {
@@ -52,44 +53,20 @@ public class Resolver {
     String destName = resolve(destination);
     if (source.isConstant()) {
       movConstant(source, destName);
-      return;
     } else {
       // source is not a constant.
-      // have to copy 1,2, or 4 bytes
+      // have to copy bytes
       String sourceName = resolve(source);
       int sourceSize = source.type().size();
-      if (sourceSize == 1) {
-        // load one byte from source
-        emitter.emit("lda %s  ; read byte at source", sourceName);
-        // write one byte to dest
-        emitter.emit("sta %s  ; write byte to dest", destName);
-        return;
-      } else if (sourceSize == 2 || sourceSize == 4) {
-        // Transfer low word
-        emitter.emit("lhld %s  ; read word at source", sourceName);
-        emitter.emit("shld %s  ; write word to dest", destName);
-        if (sourceSize == 4) {
-          // Transfer high word
-          emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
-          emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
-          return;
-        }
-      }
+      mov(sourceName, destName, sourceSize);
     }
-    fail(null, "Cannot mov from " + source + " to " + destination);
   }
 
   private void movConstant(Operand source, String dest) {
     if (source.type() == VarType.BYTE) {
       ConstantOperand<Byte> byteOp = (ConstantOperand<Byte>) source;
-      if (registers.isAllocated(Register.M)) {
-        emitter.emit("lxi B, %s  ; location to store literal byte", dest);
-        emitter.emit("mvi A, 0x%02x  ; A <- literal byte", byteOp.value());
-        emitter.emit("stax B  ; [BC] <- literal byte");
-      } else {
-        emitter.emit("lxi H, %s  ; location to store literal byte", dest);
-        emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
-      }
+      emitter.emit("lxi H, %s  ; location to store literal byte", dest);
+      emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
       return;
     }
 
@@ -115,19 +92,35 @@ public class Resolver {
       emitter.emit("shld %s + 0x02  ; store high word", dest);
       return;
     }
+
     if (source.type() == VarType.BOOL) {
       String value = source.equals(ConstantOperand.TRUE) ? "1" : "0";
       emitter.emit("lxi H, %s  ; location to store boolean", dest);
       emitter.emit("mvi M, 0x0%s  ; [HL] <- literal boolean", value);
       return;
     }
+
     if (source.type() == VarType.STRING) {
       ConstantOperand<String> stringOp = (ConstantOperand<String>) source;
       String value = stringOp.value();
       // look it up
       ConstEntry<String> entry = stringTable.lookup(value);
-      emitter.emit("lxi H, %s  ; location to store literal string", entry.name());
+      emitter.emit("lxi H, %s  ; load location of literal string", entry.name());
       emitter.emit("shld %s  ; [HL] <- literal string", dest);
+      return;
+    }
+
+    if (source.type() == VarType.DOUBLE) {
+      ConstantOperand<Double> doubleOp = (ConstantOperand<Double>) source;
+      double value = doubleOp.value();
+      // look it up
+      ConstEntry<Double> entry = doubleTable.lookup(value);
+      // move each byte
+      emitter.emit("mvi D, 0x08");
+      // from BC to HL
+      emitter.emit("lxi B, %s  ; load source/location of literal double", entry.name());
+      emitter.emit("lxi H, %s  ; load destination", dest);
+      emitter.callSubroutine(Name.D_copyN);
       return;
     }
     fail(null, "Cannot mov from " + source + " to " + dest);
@@ -141,14 +134,8 @@ public class Resolver {
       // for byte: just store it
       if (source.type() == VarType.BYTE) {
         ConstantOperand<Byte> byteOp = (ConstantOperand<Byte>) source;
-        if (registers.isAllocated(Register.M)) {
-          emitter.emit("lxi B, %s  ; location to store literal byte", destName);
-          emitter.emit("mvi A, 0x%02x  ; A <- literal byte", byteOp.value());
-          emitter.emit("stax B  ; [BC] <- literal byte");
-        } else {
-          emitter.emit("lxi H, %s  ; location to store literal byte", destName);
-          emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
-        }
+        emitter.emit("lxi H, %s  ; location to store literal byte", destName);
+        emitter.emit("mvi M, 0x%02x  ; [HL] <- literal byte", byteOp.value());
         return;
       }
       if (source.type() == VarType.INT) {
@@ -188,30 +175,12 @@ public class Resolver {
       }
       fail(null, "Cannot mov from " + source + " to " + globalDestination);
     }
+
     // source is not a constant.
     // have to copy 1,2, or 4 bytes
     String sourceName = resolve(source);
     int sourceSize = source.type().size();
-    if (sourceSize == 1) {
-      // load one byte from source
-      emitter.emit("lda %s  ; read byte at source", sourceName);
-      // write one byte to dest
-      emitter.emit("sta %s  ; write byte to dest", destName);
-      return;
-    }
-    if (sourceSize == 2 || sourceSize == 4) {
-      // load 2 bytes
-      // Transfer low word
-      emitter.emit("lhld %s  ; read word at source", sourceName);
-      emitter.emit("shld %s  ; write word to dest", destName);
-      if (sourceSize == 4) {
-        // Transfer high word
-        emitter.emit("lhld %s + 0x02  ; read high word at source", sourceName);
-        emitter.emit("shld %s + 0x02  ; write high word to dest", destName);
-      }
-      return;
-    }
-    fail(null, "Cannot generate mov from %s to %s", source, destName);
+    mov(sourceName, destName, sourceSize);
   }
 
   // TODO: Fold this into mov(source, dest)
@@ -219,6 +188,10 @@ public class Resolver {
     String destName = resolve(destination);
     // have to copy 1,2, or 4 bytes
     int sourceSize = destination.type().size();
+    mov(sourceName, destName, sourceSize);
+  }
+
+  private void mov(String sourceName, String destName, int sourceSize) {
     if (sourceSize == 1) {
       // load one byte from source
       emitter.emit("lda %s  ; read byte at source", sourceName);
@@ -238,7 +211,11 @@ public class Resolver {
       }
       return;
     }
-    fail(null, "Cannot generate mov from %s to %s", sourceName, destination);
+    // BC to HL     
+    emitter.emit("lxi B, %s", sourceName);
+    emitter.emit("lxi H, %s", destName);
+    emitter.emit("mvi D, 0x%02d", sourceSize);
+    emitter.callSubroutine(Name.D_copyN);
   }
 
   public String resolve(Operand arg) {
