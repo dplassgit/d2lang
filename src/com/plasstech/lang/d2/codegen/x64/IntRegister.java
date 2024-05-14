@@ -16,9 +16,9 @@ enum IntRegister implements Register {
   R10("R10"),
   R11("R11"),
   R9("R9"),
-  R8("R8"),
   // These are at the bottom so that they're less frequently used, since division uses EDX:EAX
   // and RCX, RDX, R8, R9 are the first 4 params to both system and regular calls.
+  R8("R8"),
   RDX("RDX", "EDX", "DX", "DL"),
   RCX("RCX", "ECX", "CX", "CL"),
   RAX("RAX", "EAX", "AX", "AL");
@@ -44,34 +44,15 @@ enum IntRegister implements Register {
     return name64;
   }
 
-  // TODO: implement equals by comparing the input string to any of the names
   @Override
-  public String sizeByType(VarType type) {
+  public String nameByType(VarType type) {
     if (type == VarType.INT) {
       return name32;
     } else if (type == VarType.BYTE || type == VarType.BOOL) {
       return name8;
+    } else if (type == VarType.SHORT) {
+      return name16;
     }
-    return name64;
-  }
-
-  @Override
-  public String name8() {
-    return name8;
-  }
-
-  @Override
-  public String name16() {
-    return name16;
-  }
-
-  @Override
-  public String name32() {
-    return name32;
-  }
-
-  @Override
-  public String name64() {
     return name64;
   }
 

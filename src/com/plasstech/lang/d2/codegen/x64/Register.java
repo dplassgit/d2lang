@@ -4,18 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.type.VarType;
 
 public interface Register {
-
-  String name8();
-
-  String name16();
-
-  String name32();
-
-  String name64();
-
   String name();
 
-  String sizeByType(VarType type);
+  String nameByType(VarType type);
 
   void accept(RegisterVisitor visitor);
 

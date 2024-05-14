@@ -22,27 +22,7 @@ enum XmmRegister implements Register {
   XMM0;
 
   @Override
-  public String name8() {
-    throw new UnsupportedOperationException("Cannot get name8 of xmm register");
-  }
-
-  @Override
-  public String name16() {
-    throw new UnsupportedOperationException("Cannot get name16 of xmm register");
-  }
-
-  @Override
-  public String name32() {
-    throw new UnsupportedOperationException("Cannot get name32 of xmm register");
-  }
-
-  @Override
-  public String name64() {
-    return name();
-  }
-
-  @Override
-  public String sizeByType(VarType type) {
+  public String nameByType(VarType type) {
     return name();
   }
 

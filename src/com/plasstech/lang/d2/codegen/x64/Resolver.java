@@ -45,7 +45,7 @@ class Resolver implements RegistersInterface {
     @Override
     public int compare(Register arg0, Register arg1) {
       // This doesn't sort in enum order but it doesn't matter.
-      return arg0.name64().compareTo(arg1.name64());
+      return arg0.name().compareTo(arg1.name());
     }
   };
   private final Set<Register> usedRegisters = new TreeSet<>(REGISTER_NAME_COMPARATOR);
@@ -111,12 +111,12 @@ class Resolver implements RegistersInterface {
     // maybe look up the location in the symbol table?
     if (location.isRegister()) {
       Register reg = ((RegisterLocation) location).register();
-      return reg.sizeByType(location.type());
+      return reg.nameByType(location.type());
     }
     Register reg = aliases.get(location.toString());
     if (reg != null) {
       // Found it in a register.
-      return reg.sizeByType(location.type());
+      return reg.nameByType(location.type());
     }
     switch (location.storage()) {
       case TEMP:
@@ -125,7 +125,7 @@ class Resolver implements RegistersInterface {
         reg = allocate(location.type());
         aliases.put(location.name(), reg);
         emitter.emit("; Allocating %s (%s) to %s", location, location.storage(), reg);
-        return reg.sizeByType(location.type());
+        return reg.nameByType(location.type());
 
       case GLOBAL:
         return "[_" + location.name() + "]";
@@ -152,7 +152,7 @@ class Resolver implements RegistersInterface {
       emitter.emit("; param location for %s (%d)", param.name(), param.offset());
       return "[RBP + " + param.offset() + "]";
     }
-    return reg.sizeByType(param.type());
+    return reg.nameByType(param.type());
   }
 
   /** If the operand is a temp and was allocated, deallocate its register. */
@@ -301,11 +301,11 @@ class Resolver implements RegistersInterface {
     String size = Size.of(type).asmType;
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s", destReg.name64(), destReg.name64());
+        emitter.emit("xor %s, %s", destReg.name(), destReg.name());
       } else {
         if (sourceReg != null && destReg != null) {
           // Fixed Issue #170: if register to register, don't need "size"
-          emitter.emit("mov %s, %s", destReg.sizeByType(type), sourceReg.sizeByType(type));
+          emitter.emit("mov %s, %s", destReg.nameByType(type), sourceReg.nameByType(type));
         } else {
           // if source is a constant and it's bigger than a 32-bit int, AND we're moving to
           // memory, we need to use an intermediary
@@ -346,7 +346,7 @@ class Resolver implements RegistersInterface {
 
     if (destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s", destReg.name64(), destReg.name64());
+        emitter.emit("xor %s, %s", destReg.name(), destReg.name());
       } else {
         // go right from source to dest
         emitter.emit("mov %s, %s", destName, sourceName);

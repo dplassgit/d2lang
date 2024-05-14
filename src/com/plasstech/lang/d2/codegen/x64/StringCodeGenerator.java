@@ -377,7 +377,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     if (!indexName.equals("0")) {
       // if index is 0, we're comparing to 0, and the ZF is set by dec.
       emitter.emit(
-          "cmp %s, %s  ; see if index == length - 1", RAX.sizeByType(index.type()), indexName);
+          "cmp %s, %s  ; see if index == length - 1", RAX.nameByType(index.type()), indexName);
     }
     String allocateLabel = Labels.nextLabel("allocate_2_char_string");
     emitter.emit("jne %s", allocateLabel);
@@ -432,7 +432,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("; deallocated indexReg from %s", indexReg);
     // 6. copy the character to the first location
     emitter.emit(
-        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());
+        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.nameByType(VarType.BYTE));
     resolver.deallocate(charReg);
     emitter.emit("; deallocated charReg from %s", charReg);
     // 7. clear the 2nd location
@@ -470,28 +470,28 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     String justConcatenate = Labels.nextLabel("concatenate");
     emitter.emit0("");
     emitter.emit("; short-circuit for empty left");
-    emitter.emit("cmp %s, 0", leftLengthReg.name32());
+    emitter.emit("cmp %s, 0", leftLengthReg.nameByType(VarType.INT));
     emitter.emit("jne %s", testRight);
     resolver.mov(right, destination);
     emitter.emit("jmp %s", fin);
 
     emitter.emitLabel(testRight);
     emitter.emit("; short-circuit for empty right");
-    emitter.emit("cmp %s, 0", rightLengthReg.name32());
+    emitter.emit("cmp %s, 0", rightLengthReg.nameByType(VarType.INT));
     emitter.emit("jne %s", justConcatenate);
     resolver.mov(left, destination);
     emitter.emit("jmp %s", fin);
 
     emitter.emitLabel(justConcatenate);
     emitter.emit(
-        "add %s, %s  ; Total new string length", leftLengthReg.name32(), rightLengthReg.name32());
-    emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.name32());
+        "add %s, %s  ; Total new string length", leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
+    emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.nameByType(VarType.INT));
     emitter.emit("; deallocating right length from %s", rightLengthReg);
     resolver.deallocate(rightLengthReg);
 
     // 3. allocate string of length left+right + 1
     emitter.emit0("");
-    emitter.emit("; Allocate string of length %s", leftLengthReg.name32());
+    emitter.emit("; Allocate string of length %s", leftLengthReg.nameByType(VarType.INT));
 
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
@@ -629,7 +629,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     resolver.mov(op.operand(), charReg);
     // 4. write source char in first location
     emitter.emit(
-        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.name8());
+        "mov BYTE [RAX], %s  ; move the character into the first location", charReg.nameByType(VarType.BYTE));
     emitter.emit("mov BYTE [RAX+1], 0  ; clear the 2nd location");
 
     raxState.condPop();

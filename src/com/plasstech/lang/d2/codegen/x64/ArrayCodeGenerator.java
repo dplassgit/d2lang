@@ -91,11 +91,11 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
       if (entrySize > 1) {
         emitter.emit(
-            "imul %s, %s ; total size of entries", allocSizeBytesRegister.name32(), entrySize);
+            "imul %s, %s ; total size of entries", allocSizeBytesRegister.nameByType(VarType.INT), entrySize);
       }
       emitter.emit(
           "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
-          allocSizeBytesRegister.name32(), 1 + 4 * dimensions, dimensions);
+          allocSizeBytesRegister.nameByType(VarType.INT), 1 + 4 * dimensions, dimensions);
     }
 
     emitter.emit("mov RCX, 1  ; # of 'entries' for calloc");
@@ -112,7 +112,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
           "; numEntriesLoc (%s) is not in a register; putting it into %s",
           numEntriesLoc, numEntriesReg);
       resolver.mov(numEntriesLoc, numEntriesReg);
-      numEntriesLocName = numEntriesReg.name32();
+      numEntriesLocName = numEntriesReg.nameByType(VarType.INT);
     }
     // TODO(#38): iterate over dimensions.
     boolean setSize = true;
@@ -154,7 +154,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         resolver.mov(source, destination);
         emitter.emit(
             "mov DWORD %s, [%s + 1]  ; get length from first dimension",
-            destReg.name32(), destReg.name64());
+            destReg.nameByType(VarType.INT), destReg.name());
       } else {
         // if source is not a register we have to allocate a register first
         Register tempReg = resolver.allocate(VarType.INT);
@@ -186,7 +186,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // not a constant and not in a registers; put it in a register
       sourceReg = resolver.allocate(baseType);
       emitter.emit("; source (%s) is not in a register; putting it into %s:", sourceLoc, sourceReg);
-      String sourceRegisterSized = sourceReg.sizeByType(baseType);
+      String sourceRegisterSized = sourceReg.nameByType(baseType);
       resolver.mov(sourceLoc, sourceReg);
       sourceName = sourceRegisterSized;
     }
@@ -203,7 +203,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       } else {
         sourceReg = resolver.allocate(baseType);
         resolver.mov(sourceLoc, sourceReg);
-        String sourceRegisterSized = sourceReg.sizeByType(baseType);
+        String sourceRegisterSized = sourceReg.nameByType(baseType);
         sourceName = sourceRegisterSized;
       }
       emitter.emit("movq [%s], %s  ; store it!", fullIndex, sourceName);
@@ -274,8 +274,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     String rightName = resolver.resolve(op.right());
     // TODO this can be simpler
     emitter.emit("; if they're the same objects we can stop now");
-    emitter.emit("mov QWORD %s, %s ; array compare setup", tempReg.name64(), leftName);
-    emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
+    emitter.emit("mov QWORD %s, %s ; array compare setup", tempReg.name(), leftName);
+    emitter.emit("cmp QWORD %s, %s", tempReg.name(), rightName);
     resolver.deallocate(tempReg);
     String nextTest = Labels.nextLabel("next_arraycmp_test");
     emitter.emit("jne %s", nextTest);
@@ -336,7 +336,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
 
     String continueLabel = Labels.nextLabel("array_memcmp");
-    emitter.emit("cmp %s, %s", leftLengthReg.name32(), rightLengthReg.name32());
+    emitter.emit("cmp %s, %s", leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
     resolver.deallocate(rightLengthReg);
     emitter.emit("je %s", continueLabel);
     emitter.emit("; sizes are different; definitely not equal");
@@ -407,7 +407,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         // this gets the size in the register
         emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
         // 2. compare - NOTE SWAPPED ARGS
-        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.name32(), index);
+        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.nameByType(VarType.INT), index);
         // 3. if good, continue
         String continueLabel = Labels.nextLabel("good_array_index");
         emitter.emit("jg %s", continueLabel);
@@ -415,7 +415,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         emitter.emit("");
         emitter.emit("; no good. print error and stop");
         emitter.addData(ARRAY_INDEX_OOB_ERR);
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32());
+        emitter.emit("mov R8d, %s  ; length ", lengthReg.nameByType(VarType.INT));
         emitter.emit("mov R9d, %s  ; index", index);
         emitter.emit("mov EDX, %s  ; line number", position.line());
         emitter.emit("mov RCX, ARRAY_INDEX_OOB_ERR");
@@ -468,7 +468,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       // this gets the size in the register
       emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
       // 2. compare
-      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.name32());
+      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName, lengthReg.nameByType(VarType.INT));
       // 3. if good, continue
       continueLabel = Labels.nextLabel("continue");
       emitter.emit("jl %s", continueLabel);
@@ -479,7 +479,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
       if (lengthReg == R8) {
         emitter.emit("; index already in R8");
       } else {
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.name32());
+        emitter.emit("mov R8d, %s  ; length ", lengthReg.nameByType(VarType.INT));
       }
       emitter.emit("mov DWORD R9d, %s  ; index", indexName);
       emitter.emit("mov EDX, %s  ; line number", position.line());

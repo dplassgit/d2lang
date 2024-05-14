@@ -103,9 +103,9 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emit("; allocated %s for calculations", tempReg);
       emitter.emit(
           "mov %s %s, %s  ; get value to store",
-          size, tempReg.sizeByType(source.type()), sourceName);
+          size, tempReg.nameByType(source.type()), sourceName);
       emitter.emit(
-          "mov %s [%s], %s  ; store it!", size, calcReg, tempReg.sizeByType(source.type()));
+          "mov %s [%s], %s  ; store it!", size, calcReg, tempReg.nameByType(source.type()));
       resolver.deallocate(tempReg);
     }
     resolver.deallocate(source);
@@ -153,8 +153,8 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     String rightName = resolver.resolve(op.right());
     // TODO this can be simpler if left is already in a register
     emitter.emit("; if they're the same objects we can stop now");
-    emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name64(), leftName);
-    emitter.emit("cmp QWORD %s, %s", tempReg.name64(), rightName);
+    emitter.emit("mov QWORD %s, %s ; record compare setup", tempReg.name(), leftName);
+    emitter.emit("cmp QWORD %s, %s", tempReg.name(), rightName);
     resolver.deallocate(tempReg);
     String notSameObjectLabel = Labels.nextLabel("not_same_object");
     emitter.emit("jne %s", notSameObjectLabel);
@@ -299,11 +299,11 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       // 1. get source into indirectReg, e.g., mov BYTE indirectReg.sized, [calcReg]
       VarType type = destination.type();
       emitter.emit("mov %s %s, [%s]  ; load from memory into indirect register", size,
-          indirectReg.sizeByType(type), calcReg);
+          indirectReg.nameByType(type), calcReg);
       // 2. put indirect reg into destination, e.g., mov BYTE destRo.name(), indirectReg
       // note, this doesn't need movq because we're not moving to a XMM register 
       emitter.emit("mov %s %s, %s  ; store into memory from indirect register", size, destRo.name(),
-          indirectReg.sizeByType(type));
+          indirectReg.nameByType(type));
 
       resolver.deallocate(indirectReg);
       emitter.emit("; deallocated %s from indirection", indirectReg);

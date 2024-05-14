@@ -51,13 +51,13 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
     Register tempReg = resolver.allocate(dest.type());
     emitter.emit("; allocated %s as temp reg", tempReg);
     // TODO: this register might be munged by subsequent calls...
-    emitter.emit("mov %s, RAX", tempReg.name64());
+    emitter.emit("mov %s, RAX", tempReg.name());
 
     // 3. _read up to 1mb
     emitter.emit0("");
     emitter.emit("; int _read(int fd, void *buffer, count size)");
     emitter.emit("mov RCX, 0  ; 0=stdio");
-    emitter.emit("mov RDX, %s  ; destination", tempReg.name64());
+    emitter.emit("mov RDX, %s  ; destination", tempReg.name());
     emitter.emit("mov R8, %d; count", ONE_MB);
     emitter.emitExternCall("_read");
 
@@ -79,13 +79,13 @@ class InputCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit0("");
     emitter.emit("; memcpy(dest, source, size)");
     emitter.emit("mov RCX, %s  ; dest", destName);
-    emitter.emit("mov RDX, %s  ; source", tempReg.name64());
+    emitter.emit("mov RDX, %s  ; source", tempReg.name());
     emitter.emit("pop R8  ; size, was pushed before as RDX");
     emitter.emitExternCall("memcpy");
 
     // 8. deallocate the original
     emitter.emit("; deallocate the original 1mb buffer");
-    emitter.emit("mov RCX, %s", tempReg.name64());
+    emitter.emit("mov RCX, %s", tempReg.name());
     emitter.emitExternCall("free");
     resolver.deallocate(tempReg);
     state.condPop();

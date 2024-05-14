@@ -85,7 +85,7 @@ class RegisterState {
   private class PushVisitor implements RegisterVisitor {
     @Override
     public void visit(IntRegister r) {
-      emitter.emit("push %s", r.name64());
+      emitter.emit("push %s", r.name());
     }
 
     @Override
@@ -98,12 +98,12 @@ class RegisterState {
   private class PopVisitor implements RegisterVisitor {
     @Override
     public void visit(IntRegister r) {
-      emitter.emit("pop %s", r.name64());
+      emitter.emit("pop %s", r.name());
     }
 
     @Override
     public void visit(XmmRegister r) {
-      emitter.emit("movq %s, [RSP]", r.name64());
+      emitter.emit("movq %s, [RSP]", r.name());
       emitter.emit("add RSP, 0x08");
     }
   }

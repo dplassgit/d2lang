@@ -364,7 +364,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
             }
 
             // 3. temp = left * right
-            emitter.emit("imul %s, %s", tempReg.name16(), rightReg.name16());
+            emitter.emit("imul %s, %s", tempReg.nameByType(VarType.SHORT), rightReg.nameByType(VarType.SHORT));
 
             // 4. mov dest, temp
             resolver.mov(tempReg, dest);
@@ -403,7 +403,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
               rightReg = resolver.allocate(VarType.INT);
               Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
               emitter.emit("mov %s, %s  ; save right to a different register",
-                  rightReg.sizeByType(leftType),
+                  rightReg.nameByType(leftType),
                   rightName);
               // NOTE: rightName IS OVERWRITTEN
               rightName = resolver.resolve(rightOp);
@@ -434,7 +434,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
             // move right (amount to shift) to RCX
             emitter.emit("mov %s %s, %s ; get amount to shift into CL",
                 size,
-                RCX.sizeByType(leftType),
+                RCX.nameByType(leftType),
                 rightName);
             // NOTE: destName may have been overwritten
             emitter.emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
@@ -536,19 +536,19 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       // Normally we'd do a direct comparison, but the RHS was too big. Need to do even worse
       // indirect comparison.
       tempReg = resolver.allocate(VarType.INT);
-      String tempRegName = tempReg.sizeByType(leftRo.type());
+      String tempRegName = tempReg.nameByType(leftRo.type());
       resolver.mov(leftRo.operand(), tempReg);
       Register rightReg = resolver.allocate(VarType.INT);
       resolver.mov(rightRo.operand(), rightReg);
       emitter.emit("cmp %s, %s  ; imm comparison", tempRegName,
-          rightReg.sizeByType(rightRo.type()));
+          rightReg.nameByType(rightRo.type()));
       resolver.deallocate(rightReg);
     } else {
       // imm/imm, imm/reg, imm/mem, mem/mem
       // TODO: Switch imm/reg & imm/mem to be reg/imm & mem/imm in the ILCodeGenerator
       // (doesn't it do this?!)
       tempReg = resolver.allocate(VarType.INT);
-      String tempRegName = tempReg.sizeByType(leftRo.type());
+      String tempRegName = tempReg.nameByType(leftRo.type());
       resolver.mov(leftRo.operand(), tempReg);
       emitter.emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
     }
@@ -624,8 +624,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     }
 
     emitter.emit("idiv %s  ; %s = %s / %s",
-        temp.sizeByType(operandType),
-        RAX.sizeByType(operandType),
+        temp.nameByType(operandType),
+        RAX.nameByType(operandType),
         leftName,
         rightName);
 
@@ -726,7 +726,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
             // register to register, don't need extra temp
             Register sourceReg = resolver.toRegister(source);
             Register destReg = resolver.toRegister(destination);
-            emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), sourceReg);
+            emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE), sourceReg);
           } else {
 
             // Source or dest is in memory; use a temp register.
@@ -738,7 +738,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
             if (resolver.isInAnyRegister(destination)) {
               // two regs, good.
               Register destReg = resolver.toRegister(destination);
-              emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.name8(), tempReg);
+              emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE), tempReg);
             } else {
               // This can't really happen, probably, because destinations
               // are typically temps, which are stored in registers.

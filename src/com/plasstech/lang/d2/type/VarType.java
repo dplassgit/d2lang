@@ -8,9 +8,10 @@ import com.google.common.collect.ImmutableSet;
 public interface VarType {
   VarType BOOL = new SimpleType("BOOL", 1);
   VarType BYTE = new SimpleType("BYTE", 1);
-  VarType DOUBLE = new SimpleType("DOUBLE", 8);
+  VarType SHORT = new SimpleType("SHORT", 2);
   VarType INT = new SimpleType("INT", 4);
   VarType LONG = new SimpleType("LONG", 8);
+  VarType DOUBLE = new SimpleType("DOUBLE", 8);
   VarType NULL = new NullType();
   VarType PROC = new SimpleType("PROC");
   VarType STRING = new StringType();
@@ -48,7 +49,8 @@ public interface VarType {
 
   final Set<VarType> NUMERIC_TYPES = ImmutableSet
       .of(VarType.BYTE, VarType.INT, VarType.LONG, VarType.DOUBLE);
-  final Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG);
+  final Set<VarType> INTEGRAL_TYPES =
+      ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG);
 
   default boolean isIntegral() {
     return INTEGRAL_TYPES.contains(this);
