@@ -429,80 +429,70 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       // ... to be continued
     }
 
-    // Calculate the value and put it somewhere
     Node rightNode = node.right();
     // Source for the value of right - either a register or memory location or a constant value.
     Operand right;
 
-    // TODO: CLEAN THIS CRAP UP
     if (operator == TokenType.DOT) {
       left = npeCheck(left, leftNode.position());
 
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) rightNode;
       right = ConstantOperand.of(rightVarNode.name());
-    } else {
-      if (operator == TokenType.LBRACKET
-          || (operator == TokenType.PLUS && left.type() == VarType.STRING)) {
-        // make sure "left" isn't null
-        left = npeCheck(left, leftNode.position());
-      }
+    } else if (rightNode.isConstant()) {
       // if right is a constant, just get it.
-      if (rightNode.isConstant()) {
-        ConstNode<?> simpleRight = (ConstNode<?>) rightNode;
-        right = toConstOperand(simpleRight);
-      } else {
-        rightNode.accept(this);
-        right = rightNode.location();
-      }
-      if (operator == TokenType.LBRACKET) {
-        // this may be replaced
-        right = indexChecks(left, right, leftNode.position());
-      }
+      ConstNode<?> simpleRight = (ConstNode<?>) rightNode;
+      right = toConstOperand(simpleRight);
+    } else {
+      rightNode.accept(this);
+      right = rightNode.location();
+    }
 
-      if (operator == TokenType.PLUS && left.type() == VarType.STRING) {
-        // make sure "right" isn't null
-        right = npeCheck(right, rightNode.position());
-      }
+    if (operator == TokenType.LBRACKET) {
+      // make sure "left" isn't null
+      left = npeCheck(left, leftNode.position());
+      right = indexChecks(left, right, leftNode.position());
+    }
+     if (operator == TokenType.PLUS && left.type() == VarType.STRING) {
+      // make sure "left" isn't null
+      left = npeCheck(left, leftNode.position());
+      // make sure "right" isn't null
+      right = npeCheck(right, rightNode.position());
+    }
 
-      if (operator == TokenType.DIV || operator == TokenType.MOD) {
-        right = divBy0Check(rightNode, right);
-      } else if (operator == TokenType.AND || operator == TokenType.OR) {
-        String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
-        if (operator == TokenType.AND) {
-          // value = right (we know left is true, therefore value is true AND right = right)
-          emit(new Transfer(destination, right, node.position()));
-          // goto valueIsSetLabel
-          emit(new Goto(valueIsSetLabel));
+    if (operator == TokenType.DIV || operator == TokenType.MOD) {
+      right = divBy0Check(rightNode, right);
+    } else if (operator == TokenType.AND || operator == TokenType.OR) {
+      String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+      if (operator == TokenType.AND) {
+        // value = right (we know left is true, therefore value is true AND right = right)
+        emit(new Transfer(destination, right, node.position()));
+        // goto valueIsSetLabel
+        emit(new Goto(valueIsSetLabel));
 
-          // resultisfalse:
-          emit(new Label(resultIsFalseLabel));
-          //   value=false
-          emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
+        // resultisfalse:
+        emit(new Label(resultIsFalseLabel));
+        //   value=false
+        emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
 
-          // valueIsSetLabel: (continue)
-          emit(new Label(valueIsSetLabel));
+        // valueIsSetLabel: (continue)
+        emit(new Label(valueIsSetLabel));
 
-        } else if (operator == TokenType.OR) {
-          // value = right (we know left is false, so value is false OR right = right)
-          emit(new Transfer(destination, right, node.position()));
-          // goto valueIsSetLabel
-          emit(new Goto(valueIsSetLabel));
+      } else if (operator == TokenType.OR) {
+        // value = right (we know left is false, so value is false OR right = right)
+        emit(new Transfer(destination, right, node.position()));
+        // goto valueIsSetLabel
+        emit(new Goto(valueIsSetLabel));
 
-          // resultistrue:
-          emit(new Label(resultIsTrueLabel));
-          //   value=true
-          emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
-          // valueIsSetLabel:
-          emit(new Label(valueIsSetLabel));
-        }
+        // resultistrue:
+        emit(new Label(resultIsTrueLabel));
+        //   value=true
+        emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
+        // valueIsSetLabel:
+        emit(new Label(valueIsSetLabel));
       }
     }
 
-    if ((left.type() == VarType.STRING || left.type().isArray() || left.type().isRecord())
-        && (operator == TokenType.EQEQ || operator == TokenType.NEQ)) {
-      // emit null comparison checks here ?!
-    }
     // do not do this for AND or OR because it's already taken care of
     if (operator != TokenType.AND && operator != TokenType.OR) {
       emit(new BinOp(destination, left, operator, right, node.position()));
