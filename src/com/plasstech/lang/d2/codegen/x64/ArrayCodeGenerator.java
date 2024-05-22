@@ -28,13 +28,6 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
   private static final Map<TokenType, String> BINARY_OPCODE =
       ImmutableMap.of(TokenType.EQEQ, "setz", TokenType.NEQ, "setnz");
 
-  private static final String ARRAY_INDEX_NEGATIVE_ERR =
-      "ARRAY_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: ARRAY index must be non-negative; was %d\", 10, 0";
-  private static final String ARRAY_INDEX_OOB_ERR =
-      "ARRAY_INDEX_OOB_ERR: db \"Invalid index error at line %d: ARRAY index out of bounds (length %d); was %d\", 10, 0";
-  private static final String ARRAY_SIZE_ERR =
-      "ARRAY_SIZE_ERR: db \"Invalid value error at line %d: ARRAY size must be non-negative; was %d\", 10, 0";
-
   private final Resolver resolver;
   private final Emitter emitter;
 
@@ -71,20 +64,6 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
           4 * dimensions,
           numEntries * entrySize);
     } else {
-      // Validate array size is positive.
-      emitter.emit("cmp DWORD %s, 0  ; check for non-negative size", numEntriesLocName);
-      String continueLabel = Labels.nextLabel("continue");
-      emitter.emit("jge %s", continueLabel);
-
-      emitter.addData(ARRAY_SIZE_ERR);
-      emitter.emit("; no good; array size is not positive");
-      emitter.emit("mov R8d, %s  ; number of entries", numEntriesLocName);
-      emitter.emit("mov EDX, %s  ; line number", op.position().line());
-      emitter.emit("mov RCX, ARRAY_SIZE_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
       resolver.mov(numEntriesLoc, allocSizeBytesRegister);
 
       if (entrySize > 1) {
@@ -393,102 +372,11 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
         fail("Invalid index", position, "ARRAY index must be non-negative; was %d", index);
       }
 
-      if (index > 0 && !arrayLiteral) {
-        // fun fact, we never have to calculate this for index 0, because all arrays
-        // are at least size 1.
-        // 1. get size from arrayloc
-        emitter.emit("");
-        emitter.emit("; make sure index is < length");
-        emitter.emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
-        emitter.emit("inc %s  ; skip past # dimensions", lengthReg);
-        // this gets the size in the register
-        emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
-        // 2. compare - NOTE SWAPPED ARGS
-        emitter.emit("cmp %s, %s  ; check length > index (SIC)", lengthReg.nameByType(VarType.INT),
-            index);
-        // 3. if good, continue
-        String continueLabel = Labels.nextLabel("good_array_index");
-        emitter.emit("jg %s", continueLabel);
-
-        emitter.emit("");
-        emitter.emit("; no good. print error and stop");
-        emitter.addData(ARRAY_INDEX_OOB_ERR);
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.nameByType(VarType.INT));
-        emitter.emit("mov R9d, %s  ; index", index);
-        emitter.emit("mov EDX, %s  ; line number", position.line());
-        emitter.emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-        emitter.emitExternCall("printf");
-        emitter.emitExit(-1);
-
-        emitter.emitLabel(continueLabel);
-      } else {
-        emitter.emit("; don't have to check if index is within bounds. :)");
-      }
-
       // index is always a dword/int because I said so.
       emitter.emit(
           "mov %s, %d  ; const index; full index=1+dims*4+index*base size",
           lengthReg, 1 + 4 * arrayType.dimensions() + arrayType.baseType().size() * index);
     } else {
-      String indexName = resolver.resolve(indexLoc);
-
-      // TODO: make this an asm function instead of inlining each time?
-      emitter.emit("; make sure index is >= 0");
-      // Validate index part 1
-      emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
-      // Note, three underscores
-      String continueLabel = Labels.nextLabel("continue");
-      emitter.emit("jge %s", continueLabel);
-
-      // print error and stop.
-      emitter.emit("");
-      emitter.emit("; negative. no good. print error and stop");
-      emitter.addData(ARRAY_INDEX_NEGATIVE_ERR);
-      // TODO: Pretty sure this is wrong
-      if (lengthReg == R8) {
-        emitter.emit("; index already in R8");
-      } else {
-        resolver.mov(indexLoc, IntRegister.R8);
-        //        emitter.emit("mov R8d, %s  ; index", indexName);
-      }
-      emitter.emit("mov RDX, %d  ; line number", position.line());
-      emitter.emit("mov RCX, ARRAY_INDEX_NEGATIVE_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
-
-      // 1. get size from arrayloc
-      emitter.emit("");
-      emitter.emit("; make sure index is < length");
-      emitter.emit("mov %s, %s  ; get base of array", lengthReg, arrayLoc);
-      emitter.emit("inc %s  ; skip past # dimensions", lengthReg);
-      // this gets the size in the register
-      emitter.emit("mov %s, [%s]  ; get array length", lengthReg, lengthReg);
-      // 2. compare
-      emitter.emit("cmp DWORD %s, %s  ; check index is < length", indexName,
-          lengthReg.nameByType(VarType.INT));
-      // 3. if good, continue
-      continueLabel = Labels.nextLabel("continue");
-      emitter.emit("jl %s", continueLabel);
-
-      emitter.emit("");
-      emitter.emit("; no good. print error and stop");
-      emitter.addData(ARRAY_INDEX_OOB_ERR);
-      if (lengthReg == R8) {
-        emitter.emit("; index already in R8");
-      } else {
-        emitter.emit("mov R8d, %s  ; length ", lengthReg.nameByType(VarType.INT));
-      }
-      emitter.emit("mov DWORD R9d, %s  ; index", indexName);
-      emitter.emit("mov EDX, %s  ; line number", position.line());
-      emitter.emit("mov RCX, ARRAY_INDEX_OOB_ERR");
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
-
-      emitter.emit("");
       emitter.emit("; calculate index*base size+1+dims*4");
       // index is always a dword/int because I said so.
       resolver.mov(indexLoc, lengthReg);

@@ -32,11 +32,6 @@ import com.plasstech.lang.d2.type.VarType;
  */
 class StringCodeGenerator extends DefaultOpcodeVisitor {
 
-  private static final String STRING_INDEX_NEGATIVE_ERR =
-      "STRING_INDEX_NEGATIVE_ERR: db \"Invalid index error at line %d: STRING index must be non-negative; was %d\", 10, 0";
-  private static final String STRING_INDEX_OOB_ERR =
-      "STRING_INDEX_OOB_ERR: db \"Invalid index error at line %d: STRING index out of bounds (length %d); was %d\", 10, 0";
-
   private static final Map<NullPair, String> LT_CONSTANT_MAP =
       ImmutableMap.of(
           // Include this for completeness
@@ -328,25 +323,6 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       if (indexValue < 0) {
         fail("Invalid index", position, "STRING index must be non-negative; was %d", indexValue);
       }
-    } else {
-      // TODO: make this an asm function instead of inlining each time?
-      emitter.emit("; make sure index is >= 0");
-      // Validate index part 1
-      emitter.emit("cmp DWORD %s, 0  ; check index is >= 0", indexName);
-      // Note, three underscores
-      String continueLabel = Labels.nextLabel("continue");
-      emitter.emit("jge %s", continueLabel);
-
-      // print error and stop.
-      emitter.emit0("\n  ; negative. no good. print error and stop");
-      emitter.addData(STRING_INDEX_NEGATIVE_ERR);
-      emitter.emit("mov RCX, STRING_INDEX_NEGATIVE_ERR");
-      emitter.emit("mov RDX, %d  ; line number", position.line());
-      resolver.mov(index, R8);
-      emitter.emitExternCall("printf");
-      emitter.emitExit(-1);
-
-      emitter.emitLabel(continueLabel);
     }
 
     // Issue #112:
@@ -354,22 +330,6 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     resolver.mov(stringOperand, RCX);
     emitter.emitExternCall("strlen");
     registerState.condPop();
-    // Make sure index isn't >= length
-    emitter.emit("cmp EAX, %s", indexName);
-    String goodIndex = Labels.nextLabel("good_string_index");
-    emitter.emit("jg %s", goodIndex);
-
-    // else bad
-    emitter.emit("; index out of bounds");
-    emitter.addData(STRING_INDEX_OOB_ERR);
-    resolver.mov(index, R9);
-    emitter.emit("mov EDX, %s  ; line number", position.line());
-    emitter.emit("mov R8d, EAX  ; length ");
-    emitter.emit("mov RCX, STRING_INDEX_OOB_ERR");
-    emitter.emitExternCall("printf");
-    emitter.emitExit(-1);
-
-    emitter.emitLabel(goodIndex);
     emitter.emit("dec RAX");
     if (!indexName.equals("0")) {
       // if index is 0, we're comparing to 0, and the ZF is set by dec.

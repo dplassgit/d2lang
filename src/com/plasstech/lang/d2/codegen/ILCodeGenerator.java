@@ -85,6 +85,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final String ARRAY_INDEX_NEGATIVE_ERR =
       "Invalid index error at line %d, column %d: ARRAY index must be non-negative";
+  private static final String ARRAY_SIZE_NEGATIVE_ERR =
+      "Invalid array size error at line %d, column %d: ARRAY size must be non-negative";
   private static final String ARRAY_INDEX_OOB_ERR =
       "Invalid index error at line %d, column %d: ARRAY index out of bounds";
   private static final String STRING_INDEX_NEGATIVE_ERR =
@@ -296,9 +298,29 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(ArrayDeclarationNode node) {
     node.sizeExpr().accept(this);
+
+    Position position = node.sizeExpr().position();
+    Location index = node.sizeExpr().location();
+    if (index.storage() == SymbolStorage.TEMP) {
+      // Copy index to a long lived temp so we can re-use it
+      Location longTemp = allocateLongTemp(VarType.INT);
+      emit(new Transfer(longTemp, index, position));
+      index = longTemp;
+    }
+
+    Location nonNegativeIndex = allocateTemp(VarType.BOOL);
+    emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
+    // if nonnegativeindex: goto good
+    String nonNegativeIndexLabel = nextLabel("non_negative_index");
+    emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
+    emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR, position.line(), position.column()));
+    emit(new Stop());
+    emit(new Label(nonNegativeIndexLabel));
+
     Location dest = lookupLocation(node.name(), node.position());
     node.setLocation(dest);
-    emit(new ArrayAlloc(dest, node.arrayType(), node.sizeExpr().location(), node.position()));
+    emit(new ArrayAlloc(dest, node.arrayType(), index, node.position()));
+    emitDeallocateLongTemp(index, node.sizeExpr().position());
   }
 
   @Override
@@ -933,6 +955,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         Node indexNode = asn.indexNode();
         indexNode.accept(ILCodeGenerator.this);
         Operand indexLocation = indexNode.location();
+        indexLocation = indexChecks(arrayLocation, indexLocation, indexNode.position());
 
         emit(new ArraySet(
             arrayLocation,
@@ -941,9 +964,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             rhs,
             /* isArrayLiteral= */ false,
             asn.position()));
+        emitDeallocateLongTemp(indexLocation, indexNode.position());
       } else {
         throw new RuntimeException(
-            String.format("Could not find record symbol %s in symtab", asn.variableName()));
+            String.format("Could not find symbol %s in symtab", asn.variableName()));
       }
     }
   }

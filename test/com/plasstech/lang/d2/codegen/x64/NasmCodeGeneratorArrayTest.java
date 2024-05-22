@@ -8,7 +8,6 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.PrimitiveTypeProvider;
 
@@ -76,6 +75,13 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
   @Test
   public void arraySetString() throws Exception {
     execute("x:string[1] x[0]='hi' println x[0]", "arraySetString");
+  }
+
+  @Test
+  public void setNegativeIndex() throws Exception {
+    assertRuntimeError(
+        "x:string[1] a=0 x[a-1]='hi'",
+        "setNegativeIndex", "ARRAY index must be non-negative");
   }
 
   @Test
@@ -209,45 +215,40 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
 
   @Test
   public void arrayAllocConstLengthNegative_error() throws Exception {
-    // If it's not optimized, the size constant won't be propagated.
-    assertGenerateError(
+    assertRuntimeError(
         "f:proc() {size=-3 x:string[size] print length(x)} f()",
-        "ARRAY size must be non-negative; was -3", true, PhaseName.ASM_CODEGEN);
-    assertGenerateError(
+        "negaive", "ARRAY size must be non-negative");
+    assertRuntimeError(
         "f:proc() {size=-3 x:string[size+size] print length(x)} f()",
-        "ARRAY size must be non-negative; was -6", true, PhaseName.ASM_CODEGEN);
+        "negaive", "ARRAY size must be non-negative");
   }
 
   @Test
   public void arrayAllocLengthNegative_runtimeError() throws Exception {
-    // If optimized, the proc or constant and it will degenerate to the previous test.
-    assertRuntimeErrorNoOptimize("s=-3 x:string[s]", "arrayAllocLengthNegative",
-        "ARRAY size must be non-negative; was -3");
+    assertRuntimeError("s=-3 x:string[s]", "arrayAllocLengthNegative",
+        "ARRAY size must be non-negative");
     assertRuntimeError("x:string[size()] size: proc():int{return -3}",
-        "arrayAllocCalLengthNegative", "ARRAY size must be non-negative; was -3");
+        "arrayAllocCalLengthNegative", "ARRAY size must be non-negative");
   }
 
   @Test
   public void arraySetIndexConstNegative_error() throws Exception {
-    // If it's not optimized, the size constant won't be propagated.
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
         "asicne",
-        "ARRAY index must be non-negative; was -3");
+        "ARRAY index must be non-negative");
   }
 
   @Test
   public void arraySetIndexLocalNegative_error() throws Exception {
-    // If it's not optimized, the size constant won't be propagated.
-    assertRuntimeErrorNoOptimize("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative; was -3");
+    assertRuntimeError("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative");
   }
 
   @Test
   public void arraySetIndexLocalOOBE() throws Exception {
-    // If it's not optimized, the size constant won't be propagated.
     assertRuntimeError("f:proc() {y=3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "arraySetIndexLocalOOBE", "out of bounds (length 1); was 3");
+        "arraySetIndexLocalOOBE", "out of bounds");
   }
 
   @Test
@@ -452,5 +453,4 @@ public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
     program += "true)\n";
     execute(program, "printManyLocals");
   }
-
 }

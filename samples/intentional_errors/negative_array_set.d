@@ -3,5 +3,7 @@ f:proc(y:int) {
     x[y] = 3
     println length(x)
 }
-f(-3)
 
+x:string[1] a=0 x[a-1]='hi'
+
+f(-3)

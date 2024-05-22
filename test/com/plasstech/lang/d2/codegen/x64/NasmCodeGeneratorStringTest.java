@@ -62,6 +62,12 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
   }
 
   @Test
+  public void negativeIndexCalculated() throws Exception {
+    String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
+    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative");
+  }
+
+  @Test
   public void negativeIndexGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
     assertGenerateError(sourceCode, "must be non-negative; was -2");
@@ -69,6 +75,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     // non-optimized only
     CompilationConfiguration config =
         CompilationConfiguration.builder().setSourceCode(sourceCode)
+            .setCodeGenDebugLevel(2)
             .setFilename("negativeIndexRunTimeGlobal")
             .build();
     assertRuntimeError(config, "must be non-negative");
