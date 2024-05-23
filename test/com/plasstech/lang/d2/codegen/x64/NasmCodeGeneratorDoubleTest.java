@@ -1,6 +1,10 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.compile;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -10,7 +14,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorDoubleTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorDoubleTest {
 
   @Test
   public void negate() throws Exception {

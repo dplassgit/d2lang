@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -7,7 +9,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorBoolTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorBoolTest {
   @Test
   public void not(@TestParameter boolean bool) throws Exception {
     execute(String.format("a=%s c=not a println a println c", bool), "not" + bool);

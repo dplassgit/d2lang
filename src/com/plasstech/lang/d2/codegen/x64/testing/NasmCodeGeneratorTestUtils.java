@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.codegen.x64;
+package com.plasstech.lang.d2.codegen.x64.testing;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import org.junit.BeforeClass;
-
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
@@ -19,6 +17,7 @@ import com.google.common.io.Files;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
 import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -26,19 +25,15 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 
-public class NasmCodeGeneratorTestBase {
-  private static File dir;
+/**
+ * I kind of hate how ... random... the methods in this file are.
+ */
+final public class NasmCodeGeneratorTestUtils {
+  private static File dir = Files.createTempDir();
 
-  @SuppressWarnings("deprecation")
-  @BeforeClass
-  public static void setUpClass() throws Exception {
-    dir = Files.createTempDir();
-  }
-
-  public String execute(String sourceCode, String filename) throws Exception {
+  public static String execute(String sourceCode, String filename) throws Exception {
     String notOptimizedStdOut = assertCompiledEqualsInterpreted(sourceCode, filename, 0, false);
-    //        String optimizedStdOut = assertCompiledEqualsInterpreted(sourceCode, filename, 0, true);
-    String optimizedStdOut = notOptimizedStdOut;
+    String optimizedStdOut = assertCompiledEqualsInterpreted(sourceCode, filename, 0, true);
     //    System.out.println("not optimized ");
     //    System.out.println(notOptimizedStdOut);
     //    System.out.println("optimized ");
@@ -46,8 +41,8 @@ public class NasmCodeGeneratorTestBase {
     //    System.out.println("-------");
     //    System.out.println(optimizedStdOut);
     //
-    //    // Not-optimized is the gold standard.
-    //    assertThat(optimizedStdOut).isEqualTo(notOptimizedStdOut);
+    // Not-optimized is the gold standard.
+    assertThat(optimizedStdOut).isEqualTo(notOptimizedStdOut);
     return optimizedStdOut;
   }
 
@@ -56,7 +51,8 @@ public class NasmCodeGeneratorTestBase {
    * the "optimize" flag, runs it through the interpreter and asserts that the compiled output
    * equals the interpreted output. Asserts that the exit code is as given.
    */
-  public String assertCompiledEqualsInterpreted(String sourceCode, String filename, int exitCode,
+  public static String assertCompiledEqualsInterpreted(String sourceCode, String filename,
+      int exitCode,
       boolean optimize) throws Exception {
     State compiledState = null;
     try {
@@ -100,7 +96,7 @@ public class NasmCodeGeneratorTestBase {
    * Compiles down to x64 executable using the existing state of the configBuilder field, runs it
    * and asserts that the exit code is 0.
    */
-  public State compile(String sourceCode, String filename) throws Exception {
+  public static State compile(String sourceCode, String filename) throws Exception {
     CompilationConfiguration config =
         CompilationConfiguration.builder().setSourceCode(sourceCode).setFilename(filename).build();
     return compile(config, 0);
@@ -109,7 +105,7 @@ public class NasmCodeGeneratorTestBase {
   /**
    * Compiles down to x64 executable, runs it and asserts that the exit code matches.
    */
-  private State compile(CompilationConfiguration config, int exitCode) throws Exception {
+  private static State compile(CompilationConfiguration config, int exitCode) throws Exception {
     // This parses, type checks, generates IL code, and optionally optimizes.
     YetAnotherCompiler yac = new YetAnotherCompiler();
     State state = yac.compile(config);
@@ -169,7 +165,8 @@ public class NasmCodeGeneratorTestBase {
     return state;
   }
 
-  private void assertNoProcessError(Process process, String name, int exitCode) throws IOException {
+  private static void assertNoProcessError(Process process, String name, int exitCode)
+      throws IOException {
     if (process.exitValue() != exitCode) {
       InputStream stream = process.getErrorStream();
       String output = new String(ByteStreams.toByteArray(stream));
@@ -183,11 +180,11 @@ public class NasmCodeGeneratorTestBase {
     }
   }
 
-  protected void assertGenerateError(String sourceCode, String error) {
+  public static void assertGenerateError(String sourceCode, String error) {
     assertGenerateError(sourceCode, error, true, PhaseName.IL_OPTIMIZE);
   }
 
-  protected void assertGenerateError(String sourceCode, String error, boolean optimize,
+  public static void assertGenerateError(String sourceCode, String error, boolean optimize,
       PhaseName expectedPhase) {
     CompilationConfiguration config =
         CompilationConfiguration.builder()
@@ -213,7 +210,7 @@ public class NasmCodeGeneratorTestBase {
     assertThat(state.errorMessage()).matches(error);
   }
 
-  protected void assertRuntimeError(String sourceCode, String filename, String error)
+  public static void assertRuntimeError(String sourceCode, String filename, String error)
       throws Exception {
 
     CompilationConfiguration config =
@@ -223,7 +220,8 @@ public class NasmCodeGeneratorTestBase {
     assertRuntimeError(config.toBuilder().setOptimize(true).setOptDebugLevel(2).build(), error);
   }
 
-  protected void assertRuntimeErrorNoOptimize(String sourceCode, String filename, String error)
+  public static void assertRuntimeErrorNoOptimize(String sourceCode, String filename,
+      String error)
       throws Exception {
 
     CompilationConfiguration config =
@@ -232,7 +230,7 @@ public class NasmCodeGeneratorTestBase {
     assertRuntimeError(config, error);
   }
 
-  protected void assertRuntimeError(CompilationConfiguration config, String expectedError)
+  private static void assertRuntimeError(CompilationConfiguration config, String expectedError)
       throws Exception {
     State state = compile(config, -1);
 

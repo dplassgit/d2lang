@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -25,7 +26,7 @@ import com.plasstech.lang.d2.phase.State;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
-public class GoldenTests extends NasmCodeGeneratorTestBase {
+public class GoldenTests {
 
   @Test
   public void compileNonGoldenSample(

@@ -1,5 +1,9 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeErrorNoOptimize;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -7,7 +11,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorRecordTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorRecordTest {
 
   @Test
   public void alloc() throws Exception {

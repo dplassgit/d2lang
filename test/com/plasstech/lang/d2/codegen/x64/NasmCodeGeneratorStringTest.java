@@ -1,15 +1,19 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeErrorNoOptimize;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorStringTest {
   @Test
   public void assign() throws Exception {
     execute("a='string' b=a print b", "assign");
@@ -72,13 +76,7 @@ public class NasmCodeGeneratorStringTest extends NasmCodeGeneratorTestBase {
     String sourceCode = "i=-2 s='hello' print s[i]";
     assertGenerateError(sourceCode, "must be non-negative; was -2");
 
-    // non-optimized only
-    CompilationConfiguration config =
-        CompilationConfiguration.builder().setSourceCode(sourceCode)
-            .setCodeGenDebugLevel(2)
-            .setFilename("negativeIndexRunTimeGlobal")
-            .build();
-    assertRuntimeError(config, "must be non-negative");
+    assertRuntimeErrorNoOptimize(sourceCode, "negativeIndexGlobal", "must be non-negative");
   }
 
   @Test

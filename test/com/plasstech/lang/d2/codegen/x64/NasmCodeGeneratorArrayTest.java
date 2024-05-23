@@ -1,6 +1,8 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.TruthJUnit.assume;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,7 +14,7 @@ import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.PrimitiveTypeProvider;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorArrayTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorArrayTest {
   // TODO: test print
 
   private static final String DASSERTS =

@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertCompiledEqualsInterpreted;
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -7,7 +10,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorBuiltinsTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorBuiltinsTest {
   @Test
   public void printDuplicateStrings() throws Exception {
     execute("print 'hello' print 'world' print 'hello world'", "printDuplicateStrings");

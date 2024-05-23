@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -7,7 +9,7 @@ import org.junit.runner.RunWith;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorProcTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorProcTest {
   @Test
   public void voidProcNoArgs() throws Exception {
     execute(

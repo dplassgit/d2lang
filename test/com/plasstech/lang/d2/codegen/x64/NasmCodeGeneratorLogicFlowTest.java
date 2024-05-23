@@ -1,12 +1,14 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
-public class NasmCodeGeneratorLogicFlowTest extends NasmCodeGeneratorTestBase {
+public class NasmCodeGeneratorLogicFlowTest {
   @Test
   public void ifPrint() throws Exception {
     execute("a=3 if a > 1 {print a}", "ifPrint");
