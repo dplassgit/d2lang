@@ -52,11 +52,47 @@ public class PrintCodeGeneratorTest {
     String message = "Bad call line %d col %d";
     stringTable.add(message);
     ConstEntry<String> entry = stringTable.lookup(message);
-    SysCall op = new SysCall(message, 1, 2);
+    SysCall op = new SysCall(message,
+        ImmutableList.of(ConstantOperand.of(1), ConstantOperand.of(2)));
     sut.visit(op);
     ImmutableList<String> code = TestUtils.trimComments(emitter.all());
     assertThat(code)
-        .containsAtLeast("mov RCX, " + entry.name(), "mov RDX, 1", "mov R8, 2", "call printf")
-        .inOrder();
+        .containsAtLeast("mov RCX, " + entry.name(), "mov DWORD EDX, 1", "mov DWORD R8d, 2",
+            "call printf");
+  }
+
+  @Test
+  public void printParameterizedMessageWithOperands() {
+    String message = "Bad call line %d col %d index %d";
+    stringTable.add(message);
+    ConstEntry<String> entry = stringTable.lookup(message);
+    SysCall op = new SysCall(message, ImmutableList.of(
+        ConstantOperand.of(1),
+        ConstantOperand.of(2),
+        ConstantOperand.of(3)));
+    sut.visit(op);
+    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    assertThat(code)
+        .containsAtLeast("mov DWORD R9d, 3", "mov RCX, " + entry.name(), "mov DWORD EDX, 1",
+            "mov DWORD R8d, 2", "call printf");
+  }
+
+  @Test
+  public void printParameterizedMessageWithManyOperands() {
+    String message = "Bad call line %d col %d index %d (was %d)";
+    stringTable.add(message);
+    ConstEntry<String> entry = stringTable.lookup(message);
+    SysCall op = new SysCall(message, ImmutableList.of(
+        ConstantOperand.of(1),
+        ConstantOperand.of(2),
+        ConstantOperand.of(3),
+        ConstantOperand.of(4)));
+    sut.visit(op);
+    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    assertThat(code)
+        .containsAtLeast("mov DWORD R9d, 3",
+            "mov DWORD ECX, 4", "push RCX",
+            "mov RCX, " + entry.name(), "mov DWORD EDX, 1",
+            "mov DWORD R8d, 2", "call printf");
   }
 }

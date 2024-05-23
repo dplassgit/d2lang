@@ -82,8 +82,8 @@ public class NasmCodeGeneratorArrayTest {
   @Test
   public void setNegativeIndex() throws Exception {
     assertRuntimeError(
-        "x:string[1] a=0 x[a-1]='hi'",
-        "setNegativeIndex", "ARRAY index must be non-negative");
+        "x:string[1] a=2 x[a-5]='hi'",
+        "setNegativeIndex", "ARRAY index must be non-negative; was -3");
   }
 
   @Test
@@ -219,18 +219,18 @@ public class NasmCodeGeneratorArrayTest {
   public void arrayAllocConstLengthNegative_error() throws Exception {
     assertRuntimeError(
         "f:proc() {size=-3 x:string[size] print length(x)} f()",
-        "negaive", "ARRAY size must be non-negative");
+        "negaive", "ARRAY size must be non-negative; was -3");
     assertRuntimeError(
         "f:proc() {size=-3 x:string[size+size] print length(x)} f()",
-        "negaive", "ARRAY size must be non-negative");
+        "negaive", "ARRAY size must be non-negative; was -6");
   }
 
   @Test
   public void arrayAllocLengthNegative_runtimeError() throws Exception {
     assertRuntimeError("s=-3 x:string[s]", "arrayAllocLengthNegative",
-        "ARRAY size must be non-negative");
+        "ARRAY size must be non-negative; was -3");
     assertRuntimeError("x:string[size()] size: proc():int{return -3}",
-        "arrayAllocCalLengthNegative", "ARRAY size must be non-negative");
+        "arrayAllocCalLengthNegative", "ARRAY size must be non-negative; was -3");
   }
 
   @Test
@@ -238,19 +238,19 @@ public class NasmCodeGeneratorArrayTest {
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
         "asicne",
-        "ARRAY index must be non-negative");
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
   public void arraySetIndexLocalNegative_error() throws Exception {
     assertRuntimeError("f:proc() {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative");
+        "arraySetIndexLocalNegative_error", "ARRAY index must be non-negative; was -3");
   }
 
   @Test
   public void arraySetIndexLocalOOBE() throws Exception {
     assertRuntimeError("f:proc() {y=3 x:string[1] x[y] = 'hi' print length(x)} f()",
-        "arraySetIndexLocalOOBE", "out of bounds");
+        "arraySetIndexLocalOOBE", "out of bounds (length 1); was 3");
   }
 
   @Test
@@ -258,13 +258,13 @@ public class NasmCodeGeneratorArrayTest {
     assertRuntimeError(
         "f:proc() {y=-3 x:string[1] print x[y]} f()",
         "arrayGetIndexLocalNegative",
-        "must be non-negative");
+        "must be non-negative; was -3");
   }
 
   @Test
   public void arrayGetIndexOOBE() throws Exception {
     assertRuntimeError("f:proc() {y=3 x:string[1] println x[y]} f()", "arrayGetIndexConstOOBE",
-        "out of bounds");
+        "out of bounds (length 1); was 3");
   }
 
   @Test

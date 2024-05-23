@@ -50,25 +50,26 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds");
+    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds (length 5); was 10");
   }
 
   @Test
   public void oobeIndexVariable() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
-    assertRuntimeError(sourceCode, "oobeIndexVariable", "STRING index out of bounds");
+    assertRuntimeError(sourceCode, "oobeIndexVariable",
+        "STRING index out of bounds (length 5); was 10");
   }
 
   @Test
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative");
+    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative; was -2");
   }
 
   @Test
   public void negativeIndexCalculated() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
-    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative");
+    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative; was -2");
   }
 
   @Test
@@ -76,7 +77,7 @@ public class NasmCodeGeneratorStringTest {
     String sourceCode = "i=-2 s='hello' print s[i]";
     assertGenerateError(sourceCode, "must be non-negative; was -2");
 
-    assertRuntimeErrorNoOptimize(sourceCode, "negativeIndexGlobal", "must be non-negative");
+    assertRuntimeErrorNoOptimize(sourceCode, "negativeIndexGlobal", "must be non-negative; was -2");
   }
 
   @Test

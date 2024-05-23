@@ -840,7 +840,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         break;
 
       case PARAMETERIZED_MESSAGE:
-        String message = String.format(resolved.toString(), op.getLine(), op.getColumn());
+        String message = String.format(resolved.toString(), op.line(), op.column());
         String output = String.format("ERROR: %s", message);
         if (interactive) {
           System.err.println(output);

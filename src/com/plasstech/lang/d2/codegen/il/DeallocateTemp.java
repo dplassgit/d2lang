@@ -1,18 +1,18 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.common.Position;
 
 public class DeallocateTemp extends Op {
 
-  private final Operand temp;
+  private final Location temp;
 
-  public DeallocateTemp(Operand temp, Position position) {
+  public DeallocateTemp(Location temp, Position position) {
     super(position);
     this.temp = temp;
   }
 
-  public Operand temp() {
+  public Location temp() {
     return temp;
   }
 

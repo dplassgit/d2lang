@@ -84,15 +84,15 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   private static final String NULL_POINTER = "Null pointer error at line %d, column %d";
 
   private static final String ARRAY_INDEX_NEGATIVE_ERR =
-      "Invalid index error at line %d, column %d: ARRAY index must be non-negative";
+      "Invalid index error at line %d, column %d: ARRAY index must be non-negative; was %d";
   private static final String ARRAY_SIZE_NEGATIVE_ERR =
-      "Invalid array size error at line %d, column %d: ARRAY size must be non-negative";
+      "Invalid array size error at line %d, column %d: ARRAY size must be non-negative; was %d";
   private static final String ARRAY_INDEX_OOB_ERR =
-      "Invalid index error at line %d, column %d: ARRAY index out of bounds";
+      "Invalid index error at line %d, column %d: ARRAY index out of bounds (length %d); was %d";
   private static final String STRING_INDEX_NEGATIVE_ERR =
-      "Invalid index error at line %d, column %d: STRING index must be non-negative";
+      "Invalid index error at line %d, column %d: STRING index must be non-negative; was %d";
   private static final String STRING_INDEX_OOB_ERR =
-      "Invalid index error at line %d, column %d: STRING index out of bounds";
+      "Invalid index error at line %d, column %d: STRING index out of bounds (length %d); was %d";
 
   private SymbolTable symbolTable;
   private SymbolTable globals;
@@ -300,27 +300,29 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     node.sizeExpr().accept(this);
 
     Position position = node.sizeExpr().position();
-    Location index = node.sizeExpr().location();
-    if (index.storage() == SymbolStorage.TEMP) {
+    Location size = node.sizeExpr().location();
+    if (size.storage() == SymbolStorage.TEMP) {
       // Copy index to a long lived temp so we can re-use it
       Location longTemp = allocateLongTemp(VarType.INT);
-      emit(new Transfer(longTemp, index, position));
-      index = longTemp;
+      emit(new Transfer(longTemp, size, position));
+      size = longTemp;
     }
 
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
-    emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
+    emit(new BinOp(nonNegativeIndex, size, TokenType.GEQ, ConstantOperand.of(0), position));
     // if nonnegativeindex: goto good
     String nonNegativeIndexLabel = nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
-    emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR, position.line(), position.column()));
+    emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR,
+        ImmutableList.of(ConstantOperand.of(position.line()),
+            ConstantOperand.of(position.column()), size)));
     emit(new Stop());
     emit(new Label(nonNegativeIndexLabel));
 
     Location dest = lookupLocation(node.name(), node.position());
     node.setLocation(dest);
-    emit(new ArrayAlloc(dest, node.arrayType(), index, node.position()));
-    emitDeallocateLongTemp(index, node.sizeExpr().position());
+    emit(new ArrayAlloc(dest, node.arrayType(), size, node.position()));
+    emitDeallocateLongTemp(size, node.sizeExpr().position());
   }
 
   @Override
@@ -542,19 +544,21 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private Operand divBy0Check(Node rightNode, Operand right) {
+    Position position = rightNode.position();
     if (right.storage() == SymbolStorage.TEMP) {
       // Copy right to a long lived temp so we can re-use it
       Location newRight = allocateLongTemp(rightNode.varType());
-      emit(new Transfer(newRight, right, rightNode.position()));
+      emit(new Transfer(newRight, right, position));
       right = newRight;
     }
     TempLocation divBy0Bool = allocateTemp(VarType.BOOL);
     ConstantOperand<? extends Number> zero = ConstantOperand.zeroOf(rightNode.varType());
-    emit(new BinOp(divBy0Bool, right, TokenType.EQEQ, zero, rightNode.position()));
+    emit(new BinOp(divBy0Bool, right, TokenType.EQEQ, zero, position));
     String continueLabel = Labels.nextLabel("not_div_by_0");
     emit(new IfOp(divBy0Bool, continueLabel, true));
-
-    emit(new SysCall(DIV_BY_0, rightNode.position().line(), rightNode.position().column()));
+    emit(new SysCall(DIV_BY_0,
+        ImmutableList.of(ConstantOperand.of(position.line()),
+            ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
 
@@ -578,7 +582,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             position));
     String continueLabel = Labels.nextLabel("not_null");
     emit(new IfOp(nullRecordBool, continueLabel, true));
-    emit(new SysCall(NULL_POINTER, position.line(), position.column()));
+    emit(new SysCall(NULL_POINTER,
+        ImmutableList.of(ConstantOperand.of(position.line()),
+            ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
     // This may be different now
@@ -593,7 +599,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       index = longTemp;
     }
     // len = length(array)
-    Location length = allocateTemp(VarType.INT);
+    Location length = allocateLongTemp(VarType.INT);
     emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
     // indexInBounds = index < length
     Location indexInBounds = allocateTemp(VarType.BOOL);
@@ -602,13 +608,18 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     String indexInBoundsLabel = nextLabel("index_in_bounds");
     emit(new IfOp(indexInBounds, indexInBoundsLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_OOB_ERR, position.line(), position.column()));
+      emit(new SysCall(STRING_INDEX_OOB_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), length, index)));
     } else {
-      emit(new SysCall(ARRAY_INDEX_OOB_ERR, position.line(), position.column()));
+      emit(new SysCall(ARRAY_INDEX_OOB_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), length, index)));
     }
     emit(new Stop());
 
     emit(new Label(indexInBoundsLabel));
+    emitDeallocateLongTemp(length, position);
 
     // nonNegativeIndex = index >= 0
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
@@ -617,9 +628,13 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     String nonNegativeIndexLabel = nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_NEGATIVE_ERR, position.line(), position.column()));
+      emit(new SysCall(STRING_INDEX_NEGATIVE_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), index)));
     } else {
-      emit(new SysCall(ARRAY_INDEX_NEGATIVE_ERR, position.line(), position.column()));
+      emit(new SysCall(ARRAY_INDEX_NEGATIVE_ERR,
+          ImmutableList.of(ConstantOperand.of(position.line()),
+              ConstantOperand.of(position.column()), index)));
     }
     emit(new Stop());
 
@@ -647,7 +662,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         TempLocation destination = allocateTemp(node.varType());
         node.setLocation(destination);
         emit(new UnaryOp(destination, node.operator(), operand, node.position()));
-        emitDeallocateLongTemp(operand, node.position());
         break;
 
       case PLUS:
@@ -659,11 +673,13 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         logger.atSevere().log("No code generated for node %s", node);
         break;
     }
+    emitDeallocateLongTemp(operand, node.position());
   }
 
   private void emitDeallocateLongTemp(Operand operand, Position position) {
     if (operand.storage() == SymbolStorage.LONG_TEMP) {
-      emit(new DeallocateTemp(operand, position));
+      // Ugh.
+      emit(new DeallocateTemp((Location) operand, position));
     }
   }
 
@@ -972,6 +988,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             /* isArrayLiteral= */ false,
             asn.position()));
         emitDeallocateLongTemp(indexLocation, indexNode.position());
+        emitDeallocateLongTemp(arrayLocation, indexNode.position());
       } else {
         throw new RuntimeException(
             String.format("Could not find symbol %s in symtab", asn.variableName()));

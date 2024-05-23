@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -104,7 +105,6 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     if (!source.isConstant()) {
       Location sourceLocation = (Location) source;
       assignments.remove(sourceLocation.baseLocation());
-      // this might have ot change for long lived temps
       tempAssignments.remove(sourceLocation.baseLocation());
     }
   }
@@ -225,6 +225,13 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   }
 
   @Override
+  public void visit(DeallocateTemp op) {
+    if (killIfReassigned(op.temp())) {
+      deleteCurrent();
+    }
+  }
+
+  @Override
   public void visit(Dec op) {
     Location dest = op.target();
     markRead(dest);
@@ -248,7 +255,9 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(SysCall op) {
-    markRead(op.arg());
+    for (Operand operand : op.operands()) {
+      markRead(operand);
+    }
   }
 
   @Override

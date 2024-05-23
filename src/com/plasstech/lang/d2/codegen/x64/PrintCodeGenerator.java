@@ -4,6 +4,7 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
+import java.util.List;
 import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
@@ -104,9 +105,25 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         // The arg is a string constant. Need to get its entry so we can get its name.
         ConstantOperand<String> constOp = (ConstantOperand<String>) op.arg();
         ConstEntry<String> entry = stringTable.lookup(constOp.value());
+        List<Operand> operands = op.operands();
+
+        for (int i = 1; i < operands.size(); ++i) {
+          Operand operand = operands.get(i);
+          if (i < 4) {
+            // Yes, we skip 1 (RCX) 
+            Register register = Register.INT_PARAM_REGISTERS.get(i);
+            resolver.mov(operand, register);
+          } else {
+            //  push the rest
+            // I don't love this, but it's a start.
+            resolver.mov(operand, IntRegister.RCX);
+            // bug: it never fixes the stack, but... parameterized messages are always followed
+            // by an "exit" so... we don't quite care. but it's still a bug.
+            emitter.emit("push RCX");
+          }
+        }
+
         emitter.emit("mov RCX, %s  ; pattern", entry.name());
-        emitter.emit("mov RDX, %d", op.getLine());
-        emitter.emit("mov R8, %d", op.getColumn());
       } else {
         // arg may not be in rcx (or rdx) yet
         if (arg.isConstant() && op.call() == SysCall.Call.PRINT) {

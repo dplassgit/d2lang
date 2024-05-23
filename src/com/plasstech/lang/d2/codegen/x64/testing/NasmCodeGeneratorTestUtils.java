@@ -214,10 +214,13 @@ final public class NasmCodeGeneratorTestUtils {
       throws Exception {
 
     CompilationConfiguration config =
-        CompilationConfiguration.builder().setSourceCode(sourceCode).setFilename(filename).build();
+        CompilationConfiguration.builder().setSourceCode(sourceCode).setCodeGenDebugLevel(2)
+            .setFilename(filename).build();
 
     assertRuntimeError(config, error);
-    assertRuntimeError(config.toBuilder().setOptimize(true).setOptDebugLevel(2).build(), error);
+    assertRuntimeError(
+        config.toBuilder().setOptimize(true).setOptDebugLevel(2).build(),
+        error);
   }
 
   public static void assertRuntimeErrorNoOptimize(String sourceCode, String filename,

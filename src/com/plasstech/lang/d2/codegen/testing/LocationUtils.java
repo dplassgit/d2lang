@@ -1,6 +1,5 @@
 package com.plasstech.lang.d2.codegen.testing;
 
-import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.ParamLocation;
@@ -38,7 +37,7 @@ public class LocationUtils {
     return new TempLocation(symbol);
   }
 
-  public static Location newLongTempLocation(String name, VarType varType) {
+  public static LongTempLocation newLongTempLocation(String name, VarType varType) {
     VariableSymbol symbol = new VariableSymbol(name, SymbolStorage.LONG_TEMP);
     symbol.setVarType(varType);
     return new LongTempLocation(symbol);

@@ -6,7 +6,9 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -18,6 +20,7 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeadAssignmentOptimizerTest {
+  private static Location LONG_TEMP = LocationUtils.newLongTempLocation("longtemp", VarType.INT);
 
   private Optimizer optimizer =
       new ILOptimizer(ImmutableList.of(new DeadAssignmentOptimizer(2), new NopOptimizer()));
@@ -97,6 +100,8 @@ public class DeadAssignmentOptimizerTest {
             new Stop());
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimized).hasSize(2);
+    assertThat(optimized.get(0)).isInstanceOf(Call.class);
+    assertThat(optimized.get(1)).isInstanceOf(Stop.class);
   }
 
   @Test
@@ -141,5 +146,38 @@ public class DeadAssignmentOptimizerTest {
             + "}\n"
             + "f()",
         optimizer);
+  }
+
+  @Test
+  public void nonDeadLongTemp() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, ConstantOperand.ZERO, null),
+            new Transfer(LocationUtils.newParamLocation("dest", VarType.INT, 0, 0), LONG_TEMP,
+                null),
+            new DeallocateTemp(LONG_TEMP, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(3);
+  }
+
+  @Test
+  public void deadLongTempNoDeallocate() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, ConstantOperand.ZERO, null),
+            new Transfer(LocationUtils.newParamLocation("dest", VarType.INT, 0, 0), LONG_TEMP,
+                null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(2);
+  }
+
+  @Test
+  public void deadLongTemp() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, ConstantOperand.ZERO, null),
+            new DeallocateTemp(LONG_TEMP, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(0);
   }
 }
