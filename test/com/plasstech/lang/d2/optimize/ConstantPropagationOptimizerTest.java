@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
@@ -170,5 +171,21 @@ public class ConstantPropagationOptimizerTest {
 
     ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
     assertThat(optimized.get(1)).isTransferredFrom(zero);
+  }
+
+  @Test
+  public void syscall() {
+    ConstantOperand<Integer> one = ConstantOperand.of(1);
+    Location param = LocationUtils.newParamLocation("param", VarType.INT, 0, 0);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(param, one, null),
+            new SysCall(SysCall.Call.PARAMETERIZED_MESSAGE,
+                ImmutableList.of(ConstantOperand.ZERO, param)));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(2);
+    SysCall newCall = (SysCall) optimized.get(1);
+    assertThat(newCall.operands().get(1)).isEqualTo(one);
   }
 }

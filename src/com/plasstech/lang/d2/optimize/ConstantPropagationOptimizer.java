@@ -1,6 +1,8 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
@@ -200,10 +202,19 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   public void visit(SysCall op) {
-    Operand operand = op.arg();
-    Operand replacement = findReplacement(operand);
-    if (replacement != null) {
-      replaceCurrent(new SysCall(op.call(), replacement));
+    List<Operand> newOperands = new ArrayList();
+    boolean replaced = false;
+    for (Operand operand : op.operands()) {
+      Operand replacement = findReplacement(operand);
+      if (replacement != null) {
+        replaced = true;
+        newOperands.add(replacement);
+      } else {
+        newOperands.add(operand);
+      }
+    }
+    if (replaced) {
+      replaceCurrent(new SysCall(op.call(), newOperands));
     }
   }
 

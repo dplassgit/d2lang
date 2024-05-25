@@ -71,11 +71,12 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
-  public void setNegativeIndex() throws Exception {
-    assertThatCompiling("x:string[1] a=2 x[a-5]='hi'")
-        .withRuntimeError("ARRAY index must be non-negative; was -3").executes();
-    assertThatCompiling("x:string[1] a=2 x[a-5]='bhi'").withOptimize(false)
-        .withRuntimeError("ARRAY index must be non-negative; was -3").executes();
+  public void setNegativeIndex(
+      @TestParameter boolean optimize) throws Exception {
+    assertThatCompiling("x:string[1] a=2 x[a-5]='bhi'")
+        .withOptimize(optimize)
+        .withRuntimeError("ARRAY index must be non-negative; was -3")
+        .executes();
   }
 
   @Test
@@ -225,6 +226,7 @@ public class NasmCodeGeneratorArrayTest {
         .executes();
     assertThatCompiling("x:string[size()] size: proc:int{return -3}")
         .withOptimize(optimize)
+        .withOptimizeDebugLevel(2)
         .withRuntimeError("ARRAY size must be non-negative; was -3")
         .executes();
   }

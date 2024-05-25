@@ -24,8 +24,7 @@ public class SysCall extends Op {
   private int column;
 
   public SysCall(Call call, Operand arg) {
-    this.call = call;
-    this.operands = ImmutableList.of(arg);
+    this(call, ImmutableList.of(arg));
   }
 
   public SysCall(String parameterizedMessage) {
@@ -33,9 +32,14 @@ public class SysCall extends Op {
   }
 
   public SysCall(String parameterizedMessage, List<Operand> operands) {
-    this.call = Call.PARAMETERIZED_MESSAGE;
-    this.operands = ImmutableList.<Operand>builder().add(ConstantOperand.of(parameterizedMessage))
-        .addAll(operands).build();
+    this(Call.PARAMETERIZED_MESSAGE,
+        ImmutableList.<Operand>builder().add(ConstantOperand.of(parameterizedMessage))
+            .addAll(operands).build());
+  }
+
+  public SysCall(Call call, List<Operand> operands) {
+    this.call = call;
+    this.operands = ImmutableList.copyOf(operands);
   }
 
   public Call call() {

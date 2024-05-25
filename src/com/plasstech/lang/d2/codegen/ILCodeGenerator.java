@@ -544,6 +544,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private Operand divBy0Check(Node rightNode, Operand right) {
+    if (right.isConstant() && !ConstantOperand.isAnyZero(right)) {
+      return right;
+    }
     Position position = rightNode.position();
     if (right.storage() == SymbolStorage.TEMP) {
       // Copy right to a long lived temp so we can re-use it
