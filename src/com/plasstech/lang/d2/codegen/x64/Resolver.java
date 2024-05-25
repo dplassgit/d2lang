@@ -407,7 +407,7 @@ class Resolver implements RegistersInterface {
     if (reg == null) {
       throw new IllegalStateException("No alias for temp " + oldAlias);
     }
-    emitter.emit("; aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
+    emitter.emit("; Aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
     aliases.put(newAlias.name(), reg);
   }
 

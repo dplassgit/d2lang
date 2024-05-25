@@ -35,7 +35,7 @@ public class NasmCodeGeneratorTest {
   private static final Position START = new Position(0, 0);
   private static final Location TEMP = LocationUtils.newTempLocation("__temp", VarType.INT);
   private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
-  private static final Location LLTEMP =
+  private static final Location LONG_TEMP =
       LocationUtils.newLongTempLocation("__longtemp", VarType.INT);
 
   private Emitter emitter = new X64Emitter();
@@ -343,8 +343,8 @@ public class NasmCodeGeneratorTest {
   public void longLivedTempNotAutoDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(LLTEMP, ConstantOperand.ONE, START),
-            new Transfer(GLOBAL, LLTEMP, START));
+            new Transfer(LONG_TEMP, ConstantOperand.ONE, START),
+            new Transfer(GLOBAL, LONG_TEMP, START));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
     assertWithoutTrimmingThat(emitter).doesNotContain("  ; Deallocating __longtemp from RBX");
@@ -354,12 +354,23 @@ public class NasmCodeGeneratorTest {
   public void longLivedTempDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(LLTEMP, ConstantOperand.ONE, START),
-            new Transfer(GLOBAL, LLTEMP, START),
-            new DeallocateTemp(LLTEMP, START));
+            new Transfer(LONG_TEMP, ConstantOperand.ONE, START),
+            new Transfer(GLOBAL, LONG_TEMP, START),
+            new DeallocateTemp(LONG_TEMP, START));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
     assertWithoutTrimmingThat(emitter).contains("  ; Deallocating __longtemp from RBX");
+  }
+
+  @Test
+  public void longLivedTempTransferred() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(TEMP, ConstantOperand.ONE, START),
+            new Transfer(LONG_TEMP, TEMP, START),
+            new DeallocateTemp(LONG_TEMP, START));
+    generate(program);
+    assertThat(emitter).doesNotContain("mov ESI, EBX");
   }
 
   @Test

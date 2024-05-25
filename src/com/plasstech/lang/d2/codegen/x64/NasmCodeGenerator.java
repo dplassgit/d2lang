@@ -248,6 +248,12 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
   public void visit(Transfer op) {
     Operand source = op.source();
     Location destination = op.destination();
+    if (source.isTemp() && destination.storage() == SymbolStorage.LONG_TEMP) {
+      // Just alias the long temp to the temp's register; the long temp's register will be
+      // deallocated eventually.
+      resolver.addAlias(destination, source);
+      return;
+    }
 
     resolver.mov(source, destination);
     resolver.deallocate(source);
