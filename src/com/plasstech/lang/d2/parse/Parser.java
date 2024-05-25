@@ -105,6 +105,7 @@ public class Parser implements Phase {
   private final Lexer lexer;
   private Token token;
   private int inWhile;
+  private int inProc;
 
   public Parser(Lexer lexer) {
     this.lexer = lexer;
@@ -230,6 +231,10 @@ public class Parser implements Phase {
   }
 
   private ReturnNode returnStmt(Position start) {
+    if (inProc == 0) {
+      throw new ParseException("Cannot RETURN from outside a PROC", start);
+    }
+
     // If it's the start of an expression, read the whole expression...
     if (EXPRESSION_STARTS.contains(token.type())) {
       return new ReturnNode(start, expr());
@@ -417,6 +422,7 @@ public class Parser implements Phase {
   }
 
   private ProcedureNode procedureDecl(Token varToken) {
+    inProc++;
     expect(TokenType.PROC);
     advance();
     List<Parameter> params = formalParams();
@@ -426,6 +432,7 @@ public class Parser implements Phase {
       returnType = parseVarType(RETURN_TYPES);
     }
     BlockNode statements = block();
+    inProc--;
     return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
   }
 

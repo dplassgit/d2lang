@@ -1036,6 +1036,12 @@ public class ParserTest {
   }
 
   @Test
+  public void returnOutsideProc() {
+    assertParseError("return", "Cannot RETURN from outside a PROC");
+    assertParseError("f:proc{} return", "Cannot RETURN from outside a PROC");
+  }
+
+  @Test
   public void arrayGet() {
     BlockNode root = parseStatements("a=b[3+c]");
 

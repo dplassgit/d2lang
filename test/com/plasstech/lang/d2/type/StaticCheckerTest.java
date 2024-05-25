@@ -784,7 +784,7 @@ public class StaticCheckerTest {
   public void return_required() {
     assertError("fib:proc():int {}", "Not all codepaths");
     assertError(
-        "fib:proc():bool {" + "if false {" + " return false" + "}" + "}", "Not all codepaths");
+        "fib:proc():bool { if false { return false } }", "Not all codepaths");
     assertError(
         "fib:proc():bool {"
             + "if false {"
@@ -826,11 +826,6 @@ public class StaticCheckerTest {
             + "  }"
             + "}",
         "Not all codepaths");
-  }
-
-  @Test
-  public void return_outsideProc() {
-    assertError("return 3", "outside a PROC");
   }
 
   @Test
@@ -1391,7 +1386,6 @@ public class StaticCheckerTest {
         + "   if flag { s = 'hi'}\n"
         + "   return s\n" // this should be a typecheck error because 's' is in the inner block
         + "}\n"
-        + "println f(true)\n"
         + "println f(false)\n",
         "Indeterminable type for RETURN");
   }

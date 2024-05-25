@@ -912,10 +912,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(ReturnNode node) {
-    if (procedures.isEmpty()) {
-      errors.add(new TypeException("Cannot RETURN from outside a PROC", node.position()));
-      return;
-    }
     if (node.expr().isPresent()) {
       ExprNode expr = node.expr().get();
       expr.accept(this);
