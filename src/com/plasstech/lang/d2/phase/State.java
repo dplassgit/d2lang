@@ -150,7 +150,7 @@ public abstract class State {
     return toBuilder().setStdOut(stdOut).build();
   }
 
-  abstract Builder toBuilder();
+  public abstract Builder toBuilder();
 
   // This really should be elsewhere
   public void throwOnError() {

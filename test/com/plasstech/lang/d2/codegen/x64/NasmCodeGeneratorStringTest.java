@@ -1,117 +1,117 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeErrorNoOptimize;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorStringTest {
   @Test
   public void assign() throws Exception {
-    execute("a='string' b=a print b", "assign");
+    assertThatCompiling("a='string' b=a print b").executedEqualsInterpreted();
   }
 
   @Test
   public void index(@TestParameter({"1", "4"}) int index) throws Exception {
     String value = "value";
-    execute(
-        String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index), "index");
+    assertThatCompiling(
+        String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void oneCharStringIndex0Global() throws Exception {
-    execute("a='x' b=a[0] println b", "oneCharStringIndex0");
+    assertThatCompiling("a='x' b=a[0] println b").executedEqualsInterpreted();
   }
 
   @Test
   public void twoCharStringIndex1() throws Exception {
-    execute("f:proc(a:string) {b=a[1] println b} f('xy')", "twoCharStringIndexProc1");
+    assertThatCompiling("f:proc(a:string) {b=a[1] println b} f('xy')").executedEqualsInterpreted();
   }
 
   @Test
   public void negativeIndex() throws Exception {
-    assertGenerateError(
-        "s='hello' print s[-2]", "Index of STRING variable 's' must be non-negative; was -2", false,
-        PhaseName.TYPE_CHECK);
-    assertGenerateError(
-        "f:proc() {s='hello' print s[-3]} f()",
-        "Index of STRING variable 's' must be non-negative; was -3", false,
-        PhaseName.TYPE_CHECK);
+    assertThatCompiling("s='hello' print s[-2]").withOptimize(false).hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -2");
+    assertThatCompiling("f:proc() {s='hello' print s[-3]} f()").withOptimize(false).hasCompileTimeError("Index of STRING variable 's' must be non-negative; was -3");
   }
 
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    assertRuntimeError(sourceCode, "oobeIndex", "STRING index out of bounds (length 5); was 10");
+    assertThatCompiling(sourceCode)
+        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
+    assertThatCompiling(sourceCode).withOptimize(false)
+        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
 
   @Test
   public void oobeIndexVariable() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
-    assertRuntimeError(sourceCode, "oobeIndexVariable",
-        "STRING index out of bounds (length 5); was 10");
+    assertThatCompiling(sourceCode)
+        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
+    assertThatCompiling(sourceCode).withOptimize(false)
+        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
 
   @Test
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative; was -2");
+    assertThatCompiling(sourceCode).withRuntimeError("must be non-negative; was -2").executes();
+    assertThatCompiling(sourceCode).withOptimize(false)
+        .withRuntimeError("must be non-negative; was -2").executes();
   }
 
   @Test
   public void negativeIndexCalculated() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
-    assertRuntimeError(sourceCode, "negativeIndexLocal", "must be non-negative; was -2");
+    assertThatCompiling(sourceCode).withRuntimeError("must be non-negative; was -2").executes();
+    assertThatCompiling(sourceCode).withOptimize(false)
+        .withRuntimeError("must be non-negative; was -2").executes();
   }
 
   @Test
   public void negativeIndexGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    assertGenerateError(sourceCode, "must be non-negative; was -2");
+    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
 
-    assertRuntimeErrorNoOptimize(sourceCode, "negativeIndexGlobal", "must be non-negative; was -2");
+    assertThatCompiling(sourceCode).withOptimize(false)
+        .withRuntimeError("must be non-negative; was -2").executes();
   }
 
   @Test
   public void procIndex() throws Exception {
-    execute(
-        "       b: string "
-            + "foo: proc(a: string, i:int) {"
-            + "   b=a[i] // b = o\r\n"
-            + "   print b"
-            + "   c=a[4] // c = d\r\n"
-            + "   print c"
-            + "} "
-            + "foo('world', 1)",
-        "procIndex");
+    assertThatCompiling("       b: string "
+        + "foo: proc(a: string, i:int) {"
+        + "   b=a[i] // b = o\r\n"
+        + "   print b"
+        + "   c=a[4] // c = d\r\n"
+        + "   print c"
+        + "} "
+        + "foo('world', 1)").executedEqualsInterpreted();
   }
 
   @Test
   public void constantStringIndex(@TestParameter({"1", "4"}) int index) throws Exception {
     String value = "value";
-    execute(
-        String.format("i=%d b='%s'[i] print b c='%s'[%d] print c", index, value, value, index),
-        "constantStringIndex");
+    assertThatCompiling(
+        String.format("i=%d b='%s'[i] print b c='%s'[%d] print c", index, value, value, index))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void addSimple() throws Exception {
-    execute("a='a' c=a+'b' print c", "addSimple");
+    assertThatCompiling("a='a' c=a+'b' print c").executedEqualsInterpreted();
   }
 
   @Test
   public void addComplex() throws Exception {
-    execute(
-        "a='abc' b='def' c=a+b println c d=c+'xyz' println d e='ijk'+d+chr(32) println e",
-        "addComplex");
+    assertThatCompiling(
+        "a='abc' b='def' c=a+b println c d=c+'xyz' println d e='ijk'+d+chr(32) println e")
+        .executedEqualsInterpreted();
   }
 
   @Test
@@ -120,198 +120,194 @@ public class NasmCodeGeneratorStringTest {
       @TestParameter({"abc", "def", ""}) String first,
       @TestParameter({"abc", "def", ""}) String second)
       throws Exception {
-    execute(
-        String.format(
-            "      a='%s' b='%s' " //
-                + "c=a %s b println c " //
-                + "d=b %s a println d",
-            first, second, op, op),
-        "compOpsGlobals");
+    assertThatCompiling(String.format(
+        "      a='%s' b='%s' " //
+            + "c=a %s b println c " //
+            + "d=b %s a println d",
+        first, second, op, op)).executedEqualsInterpreted();
   }
 
   @Test
   public void compOpsParams(@TestParameter({"<", "!=", ">="}) String op)
       throws Exception {
-    execute(
-        String.format(
-            "      doit:proc(a:string,b:string) { "
-                + "  c=a %s b "
-                + "  print c "
-                + "  d=b %s a "
-                + "  print d "
-                + "} "
-                + "doit('abc', 'def') ",
-            op, op),
-        "compOpsParams");
+    assertThatCompiling(String.format(
+        "      doit:proc(a:string,b:string) { "
+            + "  c=a %s b "
+            + "  print c "
+            + "  d=b %s a "
+            + "  print d "
+            + "} "
+            + "doit('abc', 'def') ",
+        op, op)).executedEqualsInterpreted();
   }
 
   @Test
   public void compOpsNull(@TestParameter({"<", ">="}) String op) throws Exception {
-    execute(String.format("a='abc' c=a %s null", op), "compOpsNullLiteral");
-    execute(String.format("a='abc' b=null c=a %s b", op), "compOpsNullGlobal");
-    execute(String.format("a='abc' b:string b=null c=b %s a", op), "compOpsNullGlobalAsString");
+    assertThatCompiling(String.format("a='abc' c=a %s null", op)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='abc' b=null c=a %s b", op)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='abc' b:string b=null c=b %s a", op))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void equalityOpsNull(@TestParameter({"==", "!="}) String op) throws Exception {
-    execute(String.format("a='abc' c=a %s null println c", op), "equalityOpsNullLiteral");
-    execute(String.format("a='abc' c=null %s a println c", op), "equalityOpsNullGlobal");
-    execute(String.format("a='abc' b=null c=a %s b println c", op), "equalityOpsNullGlobal");
-    execute(
-        String.format("a='abc' b:string b=null c=b %s a println c", op), "equalityOpsNullAsString");
-    execute(
-        String.format("f:proc:bool { a='abc' b=null c=a %s b return c} println f()", op),
-        "equalityOpsNullProc");
+    assertThatCompiling(String.format("a='abc' c=a %s null println c", op))
+        .executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='abc' c=null %s a println c", op))
+        .executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='abc' b=null c=a %s b println c", op))
+        .executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='abc' b:string b=null c=b %s a println c", op))
+        .executedEqualsInterpreted();
+    assertThatCompiling(
+        String.format("f:proc:bool { a='abc' b=null c=a %s b return c} println f()", op))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertRuntimeError(program, "length", "Null pointer error");
+    assertThatCompiling(program).withRuntimeError("Null pointer error").executes();
+    assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
+        .executes();
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
-    assertRuntimeError("a='hello' a=null println length(a)", "length", "Null pointer error");
-    assertRuntimeError("a:string a=null println length(a)", "length", "Null pointer error");
+    assertThatCompiling("a='hello' a=null println length(a)").withRuntimeError("Null pointer error")
+        .executes();
+    assertThatCompiling("a='hello' a=null println length(a)").withOptimize(false)
+        .withRuntimeError("Null pointer error").executes();
+    assertThatCompiling("a:string a=null println length(a)").withRuntimeError("Null pointer error")
+        .executes();
+    assertThatCompiling("a:string a=null println length(a)").withOptimize(false)
+        .withRuntimeError("Null pointer error").executes();
   }
 
   @Test
   public void constStringLength() throws Exception {
-    execute("b=length('hello') print b", "constStringLength");
+    assertThatCompiling("b=length('hello') print b").executedEqualsInterpreted();
   }
 
   @Test
   public void stringLength(@TestParameter({"", "s", "hello"}) String value)
       throws Exception {
-    execute(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value), "stringLength");
+    assertThatCompiling(String.format("a='%s' c='lo' b=length(c)+length(a) print b", value))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void compOpsThreeParams(@TestParameter({"<=", "!=", ">"}) String op)
       throws Exception {
-    execute(
-        String.format(
-            "      compOpsThreeParams:proc(x:int, a:string,b:string) { "
-                + "  print x "
-                + "  print a %s b "
-                + "  print b %s a "
-                + "} "
-                + "compOpsThreeParams(123, 'abc', 'def') ",
-            op, op),
-        "compOpsThreeParams");
+    assertThatCompiling(String.format(
+        "      compOpsThreeParams:proc(x:int, a:string,b:string) { "
+            + "  print x "
+            + "  print a %s b "
+            + "  print b %s a "
+            + "} "
+            + "compOpsThreeParams(123, 'abc', 'def') ",
+        op, op)).executedEqualsInterpreted();
   }
 
   @Test
   public void bug97ComparingParams() throws Exception {
-    execute(
-        "      bug97ComparingParams:proc(a:string, b:string) { "
-            + "  println a == chr(10) "
-            + "  println chr(65) == a "
-            + "  println b == chr(66) "
-            + "  println chr(10) == b "
-            + "} "
-            + "bug97ComparingParams('A', 'B')",
-        "bug97ComparingParams");
+    assertThatCompiling("      bug97ComparingParams:proc(a:string, b:string) { "
+        + "  println a == chr(10) "
+        + "  println chr(65) == a "
+        + "  println b == chr(66) "
+        + "  println chr(10) == b "
+        + "} "
+        + "bug97ComparingParams('A', 'B')").executedEqualsInterpreted();
   }
 
   @Test
   public void compOpsLocals(@TestParameter({"<", "==", ">="}) String op)
       throws Exception {
-    execute(
-        String.format(
-            "      compOpsLocals:proc() { "
-                + "  a='abc' "
-                + "  b='def' "
-                + "  print b "
-                + "  print a "
-                + "  c = a %s b "
-                + "  print c "
-                + "} "
-                + "compOpsLocals() ",
-            op),
-        "compOpsLocals");
+    assertThatCompiling(String.format(
+        "      compOpsLocals:proc() { "
+            + "  a='abc' "
+            + "  b='def' "
+            + "  print b "
+            + "  print a "
+            + "  c = a %s b "
+            + "  print c "
+            + "} "
+            + "compOpsLocals() ",
+        op)).executedEqualsInterpreted();
   }
 
   @Test
   public void concatEmpty() throws Exception {
-    execute(
-        " tester: proc(left:string, right:string) {"
-            + "   t=left+right println t "
-            + "} "
-            + "tester('', 'hi') "
-            + "tester('hi', '') ",
-        "concatInProc");
+    assertThatCompiling(" tester: proc(left:string, right:string) {"
+        + "   t=left+right println t "
+        + "} "
+        + "tester('', 'hi') "
+        + "tester('hi', '') ").executedEqualsInterpreted();
   }
 
   @Test
   public void concatNull() throws Exception {
-    assertRuntimeError(
-        " tester: proc(left:string, right:string) {"
-            + "   t=left+right println t "
-            + "} "
-            + "tester(null, '') "
-            + "tester('', null) ",
-        "concatNull", "Null pointer error");
+    String sourceCode = " tester: proc(left:string, right:string) {"
+        + "   t=left+right println t "
+        + "} "
+        + "tester(null, '') "
+        + "tester('', null) ";
+    assertThatCompiling(sourceCode).withRuntimeError("Null pointer error").executes();
+    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Null pointer error")
+        .executes();
   }
 
   @Test
   public void indexOfTemp() throws Exception {
-    execute(
-        "      h='hello '\r\n"
-            + "w='world'\r\n"
-            + "len = length(h+w)\r\n"
-            + "i = 0 while i < len do i = i + 1 {\r\n"
-            + "  print ((h+w)[i])[0]\r\n"
-            + "}\r\n",
-        "indexOfTemp");
+    assertThatCompiling("      h='hello '\r\n"
+        + "w='world'\r\n"
+        + "len = length(h+w)\r\n"
+        + "i = 0 while i < len do i = i + 1 {\r\n"
+        + "  print ((h+w)[i])[0]\r\n"
+        + "}\r\n").executedEqualsInterpreted();
   }
 
   @Test
   public void bug83() throws Exception {
-    execute(
-        "      prepend: proc(s:string) {\n"
-            + "   println s + ' there'\n"
-            + "}\n"
-            + "return_prepend: proc(s:string):string {\n"
-            + "   return s + ' there'\n"
-            + "}\n"
-            + "postpend: proc(s:string) {\n"
-            + "   println 'there ' + s\n"
-            + "}\n"
-            + "return_postpend: proc(s:string):string {\n"
-            + "   return 'there ' + s\n"
-            + "}\n"
-            + "\n"
-            + "  println 'Should print hello there'\n"
-            + "  prepend('hello')\n"
-            + "  println return_prepend('hello')\n"
-            + "  println 'Should print there hello'\n"
-            + "  postpend('hello')\n"
-            + "  println return_postpend('hello')\n",
-        "bug83");
+    assertThatCompiling("      prepend: proc(s:string) {\n"
+        + "   println s + ' there'\n"
+        + "}\n"
+        + "return_prepend: proc(s:string):string {\n"
+        + "   return s + ' there'\n"
+        + "}\n"
+        + "postpend: proc(s:string) {\n"
+        + "   println 'there ' + s\n"
+        + "}\n"
+        + "return_postpend: proc(s:string):string {\n"
+        + "   return 'there ' + s\n"
+        + "}\n"
+        + "\n"
+        + "  println 'Should print hello there'\n"
+        + "  prepend('hello')\n"
+        + "  println return_prepend('hello')\n"
+        + "  println 'Should print there hello'\n"
+        + "  postpend('hello')\n"
+        + "  println return_postpend('hello')\n").executedEqualsInterpreted();
   }
 
   @Test
   public void addToItself() throws Exception {
-    execute(
-        "f:proc(s:string):string {\n "
-            + "  sb = ''\n"
-            // This only fails in a loop because otherwise it is optimized to "return 'X'"
-            + "  i = 0 while i < 2 do i++ {\n"
-            + "    sb = sb + 'X'\n"
-            + "  }\n"
-            + "  sb = sb + 'Y'\n"
-            + "  nb = sb + 'Z'\n"
-            + "  return nb\n"
-            + "}\n"
-            + "print f('abcde')\n",
-        "addChr");
+    assertThatCompiling("f:proc(s:string):string {\n "
+        + "  sb = ''\n"
+        // This only fails in a loop because otherwise it is optimized to "return 'X'"
+        + "  i = 0 while i < 2 do i++ {\n"
+        + "    sb = sb + 'X'\n"
+        + "  }\n"
+        + "  sb = sb + 'Y'\n"
+        + "  nb = sb + 'Z'\n"
+        + "  return nb\n"
+        + "}\n"
+        + "print f('abcde')\n").executedEqualsInterpreted();
   }
 
   @Test
   public void bug289() throws Exception {
-    execute(""
+    assertThatCompiling(""
         + "DSet: record {}"
         + "addToSet: proc(set: DSet, value: string): bool {\n"
         + "  return false\n"
@@ -321,6 +317,6 @@ public class NasmCodeGeneratorStringTest {
         + "i = 0\n"
         + "addToSet(s, 'A')\n"
         + "e = chr(i+asc('A'))+'B'\n"
-        + "print 'e: ' println e", "bug289");
+        + "print 'e: ' println e").executedEqualsInterpreted();
   }
 }

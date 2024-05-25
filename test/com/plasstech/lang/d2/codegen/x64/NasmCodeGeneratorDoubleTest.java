@@ -1,10 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.compile;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -12,43 +9,45 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.plasstech.lang.d2.phase.State;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorDoubleTest {
 
   @Test
   public void negate() throws Exception {
-    execute("a=3.1 b=-a println b", "negate");
+    assertThatCompiling("a=3.1 b=-a println b").executedEqualsInterpreted();
   }
 
   @Test
   public void negateParam() throws Exception {
-    execute("f:proc(a:double) { b=-a println b} f(1.2)", "negateParam");
+    assertThatCompiling("f:proc(a:double) { b=-a println b} f(1.2)").executedEqualsInterpreted();
   }
 
   @Test
   public void negateLocal() throws Exception {
-    execute("f:proc(a:double) { b=a+1.0 c=-b d=-c println d} f(1.2)", "negateLocal");
+    assertThatCompiling("f:proc(a:double) { b=a+1.0 c=-b d=-c println d} f(1.2)")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void printDoubleConstant() throws Exception {
-    execute("println 3.4", "printDoubleConstant");
+    assertThatCompiling("println 3.4").executedEqualsInterpreted();
   }
 
   @Test
   public void transferLocal() throws Exception {
-    execute("f:proc { a=3.0 b=a println b} f()", "transferLocal");
+    assertThatCompiling("f:proc { a=3.0 b=a println b} f()").executedEqualsInterpreted();
   }
 
   @Test
   public void addToItself() throws Exception {
-    execute("a=3.1 a=a+10.1 println a", "addToItself");
+    assertThatCompiling("a=3.1 a=a+10.1 println a").executedEqualsInterpreted();
   }
 
   @Test
   public void add() throws Exception {
-    execute("a=3.14 b=2.0 c=a+b println c", "doubleAdd");
+    assertThatCompiling("a=3.14 b=2.0 c=a+b println c").executedEqualsInterpreted();
   }
 
   @Test
@@ -57,11 +56,9 @@ public class NasmCodeGeneratorDoubleTest {
       @TestParameter({"1234.5", "-2348.3"}) double first,
       @TestParameter({"-1234.5", "2348.3"}) double second)
       throws Exception {
-    execute(
-        String.format(
-            "a=%f b=%f c=a %s b println c d=b %s a println d e=a %s a println e f=b %s b println f",
-            first, second, op, op, op, op),
-        "doubleBinOps");
+    assertThatCompiling(String.format(
+        "a=%f b=%f c=a %s b println c d=b %s a println d e=a %s a println e f=b %s b println f",
+        first, second, op, op, op, op)).executedEqualsInterpreted();
   }
 
   @Test
@@ -70,55 +67,53 @@ public class NasmCodeGeneratorDoubleTest {
       @TestParameter({"1234.5", "-34567.8"}) double first,
       @TestParameter({"-1234.5", "34567.8"}) double second)
       throws Exception {
-    execute(
-        String.format(
-            "      a=%f b=%f " //
-                + "c=a %s b println c " //
-                + "d=b %s a println d",
-            first, second, op, op),
-        "doubleCompOps");
+    assertThatCompiling(String.format(
+        "      a=%f b=%f " //
+            + "c=a %s b println c " //
+            + "d=b %s a println d",
+        first, second, op, op)).executedEqualsInterpreted();
   }
 
   @Test
   public void rounding() throws Exception {
-    execute("f=6.0 k=4.0/(5.0+(4.0-5.0*f)) println k", "rounding");
+    assertThatCompiling("f=6.0 k=4.0/(5.0+(4.0-5.0*f)) println k").executedEqualsInterpreted();
   }
 
   @Test
   public void allOpsLocals() throws Exception {
-    execute(
-        "f1:proc(a:double, b:double): double { \n"
-            + "a=2.0 "
-            + "b=3.0 "
-            + "c=-5.0 "
-            + "d=7.0 "
-            + "e=11.0 "
-            + "f=13.0 "
-            + "z=0.0 "
-            + " g=a+a*(b+(b+c*(d-(c+d/(-e+(d-e*f)+a)*b)/-c)-d)) println 'g: ' println g"
-            + " k=z+4.0/(5.0+(4.0-5.0*-f)) println 'k: ' println k"
-            + " k=0.0+-d/(5.0+(4.0-5.0*f)) println 'k: ' println k"
-            + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) println 'g: ' println g"
-            + " h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) println 'h: ' println h"
-            + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) println 'j: ' println j"
-            + " aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+8.0/11.0)+(7.0-11.0*13.0))*2.0)/b) println aa"
-            + " return aa "
-            + "} \n"
-            + "f2:proc(a:double, b:double):double { return f1(b, a) } "
-            + "println f2(1.0, 2.0)",
-        "allOpsLocals");
+    assertThatCompiling("f1:proc(a:double, b:double): double { \n"
+        + "a=2.0 "
+        + "b=3.0 "
+        + "c=-5.0 "
+        + "d=7.0 "
+        + "e=11.0 "
+        + "f=13.0 "
+        + "z=0.0 "
+        + " g=a+a*(b+(b+c*(d-(c+d/(-e+(d-e*f)+a)*b)/-c)-d)) println 'g: ' println g"
+        + " k=z+4.0/(5.0+(4.0-5.0*-f)) println 'k: ' println k"
+        + " k=0.0+-d/(5.0+(4.0-5.0*f)) println 'k: ' println k"
+        + " g=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f)))))) println 'g: ' println g"
+        + " h=0.0+a+(4.0+3.0*(4.0-(3.0+4.0/(4.0+(5.0-e*6.0))))) println 'h: ' println h"
+        + " j=a+a*(b+(b+c*(d-(c+d/(e+(d-e*f+0.0)))))) println 'j: ' println j"
+        + " aa=2.0+a*(3.0+(3.0+5.0*(7.0-(5.0+8.0/11.0)+(7.0-11.0*13.0))*2.0)/b) println aa"
+        + " return aa "
+        + "} \n"
+        + "f2:proc(a:double, b:double):double { return f1(b, a) } "
+        + "println f2(1.0, 2.0)").executedEqualsInterpreted();
   }
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
     String sourceCode = "a=0.0 b=1.0/a";
-    assertGenerateError(sourceCode, "Division by 0");
+    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:double{a=0.0 b=1.0/a return b} f()";
-    assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
+    assertThatCompiling(sourceCode).withRuntimeError("Division by 0").executes();
+    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
+        .executes();
   }
 
   @Test
@@ -133,9 +128,8 @@ public class NasmCodeGeneratorDoubleTest {
             + "print 'bextern Should be 153.045745: ' println bsqrt(23423.0) "
             + "print 'cextern Should be 153.045745: ' println csqrt(23423.0) "
             + "print 'dextern Should be 153.045745: ' println dsqrt(23423.0) ";
-    // note: cannot use "execute" because that compares interpreter to compiled, and
-    // the interpreter can't deal with externs.
-    assertThat(compile(sqrt, "sqrt").stdOut()).isEqualTo(
+    State state = assertThatCompiling(sqrt).executes();
+    assertThat(state.stdOut()).isEqualTo(
         "aextern Should be 153.045745: 153.0457447954696\r\n"
             + "bextern Should be 153.045745: 153.0457447954696\r\n"
             + "cextern Should be 153.045745: 153.0457447954696\r\n"
@@ -148,25 +142,27 @@ public class NasmCodeGeneratorDoubleTest {
         "      sqrt: extern proc(d:double):double "
             + "bsqrt: proc(a:bool, d:double):double {b=a f=sqrt(d) return f} "
             + "print 'bextern Should be 153.045745: ' println bsqrt(false, 23423.0) ";
-    assertThat(compile(sqrt, "sqrt").stdOut()).isEqualTo(
+    State state = assertThatCompiling(sqrt).executes();
+    assertThat(state.stdOut()).isEqualTo(
         "bextern Should be 153.045745: 153.0457447954696\r\n");
   }
 
   @Test
   public void paramPlusConstant() throws Exception {
-    execute("f:proc(d:double):double { d = d + 1.0 return d} println f(2.0)", "paramPlusConstant");
+    assertThatCompiling("f:proc(d:double):double { d = d + 1.0 return d} println f(2.0)")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void localPlusParam() throws Exception {
-    execute("f:proc(d:double):double { e=1.0 e = e + d return e} println f(2.0)",
-        "localPlusParam");
+    assertThatCompiling("f:proc(d:double):double { e=1.0 e = e + d return e} println f(2.0)")
+        .executedEqualsInterpreted();
   }
 
   @Test
   @Ignore("bug 273")
   public void printingTrailingDotZero() throws Exception {
-    String stdOut = execute("println 3.0", "bug273");
-    assertThat(stdOut).isEqualTo("3.0");
+    State state = assertThatCompiling("println 3.0").executedEqualsInterpreted();
+    assertThat(state.stdOut()).isEqualTo("3.0");
   }
 }

@@ -1,8 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +12,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorLongTest {
   @Test
   public void longUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
-    execute(String.format("a=3L b=%sa println b", op), "intUnaryOps");
+    assertThatCompiling(String.format("a=3L b=%sa println b", op)).executedEqualsInterpreted();
   }
 
   @Test
@@ -33,7 +31,7 @@ public class NasmCodeGeneratorLongTest {
                 + "e=a %s a println e "
                 + "f=b %s b println f",
             first, second, op, op, op, op, op);
-    execute(program, "longBinOps");
+    assertThatCompiling(program).executedEqualsInterpreted();
   }
 
   @Test
@@ -42,15 +40,13 @@ public class NasmCodeGeneratorLongTest {
       @TestParameter({"12345678901234", "-12345"}) String first,
       @TestParameter({"123456", "-3456778901234"}) String second)
       throws Exception {
-    execute(
-        String.format(
-            "      a=%sL b=%sL " //
-                + "c=a %s b println c " //
-                + "d=b %s a println d " //
-                + "e=a %s %sL println e " //
-                + "f=%sL %s b println f",
-            first, second, op, op, op, second, first, op),
-        "longCompOps");
+    assertThatCompiling(String.format(
+        "      a=%sL b=%sL " //
+            + "c=a %s b println c " //
+            + "d=b %s a println d " //
+            + "e=a %s %sL println e " //
+            + "f=%sL %s b println f",
+        first, second, op, op, op, second, first, op)).executedEqualsInterpreted();
   }
 
   @Test
@@ -72,22 +68,23 @@ public class NasmCodeGeneratorLongTest {
                 + "} "
                 + "f(%sL, %sL)",
             op, op, op, first, second, op, first, second);
-    execute(program, "longCompOpsArgs");
+    assertThatCompiling(program).executedEqualsInterpreted();
   }
 
   @Test
   public void shiftOps() throws Exception {
     String op = ">>";
-    execute(String.format("a=123L b=4L c=a%sb println c a=-234L d=b%sa println d", op, op),
-        "shiftOps");
+    assertThatCompiling(
+        String.format("a=123L b=4L c=a%sb println c a=-234L d=b%sa println d", op, op))
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void shiftConstant() throws Exception {
     String op = "<<";
-    execute(
-        String.format("a=123L c=a %s 4L println c a=-234L d=a %s 4L println d", op, op),
-        "shiftConstant");
+    assertThatCompiling(
+        String.format("a=123L c=a %s 4L println c a=-234L d=a %s 4L println d", op, op))
+        .executedEqualsInterpreted();
   }
 
   @Test
@@ -96,38 +93,41 @@ public class NasmCodeGeneratorLongTest {
         String.format(
             "f:proc(a:long) {b=4L b=b %s a println a a=a%sb println a c=a<<2L println c} f(2L)",
             op, op);
-    execute(program, "shiftOpsProc");
+    assertThatCompiling(program).executedEqualsInterpreted();
   }
 
   @Test
   public void shiftSelf() throws Exception {
-    execute("f:proc(a:long) {a=a<<a println a} f(2L)", "shiftOpsProc");
+    assertThatCompiling("f:proc(a:long) {a=a<<a println a} f(2L)").executedEqualsInterpreted();
   }
 
   @Test
   public void rounding() throws Exception {
-    execute("f=6 k=4/(5+(4-5*f)) println k", "rounding");
+    assertThatCompiling("f=6 k=4/(5+(4-5*f)) println k").executedEqualsInterpreted();
   }
 
   @Test
   public void divLoop() throws Exception {
-    execute("a=10000L while a > 0L {println a a = a / 10L }", "divLoop");
+    assertThatCompiling("a=10000L while a > 0L {println a a = a / 10L }")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void incDec() throws Exception {
-    execute("a=3L a-- println a a++ println a", "incdec");
+    assertThatCompiling("a=3L a-- println a a++ println a").executedEqualsInterpreted();
   }
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
     String sourceCode = "a=0L b=1L/a";
-    assertGenerateError(sourceCode, "Division by 0");
+    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:long {a=0L b=1L/a return b} f()";
-    assertRuntimeError(sourceCode, "divisionByZeroLocal", "Division by 0");
+    assertThatCompiling(sourceCode).withRuntimeError("Division by 0").executes();
+    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
+        .executes();
   }
 }

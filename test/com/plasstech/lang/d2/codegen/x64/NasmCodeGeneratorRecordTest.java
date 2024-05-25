@@ -1,344 +1,319 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertGenerateError;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertRuntimeErrorNoOptimize;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.phase.PhaseName;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorRecordTest {
 
   @Test
   public void alloc() throws Exception {
-    execute("r: record{i:int s:string} x=new r", "alloc");
+    assertThatCompiling("r: record{i:int s:string} x=new r").executedEqualsInterpreted();
   }
 
   @Test
   public void allocEmpty() throws Exception {
-    execute("r: record{} x=new r", "allocEmpty");
+    assertThatCompiling("r: record{} x=new r").executedEqualsInterpreted();
   }
 
   @Test
   public void allocRecursive() throws Exception {
-    execute("rt: record{i:int r:rt} x=new rt", "allocRecursive");
+    assertThatCompiling("rt: record{i:int r:rt} x=new rt").executedEqualsInterpreted();
   }
 
   @Test
   public void setField() throws Exception {
-    execute("rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1", "setField");
+    assertThatCompiling("rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void declaredInProc_setField() throws Exception {
-    execute("f:proc:int{ rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1 return x.i}\n"
-        + "println f()", "declaredInProc_setField");
+    assertThatCompiling(
+        "f:proc:int{ rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1 return x.i}\n"
+            + "println f()")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setDoubleFieldConstant() throws Exception {
-    execute("rt: record{d:double s:string} x=new rt x.d=3.0", "setDoubleFieldConstant");
+    assertThatCompiling("rt: record{d:double s:string} x=new rt x.d=3.0")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setDoubleField() throws Exception {
-    execute("rt: record{d:double s:string} dd=3.0 x=new rt x.d=dd", "setDoubleField");
+    assertThatCompiling("rt: record{d:double s:string} dd=3.0 x=new rt x.d=dd")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setDoubleFieldParam() throws Exception {
-    execute(
-        "      rt: record{d:double s:string} "
-            + "f: proc(dd:double): rt {"
-            + "  x=new rt x.d=dd return x"
-            + "} "
-            + "f(3.0)",
-        "setDoubleFieldParam");
+    assertThatCompiling("      rt: record{d:double s:string} "
+        + "f: proc(dd:double): rt {"
+        + "  x=new rt x.d=dd return x"
+        + "} "
+        + "f(3.0)").executedEqualsInterpreted();
   }
 
   @Test
   public void setFieldInProc() throws Exception {
-    execute(
-        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return i} print f()",
-        "setFieldInProc");
+    assertThatCompiling(
+        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i return i} print f()")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setFieldRecordRefIsParam() throws Exception {
-    execute(
-        "      rt: record{s:string i:int} "
-            + "f:proc(x:rt):int {i=3 x.i=i return i} "
-            + "y=new rt "
-            + "print f(y)",
-        "setFieldRecordRefIsParam");
+    assertThatCompiling("      rt: record{s:string i:int} "
+        + "f:proc(x:rt):int {i=3 x.i=i return i} "
+        + "y=new rt "
+        + "print f(y)").executedEqualsInterpreted();
   }
 
   @Test
   public void setFieldRecordIsParam() throws Exception {
-    execute(
-        "      rt: record{s:string i:int} "
-            + "f:proc(x:rt):int {i=3 x.i=i return i} "
-            + "print f(new rt)",
-        "setFieldRecordIsParam");
+    assertThatCompiling("      rt: record{s:string i:int} "
+        + "f:proc(x:rt):int {i=3 x.i=i return i} "
+        + "print f(new rt)").executedEqualsInterpreted();
   }
 
   @Test
   public void getField() throws Exception {
-    execute("rt: record{i:int s:string} x=new rt x.i=3 print x.i", "getField");
+    assertThatCompiling("rt: record{i:int s:string} x=new rt x.i=3 print x.i")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldDouble() throws Exception {
-    execute("rt: record{d:double s:string} x=new rt x.d=3.0 print x.d", "getFieldDouble");
+    assertThatCompiling("rt: record{d:double s:string} x=new rt x.d=3.0 print x.d")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldInProc() throws Exception {
-    execute(
-        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i y=x.i return y} print f()",
-        "getFieldInProc");
+    assertThatCompiling(
+        "rt: record{s:string i:int} f:proc:int {i=3 x=new rt x.i=i y=x.i return y} print f()")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void getStringFieldInProc() throws Exception {
-    execute(
-        "rt: record{i:int s:string } f:proc:string {s='h' x=new rt x.s=s y=x.s return y} print f()",
-        "getStringFieldInProc");
+    assertThatCompiling(
+        "rt: record{i:int s:string } f:proc:string {s='h' x=new rt x.s=s y=x.s return y} print f()")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldDoubleInProc() throws Exception {
-    execute(
-        "      rt: record{s:string d:double} "
-            + "f:proc(dd:double):double {"
-            + "  x=new rt "
-            + "  x.d=dd "
-            + "  y=x.d "
-            + "  return y"
-            + "}"
-            + "print f(3.0)",
-        "getFieldInProc");
+    assertThatCompiling("      rt: record{s:string d:double} "
+        + "f:proc(dd:double):double {"
+        + "  x=new rt "
+        + "  x.d=dd "
+        + "  y=x.d "
+        + "  return y"
+        + "}"
+        + "print f(3.0)").executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldDoubleInProcToLocal() throws Exception {
-    execute(
-        "      rt: record{s:string d:double} "
-            + "f:proc(dd:double):double {"
-            + "  x=new rt "
-            + "  x.d=dd "
-            + "  loc=x.d"
-            + "  return loc"
-            + "}"
-            + "print f(3.0)",
-        "getFieldInProc");
+    assertThatCompiling("      rt: record{s:string d:double} "
+        + "f:proc(dd:double):double {"
+        + "  x=new rt "
+        + "  x.d=dd "
+        + "  loc=x.d"
+        + "  return loc"
+        + "}"
+        + "print f(3.0)").executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldDoubleInProcToArg() throws Exception {
-    execute(
-        "      rt: record{s:string d:double} "
-            + "f:proc(dd:double):double {"
-            + "  x=new rt "
-            + "  x.d=dd "
-            + "  dd=x.d"
-            + "  return dd"
-            + "}"
-            + "print f(3.0)",
-        "getFieldInProc");
+    assertThatCompiling("      rt: record{s:string d:double} "
+        + "f:proc(dd:double):double {"
+        + "  x=new rt "
+        + "  x.d=dd "
+        + "  dd=x.d"
+        + "  return dd"
+        + "}"
+        + "print f(3.0)").executedEqualsInterpreted();
   }
 
   @Test
   public void getFieldRecordRefIsParam() throws Exception {
-    execute(
-        "      rt: record{s:string i:int} "
-            + "f:proc(x:rt):int {return x.i} "
-            + "y=new rt "
-            + "y.i=3 print f(y)",
-        "getFieldRecordRefIsParam");
+    assertThatCompiling("      rt: record{s:string i:int} "
+        + "f:proc(x:rt):int {return x.i} "
+        + "y=new rt "
+        + "y.i=3 print f(y)").executedEqualsInterpreted();
   }
 
   @Test
   public void crashOnSet() throws Exception {
-    execute(
-        "      Token: record { "
-            + "  type: int "
-            + "  start: Token "
-            + "  end: Token "
-            + "  value: String "
-            + "} "
-            + "makeToken: proc(type: int, start: Token, end: Token, text: String): Token { "
-            + "  token = new Token "
-            + "  token.type = type "
-            + "  token.start = start "
-            + "  token.end = end "
-            + "  token.value = text "
-            + "  print 'Made a token of value: ' "
-            + "  println token.value "
-            + "  print 'Made a token of type: ' "
-            + "  println token.type "
-            + "  return token "
-            + "} "
-            + "t = makeToken(1, null, null, 'keyword1') ",
-        "crashOnSet");
+    assertThatCompiling("      Token: record { "
+        + "  type: int "
+        + "  start: Token "
+        + "  end: Token "
+        + "  value: String "
+        + "} "
+        + "makeToken: proc(type: int, start: Token, end: Token, text: String): Token { "
+        + "  token = new Token "
+        + "  token.type = type "
+        + "  token.start = start "
+        + "  token.end = end "
+        + "  token.value = text "
+        + "  print 'Made a token of value: ' "
+        + "  println token.value "
+        + "  print 'Made a token of type: ' "
+        + "  println token.type "
+        + "  return token "
+        + "} "
+        + "t = makeToken(1, null, null, 'keyword1') ").executedEqualsInterpreted();
   }
 
   @Test
   public void nullCheck() throws Exception {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
-    assertGenerateError(program, "Cannot retrieve field \"s\" of NULL RECORD", true,
-        PhaseName.IL_OPTIMIZE);
-    assertRuntimeErrorNoOptimize(program, "nullCheck", "Null pointer error");
+    assertThatCompiling(program).withOptimize(true).hasCompileTimeError("Cannot retrieve field \"s\" of NULL RECORD");
+    assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
+        .executes();
   }
 
   @Test
   public void compareToNull_bug220() throws Exception {
-    execute(
-        "      rt: record{s:string i:int} "
-            + "f:proc(x:rt):int { if x != null {return x.i} return -1}  "
-            + "y=new rt "
-            + "y.i=3 print f(y)",
-        "compareToNull");
+    assertThatCompiling("      rt: record{s:string i:int} "
+        + "f:proc(x:rt):int { if x != null {return x.i} return -1}  "
+        + "y=new rt "
+        + "y.i=3 print f(y)").executedEqualsInterpreted();
   }
 
   @Test
   public void compare() throws Exception {
-    execute(
-        "      rt: record {s:string i:int} \n"
-            + "a=new rt a.s='hi' a.i=3 \n"
-            + "b=new rt b.s='hi' b.i=3 \n"
-            + "print 'a==b Should be true: ' println a==b \n"
-            + "if not (a==b) {exit 'assertion failure 1'} \n"
-            + "print 'a!=b Should be false: ' println a!=b \n"
-            + "if (a!=b) {exit 'assertion failure 2'} \n"
-            + "print 'a==a Should be true: ' println a==a \n"
-            + "if not (a==a) {exit 'assertion failure 3'} \n"
-            + "print 'b==b Should be true: ' println b==b \n"
-            + "if not (b==b) {exit 'assertion failure 4'} \n"
-            + "c=a \n"
-            + "print 'c==a Should be true: ' println c==a \n"
-            + "if not (c==a) {exit 'assertion failure 5'} \n"
-            + "print 'c==b Should be true: ' println c==b \n"
-            + "if not (c==b) {exit 'assertion failure 6'} \n"
-            + "print 'c!=b Should be false: ' println c!=b \n"
-            + "if c!=b {exit 'assertion failure 7'} \n"
-            + "d=new rt d.s='hi ' d.i=4 \n"
-            + "print 'a==d Should be false: ' println a==d \n"
-            + "if a==d {exit 'assertion failure 8'} \n"
-            + "print 'a!=d Should be true: ' println a!=d \n"
-            + "if not (a!=d) {exit 'assertion failure 9'} \n",
-        "compare");
+    assertThatCompiling("      rt: record {s:string i:int} \n"
+        + "a=new rt a.s='hi' a.i=3 \n"
+        + "b=new rt b.s='hi' b.i=3 \n"
+        + "print 'a==b Should be true: ' println a==b \n"
+        + "if not (a==b) {exit 'assertion failure 1'} \n"
+        + "print 'a!=b Should be false: ' println a!=b \n"
+        + "if (a!=b) {exit 'assertion failure 2'} \n"
+        + "print 'a==a Should be true: ' println a==a \n"
+        + "if not (a==a) {exit 'assertion failure 3'} \n"
+        + "print 'b==b Should be true: ' println b==b \n"
+        + "if not (b==b) {exit 'assertion failure 4'} \n"
+        + "c=a \n"
+        + "print 'c==a Should be true: ' println c==a \n"
+        + "if not (c==a) {exit 'assertion failure 5'} \n"
+        + "print 'c==b Should be true: ' println c==b \n"
+        + "if not (c==b) {exit 'assertion failure 6'} \n"
+        + "print 'c!=b Should be false: ' println c!=b \n"
+        + "if c!=b {exit 'assertion failure 7'} \n"
+        + "d=new rt d.s='hi ' d.i=4 \n"
+        + "print 'a==d Should be false: ' println a==d \n"
+        + "if a==d {exit 'assertion failure 8'} \n"
+        + "print 'a!=d Should be true: ' println a!=d \n"
+        + "if not (a!=d) {exit 'assertion failure 9'} \n").executedEqualsInterpreted();
   }
 
   @Test
   public void setArrayFieldLiteral() throws Exception {
-    execute(
-        "rt: record{d:double ar:int[3]} x=new rt x.ar=[1,2,3] print x.ar", "setArrayFieldLiteral");
+    assertThatCompiling("rt: record{d:double ar:int[3]} x=new rt x.ar=[1,2,3] print x.ar")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setArrayField() throws Exception {
-    execute("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar", "setArrayField");
+    assertThatCompiling("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar")
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void setArrayOfDoubleField_bug159() throws Exception {
-    execute(
-        "      PlanetType: record {\r\n"
-            + "  status:int \r\n"
-            + "  assets:double[5] \r\n"
-            + "}\r\n"
-            + "EMPIRE=2 "
-            + "f:proc { \r\n"
-            + "    p = new PlanetType \r\n"
-            + "    p.status = EMPIRE"
-            + "    assets = p.assets \r\n"
-            + "    assets[0] = 123.4 // npe\r\n"
-            + "}\r\n"
-            + "f()",
-        "setArrayOfDoubleField_bug159");
+    assertThatCompiling("      PlanetType: record {\r\n"
+        + "  status:int \r\n"
+        + "  assets:double[5] \r\n"
+        + "}\r\n"
+        + "EMPIRE=2 "
+        + "f:proc { \r\n"
+        + "    p = new PlanetType \r\n"
+        + "    p.status = EMPIRE"
+        + "    assets = p.assets \r\n"
+        + "    assets[0] = 123.4 // npe\r\n"
+        + "}\r\n"
+        + "f()").executedEqualsInterpreted();
   }
 
   @Test
   public void advancedRValue_bug158() throws Exception {
-    execute(
-        "      r1:record{bar:r2} r2:record{baz:r3[2]} r3:record{qux:string}"
-            + " foo:r1[8]"
-            + " foo7 = new r1"
-            + " foo[7] = foo7"
-            + " ar2 = new r2"
-            + " foo7.bar = ar2"
-            + " x=ar2.baz"
-            + " ar3=new r3"
-            + " ar3.qux='hi'"
-            + " x[1]=ar3"
-            + " a=4"
-            + " f:proc:int{return 1}"
-            + " bam = foo[3+a].bar.baz[f()].qux"
-            + " println bam"
-            + " if bam != 'hi' { exit 'fail, actual ' + bam} ",
-        "advancedRValue_bug158");
+    assertThatCompiling("      r1:record{bar:r2} r2:record{baz:r3[2]} r3:record{qux:string}"
+        + " foo:r1[8]"
+        + " foo7 = new r1"
+        + " foo[7] = foo7"
+        + " ar2 = new r2"
+        + " foo7.bar = ar2"
+        + " x=ar2.baz"
+        + " ar3=new r3"
+        + " ar3.qux='hi'"
+        + " x[1]=ar3"
+        + " a=4"
+        + " f:proc:int{return 1}"
+        + " bam = foo[3+a].bar.baz[f()].qux"
+        + " println bam"
+        + " if bam != 'hi' { exit 'fail, actual ' + bam} ").executedEqualsInterpreted();
   }
 
   @Test
   public void loopInvariantError_bug190_field() throws Exception {
-    execute(
-        "      r1:record{amt: double}\r"
-            + "f:proc {"
-            + "  amt = 0.0 i = 0 "
-            + "  while i < 10 do i = i + 1 {"
-            + "    p = new r1"
-            + "    p.amt = amt"
-            + "    amt = amt + 1.1"
-            + "  }"
-            + "}"
-            + "f()",
-        "loopInvariantError_bug190_field");
+    assertThatCompiling("      r1:record{amt: double}\r"
+        + "f:proc {"
+        + "  amt = 0.0 i = 0 "
+        + "  while i < 10 do i = i + 1 {"
+        + "    p = new r1"
+        + "    p.amt = amt"
+        + "    amt = amt + 1.1"
+        + "  }"
+        + "}"
+        + "f()").executedEqualsInterpreted();
   }
 
   @Test
   public void loopInvariantError_bug190_arraySetIsAGet() throws Exception {
-    execute(
-        "      r1:record{amt: double}\r"
-            + "rarray:r1[10]\r"
-            + "f:proc {"
-            + "  i = 0 amt = 1.2"
-            + "  while i < 10 do i = i + 1 {"
-            + "    p = new r1"
-            + "    amt = amt + 1.2"
-            + "    p.amt = amt"
-            + "    rarray[i] = p"
-            + "  }"
-            + "  i = 0 while i < 10 do i = i + 1 {"
-            + "    println rarray[i].amt"
-            + "  }"
-            + "}"
-            + "f()",
-        "loopInvariantError_bug190_arraySetIsAGet");
+    assertThatCompiling("      r1:record{amt: double}\r"
+        + "rarray:r1[10]\r"
+        + "f:proc {"
+        + "  i = 0 amt = 1.2"
+        + "  while i < 10 do i = i + 1 {"
+        + "    p = new r1"
+        + "    amt = amt + 1.2"
+        + "    p.amt = amt"
+        + "    rarray[i] = p"
+        + "  }"
+        + "  i = 0 while i < 10 do i = i + 1 {"
+        + "    println rarray[i].amt"
+        + "  }"
+        + "}"
+        + "f()").executedEqualsInterpreted();
   }
 
   @Test
   public void loopInvariantError_bug190_trim() throws Exception {
-    execute(
-        "    trim: proc(s: string): string {\r\n"
-            + "  r = ''\r\n"
-            + "  i = 0 while i < length(s) do i = i + 1 {\r\n"
-            + "    c = s[i]\r\n"
-            + "    if c != '\\n' { r = r + c }\r\n"
-            + "  }\r\n"
-            + "  return r\r\n"
-            + "}\r\n"
-            + "println trim('hi \\r')",
-        "loopInvariantError_bug190_trim");
+    assertThatCompiling("    trim: proc(s: string): string {\r\n"
+        + "  r = ''\r\n"
+        + "  i = 0 while i < length(s) do i = i + 1 {\r\n"
+        + "    c = s[i]\r\n"
+        + "    if c != '\\n' { r = r + c }\r\n"
+        + "  }\r\n"
+        + "  return r\r\n"
+        + "}\r\n"
+        + "println trim('hi \\r')").executedEqualsInterpreted();
   }
 
   @Test
   public void recordParam() throws Exception {
-    execute(""
+    assertThatCompiling(""
         + "r:record{s:string i:int rec:r}\n"
         + "f:proc(rec:r): int {\n"
         + "   amt = rec.i\n"
@@ -346,6 +321,6 @@ public class NasmCodeGeneratorRecordTest {
         + "}\n"
         + "nr = new r\n"
         + "nr.i = 100\n"
-        + "println f(nr)\n", "recordParam");
+        + "println f(nr)\n").executedEqualsInterpreted();
   }
 }

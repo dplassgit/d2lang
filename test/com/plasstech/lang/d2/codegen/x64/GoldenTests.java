@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -124,6 +124,6 @@ public class GoldenTests {
   private void testFromFile(String path) throws Exception {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
-    execute(text, "golden");
+    assertThatCompiling(text).executedEqualsInterpreted();
   }
 }

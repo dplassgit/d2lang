@@ -14,6 +14,9 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 
+/**
+ * TODO: Move this to InterpreterSubject.
+ */
 public class TestUtils {
 
   public static InterpreterResult optimizeAssertSameVariables(String program) {

@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.assertCompiledEqualsInterpreted;
-import static com.plasstech.lang.d2.codegen.x64.testing.NasmCodeGeneratorTestUtils.execute;
+import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,90 +12,89 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 public class NasmCodeGeneratorBuiltinsTest {
   @Test
   public void printDuplicateStrings() throws Exception {
-    execute("print 'hello' print 'world' print 'hello world'", "printDuplicateStrings");
+    assertThatCompiling("print 'hello' print 'world' print 'hello world'").executedEqualsInterpreted();
   }
 
   @Test
   public void printLn() throws Exception {
-    execute("println 'hello world'", "println");
-    execute("println 'println with cr\\r' println 'println with newline\\n'", "printlnWithCrLf");
-    execute("print 'print\"ln' println '\"mixed'", "printlnMixed");
+    assertThatCompiling("println 'hello world'").executedEqualsInterpreted();
+    assertThatCompiling("println 'println with cr\\r' println 'println with newline\\n'").executedEqualsInterpreted();
+    assertThatCompiling("print 'print\"ln' println '\"mixed'").executedEqualsInterpreted();
   }
 
   @Test
   public void printInt() throws Exception {
-    execute("print 3 print -3 ", "printInt" /* heh */);
+    assertThatCompiling("print 3 print -3 ").executedEqualsInterpreted();
   }
 
   @Test
   public void printBool(@TestParameter boolean bool) throws Exception {
-    execute("print " + bool, "print" + bool);
+    assertThatCompiling("print " + bool).executedEqualsInterpreted();
   }
 
   @Test
   public void printIntVariable() throws Exception {
-    execute("a=3 print a", "printIntVariable");
+    assertThatCompiling("a=3 print a").executedEqualsInterpreted();
   }
 
   @Test
   public void evilVariableName() throws Exception {
-    execute("rax=3 print rax", "evilVariableName");
+    assertThatCompiling("rax=3 print rax").executedEqualsInterpreted();
   }
 
   @Test
   public void printStringVariable() throws Exception {
-    execute("a='hello' print a", "printStringVariable");
+    assertThatCompiling("a='hello' print a").executedEqualsInterpreted();
   }
 
   @Test
   public void exit() throws Exception {
-    execute("exit", "exit");
+    assertThatCompiling("exit").executedEqualsInterpreted();
   }
 
   @Test
   public void exitErrorConst() throws Exception {
-    assertCompiledEqualsInterpreted("exit 'exitErrorConst'", "exitErrorConst", -1, false);
+    assertThatCompiling("exit 'exitErrorConst'").withRuntimeError("exitErrorConst").executes();
   }
 
   @Test
   public void exitErrorVariable() throws Exception {
-    assertCompiledEqualsInterpreted("a='exitErrorVariable' exit a", "exitErrorVariable", -1, false);
+    assertThatCompiling("a='exitErrorVariable' exit a").withRuntimeError("exitErrorVariable")
+        .executes();
   }
 
   @Test
   public void asc(@TestParameter({"s", "he"}) String value) throws Exception {
-    execute(String.format("a='%s' b=asc(a) print b", value), "asc");
-    execute(String.format("b=asc('%s') print b", value), "ascConst");
-    execute(String.format("a='%s' b=a c=asc(b) print c", value), "asc2");
+    assertThatCompiling(String.format("a='%s' b=asc(a) print b", value)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("b=asc('%s') print b", value)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("a='%s' b=a c=asc(b) print c", value)).executedEqualsInterpreted();
   }
 
   @Test
   public void constantAsc() throws Exception {
-    execute("println asc('hi')", "constantAsc");
+    assertThatCompiling("println asc('hi')").executedEqualsInterpreted();
   }
 
   @Test
   public void ascInProc() throws Exception {
-    execute("f:proc(a:string) { b=asc(a) println b} f('hi')", "ascInProc");
+    assertThatCompiling("f:proc(a:string) { b=asc(a) println b} f('hi')").executedEqualsInterpreted();
   }
 
   @Test
   public void ascLocal() throws Exception {
-    execute("f:proc(a:string) { c=a b=asc(c) println b} f('hi')", "ascInProc");
+    assertThatCompiling("f:proc(a:string) { c=a b=asc(c) println b} f('hi')").executedEqualsInterpreted();
   }
 
   @Test
   public void printParse() throws Exception {
-    execute(
-        "print 123 print ', '\n" //
-            + " print 'should be b:'\n" //
-            + " Println 'abcde'[1]",
-        "printParse");
+    assertThatCompiling("print 123 print ', '\n" //
+    + " print 'should be b:'\n" //
+    + " Println 'abcde'[1]").executedEqualsInterpreted();
   }
 
   @Test
   public void chr(@TestParameter({"65", "96"}) int value) throws Exception {
-    execute(String.format("a=%d b=chr(a) print b", value), "chr");
-    execute(String.format("a=chr(%d) print a", value), "chrConst");
+    assertThatCompiling(String.format("a=%d b=chr(a) print b", value)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("a=chr(%d) print a", value)).executedEqualsInterpreted();
   }
 }

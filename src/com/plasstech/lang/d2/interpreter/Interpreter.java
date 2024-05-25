@@ -160,7 +160,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
       return doubles;
     } else if (baseType == VarType.STRING) {
       String[] strings = new String[sizeVal];
-      Arrays.setAll(strings, (index) -> "");
+      Arrays.setAll(strings, (index) -> null);
       return strings;
     } else if (baseType.isRecord()) {
       // Cannot make array of map

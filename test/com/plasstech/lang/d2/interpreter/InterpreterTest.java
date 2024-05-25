@@ -206,7 +206,7 @@ public class InterpreterTest {
   @Test
   public void stringArraySet() {
     Environment env = execute("a:string[2] a[1]='hi' print a[1]");
-    assertThat(env.getValue("a")).isEqualTo(new String[] {"", "hi"});
+    assertThat(env.getValue("a")).isEqualTo(new String[] {null, "hi"});
     assertThat(env.output()).containsExactly("hi");
   }
 

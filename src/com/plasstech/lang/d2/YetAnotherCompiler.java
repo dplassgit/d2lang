@@ -37,17 +37,19 @@ public class YetAnotherCompiler {
     state = codegen.execute(state);
     boolean shouldReturn = shouldReturn(config, state, PhaseName.IL_CODEGEN);
     if (config.codeGenDebugLevel() > 0) {
-      System.out.println("------------------------------");
-      if (config.optimize()) {
-        System.out.println("\nINITIAL INTERMEDIATE CODE:");
-      } else {
-        System.out.println("\nINTERMEDIATE CODE:");
-      }
-      if (state.ilCode() != null) {
-        System.out.println(Joiner.on("\n").join(state.ilCode()));
-      }
-      if (config.optimize()) {
+      if (!config.optimize() || config.optDebugLevel() == 0) {
         System.out.println("------------------------------");
+        if (config.optimize()) {
+          System.out.println("\nINITIAL INTERMEDIATE CODE:");
+        } else {
+          System.out.println("\nINTERMEDIATE CODE:");
+        }
+        if (state.ilCode() != null) {
+          System.out.println(Joiner.on("\n").join(state.ilCode()));
+        }
+        if (config.optimize()) {
+          System.out.println("------------------------------");
+        }
       }
     }
     if (shouldReturn) {
@@ -58,14 +60,6 @@ public class YetAnotherCompiler {
       // Runs all the optimizers.
       ILOptimizer optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
-      if (state.optimizedIlCode() != null) {
-        if (config.codeGenDebugLevel() > 0) {
-          System.out.println("------------------------------");
-          System.out.println("\nFINAL INTERMEDIATE CODE:");
-          System.out.println(Joiner.on("\n").join(state.optimizedIlCode()));
-          System.out.println("------------------------------");
-        }
-      }
       // throws if it needs to
       shouldReturn(config, state, PhaseName.IL_OPTIMIZE);
     }
