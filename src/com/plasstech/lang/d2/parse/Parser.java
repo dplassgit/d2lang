@@ -292,8 +292,9 @@ public class Parser implements Phase {
         VariableSetNode vsn = new VariableSetNode(variable.text(), variable.start());
         ExprNode rhs = expr();
         ExprNode left = new VariableNode(variable.text(), variable.start());
-        ExprNode foo = new BinOpNode(left, OP_EQ_TO_OP.get(opEq.type()), rhs);
-        return new AssignmentNode(vsn, foo);
+        // left += rhs => left = left + rhs
+        ExprNode variableModifiedByRhs = new BinOpNode(left, OP_EQ_TO_OP.get(opEq.type()), rhs);
+        return new AssignmentNode(vsn, variableModifiedByRhs);
 
       // for record field set: field.name=expression
       case DOT:

@@ -471,6 +471,18 @@ public class ParserTest {
   }
 
   @Test
+  public void binEqualOpOperator(
+      @TestParameter({"PLUS", "MINUS", "MULT", "DIV"}) TokenType operator) {
+    BlockNode block = parseStatements(String.format("a%s=b", operator.toString()));
+    assertThat(block.statements()).hasSize(1);
+    AssignmentNode statement = (AssignmentNode) block.statements().get(0);
+    assertThat(statement.lvalue().name()).isEqualTo("a");
+    BinOpNode expectedRhs =
+        new BinOpNode(new VariableNode("a", null), operator, new VariableNode("b", null));
+    assertThat(statement.expr()).isEqualTo(expectedRhs);
+  }
+
+  @Test
   public void binOpCompare(@TestParameter({">", "<", "==", "!=", "<=", ">="}) String operator) {
     parseStatements(String.format("a=b%s5", operator));
   }
