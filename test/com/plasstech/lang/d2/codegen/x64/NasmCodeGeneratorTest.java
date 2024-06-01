@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertWithoutTrimmingThat;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -293,11 +294,19 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void printDoubleRegister() {
-    Operand doubleReg = new RegisterLocation("__double", XmmRegister.XMM3, VarType.DOUBLE);
+  public void printDoubleTemp() {
+    Operand doubleReg = LocationUtils.newTempLocation("__temp", VarType.DOUBLE);
     Op op = new SysCall(Call.PRINT, doubleReg);
     generateOne(op);
-    assertThat(emitter).containsAtLeast("movq RDX, XMM3", "mov RCX, PRINT_DOUBLE", "call printf");
+    assertThat(emitter).containsAtLeast("movq RDX, XMM4", "mov RCX, PRINT_DOUBLE", "call printf");
+  }
+
+  @Test
+  public void printDoubleParam() {
+    Operand doubleReg = LocationUtils.newParamLocation("param", VarType.DOUBLE, 0, 0);
+    Op op = new SysCall(Call.PRINT, doubleReg);
+    generateOne(op);
+    assertThat(emitter).containsAtLeast("movq RDX, XMM0", "mov RCX, PRINT_DOUBLE", "call printf");
   }
 
   @Test
@@ -397,6 +406,9 @@ public class NasmCodeGeneratorTest {
     state = state.addIlCode(ops);
     state = codeGen.execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
+    if (state.error()) {
+      fail(state.errorMessage());
+    }
     return state;
   }
 }
