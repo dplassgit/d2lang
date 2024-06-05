@@ -310,8 +310,12 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     Location destination = op.destination();
     Operand stringOperand = op.left();
     Operand index = op.right();
-    Position position = op.position();
+    if (index.type() == VarType.RANGE) {
+      generateSlice(destination, stringOperand, index);
+      return;
+    }
 
+    Position position = op.position();
     String indexName = resolver.resolve(index);
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
@@ -398,6 +402,51 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
     // jump destination for skipping the allocation step
     emitter.emitLabel(afterLabel);
+  }
+
+  private void generateSlice(Location destination, Operand stringOperand, Operand rangeOperand) {
+    RegisterState registerState =
+        RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
+    // 1. split it into start and end
+    Register range = resolver.allocate(VarType.RANGE);
+    emitter.emit("; get range for slice into %s", range);
+    resolver.mov(rangeOperand, range);
+    Register start = resolver.allocate(VarType.RANGE);
+    emitter.emit("; get top 32 bits of range into %s", start);
+    resolver.mov(VarType.RANGE, range, start);
+    // top 32 bits of "range" are now in "start.
+    emitter.emit("shr %s, 32", start);
+
+    // low 32 bits of "range" are still in "range"
+    // 1a. calculate length = end - start + 1
+    emitter.emit("sub %s, %s  ; calculate length = end - start",
+        range.nameByType(VarType.INT), start.nameByType(VarType.INT));
+    // now 'range' has length + 1 (for null)
+    emitter.emit("inc %s", range.nameByType(VarType.INT));
+    Register length = range;
+
+    // 2. allocate 'length' bytes
+    resolver.mov(VarType.INT, length, IntRegister.RCX);
+    resolver.mov(ConstantOperand.ONE, IntRegister.RDX);
+    emitter.emitExternCall("calloc");
+
+    // strncpy from source+start to RAX; num is length
+    String stringName = resolver.resolve(stringOperand);
+    emitter.emit("add %s, %s  ; adjust start to source+start", start.name(), stringName);
+
+    // Copy 1 fewer chars (because of null)
+    emitter.emit("dec %s", range.nameByType(VarType.INT));
+    resolver.mov(VarType.LONG, IntRegister.RAX, IntRegister.RCX); // dest
+    resolver.mov(VarType.LONG, start, IntRegister.RDX); // source
+    resolver.mov(VarType.INT, length, IntRegister.R8); // num/length
+    emitter.emitExternCall("strncpy");
+    resolver.deallocate(stringOperand);
+    resolver.deallocate(start);
+    resolver.deallocate(length);
+
+    // Result of strncpy
+    resolver.mov(IntRegister.RAX, destination);
+    registerState.condPop();
   }
 
   /** Generate dest = leftOperand + rightOperand */

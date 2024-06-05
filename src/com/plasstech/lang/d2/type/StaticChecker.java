@@ -470,20 +470,28 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     if (operator == TokenType.LBRACKET) {
-      // good: ((string or array) and (int or range)) or (range and int)
       if (leftType == VarType.RANGE && rightType != VarType.INT) {
         errors.add(
             new TypeException(
-                String.format("Index of RANGE variable '%s' must be INT; was %s", left, rightType),
+                String.format("Index of %s variable '%s' must be INT; was %s",
+                    leftType.toString(),
+                    left, rightType),
                 right.position()));
         return;
       }
-      if (((leftType.isArray() || leftType == VarType.STRING) &&
-          !(rightType == VarType.INT))) { //  || rightType == VarType.RANGE))) {
+      if (leftType.isArray() && rightType != VarType.INT) {
         errors.add(
             new TypeException(
-                // String.format("Index of variable '%s' must be INT or RANGE; was %s", left
-                String.format("Index of variable '%s' must be INT; was %s", left,
+                String.format("Index of ARRAY variable '%s' must be INT; was %s",
+                    left,
+                    rightType),
+                right.position()));
+        return;
+      }
+      if (leftType == VarType.STRING && rightType != VarType.INT && rightType != VarType.RANGE) {
+        errors.add(
+            new TypeException(
+                String.format("Index of STRING variable '%s' must be INT or RANGE; was %s", left,
                     rightType),
                 right.position()));
         return;

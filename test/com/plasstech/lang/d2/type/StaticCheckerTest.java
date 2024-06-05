@@ -491,7 +491,7 @@ public class StaticCheckerTest {
 
   @Test
   public void rangeBadIndex() {
-    assertError("r=2:4 a=r[false]", "Index.*RANGE.*INT.*BOOL");
+    assertError("r=2:4 a=r[false]", "Index of RANGE variable 'r' must be INT; was BOOL");
     assertError("r=2:4 a=r[2]", "index must be 0 or 1; was 2");
   }
 
@@ -511,12 +511,12 @@ public class StaticCheckerTest {
 
   @Test
   public void constantStringSlice() {
-    assertError("b='abcde' a=b[2:4]", "was RANGE");
+    checkProgram("b='abcde' a=b[2:4]");
   }
 
   @Test
   public void variableStringSlice() {
-    assertError("r=1:3 b='abcde' c=b[r]", "was RANGE");
+    checkProgram("r=1:3 b='abcde' c=b[r]");
   }
 
   @Test
@@ -551,7 +551,7 @@ public class StaticCheckerTest {
   @Test
   public void arrayIndexMismatch() {
     assertError(
-        "arr=[1,2,3] a=arr['bye']", "Index of variable 'arr' must be INT; was STRING");
+        "arr=[1,2,3] a=arr['bye']", "Index of ARRAY variable 'arr' must be INT; was STRING");
     assertError("arr=[1,2,3] a=arr[false]", "must be INT; was BOOL");
     assertError("arr=[1,2,3] b='hi' a=arr[b]", "must be INT; was STRING");
   }
@@ -647,9 +647,9 @@ public class StaticCheckerTest {
 
   @Test
   public void stringIndex_error() {
-    assertError("b='hi' a=b['bye']", "must be INT; was STRING");
-    assertError("b='hi' a=b[false]", "must be INT; was BOOL");
-    assertError("b='hi' a='hi'[b]", "must be INT; was STRING");
+    assertError("b='hi' a=b['bye']", "must be INT or RANGE; was STRING");
+    assertError("b='hi' a=b[false]", "must be INT or RANGE; was BOOL");
+    assertError("b='hi' a='hi'[b]", "must be INT or RANGE; was STRING");
     assertError("b='hi' a='hi'[-1]", "must be non-negative; was -1");
     assertError("b=3 a=b[3]", "Cannot apply \\[ operator to left operand of type INT");
   }

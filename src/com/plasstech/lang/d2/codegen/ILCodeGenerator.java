@@ -32,6 +32,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Position;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
@@ -600,6 +601,41 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private Operand indexChecks(Operand thingWithIndex, Operand index, Position position) {
+    if (index.type() == VarType.RANGE) {
+      if (index.isConstant()) {
+        Range range = ConstantOperand.rangeValueFromConstOperand(index);
+        ConstantOperand<Integer> rangeMin = ConstantOperand.of(range.start());
+        indexChecks(thingWithIndex, rangeMin, position);
+        if (range.start() == range.end()) {
+          // if start and end are the same, only need to test one
+          return index;
+        }
+        ConstantOperand<Integer> rangeMax = ConstantOperand.of(range.end());
+        indexChecks(thingWithIndex, rangeMax, position);
+        return index;
+      }
+
+      // rangemin = index[0]
+      if (index.storage() == SymbolStorage.TEMP) {
+        // Copy index to a long lived temp so we can re-use it
+        Location longTemp = allocateLongTemp(VarType.RANGE);
+        emit(new Transfer(longTemp, index, position));
+        index = longTemp;
+      }
+      // r=index[0]
+      Location rangeMin = allocateTemp(VarType.INT);
+      emit(new BinOp(rangeMin, index, TokenType.LBRACKET, ConstantOperand.ZERO, position));
+      indexChecks(thingWithIndex, rangeMin, position);
+
+      // r=index[1]-1
+      Location rangeMax = allocateLongTemp(VarType.INT);
+      emit(new BinOp(rangeMax, index, TokenType.LBRACKET, ConstantOperand.ONE, position));
+      emit(new Dec(rangeMax, position));
+      indexChecks(thingWithIndex, rangeMax, position);
+      emit(new DeallocateTemp(rangeMax, position));
+      return index;
+    }
+
     if (thingWithIndex.type() == VarType.RANGE && index.isConstant()) {
       // We can do it right here, right now.
       int indexNum = ConstantOperand.valueFromConstOperand(index).intValue();

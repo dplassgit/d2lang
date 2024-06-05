@@ -441,6 +441,34 @@ public class InterpreterTest {
     assertThat(env.output()).containsAtLeast("1", ":", "2").inOrder();
   }
 
+  @Test
+  public void stringSlice() throws Exception {
+    String code = "r=2:5 s='123456' print s[r]";
+    Environment env = execute(code, true);
+    assertThat(env.output()).containsExactly("345");
+  }
+
+  @Test
+  public void stringConstantSlice() throws Exception {
+    String code = "s='123456' print s[0:length(s)]";
+    Environment env = execute(code, true);
+    assertThat(env.output()).containsExactly("123456");
+  }
+
+  @Test
+  public void stringConstantSliceOne() throws Exception {
+    String code = "s='123456' print s[1:1]";
+    Environment env = execute(code, true);
+    assertThat(env.output()).containsExactly("");
+  }
+
+  @Test
+  public void stringFullSlice() throws Exception {
+    String code = "s='123456' a=0:length(s) print s[a]";
+    Environment env = execute(code, true);
+    assertThat(env.output()).containsExactly("123456");
+  }
+
   private Environment execute(String program, boolean optimize) {
     InterpreterExecutor ee = new InterpreterExecutor(
         CompilationConfiguration.builder().setSourceCode(program)

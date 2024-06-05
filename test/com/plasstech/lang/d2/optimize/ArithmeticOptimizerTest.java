@@ -608,4 +608,54 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(1234));
   }
+
+  @Test
+  public void constantStringConstantRange() {
+    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
+    ImmutableList<Op> program =
+        ImmutableList
+            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
+                new ConstantOperand<Range>(Range.create(2, 4), VarType.RANGE), null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of("34"));
+  }
+
+  @Test
+  public void constantStringSliceNegativeStart() {
+    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
+    ImmutableList<Op> program =
+        ImmutableList
+            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
+                new ConstantOperand<Range>(Range.create(-1, 4), VarType.RANGE), null));
+    RuntimeException exception =
+        assertThrows(D2RuntimeException.class, () -> OPTIMIZER.optimize(program, null));
+    assertThat(exception).hasMessageThat().contains("must be non-negative");
+  }
+
+  @Test
+  public void constantStringSliceEndTooHigh() {
+    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
+    ImmutableList<Op> program =
+        ImmutableList
+            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
+                new ConstantOperand<Range>(Range.create(1, 10), VarType.RANGE), null));
+    RuntimeException exception =
+        assertThrows(D2RuntimeException.class, () -> OPTIMIZER.optimize(program, null));
+    assertThat(exception).hasMessageThat().contains("out of bounds (length 6); was 10");
+  }
+
+  @Test
+  public void constantStringEmptyRange() {
+    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
+    ImmutableList<Op> program =
+        ImmutableList
+            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
+                new ConstantOperand<Range>(Range.create(2, 2), VarType.RANGE), null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(""));
+  }
 }

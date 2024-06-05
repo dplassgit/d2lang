@@ -251,6 +251,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       result = visitStringBinOp(op, (String) left, (String) right);
     } else if (left instanceof String && right instanceof Integer) {
       result = visitBinOp(op, (String) left, (Integer) right);
+    } else if (left instanceof String && rightOperand.type() == VarType.RANGE) {
+      result = visitBinOp(op, (String) left, (Range) right);
     } else if (left != null && left.getClass().isArray()) {
       result = visitArrayBinOp(op, (Object[]) left, right);
     } else if (left instanceof ArrayList && right instanceof Integer) {
@@ -270,6 +272,21 @@ public class Interpreter extends DefaultOpcodeVisitor {
     }
 
     setValue(op.destination(), result);
+  }
+
+  private Object visitBinOp(BinOp op, String left, Range rightOperand) {
+    switch (op.operator()) {
+      case LBRACKET:
+        // if they're the same, it's an empty string.
+        return left.substring(rightOperand.start(), rightOperand.end());
+
+      default:
+        break;
+    }
+    throw new IllegalStateException(
+        String.format(
+            "Not sure what to do with %s; left %s (%s) right %s",
+            op, left, left.getClass().getSimpleName(), rightOperand));
   }
 
   private Object visitBinOp(BinOp op, Range left, Integer right) {

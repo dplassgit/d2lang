@@ -214,28 +214,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         // Only works for constant strings and constant int indexes (modulo constant propagation!)
         if (left.isConstant() && right.isConstant()) {
           if (left.type() == VarType.STRING) {
-            String value = ConstantOperand.stringValueFromConstOperand(left);
-            int index = ConstantOperand.valueFromConstOperand(right).intValue();
-            if (index < 0) {
-              throw new D2RuntimeException(
-                  String.format("must be non-negative; was %d", index),
-                  op.position(),
-                  "String index");
-            }
-            if (index >= value.length()) {
-              throw new D2RuntimeException(
-                  String.format(
-                      "out of bounds (length %d); was %d",
-                      value.length(),
-                      index),
-                  op.position(),
-                  "String index");
-            }
-            replaceCurrent(
-                new Transfer(
-                    op.destination(),
-                    ConstantOperand.of(String.valueOf(value.charAt(index))),
-                    op.position()));
+            optimizeConstantStringBinOp(op, left, right);
             return;
           }
           if (left.type() == VarType.RANGE) {
@@ -252,6 +231,58 @@ class ArithmeticOptimizer extends LineOptimizer {
 
       default:
         return;
+    }
+  }
+
+  private void optimizeConstantStringBinOp(BinOp op, Operand left, Operand right) {
+    String value = ConstantOperand.stringValueFromConstOperand(left);
+    if (right.type() == VarType.INT) {
+      int index = ConstantOperand.valueFromConstOperand(right).intValue();
+      if (index < 0) {
+        throw new D2RuntimeException(
+            String.format("must be non-negative; was %d", index),
+            op.position(),
+            "String index");
+      }
+      if (index >= value.length()) {
+        throw new D2RuntimeException(
+            String.format(
+                "out of bounds (length %d); was %d",
+                value.length(),
+                index),
+            op.position(),
+            "String index");
+      }
+      replaceCurrent(
+          new Transfer(
+              op.destination(),
+              ConstantOperand.of(String.valueOf(value.charAt(index))),
+              op.position()));
+      return;
+    }
+    if (right.type() == VarType.RANGE) {
+      // constant range, constant string.
+      Range range = ConstantOperand.rangeValueFromConstOperand(right);
+      if (range.start() < 0) {
+        throw new D2RuntimeException(
+            String.format("must be non-negative; was %d", range.start()),
+            op.position(),
+            "String slice start");
+      }
+      if (range.end() > value.length()) {
+        throw new D2RuntimeException(
+            String.format(
+                "out of bounds (length %d); was %d",
+                value.length(),
+                range.end()),
+            op.position(),
+            "String slice end");
+      }
+      replaceCurrent(
+          new Transfer(
+              op.destination(),
+              ConstantOperand.of(value.substring(range.start(), range.end())),
+              op.position()));
     }
   }
 

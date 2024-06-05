@@ -270,6 +270,58 @@ public class NasmCodeGeneratorStringTest {
   }
 
   @Test
+  public void stringParamSlice() throws Exception {
+    assertThatCompiling("f:proc(r:range) {s='123456' print s[r]} f(2:5)")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringParamSliceToEmpty() throws Exception {
+    assertThatCompiling("f:proc(r:range) {s='123456' print s[r]} f(2:2)")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringParamFullSlice() throws Exception {
+    assertThatCompiling("s='123456' f:proc(r:range) {print s[r]} f(0:length(s))")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringLocalSlice() throws Exception {
+    assertThatCompiling("f:proc(start:int, e:int) {r=start:e s='123456' print s[r]} f(2,5)")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringLocalSliceToEmpty() throws Exception {
+    assertThatCompiling("f:proc(start:int, e:int) {r=start:e s='123456' print s[r]} f(2,2)")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringLocalFullSlice() throws Exception {
+    assertThatCompiling(
+        "s='123456' f:proc(start:int, e:int) {r=start:e s='123456' print s[r]} f(2,length(s))")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringConstantSlice() throws Exception {
+    assertThatCompiling("r=2:5 s='123456' print s[r]").executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringConstantSliceToEmpty() throws Exception {
+    assertThatCompiling("r=2:2 s='123456' print s[r]").executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringConstantFullSlice() throws Exception {
+    assertThatCompiling("s='123456' r=0:length(s) print s[r]").executedEqualsInterpreted();
+  }
+
+  @Test
   public void bug83() throws Exception {
     assertThatCompiling("      prepend: proc(s:string) {\n"
         + "   println s + ' there'\n"

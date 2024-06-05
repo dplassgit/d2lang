@@ -35,6 +35,7 @@ public class InterpreterExecutor {
   public InterpreterResult execute() {
     YetAnotherCompiler yac = new YetAnotherCompiler();
     state = yac.compile(config);
+    state.stopOnError(true);
     return execute(state);
   }
 
