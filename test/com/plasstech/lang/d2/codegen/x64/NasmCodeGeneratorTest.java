@@ -22,7 +22,6 @@ import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
-import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
@@ -33,7 +32,6 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class NasmCodeGeneratorTest {
 
-  private static final Position START = new Position(0, 0);
   private static final Location TEMP = LocationUtils.newTempLocation("__temp", VarType.INT);
   private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
   private static final Location LONG_TEMP =
@@ -202,7 +200,7 @@ public class NasmCodeGeneratorTest {
   public void ascConstantToTemp() {
     Operand source = ConstantOperand.of("hi");
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, null);
 
     generateOne(ascOp);
 
@@ -215,7 +213,7 @@ public class NasmCodeGeneratorTest {
     // really, reg to reg
     Operand source = LocationUtils.newParamLocation("source", VarType.STRING, 0, 0);
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, null);
 
     generateOne(ascOp);
 
@@ -230,7 +228,7 @@ public class NasmCodeGeneratorTest {
   public void ascStackToTemp() {
     Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, null);
 
     generateOne(ascOp);
 
@@ -249,7 +247,7 @@ public class NasmCodeGeneratorTest {
     Operand source = LocationUtils.newStackLocation("source", VarType.STRING, 4);
     // This should never happen; dests are usually temps stored in registers.
     Location dest = LocationUtils.newStackLocation("dest", VarType.INT, 8);
-    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, START);
+    UnaryOp ascOp = new UnaryOp(dest, TokenType.ASC, source, null);
 
     generateOne(ascOp);
 
@@ -320,7 +318,7 @@ public class NasmCodeGeneratorTest {
   @Test
   public void deallocateOp_doesNothingForNonTemps() {
     Location doubleReg = new RegisterLocation("__double", XmmRegister.XMM3, VarType.DOUBLE);
-    Op op = new DeallocateTemp(doubleReg, START);
+    Op op = new DeallocateTemp(doubleReg, null);
     generateOne(op);
     assertThat(emitter).contains("main:");
   }
@@ -330,8 +328,8 @@ public class NasmCodeGeneratorTest {
     // 1. temp=foo
     // 2. deallocate
     ImmutableList<Op> program =
-        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, START),
-            new DeallocateTemp(TEMP, START));
+        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, null),
+            new DeallocateTemp(TEMP, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
         "  ; Deallocating __temp from RBX");
@@ -340,7 +338,7 @@ public class NasmCodeGeneratorTest {
   @Test
   public void tempAllocation() {
     ImmutableList<Op> program =
-        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, START));
+        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __temp (TEMP) to RBX");
   }
@@ -349,8 +347,8 @@ public class NasmCodeGeneratorTest {
   public void tempAutoDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(TEMP, ConstantOperand.ONE, START),
-            new Transfer(GLOBAL, TEMP, START));
+            new Transfer(TEMP, ConstantOperand.ONE, null),
+            new Transfer(GLOBAL, TEMP, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
         "  ; Deallocating __temp from RBX");
@@ -360,8 +358,8 @@ public class NasmCodeGeneratorTest {
   public void longLivedTempNotAutoDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(LONG_TEMP, ConstantOperand.ONE, START),
-            new Transfer(GLOBAL, LONG_TEMP, START));
+            new Transfer(LONG_TEMP, ConstantOperand.ONE, null),
+            new Transfer(GLOBAL, LONG_TEMP, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
     assertWithoutTrimmingThat(emitter).doesNotContain("  ; Deallocating __longtemp from RBX");
@@ -371,9 +369,9 @@ public class NasmCodeGeneratorTest {
   public void longLivedTempDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(LONG_TEMP, ConstantOperand.ONE, START),
-            new Transfer(GLOBAL, LONG_TEMP, START),
-            new DeallocateTemp(LONG_TEMP, START));
+            new Transfer(LONG_TEMP, ConstantOperand.ONE, null),
+            new Transfer(GLOBAL, LONG_TEMP, null),
+            new DeallocateTemp(LONG_TEMP, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
     assertWithoutTrimmingThat(emitter).contains("  ; Deallocating __longtemp from RBX");
@@ -383,9 +381,9 @@ public class NasmCodeGeneratorTest {
   public void longLivedTempTransferred() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(TEMP, ConstantOperand.ONE, START),
-            new Transfer(LONG_TEMP, TEMP, START),
-            new DeallocateTemp(LONG_TEMP, START));
+            new Transfer(TEMP, ConstantOperand.ONE, null),
+            new Transfer(LONG_TEMP, TEMP, null),
+            new DeallocateTemp(LONG_TEMP, null));
     generate(program);
     assertThat(emitter).doesNotContain("mov ESI, EBX");
   }

@@ -1,25 +1,20 @@
 package com.plasstech.lang.d2.common;
 
+import com.google.auto.value.AutoValue;
+
 /** Represents a location in the file: line and column. */
-public class Position {
-  private final int line;
-  private final int column;
-
-  public Position(int line, int column) {
-    this.line = line;
-    this.column = column;
+@AutoValue
+public abstract class Position {
+  public static Position create(int line, int column) {
+    return new AutoValue_Position(line, column);
   }
 
-  public int line() {
-    return line;
-  }
+  public abstract int line();
 
-  public int column() {
-    return column;
-  }
+  public abstract int column();
 
   @Override
   public String toString() {
-    return String.format("line %d, column %d", line, column);
+    return String.format("line %d, column %d", line(), column());
   }
 }

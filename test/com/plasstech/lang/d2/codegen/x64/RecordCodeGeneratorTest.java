@@ -13,7 +13,6 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
-import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
@@ -117,7 +116,7 @@ public class RecordCodeGeneratorTest {
     Location source = LocationUtils.newMemoryAddress("source", recordRefType);
     Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 2, 0);
     Operand fieldOperand = ConstantOperand.of(fieldName);
-    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // It's R8 because the dest is the 3rd param.
     assertThat(code).contains("mov BYTE R8b, [RBX]");
@@ -139,7 +138,7 @@ public class RecordCodeGeneratorTest {
 
     Location dest = LocationUtils.newTempLocation("dest", VarType.BYTE);
     Operand fieldOperand = ConstantOperand.of(fieldName);
-    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // It's RSI because it allocated "dest" to RSI
     assertThat(code).contains("mov BYTE SIL, [RBX]");
@@ -161,7 +160,7 @@ public class RecordCodeGeneratorTest {
 
     Location dest = LocationUtils.newMemoryAddress("dest", VarType.BYTE);
     Operand fieldOperand = ConstantOperand.of(fieldName);
-    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // RSI is the indirect register
     assertThat(code).containsAtLeast("mov BYTE SIL, [RBX]", "mov BYTE [_dest], SIL").inOrder();
@@ -183,7 +182,7 @@ public class RecordCodeGeneratorTest {
 
     Location dest = LocationUtils.newStackLocation("dest", VarType.BYTE, 12);
     Operand fieldOperand = ConstantOperand.of(fieldName);
-    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, new Position(0, 0));
+    BinOp op = new BinOp(dest, source, TokenType.DOT, fieldOperand, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     assertThat(code).containsAtLeast("mov BYTE SIL, [RBX]", "mov BYTE [RBP - 12], SIL").inOrder();
   }
