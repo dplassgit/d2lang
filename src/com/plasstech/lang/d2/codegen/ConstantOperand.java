@@ -187,12 +187,12 @@ public class ConstantOperand<T> implements Operand {
   public static Number valueFromConstOperand(Operand operand) {
     if (!(operand instanceof ConstantOperand)) {
       throw new IllegalArgumentException(
-          "Cannot get String const from non-ConstantOperand: " + operand);
+          "Cannot get numeric const from non-ConstantOperand: " + operand);
     }
     ConstantOperand<?> constant = (ConstantOperand<?>) operand;
     if (!(constant.value() instanceof Number)) {
       throw new IllegalArgumentException(
-          "Cannot get String const from non-Number ConstantOperand: " + operand);
+          "Cannot get numeric const from non-Number ConstantOperand: " + operand);
     }
     return (Number) constant.value();
   }
@@ -234,7 +234,7 @@ public class ConstantOperand<T> implements Operand {
     ConstantOperand<?> constant = (ConstantOperand<?>) operand;
     if (!(constant.value() instanceof Range)) {
       throw new IllegalArgumentException(
-          "Cannot get Rangeconst from non-Range ConstOperand: " + operand);
+          "Cannot get Range const from non-Range ConstOperand: " + operand);
     }
     ConstantOperand<Range> rangeConstant = (ConstantOperand<Range>) operand;
     return rangeConstant.value();
