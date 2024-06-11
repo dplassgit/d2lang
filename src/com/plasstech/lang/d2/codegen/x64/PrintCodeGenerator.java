@@ -110,7 +110,13 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         for (int i = 1; i < operands.size(); ++i) {
           Operand operand = operands.get(i);
           if (i < 4) {
-            // Yes, we skip 1 (RCX) 
+            // Yes, we skip 1 (RCX)
+            // TODO: this is broken in the same way proccalls *were* broken when it's not
+            // the "easy case":
+            /**
+             * We need to do gymnastics when a param register needs to be copied to a LATER param
+             * register, e.g., RCX needs to be in RDX or RDX needs to be in R9
+             */
             Register register = Register.INT_PARAM_REGISTERS.get(i);
             resolver.mov(operand, register);
           } else {

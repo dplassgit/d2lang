@@ -8,7 +8,9 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -20,6 +22,17 @@ class RangeCodeGenerator extends DefaultOpcodeVisitor {
   public RangeCodeGenerator(Resolver resolver, Emitter emitter) {
     this.resolver = resolver;
     this.emitter = emitter;
+  }
+
+  @Override
+  public void visit(Transfer op) {
+    Operand source = op.source();
+    if (source.type() == VarType.RANGE && source.isConstant()) {
+      ConstantOperand<Range> constantRange = (ConstantOperand<Range>) source;
+      Range range = constantRange.value();
+      ConstantOperand<Long> constantLong = ConstantOperand.of(range.value());
+      resolver.mov(constantLong, op.destination());
+    }
   }
 
   /** Generate destName = left operator right for [ and comparisons. */
@@ -76,24 +89,24 @@ class RangeCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("shl QWORD %s, 32  ; shift dest left 32 to make room for right",
         destRo.name());
     // 3. add right (lower 32 bits)
-    if (destRo.isRegister()) {
-      // if dest is a register, need to specify the 32 bit version
-      emitter.emit("add %s, %s  ; right part of range",
-          destRo.register().nameByType(VarType.RANGE), rightRo.name());
+    if (rightRo.isConstant()) {
+      emitter.emit("add %s, %s  ; right part of range 1b",
+          destRo.name(),
+          rightRo);
+    } else if (rightRo.isRegister()) {
+      emitter.emit("add QWORD %s, %s  ; right part of range 1",
+          destRo.name(),
+          rightRo.register().nameByType(VarType.RANGE));
     } else {
-      if (rightRo.isRegister()) {
-        emitter.emit("add QWORD %s, %s  ; right part of range",
-            destRo.name(), rightRo.name());
-      } else {
-        // both are not in registers; put right into a reg
-        Register tempReg = resolver.allocate(VarType.INT);
-        emitter.emit("; move right to temp register");
-        resolver.mov(rightRo, tempReg);
-        emitter.emit("add QWORD %s, %s  ; right part of range",
-            destRo.name(),
-            tempReg.nameByType(VarType.RANGE));
-        resolver.deallocate(tempReg);
-      }
+      // We need to add 2 8-byte values, otherwise
+      // it will truncate the 8-byte destination when adding the 4 byte source/right.
+      Register tempReg = resolver.allocate(VarType.INT);
+      emitter.emit("; move right to temp register");
+      resolver.mov(rightRo, tempReg);
+      emitter.emit("add %s, %s  ; right part of range 2",
+          destRo.name(),
+          tempReg.nameByType(VarType.RANGE));
+      resolver.deallocate(tempReg);
     }
     resolver.deallocate(op.left());
     resolver.deallocate(op.right());

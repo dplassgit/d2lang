@@ -39,6 +39,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ParamSymbol;
@@ -255,7 +256,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
     } else if (left instanceof ArrayList && right instanceof Integer) {
       result = visitLiteralArrayBinOp(op, left, (Integer) right);
     } else if (leftOperand.type() == VarType.RANGE && right instanceof Integer) {
-      result = visitRangeBinOp(op, (Object[]) left, (Integer) right);
+      result = visitBinOp(op, (Range) left, (Integer) right);
     } else if (leftOperand.type().isRecord()
         && (rightOperand.type().isRecord() || rightOperand == null)) {
       result = visitRecordBinop(op, left, right);
@@ -271,17 +272,16 @@ public class Interpreter extends DefaultOpcodeVisitor {
     setValue(op.destination(), result);
   }
 
-  private Object visitRangeBinOp(BinOp op, Object[] left, Integer right) {
+  private Object visitBinOp(BinOp op, Range left, Integer right) {
     switch (op.operator()) {
       case LBRACKET:
-        int index = right;
-        return left[index];
+        return left.value(right);
 
       default:
         throw new IllegalStateException(
             String.format(
-                "Unknown range binop %s; left %d:%d, right %s",
-                op, (int) left[0], (int) left[1], right));
+                "Unknown range binop %s; left %s, right %s",
+                op, left, right));
     }
   }
 
@@ -433,10 +433,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private Object visitIntBinOp(BinOp op, int left, int right) {
     switch (op.operator()) {
       case COLON:
-        Integer[] range = new Integer[2];
-        range[0] = left;
-        range[1] = right;
-        return range;
+        return Range.create(left, right);
 
       case DIV:
         return left / right;
@@ -980,8 +977,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
       } else if (type == VarType.DOUBLE) {
         recordAsMap.put(fieldName, 0.0);
       } else if (type == VarType.RANGE) {
-        Object[] emptyArray = createEmptyArray(VarType.INT, 2);
-        recordAsMap.put(fieldName, emptyArray);
+        // this should never happen
+        recordAsMap.put(fieldName, Range.create(0, 0));
       } else if (type.isArray()) {
         ArrayField arrayField = op.record().getArrayField(fieldName);
         // TODO(#38) support multidimensional arrays

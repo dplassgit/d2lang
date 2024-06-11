@@ -24,6 +24,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.StringTable;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -108,6 +109,11 @@ class Resolver implements RegistersInterface {
         double doubleValue = ConstantOperand.valueFromConstOperand(operand).doubleValue();
         ConstEntry<Double> entry = doubleTable.lookup(doubleValue);
         return String.format("[%s]", entry.name());
+      }
+      if (operand.type() == VarType.RANGE) {
+        ConstantOperand<Range> rangeOperand = (ConstantOperand<Range>) operand;
+        Range range = rangeOperand.value();
+        return Long.toString(range.value());
       }
 
       fail(null, "Cannot generate %s constant %s yet", operand.type().name(), operand);

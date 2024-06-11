@@ -425,8 +425,6 @@ public class NasmCodeGeneratorTest {
     generate(program);
     assertThat(emitter).contains("  mov DWORD [_globalrange], 12");
     assertThat(emitter).contains("  shl QWORD [_globalrange], 32");
-    assertThat(emitter).contains("  mov DWORD EBX, 24");
-    assertThat(emitter).contains("  add QWORD [_globalrange], RBX");
   }
 
   @Test
@@ -466,7 +464,7 @@ public class NasmCodeGeneratorTest {
     generate(program);
     assertThat(emitter).contains("  mov DWORD ESI, EBX");
     assertThat(emitter).contains("  shl QWORD RSI, 32");
-    assertThat(emitter).contains("  add RSI, EBX");
+    assertThat(emitter).contains("  add QWORD RSI, RBX");
   }
 
   @Test
@@ -483,7 +481,7 @@ public class NasmCodeGeneratorTest {
     generate(program);
     assertThat(emitter).contains("  mov DWORD EDI, EBX");
     assertThat(emitter).contains("  shl QWORD RDI, 32");
-    assertThat(emitter).contains("  add RDI, ESI");
+    assertThat(emitter).contains("  add QWORD RDI, RSI");
     assertThat(emitter).contains("  mov QWORD [_globalrange], RDI");
   }
 

@@ -24,6 +24,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.ArrayType;
@@ -44,6 +45,8 @@ public class ArithmeticOptimizerTest {
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
   private static final ConstantOperand<String> NULL_STRING =
       new ConstantOperand<String>(null, VarType.STRING);
+  private static final Operand CONSTANT_RANGE =
+      new ConstantOperand<Range>(Range.create(1234, 2345), VarType.RANGE);
 
   @Test
   public void varPlusVarBecomesShift() {
@@ -583,5 +586,26 @@ public class ArithmeticOptimizerTest {
     OPTIMIZER.optimize(program, null);
 
     assertThat(OPTIMIZER.isChanged()).isFalse();
+  }
+
+  @Test
+  public void rangeLength() {
+    ImmutableList<Op> program =
+        ImmutableList.of(new UnaryOp(INT1, TokenType.LENGTH, CONSTANT_RANGE, null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(2));
+  }
+
+  @Test
+  public void rangeConstantIndex() {
+    ImmutableList<Op> program =
+        ImmutableList
+            .of(new BinOp(INT1, CONSTANT_RANGE, TokenType.LBRACKET, ConstantOperand.of(0), null));
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(1234));
   }
 }

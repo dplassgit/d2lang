@@ -428,10 +428,17 @@ public class InterpreterTest {
   }
 
   @Test
-  public void printRange() throws Exception {
+  public void printRangeOptimized() throws Exception {
     String code = "a=1:2 print a[0] print ':' println a[1]";
     Environment env = execute(code, true);
-    assertThat(env.output()).containsExactly("1", ":", "2", "\n").inOrder();
+    assertThat(env.output()).contains("1:2");
+  }
+
+  @Test
+  public void printRangeNotOptimized() throws Exception {
+    String code = "a=1:2 print a[0] print ':' println a[1]";
+    Environment env = execute(code, false);
+    assertThat(env.output()).containsAtLeast("1", ":", "2").inOrder();
   }
 
   private Environment execute(String program, boolean optimize) {

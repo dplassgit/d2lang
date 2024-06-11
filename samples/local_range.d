@@ -1,7 +1,8 @@
 f:proc(a:int, b:int): range {
-  r=a:b
-  return r
+  rv=a:b
+  return rv
 }
 
-f(12, 24)
+r=f(12, 24)
+print r[0] print ":" println r[1]
 

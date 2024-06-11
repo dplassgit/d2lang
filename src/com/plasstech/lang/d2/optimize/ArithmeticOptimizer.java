@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
@@ -25,6 +26,13 @@ class ArithmeticOptimizer extends LineOptimizer {
   @Override
   public void visit(UnaryOp op) {
     Operand operand = op.operand();
+    if (operand.type() == VarType.RANGE && op.operator() == TokenType.LENGTH) {
+      // ranges are always size 2, even if non constant.
+      replaceCurrent(
+          new Transfer(op.destination(), ConstantOperand.of(2), op.position()));
+      return;
+    }
+
     if (!operand.isConstant() && !operand.type().isArray()) {
       return;
     }
@@ -108,6 +116,10 @@ class ArithmeticOptimizer extends LineOptimizer {
     TokenType operator = op.operator();
 
     switch (operator) {
+      case COLON:
+        optimizeColon(op, left, right);
+        return;
+
       case DOT:
         optimizeDot(op, left, right);
         return;
@@ -200,34 +212,55 @@ class ArithmeticOptimizer extends LineOptimizer {
       case LBRACKET:
         // Replace "abc"[0] with "a".
         // Only works for constant strings and constant int indexes (modulo constant propagation!)
-        if (left.isConstant() && right.isConstant() && left.type() == VarType.STRING) {
-          String value = ConstantOperand.stringValueFromConstOperand(left);
-          int index = ConstantOperand.valueFromConstOperand(right).intValue();
-          if (index < 0) {
-            throw new D2RuntimeException(
-                String.format("must be non-negative; was %d", index),
-                op.position(),
-                "String index");
+        if (left.isConstant() && right.isConstant()) {
+          if (left.type() == VarType.STRING) {
+            String value = ConstantOperand.stringValueFromConstOperand(left);
+            int index = ConstantOperand.valueFromConstOperand(right).intValue();
+            if (index < 0) {
+              throw new D2RuntimeException(
+                  String.format("must be non-negative; was %d", index),
+                  op.position(),
+                  "String index");
+            }
+            if (index >= value.length()) {
+              throw new D2RuntimeException(
+                  String.format(
+                      "out of bounds (length %d); was %d",
+                      value.length(),
+                      index),
+                  op.position(),
+                  "String index");
+            }
+            replaceCurrent(
+                new Transfer(
+                    op.destination(),
+                    ConstantOperand.of(String.valueOf(value.charAt(index))),
+                    op.position()));
+            return;
           }
-          if (index >= value.length()) {
-            throw new D2RuntimeException(
-                String.format(
-                    "out of bounds (length %d); was %d",
-                    value.length(),
-                    index),
-                op.position(),
-                "String index");
+          if (left.type() == VarType.RANGE) {
+            Range range = ConstantOperand.rangeValueFromConstOperand(left);
+            int index = ConstantOperand.valueFromConstOperand(right).intValue();
+            int value = range.value(index);
+            replaceCurrent(
+                new Transfer(op.destination(),
+                    ConstantOperand.of(value),
+                    op.position()));
           }
-          replaceCurrent(
-              new Transfer(
-                  op.destination(),
-                  ConstantOperand.of(String.valueOf(value.charAt(index))),
-                  op.position()));
         }
         return;
 
       default:
         return;
+    }
+  }
+
+  private void optimizeColon(BinOp op, Operand left, Operand right) {
+    if (left.isConstant() && right.isConstant()) {
+      Range range = Range.create(ConstantOperand.valueFromConstOperand(left).intValue(),
+          ConstantOperand.valueFromConstOperand(right).intValue());
+      ConstantOperand<Range> constRange = new ConstantOperand<Range>(range, VarType.RANGE);
+      replaceCurrent(new Transfer(op.destination(), constRange, op.position()));
     }
   }
 

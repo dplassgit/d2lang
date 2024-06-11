@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -223,5 +224,19 @@ public class ConstantOperand<T> implements Operand {
       return ConstantOperand.of((double) value);
     }
     throw new IllegalStateException("Cannot take fromValue of type " + type);
+  }
+
+  public static Range rangeValueFromConstOperand(Operand operand) {
+    if (!(operand instanceof ConstantOperand)) {
+      throw new IllegalArgumentException(
+          "Cannot get Range const from non-ConstOperand: " + operand);
+    }
+    ConstantOperand<?> constant = (ConstantOperand<?>) operand;
+    if (!(constant.value() instanceof Range)) {
+      throw new IllegalArgumentException(
+          "Cannot get Rangeconst from non-Range ConstOperand: " + operand);
+    }
+    ConstantOperand<Range> rangeConstant = (ConstantOperand<Range>) operand;
+    return rangeConstant.value();
   }
 }
