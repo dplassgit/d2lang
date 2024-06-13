@@ -39,16 +39,19 @@ public class NasmCodeGeneratorIntTest {
   @Test
   public void intCompOps(
       @TestParameter({"<=", "!=", ">"}) String op,
-      @TestParameter({"1234", "-24567"}) int first,
-      @TestParameter({"2345", "-34567"}) int second)
+      @TestParameter({"1234", "0"}) int first,
+      @TestParameter({"0", "-34567"}) int second)
       throws Exception {
     assertThatCompiling(String.format(
-        "      a=%d b=%d " //
-            + "c=a %s b println c " //
-            + "d=b %s a println d " //
-            + "e=a %s %d println e " //
-            + "f=%d %s b println f",
-        first, second, op, op, op, second, first, op)).executedEqualsInterpreted();
+        "      a=%d b=%d "
+            + "  f:proc {} " // suppresses constant propagation optimizer 
+            + "  if a %s b { println true } "
+            + "  if b %s a { println true } "
+            + "  if a %s %d { println true } "
+            + "  if %d %s b { println true }"
+            + "f()", // without the call, the declaration will be optimized out
+        first, second, op, op, op, second, first, op))
+        .executedEqualsInterpreted();
   }
 
   @Test
@@ -59,14 +62,15 @@ public class NasmCodeGeneratorIntTest {
       throws Exception {
     String program =
         String.format(
-            "    bb:int g:bool f:proc(a:int, b:int) { " //
-                + "aa=a " //
-                + "c=a %s b println c " //
-                + "d=b %s aa println d " //
-                + "e=aa %s %d println e " //
-                + "g=%d %s aa println g " // global g
-                + "bb=b "
-                + "h=bb < 3 println h"
+            "    bb:int "
+                + "f:proc(a:int, b:int) { "
+                + "  aa=a "
+                + "  if a %s b { println true } "
+                + "  if b %s aa { println true }  "
+                + "  if aa %s %d { println true } "
+                + "  if %d %s aa { println true } "
+                + "  bb=b "
+                + "  if bb < 3 {println true}"
                 + "} "
                 + "f(%d,%d)",
             op, op, op, first, second, op, first, second);

@@ -91,14 +91,7 @@ public class D2Compiler {
     }
 
     if (options.optimizeAsm) {
-      state = new NasmOptimizer().execute(state);
-
-      if (options.debugcodegen > 0) {
-        System.out.println("------------------------------");
-        System.out.println("\nOPTIMIZED ASM CODE:");
-        System.out.println(Joiner.on("\n").join(state.asmCode()));
-        System.out.println("------------------------------");
-      }
+      state = new NasmOptimizer(options.debugopt).execute(state);
     }
 
     File dir = new File(System.getProperty("user.dir"));

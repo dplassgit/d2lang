@@ -14,7 +14,7 @@ import com.plasstech.lang.d2.phase.State;
 @RunWith(TestParameterInjector.class)
 public class NasmOptimizerTest {
 
-  private Phase optimizer = new NasmOptimizer();
+  private Phase optimizer = new NasmOptimizer(2);
 
   @Test
   public void removesComments() {
@@ -177,7 +177,7 @@ public class NasmOptimizerTest {
         {"RAX", "EBX", "CX", "DL", "BH", "R0", "R8", "R10", "R15d", "R14b", "RSI", "ESI", "SI",
             "SIL", "RDI", "EDI", "DI", "DIL"}
       ) String register,
-      @TestParameter({" ", "BYTE ", "DWORD ", "QWORD "}) String modifier) {
+      @TestParameter({" ", "BYTE ", "WORD ", "DWORD ", "QWORD "}) String modifier) {
 
     ImmutableList<String> code =
         ImmutableList.of(String.format("  mov %s%s, 0", modifier, register));

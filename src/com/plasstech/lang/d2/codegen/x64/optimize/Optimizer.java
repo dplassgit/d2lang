@@ -5,16 +5,13 @@ import com.google.common.collect.ImmutableList;
 abstract class Optimizer {
   private boolean changed;
 
-  final ImmutableList<String> optimize(ImmutableList<String> input) {
-    ImmutableList<String> output = doOptimize(input);
-    // I don't love this.
-    changed = !output.equals(input);
-    return output;
-  }
-
-  abstract protected ImmutableList<String> doOptimize(ImmutableList<String> program);
-
-  boolean isChanged() {
+  final boolean isChanged() {
     return changed;
   }
+
+  final void setChanged(boolean changed) {
+    this.changed = changed;
+  }
+
+  abstract ImmutableList<String> optimize(ImmutableList<String> program);
 }
