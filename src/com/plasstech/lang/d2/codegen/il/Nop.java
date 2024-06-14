@@ -1,9 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
 public class Nop extends Op {
-
-  public static final Op INSTANCE = new Nop();
-  private String message;
+  private final String message;
 
   public Nop() {
     this("");

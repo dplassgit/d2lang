@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
+import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
@@ -26,6 +27,17 @@ public class AssociativeOptimizerTest {
   private static final Location TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
   private static final Location STRING_TEMP =
       LocationUtils.newTempLocation("stringtemp", VarType.STRING);
+
+  @Test
+  public void constOpConst_doesNotSwap(
+      @TestParameter(
+        {"LT", "GT", "GEQ", "LEQ",
+            "PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
+      ) TokenType operator) {
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, ZERO, null));
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
+  }
 
   @Test
   public void varOpConst_doesNotSwap(

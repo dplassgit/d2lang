@@ -54,6 +54,10 @@ public class AssociativeOptimizer extends LineOptimizer {
     Operand right = op.right();
     TokenType operator = op.operator();
 
+    if (left.isConstant() && right.isConstant()) {
+      // Let the ArithmeticOptimizer handle this.
+      return;
+    }
     // constant (op) non constant: swap it so the constant is on the right.
     boolean swapit = left.isConstant()
         && !right.isConstant()

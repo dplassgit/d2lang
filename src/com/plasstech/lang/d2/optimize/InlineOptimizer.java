@@ -53,7 +53,6 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         break;
       }
     }
-    // TODO: NOP out the whole proc
 
     return ImmutableList.copyOf(code);
   }
@@ -72,9 +71,6 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       int returnCount = 0;
       for (int otherIp = ip + 1; otherIp < code.size() && !foundEnd; otherIp++) {
         Op otherOp = code.get(otherIp);
-        if (otherOp instanceof Nop) {
-          continue;
-        }
         if (otherOp instanceof ProcExit) {
           foundEnd = true;
           break;
@@ -118,6 +114,7 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.
+
       code.set(ip, new Nop(op));
       code.add(ip, new Nop("(inline end)"));
 

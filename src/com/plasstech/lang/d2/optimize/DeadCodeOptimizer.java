@@ -8,7 +8,6 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
-import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
@@ -140,7 +139,7 @@ class DeadCodeOptimizer extends LineOptimizer {
           // Found the label! Now see if it's just a goto somewhere else.
           for (int testIp2 = testIp + 1; testIp2 < code.size(); ++testIp2) {
             Op testOp2 = code.get(testIp2);
-            if (testOp2 instanceof Nop || testOp2 instanceof Label) {
+            if (testOp2 instanceof Label) {
               continue;
             } else if (testOp2 instanceof Goto) {
               Goto otherGoto = (Goto) testOp2;
@@ -176,9 +175,6 @@ class DeadCodeOptimizer extends LineOptimizer {
   private void killUntilLabel(String source) {
     for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
-      if (testOp instanceof Nop) {
-        continue;
-      }
       if (testOp instanceof DeallocateTemp) {
         // This is a bit of a hack, but deallocate temp doesn't actually generate any code,
         // just updates the state of the code generator. If we kill this op, the code generator may
@@ -188,7 +184,7 @@ class DeadCodeOptimizer extends LineOptimizer {
       if (testOp instanceof Label || testOp instanceof ProcEntry || testOp instanceof ProcExit) {
         break;
       } else {
-        logger.at(loggingLevel).log("Nopping dead statement after %s", source);
+        logger.at(loggingLevel).log("Deleting dead statement after %s", source);
         deleteAt(testIp);
       }
     }
