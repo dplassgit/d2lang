@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 /** Remove a jmp after a ret */
 class RetJmpOptimizer extends Optimizer {
   @Override
-  protected ImmutableList<String> optimize(ImmutableList<String> input) {
+  protected ImmutableList<String> doOptimize(ImmutableList<String> input) {
     List<String> code = new ArrayList<>(input);
     for (int i = 0; i < code.size() - 1; ++i) {
       String op = code.get(i);

@@ -42,7 +42,6 @@ public class NasmOptimizer implements Phase {
     do {
       changed = false;
       for (Optimizer child : OPTIMIZERS) {
-        child.setChanged(false);
         code = child.optimize(code);
         if (child.isChanged()) {
           if (debugLevel == 2) {

@@ -13,5 +13,10 @@ abstract class Optimizer {
     this.changed = changed;
   }
 
-  abstract ImmutableList<String> optimize(ImmutableList<String> program);
+  final ImmutableList<String> optimize(ImmutableList<String> program) {
+    setChanged(false);
+    return doOptimize(program);
+  }
+
+  abstract ImmutableList<String> doOptimize(ImmutableList<String> program);
 }

@@ -27,7 +27,7 @@ public class ComparisonOptimizerTest {
         String.format("  cmp BYTE %s, 0", register),
         "  je __loop_end_75");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(output).containsExactly(
         code.get(0),
@@ -49,7 +49,7 @@ public class ComparisonOptimizerTest {
         String.format("  cmp BYTE %s, 0", register),
         "  jne __loop_end_75");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(output).containsExactly(
         code.get(0),
@@ -67,7 +67,7 @@ public class ComparisonOptimizerTest {
         "  cmp BYTE BL, 0",
         "  je __loop_end_75");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEqualTo(code);
   }
@@ -79,7 +79,7 @@ public class ComparisonOptimizerTest {
         "  setg BL",
         "  cmp BYTE BL, 0");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEqualTo(code);
   }
@@ -92,7 +92,7 @@ public class ComparisonOptimizerTest {
         "  cmp BYTE CL, 0",
         "  je __loop_end_75");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEqualTo(code);
   }
@@ -105,7 +105,7 @@ public class ComparisonOptimizerTest {
         "  cmp DWORD BX, 0",
         "  je __loop_end_75");
 
-    List<String> output = optimizer.optimize(code);
+    List<String> output = optimizer.doOptimize(code);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEqualTo(code);
   }

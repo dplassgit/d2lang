@@ -49,7 +49,7 @@ class ComparisonOptimizer extends Optimizer {
           Pattern.compile("^  j(n)?e (.*)$"));
 
   @Override
-  ImmutableList<String> optimize(ImmutableList<String> input) {
+  ImmutableList<String> doOptimize(ImmutableList<String> input) {
     List<String> code = new ArrayList<>(input);
     int offset = 0;
     String setx = "";

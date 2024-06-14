@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 /** Remove jmp label followed by the same label */
 class JmpOptimizer extends Optimizer {
   @Override
-  protected ImmutableList<String> optimize(ImmutableList<String> input) {
+  protected ImmutableList<String> doOptimize(ImmutableList<String> input) {
     List<String> code = new ArrayList<String>(input);
     for (int i = 0; i < code.size() - 1; ++i) {
       String op = code.get(i);

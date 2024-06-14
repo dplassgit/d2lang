@@ -16,15 +16,20 @@ class SingleLinePatternOptimizer extends Optimizer {
   private static final String EXT_REGS = "([Rr][0-9][0-5]?[bwd]?)";
   private static final String REGISTER =
       String.format("(%s|%s|%s)", BIG4_REGS, INDEX_REGS, EXT_REGS);
-  private static final String MAYBE_MODIFIER = "(BYTE|[DQ]?WORD)?[ ]?";
+  private static final String MODIFIER = "(BYTE|[DQ]?WORD)";
+  private static final String MAYBE_MODIFIER = MODIFIER + "? ?";
   private static final ImmutableMap<String, String> PATTERNS = ImmutableMap.of(
-      "^  ((add|sub|mov).*) *;.*$", "  $1", // removes trailing comments
+      "^  ((add|sub|mov|cmp).*) *;.*$", "  $1", // removes trailing comments, very conservatively
+      "^  add " + MAYBE_MODIFIER + REGISTER + ", 1 *$", "  inc $2",
+      "^  sub " + MAYBE_MODIFIER + REGISTER + ", 1 *$", "  dec $2",
+      "^  inc " + MODIFIER + " +" + REGISTER + "*$", "  inc $2",
+      "^  dec " + MODIFIER + " +" + REGISTER + "*$", "  dec $2",
       "^  add (.*), 1 *$", "  inc $1",
       "^  sub (.*), 1 *$", "  dec $1",
-      "^  mov " + MAYBE_MODIFIER + REGISTER + ", 0[ ]*$", "  xor $2, $2");
+      "^  mov " + MAYBE_MODIFIER + REGISTER + ", 0 *$", "  xor $2, $2");
 
   @Override
-  protected ImmutableList<String> optimize(ImmutableList<String> input) {
+  protected ImmutableList<String> doOptimize(ImmutableList<String> input) {
     return input.stream()
         .map(line -> {
           for (Map.Entry<String, String> entry : PATTERNS.entrySet()) {

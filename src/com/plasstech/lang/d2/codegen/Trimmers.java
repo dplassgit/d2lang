@@ -5,14 +5,6 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 
 public class Trimmers {
-  /** Removes empty and lines that are only comments. Only right-trims. */
-  public static ImmutableList<String> rightTrim(List<String> code) {
-    return code.stream()
-        .map(line -> trimComment(line))
-        .filter(line -> !line.isEmpty())
-        .collect(ImmutableList.toImmutableList());
-  }
-
   /** Removes all comments from all lines, trims, then removes empty lines. */
   public static ImmutableList<String> trim(List<String> code) {
     return code.stream()

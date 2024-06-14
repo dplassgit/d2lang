@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 /** When add RSP, 0x20 followed by sub RSP, 0x20 is seen, both are removed. */
 class AddSubOptimizer extends Optimizer {
   @Override
-  protected ImmutableList<String> optimize(ImmutableList<String> input) {
+  protected ImmutableList<String> doOptimize(ImmutableList<String> input) {
     List<String> code = new ArrayList<String>(input);
     for (int i = 0; i < code.size() - 1; ++i) {
       String op = code.get(i).trim();
