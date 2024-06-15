@@ -19,6 +19,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   public ILOptimizer(int debugLevel) {
     this(
         ImmutableList.of(
+            new NopOptimizer(),
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
@@ -33,11 +34,9 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
-            // This doesn't play well with temps that are reused
-            // new InlineOptimizer(debugLevel),
+            new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set
-            new LoopInvariantOptimizer(debugLevel),
-            new NopOptimizer()));
+            new LoopInvariantOptimizer(debugLevel)));
     setDebugLevel(debugLevel);
   }
 
@@ -91,6 +90,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
           }
           changed = true;
           setChanged(true);
+          break; // start from the top (?)
         }
       }
     } while (changed);

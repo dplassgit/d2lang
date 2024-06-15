@@ -19,6 +19,7 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/phase:state",
+        "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "//src/com/plasstech/lang/d2/type/testing",

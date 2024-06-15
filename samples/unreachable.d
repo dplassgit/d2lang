@@ -4,5 +4,5 @@ unreachable:proc(n:int):bool {
   return true
 }
 
-unreachable(1)
-unreachable(3)
+println unreachable(1)
+println unreachable(3)

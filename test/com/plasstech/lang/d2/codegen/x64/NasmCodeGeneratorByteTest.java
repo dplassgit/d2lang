@@ -104,7 +104,7 @@ public class NasmCodeGeneratorByteTest {
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:byte {a=0y0 b=0y1/a return b} f()";
-    assertThatCompiling(sourceCode).withRuntimeError("Division by 0").executes();
+    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
     assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
         .executes();
   }

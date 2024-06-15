@@ -111,10 +111,10 @@ public class NasmCodeGeneratorDoubleTest {
   }
 
   @Test
-  public void divisionByZeroLocal(@TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("f:proc:double{a=0.0 b=1.0/a return b} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("Division by 0")
+  public void divisionByZeroLocal() throws Exception {
+    String sourceCode = "f:proc:double{a=0.0 b=1.0/a return b} f()";
+    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
+    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
         .executes();
   }
 

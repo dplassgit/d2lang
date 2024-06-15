@@ -33,6 +33,6 @@ public class StackLocation extends VariableLocation {
 
   @Override
   public String toString() {
-    return String.format("%s: %s (%d)", name(), type(), offset());
+    return String.format("%s: %s (@%d)", name(), type(), offset());
   }
 }

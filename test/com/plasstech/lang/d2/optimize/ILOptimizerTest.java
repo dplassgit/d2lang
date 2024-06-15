@@ -108,7 +108,7 @@ public class ILOptimizerTest {
             + "  a = 2 * 3 "
             + "  return a "
             + "} " //
-            + "timesConstants()");
+            + "println timesConstants()");
     TestUtils.optimizeAssertSameVariables("a = 1 * 3");
     TestUtils.optimizeAssertSameVariables("a = 3 b=1*a c=a*1");
   }
@@ -340,7 +340,7 @@ public class ILOptimizerTest {
   @Test
   public void deadAssignments() {
     TestUtils.optimizeAssertSameVariables(
-        "deadAssignments:proc(b:int):int {a=b c=b return a+1} " //
+        "deadAssignments:proc(b:int):int {a=b c=b return b+1} " //
             + "print deadAssignments(3)");
   }
 
@@ -395,6 +395,13 @@ public class ILOptimizerTest {
   @Test
   public void stringIndex() {
     TestUtils.optimizeAssertSameVariables("a='hi' b=a[1] println a println b");
+  }
+
+  @Test
+  public void shortVoidLocal() {
+    TestUtils.optimizeAssertSameVariables(
+        "      shortVoidLocal:proc(n:int) { m = n + 1 print m } " //
+            + "shortVoidLocal(3) ");
   }
 
   @Test

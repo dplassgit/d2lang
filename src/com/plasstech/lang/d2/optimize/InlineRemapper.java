@@ -1,9 +1,15 @@
 package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
@@ -30,32 +36,46 @@ import com.plasstech.lang.d2.type.VariableSymbol;
 
 /** For each opcode, remap temps with a new id. Remap any stack variables too. */
 class InlineRemapper extends DefaultOpcodeVisitor {
-  private static int global_counter = 0;
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private final Level loggingLevel;
+
+  private static int id = 0;
 
   private final List<Op> code;
   private final String suffix;
-  private final SymbolTable symtab;
+  private final Set<LongTempLocation> temps = new HashSet<>();
 
   private int ip;
 
   InlineRemapper(List<Op> code, SymbolTable symtab) {
-    this.symtab = symtab;
-    this.suffix = "__inline__" + (global_counter++);
+    this(code, symtab, Level.FINE); // off
+  }
+
+  InlineRemapper(List<Op> code, SymbolTable symtab, Level loggingLevel) {
+    this.suffix = String.format("__inline__%s", id++);
     this.code = new ArrayList<>(code);
+    this.loggingLevel = loggingLevel;
   }
 
-  Location remapFormal(String name, VarType type) {
-    String fullName = "__" + name + suffix;
-    if (symtab.get(fullName) == null) {
-      symtab.declare(fullName, type);
-    }
-    //    System.err.printf("Remapping formal to %s (type %s)\n", fullName, type);
-    // This is messed up because temps are read once, so dead code optimizer and constant
-    // propagation optimizer both create invalid code.
-    return newTempLocation(fullName, type);
+  ImmutableSet<LongTempLocation> getLongTemps() {
+    return ImmutableSet.copyOf(temps);
   }
 
-  private Location newTempLocation(String fullName, VarType type) {
+  LongTempLocation remapFormal(String name, VarType type) {
+    String fullName = "_" + name + suffix;
+    logger.at(loggingLevel).log("Remapping formal to %s (type %s)\n", fullName, type);
+    return newLongTemp(fullName, type);
+  }
+
+  private LongTempLocation newLongTemp(String fullName, VarType type) {
+    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.LONG_TEMP);
+    symbol.setVarType(type);
+    LongTempLocation temp = new LongTempLocation(symbol);
+    temps.add(temp);
+    return temp;
+  }
+
+  private Location newTemp(String fullName, VarType type) {
     VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.TEMP);
     symbol.setVarType(type);
     return new TempLocation(symbol);
@@ -198,15 +218,11 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     Location location = (Location) operand;
     switch (location.storage()) {
       case TEMP:
+        return newTemp(location.name() + suffix, location.type());
+
       case LOCAL:
       case PARAM:
-        String fullName = "__" + location.name() + suffix;
-        if (symtab.get(fullName) == null) {
-          symtab.declare(fullName, location.type());
-        }
-        // This is messed up because temps are read once, so dead code optimizer and constant
-        // propagation optimizer both create invalid code.
-        return newTempLocation(fullName, location.type());
+        return newLongTemp("_" + location.name() + suffix, location.type());
 
       default:
         return operand;

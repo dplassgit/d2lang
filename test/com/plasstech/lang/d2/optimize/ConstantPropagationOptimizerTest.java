@@ -188,4 +188,18 @@ public class ConstantPropagationOptimizerTest {
     SysCall newCall = (SysCall) optimized.get(1);
     assertThat(newCall.operands().get(1)).isEqualTo(one);
   }
+
+  @Test
+  public void identity() {
+    ConstantOperand<Integer> four = ConstantOperand.of(4);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, four, null),
+            new Transfer(STACK_INT1, STACK_INT1, null));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(2);
+    assertThat(optimized.get(0)).isTransferredFrom(four);
+    assertThat(optimized.get(1)).isTransferredFrom(four);
+  }
 }

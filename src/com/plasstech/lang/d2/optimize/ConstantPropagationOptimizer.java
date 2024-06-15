@@ -129,6 +129,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand source = op.source();
     Location dest = op.destination();
 
+    // Get the replacement *now* in case we're about to overwrite it (in the case of a=a)
+    Operand replacement = findReplacement(source, false);
+
     // Remove any old setting
     replacements.remove(dest);
     assignmentLocations.remove(dest);
@@ -143,7 +146,6 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     // Now that we cached dest=source, let's see if we can replace
     // source itself with something:
-    Operand replacement = findReplacement(source, false);
     if (replacement != null) {
       replaceCurrent(new Transfer(dest, replacement, op.position()));
 

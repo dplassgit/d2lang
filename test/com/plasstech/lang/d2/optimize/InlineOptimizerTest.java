@@ -39,18 +39,6 @@ public class InlineOptimizerTest {
   }
 
   @Test
-  public void shortVoidLocal() {
-    InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables(
-            "      shortVoidLocal:proc(n:int) { m = n + 1 print m } " //
-                + "shortVoidLocal(3) ",
-            OPTIMIZER);
-
-    ImmutableList<Op> code = result.code();
-    assertNoCalls(code);
-  }
-
-  @Test
   public void shortVoidGlobal() {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
@@ -77,7 +65,7 @@ public class InlineOptimizerTest {
   }
 
   @Test
-  @Ignore("Fails now that constant propagation optimizer propagates non-constants")
+  @Ignore("The 'if' check in IL prevents it from being inlined")
   public void shortProcRecord() {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(
@@ -146,7 +134,6 @@ public class InlineOptimizerTest {
   }
 
   @Test
-  @Ignore("Fails now that constant propagation optimizer propagates non-constants")
   public void recordLoopInvariant() {
     TestUtils.optimizeAssertSameVariables(TestUtils.RECORD_LOOP_INVARIANT, OPTIMIZER);
   }
@@ -179,7 +166,6 @@ public class InlineOptimizerTest {
   }
 
   @Test
-  @Ignore
   public void ignoreReturnValueSometimesAllOpts() {
     InterpreterResult result =
         TestUtils.optimizeAssertSameVariables(

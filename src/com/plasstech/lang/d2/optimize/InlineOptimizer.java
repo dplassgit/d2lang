@@ -10,8 +10,10 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
@@ -43,6 +45,11 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symbolTable) {
+    // Remove nops because reasons.
+    input = input
+        .stream()
+        .filter(opcode -> !(opcode instanceof Nop))
+        .collect(ImmutableList.toImmutableList());
     this.symbolTable = symbolTable;
     code = new ArrayList<>(input);
     for (ip = 0; ip < input.size(); ++ip) {
@@ -101,21 +108,25 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   }
 
   @Override
-  public void visit(Call op) {
-    List<Op> replacement = inlineableCode.get(op.procSym().name());
+  public void visit(Call callOp) {
+    List<Op> source = inlineableCode.get(callOp.procSym().name());
 
-    if (replacement != null) {
-      ProcEntry entry = procsByName.get(op.procSym().name());
-      InlineRemapper inlineRemapper = new InlineRemapper(replacement, symbolTable);
+    if (source != null) {
+      ProcEntry entry = procsByName.get(callOp.procSym().name());
+      InlineRemapper inlineRemapper = new InlineRemapper(source, symbolTable, loggingLevel);
       List<Op> remapped = inlineRemapper.remap();
       logger.at(loggingLevel).log(
           "Can inline '%s' from:\n %s\n to:\n%s",
-          op.procSym(), Joiner.on('\n').join(replacement), Joiner.on('\n').join(remapped));
+          callOp.procSym(), Joiner.on('\n').join(source), Joiner.on('\n').join(remapped));
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.
 
-      code.set(ip, new Nop(op));
+      // Last, deallocate the long temps we created during the remapping procedure.
+      for (LongTempLocation temp : inlineRemapper.getLongTemps()) {
+        code.set(ip, new DeallocateTemp(temp, callOp.position()));
+      }
+      code.set(ip, new Nop(callOp));
       code.add(ip, new Nop("(inline end)"));
 
       Return returnOp = null;
@@ -123,24 +134,25 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         // Always return it, but don't always *use* it.
         returnOp = (Return) remapped.remove(remapped.size() - 1);
       }
-      if (op.destination().isPresent() && returnOp != null) {
+      if (callOp.destination().isPresent() && returnOp != null) {
         // if op is assigned to a return value, copy that
         // from the "return" statement
         code.add(
             ip,
             new Transfer(
-                op.destination().get(), returnOp.returnValueLocation().get(), op.position()));
+                callOp.destination().get(), returnOp.returnValueLocation().get(),
+                callOp.position()));
       }
       // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);
-      for (int i = 0; i < op.actuals().size(); ++i) {
-        Operand actual = op.actuals().get(i);
+      for (int i = 0; i < callOp.actuals().size(); ++i) {
+        Operand actual = callOp.actuals().get(i);
         code.add(
             ip,
             new Transfer(
                 inlineRemapper.remapFormal(entry.formalNames().get(i), actual.type()),
                 actual,
-                op.position()));
+                callOp.position()));
       }
       code.add(ip, new Nop("(inline start)"));
       changed = true;

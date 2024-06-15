@@ -45,7 +45,7 @@ public class NasmCodeGeneratorStringTest {
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
     assertThatCompiling(sourceCode)
-        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
+        .hasCompileTimeError("STRING index out of bounds \\(length 5\\); was 10");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
@@ -62,7 +62,7 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertThatCompiling(sourceCode).withRuntimeError("must be non-negative; was -2").executes();
+    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }

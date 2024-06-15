@@ -126,7 +126,7 @@ public class NasmCodeGeneratorLongTest {
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:long {a=0L b=1L/a return b} f()";
-    assertThatCompiling(sourceCode).withRuntimeError("Division by 0").executes();
+    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
     assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
         .executes();
   }
