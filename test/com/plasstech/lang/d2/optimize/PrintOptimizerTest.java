@@ -22,9 +22,10 @@ public class PrintOptimizerTest {
   private static final Optimizer OPTIMIZER =
       new ILOptimizer(
           ImmutableList.of(
-              new ConstantPropagationOptimizer(0),
               new NopOptimizer(),
-              new PrintOptimizer(2)));
+              new ConstantPropagationOptimizer(0),
+              new PrintOptimizer(2)),
+          0);
 
   @Test
   public void twoInARow() {
@@ -99,7 +100,8 @@ public class PrintOptimizerTest {
                     new DeadAssignmentOptimizer(0),
                     // need this to convert println 3 to println "3"
                     new ArithmeticOptimizer(2),
-                    new PrintOptimizer(2))));
+                    new PrintOptimizer(2)),
+                0));
     List<String> output = result.environment().output();
     assertThat(output.get(0)).isEqualTo("3\n4");
     assertTotalPrintCount(result, 1);

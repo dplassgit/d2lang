@@ -17,9 +17,8 @@ import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AdjacentLabelOptimizerTest {
-  private final Optimizer optimizer = new AdjacentLabelOptimizer(2);
   private final Optimizer OPTIMIZERS =
-      new ILOptimizer(ImmutableList.of(optimizer, new NopOptimizer())).setDebugLevel(2);
+      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new AdjacentLabelOptimizer(2)), 2);
 
   private static final Label LABEL1 = new Label("l1");
   private static final Label LABEL2 = new Label("l2");

@@ -22,14 +22,16 @@ public class LoopInvariantOptimizerTest {
       new ILOptimizer(
           ImmutableList.of(
               new NopOptimizer(),
-              new DeadCodeOptimizer(2), //
-              new LoopInvariantOptimizer(2) //
-          ))
-          .setDebugLevel(2);
+              new DeadCodeOptimizer(2),
+              new LoopInvariantOptimizer(2)),
+          2);
   private static ILOptimizer loopAndConstantOptimizer =
       new ILOptimizer(
-          ImmutableList.of(new ConstantPropagationOptimizer(2), new LoopInvariantOptimizer(2)))
-          .setDebugLevel(2);
+          ImmutableList.of(
+              new NopOptimizer(),
+              new ConstantPropagationOptimizer(2),
+              new LoopInvariantOptimizer(2)),
+          2);
 
   @Test
   public void oneLoop() {

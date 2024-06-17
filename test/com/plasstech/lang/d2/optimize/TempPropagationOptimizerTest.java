@@ -32,7 +32,7 @@ public class TempPropagationOptimizerTest {
   private static final Location DTEMP3 = LocationUtils.newTempLocation("dtemp3", VarType.DOUBLE);
 
   private Optimizer optimizer =
-      new ILOptimizer(ImmutableList.of(new TempPropagationOptimizer(2), new NopOptimizer()));
+      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new TempPropagationOptimizer(2)), 0);
 
   @Test
   public void inc_noOptimization() {

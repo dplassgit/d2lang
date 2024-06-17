@@ -26,8 +26,7 @@ import com.plasstech.lang.d2.type.testing.NumericTypeProvider;
 public class AdjacentArithmeticOptimizerTest {
   private final Optimizer OPTIMIZERS =
       new ILOptimizer(
-          ImmutableList.of(new AdjacentArithmeticOptimizer(2), new NopOptimizer()))
-          .setDebugLevel(2);
+          ImmutableList.of(new NopOptimizer(), new AdjacentArithmeticOptimizer(2)), 2);
 
   @TestParameter(valuesProvider = NumericTypeProvider.class)
   VarType varType;

@@ -23,7 +23,7 @@ public class DeadAssignmentOptimizerTest {
   private static Location LONG_TEMP = LocationUtils.newLongTempLocation("longtemp", VarType.INT);
 
   private Optimizer optimizer =
-      new ILOptimizer(ImmutableList.of(new DeadAssignmentOptimizer(2), new NopOptimizer()));
+      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new DeadAssignmentOptimizer(2)), 0);
 
   @Test
   public void notDeadParams() {

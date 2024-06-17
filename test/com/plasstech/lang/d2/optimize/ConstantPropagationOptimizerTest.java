@@ -31,8 +31,7 @@ import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 @RunWith(TestParameterInjector.class)
 public class ConstantPropagationOptimizerTest {
   private static final Optimizer OPTIMIZER =
-      new ILOptimizer(ImmutableList.of(new ConstantPropagationOptimizer(2), new NopOptimizer()))
-          .setDebugLevel(2);
+      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new ConstantPropagationOptimizer(2)), 2);
 
   private static final TempLocation TEMP_INT1 =
       LocationUtils.newTempLocation("__temp1", VarType.INT);

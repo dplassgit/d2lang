@@ -44,7 +44,7 @@ public class ExecutionSubject extends Subject {
             // Default to optimized
             .setOptimize(true)
             .setCodeGenDebugLevel(2)
-            .setOptDebugLevel(1)
+            .setOptDebugLevel(2)
             .setFilename("sut")
             .build();
   }
@@ -53,7 +53,7 @@ public class ExecutionSubject extends Subject {
     this.config =
         this.config.toBuilder()
             .setOptimize(newFlag)
-            .setOptDebugLevel(newFlag ? 1 : 0)
+            .setOptDebugLevel(newFlag ? 2 : 0)
             .build();
     return this;
   }

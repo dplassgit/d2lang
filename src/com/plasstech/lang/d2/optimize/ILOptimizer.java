@@ -1,7 +1,10 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.logging.Level;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.Phase;
@@ -9,16 +12,14 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymbolTable;
 
 public class ILOptimizer extends DefaultOptimizer implements Phase {
-  private int debugLevel;
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private Level loggingLevel;
   private final ImmutableList<Optimizer> children;
-
-  public ILOptimizer() {
-    this(0);
-  }
 
   public ILOptimizer(int debugLevel) {
     this(
         ImmutableList.of(
+            // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
             new NopOptimizer(),
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
@@ -36,21 +37,13 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadAssignmentOptimizer(debugLevel),
             new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set
-            new LoopInvariantOptimizer(debugLevel)));
-    setDebugLevel(debugLevel);
+            new LoopInvariantOptimizer(debugLevel)),
+        debugLevel);
   }
 
-  public ILOptimizer(ImmutableList<Optimizer> children) {
+  public ILOptimizer(ImmutableList<Optimizer> children, int debugLevel) {
     this.children = children;
-  }
-
-  public ILOptimizer(Optimizer child) {
-    this(ImmutableList.of(child));
-  }
-
-  public ILOptimizer setDebugLevel(int debugLevel) {
-    this.debugLevel = debugLevel;
-    return this;
+    this.loggingLevel = toLoggingLevel(debugLevel);
   }
 
   @Override
@@ -71,38 +64,38 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     int iterations = 0;
 
     boolean changed = false;
-    if (debugLevel > 0) {
+    if (loggingLevel.intValue() < Level.CONFIG.intValue()) {
       System.out.printf("\nPRE-OPTIMIZED:\n");
       System.out.println(Joiner.on("\n").join(program));
       System.out.println();
     }
 
-    do {
-      changed = false;
+    try {
+      do {
+        changed = false;
 
-      for (Optimizer child : children) {
-        program = child.optimize(program, symbolTable);
-        if (child.isChanged()) {
-          iterations++;
-          if (debugLevel == 2) {
-            System.out.printf("\n%s OPTIMIZED:\n", child.getClass().getSimpleName());
-            System.out.println(Joiner.on("\n").join(program));
+        for (Optimizer child : children) {
+          program = child.optimize(program, symbolTable);
+          if (child.isChanged()) {
+            iterations++;
+            if (loggingLevel.intValue() <= Level.INFO.intValue()) {
+              System.out.printf("\n%s OPTIMIZED:\n", child.getClass().getSimpleName());
+              System.out.println(Joiner.on("\n").join(program));
+            }
+            changed = true;
+            setChanged(true);
+            break; // start from the top
           }
-          changed = true;
-          setChanged(true);
-          break; // start from the top (?)
         }
+      } while (changed);
+    } finally {
+      logger.at(loggingLevel).log("Iterations: %d\n", iterations);
+
+      if (loggingLevel.intValue() != Level.FINE.intValue()) {
+        System.out.println("\nFINAL (maybe) OPTIMIZED:");
+        System.out.println(Joiner.on("\n").join(program));
+        System.out.println();
       }
-    } while (changed);
-
-    if (debugLevel > 1) {
-      System.err.printf("\nITERATIONS: %d\n", iterations);
-    }
-
-    if (debugLevel > 0) {
-      System.out.println("\nFINAL OPTIMIZED:");
-      System.out.println(Joiner.on("\n").join(program));
-      System.out.println();
     }
     return program;
   }

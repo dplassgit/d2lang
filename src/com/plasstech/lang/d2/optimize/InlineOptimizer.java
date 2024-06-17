@@ -46,10 +46,7 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symbolTable) {
     // Remove nops because reasons.
-    input = input
-        .stream()
-        .filter(opcode -> !(opcode instanceof Nop))
-        .collect(ImmutableList.toImmutableList());
+    input = new NopOptimizer().optimize(input, symbolTable);
     this.symbolTable = symbolTable;
     code = new ArrayList<>(input);
     for (ip = 0; ip < input.size(); ++ip) {

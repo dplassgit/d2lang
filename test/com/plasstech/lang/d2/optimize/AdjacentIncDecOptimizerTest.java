@@ -19,8 +19,7 @@ import com.plasstech.lang.d2.type.VarType;
 public class AdjacentIncDecOptimizerTest {
   private final Optimizer OPTIMIZERS =
       new ILOptimizer(
-          ImmutableList.of(new AdjacentIncDecOptimizer(2), new NopOptimizer()))
-          .setDebugLevel(2);
+          ImmutableList.of(new NopOptimizer(), new AdjacentIncDecOptimizer(2)), 2);
 
   private static final Location VAR1 = LocationUtils.newMemoryAddress("a", VarType.INT);
   private static final Location VAR2 = LocationUtils.newParamLocation("b", VarType.INT, 0, 0);

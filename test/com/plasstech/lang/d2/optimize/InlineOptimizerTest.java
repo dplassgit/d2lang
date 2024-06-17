@@ -18,11 +18,12 @@ public class InlineOptimizerTest {
   private static final Optimizer OPTIMIZER =
       new ILOptimizer(
           ImmutableList.of(
+              new NopOptimizer(),
               new ConstantPropagationOptimizer(0),
               new DeadCodeOptimizer(0),
               new DeadAssignmentOptimizer(0),
-              new InlineOptimizer(2)))
-          .setDebugLevel(2);
+              new InlineOptimizer(2)),
+          2);
 
   @Test
   public void shortVoidNoArg() {
