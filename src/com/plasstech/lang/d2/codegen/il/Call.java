@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen.il;
 import java.util.Optional;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -62,6 +63,19 @@ public class Call extends Op {
     } else {
       return String.format("%s(%s)", procSym.name(), Joiner.on(", ").join(actuals));
     }
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (!(obj instanceof Call)) {
+      return false;
+    }
+    return this.hashCode() == obj.hashCode();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(procSym().name(), actuals, formals);
   }
 
   @Override

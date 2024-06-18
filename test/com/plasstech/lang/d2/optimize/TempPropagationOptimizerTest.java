@@ -3,18 +3,23 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
+import java.util.Optional;
+
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 
 public class TempPropagationOptimizerTest {
@@ -137,5 +142,35 @@ public class TempPropagationOptimizerTest {
     assertThat(op.destination()).isEqualTo(PARAM);
     assertThat(op.operator()).isEqualTo(TokenType.MINUS);
     assertThat(op.operand()).isEqualTo(TEMP2);
+  }
+
+  @Test
+  public void procCall() {
+    ProcSymbol procSym =
+        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Call(Optional.of(TEMP3), procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Transfer(PARAM, TEMP3, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    assertThat(optimized.get(0)).isEqualTo(
+        new Call(Optional.of(PARAM), procSym, ImmutableList.of(), ImmutableList.of(), null));
+  }
+
+  @Test
+  public void procCallNotTemp() {
+    ProcSymbol procSym =
+        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Call(Optional.of(PARAM), procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Transfer(TEMP3, PARAM, null));
+
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 }

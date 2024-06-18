@@ -26,7 +26,7 @@ public class PrintOptimizer extends LineOptimizer {
     if (!isPrintStringConstant(op)) {
       return;
     }
-    Op next = getOpAt(ip() + 1);
+    Op next = getNext();
     if (!isPrintStringConstant(next)) {
       return;
     }

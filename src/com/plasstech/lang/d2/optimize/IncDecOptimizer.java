@@ -6,7 +6,6 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Inc;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.common.TokenType;
 
@@ -33,12 +32,11 @@ class IncDecOptimizer extends LineOptimizer {
    */
   @Override
   public void visit(Transfer first) {
-    Op secondOp = getOpAt(ip() + 1);
-    if (!(secondOp instanceof BinOp)) {
+    BinOp second = getNext(BinOp.class);
+    if (second == null) {
       return;
     }
     // See if it matches the pattern
-    BinOp second = (BinOp) secondOp;
     Operand left = second.left();
     Operand right = second.right();
     if (!((left.isConstant() && !right.isConstant())
@@ -53,11 +51,10 @@ class IncDecOptimizer extends LineOptimizer {
     if (!(plus || minus)) {
       return;
     }
-    Op thirdOp = getOpAt(ip() + 2);
-    if (!(thirdOp instanceof Transfer)) {
+    Transfer third = getOpAt(ip() + 2, Transfer.class);
+    if (third == null) {
       return;
     }
-    Transfer third = (Transfer) thirdOp;
     if (plus && left.isConstant()) { // why only plus?
       // swap them
       left = second.right();
@@ -116,11 +113,11 @@ class IncDecOptimizer extends LineOptimizer {
     if (trySimpleIncDec(first)) {
       return;
     }
-    Op secondOp = getOpAt(ip() + 1);
-    if (!(secondOp instanceof Transfer)) {
+
+    Transfer second = getNext(Transfer.class);
+    if (second == null) {
       return;
     }
-    Transfer second = (Transfer) secondOp;
 
     if (plus && left.isConstant()) {
       // swap them

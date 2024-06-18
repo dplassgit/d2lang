@@ -62,7 +62,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   LongTempLocation remapFormal(String name, VarType type) {
-    String fullName = "_" + name + suffix;
+    String fullName = toRemappedTempName(name);
     logger.at(loggingLevel).log("Remapping formal to %s (type %s)\n", fullName, type);
     return newLongTemp(fullName, type);
   }
@@ -222,10 +222,14 @@ class InlineRemapper extends DefaultOpcodeVisitor {
 
       case LOCAL:
       case PARAM:
-        return newLongTemp("_" + location.name() + suffix, location.type());
+        return newLongTemp(toRemappedTempName(location.name()), location.type());
 
       default:
         return operand;
     }
+  }
+
+  private String toRemappedTempName(String location) {
+    return "_" + location + suffix;
   }
 }

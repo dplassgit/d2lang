@@ -37,7 +37,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
     if (!isVarPlusEquals(first) || !first.destination().type().isNumeric()) {
       return;
     }
-    Op second = getOpAt(ip() + 1);
+    Op second = getNext();
     ConstantOperand<? extends Number> nextConst = getCompatibleConst(first.destination(), second);
     if (nextConst == null) {
       return;
@@ -53,7 +53,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Inc first) {
-    Op second = getOpAt(ip() + 1);
+    Op second = getNext();
     ConstantOperand<? extends Number> nextConst = getCompatibleConst(first.target(), second);
     if (nextConst == null) {
       return;
@@ -67,7 +67,7 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Dec first) {
-    Op second = getOpAt(ip() + 1);
+    Op second = getNext();
     ConstantOperand<? extends Number> nextConst = getCompatibleConst(first.target(), second);
     if (nextConst == null) {
       return;
@@ -119,14 +119,14 @@ public class AdjacentIncDecOptimizer extends LineOptimizer {
   }
 
   /**
-   * @return true if binop is a=a - integral constant
+   * @return true if binop is a=a - numeric constant
    */
   private static boolean isVarMinusEquals(BinOp binOp) {
     return isVarPlusMinus(binOp, TokenType.MINUS);
   }
 
   /**
-   * @return true if binop is a=a (op) integral constant
+   * @return true if binop is a=a (op) numeric constant
    */
   private static boolean isVarPlusMinus(BinOp binOp, TokenType tokenType) {
     return binOp.left().equals(binOp.destination())

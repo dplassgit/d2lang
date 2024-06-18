@@ -68,10 +68,38 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   protected void preProcess() {}
 
-  /** Return the opcode at the given IP, if it's in range. Otherwise, return null. */
-  protected final Op getOpAt(int theIp) {
+  /** @return the opcode at the next IP, if it's in range. Otherwise, return null. */
+  protected final Op getNext() {
+    return getOpAt(ip() + 1);
+  }
+
+  /** @return the opcode at the given IP, if it's in range. Otherwise, return null. */
+  private final Op getOpAt(int theIp) {
     if (theIp < code.size()) {
       return code.get(theIp);
+    }
+    return null;
+  }
+
+  /**
+   * @return the opcode at the next IP, if it's in range and the desired type. Otherwise, return
+   *         null.
+   */
+  protected final <T extends Op> T getNext(Class<T> clazz) {
+    return getOpAt(ip() + 1, clazz);
+  }
+
+  /**
+   * @return the opcode at the given IP, if it's in range and the desired type. Otherwise, return
+   *         null.
+   */
+  protected final <T extends Op> T getOpAt(int theIp, Class<T> clazz) {
+    Op op = getOpAt(theIp);
+    if (op == null) {
+      return null;
+    }
+    if (op.getClass().equals(clazz)) {
+      return (T) op;
     }
     return null;
   }

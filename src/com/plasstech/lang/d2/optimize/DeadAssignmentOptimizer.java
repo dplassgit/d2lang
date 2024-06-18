@@ -64,12 +64,13 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     }
   }
 
+  /** Deletes a line of code, but for "Call"s, leaves it without a destination. */
   private class CallReplacer extends IdentityOpcodeVisitor {
-    private int loc;
+    private final int loc;
 
     public CallReplacer(int loc) {
       super((op) -> {
-        // run this for all ops
+        // Delete this for all opcodes EXCEPT Call, see below.
         deleteAt(loc);
       });
       this.loc = loc;
@@ -77,11 +78,11 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
     @Override
     public void visit(Call op) {
-      // change to a call without a return value
-      if (op.destination().isPresent()) {
+      op.destination().ifPresent(ignored -> {
+        // Change to a call without a return value.
         Call newCall = new Call(op.procSym(), op.actuals(), op.formals(), op.position());
         replaceAt(loc, newCall);
-      }
+      });
     }
   }
 
@@ -136,8 +137,8 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(ProcExit op) {
-    // End of scope. Kill all assigned-unused.
     if (!assignments.isEmpty()) {
+      // End of scope. Kill all assigned-unused.
       logger.at(loggingLevel).log("Killing all unused variables at end of proc: %s", assignments);
       for (int theIp : assignments.values()) {
         smartDeleteAt(theIp);
@@ -266,11 +267,10 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     for (Operand actual : actualParams) {
       markRead(actual);
     }
-    if (op.destination().isPresent()) {
-      Location dest = op.destination().get();
+    op.destination().ifPresent(dest -> {
       killIfReassigned(dest);
       recordAssignment(dest);
-    }
+    });
   }
 
   @Override

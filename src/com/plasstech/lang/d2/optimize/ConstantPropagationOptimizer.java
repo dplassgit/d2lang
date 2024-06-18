@@ -204,7 +204,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
   @Override
   public void visit(SysCall op) {
-    List<Operand> newOperands = new ArrayList();
+    List<Operand> newOperands = new ArrayList<>();
     boolean replaced = false;
     for (Operand operand : op.operands()) {
       Operand replacement = findReplacement(operand);

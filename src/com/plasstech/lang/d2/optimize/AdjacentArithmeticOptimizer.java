@@ -58,7 +58,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
         && FIRST_OPERATORS.contains(firstOperator)) {
 
       // Potential first in sequence: foo=bar+constant
-      Op secondOp = getOpAt(ip() + 1);
+      Op secondOp = getNext();
       // if first is plus or minus and second is inc/dec, allow it after expanding the inc/dec.
       if (!(secondOp instanceof BinOp)) {
         secondOp = expand(secondOp);
