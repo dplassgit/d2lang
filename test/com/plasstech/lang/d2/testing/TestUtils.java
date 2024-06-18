@@ -15,7 +15,7 @@ import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 
 /**
- * TODO: Move this to InterpreterSubject.
+ * TODO: https://github.com/dplassgit/d2lang/issues/340 - Move this to InterpreterSubject.
  */
 public class TestUtils {
 
@@ -34,6 +34,7 @@ public class TestUtils {
     System.out.println("\nUNOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(unoptimizedResult.environment().output()));
+    System.out.println(unoptimizedResult.environment().variables());
 
     ImmutableList<Op> optimized = optimizer.optimize(originalCode, unoptimizedResult.symbolTable());
     InterpreterResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
@@ -44,6 +45,7 @@ public class TestUtils {
     System.out.println("\nOPTIMIZED SYSTEM.OUT:");
     System.out.println("------------------------------");
     System.out.println(Joiner.on("").join(optimizedResult.environment().output()));
+    System.out.println(optimizedResult.environment().variables());
 
     assertWithMessage("Output should be the same")
         .that(Joiner.on("").join(optimizedResult.environment().output()))

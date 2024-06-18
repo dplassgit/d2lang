@@ -14,15 +14,11 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.YetAnotherCompiler;
-import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
-import com.plasstech.lang.d2.phase.State;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
@@ -112,18 +108,15 @@ public class GoldenTests {
             .setCodeGenDebugLevel(0)
             .setOptDebugLevel(0)
             .build();
-    State state = new YetAnotherCompiler().compile(config);
-    ImmutableList<Op> ilCode = state.lastIlCode();
-
-    System.out.println("\nCODE:");
-    System.out.println("------------------------------");
-    System.out.println(Joiner.on("\n").join(ilCode));
-    System.out.println();
+    new YetAnotherCompiler().compile(config);
   }
 
   private void testFromFile(String path) throws Exception {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
-    assertThatCompiling(text).executedEqualsInterpreted();
+    assertThatCompiling(text)
+        .withCodeGenDebugLevel(2)
+        .withOptDebugLevel(1)
+        .executedEqualsInterpreted();
   }
 }

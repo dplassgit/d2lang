@@ -20,6 +20,7 @@ import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -49,6 +50,12 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
     input = new NopOptimizer().optimize(input, symbolTable);
     this.symbolTable = symbolTable;
     code = new ArrayList<>(input);
+
+    OpcodeVisitor finder = new ProcFinder();
+    for (ip = 0; ip < input.size(); ++ip) {
+      input.get(ip).accept(finder);
+    }
+
     for (ip = 0; ip < input.size(); ++ip) {
       changed = false;
       input.get(ip).accept(this);
@@ -66,40 +73,42 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
     return changed;
   }
 
-  @Override
-  public void visit(ProcEntry op) {
-    if (op.formalNames().size() < 3) {
-      // Find the length of the procedure.
-      ArrayList<Op> opcodes = new ArrayList<>();
-      boolean foundEnd = false;
-      int returnCount = 0;
-      for (int otherIp = ip + 1; otherIp < code.size() && !foundEnd; otherIp++) {
-        Op otherOp = code.get(otherIp);
-        if (otherOp instanceof ProcExit) {
-          foundEnd = true;
-          break;
+  private class ProcFinder extends DefaultOpcodeVisitor {
+    @Override
+    public void visit(ProcEntry op) {
+      if (op.formalNames().size() < 3) {
+        // Find the length of the procedure.
+        ArrayList<Op> opcodes = new ArrayList<>();
+        boolean foundEnd = false;
+        int returnCount = 0;
+        for (int otherIp = ip + 1; otherIp < code.size() && !foundEnd; otherIp++) {
+          Op otherOp = code.get(otherIp);
+          if (otherOp instanceof ProcExit) {
+            foundEnd = true;
+            break;
+          }
+          if (otherOp instanceof Call
+              || otherOp instanceof IfOp
+              || otherOp instanceof Goto
+              || otherOp instanceof Label) {
+            logger.at(loggingLevel).log(
+                "NOT inlining '%s' because it has '%s'",
+                op.name(), otherOp.getClass().getSimpleName());
+            return;
+          }
+          if (otherOp instanceof Return) {
+            returnCount++;
+          }
+          opcodes.add(otherOp);
         }
-        if (otherOp instanceof Call
-            || otherOp instanceof IfOp
-            || otherOp instanceof Goto
-            || otherOp instanceof Label) {
-          logger.at(loggingLevel).log(
-              "NOT inlining '%s' because it has '%s'",
-              op.name(), otherOp.getClass().getSimpleName());
-          return;
+        // Only consider procedures with size < 10 and that don't allow certain opcodes, like calls,
+        // gotos/ifs that go outside the block or labels referenced outside the block.
+        boolean candidate = foundEnd && opcodes.size() < 10 && returnCount < 2;
+        logger.at(loggingLevel).log("'%s' is %sa candidate", op.name(), candidate ? "" : "not ");
+        if (candidate) {
+          inlineableCode.put(op.name(), opcodes);
+          procsByName.put(op.name(), op);
         }
-        if (otherOp instanceof Return) {
-          returnCount++;
-        }
-        opcodes.add(otherOp);
-      }
-      // Only consider procedures with size < 10 and that don't allow certain opcodes, like calls,
-      // gotos/ifs that go outside the block or labels referenced outside the block.
-      boolean candidate = foundEnd && opcodes.size() < 10 && returnCount < 2;
-      logger.at(loggingLevel).log("'%s' is %sa candidate", op.name(), candidate ? "" : "not ");
-      if (candidate) {
-        inlineableCode.put(op.name(), opcodes);
-        procsByName.put(op.name(), op);
       }
     }
   }

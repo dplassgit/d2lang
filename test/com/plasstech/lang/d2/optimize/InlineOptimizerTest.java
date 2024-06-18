@@ -20,8 +20,10 @@ public class InlineOptimizerTest {
           ImmutableList.of(
               new NopOptimizer(),
               new ConstantPropagationOptimizer(0),
-              new DeadCodeOptimizer(0),
               new DeadAssignmentOptimizer(0),
+              new DeadCodeOptimizer(0),
+              new DeadLabelOptimizer(0),
+              new DeadProcOptimizer(0),
               new InlineOptimizer(2)),
           2);
 
@@ -59,6 +61,18 @@ public class InlineOptimizerTest {
         TestUtils.optimizeAssertSameVariables(
             "      shortProc:proc(n:int):int { return n + 1 } " //
                 + "println shortProc(10)",
+            OPTIMIZER);
+
+    ImmutableList<Op> code = result.code();
+    assertNoCalls(code);
+  }
+
+  @Test
+  public void shortProcForward() {
+    InterpreterResult result =
+        TestUtils.optimizeAssertSameVariables(
+            "  println shortProc(10) "
+                + "shortProc:proc(n:int):int { println n return n + 1 }",
             OPTIMIZER);
 
     ImmutableList<Op> code = result.code();
@@ -225,33 +239,40 @@ public class InlineOptimizerTest {
     assertCall(result, "longProc");
   }
 
+  /**
+   * TODO: https://github.com/dplassgit/d2lang/issues/340 - Move this to InterpreterSubject.
+   */
   private void assertCall(InterpreterResult result, String procName) {
     ImmutableList<Op> code = result.code();
 
     // Show that there are still calls to the procedure
+    boolean[] hasCalls = new boolean[1];
     OpcodeVisitor visitor =
         new DefaultOpcodeVisitor() {
           @Override
           public void visit(Call op) {
+            hasCalls[0] = true;
             assertThat(op.procSym().name()).isEqualTo(procName);
           }
         };
     for (Op op : code) {
       op.accept(visitor);
     }
+    assertThat(hasCalls[0]).isTrue();
   }
 
-  private static final OpcodeVisitor NO_CALLS =
-      new DefaultOpcodeVisitor() {
-        @Override
-        public void visit(Call op) {
-          fail("Should not call any procs");
-        }
-      };
-
+  /**
+   * TODO: https://github.com/dplassgit/d2lang/issues/340 - Move this to InterpreterSubject.
+   */
   private static void assertNoCalls(ImmutableList<Op> code) {
+    OpcodeVisitor noCallsVisitor = new DefaultOpcodeVisitor() {
+      @Override
+      public void visit(Call op) {
+        fail("Should not call any procs");
+      }
+    };
     for (Op op : code) {
-      op.accept(NO_CALLS);
+      op.accept(noCallsVisitor);
     }
   }
 }

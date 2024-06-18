@@ -226,7 +226,6 @@ public class NasmCodeGeneratorArrayTest {
         .executes();
     assertThatCompiling("x:string[size()] size: proc:int{return -3}")
         .withOptimize(optimize)
-        .withOptimizeDebugLevel(2)
         .withRuntimeError("ARRAY size must be non-negative; was -3")
         .executes();
   }

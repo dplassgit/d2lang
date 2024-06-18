@@ -58,7 +58,12 @@ public class ExecutionSubject extends Subject {
     return this;
   }
 
-  public ExecutionSubject withOptimizeDebugLevel(int level) {
+  public ExecutionSubject withCodeGenDebugLevel(int level) {
+    this.config = this.config.toBuilder().setCodeGenDebugLevel(level).build();
+    return this;
+  }
+
+  public ExecutionSubject withOptDebugLevel(int level) {
     this.config = this.config.toBuilder().setOptDebugLevel(level).build();
     return this;
   }
@@ -110,7 +115,7 @@ public class ExecutionSubject extends Subject {
       state = new NasmOptimizer().execute(state);
     }
 
-    if (config.codeGenDebugLevel() > 1) {
+    if (config.codeGenDebugLevel() > 0) {
       String asmCode = Joiner.on('\n').join(state.asmCode());
       System.err.println(asmCode);
     }

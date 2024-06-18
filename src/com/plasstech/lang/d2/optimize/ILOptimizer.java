@@ -64,7 +64,10 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     int iterations = 0;
 
     boolean changed = false;
-    if (loggingLevel.intValue() < Level.CONFIG.intValue()) {
+    // 0=fine = 500
+    // 1=config = 700
+    // 2=info = 800
+    if (loggingLevel.intValue() >= Level.CONFIG.intValue()) {
       System.out.printf("\nPRE-OPTIMIZED:\n");
       System.out.println(Joiner.on("\n").join(program));
       System.out.println();
@@ -78,7 +81,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
           program = child.optimize(program, symbolTable);
           if (child.isChanged()) {
             iterations++;
-            if (loggingLevel.intValue() <= Level.INFO.intValue()) {
+            if (loggingLevel.intValue() >= Level.INFO.intValue()) {
               System.out.printf("\n%s OPTIMIZED:\n", child.getClass().getSimpleName());
               System.out.println(Joiner.on("\n").join(program));
             }
@@ -91,7 +94,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     } finally {
       logger.at(loggingLevel).log("Iterations: %d\n", iterations);
 
-      if (loggingLevel.intValue() != Level.FINE.intValue()) {
+      if (loggingLevel.intValue() > Level.FINE.intValue()) {
         System.out.println("\nFINAL (maybe) OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(program));
         System.out.println();
