@@ -115,7 +115,7 @@ public class GoldenTests {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
     assertThatCompiling(text)
-        .withCodeGenDebugLevel(2)
+        .withCodeGenDebugLevel(1)
         .withOptDebugLevel(1)
         .executedEqualsInterpreted();
   }

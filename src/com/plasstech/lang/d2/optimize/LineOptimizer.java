@@ -34,7 +34,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymbolTable;
 
 abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
-  private final FluentLogger logger = FluentLogger.forEnclosingClass();
+  protected final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private int ip;
 
@@ -64,9 +64,11 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     return ImmutableList.copyOf(code);
   }
 
-  protected void postProcess() {}
-
+  /** Can do anything it wants with this.code */
   protected void preProcess() {}
+
+  /** Can do anything it wants with this.code */
+  protected void postProcess() {}
 
   /** @return the opcode at the next IP, if it's in range. Otherwise, return null. */
   protected final Op getNext() {

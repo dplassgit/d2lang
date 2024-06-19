@@ -14,12 +14,14 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
+import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -58,6 +60,16 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   protected void preProcess() {
     replacements.clear();
     assignmentLocations.clear();
+  }
+
+  @Override
+  protected void postProcess() {
+    // Fix up deallocate temps that may need to move due to propagation of long temps
+    code = removeMatchingOps(code, DeallocateTemp.class);
+    code = removeMatchingOps(code, Nop.class);
+    LongTempDeallocator deallocator = new LongTempDeallocator();
+    code = deallocator.optimize(ImmutableList.copyOf(code), null);
+    setChanged(isChanged() || deallocator.isChanged());
   }
 
   @Override
@@ -174,7 +186,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.operand();
     Operand replacement = findReplacement(operand);
     if (replacement != null) {
-      replaceCurrent(new UnaryOp(op.destination(), op.operator(), replacement, op.position()));
+      replaceCurrent(op.setSource(op.operand(), replacement));
     }
     // This value has changed; remove any old settings
     replacements.remove(op.destination());
@@ -186,7 +198,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     Operand operand = op.sizeLocation();
     Operand replacement = findReplacement(operand);
     if (replacement != null) {
-      replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement, null));
+      replaceCurrent(new ArrayAlloc(op.destination(), op.arrayType(), replacement, op.position()));
     }
   }
 

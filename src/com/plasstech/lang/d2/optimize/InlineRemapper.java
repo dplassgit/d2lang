@@ -68,9 +68,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   private LongTempLocation newLongTemp(String fullName, VarType type) {
-    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.LONG_TEMP);
-    symbol.setVarType(type);
-    LongTempLocation temp = new LongTempLocation(symbol);
+    LongTempLocation temp = LongTempLocation.create(fullName, type);
     temps.add(temp);
     return temp;
   }

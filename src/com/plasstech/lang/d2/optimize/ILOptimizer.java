@@ -21,6 +21,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
         ImmutableList.of(
             // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
             new NopOptimizer(),
+            new LongTempDeallocator(),
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
@@ -30,6 +31,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new AdjacentIncDecOptimizer(debugLevel),
             new AdjacentArithmeticOptimizer(debugLevel),
             new AdjacentLabelOptimizer(debugLevel),
+            new CommonSubexpressionOptimizer(debugLevel),
             new PrintOptimizer(debugLevel),
             new DeadProcOptimizer(debugLevel),
             new DeadCodeOptimizer(debugLevel),
@@ -78,6 +80,9 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
         changed = false;
 
         for (Optimizer child : children) {
+          if (iterations > 1000) {
+            throw new IllegalStateException("Too many optimizer iterations");
+          }
           program = child.optimize(program, symbolTable);
           if (child.isChanged()) {
             iterations++;

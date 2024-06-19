@@ -82,15 +82,15 @@ public class ExecutionSubject extends Subject {
 
   // Uses the opposite optimization flag as executed
   public State executedEqualsInterpreted(boolean interpretedOptimizeFlag) {
+    this.config = this.config.toBuilder().setOptimize(!interpretedOptimizeFlag).build();
     // 1. compile & execute the original source
     State executeState = executes();
 
     // 2. interpret the original source with the new optimize flag
     CompilationConfiguration interpreterConfig =
         this.config.toBuilder().setOptimize(interpretedOptimizeFlag).build();
-    State interpreterState = executeState.toBuilder().build();
     InterpreterExecutor executor = new InterpreterExecutor(interpreterConfig);
-    InterpreterResult result = executor.execute(interpreterState);
+    InterpreterResult result = executor.execute();
     String interpreterOutput =
         Joiner.on("").join(result.environment().output()).replaceAll("\n", "\r\n");
     assertThat(executeState.stdOut()).isEqualTo(interpreterOutput);

@@ -126,6 +126,7 @@ java_library(
         "//src/com/plasstech/lang/d2/lex",
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse",
+        "//src/com/plasstech/lang/d2/phase",
         "//src/com/plasstech/lang/d2/phase:phase_name",
         "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type",

@@ -8,9 +8,7 @@ import java.util.logging.Level;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
-import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
@@ -27,6 +25,10 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.type.SymbolTable;
 
+/**
+ * Replaces calls to small functions (up to 10 opcodes with no loops) with the equivalent code
+ * in-line.
+ */
 class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -64,6 +66,11 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         break;
       }
     }
+
+    code = removeMatchingOps(code, DeallocateTemp.class);
+    code = removeMatchingOps(code, Nop.class);
+    LongTempDeallocator deallocator = new LongTempDeallocator();
+    code = deallocator.optimize(ImmutableList.copyOf(code), null);
 
     return ImmutableList.copyOf(code);
   }
@@ -121,34 +128,41 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       ProcEntry entry = procsByName.get(callOp.procSym().name());
       InlineRemapper inlineRemapper = new InlineRemapper(source, symbolTable, loggingLevel);
       List<Op> remapped = inlineRemapper.remap();
-      logger.at(loggingLevel).log(
-          "Can inline '%s' from:\n %s\n to:\n%s",
-          callOp.procSym(), Joiner.on('\n').join(source), Joiner.on('\n').join(remapped));
 
       // Nop the call and mark the end. Since we're repeatedly adding at "ip", the opcodes
       // get pushed up, so we start from the bottom up.
-
-      // Last, deallocate the long temps we created during the remapping procedure.
-      for (LongTempLocation temp : inlineRemapper.getLongTemps()) {
-        code.set(ip, new DeallocateTemp(temp, callOp.position()));
-      }
       code.set(ip, new Nop(callOp));
       code.add(ip, new Nop("(inline end)"));
 
       Return returnOp = null;
-      if (Iterables.getLast(remapped) instanceof Return) {
-        // Always return it, but don't always *use* it.
-        returnOp = (Return) remapped.remove(remapped.size() - 1);
+      int returnOpIndex = -1;
+      for (int i = 0; i < remapped.size(); ++i) {
+        Op op = remapped.get(i);
+        if (op instanceof Return) {
+          returnOp = (Return) op;
+          returnOpIndex = i;
+          break;
+        }
       }
-      if (callOp.destination().isPresent() && returnOp != null) {
+      if (callOp.destination().isPresent()) {
+        // if returnOpIndex is -1 it will (correctly) throw an exception
+        // TODO: be smarter about this.
         // if op is assigned to a return value, copy that
         // from the "return" statement
-        code.add(
-            ip,
+        remapped.set(returnOpIndex,
             new Transfer(
                 callOp.destination().get(), returnOp.returnValueLocation().get(),
                 callOp.position()));
+      } else {
+        // No destination. remove the op
+        if (returnOpIndex != -1) {
+          remapped.set(returnOpIndex, new Nop(returnOp));
+        }
       }
+      logger.at(loggingLevel).log(
+          "Can inline '%s' from:\n %s\n to:\n%s",
+          callOp.procSym(), Joiner.on('\n').join(source), Joiner.on('\n').join(remapped));
+
       // Insert the inlined code, then finally copy actuals to (remapped) formals.
       code.addAll(ip, remapped);
       for (int i = 0; i < callOp.actuals().size(); ++i) {

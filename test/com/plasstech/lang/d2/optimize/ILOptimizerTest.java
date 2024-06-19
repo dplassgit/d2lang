@@ -321,13 +321,15 @@ public class ILOptimizerTest {
 
   @Test
   public void deadAfterExit() {
+    //    TestUtils.optimizeAssertSameVariables(
+    // this is broken, it should not compile.
+    //        "deadAfterExit:proc(): int {exit 'no' a=4} print deadAfterExit()");
     TestUtils.optimizeAssertSameVariables(
-        "deadAfterExit:proc(): int {exit 'no' a=4} print deadAfterExit()");
-    TestUtils.optimizeAssertSameVariables(
-        "deadAfterExit2:proc(a:bool): int {"
-            + " if a {exit 'no2'} a=false return 5"
-            + "} "
-            + "print deadAfterExit2(true) print deadAfterExit2(false)");
+        "      deadAfterExit2:proc(a:bool): int {\n"
+            + " if a {exit 'no2' a=false } return 5\n"
+            + "}\n"
+            + "print deadAfterExit2(true)\n"
+            + "print deadAfterExit2(false)");
   }
 
   @Test

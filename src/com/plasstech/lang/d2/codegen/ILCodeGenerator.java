@@ -758,6 +758,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   private void emitDeallocateLongTemp(Operand operand, Position position) {
     if (operand.storage() == SymbolStorage.LONG_TEMP) {
       // Ugh.
+      // TODO: Use LongTempDeallocator instead of manually inserting DeallocTemp instructions. 
       emit(new DeallocateTemp((Location) operand, position));
     }
   }

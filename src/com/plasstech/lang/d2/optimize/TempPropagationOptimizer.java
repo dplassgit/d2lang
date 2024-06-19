@@ -93,9 +93,7 @@ class TempPropagationOptimizer extends LineOptimizer {
     }
     if (op.destination().equals(candidate.source()) && canApply(op.operand(), candidate)) {
       deleteCurrent();
-      replaceAt(ip() + 1,
-          new UnaryOp(candidate.destination(),
-              op.operator(), op.operand(), op.position()));
+      replaceAt(ip() + 1, op.setDestination(candidate.destination()));
     }
   }
 
@@ -111,9 +109,7 @@ class TempPropagationOptimizer extends LineOptimizer {
     }
     if (op.destination().equals(candidate.source()) && canApply(op, candidate)) {
       deleteCurrent();
-      replaceAt(ip() + 1,
-          new BinOp(candidate.destination(),
-              op.left(), op.operator(), op.right(), op.position()));
+      replaceAt(ip() + 1, op.setDestination(candidate.destination()));
     }
   }
 

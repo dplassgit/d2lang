@@ -44,6 +44,9 @@ public class ConstantPropagationOptimizerTest {
   private static final MemoryAddress GLOBAL_INT2 =
       LocationUtils.newMemoryAddress("g2", VarType.INT);
 
+  private static final Location LONG_TEMP =
+      LocationUtils.newLongTempLocation("longtemp", VarType.INT);
+
   @Test
   public void twoTransfers() {
     /**
@@ -200,5 +203,18 @@ public class ConstantPropagationOptimizerTest {
     assertThat(optimized).hasSize(2);
     assertThat(optimized.get(0)).isTransferredFrom(four);
     assertThat(optimized.get(1)).isTransferredFrom(four);
+  }
+
+  @Test
+  public void longTemp_propagation() {
+    ConstantOperand<Integer> four = ConstantOperand.of(4);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, four, null),
+            new Transfer(STACK_INT1, LONG_TEMP, null));
+
+    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(four);
   }
 }

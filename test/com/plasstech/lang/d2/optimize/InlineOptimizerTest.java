@@ -135,9 +135,10 @@ public class InlineOptimizerTest {
         TestUtils.optimizeAssertSameVariables(
             // TODO: re-enable this
             // " multipleCalls:proc(c:string):bool { return c >= '0' and c <= '9'} "
-            "      medium:proc(c:string):bool { return c >= '0' } " //
-                + "println medium('12')",
-            OPTIMIZER);
+            "      medium:proc(c:string):bool { return c >= '1' } " //
+                + "println medium('12') "
+                + "println medium('0')",
+            new ILOptimizer(2));
 
     ImmutableList<Op> code = result.code();
     assertNoCalls(code);

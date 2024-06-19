@@ -3,11 +3,7 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-
-@RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorLogicFlowTest {
   @Test
   public void ifPrint() throws Exception {
@@ -82,5 +78,33 @@ public class NasmCodeGeneratorLogicFlowTest {
         + "if null == s { println 'This should never happen'}"
         + "if s != null { println 'null'}\r\n"
         + "if s == null { println 'This should never happen'}").executedEqualsInterpreted();
+  }
+
+  @Test
+  public void commonSubexpressionElimination() throws Exception {
+    assertThatCompiling(
+        "      f:proc(a:int, b:int):int {\n"
+            + "    c=a+b\n"
+            + "    d=a+b+c\n"
+            + "    println c\n"
+            + "    return d\n"
+            + "}\n"
+            + "e=f(1, 2)\n"
+            + "println e+1")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void dumbsort() throws Exception {
+    assertThatCompiling(
+        "      f:proc(a:int, b:int):int {\n"
+            + "    c=a+b\n"
+            + "    d=a+b+c\n"
+            + "    println c\n"
+            + "    return d\n"
+            + "}\n"
+            + "e=f(1, 2)\n"
+            + "println e+1")
+        .executedEqualsInterpreted();
   }
 }
