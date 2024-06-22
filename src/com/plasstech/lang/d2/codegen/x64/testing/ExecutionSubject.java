@@ -41,20 +41,16 @@ public class ExecutionSubject extends Subject {
     this.config =
         CompilationConfiguration.create(code)
             .toBuilder()
-            // Default to optimized
-            .setOptimize(true)
-            .setCodeGenDebugLevel(1)
-            .setOptDebugLevel(1)
+            // Default to NOT optimized
+            .setOptimize(false)
+            .setCodeGenDebugLevel(2)
+            .setOptDebugLevel(2)
             .setFilename("sut")
             .build();
   }
 
   public ExecutionSubject withOptimize(boolean newFlag) {
-    this.config =
-        this.config.toBuilder()
-            .setOptimize(newFlag)
-            .setOptDebugLevel(newFlag ? 2 : 0)
-            .build();
+    this.config = this.config.toBuilder().setOptimize(newFlag).build();
     return this;
   }
 
@@ -89,7 +85,7 @@ public class ExecutionSubject extends Subject {
 
     // 2. interpret the original source with the new optimize flag
     CompilationConfiguration interpreterConfig =
-        this.config.toBuilder().setOptimize(interpretedOptimizeFlag).build();
+        this.config.toBuilder().setOptDebugLevel(0).setOptimize(interpretedOptimizeFlag).build();
     InterpreterExecutor executor = new InterpreterExecutor(interpreterConfig);
     InterpreterResult result = executor.execute();
     String interpreterOutput =

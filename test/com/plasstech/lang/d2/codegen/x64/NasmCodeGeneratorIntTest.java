@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
+import static org.junit.Assume.assumeFalse;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,14 +11,19 @@ import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorIntTest {
+  @TestParameter
+  boolean optimize;
+
   @Test
   public void intUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
-    assertThatCompiling(String.format("a=3 b=%sa println b", op)).executedEqualsInterpreted();
+    assertThatCompiling(String.format("a=3 b=%sa println b", op)).withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void intParamUnaryOps(@TestParameter({"-", "!"}) String op) throws Exception {
     assertThatCompiling(String.format("f:proc(a:int, b:int) {b=%sa println b} f(2,3)", op))
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
@@ -33,7 +39,7 @@ public class NasmCodeGeneratorIntTest {
             + "d=b %s a println d "
             + "e=a %s a println e "
             + "f=b %s b println f",
-        first, second, op, op, op, op)).executedEqualsInterpreted();
+        first, second, op, op, op, op)).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
@@ -69,6 +75,7 @@ public class NasmCodeGeneratorIntTest {
             + "  if %d %s b { println true }"
             + "f()", // without the call, the declaration will be optimized out
         first, second, op, op, op, second, first, op))
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
@@ -92,7 +99,7 @@ public class NasmCodeGeneratorIntTest {
                 + "} "
                 + "f(%d,%d)",
             op, op, op, first, second, op, first, second);
-    assertThatCompiling(program).executedEqualsInterpreted();
+    assertThatCompiling(program).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
@@ -144,34 +151,45 @@ public class NasmCodeGeneratorIntTest {
   }
 
   @Test
+  public void shiftSelf() throws Exception {
+    assertThatCompiling("f:proc(a:int) {a=a << a println a} f(2)").withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
   public void increment() throws Exception {
     assertThatCompiling("a=3 a++ if a!=4 {exit('increment is broken')} println a")
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void decrement() throws Exception {
     assertThatCompiling("a=3 a-- if a!=2 {exit('decrement is broken')} println a")
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void divLoop() throws Exception {
-    assertThatCompiling("a=10000 while a > 0 {println a a = a / 10 }").executedEqualsInterpreted();
+    assertThatCompiling("a=10000 while a > 0 {println a a = a / 10 }").withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
-    assertThatCompiling("a=1 println a/0").hasCompileTimeError("Division by 0");
+    assumeFalse(optimize);
     String sourceCode = "a=0 b=1/a";
-    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
+    assertThatCompiling(sourceCode).withOptimize(true).hasCompileTimeError("Division by 0");
+    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
+        .executes();
   }
 
   @Test
   public void divisionByZeroLocal() throws Exception {
+    assumeFalse(optimize);
     String sourceCode = "f:proc:int {a=0 b=1/a return b} f()";
-    assertThatCompiling(sourceCode).withCodeGenDebugLevel(2).withOptDebugLevel(2)
-        .hasCompileTimeError("Division by 0");
+    assertThatCompiling(sourceCode).withOptimize(true).hasCompileTimeError("Division by 0");
     assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
         .executes();
   }
@@ -179,13 +197,13 @@ public class NasmCodeGeneratorIntTest {
   @Test
   public void simpleParamBinop() throws Exception {
     assertThatCompiling("f:proc(a:int):int { a=a+3 print a return a} f(1)")
-        .executedEqualsInterpreted();
+        .withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
   public void simpleLocalBinop() throws Exception {
     assertThatCompiling("f:proc(a:int):int { b=a+3 print b return b} f(1)")
-        .executedEqualsInterpreted();
+        .withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
@@ -195,6 +213,6 @@ public class NasmCodeGeneratorIntTest {
     assertThatCompiling(
         String.format("f:proc(a: int, b:int) { a %s b c=b c %s a println a println c} f(100, 10)",
             op, op))
-        .executedEqualsInterpreted();
+        .withOptimize(optimize).executedEqualsInterpreted();
   }
 }

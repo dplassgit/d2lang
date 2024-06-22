@@ -44,7 +44,7 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void oobeIndex() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
-    assertThatCompiling(sourceCode)
+    assertThatCompiling(sourceCode).withOptimize(true)
         .hasCompileTimeError("STRING index out of bounds \\(length 5\\); was 10");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
@@ -53,7 +53,7 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void oobeIndexVariable() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
-    assertThatCompiling(sourceCode)
+    assertThatCompiling(sourceCode).withOptimize(true)
         .hasCompileTimeError("STRING index out of bounds.*length 5.*was 10");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
@@ -62,7 +62,8 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
-    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
+    assertThatCompiling(sourceCode).withOptimize(true)
+        .hasCompileTimeError("must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -70,7 +71,8 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void negativeIndexCalculated() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
-    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
+    assertThatCompiling(sourceCode).withOptimize(true)
+        .hasCompileTimeError("must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -78,8 +80,8 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void negativeIndexGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
-    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
-
+    assertThatCompiling(sourceCode).withOptimize(true)
+        .hasCompileTimeError("must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -169,18 +171,18 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertThatCompiling(program).hasCompileTimeError("Null pointer error");
+    assertThatCompiling(program).withOptimize(true).hasCompileTimeError("Null pointer error");
     assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
         .executes();
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
-    assertThatCompiling("a='hello' a=null println length(a)")
+    assertThatCompiling("a='hello' a=null println length(a)").withOptimize(true)
         .hasCompileTimeError("Null pointer error");
     assertThatCompiling("a='hello' a=null println length(a)").withOptimize(false)
         .withRuntimeError("Null pointer error").executes();
-    assertThatCompiling("a:string a=null println length(a)")
+    assertThatCompiling("a:string a=null println length(a)").withOptimize(true)
         .hasCompileTimeError("Null pointer error");
     assertThatCompiling("a:string a=null println length(a)").withOptimize(false)
         .withRuntimeError("Null pointer error").executes();
