@@ -28,12 +28,14 @@ import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.SymbolStorage;
 
 class DeadAssignmentOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map from object to line number
   private final Map<Location, Integer> assignments = new HashMap<>();
+  private final Map<Location, Integer> globalAssignments = new HashMap<>();
   private final Map<Location, Integer> tempAssignments = new HashMap<>();
 
   DeadAssignmentOptimizer(int debugLevel) {
@@ -43,6 +45,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   @Override
   protected void preProcess() {
     assignments.clear();
+    globalAssignments.clear();
     tempAssignments.clear();
   }
 
@@ -57,6 +60,10 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       case REGISTER:
       case LONG_TEMP:
         assignments.put(destination.baseLocation(), ip());
+        break;
+
+      case GLOBAL:
+        globalAssignments.put(destination.baseLocation(), ip());
         break;
 
       default:
@@ -88,6 +95,15 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   // This can never be called with a temp, because temps aren't reassigned.
   private boolean killIfReassigned(Location destination) {
+    if (destination.storage() == SymbolStorage.GLOBAL) {
+      Integer loc = globalAssignments.get(destination.baseLocation());
+      if (loc != null) {
+        globalAssignments.remove(destination.baseLocation());
+        smartDeleteAt(loc);
+        return true;
+      }
+      return false;
+    }
     Integer loc = assignments.get(destination.baseLocation());
     if (loc != null) {
       assignments.remove(destination.baseLocation());
@@ -107,6 +123,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       Location sourceLocation = (Location) source;
       assignments.remove(sourceLocation.baseLocation());
       tempAssignments.remove(sourceLocation.baseLocation());
+      globalAssignments.remove(sourceLocation.baseLocation());
     }
   }
 
@@ -126,13 +143,22 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       }
       tempAssignments.clear();
     }
+    globalAssignments.clear();
   }
 
   @Override
   public void visit(ProcEntry op) {
     // start of scope.
-    assignments.clear();
+    if (!assignments.isEmpty()) {
+      // Start of scope. Kill all assigned-unused.
+      logger.at(loggingLevel).log("Killing all unused variables at start of proc: %s", assignments);
+      for (int theIp : assignments.values()) {
+        smartDeleteAt(theIp);
+      }
+      assignments.clear();
+    }
     tempAssignments.clear();
+    globalAssignments.clear();
   }
 
   @Override
@@ -152,6 +178,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       }
       tempAssignments.clear();
     }
+    globalAssignments.clear();
   }
 
   @Override
@@ -161,6 +188,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     // it can probably be killed.
     assignments.clear();
     tempAssignments.clear();
+    globalAssignments.clear();
   }
 
   @Override
@@ -168,6 +196,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     // a goto means potentially a loop and we can't rely on unused non-temps
     assignments.clear();
     tempAssignments.clear();
+    globalAssignments.clear();
   }
 
   @Override
@@ -251,6 +280,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(IfOp op) {
     assignments.clear();
     tempAssignments.clear();
+    globalAssignments.clear();
     markRead(op.condition());
   }
 

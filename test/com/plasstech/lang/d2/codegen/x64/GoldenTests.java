@@ -24,21 +24,23 @@ import com.plasstech.lang.d2.common.CompilationConfiguration;
 @RunWith(TestParameterInjector.class)
 public class GoldenTests {
 
+  @TestParameter
+  boolean optimize;
+
   @Test
   public void compileNonGoldenSample(
-      @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file,
-      @TestParameter boolean goldenOptimize) throws IOException {
-    compileOneFile(file, goldenOptimize);
+      @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
+    compileOneFile(file, optimize);
   }
 
   @Test
-  public void compileBootstrap(@TestParameter boolean goldenOptimize) throws IOException {
-    compileOneFile(new File("src/bootstrap/v0/v0.d"), goldenOptimize);
+  public void compileBootstrap() throws IOException {
+    compileOneFile(new File("src/bootstrap/v0/v0.d"), optimize);
   }
 
   @Test
-  public void compileGames(@TestParameter boolean goldenOptimize) throws IOException {
-    compileOneFile(new File("samples/games/ge.d"), goldenOptimize);
+  public void compileGames() throws IOException {
+    compileOneFile(new File("samples/games/ge.d"), optimize);
   }
 
   // Just compile, no running
@@ -115,6 +117,7 @@ public class GoldenTests {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
     assertThatCompiling(text)
+        .withOptimize(true)
         .withCodeGenDebugLevel(1)
         .withOptDebugLevel(1)
         .executedEqualsInterpreted();

@@ -1,18 +1,24 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
+import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.testing.TestUtils;
@@ -21,6 +27,7 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class DeadAssignmentOptimizerTest {
   private static Location LONG_TEMP = LocationUtils.newLongTempLocation("longtemp", VarType.INT);
+  private static Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
 
   private Optimizer optimizer =
       new ILOptimizer(ImmutableList.of(new NopOptimizer(), new DeadAssignmentOptimizer(2)), 0);
@@ -179,5 +186,70 @@ public class DeadAssignmentOptimizerTest {
             new DeallocateTemp(LONG_TEMP, null));
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimized).hasSize(0);
+  }
+
+  @Test
+  public void deadGlobalTransfer() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(GLOBAL, ConstantOperand.ZERO, null), // dead
+            new Transfer(GLOBAL, ConstantOperand.ONE, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void deadGlobalBinOp() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(GLOBAL, ConstantOperand.ZERO, TokenType.PLUS, ConstantOperand.ZERO, null), // dead
+            new Transfer(GLOBAL, ConstantOperand.ONE, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void deadGlobalUnaryOp() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new UnaryOp(GLOBAL, TokenType.PLUS, ConstantOperand.ZERO, null), // dead
+            new Transfer(GLOBAL, ConstantOperand.ONE, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ONE);
+  }
+
+  @Test
+  public void nonDeadGlobalProcStart() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(GLOBAL, ConstantOperand.ONE, null),
+            new ProcEntry("name", ImmutableList.of(), 0));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).isEqualTo(code);
+  }
+
+  @Test
+  public void nonDeadGlobalGoto() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(GLOBAL, ConstantOperand.ONE, null),
+            new Goto("label"));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).isEqualTo(code);
+  }
+
+  @Test
+  public void notDeadGlobalInProc() {
+    TestUtils.optimizeAssertSameVariables(
+        "      g = 0 "
+            + "g = 1 "
+            // this 'g' should not be dead.
+            + "shortVoidGlobal:proc(n:int) { g = g + n } "
+            + "shortVoidGlobal(10) "
+            + "println g",
+        optimizer);
   }
 }

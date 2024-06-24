@@ -82,7 +82,9 @@ public class NasmCodeGeneratorByteTest {
 
   @Test
   public void incDec() throws Exception {
-    assertThatCompiling("a=0y42 a++ print a a=0y41 a-- print a").withOptimize(optimize)
+    //    assertThatCompiling("a=0y42 a++ println a a=0y41 a-- println a")
+    assertThatCompiling("a=0y42 a++ println a a=0y41 a-- doit() doit:proc {println a}")
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
