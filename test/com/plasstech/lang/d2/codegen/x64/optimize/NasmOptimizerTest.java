@@ -119,7 +119,7 @@ public class NasmOptimizerTest {
   @Test
   public void leavesAddSubRsp_diffOffset() {
     ImmutableList<String> code = ImmutableList.of("  add RSP, 0x20", "  sub RSP, 0x28");
-    assertThat(optimize(code)).isEqualTo(code);
+    assertThat(optimize(code)).containsExactly("  sub RSP, 0x08");
   }
 
   @Test
