@@ -23,7 +23,7 @@ public class NasmCodeGeneratorIntTest {
 
   @Test
   public void intBinOps(
-      @TestParameter({"+", "-", "*", "/", "&", "|", "^", "%"}) String op,
+      @TestParameter({"+", "-", "*", "&", "|", "^"}) String op,
       @TestParameter({"1234", "-23456"}) int first,
       @TestParameter({"2345", "-34567"}) int second)
       throws Exception {
@@ -34,6 +34,24 @@ public class NasmCodeGeneratorIntTest {
             + "e=a %s a println e "
             + "f=b %s b println f",
         first, second, op, op, op, op)).executedEqualsInterpreted();
+  }
+
+  @Test
+  public void divMod(
+      @TestParameter({"/", "%"}) String op,
+      @TestParameter({"1234", "-25"}) int first,
+      @TestParameter({"-2345", "37"}) int second,
+      @TestParameter boolean optimize)
+      throws Exception {
+    assertThatCompiling(String.format(
+        "      a=%d b=%d "
+            + "c=a %s b println c "
+            + "dp:proc(ad:int, bd:int) { d=ad %s bd println d} "
+            + "ep:proc() { ae=%d be=%d e=be %s ae println e} "
+            + "dp(a,b) "
+            + "ep()",
+        first, second, op, op, first, second, op)).withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test

@@ -598,41 +598,38 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     return rightRo.isConstant() || rightRo.isRegister();
   }
 
+  // NOTE: `dest` might NOT be op.destination() because of register reuse.
   private void generateDivMod(BinOp op, Location dest) {
-    Operand rightOperand = op.right();
-    String rightName = resolver.resolve(rightOperand);
-    Operand leftOperand = op.left();
-    VarType operandType = leftOperand.type();
-    String size = Size.of(operandType).asmType;
+    Operand right = op.right();
+    Operand left = op.left();
+    VarType operandType = left.type();
 
     // Note: division by 0 checks are done in IL code now.
-    // 3. determine dest location
-    // 4. set up left in EDX:EAX
-    // 5. idiv by right, result in eax
-    // 6. mov destName, eax
+    // 1. determine dest location
+    // 2. set up left in EDX:EAX
+    // 3. idiv by right, result in eax
+    // 4. mov destName, eax
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, ImmutableList.of(RAX, RDX));
-    Register temp = resolver.allocate(VarType.INT);
-    String leftName = resolver.resolve(leftOperand);
-    emitter.emit("xor RAX, RAX");
     emitter.emit("; numerator:");
-    resolver.mov(leftOperand, RAX);
+    resolver.mov(left, RAX);
     emitter.emit("; denominator:");
-    resolver.mov(rightOperand, temp);
+    Register temp = resolver.allocate(VarType.INT);
+    resolver.mov(right, temp);
 
-    if (operandType == VarType.INT) {
-      emitter.emit("cdq  ; sign extend eax to edx");
+    if (operandType == VarType.BYTE) {
+      emitter.emit("; sign extend AL to AX");
+      emitter.emit("cbw");
+    } else if (operandType == VarType.INT) {
+      emitter.emit("; sign extend EAX to EDX");
+      emitter.emit("cdq");
     } else if (operandType == VarType.LONG) {
-      emitter.emit("cqo  ; sign extend rax to rdx");
-    } else if (operandType == VarType.BYTE) {
-      emitter.emit("cbw  ; sign extend al to ax");
+      emitter.emit("; sign extend RAX to RDX");
+      emitter.emit("cqo");
     }
 
-    emitter.emit("idiv %s  ; %s = %s / %s",
-        temp.nameByType(operandType),
-        RAX.nameByType(operandType),
-        leftName,
-        rightName);
+    emitter.emit("; %s = %s / %s", RAX.nameByType(operandType), left, right);
+    emitter.emit("idiv %s", temp.nameByType(operandType));
 
     resolver.deallocate(temp);
     if (op.operator() == TokenType.DIV) {
@@ -643,7 +640,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       if (operandType == VarType.BYTE) {
         // Remainder is in AH, but we can only transfer from AH to certain other registers.
         // Prevent it by always just using AL.
-        emitter.emit("xchg AL, AH  ; prevent using AH for mod");
+        emitter.emit("; prevent using AH for mod");
+        emitter.emit("xchg AL, AH");
         resolver.mov(RAX, dest);
       } else {
         // remainder is in EDX
@@ -655,7 +653,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       registerState.condPop(RDX);
     } else {
       // pseudo pop
-      emitter.emit("add RSP, 0x08  ; pseudo pop RDX");
+      emitter.emit("add RSP, 0x08  ; adjust stack instead of popping RDX");
     }
     registerState.condPop(RAX);
   }
