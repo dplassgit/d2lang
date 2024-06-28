@@ -57,6 +57,7 @@ java_library(
     srcs = [
         "ArrayType.java",
         "DefaultVarType.java",
+        "GenericType.java",
         "NullType.java",
         "PointerType.java",
         "RecordReferenceType.java",

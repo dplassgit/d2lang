@@ -53,6 +53,7 @@ import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class Parser implements Phase {
@@ -380,18 +381,68 @@ public class Parser implements Phase {
 
   private DeclarationNode parseRecordDeclaration(Token varToken) {
     expectToken(TokenType.RECORD);
+
+    List<String> formalTypeVariables = ImmutableList.of();
+    if (token.type() == TokenType.LT) {
+      advance(); // eat the <
+      formalTypeVariables = commaSeparated(() -> {
+        Token next = expectToken(TokenType.VARIABLE);
+        String name = next.text();
+        return name;
+      });
+      expectToken(TokenType.GT);
+    }
     expectToken(TokenType.LBRACE);
 
     // read field declarations
     List<DeclarationNode> fieldNodes = new ArrayList<>();
     while (token.type() != TokenType.RBRACE) {
       Token fieldVar = expectToken(TokenType.VARIABLE);
-      DeclarationNode decl = declaration(fieldVar);
+      DeclarationNode decl = fieldDeclaration(fieldVar, formalTypeVariables);
       fieldNodes.add(decl);
     }
 
     expectToken(TokenType.RBRACE);
-    return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start());
+    return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start(),
+        formalTypeVariables);
+  }
+
+  private DeclarationNode fieldDeclaration(Token varToken, List<String> formalTypeVariables) {
+    expectToken(TokenType.COLON);
+    if (token.type().isKeyword()) {
+      TokenType declaredType = token.type();
+      VarType varType = VARIABLE_TYPES.get(declaredType);
+      if (varType != null) {
+        advance(); // int, string, bool, etc.
+        // See if it's an array declaration and build a "compound type" from the
+        // declaration, e.g., "array of int"
+        if (token.type() == TokenType.LBRACKET) {
+          return arrayDecl(varToken, varType);
+        }
+        return new DeclarationNode(varToken.text(), varType, varToken.start());
+      }
+    }
+    if (token.type() == TokenType.VARIABLE) {
+      Token typeToken = advance(); // eat the variable type record reference
+      String name = typeToken.text();
+      if (formalTypeVariables.contains(name)) {
+        // Field type is from formal type parameter
+        VarType varType = new UnboundType(name);
+        // TODO: Arrays of unbound types not allowed yet
+        return new DeclarationNode(varToken.text(), varType, varToken.start());
+      }
+      RecordReferenceType recordReference = new RecordReferenceType(name);
+      if (token.type() == TokenType.LBRACKET) {
+        // Array of records!
+        return arrayDecl(varToken, recordReference);
+      }
+      return new DeclarationNode(varToken.text(), recordReference, varToken.start());
+    }
+    throw new ParseException(
+        String.format(
+            "Unexpected '%s' in RECORD declaration; expected built-in type or RECORD reference",
+            token.text()),
+        token.start());
   }
 
   /** declaration -> '[' expr ']' */
@@ -464,6 +515,8 @@ public class Parser implements Phase {
     if (token.type() == TokenType.VARIABLE) {
       // Record type.
       Token typeToken = expectToken(TokenType.VARIABLE); // eat the record type
+      // TODO: optional < followed by comma-separated vartypes - OR NOT...they might still be
+      // unbound type variables...
       return new RecordReferenceType(typeToken.text());
     }
 
@@ -758,9 +811,35 @@ public class Parser implements Phase {
     if (token.type() == TokenType.NEW) {
       Position start = token.start();
       expectToken(TokenType.NEW);
-      Token recordTypeName = expectToken(TokenType.VARIABLE);
 
-      return new NewNode(recordTypeName.text(), start);
+      Token recordTypeName = expectToken(TokenType.VARIABLE);
+      // optionally allow < and comma-separated types then >
+      // then create a new type from the record.
+      List<VarType> actualTypes = ImmutableList.of();
+      if (token.type() == TokenType.LT) {
+        advance();
+        actualTypes = commaSeparated(() -> {
+          if (token.type() == TokenType.VARIABLE) {
+            // Record type.
+            Token typeToken = advance(); // eat the record type
+            return new RecordReferenceType(typeToken.text());
+          }
+
+          TokenType declaredType = token.type();
+          VarType paramType = VARIABLE_TYPES.get(declaredType);
+          if (paramType != null) {
+            // We have a param type
+            advance(); // eat the param type
+            // possibly an array. see if there's an open and close bracket
+            return paramType;
+          }
+          throw new ParseException(
+              String.format("Unexpected '%s'; expected built-in or record type", token.text()),
+              token.start());
+        });
+        expectToken(TokenType.GT);
+      }
+      return new NewNode(recordTypeName.text(), actualTypes, start);
     }
 
     return compositeDereference();

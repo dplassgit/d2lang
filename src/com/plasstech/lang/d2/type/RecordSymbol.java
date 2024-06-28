@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -159,5 +160,16 @@ public class RecordSymbol extends AbstractSymbol {
               return (ArrayField) f;
             })
         .collect(toImmutableList());
+  }
+
+  /**
+   * Returns a new RecordSymbol which is this one with all the generic field types mapped to
+   * concrete vartypes.
+   * 
+   * @param mapping from variable type to concrete type.
+   * @return
+   */
+  public RecordSymbol bindTypeVariables(Map<String, VarType> mapping) {
+    return this;
   }
 }

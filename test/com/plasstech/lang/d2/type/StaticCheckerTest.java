@@ -1011,9 +1011,18 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_errors() {
-    assertThatTypeChecking("r: record{f:record{f2:int}}")
-        .hasError("nested RECORD 'f' in RECORD 'r'");
-    assertThatTypeChecking("r: record{p:proc() {} }").hasError("nested PROC 'p' in RECORD 'r'");
+    //    assertThatTypeChecking("r: record{f:record{f2:int}}")
+    //        .hasError("nested RECORD 'f' in RECORD 'r'");
+    //    assertThatTypeChecking("r: record{p:proc() {} }").hasError("nested PROC 'p' in RECORD 'r'");
+    assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
+        .hasError("Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
+    assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");
+    assertThatTypeChecking("s=3 r:record{a:string[s]} anr=new r print anr.a")
+        .hasError("ARRAYs in RECORDs must have constant size");
+    assertThatTypeChecking("r:record{a:string[1+1]} anr=new r print anr.a")
+        .hasError("ARRAYs in RECORDs must have constant size");
+    assertThatTypeChecking("r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]")
+        .hasError("declared type INT to STRING");
     assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
         .hasError("Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
     assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");

@@ -47,6 +47,7 @@ import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
@@ -1374,6 +1375,45 @@ public class ParserTest {
   }
 
   @Test
+  public void declGenericRecord() {
+    ProgramNode programNode = assertThatParsing("r: record<T, UV>{i: T s: UV}").succeeds();
+    BlockNode root = programNode.statements();
+    RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
+    assertThat(node.formalTypeVariables()).containsExactly("T", "UV").inOrder();
+
+    assertThat(node.fields().get(0).name()).isEqualTo("i");
+    UnboundType fieldType = (UnboundType) node.fields().get(0).varType();
+    assertThat(fieldType.name()).isEqualTo("T");
+    assertThat(node.fields().get(1).name()).isEqualTo("s");
+    fieldType = (UnboundType) node.fields().get(1).varType();
+    assertThat(fieldType.name()).isEqualTo("UV");
+  }
+
+  @Test
+  public void declGenericRecord_mix() {
+    ProgramNode programNode = assertThatParsing("r: record<T>{i: T s: UV}").succeeds();
+    BlockNode root = programNode.statements();
+    RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
+    assertThat(node.formalTypeVariables()).containsExactly("T");
+
+    assertThat(node.fields().get(0).name()).isEqualTo("i");
+    UnboundType fieldType = (UnboundType) node.fields().get(0).varType();
+    assertThat(fieldType.name()).isEqualTo("T");
+
+    assertThat(node.fields().get(1).name()).isEqualTo("s");
+    RecordReferenceType recordFieldType = (RecordReferenceType) node.fields().get(1).varType();
+    assertThat(recordFieldType.name()).isEqualTo("UV");
+  }
+
+  @Test
+  public void declGenericRecord_bad() {
+    assertThatParsing("r: record<T, 1>{i: T s: UV}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<>{i: T s: UV}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<(3)>{i: T s: UV}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<record>{i: T s: UV}").hasError("expected VARIABLE");
+  }
+
+  @Test
   public void declRecordRecursive() {
     ProgramNode programNode = assertThatParsing("R: record {r: R}").succeeds();
     BlockNode root = programNode.statements();
@@ -1392,10 +1432,14 @@ public class ParserTest {
     assertThatParsing("r: record{int}").hasError("expected VARIABLE");
     assertThatParsing("r: record{proc}").hasError("expected VARIABLE");
     // the error here is actually that it's trying to parse a procedure, but meh
-    assertThatParsing("r: record{p:proc}").hasError("expected");
+    // assertThatParsing("r: record{p:proc}").hasError("expected");
     // not parse errors, but are type errors
     // assertParseError("r: record{p:proc{}}", "expected");-
     // assertParseError("r: record{r2:record{}}", "expected VARIABLE");
+    assertThatParsing("r: record{f:record{f2:int}}")
+        .hasError("Unexpected 'RECORD' in RECORD declaration");
+    assertThatParsing("r: record{p:proc() {} }")
+        .hasError("Unexpected 'PROC' in RECORD declaration");
   }
 
   @Test
@@ -1437,6 +1481,15 @@ public class ParserTest {
     assertThat(node.recordName()).isEqualTo("R");
     RecordReferenceType type = (RecordReferenceType) node.varType();
     assertThat(type.name()).isEqualTo("R");
+  }
+
+  @Test
+  public void newGenericRecord() {
+    ProgramNode programNode = assertThatParsing("R: record<T>{i: T} rec = new R<int>").succeeds();
+    BlockNode root = programNode.statements();
+    AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
+    NewNode node = (NewNode) assignment.expr();
+    assertThat(node.actualTypes()).containsExactly(VarType.INT);
   }
 
   @Test

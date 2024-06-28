@@ -730,7 +730,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
    */
   private boolean validatePossibleRecordType(String name, VarType type, Position position) {
     if (type.isRecord()) {
-      String recordName = ((RecordReferenceType) type).name();
+      RecordReferenceType recordReferenceType = (RecordReferenceType) type;
+      String recordName = recordReferenceType.name();
       Symbol symbol = symbolTable.getRecursive(recordName);
       if (symbol == null || !symbol.varType().isRecord()) {
         errors.add(
@@ -742,6 +743,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return false;
       }
       // fall through; valid record
+
+      // TODO: check that # of actual type variables (for generics) matches the # of formal
+      // type variables.
+      return true;
     }
     // valid: either valid record, or not a record.
     return true;
@@ -831,6 +836,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         }
       }
     }
+    // TODO: Make sure all type variables are used.
   }
 
   @Override
