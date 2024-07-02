@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableList;
@@ -101,7 +99,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
       return null;
     }
     if (op.getClass().equals(clazz)) {
-      return (T) op;
+      return clazz.cast(op);
     }
     return null;
   }
@@ -136,20 +134,6 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   protected final int ip() {
     return ip;
-  }
-
-  protected final <T extends Op> void replaceAllMatching(
-      Class<T> opClazz, Predicate<T> pred, Function<T, Op> replacer) {
-
-    for (int index = 0; index < code.size(); ++index) {
-      Op op = code.get(index);
-      if (op.getClass().equals(opClazz)) {
-        T top = (T) op;
-        if (pred.test(top)) {
-          replaceAt(index, replacer.apply(top));
-        }
-      }
-    }
   }
 
   @Override

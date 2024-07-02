@@ -1,8 +1,12 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
+import com.plasstech.lang.d2.codegen.il.Op;
 
 /**
  * If there are two labels in a row, delete the 2nd and replace all gotos to the 2nd, to be gotos to
@@ -31,4 +35,23 @@ class AdjacentLabelOptimizer extends LineOptimizer {
         ifOp -> ifOp.destination().equals(secondLabel.label()),
         ifOp -> new IfOp(ifOp.condition(), firstLabel.label(), ifOp.isNot(), ifOp.position()));
   }
+
+  /**
+   * Find all opcodes of the given type that match the predicate, and replace them using the
+   * function.
+   */
+  private <T extends Op> void replaceAllMatching(
+      Class<T> clazz, Predicate<T> pred, Function<T, Op> replacer) {
+
+    for (int index = 0; index < code.size(); ++index) {
+      Op op = code.get(index);
+      if (op.getClass().equals(clazz)) {
+        T opAsT = clazz.cast(op);
+        if (pred.test(opAsT)) {
+          replaceAt(index, replacer.apply(opAsT));
+        }
+      }
+    }
+  }
+
 }
