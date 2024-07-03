@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -13,7 +14,6 @@ import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.ConstToken;
@@ -135,22 +135,19 @@ public class Parser implements Phase {
     return program();
   }
 
-  private void expect(TokenType first, TokenType... rest) {
-    ImmutableList<TokenType> expected = ImmutableList.copyOf(Lists.asList(first, rest));
+  private Token expectToken(TokenType... allowed) {
+    ImmutableList<TokenType> expected = ImmutableList.copyOf(Arrays.asList(allowed));
     if (!expected.contains(token.type())) {
       String expectedStr;
       if (expected.size() == 1) {
         expectedStr = expected.get(0).toString();
       } else {
-        expectedStr =
-            String.format(
-                "%s or %s",
-                Joiner.on(", ").join(expected.subList(0, expected.size() - 1)),
-                expected.get(expected.size() - 1));
+        expectedStr = Joiner.on(" or ").join(expected);
       }
       throw new ParseException(
           String.format("Unexpected '%s'; expected %s", token.text(), expectedStr), token.start());
     }
+    return advance();
   }
 
   private ProgramNode program() {
@@ -176,12 +173,10 @@ public class Parser implements Phase {
 
   // This is a statements node surrounded by braces.
   private BlockNode block() {
-    expect(TokenType.LBRACE);
-    advance();
+    expectToken(TokenType.LBRACE);
 
     BlockNode statements = statements(token -> token.type() == TokenType.RBRACE);
-    expect(TokenType.RBRACE);
-    advance();
+    expectToken(TokenType.RBRACE);
     return statements;
   }
 
@@ -202,7 +197,6 @@ public class Parser implements Phase {
         return new ContinueNode(token.start());
 
       case EXIT:
-        advance();
         return exitStmt(token.start());
 
       case IF:
@@ -213,7 +207,6 @@ public class Parser implements Phase {
         return print(token);
 
       case RETURN:
-        advance();
         return returnStmt(token.start());
 
       case VARIABLE:
@@ -232,6 +225,7 @@ public class Parser implements Phase {
   }
 
   private ReturnNode returnStmt(Position start) {
+    expectToken(TokenType.RETURN);
     if (inProc == 0) {
       throw new ParseException("Cannot RETURN from outside a PROC", start);
     }
@@ -245,6 +239,7 @@ public class Parser implements Phase {
   }
 
   private ExitNode exitStmt(Position start) {
+    expectToken(TokenType.EXIT);
     // If it's the start of an expression, read the whole expression...
     // (Except INPUT, which is forbidden.)
     if (token.type() == TokenType.INPUT) {
@@ -262,9 +257,7 @@ public class Parser implements Phase {
    * procedure call statement.
    */
   private StatementNode startsWithVariableStmt() {
-    expect(TokenType.VARIABLE);
-
-    Token variable = advance(); // eat the variable name
+    Token variable = expectToken(TokenType.VARIABLE);
     switch (token.type()) {
       // Assignment: variable=expression
       case ASSIGN:
@@ -317,39 +310,32 @@ public class Parser implements Phase {
   }
 
   private StatementNode arraySlotAssignment(Token variable) {
-    expect(TokenType.LBRACKET);
-    advance(); // eat the [
+    expectToken(TokenType.LBRACKET);
     // now get an expression
     ExprNode indexNode = expr();
     ArraySetNode asn = new ArraySetNode(variable.text(), indexNode, variable.start());
 
-    expect(TokenType.RBRACKET);
-    advance(); // eat the ]
+    expectToken(TokenType.RBRACKET);
 
-    expect(TokenType.ASSIGN);
-    advance();
+    expectToken(TokenType.ASSIGN);
     ExprNode rhs = expr();
 
     return new AssignmentNode(asn, rhs);
   }
 
   private StatementNode fieldAssignment(Token variable) {
-    expect(TokenType.DOT);
-    advance(); // eat the .
+    expectToken(TokenType.DOT);
 
-    expect(TokenType.VARIABLE);
-    Token fieldName = advance();
+    Token fieldName = expectToken(TokenType.VARIABLE);
     FieldSetNode fsn = new FieldSetNode(variable.text(), fieldName.text(), variable.start());
-    expect(TokenType.ASSIGN);
-    advance();
+    expectToken(TokenType.ASSIGN);
     ExprNode rhs = expr();
 
     return new AssignmentNode(fsn, rhs);
   }
 
   private DeclarationNode declaration(Token varToken) {
-    expect(TokenType.COLON);
-    advance(); // eat the colon
+    expectToken(TokenType.COLON);
     if (token.type().isKeyword()) {
       TokenType declaredType = token.type();
 
@@ -389,44 +375,37 @@ public class Parser implements Phase {
   }
 
   private DeclarationNode parseRecordDeclaration(Token varToken) {
-    expect(TokenType.RECORD);
-    advance(); // eat "record"
-    expect(TokenType.LBRACE);
-    advance();
+    expectToken(TokenType.RECORD);
+    expectToken(TokenType.LBRACE);
 
     // read field declarations
     List<DeclarationNode> fieldNodes = new ArrayList<>();
     while (token.type() != TokenType.RBRACE) {
-      expect(TokenType.VARIABLE);
-      Token fieldVar = advance(); // eat the variable.
+      Token fieldVar = expectToken(TokenType.VARIABLE);
       DeclarationNode decl = declaration(fieldVar);
       fieldNodes.add(decl);
     }
 
-    expect(TokenType.RBRACE);
-    advance();
+    expectToken(TokenType.RBRACE);
     return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start());
   }
 
   /** declaration -> '[' expr ']' */
   private ArrayDeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
     /** while... (dimensions) */
-    expect(TokenType.LBRACKET);
-    advance();
+    expectToken(TokenType.LBRACKET);
     // The size can be variable.
     ExprNode arraySize = expr();
     // TODO(#38): support multidimensional arrays
     ArrayType arrayType = new ArrayType(baseVarType, 1);
-    expect(TokenType.RBRACKET);
-    advance();
+    expectToken(TokenType.RBRACKET);
 
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);
   }
 
   private ProcedureNode procedureDecl(Token varToken) {
     inProc++;
-    expect(TokenType.PROC);
-    advance();
+    expectToken(TokenType.PROC);
     List<Parameter> params = formalParams();
 
     VarType returnType = VarType.VOID;
@@ -439,10 +418,8 @@ public class Parser implements Phase {
   }
 
   private DeclarationNode externDecl(Token varToken) {
-    expect(TokenType.EXTERN);
-    advance(); // eat the extern
-    expect(TokenType.PROC);
-    advance(); // eat the proc
+    expectToken(TokenType.EXTERN);
+    expectToken(TokenType.PROC);
 
     List<Parameter> params = formalParams();
 
@@ -466,8 +443,7 @@ public class Parser implements Phase {
     }
 
     params = commaSeparated(() -> formalParam());
-    expect(TokenType.RPAREN);
-    advance(); // eat the right paren.
+    expectToken(TokenType.RPAREN);
     return params;
   }
 
@@ -475,11 +451,10 @@ public class Parser implements Phase {
    * Parses colon followed by var type.
    */
   private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap) {
-    expect(TokenType.COLON);
-    advance();
+    expectToken(TokenType.COLON);
     if (token.type() == TokenType.VARIABLE) {
       // Record type.
-      Token typeToken = advance(); // eat the record type
+      Token typeToken = expectToken(TokenType.VARIABLE); // eat the record type
       return new RecordReferenceType(typeToken.text());
     }
 
@@ -488,11 +463,11 @@ public class Parser implements Phase {
     if (paramType != null) {
       // We have a param type
       advance(); // eat the param type
+
       // possibly an array. see if there's an open and close bracket
       if (token.type() == TokenType.LBRACKET) {
-        advance();
-        expect(TokenType.RBRACKET);
-        advance();
+        expectToken(TokenType.LBRACKET);
+        expectToken(TokenType.RBRACKET);
         // TODO(#38): Support multidimensional arrays
         return new ArrayType(paramType, 1);
       }
@@ -504,9 +479,7 @@ public class Parser implements Phase {
   }
 
   private Parameter formalParam() {
-    expect(TokenType.VARIABLE);
-
-    Token paramName = advance();
+    Token paramName = expectToken(TokenType.VARIABLE);
     if (token.type() == TokenType.COLON) {
       VarType paramType = parseVarType(VARIABLE_TYPES);
       return new Parameter(paramName.text(), paramType, paramName.start());
@@ -517,15 +490,13 @@ public class Parser implements Phase {
   }
 
   private PrintNode print(Token printToken) {
-    assert (printToken.type() == TokenType.PRINT || printToken.type() == TokenType.PRINTLN);
-    advance();
+    expectToken(TokenType.PRINT, TokenType.PRINTLN);
     ExprNode expr = expr();
     return new PrintNode(expr, printToken.start(), printToken.type() == TokenType.PRINTLN);
   }
 
   private IfNode ifStmt(Token kt) {
-    expect(TokenType.IF);
-    advance();
+    expectToken(TokenType.IF);
 
     List<IfNode.Case> cases = new ArrayList<>();
 
@@ -535,7 +506,7 @@ public class Parser implements Phase {
 
     // while elif: get condition, get statements, add to case list.
     while (token.type() == TokenType.ELIF) {
-      advance();
+      expectToken(TokenType.ELIF);
 
       Node elifCondition = expr();
       Node elifStatements = block();
@@ -544,7 +515,7 @@ public class Parser implements Phase {
 
     Optional<BlockNode> elseBlock = Optional.empty();
     if (token.type() == TokenType.ELSE) {
-      advance();
+      expectToken(TokenType.ELSE);
       elseBlock = Optional.of(block());
     }
 
@@ -552,8 +523,8 @@ public class Parser implements Phase {
   }
 
   private WhileNode whileStmt(Token kt) {
-    expect(TokenType.WHILE);
-    advance();
+    expectToken(TokenType.WHILE);
+
     ExprNode condition = expr();
     Optional<StatementNode> doStatement = Optional.empty();
     if (token.type() == TokenType.DO) {
@@ -565,8 +536,7 @@ public class Parser implements Phase {
   }
 
   private CallNode procedureCall(Token varToken, boolean isStatement) {
-    expect(TokenType.LPAREN);
-    advance(); // eat the lparen
+    expectToken(TokenType.LPAREN);
 
     List<ExprNode> actuals;
     if (token.type() == TokenType.RPAREN) {
@@ -575,8 +545,7 @@ public class Parser implements Phase {
       actuals = commaSeparatedExpressions();
     }
 
-    expect(TokenType.RPAREN);
-    advance(); // eat the rparen
+    expectToken(TokenType.RPAREN);
 
     return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
   }
@@ -776,18 +745,15 @@ public class Parser implements Phase {
       Token keywordToken = unaryToken;
 
       advance();
-      expect(TokenType.LPAREN);
-      advance();
+      expectToken(TokenType.LPAREN);
       ExprNode expr = expr();
-      expect(TokenType.RPAREN);
-      advance();
+      expectToken(TokenType.RPAREN);
 
       return new UnaryNode(keywordToken.type(), expr, keywordToken.start());
     } else if (token.type() == TokenType.NEW) {
       Position start = token.start();
-      advance();
-      expect(TokenType.VARIABLE);
-      Token recordTypeName = advance();
+      expectToken(TokenType.NEW);
+      Token recordTypeName = expectToken(TokenType.VARIABLE);
       return new NewNode(recordTypeName.text(), start);
     }
 
@@ -816,8 +782,7 @@ public class Parser implements Phase {
       // TODO(#38): Support multidimensional arrays (switch to "while" instead of "if")
       if (operator == TokenType.LBRACKET) {
         right = expr();
-        expect(TokenType.RBRACKET);
-        advance();
+        expectToken(TokenType.RBRACKET);
       } else {
         // dot operator.
         right = atom();
@@ -890,14 +855,13 @@ public class Parser implements Phase {
 
           default:
             throw new ParseException(
-                String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
+                String.format("Unexpected '%s'; expected literal, variable, or '('", token.text()),
                 token.start());
         }
       case LPAREN:
-        advance(); // eat lparen
+        expectToken(TokenType.LPAREN);
         ExprNode expr = expr();
-        expect(TokenType.RPAREN);
-        advance(); // eat rparen
+        expectToken(TokenType.RPAREN);
         return expr;
 
       case NULL:
@@ -915,25 +879,21 @@ public class Parser implements Phase {
         }
       default:
         throw new ParseException(
-            String.format("Unexpected '%s'; expected literal, variable or '('", token.text()),
+            String.format("Unexpected '%s'; expected literal, variable, or '('", token.text()),
             token.start());
     }
   }
 
   /** Parse an array constant/literal. */
   private ExprNode arrayLiteral() {
-    expect(TokenType.LBRACKET);
-
-    Token openBracket = advance(); // eat left bracket
-
+    Token openBracket = expectToken(TokenType.LBRACKET);
     List<ExprNode> values = commaSeparatedExpressions();
     if (values.isEmpty()) {
       // will this ever be allowed?
       throw new ParseException("Empty array constants are not allowed yet", openBracket.start());
     }
 
-    expect(TokenType.RBRACKET);
-    advance(); // eat rbracket
+    expectToken(TokenType.RBRACKET);
 
     // First implementation: find the first non-unknown value and use it
     Optional<VarType> baseType =

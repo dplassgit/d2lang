@@ -1054,6 +1054,11 @@ public class ParserTest {
   }
 
   @Test
+  public void invalidReturn() {
+    assertParseError("f:proc {return print}", "expected literal, variable, or");
+  }
+
+  @Test
   public void arrayGet() {
     BlockNode root = parseStatements("a=b[3+c]");
 
