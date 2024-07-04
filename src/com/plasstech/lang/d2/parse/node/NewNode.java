@@ -12,7 +12,7 @@ import com.plasstech.lang.d2.type.VarType;
 public class NewNode extends AbstractNode implements ExprNode {
 
   private final String recordName;
-  private final List<VarType> actualTypes;
+  private final ImmutableList<VarType> actualTypes;
 
   public NewNode(String recordName, Position position) {
     this(recordName, ImmutableList.of(), position);
@@ -21,8 +21,8 @@ public class NewNode extends AbstractNode implements ExprNode {
   public NewNode(String recordName, List<VarType> actualTypes, Position position) {
     super(position);
     this.recordName = recordName;
-    this.actualTypes = actualTypes;
-    this.setVarType(new RecordReferenceType(recordName));
+    this.actualTypes = ImmutableList.copyOf(actualTypes);
+    this.setVarType(new RecordReferenceType(recordName, actualTypes));
   }
 
   public String recordName() {
@@ -52,7 +52,7 @@ public class NewNode extends AbstractNode implements ExprNode {
     return Objects.hashCode(recordName, varType(), getClass());
   }
 
-  public List<VarType> actualTypes() {
+  public ImmutableList<VarType> actualTypes() {
     return actualTypes;
   }
 }

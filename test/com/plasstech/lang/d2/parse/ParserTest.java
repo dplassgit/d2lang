@@ -1411,6 +1411,12 @@ public class ParserTest {
     assertThatParsing("r: record<>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<(3)>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<record>{i: T s: UV}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<T, 1>{}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<>{}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<(3)>{}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<record>{}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<T,>{}").hasError("expected VARIABLE");
+    //assertThatParsing("r: record<int>{}").hasError("expected VARIABLE");
   }
 
   @Test
@@ -1453,6 +1459,17 @@ public class ParserTest {
   }
 
   @Test
+  public void declVar_asGenericRecord() {
+    ProgramNode programNode = assertThatParsing("a: R<string>").succeeds();
+    BlockNode root = programNode.statements();
+    DeclarationNode node = (DeclarationNode) root.statements().get(0);
+    assertThat(node.name()).isEqualTo("a");
+    RecordReferenceType type = (RecordReferenceType) node.varType();
+    assertThat(type.name()).isEqualTo("R");
+    assertThat(type.actualTypes()).containsExactly(VarType.STRING);
+  }
+
+  @Test
   public void recordAsFormalParam() {
     ProgramNode node = assertThatParsing("p:proc(a: R) {}").succeeds();
     BlockNode root = node.statements();
@@ -1464,12 +1481,34 @@ public class ParserTest {
   }
 
   @Test
+  public void genericRecordAsFormalParam() {
+    ProgramNode node = assertThatParsing("p:proc(a: R<int>) {}").succeeds();
+    BlockNode root = node.statements();
+    ProcedureNode proc = (ProcedureNode) root.statements().get(0);
+    ProcedureNode.Parameter param = proc.parameters().get(0);
+    assertThat(param.name()).isEqualTo("a");
+    RecordReferenceType type = (RecordReferenceType) param.varType();
+    assertThat(type.name()).isEqualTo("R");
+    assertThat(type.actualTypes()).containsExactly(VarType.INT);
+  }
+
+  @Test
   public void recordAsReturnType() {
     ProgramNode node = assertThatParsing("p:proc():R {}").succeeds();
     BlockNode root = node.statements();
     ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     RecordReferenceType type = (RecordReferenceType) proc.returnType();
     assertThat(type.name()).isEqualTo("R");
+  }
+
+  @Test
+  public void genericRecordAsReturnType() {
+    ProgramNode programNode = assertThatParsing("p:proc():R<bool, int> {}").succeeds();
+    BlockNode root = programNode.statements();
+    ProcedureNode proc = (ProcedureNode) root.statements().get(0);
+    RecordReferenceType type = (RecordReferenceType) proc.returnType();
+    assertThat(type.name()).isEqualTo("R");
+    assertThat(type.actualTypes()).containsExactly(VarType.BOOL, VarType.INT);
   }
 
   @Test
@@ -1490,6 +1529,14 @@ public class ParserTest {
     AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
     NewNode node = (NewNode) assignment.expr();
     assertThat(node.actualTypes()).containsExactly(VarType.INT);
+  }
+
+  @Test
+  public void newGenericRecord_bad() {
+    assertThatParsing("R: record<T>{i: T} rec = new R<>")
+        .hasError("expected built-in or RECORD type");
+    assertThatParsing("R: record<T>{i: T} rec = new R<int, >")
+        .hasError("expected built-in or RECORD type");
   }
 
   @Test

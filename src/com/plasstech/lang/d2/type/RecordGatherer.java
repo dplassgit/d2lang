@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
@@ -72,6 +73,7 @@ class RecordGatherer extends DefaultNodeVisitor {
     // 2. Make sure no duplicated field names
     // Note, NOT immutable list
     List<String> fieldNames = node.fields().stream().map(DeclarationNode::name).collect(toList());
+    // TODO: use stream/set difference
     Set<String> duplicates = new HashSet<>();
     Set<String> uniques = new HashSet<>();
     for (String fieldName : fieldNames) {
@@ -86,7 +88,25 @@ class RecordGatherer extends DefaultNodeVisitor {
       throw new TypeException(
           String.format(
               "Duplicate field(s) '%s' declared in RECORD '%s'",
-              duplicates.toString(), node.name()),
+              Joiner.on(", ").join(duplicates), node.name()),
+          node.position());
+    }
+
+    duplicates.clear();
+    uniques.clear();
+    for (String typeName : node.formalTypeVariables()) {
+      if (uniques.contains(typeName)) {
+        uniques.remove(typeName);
+        duplicates.add(typeName);
+      } else {
+        uniques.add(typeName);
+      }
+    }
+    if (duplicates.size() > 0) {
+      throw new TypeException(
+          String.format(
+              "Duplicate formal type(s) '%s' declared in RECORD '%s'",
+              Joiner.on(", ").join(duplicates), node.name()),
           node.position());
     }
 

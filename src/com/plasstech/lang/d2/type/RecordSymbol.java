@@ -121,6 +121,15 @@ public class RecordSymbol extends AbstractSymbol {
     return String.format("Record %s: %s", name(), fields);
   }
 
+  public boolean isGeneric() {
+    for (Field field : fields.values()) {
+      if (field.type() instanceof UnboundType) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** In the same order as definition */
   public Collection<String> fieldNames() {
     return fields.keySet();

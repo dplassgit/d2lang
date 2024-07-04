@@ -986,7 +986,17 @@ public class StaticCheckerTest {
   @Test
   public void recordDefinition_simple() {
     SymbolTable symTab = checkProgram("r2: record{s:string i:int b:bool}");
-    assertThat(symTab.getRecursive("r2", RecordSymbol.class)).isNotNull();
+    RecordSymbol recordSymbol = symTab.getRecursive("r2", RecordSymbol.class);
+    assertThat(recordSymbol).isNotNull();
+    assertThat(recordSymbol.isGeneric()).isFalse();
+  }
+
+  @Test
+  public void recordDefinition_generic() {
+    SymbolTable symTab = checkProgram("r2: record<T, U> {s:T i:U b:bool}");
+    RecordSymbol record = symTab.getRecursive("r2", RecordSymbol.class);
+    assertThat(record).isNotNull();
+    assertThat(record.isGeneric()).isTrue();
   }
 
   @Test
@@ -1011,11 +1021,8 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_errors() {
-    //    assertThatTypeChecking("r: record{f:record{f2:int}}")
-    //        .hasError("nested RECORD 'f' in RECORD 'r'");
-    //    assertThatTypeChecking("r: record{p:proc() {} }").hasError("nested PROC 'p' in RECORD 'r'");
     assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
-        .hasError("Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
+        .hasError("Duplicate field\\(s\\) 'f, i' declared in RECORD 'r'");
     assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");
     assertThatTypeChecking("s=3 r:record{a:string[s]} anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
@@ -1024,7 +1031,7 @@ public class StaticCheckerTest {
     assertThatTypeChecking("r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]")
         .hasError("declared type INT to STRING");
     assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
-        .hasError("Duplicate field\\(s\\) '\\[f, i\\]' declared in RECORD 'r'");
+        .hasError("Duplicate field\\(s\\) 'f, i' declared in RECORD 'r'");
     assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");
     assertThatTypeChecking("s=3 r:record{a:string[s]} anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
@@ -1062,6 +1069,42 @@ public class StaticCheckerTest {
   public void recordDefinition_redeclaredInIf() {
     assertThatTypeChecking("if true {r: int r:record{b:bool}}").hasError("redeclared as INT");
     assertThatTypeChecking("if true {r:record{b:bool} r: int}").hasError("redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_error_duplicateName() {
+    assertThatTypeChecking("r: record{f:int} r:record{b:bool}")
+        .hasError("'r' already declared as r: RECORD");
+  }
+
+  @Test
+  public void recordDefinition_error_redeclaredAsRecord() {
+    assertThatTypeChecking("r: int r:record{b:bool}").hasError("redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_error_redeclaredAsInt() {
+    assertThatTypeChecking("r:record{b:bool} r: int").hasError("redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_error_redeclaredInProc() {
+    assertThatTypeChecking("      f:proc{\n"
+        + "  r: int \n"
+        + "  r:record{b:bool}\n"
+        + "}\n").hasError("redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_error_redeclaredInIf() {
+    assertThatTypeChecking("if true {r: int r:record{b:bool}}").hasError("redeclared as INT");
+    assertThatTypeChecking("if true {r:record{b:bool} r: int}").hasError("redeclared as INT");
+  }
+
+  @Test
+  public void recordDefinition_error_repeatedGeneric() {
+    assertThatTypeChecking("r2: record<T, S, S, T, U> {s:T b:bool}")
+        .hasError("Duplicate formal type\\(s\\) 'S, T'");
   }
 
   @Test

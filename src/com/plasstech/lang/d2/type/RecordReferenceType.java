@@ -1,11 +1,21 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.List;
 import java.util.Objects;
+
+import com.google.common.collect.ImmutableList;
 
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType extends PointerType {
+  private final ImmutableList<VarType> actualTypes;
+
   public RecordReferenceType(String recordSymbolName) {
+    this(recordSymbolName, ImmutableList.of());
+  }
+
+  public RecordReferenceType(String recordSymbolName, List<VarType> actualTypes) {
     super(recordSymbolName);
+    this.actualTypes = ImmutableList.copyOf(actualTypes);
   }
 
   @Override
@@ -34,5 +44,9 @@ public class RecordReferenceType extends PointerType {
   @Override
   public int hashCode() {
     return Objects.hash(name(), size()) + 7;
+  }
+
+  public ImmutableList<VarType> actualTypes() {
+    return actualTypes;
   }
 }

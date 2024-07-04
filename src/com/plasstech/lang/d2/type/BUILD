@@ -57,12 +57,12 @@ java_library(
     srcs = [
         "ArrayType.java",
         "DefaultVarType.java",
-        "GenericType.java",
         "NullType.java",
         "PointerType.java",
         "RecordReferenceType.java",
         "SimpleType.java",
         "StringType.java",
+        "UnboundType.java",
         "UnknownType.java",
         "VarType.java",
         "VarTypeRegistry.java",
