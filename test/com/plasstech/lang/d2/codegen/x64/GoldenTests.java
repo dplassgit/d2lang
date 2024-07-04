@@ -19,6 +19,7 @@ import com.google.testing.junit.testparameterinjector.TestParameter.TestParamete
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.State;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
@@ -30,23 +31,23 @@ public class GoldenTests {
   @Test
   public void compileNonGoldenSample(
       @TestParameter(valuesProvider = NonGoldenFilesProvider.class) File file) throws IOException {
-    compileOneFile(file, optimize);
+    compileOneFile(file);
   }
 
   @Test
   public void compileBootstrap() throws IOException {
-    compileOneFile(new File("src/bootstrap/v0/v0.d"), optimize);
+    compileOneFile(new File("src/bootstrap/v0/v0.d"));
   }
 
   @Test
   public void compileGames() throws IOException {
-    compileOneFile(new File("samples/games/ge.d"), optimize);
+    compileOneFile(new File("samples/games/ge.d"));
   }
 
   // Just compile, no running
-  private void compileOneFile(File file, boolean goldenOptimize) throws IOException {
+  private void compileOneFile(File file) throws IOException {
     if (System.getenv("TEST_SRCDIR") == null) {
-      compileFile(file.getAbsolutePath(), goldenOptimize);
+      compileFile(file.getAbsolutePath());
     } else {
       // running in bazel
       fail("Sorry, cannot test in bazel");
@@ -98,28 +99,31 @@ public class GoldenTests {
     }
   }
 
-  private void compileFile(String path, boolean goldenOptimize) throws IOException {
-    System.out.println("path = " + path);
+  private void compileFile(String path) throws IOException {
+    // System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
 
     CompilationConfiguration config =
         CompilationConfiguration.builder()
             .setSourceCode(text)
             .setFilename(path)
-            .setOptimize(goldenOptimize)
+            .setOptimize(optimize)
             .setCodeGenDebugLevel(0)
             .setOptDebugLevel(0)
             .build();
-    new YetAnotherCompiler().compile(config);
+    State result = new YetAnotherCompiler().compile(config);
+    if (result.error()) {
+      fail(result.errorMessage());
+    }
   }
 
   private void testFromFile(String path) throws Exception {
     System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
     assertThatCompiling(text)
-        .withOptimize(true)
+        .withOptimize(optimize)
         .withCodeGenDebugLevel(1)
-        .withOptDebugLevel(1)
+        .withOptDebugLevel(0)
         .executedEqualsInterpreted();
   }
 }
