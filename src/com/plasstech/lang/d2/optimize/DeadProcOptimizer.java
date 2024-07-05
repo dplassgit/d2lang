@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 
-public class DeadProcOptimizer extends LineOptimizer {
+class DeadProcOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private Set<String> calledProcs = new HashSet<>();

@@ -7,7 +7,7 @@ import com.plasstech.lang.d2.common.TokenType;
 /**
  * Converts a = b + (-1) to a = b - 1 and a = b - (-1) to a = b + 1
  */
-public class NormalizeNegativesOptimizer extends LineOptimizer {
+class NormalizeNegativesOptimizer extends LineOptimizer {
   NormalizeNegativesOptimizer(int debugLevel) {
     super(debugLevel);
   }

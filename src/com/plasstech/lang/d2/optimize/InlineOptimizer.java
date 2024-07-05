@@ -67,8 +67,8 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       }
     }
 
-    code = removeMatchingOps(code, DeallocateTemp.class);
-    code = removeMatchingOps(code, Nop.class);
+    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
+    code = Optimizer.removeMatchingOps(code, Nop.class);
     LongTempDeallocator deallocator = new LongTempDeallocator();
     code = deallocator.optimize(ImmutableList.copyOf(code), null);
 

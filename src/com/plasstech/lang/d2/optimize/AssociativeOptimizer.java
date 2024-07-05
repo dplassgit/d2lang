@@ -22,7 +22,7 @@ import com.plasstech.lang.d2.type.VarType;
  * _temp = a > 1
  * </pre>
  */
-public class AssociativeOptimizer extends LineOptimizer {
+class AssociativeOptimizer extends LineOptimizer {
   private static final Set<TokenType> ASSOCIATIVE_OPERATORS =
       ImmutableSet.of(
           TokenType.AND,

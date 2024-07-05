@@ -1,26 +1,20 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.type.SymbolTable;
 
-public class NopOptimizer implements Optimizer {
-
-  private boolean changed;
-
+/**
+ * Removes Nop operations from the IL program.
+ */
+class NopOptimizer extends DefaultOptimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> program, SymbolTable symtab) {
-    ImmutableList<Op> noNops = program
-        .stream()
-        .filter(op -> !(op instanceof Nop))
-        .collect(ImmutableList.toImmutableList());
-    changed = noNops.size() < program.size();
-    return noNops;
-  }
-
-  @Override
-  public boolean isChanged() {
-    return changed;
+    List<Op> noNops = Optimizer.removeMatchingOps(program, Nop.class);
+    setChanged(noNops.size() < program.size());
+    return ImmutableList.copyOf(noNops);
   }
 }

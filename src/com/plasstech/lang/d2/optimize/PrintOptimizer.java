@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.PrintFormats.Format;
 import com.plasstech.lang.d2.type.VarType;
 
 /** Optimizes printing constants, and consecutive print statements, if they're constant strings. */
-public class PrintOptimizer extends LineOptimizer {
+class PrintOptimizer extends LineOptimizer {
 
   PrintOptimizer(int debugLevel) {
     super(debugLevel);

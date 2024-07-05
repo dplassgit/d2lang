@@ -27,7 +27,7 @@ public interface Optimizer {
     }
   }
 
-  default List<Op> removeMatchingOps(List<Op> program,
+  static List<Op> removeMatchingOps(List<Op> program,
       Class<? extends Op> clazz) {
     return program
         .stream()

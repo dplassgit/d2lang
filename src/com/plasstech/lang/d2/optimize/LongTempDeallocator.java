@@ -25,7 +25,7 @@ public class LongTempDeallocator implements Optimizer {
     // 1. remove all deallocations
     List<Op> code = new ArrayList<>(program);
     // TODO: capture the location of all deallocates
-    code = removeMatchingOps(code, DeallocateTemp.class);
+    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
 
     // 2. add the correct ones.
     Set<Operand> longTempsRead = new HashSet<>();

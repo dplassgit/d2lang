@@ -23,7 +23,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
  * 
  * TODO: this is N^2. It could be linear.
  */
-public class CommonSubexpressionOptimizer extends LineOptimizer {
+class CommonSubexpressionOptimizer extends LineOptimizer {
 
   private static final List<Class<? extends Op>> ASSIGNMENT_OPS =
       ImmutableList.of(
@@ -43,7 +43,7 @@ public class CommonSubexpressionOptimizer extends LineOptimizer {
   @Override
   protected void preProcess() {
     // Remove all DeallocateTemp ops.
-    code = removeMatchingOps(code, DeallocateTemp.class);
+    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
   }
 
   @Override

@@ -65,8 +65,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
   @Override
   protected void postProcess() {
     // Fix up deallocate temps that may need to move due to propagation of long temps
-    code = removeMatchingOps(code, DeallocateTemp.class);
-    code = removeMatchingOps(code, Nop.class);
+    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
+    code = Optimizer.removeMatchingOps(code, Nop.class);
     LongTempDeallocator deallocator = new LongTempDeallocator();
     code = deallocator.optimize(ImmutableList.copyOf(code), null);
     setChanged(isChanged() || deallocator.isChanged());

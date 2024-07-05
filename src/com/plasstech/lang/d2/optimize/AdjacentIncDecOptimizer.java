@@ -25,7 +25,7 @@ import com.plasstech.lang.d2.common.TokenType;
  * 
  * And vice/versa.
  */
-public class AdjacentIncDecOptimizer extends LineOptimizer {
+class AdjacentIncDecOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   AdjacentIncDecOptimizer(int debugLevel) {
