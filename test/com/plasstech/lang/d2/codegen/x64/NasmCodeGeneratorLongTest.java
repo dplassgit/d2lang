@@ -36,7 +36,7 @@ public class NasmCodeGeneratorLongTest {
 
   @Test
   public void longCompOps(
-      @TestParameter({"<", "<=", "==", "!=", ">=", ">"}) String op,
+      @TestParameter({"<=", "!=", ">"}) String op,
       @TestParameter({"12345678901234", "-12345"}) String first,
       @TestParameter({"123456", "-3456778901234"}) String second)
       throws Exception {

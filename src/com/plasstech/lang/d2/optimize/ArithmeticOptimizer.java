@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.DivisionByZeroException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
@@ -367,7 +368,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     if (ConstantOperand.isAnyZero(right)) {
-      throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      throw new DivisionByZeroException(op.position());
     }
     if (left.equals(right)) {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.fromValue(1, left.type()),
@@ -399,7 +400,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
       }
     } catch (ArithmeticException e) {
-      throw new D2RuntimeException("Division by 0", op.position(), "Arithmetic");
+      throw new DivisionByZeroException(op.position());
     }
   }
 

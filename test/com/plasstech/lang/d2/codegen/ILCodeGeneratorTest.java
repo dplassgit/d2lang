@@ -17,6 +17,10 @@ import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 
+/**
+ * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
+ * program, *not* that the code is correct.
+ */
 public class ILCodeGeneratorTest {
   @Test
   public void print() {
@@ -230,6 +234,11 @@ public class ILCodeGeneratorTest {
   @Test
   public void recordWithArray() {
     generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
+  }
+
+  @Test
+  public void divBy0Literal() {
+    expectError("a=1 b=a/0 println b", PhaseName.IL_CODEGEN);
   }
 
   private static List<Op> generateProgram(String program) {

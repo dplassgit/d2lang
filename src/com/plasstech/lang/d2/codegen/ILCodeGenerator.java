@@ -31,6 +31,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.DivisionByZeroException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
@@ -550,7 +551,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   }
 
   private Operand divBy0Check(Node rightNode, Operand right) {
-    if (right.isConstant() && !ConstantOperand.isAnyZero(right)) {
+    if (right.isConstant()) {
+      if (ConstantOperand.isAnyZero(right)) {
+        throw new DivisionByZeroException(rightNode.position());
+      }
       return right;
     }
     Position position = rightNode.position();

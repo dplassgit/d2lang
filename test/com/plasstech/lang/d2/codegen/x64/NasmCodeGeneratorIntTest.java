@@ -128,6 +128,7 @@ public class NasmCodeGeneratorIntTest {
 
   @Test
   public void divisionByZeroGlobal() throws Exception {
+    assertThatCompiling("a=1 println a/0").hasCompileTimeError("Division by 0");
     String sourceCode = "a=0 b=1/a";
     assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
   }
