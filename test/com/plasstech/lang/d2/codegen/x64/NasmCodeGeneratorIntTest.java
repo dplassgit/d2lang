@@ -24,8 +24,8 @@ public class NasmCodeGeneratorIntTest {
   @Test
   public void intBinOps(
       @TestParameter({"+", "-", "*", "&", "|", "^"}) String op,
-      @TestParameter({"1234", "-23456"}) int first,
-      @TestParameter({"2345", "-34567"}) int second)
+      @TestParameter({"1024", "-23456"}) int first,
+      @TestParameter({"2048", "-34567"}) int second)
       throws Exception {
     assertThatCompiling(String.format(
         "a=%d b=%d "
@@ -96,17 +96,25 @@ public class NasmCodeGeneratorIntTest {
   }
 
   @Test
-  public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op) throws Exception {
+  public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op,
+      @TestParameter boolean optimize) throws Exception {
     String program =
         String.format(
-            "f:proc(a:int) {b=4 b=b %s a println a a=a%sb println a c=a<<2 println c} f(2)", op,
+            "f:proc(a:int) {b=4 b=b %s a println a a=a %s b println a c=a<<2 println c} f(2)", op,
             op);
-    assertThatCompiling(program).executedEqualsInterpreted();
+    assertThatCompiling(program).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
-  public void shiftSelf() throws Exception {
-    assertThatCompiling("f:proc(a:int) {a=a << a println a} f(2)").executedEqualsInterpreted();
+  public void shiftSelfParam(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling("f:proc(a:int) {a=a << a println a} f(2)").withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void shiftSelfLocal(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling("f:proc(a:int) {b=a+1 b=b << b println b} f(2)").withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test

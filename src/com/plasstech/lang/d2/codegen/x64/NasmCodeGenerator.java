@@ -303,15 +303,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
   @Override
   public void visit(BinOp op) {
-    // 1. get left
     VarType leftType = op.left().type();
 
-    ResolvedOperand leftRo = resolver.resolveFully(op.left());
-    String leftName = leftRo.name();
-    // 2. get right
-    ResolvedOperand rightRo = resolver.resolveFully(op.right());
-
     Location dest = op.destination();
+    // TODO: I think it's possible we don't need this anymore, because resolveFully should
+    // probably do the right thign.
     boolean reuse = false;
     if (op.left().isTemp() && op.destination().isTemp()
         && (leftType.isNumeric() || leftType == VarType.BOOL)
@@ -337,6 +333,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     Register tempReg = null;
 
     // 5. [op] dest, right
+    ResolvedOperand leftRo = resolver.resolveFully(op.left());
+    ResolvedOperand rightRo = resolver.resolveFully(op.right());
     TokenType operator = op.operator();
     if (leftType == VarType.BOOL) {
       switch (operator) {
@@ -365,7 +363,6 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     } else if (leftType == VarType.DOUBLE) {
       op.accept(doubleGenerator);
     } else if (leftType.isIntegral()) {
-      String size = Size.of(leftType).asmType;
       switch (operator) {
         case MULT:
           if (leftType == VarType.BYTE) {
@@ -407,70 +404,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
         case SHIFT_LEFT:
         case SHIFT_RIGHT:
-          // mov dest, left, then mov cl, amount to shirt, then shift.
-          if (op.right().isConstant()) {
-            // easy. left << right or left >> right
-            // TODO this will fail if dest and left are in memory
-            if (!reuse) {
-              resolver.mov(op.left(), dest);
-            }
-            generateBinOp(rightRo, destRo, operator);
-          } else {
-            // TODO: bug https://github.com/dplassgit/d2lang/issues/177 - this is stupidly complex.
-            Register rightReg = null;
-            String rightName = rightRo.name();
-            if (rightRo.register() == RCX) {
-              // Have to move it
-              rightReg = resolver.allocate(VarType.INT);
-              Operand rightOp = new RegisterLocation(op.right().toString(), rightReg, leftType);
-              emitter.emit("mov %s, %s  ; save right to a different register",
-                  rightReg.nameByType(leftType),
-                  rightName);
-              // NOTE: rightName IS OVERWRITTEN
-              rightName = resolver.resolve(rightOp);
-            }
-            // TODO: maybe use tempReg for this
-            Register destReg = null;
-            if (resolver.isInRegister(dest, RCX)) {
-              destReg = resolver.allocate(VarType.INT);
-              Location destRegLocation = new RegisterLocation(dest.name(), destReg, dest.type());
-              emitter.emit("; dest is RCX, have to do an extra mov:");
-              resolver.mov(dest, destRegLocation);
-              // NOTE: destName IS OVERWRITTEN
-              destName = resolver.resolve(destRegLocation);
-            }
-
-            RegisterState registerState = null;
-            if (destReg == null) {
-              // it wasn't in rcx, so we have to push now
-              registerState = RegisterState.condPush(emitter, resolver, ImmutableList.of(RCX));
-            }
-            if (!reuse) {
-              // Start with dest = left. CANNOT use destRo.operand because destName might have been
-              // overwritten
-              // MUST use "size" because it might be memory
-              emitter.emit("mov %s %s, %s ; shift setup (source)", size, destName, leftName);
-            }
-            // NOTE: rightName was overwritten (though, it is in both rightRo.operand AND rightName)
-            // move right (amount to shift) to RCX
-            emitter.emit("mov %s %s, %s ; get amount to shift into CL",
-                size,
-                RCX.nameByType(leftType),
-                rightName);
-            // NOTE: destName may have been overwritten
-            emitter.emit("%s %s, CL ; shift %s", BINARY_OPCODE.get(operator), destName, operator);
-            if (rightReg != null) {
-              resolver.deallocate(rightReg);
-            }
-            if (destReg != null) {
-              emitter.emit("; destreg was set, copy it out now");
-              resolver.mov(VarType.INT, destReg, RCX);
-              resolver.deallocate(destReg);
-            } else {
-              // it wasn't in RCX; we already put it in the right place
-              registerState.condPop();
-            }
-          }
+          generateShift(leftRo, rightRo, reuse, destRo, operator);
           break;
 
         case EQEQ:
@@ -519,6 +453,58 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       resolver.deallocate(op.left());
     }
     resolver.deallocate(op.right());
+  }
+
+  private void generateShift(ResolvedOperand leftRo,
+      ResolvedOperand rightRo, boolean reuxse, ResolvedOperand destRo,
+      TokenType operator) {
+
+    if (rightRo.isConstant()) {
+      // Easy, because shl and sar can take a constant
+      // mov dest, left
+      // mov cl, right (amount to shift)
+      // shl dest, cl
+      // easy. left << right or left >> right
+
+      // dest = left. it does this smartly.
+      resolver.mov(leftRo, destRo);
+
+      if (!ConstantOperand.isAnyZero(rightRo.operand())) {
+        // if rightRo is 0, skip.
+        // dest = dest << right or dest = dest >> right
+        generateBinOp(rightRo, destRo, operator);
+      }
+      return;
+    }
+
+    if (resolver.isInRegister(destRo, RCX)) {
+      // allocate temp reg
+      // temp = left
+      // rcx = right ;; mov is smart enough to not do this if not necessary
+      // temp = temp << cl   ; can ONLY do temp = temp
+      // dest = temp
+      Register tempReg = resolver.allocate(VarType.INT);
+      emitter.emit("; dest in rcx - go through temp reg %s", tempReg);
+      resolver.mov(leftRo, tempReg);
+      resolver.mov(rightRo, RCX);
+      emitter.emit("%s %s, CL",
+          BINARY_OPCODE.get(operator),
+          tempReg.nameByType(leftRo.type()));
+      resolver.mov(tempReg, destRo);
+      resolver.deallocate(tempReg);
+      return;
+    }
+
+    // destination is not in rcx.
+    // dest = left ;; mov is smart enough to not do this if not necessary
+    // rcx = right ;; mov is smart enough to not do this if not necessary
+    // dest = dest << cl
+    emitter.emit("; dest not in rcx");
+    resolver.mov(leftRo, destRo);
+    resolver.mov(rightRo, RCX);
+    emitter.emit("%s %s, CL",
+        BINARY_OPCODE.get(operator),
+        destRo.name());
   }
 
   // Generate dest=dest (operator) source

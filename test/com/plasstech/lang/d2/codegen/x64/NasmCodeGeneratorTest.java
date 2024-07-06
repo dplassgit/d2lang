@@ -56,58 +56,48 @@ public class NasmCodeGeneratorTest {
 
   @Test
   public void shiftLeftParamParamParamByte() {
-    Operand right = LocationUtils.newParamLocation("right", VarType.BYTE, 0, 0);
-    Operand left = LocationUtils.newParamLocation("left", VarType.BYTE, 0, 0);
     Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 0, 0);
-    BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
+    BinOp shiftOp = new BinOp(dest, dest, TokenType.SHIFT_LEFT, dest, null);
 
     generateOne(shiftOp);
     assertThat(emitter)
         .containsAtLeast(
             "mov BL, CL", // save ecx (param) -> temp ebx
-            "mov SIL, CL", // save ecx (param) -> dest esi
-            "mov BYTE SIL, CL", // set up dest. this is stupid
-            "mov BYTE CL, BL", // set up ecx. this is stupid, but, shrug.
-            "shl SIL, CL")
+            "shl BL, CL",
+            "mov CL, BL")
         .inOrder();
   }
 
   @Test
   public void shiftLeftParamParamParam() {
-    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 0, 0);
-    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 0, 0);
     Location dest = LocationUtils.newParamLocation("dest", VarType.INT, 0, 0);
-    BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
+    BinOp shiftOp = new BinOp(dest, dest, TokenType.SHIFT_LEFT, dest, null);
 
     generateOne(shiftOp);
     assertThat(emitter)
         .containsAtLeast(
             "mov EBX, ECX", // save ecx (param) -> temp ebx
-            "mov ESI, ECX", // save ecx (param) -> dest esi
-            "mov DWORD ESI, ECX", // set up dest. this is stupid
-            "mov DWORD ECX, EBX", // set up ecx. this is stupid, but, shrug.
-            "shl ESI, CL")
+            "shl EBX, CL",
+            "mov ECX, EBX")
         .inOrder();
   }
 
   @Test
   public void shiftLeftTempParamParam() {
     registers.reserve(IntRegister.RCX);
-    Operand right = LocationUtils.newParamLocation("right", VarType.INT, 0, 0);
-    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 0, 0);
+    // rdx
+    Operand left = LocationUtils.newParamLocation("left", VarType.INT, 1, 0);
+    // should be rbx
     Location dest = LocationUtils.newTempLocation("dest", VarType.INT);
-    BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, right, null);
+    BinOp shiftOp = new BinOp(dest, left, TokenType.SHIFT_LEFT, left, null);
 
     generateOne(shiftOp);
 
     assertThat(emitter)
         .containsAtLeast(
-            "mov ESI, ECX",
-            "push RCX",
-            "mov DWORD EBX, ECX", // this is stupid
-            "mov DWORD ECX, ESI", // this is stupid, but, shrug.
-            "shl EBX, CL",
-            "pop RCX")
+            "mov EBX, EDX", // put left into ebx/dest
+            "mov ECX, EDX", // put shift amount into ecx
+            "shl EBX, CL")
         .inOrder();
   }
 
@@ -123,7 +113,7 @@ public class NasmCodeGeneratorTest {
     assertThat(emitter)
         .containsAtLeast(
             "mov DWORD EBX, [RBP - 12]", // left (dest)
-            "mov DWORD ECX, EDX", // right (amount)
+            "mov ECX, EDX", // right (amount)
             "shl EBX, CL")
         .inOrder();
   }
@@ -139,7 +129,7 @@ public class NasmCodeGeneratorTest {
 
     assertThat(emitter)
         .containsAtLeast(
-            "mov DWORD EBX, R8d", // left (dest)
+            "mov EBX, R8d", // left (dest)
             "mov DWORD ECX, [RBP - 12]", // right (amount)
             "shl EBX, CL")
         .inOrder();
@@ -157,7 +147,7 @@ public class NasmCodeGeneratorTest {
     assertThat(emitter)
         .containsAtLeast(
             "mov DWORD EBX, [RBP - 12]", // left (dest)
-            "mov DWORD ECX, R8d", // right (amount)
+            "mov ECX, R8d", // right (amount)
             "shl EBX, CL")
         .inOrder();
   }

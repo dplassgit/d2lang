@@ -239,6 +239,10 @@ class Resolver implements RegistersInterface {
     return toRegister(arg) == register;
   }
 
+  boolean isInRegister(ResolvedOperand arg, Register register) {
+    return arg.isRegister() && arg.register().equals(register);
+  }
+
   /** Allocate and return a register. */
   @Override
   public Register reserve(Register r) {

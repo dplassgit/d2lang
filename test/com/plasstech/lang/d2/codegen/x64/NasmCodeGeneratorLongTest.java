@@ -72,33 +72,37 @@ public class NasmCodeGeneratorLongTest {
   }
 
   @Test
-  public void shiftOps() throws Exception {
+  public void shiftOps(@TestParameter boolean optimize) throws Exception {
     String op = ">>";
     assertThatCompiling(
         String.format("a=123L b=4L c=a%sb println c a=-234L d=b%sa println d", op, op))
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
   @Test
-  public void shiftConstant() throws Exception {
+  public void shiftConstant(@TestParameter boolean optimize) throws Exception {
     String op = "<<";
     assertThatCompiling(
         String.format("a=123L c=a %s 4L println c a=-234L d=a %s 4L println d", op, op))
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
   @Test
-  public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op) throws Exception {
+  public void shiftOpsProc(@TestParameter({"<<", ">>"}) String op, @TestParameter boolean optimize)
+      throws Exception {
     String program =
         String.format(
             "f:proc(a:long) {b=4L b=b %s a println a a=a%sb println a c=a<<2L println c} f(2L)",
             op, op);
-    assertThatCompiling(program).executedEqualsInterpreted();
+    assertThatCompiling(program).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
-  public void shiftSelf() throws Exception {
-    assertThatCompiling("f:proc(a:long) {a=a<<a println a} f(2L)").executedEqualsInterpreted();
+  public void shiftSelf(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling("f:proc(a:long) {a=a<<a println a} f(2L)").withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test
