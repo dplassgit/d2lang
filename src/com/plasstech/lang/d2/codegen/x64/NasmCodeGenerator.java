@@ -479,10 +479,10 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
     if (resolver.isInRegister(destRo, RCX)) {
       // allocate temp reg
-      // temp = left
+      // tempreg = left
       // rcx = right ;; mov is smart enough to not do this if not necessary
-      // temp = temp << cl   ; can ONLY do temp = temp
-      // dest = temp
+      // tempreg = tempreg << cl
+      // dest = tempreg
       Register tempReg = resolver.allocate(VarType.INT);
       emitter.emit("; dest in rcx - go through temp reg %s", tempReg);
       resolver.mov(leftRo, tempReg);
@@ -500,11 +500,22 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     // rcx = right ;; mov is smart enough to not do this if not necessary
     // dest = dest << cl
     emitter.emit("; dest not in rcx");
+    RegisterState registerState = null;
+    // IMPORTANT: this must be before moving rightro to RCX; otherwise it might be overwritten.
     resolver.mov(leftRo, destRo);
-    resolver.mov(rightRo, RCX);
+    if (!resolver.isInRegister(rightRo, RCX)) {
+      // if rcx is used, and rightro isn't it, save it
+      // If it's not in RCX, we may need to save it.
+      registerState = RegisterState.condPush(emitter, registers, ImmutableList.of(RCX));
+      // since it's not in RCX, put it there.
+      resolver.mov(rightRo, RCX);
+    }
     emitter.emit("%s %s, CL",
         BINARY_OPCODE.get(operator),
         destRo.name());
+    if (registerState != null) {
+      registerState.condPop();
+    }
   }
 
   // Generate dest=dest (operator) source

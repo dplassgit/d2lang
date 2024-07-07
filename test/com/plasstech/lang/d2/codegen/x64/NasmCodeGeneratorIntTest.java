@@ -106,6 +106,32 @@ public class NasmCodeGeneratorIntTest {
   }
 
   @Test
+  public void shiftOpsGlobal(@TestParameter({"<<", ">>"}) String op,
+      @TestParameter boolean optimize) throws Exception {
+    String program =
+        String.format(
+            "a=2 b=4 b=b %s a println a a=a %s b println a c=a<<2 println c", op,
+            op);
+    assertThatCompiling(program).withOptimize(optimize).executedEqualsInterpreted();
+  }
+
+  @Test
+  public void shiftParamWhenRcxIsUsed(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "f:proc(donottouch: int, a:int) {a=a << a println a println donottouch} f(1, 2)")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void shiftParamInExpression(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "f:proc(b: int, a:int) {a=(b>>2) + a << (a+b) println a} f(256, 2)")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
   public void shiftSelfParam(@TestParameter boolean optimize) throws Exception {
     assertThatCompiling("f:proc(a:int) {a=a << a println a} f(2)").withOptimize(optimize)
         .executedEqualsInterpreted();
