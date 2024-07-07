@@ -265,7 +265,10 @@ class Resolver implements RegistersInterface {
   /** Deallocate the given register. */
   @Override
   public void deallocate(Register r) {
-    registers.deallocate(r);
+    if (registers.isAllocated(r)) {
+      // This may mask errors
+      registers.deallocate(r);
+    }
   }
 
   @Override

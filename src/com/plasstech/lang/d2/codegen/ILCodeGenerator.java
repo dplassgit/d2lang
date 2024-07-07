@@ -262,7 +262,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   public void visit(ArrayLiteralNode node) {
     // 1. allocate an array of the desired type and length
     // 2. set each value of the array to what we want.
-    Location destination = allocateTemp(node.varType());
+    Location destination = allocateLongTemp(node.varType());
     node.setLocation(destination);
 
     ArrayType arrayType = node.arrayType();
@@ -282,6 +282,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
               true,
               node.position()));
     }
+    emit(new DeallocateTemp(destination, node.position()));
   }
 
   @Override

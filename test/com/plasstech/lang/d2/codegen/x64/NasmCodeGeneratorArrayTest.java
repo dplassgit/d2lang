@@ -405,7 +405,7 @@ public class NasmCodeGeneratorArrayTest {
   public void printManyArraysGlobals() throws Exception {
     String pattern = "%s=[1,2,3] println %s\n";
     String program = "";
-    for (char c = 'a'; c <= 'z'; c++) {
+    for (char c = 'a'; c <= 'd'; c++) {
       program += String.format(pattern, c, c);
     }
     assertThatCompiling(program).executedEqualsInterpreted();

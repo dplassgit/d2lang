@@ -306,8 +306,6 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     VarType leftType = op.left().type();
 
     Location dest = op.destination();
-    // TODO: I think it's possible we don't need this anymore, because resolveFully should
-    // probably do the right thign.
     boolean reuse = false;
     if (op.left().isTemp() && op.destination().isTemp()
         && (leftType.isNumeric() || leftType == VarType.BOOL)
@@ -341,9 +339,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         case AND:
         case OR:
         case XOR:
-          if (!reuse) {
-            resolver.mov(op.left(), dest);
-          }
+          resolver.mov(op.left(), dest);
           generateBinOp(rightRo, destRo, operator);
           break;
 
@@ -353,7 +349,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = generateCmp(leftRo, rightRo, operator, destName);
+          generateCmp(leftRo, rightRo, operator, destName);
           break;
 
         default:
@@ -396,15 +392,13 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         case BIT_XOR:
         case MINUS:
         case PLUS:
-          if (!reuse) {
-            resolver.mov(op.left(), dest);
-          }
+          resolver.mov(op.left(), dest);
           generateBinOp(rightRo, destRo, operator);
           break;
 
         case SHIFT_LEFT:
         case SHIFT_RIGHT:
-          generateShift(leftRo, rightRo, reuse, destRo, operator);
+          generateShift(leftRo, rightRo, destRo, operator);
           break;
 
         case EQEQ:
@@ -413,7 +407,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         case GEQ:
         case LT:
         case LEQ:
-          tempReg = generateCmp(leftRo, rightRo, operator, destName);
+          generateCmp(leftRo, rightRo, operator, destName);
           break;
 
         case DIV:
@@ -429,7 +423,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       switch (operator) {
         case EQEQ:
         case NEQ:
-          tempReg = generateCmp(leftRo, rightRo, operator, destName);
+          generateCmp(leftRo, rightRo, operator, destName);
           break;
 
         case DOT:
@@ -445,18 +439,19 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       fail(op.position(), "Cannot do anything (%s) on %ss (yet?)", operator, leftType);
     }
 
+    // This is just a convenience so all the sub-methods don't have to deallocate tempReg 
+    // individually. Thanks, I hate it.
     if (tempReg != null) {
       resolver.deallocate(tempReg);
     }
-    if (!leftType.isArray() && !reuse) {
-      // don't deallocate yet so that array literal assignments work.
+    if (!reuse) {
       resolver.deallocate(op.left());
     }
     resolver.deallocate(op.right());
   }
 
   private void generateShift(ResolvedOperand leftRo,
-      ResolvedOperand rightRo, boolean reuxse, ResolvedOperand destRo,
+      ResolvedOperand rightRo, ResolvedOperand destRo,
       TokenType operator) {
 
     if (rightRo.isConstant()) {
@@ -542,7 +537,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         source.name());
   }
 
-  private Register generateCmp(ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator,
+  private void generateCmp(ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator,
       String destName) {
     Register tempReg = null;
     if (directCompare(leftRo, rightRo)) {
@@ -573,7 +568,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       emitter.emit("cmp %s, %s  ; indirect comparison", tempRegName, rightRo.name());
     }
     emitter.emit("%s %s", BINARY_OPCODE.get(operator), destName);
-    return tempReg;
+    resolver.deallocate(tempReg);
   }
 
   /** returns true if we can directly compare left and right. */
