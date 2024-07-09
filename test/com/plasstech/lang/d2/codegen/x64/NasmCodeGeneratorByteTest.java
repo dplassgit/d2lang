@@ -36,12 +36,18 @@ public class NasmCodeGeneratorByteTest {
 
   @Test
   public void byteMul() throws Exception {
-    assertThatCompiling("f:proc {a=0y3e b=0y2 c=a * b print c} f()").withOptimize(optimize)
+    assertThatCompiling("f1:proc {a=0y3e b=0y2 c=a * b * 0y03 print c} f1()").withOptimize(optimize)
         .executedEqualsInterpreted();
-    assertThatCompiling("f:proc(a:byte, b:byte) {c=a * b print c} f(0y3e, 0y2)")
+    assertThatCompiling("f2:proc(a:byte, b:byte) {c=a * b print c} f2(0y3e, 0y2)")
         .withOptimize(optimize).executedEqualsInterpreted();
-    assertThatCompiling("b=0y2 f:proc(a:byte) {c=a * b print c} f(0y3e)")
+    assertThatCompiling("b=0y2 f3:proc(a:byte) {c=a * b print c} f3(0y3e)")
         .withOptimize(optimize).executedEqualsInterpreted();
+  }
+
+  @Test
+  public void byteMulAdjacentInMemory() throws Exception {
+    assertThatCompiling("a=0y3e b=0y2 f1:proc {c=a * b * 0y03 print c} f1()").withOptimize(optimize)
+        .executedEqualsInterpreted();
   }
 
   @Test

@@ -20,6 +20,7 @@ import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
+import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
@@ -111,7 +112,7 @@ public class ExecutionSubject extends Subject {
     state.throwOnError();
 
     if (config.optimize()) {
-      //      state = new NasmOptimizer().execute(state);
+      state = new NasmOptimizer().execute(state);
     }
 
     if (config.codeGenDebugLevel() > 0) {

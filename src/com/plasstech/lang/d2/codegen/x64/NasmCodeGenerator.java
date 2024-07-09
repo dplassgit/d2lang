@@ -285,7 +285,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     if (condition.isConstant()) {
       int condAsNumber = Integer.parseInt(condAsString);
       if (!((condAsNumber == 0) ^ op.isNot())) {
-        // If both true or both false, unconditionally jump to destination. 
+        // If both true or both false, unconditionally jump to destination.
         emitter.emit("jmp %s", destination);
       }
     } else {
@@ -328,8 +328,6 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     ResolvedOperand destRo = resolver.resolveFully(dest);
     String destName = destRo.name();
 
-    Register tempReg = null;
-
     // 5. [op] dest, right
     ResolvedOperand leftRo = resolver.resolveFully(op.left());
     ResolvedOperand rightRo = resolver.resolveFully(op.right());
@@ -362,29 +360,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       switch (operator) {
         case MULT:
           if (leftType == VarType.BYTE) {
-            // This might be able to be simplified, but, shrug.
-            // 1. move left to a (new) reg
-            tempReg = resolver.allocate(leftType);
-            resolver.mov(op.left(), tempReg);
-
-            // 2. move right to a reg if it's not in one already
-            Register rightReg = rightRo.register();
-            boolean rightAllocated = false;
-            if (rightReg == null) {
-              rightReg = resolver.allocate(leftType);
-              resolver.mov(op.right(), rightReg);
-              rightAllocated = true;
-            }
-
-            // 3. temp = left * right
-            emitter.emit("imul %s, %s", tempReg.nameByType(VarType.SHORT),
-                rightReg.nameByType(VarType.SHORT));
-
-            // 4. mov dest, temp
-            resolver.mov(tempReg, dest);
-            if (rightAllocated) {
-              resolver.deallocate(rightReg);
-            }
+            generateByteMult(leftRo, rightRo, destRo);
+            // NOTE BREAK
             break;
           } // else: fall through
         case BIT_AND:
@@ -439,15 +416,53 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       fail(op.position(), "Cannot do anything (%s) on %ss (yet?)", operator, leftType);
     }
 
-    // This is just a convenience so all the sub-methods don't have to deallocate tempReg 
-    // individually. Thanks, I hate it.
-    if (tempReg != null) {
-      resolver.deallocate(tempReg);
-    }
     if (!reuse) {
       resolver.deallocate(op.left());
     }
     resolver.deallocate(op.right());
+  }
+
+  private void generateByteMult(ResolvedOperand leftRo, ResolvedOperand rightRo,
+      ResolvedOperand destRo) {
+
+    // 1. if dest is not in a reg, make a reg
+    Register allocatedDestReg = null;
+    Register destReg = destRo.register();
+    if (destReg == null) {
+      // not in a reg; make one.
+      allocatedDestReg = resolver.allocate(VarType.INT);
+      destReg = allocatedDestReg;
+    }
+    // 2. destreg = left
+    resolver.mov(leftRo, destReg);
+
+    // 3. optionally move right to a register
+    String rightName = rightRo.name();
+    Register allocatedRightReg = null;
+    Register rightReg = rightRo.register();
+    if (rightReg != null) {
+      // Right is in a reg, yay. Use its short name
+      rightName = rightReg.nameByType(VarType.SHORT);
+    } else if (!rightRo.isConstant()) {
+      // Not a constant; move it to a register, so it doesn't
+      // read too many bytes from memory in the imul instruction (? I can't verify that's what
+      // happens, but it seems like a good idea)
+      allocatedRightReg = resolver.allocate(VarType.BYTE);
+      resolver.mov(rightRo, allocatedRightReg);
+      rightName = allocatedRightReg.nameByType(VarType.SHORT);
+    }
+
+    // 4. imul destreg, right
+    emitter.emit("imul WORD %s, %s", destReg.nameByType(VarType.SHORT), rightName);
+
+    if (allocatedRightReg != null) {
+      resolver.deallocate(allocatedRightReg);
+    }
+    if (allocatedDestReg != null) {
+      // 5. if moved to a reg in step 1, move to final dest.
+      resolver.mov(allocatedDestReg, destRo);
+      resolver.deallocate(allocatedDestReg);
+    }
   }
 
   private void generateShift(ResolvedOperand leftRo,
