@@ -194,7 +194,7 @@ public class ExecutionSubject extends Subject {
         errorStream = process.getInputStream();
         output = new String(ByteStreams.toByteArray(errorStream));
         System.err.printf("%s std output: %s\n", "Executable", output);
-        assertWithMessage("Executable exit value")
+        assertWithMessage("Executable exit value of asm" + file)
             .that(process.exitValue())
             .isEqualTo(0);
       }

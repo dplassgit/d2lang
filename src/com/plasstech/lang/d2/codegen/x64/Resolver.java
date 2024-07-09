@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -13,7 +14,9 @@ import java.util.TreeSet;
 import javax.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
@@ -33,8 +36,12 @@ import com.plasstech.lang.d2.type.VarType;
  * this to something better.
  */
 class Resolver implements RegistersInterface {
-  // map from name to register
+  // map from temp name to register
   private final Map<String, Register> aliases = new HashMap<>();
+  // map from register to names
+  private final Multimap<Register, String> reverseAllocations = HashMultimap.create();
+  // map from temp name to offset
+  private final HashMap<String, Integer> offsets = new HashMap<>();
   private final Registers registers;
   private final StringTable stringTable;
   private final DoubleTable doubleTable;
@@ -51,6 +58,7 @@ class Resolver implements RegistersInterface {
   };
   private final Set<Register> usedRegisters = new TreeSet<>(REGISTER_NAME_COMPARATOR);
   private boolean inProc;
+  private int localBytes;
 
   Resolver(
       Registers registers,
@@ -134,9 +142,15 @@ class Resolver implements RegistersInterface {
     switch (location.storage()) {
       case TEMP:
       case LONG_TEMP:
-        // TODO: deal with out-of-registers
+        // look up in offsets table
+        Integer offset = offsets.get(location.toString());
+        if (offset != null) {
+          return "[RBP - " + offset + "]";
+        }
+        emitter.emit("; trying to allocate %s", location);
         reg = allocate(location.type());
         aliases.put(location.name(), reg);
+        reverseAllocations.put(reg, location.name());
         emitter.emit("; Allocating %s (%s) to %s", location, location.storage(), reg);
         return reg.nameByType(location.type());
 
@@ -172,7 +186,7 @@ class Resolver implements RegistersInterface {
   void deallocate(Operand operand) {
     if (operand instanceof ResolvedOperand) {
       throw new IllegalStateException(
-          "trying to dallocate a fully resovled operand " + operand.toString());
+          "trying to deallocate a fully resovled operand " + operand.toString());
     }
     if (operand.isTemp()) {
       unconditionallyDeallocate(operand);
@@ -191,6 +205,8 @@ class Resolver implements RegistersInterface {
       aliases.remove(operandName);
       deallocate(reg);
     }
+    reverseAllocations.remove(reg, operandName);
+    offsets.remove(operandName);
   }
 
   /** @return the equivalent register, or null if none. */
@@ -256,10 +272,33 @@ class Resolver implements RegistersInterface {
   @Override
   public Register allocate(VarType varType) {
     Register r = registers.allocate(varType);
-    if (inProc) {
-      usedRegisters.add(r);
+    if (r != null) {
+      if (inProc) {
+        usedRegisters.add(r);
+      }
+      return r;
     }
+
+    // Spillover: find the LRU register, and put it onto the stack instead.
+    r = registers.lru();
+    // reset its location in the LRU cache.
+    registers.touch(r);
+
+    // find the allocations (aliases) and update to an offset
+    Collection<String> tempNames = reverseAllocations.get(r);
+    localBytes += 8;
+    for (String name : tempNames) {
+      offsets.put(name, localBytes);
+      aliases.remove(name);
+    }
+    emitter.emit("; spilling %s from %s to offset %d", tempNames, r, localBytes);
+    emitter.emit("mov [RBP - %d], %s", localBytes, r);
     return r;
+  }
+
+  @Override
+  public Register lru() {
+    return registers.lru();
   }
 
   /** Deallocate the given register. */
@@ -269,6 +308,7 @@ class Resolver implements RegistersInterface {
       // This may mask errors
       registers.deallocate(r);
     }
+    // TODO: move MRU back from spillover to this register.
   }
 
   @Override
@@ -420,15 +460,25 @@ class Resolver implements RegistersInterface {
   }
 
   void addAlias(Location newAlias, Operand oldAlias) {
-    Register reg = aliases.get(oldAlias.toString());
+    String oldAliasName = oldAlias.toString();
+    Register reg = aliases.get(oldAliasName);
+    String newAliasName = newAlias.name();
     if (reg == null) {
-      throw new IllegalStateException("No alias for temp " + oldAlias);
+      Integer offset = offsets.get(oldAliasName);
+      if (offset != null) {
+        emitter.emit("; Aliasing %s to %s at [RBP - %d]", newAliasName, oldAliasName, offset);
+        offsets.put(newAliasName, offset);
+        return;
+      }
+      throw new IllegalStateException("No alias or offset for temp: " + oldAlias);
     }
-    emitter.emit("; Aliasing %s to %s (%s)", newAlias.name(), reg, oldAlias.toString());
-    aliases.put(newAlias.name(), reg);
+    emitter.emit("; Aliasing %s to %s (%s)", newAliasName, reg, oldAliasName);
+    aliases.put(newAliasName, reg);
+    reverseAllocations.put(reg, newAliasName);
   }
 
-  void procEntry() {
+  void procEntry(int localBytes) {
+    this.localBytes = localBytes;
     inProc = true;
     Emitter original = emitter.getDelegate();
     emitters.push(original);
@@ -438,6 +488,7 @@ class Resolver implements RegistersInterface {
 
   void procEnd() {
     inProc = false;
+    localBytes = 0;
 
     Emitter original = emitters.pop();
     // now, push all nonvolatile registers on the *original* emitter
@@ -467,6 +518,9 @@ class Resolver implements RegistersInterface {
 
     emitter.setDelegate(original);
     usedRegisters.clear();
+
+    aliases.clear();
+    reverseAllocations.clear();
   }
 
   void push(ResolvedOperand operand) {
@@ -478,6 +532,11 @@ class Resolver implements RegistersInterface {
     } else {
       emitter.emit("push QWORD %s", operand.name());
     }
+  }
+
+  @Override
+  public void touch(Register r) {
+    registers.touch(r);
   }
 
   @AutoValue

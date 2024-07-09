@@ -3,7 +3,9 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.XmmRegister.XMM0;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -12,11 +14,27 @@ import com.plasstech.lang.d2.type.VarType;
 class Registers implements RegistersInterface {
   // these are the USED registers
   private final Set<Register> used = new HashSet<>();
+  // These are the registers in order of allocation.
+  private final List<Register> registersAllocated = new ArrayList<>();
 
   @Override
   public Register reserve(Register r) {
+    // do NOT add to registersAllocated
     used.add(r);
     return r;
+  }
+
+  /** Return the least recently used register. */
+  @Override
+  public Register lru() {
+    return registersAllocated.get(0);
+  }
+
+  /** Effectively moves to the top of the LRU list. */
+  @Override
+  public void touch(Register r) {
+    registersAllocated.remove(r);
+    registersAllocated.add(r);
   }
 
   @Override
@@ -26,19 +44,21 @@ class Registers implements RegistersInterface {
       for (Register r : XmmRegister.values()) {
         if (!used.contains(r)) {
           used.add(r);
+          registersAllocated.add(r);
           return r;
         }
       }
-      throw new D2RuntimeException("IllegalStateException", null, "No XMM registers left");
+      return null;
     }
     // find one to return
     for (Register r : IntRegister.values()) {
       if (!used.contains(r)) {
         used.add(r);
+        registersAllocated.add(r);
         return r;
       }
     }
-    throw new D2RuntimeException("IllegalStateException", null, "No registers left");
+    return null;
   }
 
   @Override
@@ -56,6 +76,7 @@ class Registers implements RegistersInterface {
           String.format("Register %s not allocated in register bank", r.name()), null, "CodeGen");
     }
     used.remove(r);
+    registersAllocated.remove(r);
   }
 
   public static Register returnRegister(VarType type) {

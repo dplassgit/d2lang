@@ -13,4 +13,12 @@ public interface RegistersInterface {
   boolean isAllocated(Register r);
 
   Register reserve(Register r);
+
+  /**
+   * Return the least recently used register.
+   */
+  Register lru();
+
+  /** Touches this register, making it the most recently "used". */
+  void touch(Register r);
 }

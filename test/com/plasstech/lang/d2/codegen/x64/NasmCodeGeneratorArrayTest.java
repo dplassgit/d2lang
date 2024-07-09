@@ -423,22 +423,26 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void printManyArraysParams() throws Exception {
-    String pattern = "%s=[1,2,3] println %s\n";
+    String pattern = "%s=[1,2,3] print '%s: ' println %s\n";
     String program = "fun:proc(";
-    char limit = 'd';
+    char limit = 'z';
     for (char c = 'a'; c <= limit; c++) {
-      program += String.format("%s:int[],", c);
+      program += String.format("%s:int[],\n", c);
     }
-    program += "ignored:bool) {\n";
-    for (char c = 'a'; c <= limit; c++) {
-      program += String.format(pattern, c, c);
+    // I'm too lazy to skip the trailing comma, so just add a fake extra param
+    program += "ignored: bool) {\n";
+    for (char c = 'a'; c <= 'z'; c++) {
+      program += String.format(pattern, c, c, c);
     }
     program += "}\nfun(";
     for (char c = 'a'; c <= limit; c++) {
       program += "[1],";
     }
     program += "true)\n";
-    assertThatCompiling(program).executedEqualsInterpreted();
+    System.err.println(program);
+    assertThatCompiling(program)//.withOptimize(false)
+        .withOptimize(false)
+        .withCodeGenDebugLevel(2).executedEqualsInterpreted();
   }
 
   @Test

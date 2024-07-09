@@ -446,7 +446,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryEnd_noAllocations() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     resolver.reserve(IntRegister.RCX);
     resolver.mov(IntRegister.RCX, STACK_INT);
     resolver.procEnd();
@@ -455,7 +455,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryProcEnd() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     resolver.allocate(VarType.INT); // allocates rbx
     emitter.emit("mov RCX, 0");
     resolver.procEnd();
@@ -468,7 +468,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryProcEnd_intAndFloat() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     resolver.allocate(VarType.INT); // allocates rbx
     // allocate XMM4 through XMM7
     for (int i = 4; i <= 7; ++i) {
@@ -493,7 +493,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryProcEnd_intAndVolatileFloat() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     resolver.allocate(VarType.INT); // allocates rbx
     resolver.allocate(VarType.DOUBLE); // allocates XMM4, but doesn't push because XMM4 is volatile
     emitter.emit("mov RCX, 0");
@@ -507,7 +507,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryProcEnd_sorted() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     // Allocates RBX through R13
     for (int i = 0; i < 5; ++i) {
       resolver.allocate(VarType.INT);
@@ -531,7 +531,7 @@ public class ResolverTest {
 
   @Test
   public void procEntryProcEnd_nonvolatile() {
-    resolver.procEntry();
+    resolver.procEntry(0);
     resolver.reserve(IntRegister.RCX);
     emitter.emit("mov RCX, 0");
     resolver.procEnd();

@@ -546,7 +546,21 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       // NOTE RETURN
       return;
     }
-    // This will fail if both source and dest have offsets (i.e, [RBP-8], [RBP+16])
+
+    if (!dest.isRegister()) {
+      // Use a register because we can never use memory (or offset) in a binary operation.
+      Register tempReg = resolver.allocate(dest.type());
+      emitter.emit("; moving dest to a reg");
+      resolver.mov(dest, tempReg);
+      emitter.emit("%s %s %s, %s",
+          BINARY_OPCODE.get(operator),
+          Size.of(source.type()).asmType,
+          tempReg.nameByType(source.type()),
+          source.name());
+      resolver.mov(tempReg, dest);
+      resolver.deallocate(tempReg);
+      return;
+    }
     emitter.emit("%s %s %s, %s",
         BINARY_OPCODE.get(operator),
         Size.of(source.type()).asmType,
@@ -783,9 +797,10 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     // this over-allocates, but /shrug.
     if (op.localBytes() > 0) {
       int bytes = 16 * (op.localBytes() / 16 + 1);
+      // TODO: we'll need to update this to accommodate spillover 
       emitter.emit("sub RSP, 0x%02x  ; space for locals", bytes);
     }
-    resolver.procEntry();
+    resolver.procEntry(op.localBytes());
 
     int i = 0;
     for (ParamSymbol formal : op.formals()) {
