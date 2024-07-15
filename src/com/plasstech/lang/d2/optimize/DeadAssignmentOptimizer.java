@@ -256,6 +256,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(DeallocateTemp op) {
+    // ugh, we remove deallocates, so this is never run, so non-read longtemps aren't killed.
     if (killIfReassigned(op.temp())) {
       deleteCurrent();
     }

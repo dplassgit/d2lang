@@ -1,8 +1,6 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.List;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -25,13 +23,5 @@ public interface Optimizer {
       case 0:
         return Level.FINE;
     }
-  }
-
-  static List<Op> removeMatchingOps(List<Op> program,
-      Class<? extends Op> clazz) {
-    return program
-        .stream()
-        .filter(op -> !op.getClass().equals(clazz))
-        .collect(Collectors.toList());
   }
 }

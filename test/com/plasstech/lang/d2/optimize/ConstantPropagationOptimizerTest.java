@@ -214,7 +214,8 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(STACK_INT1, LONG_TEMP, null));
 
     ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
-    assertThat(optimized).hasSize(1);
+    assertThat(optimized).hasSize(2);
     assertThat(optimized.get(0)).isTransferredFrom(four);
+    assertThat(optimized.get(1)).isTransferredFrom(four);
   }
 }

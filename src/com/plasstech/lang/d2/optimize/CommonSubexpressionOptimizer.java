@@ -9,7 +9,6 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
-import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Inc;
@@ -38,20 +37,6 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
 
   CommonSubexpressionOptimizer(int debugLevel) {
     super(debugLevel);
-  }
-
-  @Override
-  protected void preProcess() {
-    // Remove all DeallocateTemp ops.
-    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
-  }
-
-  @Override
-  protected void postProcess() {
-    // re-add DeallocateTemp operands in the "right" places.
-    LongTempDeallocator deallocator = new LongTempDeallocator();
-    code = deallocator.optimize(ImmutableList.copyOf(code), null);
-    setChanged(isChanged() || deallocator.isChanged());
   }
 
   @Override

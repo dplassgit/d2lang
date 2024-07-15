@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -423,22 +422,44 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
-  @Ignore // this runs out of registers for the arguments
   public void printManyArraysParams() throws Exception {
     String pattern = "%s=[1,2,3] println %s\n";
     String program = "fun:proc(";
-    for (char c = 'a'; c <= 'z'; c++) {
+    char limit = 'd';
+    for (char c = 'a'; c <= limit; c++) {
       program += String.format("%s:int[],", c);
     }
     program += "ignored:bool) {\n";
-    for (char c = 'a'; c <= 'z'; c++) {
+    for (char c = 'a'; c <= limit; c++) {
       program += String.format(pattern, c, c);
     }
     program += "}\nfun(";
-    for (char c = 'a'; c <= 'z'; c++) {
+    for (char c = 'a'; c <= limit; c++) {
       program += "[1],";
     }
     program += "true)\n";
     assertThatCompiling(program).executedEqualsInterpreted();
+  }
+
+  @Test
+  public void assignments() throws Exception {
+    String program =
+        "      data:int[14]\n"
+            + "data[0]=2\n"
+            + "data[1]=1\n"
+            + "data[2]=4\n"
+            + "data[3]=5\n"
+            + "data[4]=20\n"
+            + "data[5]=40\n"
+            + "data[6]=1\n"
+            + "data[7]=9\n"
+            + "data[8]=100\n"
+            + "data[9]=0\n"
+            + "data[10]=8\n"
+            + "data[11]=6\n"
+            + "data[12]=98\n"
+            + "data[13]=0\n"
+            + " println data";
+    assertThatCompiling(program).withOptDebugLevel(2).executedEqualsInterpreted();
   }
 }

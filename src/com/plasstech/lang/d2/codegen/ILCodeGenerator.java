@@ -15,7 +15,6 @@ import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
-import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
@@ -282,7 +281,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
               true,
               node.position()));
     }
-    emit(new DeallocateTemp(destination, node.position()));
+    // NOTE: do NOT deallocate the temp now! We will likely use it later.
   }
 
   @Override
@@ -328,7 +327,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     Location dest = lookupLocation(node.name(), node.position());
     node.setLocation(dest);
     emit(new ArrayAlloc(dest, node.arrayType(), size, node.position()));
-    emitDeallocateLongTemp(size, node.sizeExpr().position());
   }
 
   @Override
@@ -546,9 +544,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     if (operator != TokenType.AND && operator != TokenType.OR) {
       emit(new BinOp(destination, left, operator, right, node.position()));
     }
-
-    emitDeallocateLongTemp(left, node.position());
-    emitDeallocateLongTemp(right, node.position());
   }
 
   private Operand divBy0Check(Node rightNode, Operand right) {
@@ -637,7 +632,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new BinOp(rangeMax, index, TokenType.LBRACKET, ConstantOperand.ONE, position));
       emit(new Dec(rangeMax, position));
       indexChecks(thingWithIndex, rangeMax, position);
-      emit(new DeallocateTemp(rangeMax, position));
       return index;
     }
 
@@ -690,7 +684,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     emit(new Stop());
 
     emit(new Label(indexInBoundsLabel));
-    emitDeallocateLongTemp(length, position);
 
     // nonNegativeIndex = index >= 0
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
@@ -756,15 +749,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       default:
         logger.atSevere().log("No code generated for node %s", node);
         break;
-    }
-    emitDeallocateLongTemp(operand, node.position());
-  }
-
-  private void emitDeallocateLongTemp(Operand operand, Position position) {
-    if (operand.storage() == SymbolStorage.LONG_TEMP) {
-      // Ugh.
-      // TODO: Use LongTempDeallocator instead of manually inserting DeallocTemp instructions. 
-      emit(new DeallocateTemp((Location) operand, position));
     }
   }
 
@@ -1072,8 +1056,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             rhs,
             /* isArrayLiteral= */ false,
             asn.position()));
-        emitDeallocateLongTemp(indexLocation, indexNode.position());
-        emitDeallocateLongTemp(arrayLocation, indexNode.position());
       } else {
         throw new RuntimeException(
             String.format("Could not find symbol %s in symtab", asn.variableName()));

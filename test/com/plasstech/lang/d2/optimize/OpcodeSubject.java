@@ -12,6 +12,7 @@ import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 
 /** Assertions for optimizer tests. */
@@ -48,6 +49,15 @@ public class OpcodeSubject extends Subject {
     check("isBinOp").that(binOp.left()).isEqualTo(left);
     check("isBinOp").that(binOp.operator()).isEqualTo(op);
     check("isBinOp").that(binOp.right()).isEqualTo(right);
+  }
+
+  public void isUnaryOp(Location dest, TokenType op,
+      Operand operand) {
+    Truth.assertThat(actual).isInstanceOf(UnaryOp.class);
+    UnaryOp binOp = (UnaryOp) actual;
+    check("isUnaryOp").that(binOp.destination()).isEqualTo(dest);
+    check("isUnaryOp").that(binOp.operator()).isEqualTo(op);
+    check("isUnaryOp").that(binOp.operand()).isEqualTo(operand);
   }
 
   public static OpcodeSubject assertThat(Op actual) {

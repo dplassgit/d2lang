@@ -7,12 +7,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.il.BinOp;
-import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -109,21 +107,19 @@ public class CommonSubexpressionOptimizerTest {
     //  longtemp = b+c
     //  d=longtemp
     //  b=d+longtemp
-    //  deallocate longtemp
 
     List<Op> optimized = optimizer.optimize(code, null);
-    System.out.println(Joiner.on('\n').join(optimized));
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(4);
+    assertThat(optimized).hasSize(3);
 
     BinOp newFirst = (BinOp) optimized.get(0);
     var newLongTemp = newFirst.destination();
     assertThat(newLongTemp.storage()).isEqualTo(SymbolStorage.LONG_TEMP);
 
+    assertThat(optimized.get(0)).isBinOp(newLongTemp, B, TokenType.PLUS, C);
     assertThat(optimized.get(1)).isTransferredFrom(newLongTemp);
     assertThat(optimized.get(2)).isBinOp(B, D, TokenType.PLUS, newLongTemp);
-    assertThat(optimized.get(3)).isInstanceOf(DeallocateTemp.class);
   }
 
   @Test
@@ -136,72 +132,62 @@ public class CommonSubexpressionOptimizerTest {
     //  longtemp = -c
     //  d=longtemp
     //  b=d+longtemp
-    //  deallocate longtemp (NOTE added)
 
     List<Op> optimized = optimizer.optimize(code, null);
-    System.out.println(Joiner.on('\n').join(optimized));
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(4);
+    assertThat(optimized).hasSize(3);
 
     UnaryOp newFirst = (UnaryOp) optimized.get(0);
     var newLongTemp = newFirst.destination();
     assertThat(newLongTemp.storage()).isEqualTo(SymbolStorage.LONG_TEMP);
 
+    assertThat(optimized.get(0)).isUnaryOp(newLongTemp, TokenType.MINUS, C);
     assertThat(optimized.get(1)).isTransferredFrom(newLongTemp);
     assertThat(optimized.get(2)).isBinOp(B, D, TokenType.PLUS, newLongTemp);
-    assertThat(optimized.get(3)).isInstanceOf(DeallocateTemp.class);
   }
 
   @Test
-  public void longTempDest_movesDealloc() {
+  public void longTempDest() {
     ImmutableList<Op> code = ImmutableList.of(
         new BinOp(LONG_TEMP, B, TokenType.PLUS, C, null),
         new Transfer(D, LONG_TEMP, null),
-        new DeallocateTemp(LONG_TEMP, null),
         new BinOp(D, B, TokenType.PLUS, C, null));
     // Should become:
     //  longtemp = b+c
     //  d=longtemp
     //  d=longtemp
-    //  deallocate longtemp (NOTE added)
 
     List<Op> optimized = optimizer.optimize(code, null);
-    System.out.println(Joiner.on('\n').join(optimized));
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(4);
+    assertThat(optimized).hasSize(3);
 
     // no change
     assertThat(optimized.get(0)).isEqualTo(code.get(0));
     assertThat(optimized.get(1)).isTransferredFrom(LONG_TEMP);
     assertThat(optimized.get(2)).isTransferredFrom(LONG_TEMP);
-    assertThat(optimized.get(3)).isInstanceOf(DeallocateTemp.class);
   }
 
   @Test
-  public void unaryLongTempDest_movesDealloc() {
+  public void unaryLongTempDest() {
     ImmutableList<Op> code = ImmutableList.of(
         new UnaryOp(LONG_TEMP, TokenType.MINUS, C, null),
         new Transfer(D, LONG_TEMP, null),
-        new DeallocateTemp(LONG_TEMP, null),
         new UnaryOp(D, TokenType.MINUS, C, null));
     // Should become:
     //  longtemp = -c
     //  d=longtemp
     //  d=longtemp
-    //  deallocate longtemp (NOTE added)
 
     List<Op> optimized = optimizer.optimize(code, null);
-    System.out.println(Joiner.on('\n').join(optimized));
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(4);
+    assertThat(optimized).hasSize(3);
 
     // no change
     assertThat(optimized.get(0)).isEqualTo(code.get(0));
     assertThat(optimized.get(1)).isTransferredFrom(LONG_TEMP);
     assertThat(optimized.get(2)).isTransferredFrom(LONG_TEMP);
-    assertThat(optimized.get(3)).isInstanceOf(DeallocateTemp.class);
   }
 }

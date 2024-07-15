@@ -21,7 +21,6 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
         ImmutableList.of(
             // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
             new NopOptimizer(),
-            new LongTempDeallocator(),
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
@@ -37,6 +36,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new DeadCodeOptimizer(debugLevel),
             new DeadLabelOptimizer(debugLevel),
             new DeadAssignmentOptimizer(debugLevel),
+            new DeadLongTempAssignmentOptimizer(debugLevel),
             new InlineOptimizer(debugLevel),
             // This doesn't work with field set or array set
             new LoopInvariantOptimizer(debugLevel)),
@@ -52,6 +52,12 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   public State execute(State input) {
     try {
       ImmutableList<Op> optimized = optimize(input.ilCode(), input.symbolTable());
+
+      if (loggingLevel.intValue() > Level.FINE.intValue()) {
+        System.out.println("\nFINAL (maybe) OPTIMIZED:");
+        System.out.println(Joiner.on("\n").join(optimized));
+        System.out.println();
+      }
       return input.addOptimizedCode(optimized);
     } catch (D2RuntimeException e) {
       return input.addException(e);
@@ -98,12 +104,6 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
       } while (changed);
     } finally {
       logger.at(loggingLevel).log("Iterations: %d\n", iterations);
-
-      if (loggingLevel.intValue() > Level.FINE.intValue()) {
-        System.out.println("\nFINAL (maybe) OPTIMIZED:");
-        System.out.println(Joiner.on("\n").join(program));
-        System.out.println();
-      }
     }
     return program;
   }

@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -251,5 +252,18 @@ public class DeadAssignmentOptimizerTest {
             + "shortVoidGlobal(10) "
             + "println g",
         optimizer);
+  }
+
+  private static final Location B = LocationUtils.newParamLocation("b", null, 0, 0);
+  private static final Location C = LocationUtils.newParamLocation("c", null, 0, 0);
+
+  @Test
+  public void longTempDestinationOnly_nops() {
+    ImmutableList<Op> code = ImmutableList.of(new BinOp(LONG_TEMP, B, TokenType.PLUS, C, null),
+        new ProcExit(null, 0, 0));
+    ImmutableList<Op> output = optimizer.optimize(code, null);
+    assertThat(output).hasSize(1);
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(output.get(0)).isInstanceOf(ProcExit.class);
   }
 }

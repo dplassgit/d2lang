@@ -63,6 +63,20 @@ public class YetAnotherCompiler {
       // throws if it needs to
       shouldReturn(config, state, PhaseName.IL_OPTIMIZE);
     }
+    if (config.codeGenDebugLevel() > 0) {
+      if (config.optimize() && config.optDebugLevel() > 0) {
+        System.out.println("------------------------------");
+        if (config.optimize()) {
+          System.out.println("\nFINAL INTERMEDIATE CODE:");
+        }
+        if (state.lastIlCode() != null) {
+          System.out.println(Joiner.on("\n").join(state.lastIlCode()));
+        }
+        if (config.optimize()) {
+          System.out.println("------------------------------");
+        }
+      }
+    }
     return state;
   }
 

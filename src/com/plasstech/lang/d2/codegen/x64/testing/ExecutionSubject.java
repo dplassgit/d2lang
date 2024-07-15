@@ -43,8 +43,8 @@ public class ExecutionSubject extends Subject {
             .toBuilder()
             // Default to optimized
             .setOptimize(true)
-            .setCodeGenDebugLevel(2)
-            .setOptDebugLevel(2)
+            .setCodeGenDebugLevel(1)
+            .setOptDebugLevel(1)
             .setFilename("sut")
             .build();
   }

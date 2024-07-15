@@ -318,11 +318,16 @@ public class NasmCodeGeneratorTest {
     // 1. temp=foo
     // 2. deallocate
     ImmutableList<Op> program =
-        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, null),
-            new DeallocateTemp(TEMP, null));
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, ConstantOperand.ONE, null),
+            new Transfer(TEMP, LONG_TEMP, null),
+            // This should never happen, because the nasm code generator adds its own
+            // deallocates where needed...
+            new DeallocateTemp(LONG_TEMP, null));
     generate(program);
-    assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
-        "  ; Deallocating __temp from RBX");
+    assertWithoutTrimmingThat(emitter).containsAtLeast(
+        "  ; Allocating __longtemp (LONG_TEMP) to RBX",
+        "  ; Deallocating __longtemp from RBX");
   }
 
   @Test
@@ -345,14 +350,14 @@ public class NasmCodeGeneratorTest {
   }
 
   @Test
-  public void longLivedTempNotAutoDeallocated() {
+  public void longLivedTempAutoDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(LONG_TEMP, ConstantOperand.ONE, null),
             new Transfer(GLOBAL, LONG_TEMP, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __longtemp (LONG_TEMP) to RBX");
-    assertWithoutTrimmingThat(emitter).doesNotContain("  ; Deallocating __longtemp from RBX");
+    assertWithoutTrimmingThat(emitter).contains("  ; Deallocating __longtemp from RBX");
   }
 
   @Test

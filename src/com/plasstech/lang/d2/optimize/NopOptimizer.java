@@ -13,7 +13,7 @@ import com.plasstech.lang.d2.type.SymbolTable;
 class NopOptimizer extends DefaultOptimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> program, SymbolTable symtab) {
-    List<Op> noNops = Optimizer.removeMatchingOps(program, Nop.class);
+    List<Op> noNops = Op.removeMatchingOps(program, Nop.class);
     setChanged(noNops.size() < program.size());
     return ImmutableList.copyOf(noNops);
   }

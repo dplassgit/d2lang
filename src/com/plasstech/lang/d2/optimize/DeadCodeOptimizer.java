@@ -2,7 +2,6 @@ package com.plasstech.lang.d2.optimize;
 
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
@@ -161,12 +160,6 @@ class DeadCodeOptimizer extends LineOptimizer {
   private void killUntilLabel(String sourceForMessage) {
     for (int testIp = ip() + 1; testIp < code.size(); ++testIp) {
       Op testOp = code.get(testIp);
-      if (testOp instanceof DeallocateTemp) {
-        // This is a bit of a hack, but deallocate temp doesn't actually generate any code,
-        // just updates the state of the code generator. If we kill this op, the code generator may
-        // out of registers prematurely.
-        continue;
-      }
       if (testOp instanceof Label || testOp instanceof ProcEntry || testOp instanceof ProcExit) {
         break;
       } else {

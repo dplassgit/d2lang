@@ -130,6 +130,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         this);
 
     ImmutableList<Op> code = input.lastIlCode();
+    code = ImmutableList.copyOf(DeallocateTemp.fixDeallocateTemps(code));
+
     String f = "dcode";
     if (input.filename() != null) {
       f = input.filename();

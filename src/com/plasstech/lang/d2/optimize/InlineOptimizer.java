@@ -11,7 +11,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Call;
-import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
@@ -66,11 +65,6 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         break;
       }
     }
-
-    code = Optimizer.removeMatchingOps(code, DeallocateTemp.class);
-    code = Optimizer.removeMatchingOps(code, Nop.class);
-    LongTempDeallocator deallocator = new LongTempDeallocator();
-    code = deallocator.optimize(ImmutableList.copyOf(code), null);
 
     return ImmutableList.copyOf(code);
   }

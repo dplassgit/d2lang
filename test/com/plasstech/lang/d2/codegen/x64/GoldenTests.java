@@ -122,8 +122,8 @@ public class GoldenTests {
     String text = new String(Files.readAllBytes(Paths.get(path)));
     assertThatCompiling(text)
         .withOptimize(optimize)
-        .withCodeGenDebugLevel(1)
-        .withOptDebugLevel(0)
+        .withCodeGenDebugLevel(2)
+        .withOptDebugLevel(2)
         .executedEqualsInterpreted();
   }
 }

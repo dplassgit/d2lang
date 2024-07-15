@@ -64,7 +64,7 @@ public class YetAnotherCompilerTest {
     long deallocCount = code.stream()
         .filter(op -> (op instanceof DeallocateTemp))
         .count();
-    assertThat(deallocCount).isGreaterThan(0);
+    assertThat(deallocCount).isEqualTo(0);
   }
 
   @Test

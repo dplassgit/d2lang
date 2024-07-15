@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
@@ -61,5 +64,13 @@ public abstract class Op {
    */
   public Op setSource(Operand oldSource, Operand newSource) {
     return new SetSourcesVisitor().setSource(this, oldSource, newSource);
+  }
+
+  public static List<Op> removeMatchingOps(List<Op> program,
+      Class<? extends Op> clazz) {
+    return program
+        .stream()
+        .filter(op -> !op.getClass().equals(clazz))
+        .collect(Collectors.toList());
   }
 }
