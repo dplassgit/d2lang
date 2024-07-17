@@ -61,6 +61,7 @@ public class NasmCodeGeneratorArrayTest {
     assertThatCompiling(
         String.format("p:proc {x:%s[2] print 'Should be 0 or false or null: ' println x[0]} p()",
             type))
+        .withOptimize(false)
         .executedEqualsInterpreted();
   }
 
@@ -439,10 +440,7 @@ public class NasmCodeGeneratorArrayTest {
       program += "[1],";
     }
     program += "true)\n";
-    System.err.println(program);
-    assertThatCompiling(program)//.withOptimize(false)
-        .withOptimize(false)
-        .withCodeGenDebugLevel(2).executedEqualsInterpreted();
+    assertThatCompiling(program).executedEqualsInterpreted();
   }
 
   @Test
@@ -464,6 +462,6 @@ public class NasmCodeGeneratorArrayTest {
             + "data[12]=98\n"
             + "data[13]=0\n"
             + " println data";
-    assertThatCompiling(program).withOptDebugLevel(2).executedEqualsInterpreted();
+    assertThatCompiling(program).executedEqualsInterpreted();
   }
 }

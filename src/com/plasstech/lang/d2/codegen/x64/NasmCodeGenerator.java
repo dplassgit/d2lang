@@ -155,6 +155,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     }
 
     emitter.emit0("main:");
+    emitter.emit("mov RBP, RSP");
     // Convert command-line arguments to a D-style array of strings
     ArgsCodeGenerator argsGenerator = new ArgsCodeGenerator(emitter, globals);
     argsGenerator.generate();
@@ -536,7 +537,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       // adjust for OPCODE REG, imm64 if the constant is too big.
       emitter.emit("; constant is larger than 32 bits, must use intermediary");
       Register tempReg = resolver.allocate(source.type());
-      resolver.mov(source.operand(), tempReg);
+      source = resolver.resolveFully(source.operand());
+      resolver.mov(source, tempReg);
       emitter.emit("%s %s %s, %s",
           BINARY_OPCODE.get(operator),
           Size.of(source.type()).asmType,
@@ -552,6 +554,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       Register tempReg = resolver.allocate(dest.type());
       emitter.emit("; moving dest to a reg");
       resolver.mov(dest, tempReg);
+      // re-resolve in case source was spilled
+      source = resolver.resolveFully(source.operand());
       emitter.emit("%s %s %s, %s",
           BINARY_OPCODE.get(operator),
           Size.of(source.type()).asmType,
@@ -578,6 +582,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           leftRo.name(),
           rightRo.name());
     } else if (rightRo.isConstant()) {
+      // TODO: simplify this
+
       emitter.emit("; both are constants: %s vs %s", leftRo, rightRo);
       // Normally we'd do a direct comparison, but the RHS was too big. Need to do even worse
       // indirect comparison.
@@ -790,16 +796,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
   @Override
   public void visit(ProcEntry op) {
-    if (op.localBytes() > 0 || op.formals().size() > 4) {
-      emitter.emit("push RBP");
-      emitter.emit("mov RBP, RSP");
-    }
-    // this over-allocates, but /shrug.
-    if (op.localBytes() > 0) {
-      int bytes = 16 * (op.localBytes() / 16 + 1);
-      // TODO: we'll need to update this to accommodate spillover 
-      emitter.emit("sub RSP, 0x%02x  ; space for locals", bytes);
-    }
+    // This sets up the stack if needed.
     resolver.procEntry(op.localBytes());
 
     int i = 0;
@@ -827,12 +824,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     }
 
     emitter.emit0("__exit_of_%s:", op.procName());
-    resolver.procEnd();
-
-    if (op.localBytes() > 0 || op.numFormals() > 4) {
-      emitter.emit("mov RSP, RBP");
-      emitter.emit("pop RBP");
-    }
+    // Takes care of fixing up the stack based on locals & spillovers
+    resolver.procExit(op);
     emitter.emit("ret");
   }
 

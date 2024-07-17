@@ -12,7 +12,9 @@ public class RegistersTest {
   @Test
   public void allocate_all() {
     for (Register r : IntRegister.values()) {
-      assertThat(registers.allocate(VarType.INT)).isEqualTo(r);
+      if (r != IntRegister.RAX) {
+        assertThat(registers.allocate(VarType.INT)).isEqualTo(r);
+      }
     }
     assertThat(registers.allocate(VarType.INT)).isNull();
   }
@@ -23,7 +25,9 @@ public class RegistersTest {
       registers.allocate(VarType.INT);
     }
     for (Register r : IntRegister.values()) {
-      registers.deallocate(r);
+      if (r != IntRegister.RAX) {
+        registers.deallocate(r);
+      }
     }
   }
 }

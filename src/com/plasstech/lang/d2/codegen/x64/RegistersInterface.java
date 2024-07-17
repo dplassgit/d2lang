@@ -15,9 +15,9 @@ public interface RegistersInterface {
   Register reserve(Register r);
 
   /**
-   * Return the least recently used register.
+   * Return the least recently used register of the requested type.
    */
-  Register lru();
+  Register lru(VarType varType);
 
   /** Touches this register, making it the most recently "used". */
   void touch(Register r);

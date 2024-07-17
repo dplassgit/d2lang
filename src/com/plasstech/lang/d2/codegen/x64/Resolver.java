@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -27,6 +28,8 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.StringTable;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
+import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
@@ -147,7 +150,6 @@ class Resolver implements RegistersInterface {
         if (offset != null) {
           return "[RBP - " + offset + "]";
         }
-        emitter.emit("; trying to allocate %s", location);
         reg = allocate(location.type());
         aliases.put(location.name(), reg);
         reverseAllocations.put(reg, location.name());
@@ -185,6 +187,7 @@ class Resolver implements RegistersInterface {
   /** If the operand is a temp and was allocated, deallocate its register. */
   void deallocate(Operand operand) {
     if (operand instanceof ResolvedOperand) {
+      // why is this bad?!
       throw new IllegalStateException(
           "trying to deallocate a fully resovled operand " + operand.toString());
     }
@@ -203,9 +206,12 @@ class Resolver implements RegistersInterface {
     if (reg != null) {
       emitter.emit("; Deallocating %s from %s", operand, reg);
       aliases.remove(operandName);
+      emitter.emit("; removing reverse allocation of %s (%s) to %s", reg,
+          reverseAllocations.get(reg),
+          operandName);
+      reverseAllocations.remove(reg, operandName);
       deallocate(reg);
     }
-    reverseAllocations.remove(reg, operandName);
     offsets.remove(operandName);
   }
 
@@ -279,26 +285,46 @@ class Resolver implements RegistersInterface {
       return r;
     }
 
-    // Spillover: find the LRU register, and put it onto the stack instead.
-    r = registers.lru();
+    return spillOver(varType);
+  }
+
+  // Spillover: find the LRU register, and put it onto the stack instead.
+  private Register spillOver(VarType varType) {
+    Register r = registers.lru(varType);
     // reset its location in the LRU cache.
     registers.touch(r);
-
-    // find the allocations (aliases) and update to an offset
-    Collection<String> tempNames = reverseAllocations.get(r);
-    localBytes += 8;
-    for (String name : tempNames) {
-      offsets.put(name, localBytes);
-      aliases.remove(name);
+    if (inProc) {
+      usedRegisters.add(r);
     }
-    emitter.emit("; spilling %s from %s to offset %d", tempNames, r, localBytes);
-    emitter.emit("mov [RBP - %d], %s", localBytes, r);
+
+    // find the allocations (aliases) and update them all to the offset
+    Collection<String> tempNames = ImmutableSet.copyOf(reverseAllocations.get(r));
+
+    if (tempNames.isEmpty()) {
+      throw new D2RuntimeException("Spilling but no temp is using " + r, null, "Internal");
+    }
+    localBytes += 8;
+    int offset = localBytes;
+    for (String name : tempNames) {
+      offsets.put(name, offset);
+      aliases.remove(name);
+      reverseAllocations.remove(r, name);
+      emitter.emit("; spilling %s from %s to RBP - %d", name, r, offset);
+    }
+
+    // Move from register to [RBP-offset]
+    if (varType == VarType.DOUBLE) {
+      emitter.emit("movq [RBP - %d], %s", offset, r.name());
+    } else {
+      // Always move all 8 bytes.
+      emitter.emit("mov [RBP - %d], %s", offset, r.name());
+    }
     return r;
   }
 
   @Override
-  public Register lru() {
-    return registers.lru();
+  public Register lru(VarType varType) {
+    return registers.lru(varType);
   }
 
   /** Deallocate the given register. */
@@ -307,8 +333,8 @@ class Resolver implements RegistersInterface {
     if (registers.isAllocated(r)) {
       // This may mask errors
       registers.deallocate(r);
+      // TODO: should it remove all the aliases, etc?!
     }
-    // TODO: move MRU back from spillover to this register.
   }
 
   @Override
@@ -454,6 +480,7 @@ class Resolver implements RegistersInterface {
     // Memory to memory.
     // Move from sourceName to tempReg, then from tempReg to destName
     Register tempReg = allocate(VarType.DOUBLE);
+    emitter.emit("; allocated tempreg %s during mov", tempReg);
     mov(source.operand(), tempReg);
     mov(tempReg, dest.location());
     deallocate(tempReg);
@@ -480,20 +507,32 @@ class Resolver implements RegistersInterface {
   void procEntry(int localBytes) {
     this.localBytes = localBytes;
     inProc = true;
+
     Emitter original = emitter.getDelegate();
     emitters.push(original);
 
     emitter.setDelegate(new X64Emitter());
+    reverseAllocations.clear();
   }
 
-  void procEnd() {
+  void procExit(ProcExit op) {
     inProc = false;
-    localBytes = 0;
 
     Emitter original = emitters.pop();
+    if (localBytes > 0 || op.numFormals() > 4) {
+      original.emit("push RBP");
+      original.emit("mov RBP, RSP");
+    }
+    // this over-allocates, but /shrug.
+    if (localBytes > 0) {
+      int bytes = 16 * (localBytes / 16 + 1);
+      original.emit("sub RSP, 0x%02x  ; space for locals or spillover", bytes);
+    }
     // now, push all nonvolatile registers on the *original* emitter
     RegisterState rs = new RegisterState(original);
+    original.emit("; used registers %s", usedRegisters);
     usedRegisters.retainAll(Register.NONVOLATILE_REGISTERS);
+    original.emit("; needed to save used registers %s", usedRegisters);
     ImmutableList<Register> registersToSave = ImmutableList.copyOf(usedRegisters);
     for (Register r : registersToSave) {
       rs.push(r);
@@ -501,6 +540,7 @@ class Resolver implements RegistersInterface {
 
     // then copy everything from the child to the *original* emitter
     Emitter child = emitter.getDelegate();
+
     // Copy emitted lines, externs and data
     for (String line : child.all()) {
       original.emit0("%s", line);
@@ -516,11 +556,17 @@ class Resolver implements RegistersInterface {
       rs.pop(r);
     }
 
+    if (localBytes > 0 || op.numFormals() > 4) {
+      original.emit("mov RSP, RBP");
+      original.emit("pop RBP");
+    }
+
     emitter.setDelegate(original);
     usedRegisters.clear();
 
     aliases.clear();
     reverseAllocations.clear();
+    localBytes = 0;
   }
 
   void push(ResolvedOperand operand) {

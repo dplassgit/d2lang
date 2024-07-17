@@ -270,8 +270,17 @@ public class NasmCodeGeneratorStringTest {
   }
 
   @Test
-  public void stringParamSlice() throws Exception {
-    assertThatCompiling("f:proc(r:range) {s='123456' print s[r]} f(2:5)")
+  public void paramSlice() throws Exception {
+    assertThatCompiling("f:proc(r:range) {s='first' print s[r]} f(0:2)")
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void stringParamThenSliced() throws Exception {
+    assertThatCompiling(
+        "      f:proc(s:string, i:int, j:int) {println s[0:2] println s[i:j]}\n"
+            + "f('first', 0, 2)")
+        .withOptimize(false)
         .executedEqualsInterpreted();
   }
 

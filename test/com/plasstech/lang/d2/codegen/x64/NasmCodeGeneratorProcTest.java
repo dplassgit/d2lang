@@ -154,9 +154,33 @@ public class NasmCodeGeneratorProcTest {
   @Test
   public void commonSubexpression(@TestParameter boolean optimize) throws Exception {
     assertThatCompiling(
-        "      fun:proc(a:int, b:int, cc:int, dd:int) {\r"
+        "      fun:proc(a:int, b:int) {\r"
             + "  c=((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*(a-b))))))))))))))\r"
             + "  println c\r"
+            + "}\r"
+            + "fun(1,2)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void commonSubexpression_double(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      fun:proc(a:double, b:double) {\r"
+            + "  c=((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*((a-b)*((a+b)*(a-b))))))))))))))\r"
+            + "  println c\r"
+            + "}\r"
+            + "fun(1.0,2.0)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void spillover_int(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      fun:proc(a:int, b:int, c:int, d:int) {\r"
+            + "  e=((a+b)*((a-b)*((a*b)*((a/b)*((a+c)*((a-c)*((a*c)*((a+d)*((a-d)*((a*d)*((b+c)*((b*c)*((b/c)*(b+d))))))))))))))\r"
+            + "  println e\r"
             + "}\r"
             + "fun(1,2,3,4)\r")
         .withOptimize(optimize)
@@ -164,13 +188,66 @@ public class NasmCodeGeneratorProcTest {
   }
 
   @Test
-  public void outOfRegs(@TestParameter boolean optimize) throws Exception {
+  public void spillover_int_calls(@TestParameter boolean optimize) throws Exception {
     assertThatCompiling(
-        "      fun:proc(a:int, b:int, cc:int, dd:int) {\r"
-            + "  c=((a+b)*((a-b)*((a*b)*((a/b)*((a%b)*((a|b)*((a&b)*((a%b)*((b-a)*((b+a)*((b*a)*((b/a)*((b%a)*(b^a))))))))))))))\r"
-            + "  println c\r"
+        "     maybedouble:proc(i:int):int {"
+            + "       if (i%4)==0 { return i+1}"
+            + "       return i*2"
+            + "   } "
+            + "   fun:proc(a:int, b:int, c:int, d:int) {\r"
+            + "  e=((a+b)*(maybedouble(a-b)*((a*b)*((a/b)*((a+c)*(maybedouble(a-c)*((a*c)*((a+d)*(maybedouble(a-d)*((a*d)*(maybedouble(b+c)*(maybedouble(b*c)*"
+            + "  ((b/c)*maybedouble(b+d))))))))))))))\r"
+            + "  println e\r"
             + "}\r"
             + "fun(1,2,3,4)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void spillover_long(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      fun:proc(a:long, b:long, c:long, d:long) {\r"
+            + "  e=((a+b)*((a-b)*((a*b)*((a/b)*((a+c)*((a-c)*((a*c)*((a+d)*((a-d)*((a*d)*((b+c)*((b*c)*((b/c)*(b+d))))))))))))))\r"
+            + "  println e\r"
+            + "}\r"
+            + "fun(1L,2L,3L,4L)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void spillover_double(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      fun:proc(a:double, b:double, c:double, d:double) {\r"
+            + "  e=((a+b)*((a-b)*((a*b)*((a+b)*((a+c)*((a-c)*((a*c)*((a+d)*((a-d)*((a*d)*((b+c)*((b*c)*((b+c)*(b+d))))))))))))))\r"
+            + "  println e\r"
+            + "}\r"
+            + "fun(1.0,2.0, 3.0, 4.0)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void spillover_string(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      fun:proc(a:string, b:string, i:int, j:int) {\r"
+            + "  e = (a+(b+(a[i]+(a[j]+(b[i]+(b[j]+(a[i:j]+(b[i:j]+(a+(b+(a[i]+(a[j]+(b[i]+(b[j]+(a[i:j]+(b[i:j]))))))))))))))))\r"
+            + "  println e\r"
+            + "}\r"
+            + "fun('first', 'second', 0, 2)\r")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void spillover_string_globals(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      a='first' b='second' fun:proc(i:int, j:int) {\r"
+            + "  e = (a+(b+(a[i]+(a[j]+(b[i]+(b[j]+(a[i:j]+(b[i:j]+(a+(b+(a[i]+(a[j]+(b[i]+(b[j]+(a[i:j]+(b[i:j]))))))))))))))))\r"
+            + "  println e\r"
+            + "}\r"
+            + "fun(0, 2)\r")
         .withOptimize(optimize)
         .executedEqualsInterpreted();
   }

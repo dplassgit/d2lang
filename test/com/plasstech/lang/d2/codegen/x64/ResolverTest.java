@@ -3,17 +3,29 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 
-import org.junit.Test;
+import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.google.common.collect.ImmutableList;
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
+@RunWith(TestParameterInjector.class)
 public class ResolverTest {
 
   private static final MemoryAddress GLOBAL_BYTE =
@@ -59,6 +71,7 @@ public class ResolverTest {
       LocationUtils.newTempLocation("__tempi", VarType.INT);
   private static final TempLocation TEMP_STRING =
       LocationUtils.newTempLocation("__temps", VarType.STRING);
+  private final static ProcExit PROC_EXIT = new ProcExit("proc", 0, 0);
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
@@ -449,7 +462,7 @@ public class ResolverTest {
     resolver.procEntry(0);
     resolver.reserve(IntRegister.RCX);
     resolver.mov(IntRegister.RCX, STACK_INT);
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter).containsExactly("mov DWORD [RBP - 12], ECX");
   }
 
@@ -458,7 +471,7 @@ public class ResolverTest {
     resolver.procEntry(0);
     resolver.allocate(VarType.INT); // allocates rbx
     emitter.emit("mov RCX, 0");
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter)
         .containsExactly(
             "push RBX", //
@@ -475,7 +488,7 @@ public class ResolverTest {
       resolver.allocate(VarType.DOUBLE); // allocates XMM4
     }
     emitter.emit("mov RCX, 0");
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter)
         .containsExactly(
             "push RBX", //
@@ -497,7 +510,7 @@ public class ResolverTest {
     resolver.allocate(VarType.INT); // allocates rbx
     resolver.allocate(VarType.DOUBLE); // allocates XMM4, but doesn't push because XMM4 is volatile
     emitter.emit("mov RCX, 0");
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter)
         .containsExactly(
             "push RBX", //
@@ -513,7 +526,7 @@ public class ResolverTest {
       resolver.allocate(VarType.INT);
     }
     emitter.emit("mov RCX, 0");
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter)
         .containsExactly(
             "push R12",
@@ -534,7 +547,109 @@ public class ResolverTest {
     resolver.procEntry(0);
     resolver.reserve(IntRegister.RCX);
     emitter.emit("mov RCX, 0");
-    resolver.procEnd();
+    resolver.procExit(PROC_EXIT);
     assertThat(emitter).containsExactly("mov RCX, 0");
+  }
+
+  @Test
+  public void procExit_withLocals() {
+    resolver.procEntry(8);
+    resolver.procExit(PROC_EXIT);
+    assertThat(emitter)
+        .containsAtLeast("push RBP", "mov RBP, RSP", "sub RSP, 0x10", "mov RSP, RBP", "pop RBP")
+        .inOrder();
+  }
+
+  private static class NonDoubleTypeProvider implements TestParameterValuesProvider {
+    @Override
+    public List<VarType> provideValues() {
+      return ImmutableList.of(VarType.BYTE, VarType.SHORT, VarType.INT, VarType.LONG,
+          VarType.BOOL, VarType.RANGE);
+    }
+  }
+
+  @Test
+  public void spillover_integral(
+      @TestParameter(valuesProvider = NonDoubleTypeProvider.class) VarType varType) {
+    resolver.procEntry(8);
+    for (int i = 0; i < 32; ++i) {
+      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      symbol.setVarType(varType);
+      resolver.resolve(new TempLocation(symbol));
+    }
+    resolver.procExit(PROC_EXIT);
+
+    String registerName = IntRegister.RBX.name();
+    assertThat(emitter).containsAtLeast(
+        "sub RSP, 0xb0",
+        String.format("mov [RBP - 16], %s", registerName))
+        .inOrder();
+  }
+
+  @Test
+  public void spillover_string() {
+    resolver.procEntry(8);
+    for (int i = 0; i < 32; ++i) {
+      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      symbol.setVarType(VarType.STRING);
+      resolver.resolve(new TempLocation(symbol));
+    }
+    resolver.procExit(PROC_EXIT);
+
+    assertThat(emitter).containsAtLeast(
+        "sub RSP, 0xb0",
+        "mov [RBP - 16], RBX")
+        .inOrder();
+  }
+
+  @Test
+  public void spillover_array() {
+    VarType arrayVarType = new ArrayType(VarType.INT, 1);
+    resolver.procEntry(8);
+    for (int i = 0; i < 32; ++i) {
+      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      symbol.setVarType(arrayVarType);
+      resolver.resolve(new TempLocation(symbol));
+    }
+    resolver.procExit(PROC_EXIT);
+
+    assertThat(emitter).containsAtLeast(
+        "sub RSP, 0xb0",
+        "mov [RBP - 16], RBX")
+        .inOrder();
+  }
+
+  @Test
+  public void spillover_double() {
+    resolver.procEntry(8);
+    for (int i = 0; i < 32; ++i) {
+      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      symbol.setVarType(VarType.DOUBLE);
+      resolver.resolve(new TempLocation(symbol));
+    }
+    resolver.procExit(PROC_EXIT);
+    assertThat(emitter).containsAtLeast("sub RSP, 0xa0", "movq [RBP - 16], XMM4").inOrder();
+  }
+
+  @Test
+  public void spillover_mixed() {
+    resolver.procEntry(8);
+    for (int i = 0; i < 32; ++i) {
+      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      symbol.setVarType(VarType.INT);
+      resolver.resolve(new TempLocation(symbol));
+
+      symbol = new VariableSymbol("double" + i, SymbolStorage.TEMP);
+      symbol.setVarType(VarType.DOUBLE);
+      resolver.resolve(new TempLocation(symbol));
+    }
+    resolver.procExit(PROC_EXIT);
+
+    assertThat(emitter)
+        .containsAtLeast(
+            "sub RSP, 0x130",
+            "mov [RBP - 16], RBX",
+            "movq [RBP - 40], XMM4")
+        .inOrder();
   }
 }

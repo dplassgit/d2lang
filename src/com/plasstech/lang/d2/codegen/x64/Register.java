@@ -27,6 +27,13 @@ public interface Register {
 
   public static final ImmutableList<Register> NONVOLATILE_REGISTERS =
       ImmutableList.of(
+          IntRegister.RBX,
+          IntRegister.R12,
+          IntRegister.R13,
+          IntRegister.R14,
+          IntRegister.R15,
+          IntRegister.RDI,
+          IntRegister.RSI,
           XmmRegister.XMM6,
           XmmRegister.XMM7,
           XmmRegister.XMM8,
@@ -36,20 +43,17 @@ public interface Register {
           XmmRegister.XMM12,
           XmmRegister.XMM13,
           XmmRegister.XMM14,
-          XmmRegister.XMM15,
-          IntRegister.RBX,
-          IntRegister.R12,
-          IntRegister.R13,
-          IntRegister.R14,
-          IntRegister.R15,
-          IntRegister.RDI,
-          IntRegister.RSI);
+          XmmRegister.XMM15);
 
   public static final ImmutableList<Register> INT_PARAM_REGISTERS =
       ImmutableList.of(IntRegister.RCX, IntRegister.RDX, IntRegister.R8, IntRegister.R9);
 
   public static final ImmutableList<Register> XMM_PARAM_REGISTERS =
       ImmutableList.of(XmmRegister.XMM0, XmmRegister.XMM1, XmmRegister.XMM2, XmmRegister.XMM3);
+
+  static boolean isVolatile(Register r) {
+    return VOLATILE_REGISTERS.contains(r);
+  }
 
   static Register paramRegister(VarType type, int index) {
     if (index > 3) {
@@ -60,4 +64,6 @@ public interface Register {
     }
     return INT_PARAM_REGISTERS.get(index);
   }
+
+  VarType varType();
 }

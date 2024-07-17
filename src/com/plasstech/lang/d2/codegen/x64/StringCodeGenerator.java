@@ -353,16 +353,17 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     } else {
       // At runtime, we're getting the last character of the given string. We don't know the
       // length at compile time though.
-      String stringName = resolver.resolve(stringOperand);
       if (resolver.isInAnyRegister(destination)) {
         Register destReg = resolver.toRegister(destination);
         emitter.emit("; dest in %s", destReg);
         resolver.mov(index, destReg);
+        String stringName = resolver.resolve(stringOperand);
         emitter.emit("add %s, %s", destReg, stringName);
       } else {
         Register tempReg = resolver.allocate(VarType.INT);
         emitter.emit("; dest not in reg; allocated %s as tempReg", tempReg);
         resolver.mov(index, tempReg);
+        String stringName = resolver.resolve(stringOperand);
         emitter.emit("add %s, %s", tempReg, stringName);
         resolver.mov(tempReg, destination);
         resolver.deallocate(tempReg);
@@ -430,15 +431,28 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     String stringName = resolver.resolve(stringOperand);
     emitter.emit("add %s, %s  ; adjust start to source+start", start.name(), stringName);
 
+    // re-use the register
     Register length = range;
 
     // 2. allocate 'length' bytes
+    if (Register.isVolatile(start)) {
+      emitter.emit("push %s", start);
+    }
+    if (Register.isVolatile(length)) {
+      emitter.emit("push %s", length);
+    }
     resolver.mov(VarType.INT, length, IntRegister.RCX);
     resolver.mov(ConstantOperand.ONE, IntRegister.RDX);
     emitter.emitExternCall("calloc");
+    if (Register.isVolatile(length)) {
+      emitter.emit("pop %s", length);
+    }
+    if (Register.isVolatile(start)) {
+      emitter.emit("pop %s", start);
+    }
 
     // Copy 1 fewer chars (because of null)
-    emitter.emit("dec %s", range.nameByType(VarType.INT));
+    emitter.emit("dec %s", length.nameByType(VarType.INT));
     // strncpy from source+start to RAX; num is length
     resolver.mov(VarType.LONG, IntRegister.RAX, IntRegister.RCX); // dest
     resolver.mov(VarType.LONG, start, IntRegister.RDX); // source

@@ -24,10 +24,16 @@ class Registers implements RegistersInterface {
     return r;
   }
 
-  /** Return the least recently used register. */
+  /** Return the least recently used register compatible with the requested type. */
   @Override
-  public Register lru() {
-    return registersAllocated.get(0);
+  public Register lru(VarType varType) {
+    boolean isDouble = varType == VarType.DOUBLE;
+    for (Register r : registersAllocated) {
+      if (isDouble == (r.varType() == VarType.DOUBLE)) {
+        return r;
+      }
+    }
+    throw new IllegalStateException("No lru registers of type " + varType);
   }
 
   /** Effectively moves to the top of the LRU list. */
@@ -43,6 +49,9 @@ class Registers implements RegistersInterface {
       // find one to return
       for (Register r : XmmRegister.values()) {
         if (!used.contains(r)) {
+          if (r == XMM0) {
+            continue;
+          }
           used.add(r);
           registersAllocated.add(r);
           return r;
@@ -53,6 +62,9 @@ class Registers implements RegistersInterface {
     // find one to return
     for (Register r : IntRegister.values()) {
       if (!used.contains(r)) {
+        if (r == RAX) {
+          continue;
+        }
         used.add(r);
         registersAllocated.add(r);
         return r;

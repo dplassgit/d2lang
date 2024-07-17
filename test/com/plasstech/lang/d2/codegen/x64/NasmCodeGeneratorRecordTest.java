@@ -178,7 +178,8 @@ public class NasmCodeGeneratorRecordTest {
   @Test
   public void nullCheck() throws Exception {
     String program = "rt: record {s:string i:int} a:rt a=null println a.s";
-    assertThatCompiling(program).withOptimize(true).hasCompileTimeError("Cannot retrieve field \"s\" of NULL RECORD");
+    assertThatCompiling(program).withOptimize(true)
+        .hasCompileTimeError("Cannot retrieve field \"s\" of NULL RECORD");
     assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
         .executes();
   }
@@ -215,7 +216,10 @@ public class NasmCodeGeneratorRecordTest {
         + "print 'a==d Should be false: ' println a==d \n"
         + "if a==d {exit 'assertion failure 8'} \n"
         + "print 'a!=d Should be true: ' println a!=d \n"
-        + "if not (a!=d) {exit 'assertion failure 9'} \n").executedEqualsInterpreted();
+        + "if not (a!=d) {exit 'assertion failure 9'} \n")
+        .withCodeGenDebugLevel(2)
+        .withOptDebugLevel(2)
+        .executedEqualsInterpreted();
   }
 
   @Test

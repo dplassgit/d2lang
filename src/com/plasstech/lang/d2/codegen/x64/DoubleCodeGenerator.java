@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -43,21 +44,16 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
     if (leftType != VarType.DOUBLE) {
       return;
     }
-    TokenType operator = op.operator();
-    String leftName = resolver.resolve(op.left());
-    String rightName = resolver.resolve(op.right());
-    String destName = resolver.resolve(op.destination());
+    ResolvedOperand dest = resolver.resolveFully(op.destination());
 
+    TokenType operator = op.operator();
     switch (operator) {
       case PLUS:
       case MINUS:
       case MULT:
       case DIV:
-        if (!destName.equals(leftName)) {
-          emitter.emit("movsd %s, %s ; double setup", destName, leftName);
-        }
-        emitter.emit(
-            "%s %s, %s ; double %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
+        resolver.mov(op.left(), dest);
+        generateBinOp(op, dest);
         break;
 
       case EQEQ:
@@ -67,8 +63,12 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       case LT:
       case LEQ:
         Register tempReg = resolver.allocate(VarType.DOUBLE);
-        emitter.emit("movsd %s, %s ; double compare setup", tempReg.name(), leftName);
-        emitter.emit("comisd %s, %s", tempReg.name(), rightName);
+        // re-resolve left in case it was spilled
+        ResolvedOperand left = resolver.resolveFully(op.left());
+        resolver.mov(left, tempReg);
+        String destName = dest.name();
+        ResolvedOperand right = resolver.resolveFully(op.right());
+        emitter.emit("comisd %s, %s", tempReg.name(), right.name());
         emitter.emit("%s %s  ; double compare %s", BINARY_OPCODE.get(operator), destName, operator);
         resolver.deallocate(tempReg);
         break;
@@ -77,6 +77,36 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
         fail(op.position(), "Cannot do %s on %ss (yet?)", operator, leftType);
         break;
     }
+  }
+
+  private void generateBinOp(BinOp op, ResolvedOperand dest) {
+    TokenType operator = op.operator();
+    if (!dest.isRegister()) {
+      Register tempReg = resolver.allocate(VarType.DOUBLE);
+      emitter.emit("; allocated temp reg %s", tempReg);
+      resolver.mov(dest, tempReg);
+      // Resolve it now because it might have been spilled
+      String rightName = resolver.resolve(op.right());
+      emitter.emit(
+          "%s %s, %s ; double %s",
+          BINARY_OPCODE.get(operator),
+          tempReg.name(),
+          rightName,
+          operator);
+      resolver.mov(tempReg, dest);
+      resolver.deallocate(tempReg);
+      // NOTE RETURN
+      return;
+    }
+    String rightName = resolver.resolve(op.right());
+    String destName = dest.name();
+    emitter.emit(
+        "%s %s, %s ; double %s",
+        BINARY_OPCODE.get(operator),
+        destName,
+        rightName,
+        operator);
+    // nasmCodeGenerator does the deallocs
   }
 
   @Override
@@ -97,6 +127,8 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       }
       Register tempReg = resolver.allocate(VarType.DOUBLE);
       emitter.emit("xorpd %s, %s", tempReg, tempReg);
+      // re-resolve it in case it was spilled
+      sourceName = resolver.resolve(source);
       emitter.emit("subsd %s, %s", tempReg, sourceName);
       resolver.mov(tempReg, destination);
       resolver.deallocate(tempReg);

@@ -30,4 +30,9 @@ enum XmmRegister implements Register {
   public void accept(RegisterVisitor visitor) {
     visitor.visit(this);
   }
+
+  @Override
+  public VarType varType() {
+    return VarType.DOUBLE;
+  }
 }
