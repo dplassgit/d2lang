@@ -282,6 +282,23 @@ public class NasmCodeGeneratorStringTest {
   }
 
   @Test
+  public void stringParamSliced(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(
+        "      f:proc(s:string) {println s[0:2]}\n"
+            + "f('first')")
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void globalStringSliced() throws Exception {
+    assertThatCompiling(
+        "      s='first' println s[0:2]")
+        .withOptimize(false)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
   public void stringParamFullSlice() throws Exception {
     assertThatCompiling("s='123456' f:proc(r:range) {print s[r]} f(0:length(s))")
         .executedEqualsInterpreted();

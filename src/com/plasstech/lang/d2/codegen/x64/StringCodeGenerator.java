@@ -260,7 +260,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     }
     emitter.emitExternCall("strcmp");
     emitter.emit("cmp RAX, 0");
-    emitter.emit("%s %s  ; string %s", COMPARISON_OPCODE.get(operator), destName, operator);
+    emitter.emit("; string %s:", operator);
+    emitter.emit("%s %s", COMPARISON_OPCODE.get(operator), destName);
     registerState.condPop();
 
     // Fin
@@ -301,7 +302,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
         // see if left is not null
         emitter.emit("cmp QWORD %s, 0  ; see if left is null", leftName);
       }
-      emitter.emit("%s %s  ; string %s", COMPARISON_OPCODE.get(operator), destName, operator);
+      emitter.emit("; string %s:", operator);
+      emitter.emit("%s %s", COMPARISON_OPCODE.get(operator), destName);
     }
   }
 
@@ -423,6 +425,11 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
         range.nameByType(VarType.INT), start.nameByType(VarType.INT));
     // now 'range' has length + 1 (for null)
     emitter.emit("inc %s", range.nameByType(VarType.INT));
+    // Note: this was moved from down below because stringName might be in a register that
+    // may be munged but not restored for a while.
+    String stringName = resolver.resolve(stringOperand);
+    emitter.emit("add %s, %s  ; adjust start to source+start", start.name(), stringName);
+
     Register length = range;
 
     // 2. allocate 'length' bytes
@@ -430,12 +437,9 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     resolver.mov(ConstantOperand.ONE, IntRegister.RDX);
     emitter.emitExternCall("calloc");
 
-    // strncpy from source+start to RAX; num is length
-    String stringName = resolver.resolve(stringOperand);
-    emitter.emit("add %s, %s  ; adjust start to source+start", start.name(), stringName);
-
     // Copy 1 fewer chars (because of null)
     emitter.emit("dec %s", range.nameByType(VarType.INT));
+    // strncpy from source+start to RAX; num is length
     resolver.mov(VarType.LONG, IntRegister.RAX, IntRegister.RCX); // dest
     resolver.mov(VarType.LONG, start, IntRegister.RDX); // source
     resolver.mov(VarType.INT, length, IntRegister.R8); // num/length
