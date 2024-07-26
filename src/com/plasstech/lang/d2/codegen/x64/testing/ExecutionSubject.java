@@ -78,6 +78,7 @@ public class ExecutionSubject extends Subject {
     this.config = this.config.toBuilder().setExpectedErrorMessage(error).build();
     State state = compiler.compile(this.config);
     assertThat(state.error()).isTrue();
+    System.err.printf("Compile time exception: %s\n", state.exception());
   }
 
   // Uses the opposite optimization flag as executed
@@ -112,10 +113,16 @@ public class ExecutionSubject extends Subject {
     state.throwOnError();
 
     if (config.optimize()) {
+      if (config.codeGenDebugLevel() > 0) {
+        String asmCode = Joiner.on('\n').join(state.asmCode());
+        System.err.println("\nPRE-ASM OPTIMIZED:\n");
+        System.err.println(asmCode);
+      }
       state = new NasmOptimizer().execute(state);
     }
 
     if (config.codeGenDebugLevel() > 0) {
+      System.err.println("\nFINAL-ASM:\n");
       String asmCode = Joiner.on('\n').join(state.asmCode());
       System.err.println(asmCode);
     }

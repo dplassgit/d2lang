@@ -171,7 +171,10 @@ public class RangeCodeGeneratorTest {
   @Test
   public void invalidIndexRuntime() {
     assertThatCompiling("f:proc(r:range, index:int) {print r[index]} r=3:5 f(r, 2)")
-        .withRuntimeError("Invalid index error").executes();
+        .hasCompileTimeError("index must be 0 or 1");
+    assertThatCompiling("f:proc(r:range, index:int) {print r[index]} r=3:5 f(r, 2)")
+        .withOptimize(false)
+        .withRuntimeError("index must be 0 or 1").executes();
   }
 
   @Test
@@ -181,8 +184,9 @@ public class RangeCodeGeneratorTest {
   }
 
   @Test
-  public void returnRange() {
+  public void returnRange(@TestParameter boolean optimize) {
     assertThatCompiling("f:proc:range{r=2:4 return r} x=f() print x[0] print x[1]")
+        .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 

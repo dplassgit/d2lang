@@ -69,13 +69,7 @@ public abstract class State {
   @Nullable
   public abstract ImmutableList<Op> ilCode();
 
-  @Nullable
-  public abstract ImmutableList<Op> optimizedIlCode();
-
   public ImmutableList<Op> lastIlCode() {
-    if (optimizedIlCode() != null) {
-      return optimizedIlCode();
-    }
     return ilCode();
   }
 
@@ -99,8 +93,6 @@ public abstract class State {
     public abstract Builder setTypeCheckResult(TypeCheckResult result);
 
     public abstract Builder setIlCode(ImmutableList<Op> code);
-
-    public abstract Builder setOptimizedIlCode(ImmutableList<Op> code);
 
     public abstract Builder setAsmCode(ImmutableList<String> asmCode);
 
@@ -134,12 +126,12 @@ public abstract class State {
     return toBuilder().setTypeCheckResult(result).build();
   }
 
-  public State addIlCode(ImmutableList<Op> ilCode) {
+  public State setIlCode(ImmutableList<Op> ilCode) {
     return toBuilder().setIlCode(ilCode).build();
   }
 
-  public State addOptimizedCode(ImmutableList<Op> optimizedIlCode) {
-    return toBuilder().setOptimizedIlCode(optimizedIlCode).build();
+  public State addIlCode(ImmutableList<Op> ilCode) {
+    return setIlCode(ilCode);
   }
 
   public State addAsmCode(ImmutableList<String> asmCode) {

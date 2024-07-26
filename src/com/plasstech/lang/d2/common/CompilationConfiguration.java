@@ -24,6 +24,7 @@ public abstract class CompilationConfiguration {
         .setOptDebugLevel(0)
         .setCodeGenDebugLevel(0)
         .setOptimize(false)
+        .setRuntimeChecks(true)
         // no error phase means all should succeed
         .setExpectedErrorPhase(PhaseName.PHASE_UNDEFINED);
   }
@@ -38,6 +39,8 @@ public abstract class CompilationConfiguration {
   public abstract PhaseName lastPhase();
 
   public abstract boolean optimize();
+
+  public abstract boolean runtimeChecks();
 
   public abstract PhaseName expectedErrorPhase();
 
@@ -75,6 +78,8 @@ public abstract class CompilationConfiguration {
     public abstract Builder setCodeGenDebugLevel(int level);
 
     public abstract Builder setOptimize(boolean optimize);
+
+    public abstract Builder setRuntimeChecks(boolean runtimeChecks);
 
     public abstract Builder setExpectedErrorPhase(PhaseName phase);
 

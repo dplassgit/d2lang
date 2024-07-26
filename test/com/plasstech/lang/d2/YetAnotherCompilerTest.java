@@ -78,6 +78,5 @@ public class YetAnotherCompilerTest {
     State result = yac.compile(config);
     assertThat(result.error()).isFalse();
     assertThat(result.lastIlCode()).isNotNull();
-    assertThat(result.optimizedIlCode()).isNotNull();
   }
 }

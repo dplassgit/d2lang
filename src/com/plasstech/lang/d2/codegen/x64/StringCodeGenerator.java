@@ -317,19 +317,9 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
       return;
     }
 
-    Position position = op.position();
     String indexName = resolver.resolve(index);
     RegisterState registerState =
         RegisterState.condPush(emitter, resolver, Register.VOLATILE_REGISTERS);
-
-    // Issue #94: Check index to be >= 0 and < length
-    if (index.isConstant()) {
-      // if index is constant, can skip some of this calculation.
-      int indexValue = ConstantOperand.valueFromConstOperand(index).intValue();
-      if (indexValue < 0) {
-        fail("Invalid index", position, "STRING index must be non-negative; was %d", indexValue);
-      }
-    }
 
     // Issue #112:
     // if indexname == stringname's length-1, just return stringname-1

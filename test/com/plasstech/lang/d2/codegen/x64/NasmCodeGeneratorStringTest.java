@@ -54,7 +54,7 @@ public class NasmCodeGeneratorStringTest {
   public void oobeIndexVariable() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
     assertThatCompiling(sourceCode)
-        .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
+        .hasCompileTimeError("STRING index out of bounds.*length 5.*was 10");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
@@ -70,7 +70,7 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void negativeIndexCalculated() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
-    assertThatCompiling(sourceCode).withRuntimeError("must be non-negative; was -2").executes();
+    assertThatCompiling(sourceCode).hasCompileTimeError("must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -169,19 +169,19 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertThatCompiling(program).withRuntimeError("Null pointer error").executes();
+    assertThatCompiling(program).hasCompileTimeError("Null pointer error");
     assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
         .executes();
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
-    assertThatCompiling("a='hello' a=null println length(a)").withRuntimeError("Null pointer error")
-        .executes();
+    assertThatCompiling("a='hello' a=null println length(a)")
+        .hasCompileTimeError("Null pointer error");
     assertThatCompiling("a='hello' a=null println length(a)").withOptimize(false)
         .withRuntimeError("Null pointer error").executes();
-    assertThatCompiling("a:string a=null println length(a)").withRuntimeError("Null pointer error")
-        .executes();
+    assertThatCompiling("a:string a=null println length(a)")
+        .hasCompileTimeError("Null pointer error");
     assertThatCompiling("a:string a=null println length(a)").withOptimize(false)
         .withRuntimeError("Null pointer error").executes();
   }
@@ -248,14 +248,15 @@ public class NasmCodeGeneratorStringTest {
   }
 
   @Test
-  public void concatNull() throws Exception {
+  public void concatNull(@TestParameter boolean optimize) throws Exception {
     String sourceCode = " tester: proc(left:string, right:string) {"
         + "   t=left+right println t "
         + "} "
         + "tester(null, '') "
         + "tester('', null) ";
-    assertThatCompiling(sourceCode).withRuntimeError("Null pointer error").executes();
-    assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Null pointer error")
+    assertThatCompiling(sourceCode)
+        .withOptimize(optimize)
+        .withRuntimeError("Null pointer error")
         .executes();
   }
 

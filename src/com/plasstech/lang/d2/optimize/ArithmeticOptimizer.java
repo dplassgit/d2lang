@@ -121,10 +121,6 @@ class ArithmeticOptimizer extends LineOptimizer {
         optimizeColon(op, left, right);
         return;
 
-      case DOT:
-        optimizeDot(op, left, right);
-        return;
-
       case MULT:
         optimizeMultiply(op, left, right);
         return;
@@ -219,8 +215,11 @@ class ArithmeticOptimizer extends LineOptimizer {
             return;
           }
           if (left.type() == VarType.RANGE) {
-            Range range = ConstantOperand.rangeValueFromConstOperand(left);
             int index = ConstantOperand.valueFromConstOperand(right).intValue();
+            if (index < 0 || index > 1) {
+              return;
+            }
+            Range range = ConstantOperand.rangeValueFromConstOperand(left);
             int value = range.value(index);
             replaceCurrent(
                 new Transfer(op.destination(),
@@ -231,7 +230,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         return;
 
       default:
-        return;
+        break;
     }
   }
 
@@ -240,10 +239,7 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (right.type() == VarType.INT) {
       int index = ConstantOperand.valueFromConstOperand(right).intValue();
       if (index < 0) {
-        throw new D2RuntimeException(
-            String.format("STRING index must be non-negative; was %d", index),
-            op.position(),
-            "STRING index");
+        return;
       }
       if (index >= value.length()) {
         throw new D2RuntimeException(
@@ -296,14 +292,6 @@ class ArithmeticOptimizer extends LineOptimizer {
     }
   }
 
-  private void optimizeDot(BinOp op, Operand left, Operand right) {
-    if (left.isNull()) {
-      throw new D2RuntimeException(
-          String.format("Cannot retrieve field %s of NULL RECORD", right.toString()), op.position(),
-          "Null pointer");
-    }
-  }
-
   private void optimizeBitXor(BinOp op, Operand left, Operand right) {
     if (ConstantOperand.isAnyZero(right)) {
       // a ^ 0 == a
@@ -352,10 +340,11 @@ class ArithmeticOptimizer extends LineOptimizer {
           new Transfer(op.destination(), ConstantOperand.fromValue(0, left.type()), op.position()));
       return;
     }
+    if (ConstantOperand.isAnyZero(right)) {
+      // Taken care of elsewhere.
+      return;
+    }
     try {
-      if (ConstantOperand.isAnyZero(right)) {
-        throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
-      }
       optimizeIntegralArith(op, left, right, (t, u) -> t % u);
     } catch (ArithmeticException e) {
       throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
@@ -368,7 +357,8 @@ class ArithmeticOptimizer extends LineOptimizer {
       return;
     }
     if (ConstantOperand.isAnyZero(right)) {
-      throw new DivisionByZeroException(op.position());
+      // Taken care of elsewhere.
+      return;
     }
     if (left.equals(right)) {
       replaceCurrent(new Transfer(op.destination(), ConstantOperand.fromValue(1, left.type()),
@@ -472,17 +462,17 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (left.isConstant() && right.isConstant()) {
       // Strings
       if (right.type().isNull()) {
-        throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+        return;
       }
       @SuppressWarnings("unchecked")
       ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
       if (leftConstant.value() == null) {
-        throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+        return;
       }
       @SuppressWarnings("unchecked")
       ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
       if (rightConstant.value() == null) {
-        throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+        return;
       }
       replaceCurrent(
           new Transfer(
@@ -498,7 +488,7 @@ class ArithmeticOptimizer extends LineOptimizer {
         @SuppressWarnings("unchecked")
         ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
         if (left.type().isNull() || leftConstant.value() == null) {
-          throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+          return;
         }
         if (leftConstant.value().isEmpty()) {
           replaceCurrent(new Transfer(op.destination(), right, op.position()));
@@ -509,9 +499,10 @@ class ArithmeticOptimizer extends LineOptimizer {
         @SuppressWarnings("unchecked")
         ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
         if (right.type().isNull() || rightConstant.value() == null) {
-          throw new D2RuntimeException("Cannot add NULL to STRING", op.position(), "Null pointer");
+          return;
         }
         if (rightConstant.value().isEmpty()) {
+          // Left might be null but not propagated yet...
           replaceCurrent(new Transfer(op.destination(), left, op.position()));
           return;
         }

@@ -56,11 +56,12 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
   /** Generate nasm code to set a field value: record.field = source */
   @Override
   public void visit(FieldSetOp op) {
-    String recordLoc = resolver.resolve(op.recordLocation());
+    //    String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
     emitter.emit(
-        "mov %s, %s  ; put record location in register for calculations", calcReg, recordLoc);
+        "; put record location in register for calculations");
+    resolver.mov(op.recordLocation(), calcReg);
 
     // 2. get offset of field
     int offset = op.recordSymbol().getField(op.field()).offset();
@@ -95,6 +96,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       // if source is a double in memory...
       Register tempReg = resolver.allocate(VarType.INT);
       emitter.emit("; allocated %s for calculations", tempReg);
+      // resolver.mov(source, tempReg); this was generating movsd RSI, [RBP-12] which is illegal?!
       emitter.emit(
           "mov %s %s, %s  ; get value to store",
           size, tempReg.nameByType(source.type()), sourceName);
@@ -244,12 +246,11 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       recordSymbol = variable.symbol().recordSymbol();
     }
 
-    String recordLoc = resolver.resolve(op.left());
     Register calcReg = resolver.allocate(VarType.INT);
     emitter.emit("; allocated %s for source location calculation", calcReg);
     // 1. if not already in register, put record location into a register
-    emitter.emit(
-        "mov %s, %s  ; base record location", calcReg, recordLoc);
+    emitter.emit("; base record location");
+    resolver.mov(op.left(), calcReg);
 
     // 2. get offset of field
     Operand right = op.right();
@@ -292,9 +293,9 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       emitter.emit("mov %s %s, [%s]  ; load from memory into indirect register", size,
           indirectReg.nameByType(type), calcReg);
       // 2. put indirect reg into destination, e.g., mov BYTE destRo.name(), indirectReg
-      // note, this doesn't need movq because we're not moving to a XMM register 
-      emitter.emit("mov %s %s, %s  ; store into memory from indirect register", size, destRo.name(),
-          indirectReg.nameByType(type));
+      // note, this doesn't need movq because we're not moving to a XMM register
+      emitter.emit("; store into memory from indirect register");
+      resolver.mov(indirectReg, destRo);
 
       resolver.deallocate(indirectReg);
       emitter.emit("; deallocated %s from indirection", indirectReg);

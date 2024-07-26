@@ -21,6 +21,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
         ImmutableList.of(
             // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
             new NopOptimizer(),
+            new RangeChecker(), // run this just in case we have a line that might have otherwise been dead
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
@@ -51,14 +52,14 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   @Override
   public State execute(State input) {
     try {
-      ImmutableList<Op> optimized = optimize(input.ilCode(), input.symbolTable());
+      ImmutableList<Op> optimized = optimize(input.lastIlCode(), input.symbolTable());
 
       if (loggingLevel.intValue() > Level.FINE.intValue()) {
         System.out.println("\nFINAL (maybe) OPTIMIZED:");
         System.out.println(Joiner.on("\n").join(optimized));
         System.out.println();
       }
-      return input.addOptimizedCode(optimized);
+      return input.setIlCode(optimized);
     } catch (D2RuntimeException e) {
       return input.addException(e);
     }

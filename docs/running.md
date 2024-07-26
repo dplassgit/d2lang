@@ -53,6 +53,8 @@ These flags can be passed to `dcc` or `dccrun`:
     Libraries to link
   --[no]optimize (a boolean; default: "true")
     Turns on the optimizer.
+  --[no]runtime-checks (a boolean; default: "true")
+    Add runtime checks for out-of-bounds, null pointers, etc.
   --[no]save-temps (a boolean; default: "false")
     If the asm and obj files should be kept.
   --[no]show-commands [-v] (a boolean; default: "false")

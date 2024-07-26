@@ -65,11 +65,15 @@ final class GetSourcesVisitor extends DefaultOpcodeVisitor {
   public void visit(ArraySet op) {
     sources.add(op.index());
     sources.add(op.source());
+    // technically we're reading the array whose index we're setting
+    sources.add(op.getDestination());
   }
 
   @Override
   public void visit(FieldSetOp op) {
     sources.add(op.source());
+    // Technically we're reading the record whose field we're setting
+    sources.add(op.recordLocation());
   }
 
   @Override

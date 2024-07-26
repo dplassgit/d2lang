@@ -299,11 +299,14 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     // get left size, right size
 
     Register leftLengthReg;
+    boolean deallocateleftLengthReg = false;
     // use R8 for leftLengthReg if we can
     if (!resolver.isInRegister(left, R8) && !resolver.isInRegister(right, R8)) {
       resolver.reserve(IntRegister.R8);
       leftLengthReg = R8;
     } else {
+      // this may be wrong? We may have to deallocate r8 regardless?
+      deallocateleftLengthReg = true;
       leftLengthReg = resolver.allocate(VarType.INT);
     }
     generateArrayLength(new RegisterLocation("__leftLength", leftLengthReg, VarType.INT), left);
@@ -342,7 +345,9 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit("add %s, %d  ; ... +1+dims*4", leftLengthReg, 1 + leftArrayType.dimensions() * 4);
     // LeftLengthReg may or may not already be in r8
     resolver.mov(VarType.INT, leftLengthReg, R8);
-    resolver.deallocate(leftLengthReg);
+    if (deallocateleftLengthReg) {
+      resolver.deallocate(leftLengthReg);
+    }
     emitter.emitExternCall("memcmp");
     emitter.emit("cmp RAX, 0");
     emitter.emit("%s %s  ; record cmp %s", BINARY_OPCODE.get(operator), destName, operator);

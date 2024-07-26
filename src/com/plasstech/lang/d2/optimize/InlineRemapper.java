@@ -12,7 +12,9 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.VariableLocation;
 import com.plasstech.lang.d2.codegen.il.AllocateOp;
+import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
@@ -29,6 +31,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
@@ -71,12 +74,6 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     LongTempLocation temp = LongTempLocation.create(fullName, type);
     temps.add(temp);
     return temp;
-  }
-
-  private Location newTemp(String fullName, VarType type) {
-    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.TEMP);
-    symbol.setVarType(type);
-    return new TempLocation(symbol);
   }
 
   List<Op> remap() {
@@ -159,6 +156,15 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   @Override
+  public void visit(ArrayAlloc op) {
+    Location destination = (Location) remap(op.destination());
+    if (destination == op.destination()) {
+      return;
+    }
+    code.set(ip, new ArrayAlloc(destination, op.arrayType(), op.sizeLocation(), op.position()));
+  }
+
+  @Override
   public void visit(AllocateOp op) {
     Location destination = (Location) remap(op.destination());
     if (destination == op.destination()) {
@@ -216,15 +222,52 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     Location location = (Location) operand;
     switch (location.storage()) {
       case TEMP:
-        return newTemp(location.name() + suffix, location.type());
+        return newTemp(location); // location.name() + suffix, location.type());
 
       case LOCAL:
       case PARAM:
-        return newLongTemp(toRemappedTempName(location.name()), location.type());
+        return newLongTemp(location);//toRemappedTempName(location.name()), location.type());
 
       default:
+        // global
         return operand;
     }
+  }
+
+  private Location newTemp(Location source) {
+    String fullName = source.name() + suffix;
+    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.TEMP);
+    VarType type = source.type();
+    symbol.setVarType(type);
+    if (type.isRecord()) {
+      // TODO: STOP DOING THIS EVERYWHERE
+      if (source instanceof VariableLocation) {
+        VariableLocation location = (VariableLocation) source;
+        RecordSymbol recordSymbol = location.symbol().recordSymbol();
+        if (recordSymbol != null) {
+          symbol.setRecordSymbol(recordSymbol);
+        }
+      }
+    }
+    return new TempLocation(symbol);
+  }
+
+  private Operand newLongTemp(Location source) {
+    String fullName = toRemappedTempName(source.name());
+    VarType type = source.type();
+    LongTempLocation temp = LongTempLocation.create(fullName, type);
+    if (type.isRecord()) {
+      // TODO: STOP DOING THIS EVERYWHERE
+      if (source instanceof VariableLocation) {
+        VariableLocation location = (VariableLocation) source;
+        RecordSymbol recordSymbol = location.symbol().recordSymbol();
+        if (recordSymbol != null) {
+          temp.symbol().setRecordSymbol(recordSymbol);
+        }
+      }
+    }
+    temps.add(temp);
+    return temp;
   }
 
   private String toRemappedTempName(String location) {

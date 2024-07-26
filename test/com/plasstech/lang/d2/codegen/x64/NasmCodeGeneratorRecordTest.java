@@ -230,24 +230,60 @@ public class NasmCodeGeneratorRecordTest {
 
   @Test
   public void setArrayField() throws Exception {
-    assertThatCompiling("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar")
+    assertThatCompiling(
+        "      rt: record{d:double ar:int[3]}\n"
+            + "x=new rt\n"
+            + "ar=x.ar \n"
+            + "ar[1]=3 \n"
+            + "println x.ar")
         .executedEqualsInterpreted();
   }
 
   @Test
   public void setArrayOfDoubleField_bug159() throws Exception {
-    assertThatCompiling("      PlanetType: record {\r\n"
-        + "  status:int \r\n"
-        + "  assets:double[5] \r\n"
-        + "}\r\n"
-        + "EMPIRE=2 "
-        + "f:proc { \r\n"
-        + "    p = new PlanetType \r\n"
-        + "    p.status = EMPIRE"
-        + "    assets = p.assets \r\n"
-        + "    assets[0] = 123.4 // npe\r\n"
-        + "}\r\n"
-        + "f()").executedEqualsInterpreted();
+    assertThatCompiling(
+        "      PlanetType: record {\r\n"
+            + "  status:int \r\n"
+            + "  assets:double[5] \r\n"
+            + "}\r\n"
+            + "EMPIRE=2 \r\n"
+            + "f:proc:PlanetType { \r\n"
+            + "    p = new PlanetType \r\n"
+            + "    p.status = EMPIRE \r\n"
+            + "    a = p.assets \r\n"
+            + "    a[0] = 123.4 // npe\r\n"
+            + "    return p \r\n"
+            + "}\r\n"
+            + "p = f() \r\n"
+            + "println p.status\r\n")
+        .withCodeGenDebugLevel(2)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void recordOfArrays() throws Exception {
+    assertThatCompiling(
+        "PlanetType: record { \r\n"
+            + "  status: int\r\n"
+            + "  name: string\r\n"
+            + "  assets: double[5]    // amount of each type on hand: food, fuel, parts, draftable, money\r\n"
+            + "  prod_ratio: int[5]   // ratio of each type of asset production\r\n"
+            + "  prices: int[2]       // food, fuel (note can only buy if status=empire)\r\n"
+            + "  sats_arrive: int[3]  // arrival date (in DAYS) of each satellite\r\n"
+            + "}\r\n"
+            + "EMPIRE=2 \r\n"
+            + "planets:PlanetType[1]\r\n"
+            + "f:proc:PlanetType { \r\n"
+            + "    p = new PlanetType \r\n"
+            + "    planets[0] = p\r\n"
+            + "    p.status = EMPIRE \r\n"
+            + "    a = p.assets \r\n"
+            + "    a[0] = 123.4 // npe\r\n"
+            + "    return p \r\n"
+            + "}\r\n"
+            + "p = f() \r\n"
+            + "println p.status\r\n")
+        .executedEqualsInterpreted();
   }
 
   @Test

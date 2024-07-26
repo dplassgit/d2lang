@@ -2,10 +2,13 @@ package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.codegen.RuntimeChecksGenerator;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.lex.Lexer;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
+import com.plasstech.lang.d2.optimize.RangeChecker;
 import com.plasstech.lang.d2.parse.Parser;
+import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
@@ -15,7 +18,7 @@ public class YetAnotherCompiler {
   public State compile(CompilationConfiguration config) {
     State state = State.create(config.sourceCode()).build().addFilename(config.filename());
     Lexer lexer = new Lexer(state.sourceCode());
-    Parser parser = new Parser(lexer);
+    Phase parser = new Parser(lexer);
     state = parser.execute(state);
     if (config.parseDebugLevel() > 0) {
       System.out.println("------------------------------");
@@ -27,55 +30,81 @@ public class YetAnotherCompiler {
       return state;
     }
 
-    StaticChecker checker = new StaticChecker();
+    Phase checker = new StaticChecker();
     state = checker.execute(state);
     if (shouldReturn(config, state, PhaseName.TYPE_CHECK)) {
       return state;
     }
 
-    ILCodeGenerator codegen = new ILCodeGenerator();
+    Phase codegen = new ILCodeGenerator();
     state = codegen.execute(state);
-    boolean shouldReturn = shouldReturn(config, state, PhaseName.IL_CODEGEN);
     if (config.codeGenDebugLevel() > 0) {
-      if (!config.optimize() || config.optDebugLevel() == 0) {
+      System.out.println("------------------------------");
+      System.out.println("\nINITIAL INTERMEDIATE CODE:");
+      if (state.ilCode() != null) {
+        System.out.println(Joiner.on("\n").join(state.ilCode()));
+      }
+    }
+    if (state.error()) {
+      if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
+        return state;
+      }
+    }
+
+    // Always run the RangeCheckOptimizer even if optimizations are off.
+    Phase rangeChecker = new RangeChecker();
+    state = rangeChecker.execute(state);
+    if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
+      return state;
+    }
+
+    // Run all the optimizers.
+    if (config.optimize()) {
+      Phase optimizer = new ILOptimizer(config.optDebugLevel());
+      state = optimizer.execute(state);
+      // throws if it needs to
+      if (shouldReturn(config, state, PhaseName.IL_OPTIMIZE)) {
+        return state;
+      }
+      if (config.optimize() && config.optDebugLevel() > 0) {
         System.out.println("------------------------------");
-        if (config.optimize()) {
-          System.out.println("\nINITIAL INTERMEDIATE CODE:");
-        } else {
-          System.out.println("\nINTERMEDIATE CODE:");
+        System.out.println("\nFIRST OPTIMIZED INTERMEDIATE CODE:");
+        if (state.lastIlCode() != null) {
+          System.out.println(Joiner.on("\n").join(state.lastIlCode()));
         }
+        System.out.println("------------------------------");
+      }
+    }
+
+    if (config.runtimeChecks()) {
+      Phase augmented = new RuntimeChecksGenerator();
+      state = augmented.execute(state);
+      if (config.codeGenDebugLevel() > 0) {
+        System.out.println("------------------------------");
+        System.out.println("\nAUGMENTED INTERMEDIATE CODE:");
         if (state.ilCode() != null) {
           System.out.println(Joiner.on("\n").join(state.ilCode()));
         }
-        if (config.optimize()) {
-          System.out.println("------------------------------");
-        }
       }
     }
-    if (shouldReturn) {
+    if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
       return state;
     }
 
     if (config.optimize()) {
       // Runs all the optimizers.
-      ILOptimizer optimizer = new ILOptimizer(config.optDebugLevel());
+      Phase optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
       // throws if it needs to
       shouldReturn(config, state, PhaseName.IL_OPTIMIZE);
     }
-    if (config.codeGenDebugLevel() > 0) {
-      if (config.optimize() && config.optDebugLevel() > 0) {
-        System.out.println("------------------------------");
-        if (config.optimize()) {
-          System.out.println("\nFINAL INTERMEDIATE CODE:");
-        }
-        if (state.lastIlCode() != null) {
-          System.out.println(Joiner.on("\n").join(state.lastIlCode()));
-        }
-        if (config.optimize()) {
-          System.out.println("------------------------------");
-        }
+    if (config.optimize() && config.optDebugLevel() > 0) {
+      System.out.println("------------------------------");
+      System.out.println("\nFINAL INTERMEDIATE CODE:");
+      if (state.lastIlCode() != null) {
+        System.out.println(Joiner.on("\n").join(state.lastIlCode()));
       }
+      System.out.println("------------------------------");
     }
     return state;
   }
@@ -83,6 +112,7 @@ public class YetAnotherCompiler {
   /** Return true if should return, false if continue. */
   private boolean shouldReturn(CompilationConfiguration config, State state,
       PhaseName currentPhase) {
+    // TODO: I hate this.
     if (state.error()) {
       if (config.expectedErrorPhase() != PhaseName.PHASE_UNDEFINED
           && config.expectedErrorPhase() != currentPhase) {

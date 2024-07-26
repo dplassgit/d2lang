@@ -150,4 +150,11 @@ public class D2Options extends OptionsBase {
       return it;
     }
   }
+
+  @Option(
+      name = "runtime-checks",
+      help = "Add runtime checks for out-of-bounds, null pointers, etc.",
+      defaultValue = "true"
+  )
+  public boolean runtimeChecks;
 }

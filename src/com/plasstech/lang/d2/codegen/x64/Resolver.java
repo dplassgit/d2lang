@@ -210,7 +210,13 @@ class Resolver implements RegistersInterface {
           reverseAllocations.get(reg),
           operandName);
       reverseAllocations.remove(reg, operandName);
-      deallocate(reg);
+      // This is broken; there may still be a forward allocation
+      if (!reverseAllocations.containsKey(reg)) {
+        registers.deallocate(reg);
+      } else {
+        emitter.emit("; NOT deallocating %s because it's still used: %s", reg,
+            reverseAllocations.get(reg));
+      }
     }
     offsets.remove(operandName);
   }
@@ -333,7 +339,14 @@ class Resolver implements RegistersInterface {
     if (registers.isAllocated(r)) {
       // This may mask errors
       registers.deallocate(r);
-      // TODO: should it remove all the aliases, etc?!
+
+      // remove all the aliases, etc
+      reverseAllocations.removeAll(r);
+      for (var e : ImmutableSet.copyOf(aliases.entrySet())) {
+        if (e.getValue().equals(r)) {
+          aliases.remove(e.getKey());
+        }
+      }
     }
   }
 
@@ -499,7 +512,8 @@ class Resolver implements RegistersInterface {
       }
       throw new IllegalStateException("No alias or offset for temp: " + oldAlias);
     }
-    emitter.emit("; Aliasing %s to %s (%s)", newAliasName, reg, oldAliasName);
+    emitter.emit("; Aliasing %s (%s) to %s (%s)", newAliasName, newAlias.storage(), reg,
+        oldAliasName);
     aliases.put(newAliasName, reg);
     reverseAllocations.put(reg, newAliasName);
   }

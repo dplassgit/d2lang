@@ -37,7 +37,7 @@ public class TestUtils {
     System.out.println(unoptimizedResult.environment().variables());
 
     ImmutableList<Op> optimized = optimizer.optimize(originalCode, unoptimizedResult.symbolTable());
-    InterpreterResult optimizedResult = ee.execute(ee.state().addOptimizedCode(optimized));
+    InterpreterResult optimizedResult = ee.execute(ee.state().setIlCode(optimized));
 
     System.out.printf("\n%s OPTIMIZED:\n", optimizer.getClass().getSimpleName());
     System.out.println(Joiner.on("\n").join(optimized));

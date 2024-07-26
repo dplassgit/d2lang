@@ -170,7 +170,8 @@ public class NasmCodeGeneratorIntTest {
   @Test
   public void divisionByZeroLocal() throws Exception {
     String sourceCode = "f:proc:int {a=0 b=1/a return b} f()";
-    assertThatCompiling(sourceCode).hasCompileTimeError("Division by 0");
+    assertThatCompiling(sourceCode).withCodeGenDebugLevel(2).withOptDebugLevel(2)
+        .hasCompileTimeError("Division by 0");
     assertThatCompiling(sourceCode).withOptimize(false).withRuntimeError("Division by 0")
         .executes();
   }

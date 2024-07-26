@@ -73,10 +73,8 @@ public class NasmCodeGeneratorArrayTest {
   @Test
   public void setNegativeIndex(
       @TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("x:string[1] a=2 x[a-5]='bhi'")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY index must be non-negative; was -3")
-        .executes();
+    assertError(optimize, "x:string[1] a=2 x[a-5]='bhi'",
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
@@ -138,6 +136,7 @@ public class NasmCodeGeneratorArrayTest {
   @Test
   public void arraySetIntProc() throws Exception {
     assertThatCompiling("f:proc(i:int) {x:int[2] x[i]=i+2 println x[i]} f(0) f(1)")
+        .withOptDebugLevel(2)
         .executedEqualsInterpreted();
   }
 
@@ -204,48 +203,46 @@ public class NasmCodeGeneratorArrayTest {
         + " arrayParam([0y1, 0y2])").executedEqualsInterpreted();
   }
 
-  @Test
-  public void arrayAllocConstLengthNegative_error(
-      @TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("f:proc {size=-3 x:string[size] print length(x)} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY size must be non-negative; was -3")
-        .executes();
-    assertThatCompiling("f:proc {size=-3 x:string[size+size] print length(x)} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY size must be non-negative; was -6")
-        .executes();
+  private void assertError(boolean optimize, String program, String error) {
+    if (optimize) {
+      assertThatCompiling(program)
+          .withOptimize(optimize)
+          .hasCompileTimeError(error);
+    } else {
+      assertThatCompiling(program)
+          .withOptimize(optimize)
+          .withRuntimeError(error).executes();
+    }
   }
 
   @Test
-  public void arrayAllocLengthNegative_runtimeError(@TestParameter boolean optimize)
+  public void arrayAllocConstLengthNegative_error(@TestParameter boolean optimize)
       throws Exception {
-    assertThatCompiling("s=-3 x:string[s]")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY size must be non-negative; was -3")
-        .executes();
-    assertThatCompiling("x:string[size()] size: proc:int{return -3}")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY size must be non-negative; was -3")
-        .executes();
+    assertError(optimize, "f:proc {size=-3 x:string[size] print length(x)} f()",
+        "ARRAY size must be non-negative; was -3");
+    assertError(optimize, "f:proc {size=-3 x:string[size+size] print length(x)} f()",
+        "ARRAY size must be non-negative; was -6");
   }
 
   @Test
-  public void arraySetIndexConstNegative_error(
-      @TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("f:proc {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY index must be non-negative; was -3")
-        .executes();
+  public void arrayAllocLengthNegative_error(@TestParameter boolean optimize)
+      throws Exception {
+    assertError(optimize, "s=-3 x:string[s]", "ARRAY size must be non-negative; was -3");
+    assertError(optimize, "x:string[size()] size: proc:int{return -3}",
+        "ARRAY size must be non-negative; was -3");
+  }
+
+  @Test
+  public void arraySetIndexConstNegative_error(@TestParameter boolean optimize) throws Exception {
+    assertError(optimize, "f:proc {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
   public void arraySetIndexLocalNegative_error(
       @TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("f:proc {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("ARRAY index must be non-negative; was -3")
-        .executes();
+    assertError(optimize, "f:proc {y=-3 x:string[1] x[y] = 'hi' print length(x)} f()",
+        "ARRAY index must be non-negative; was -3");
   }
 
   @Test
@@ -258,10 +255,15 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
-  public void arrayGetIndexConstNegative_error(@TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("f:proc {y=-3 x:string[1] print x[y]} f()")
-        .withOptimize(optimize)
-        .withRuntimeError("must be non-negative; was -3")
+  public void arrayGetIndexConstNegative_error() throws Exception {
+    String program = "f:proc {y=-3 x:string[1] print x[y]} f()";
+    String error = "must be non-negative; was -3";
+    assertThatCompiling(program)
+        .withOptimize(true)
+        .hasCompileTimeError(error);
+    assertThatCompiling(program)
+        .withOptimize(false)
+        .withRuntimeError(error)
         .executes();
   }
 
@@ -285,24 +287,28 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void arrayOfRecord() throws Exception {
-    assertThatCompiling("r:record{a:string} \r\n"
-        + "rs:r[2]\r\n"
-        + "rs[1] = new r\r\n"
-        + "tr = rs[1]\r\n"
-        + "tr.a='hi'\r\n"
-        + "println \"Should be hi\"\r\n"
-        + "println rs[1].a // will this work? no\r\n"
-        + "println tr.a\r\n"
-        + "\r\n"
-        + "println \"Should be null\"\r\n"
-        + "if rs[0] == null {\r\n"
-        + "  println \"null\"\r\n"
-        + "}\r\n"
-        + "\r\n"
-        + "println \"Should be not null\"\r\n"
-        + "if rs[1] != null {\r\n"
-        + "  println \"not null\"\r\n"
-        + "}\r\n").executedEqualsInterpreted();
+    assertThatCompiling(
+        "      r:record{a:string} \r"
+            + "recordarray:r[2] \r"
+            + "recordarray[1] = new r \r"
+            + "second = recordarray[1] \r"
+            + "second.a='hi' \r"
+            + "println 'Should be hi' \r"
+            + "println recordarray[1].a \r" // this line is failing. wth
+            + "println second.a \r"
+            + "println 'Should be null' \r"
+            + "if recordarray[0] == null { \r"
+            + "  println 'null' \r"
+            + "} else { exit 'should have been null' }\r"
+            + "println 'Should be not null'  \r"
+            + "if recordarray[1] != null { \r"
+            + "  println 'not null' \r"
+            + "} else { \r"
+            + " exit 'should not have been null' \r"
+            + "} ")
+        //        .withOptDebugLevel(2)
+        //        .withCodeGenDebugLevel(2)
+        .executedEqualsInterpreted();
   }
 
   @Test
@@ -432,7 +438,7 @@ public class NasmCodeGeneratorArrayTest {
     }
     // I'm too lazy to skip the trailing comma, so just add a fake extra param
     program += "ignored: bool) {\n";
-    for (char c = 'a'; c <= 'z'; c++) {
+    for (char c = 'a'; c <= limit; c++) {
       program += String.format(pattern, c, c, c);
     }
     program += "}\nfun(";
@@ -440,6 +446,7 @@ public class NasmCodeGeneratorArrayTest {
       program += "[1],";
     }
     program += "true)\n";
+    System.err.println(program);
     assertThatCompiling(program).executedEqualsInterpreted();
   }
 

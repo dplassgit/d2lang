@@ -254,13 +254,12 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     Operand source = op.source();
     Location destination = op.destination();
     if (source.isTemp() && destination.storage() == SymbolStorage.LONG_TEMP) {
-      // Just alias the long temp to the temp's register; the long temp's register will be
-      // deallocated eventually.
+      // TODO: what if destination is already allocated?!
+      // Alias the long temp to the temp's location
       resolver.addAlias(destination, source);
-      return;
+    } else {
+      resolver.mov(source, destination);
     }
-
-    resolver.mov(source, destination);
     resolver.deallocate(source);
   }
 
@@ -309,7 +308,6 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     VarType leftType = op.left().type();
 
     Location dest = op.destination();
-    boolean reuse = false;
     if (op.left().isTemp() && op.destination().isTemp()
         && (leftType.isNumeric() || leftType == VarType.BOOL)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
@@ -323,7 +321,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         emitter.emit("; dest %s already in a register %s", op.destination(), maybeAlias);
       } else {
         dest = (Location) op.left();
-        reuse = true;
+        emitter.emit("; adding alias for destination");
         resolver.addAlias(op.destination(), op.left());
       }
     }
@@ -408,7 +406,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
         case DOT:
           fail("Null pointer", op.position(),
-              "Cannot retrieve field %s of NULL record", op.right());
+              "Cannot retrieve field %s of NULL RECORD", op.right());
           break;
 
         default:
@@ -419,9 +417,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       fail(op.position(), "Cannot do anything (%s) on %ss (yet?)", operator, leftType);
     }
 
-    if (!reuse) {
-      resolver.deallocate(op.left());
-    }
+    // we still deallocate the left, because that removes it from the alias lists etc 
+    resolver.deallocate(op.left());
     resolver.deallocate(op.right());
   }
 

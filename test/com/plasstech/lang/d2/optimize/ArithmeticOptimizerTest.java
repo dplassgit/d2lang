@@ -253,25 +253,6 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
   }
 
-  @Test
-  public void varStringPlusNull() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, STRING_TEMP, TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> OPTIMIZER.optimize(program, null));
-    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
-  }
-
-  @Test
-  public void constStringPlusNull() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, CONSTANT_A, TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> OPTIMIZER.optimize(program, null));
-    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
-  }
-
-  @Test
   public void constStringPlusConstString(
       @TestParameter({"a", ""}) String leftValue,
       @TestParameter({"", "b"}) String rightValue) {

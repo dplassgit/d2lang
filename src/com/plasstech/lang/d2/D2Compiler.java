@@ -55,6 +55,7 @@ public class D2Compiler {
               .setCodeGenDebugLevel(options.debugcodegen)
               .setOptDebugLevel(options.debugopt)
               .setOptimize(options.optimize)
+              .setRuntimeChecks(options.runtimeChecks)
               .build();
       state = yac.compile(config);
     } catch (D2RuntimeException re) {

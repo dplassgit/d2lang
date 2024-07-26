@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.TokenType;
 
 /**
  * Replace common subexpressions.
@@ -77,6 +78,10 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
   public void visit(BinOp op) {
     Operand left = op.left();
     Operand right = op.right();
+    if (op.operator() == TokenType.LBRACKET || op.operator() == TokenType.DOT) {
+      // arrays and records are mutable so don't even try 
+      return;
+    }
     if (left.isTemp() || right.isTemp()) {
       // temps are never re-used so they can't be "common"
       return;
@@ -123,7 +128,7 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
     if (replacement.isTemp()) {
       // if this op's dest is a temp, make this op's dest a longtemp
       Location longTemp =
-          LongTempLocation.create(String.format("_longtemp_%s", replacement.name()),
+          LongTempLocation.create(String.format("__cselongtemp_%s", replacement.name()),
               replacement.type());
       replaceAt(ip(), originalOp.setDestination(longTemp));
 

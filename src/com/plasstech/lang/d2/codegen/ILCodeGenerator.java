@@ -30,9 +30,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.common.DivisionByZeroException;
 import com.plasstech.lang.d2.common.Position;
-import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
@@ -71,7 +69,6 @@ import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
-import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
@@ -82,21 +79,7 @@ import com.plasstech.lang.d2.type.VariableSymbol;
 public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final String DIV_BY_0 = "Arithmetic error at line %d, column %d: Division by 0";
   private static final String NULL_POINTER = "Null pointer error at line %d, column %d";
-
-  private static final String ARRAY_INDEX_NEGATIVE_ERR =
-      "Invalid index error at line %d, column %d: ARRAY index must be non-negative; was %d";
-  private static final String ARRAY_SIZE_NEGATIVE_ERR =
-      "Invalid array size error at line %d, column %d: ARRAY size must be non-negative; was %d";
-  private static final String ARRAY_INDEX_OOB_ERR =
-      "Invalid index error at line %d, column %d: ARRAY index out of bounds (length %d); was %d";
-  private static final String STRING_INDEX_NEGATIVE_ERR =
-      "Invalid index error at line %d, column %d: STRING index must be non-negative; was %d";
-  private static final String STRING_INDEX_OOB_ERR =
-      "Invalid index error at line %d, column %d: STRING index out of bounds (length %d); was %d";
-  private static final String RANGE_INDEX_OOB_ERR =
-      "Invalid index error at line %d, column %d: RANGE index must be 0 or 1; was %d";
 
   private SymbolTable symbolTable;
   private SymbolTable globals;
@@ -306,27 +289,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     Position position = node.sizeExpr().position();
     Location size = node.sizeExpr().location();
-    if (size.storage() == SymbolStorage.TEMP) {
-      // Copy index to a long lived temp so we can re-use it
-      Location longTemp = allocateLongTemp(VarType.INT);
-      emit(new Transfer(longTemp, size, position));
-      size = longTemp;
-    }
-
-    Location nonNegativeIndex = allocateTemp(VarType.BOOL);
-    emit(new BinOp(nonNegativeIndex, size, TokenType.GEQ, ConstantOperand.of(0), position));
-    // if nonnegativeindex: goto good
-    String nonNegativeIndexLabel = nextLabel("non_negative_index");
-    emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
-    emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()), size)));
-    emit(new Stop());
-    emit(new Label(nonNegativeIndexLabel));
-
-    Location dest = lookupLocation(node.name(), node.position());
+    Location dest = lookupLocation(node.name(), position);
     node.setLocation(dest);
-    emit(new ArrayAlloc(dest, node.arrayType(), size, node.position()));
+    emit(new ArrayAlloc(dest, node.arrayType(), size, position));
   }
 
   @Override
@@ -466,7 +431,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     Operand right;
 
     if (operator == TokenType.DOT) {
-      left = npeCheck(left, leftNode.position());
       // the RHS is a field reference
       VariableNode rightVarNode = (VariableNode) rightNode;
       right = ConstantOperand.of(rightVarNode.name());
@@ -480,15 +444,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
 
     switch (operator) {
-      case LBRACKET:
-        // make sure "left" isn't null
-        if (left.type() != VarType.RANGE) {
-          left = npeCheck(left, leftNode.position());
-        }
-        // make sure the index is ok
-        right = indexChecks(left, right, leftNode.position());
-        break;
-
+      // We have to check for null here because the optimizer may try to optimize "null + ''" to ''
+      // but not know it's null. Shrug, it could be worse.
       case PLUS:
         if (left.type() == VarType.STRING) {
           // make sure "left" isn't null
@@ -496,11 +453,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           // make sure "right" isn't null
           right = npeCheck(right, rightNode.position());
         }
-        break;
-
-      case DIV:
-      case MOD:
-        right = divBy0Check(rightNode, right);
         break;
 
       case AND: {
@@ -546,40 +498,12 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
   }
 
-  private Operand divBy0Check(Node rightNode, Operand right) {
-    if (right.isConstant()) {
-      if (ConstantOperand.isAnyZero(right)) {
-        throw new DivisionByZeroException(rightNode.position());
-      }
-      return right;
-    }
-    Position position = rightNode.position();
-    if (right.storage() == SymbolStorage.TEMP) {
-      // Copy right to a long lived temp so we can re-use it
-      Location newRight = allocateLongTemp(rightNode.varType());
-      emit(new Transfer(newRight, right, position));
-      right = newRight;
-    }
-    TempLocation divBy0Bool = allocateTemp(VarType.BOOL);
-    ConstantOperand<? extends Number> zero = ConstantOperand.zeroOf(rightNode.varType());
-    emit(new BinOp(divBy0Bool, right, TokenType.EQEQ, zero, position));
-    String continueLabel = Labels.nextLabel("not_div_by_0");
-    emit(new IfOp(divBy0Bool, continueLabel, true));
-    emit(new SysCall(DIV_BY_0,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()))));
-    emit(new Stop(-1));
-    emit(new Label(continueLabel));
-
-    return right;
-  }
-
-  private <T extends Operand> T npeCheck(T operand, Position position) {
-    if (operand.storage() == SymbolStorage.TEMP) {
+  private Operand npeCheck(Operand operand, Position position) {
+    if (operand.isTemp()) {
       // Copy operand to a long lived temp so we can re-use it
       Location longTempOperand = allocateLongTemp(operand.type());
       emit(new Transfer(longTempOperand, operand, position));
-      operand = (T) longTempOperand; // I wish there was a better way.
+      operand = longTempOperand;
     }
     TempLocation nullRecordBool = allocateTemp(VarType.BOOL);
     emit(
@@ -600,118 +524,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     return operand;
   }
 
-  private Operand indexChecks(Operand thingWithIndex, Operand index, Position position) {
-    if (index.type() == VarType.RANGE) {
-      if (index.isConstant()) {
-        Range range = ConstantOperand.rangeValueFromConstOperand(index);
-        ConstantOperand<Integer> rangeMin = ConstantOperand.of(range.start());
-        indexChecks(thingWithIndex, rangeMin, position);
-        if (range.start() == range.end()) {
-          // if start and end are the same, only need to test one
-          return index;
-        }
-        ConstantOperand<Integer> rangeMax = ConstantOperand.of(range.end());
-        indexChecks(thingWithIndex, rangeMax, position);
-        return index;
-      }
-
-      // rangemin = index[0]
-      if (index.storage() == SymbolStorage.TEMP) {
-        // Copy index to a long lived temp so we can re-use it
-        Location longTemp = allocateLongTemp(VarType.RANGE);
-        emit(new Transfer(longTemp, index, position));
-        index = longTemp;
-      }
-      // r=index[0]
-      Location rangeMin = allocateTemp(VarType.INT);
-      emit(new BinOp(rangeMin, index, TokenType.LBRACKET, ConstantOperand.ZERO, position));
-      indexChecks(thingWithIndex, rangeMin, position);
-
-      // r=index[1]-1
-      Location rangeMax = allocateLongTemp(VarType.INT);
-      emit(new BinOp(rangeMax, index, TokenType.LBRACKET, ConstantOperand.ONE, position));
-      emit(new Dec(rangeMax, position));
-      indexChecks(thingWithIndex, rangeMax, position);
-      return index;
-    }
-
-    if (thingWithIndex.type() == VarType.RANGE && index.isConstant()) {
-      // We can do it right here, right now.
-      int indexNum = ConstantOperand.valueFromConstOperand(index).intValue();
-      if (indexNum < 0 || indexNum > 1) {
-        throw new TypeException(
-            String.format(
-                StaticChecker.RANGE_INDEX_OUT_OF_RANGE,
-                thingWithIndex.toString(), indexNum),
-            position);
-      }
-      return index;
-    }
-    if (index.storage() == SymbolStorage.TEMP) {
-      // Copy index to a long lived temp so we can re-use it
-      Location longTemp = allocateLongTemp(VarType.INT);
-      emit(new Transfer(longTemp, index, position));
-      index = longTemp;
-    }
-    // len = length(array)
-    Location length = allocateLongTemp(VarType.INT);
-    if (thingWithIndex.type() == VarType.RANGE) {
-      emit(new Transfer(length, ConstantOperand.of(2), position));
-    } else {
-      emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
-    }
-
-    // indexInBounds = index < length
-    Location indexInBounds = allocateTemp(VarType.BOOL);
-
-    emit(new BinOp(indexInBounds, index, TokenType.LT, length, position));
-    // if indexInBounds, goto good
-    String indexInBoundsLabel = nextLabel("index_in_bounds");
-    emit(new IfOp(indexInBounds, indexInBoundsLabel, false, position));
-    if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), length, index)));
-    } else if (thingWithIndex.type() == VarType.RANGE) {
-      emit(new SysCall(RANGE_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
-    } else {
-      emit(new SysCall(ARRAY_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), length, index)));
-    }
-    emit(new Stop());
-
-    emit(new Label(indexInBoundsLabel));
-
-    // nonNegativeIndex = index >= 0
-    Location nonNegativeIndex = allocateTemp(VarType.BOOL);
-    // TODO: If index is a constant, don't have to do this whole section.
-    emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
-    // if nonnegativeindex: goto good
-    String nonNegativeIndexLabel = nextLabel("non_negative_index");
-    emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
-    if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_NEGATIVE_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
-    } else if (thingWithIndex.type() == VarType.RANGE) {
-      emit(new SysCall(RANGE_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
-    } else {
-      emit(new SysCall(ARRAY_INDEX_NEGATIVE_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
-    }
-    emit(new Stop());
-
-    emit(new Label(nonNegativeIndexLabel));
-
-    return index;
-  }
-
   @Override
   public void visit(UnaryNode node) {
     Node rhsNode = node.expr();
@@ -720,18 +532,16 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // calculate the value and put it somewhere.
     Location operand = rhsNode.location();
     switch (node.operator()) {
-      case ASC:
       case LENGTH:
-        if (operand.type() != VarType.RANGE) {
-          operand = npeCheck(operand, rhsNode.position());
-        } else {
-          // just return 2
+        if (operand.type() == VarType.RANGE) {
+          // The length of all ranges is 2
           TempLocation destination = allocateTemp(node.varType());
           node.setLocation(destination);
           emit(new Transfer(destination, ConstantOperand.of(2), node.position()));
           return;
         }
         // fall through:
+      case ASC:
       case MINUS:
       case BIT_NOT:
       case NOT:
@@ -1026,7 +836,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         String fieldName = fsn.fieldName();
 
         RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
-        recordLocation = npeCheck(recordLocation, fsn.position());
         emit(
             new FieldSetOp(
                 recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
@@ -1042,12 +851,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       Symbol sym = symbolTable.getRecursive(asn.variableName());
       if (sym != null) {
         Location arrayLocation = lookupLocation(asn.variableName(), null);
-        arrayLocation = npeCheck(arrayLocation, asn.position());
 
         Node indexNode = asn.indexNode();
         indexNode.accept(ILCodeGenerator.this);
         Operand indexLocation = indexNode.location();
-        indexLocation = indexChecks(arrayLocation, indexLocation, indexNode.position());
 
         emit(new ArraySet(
             arrayLocation,

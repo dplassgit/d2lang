@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
@@ -58,6 +59,13 @@ public class OpcodeSubject extends Subject {
     check("isUnaryOp").that(binOp.destination()).isEqualTo(dest);
     check("isUnaryOp").that(binOp.operator()).isEqualTo(op);
     check("isUnaryOp").that(binOp.operand()).isEqualTo(operand);
+  }
+
+  public void isExit() {
+    Truth.assertThat(actual).isInstanceOf(SysCall.class);
+    SysCall syscall = (SysCall) actual;
+    check("isExit").that(syscall.call()).isAnyOf(SysCall.Call.MESSAGE,
+        SysCall.Call.PARAMETERIZED_MESSAGE);
   }
 
   public static OpcodeSubject assertThat(Op actual) {

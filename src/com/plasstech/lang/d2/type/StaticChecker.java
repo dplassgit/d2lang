@@ -9,6 +9,7 @@ import java.util.Stack;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.common.InvalidIndexException;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
@@ -520,7 +521,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           // we know it's not negative.
           if (value > 1) {
             errors.add(
-                new TypeException(
+                new InvalidIndexException(
                     String.format(
                         RANGE_INDEX_OUT_OF_RANGE,
                         left, value),
