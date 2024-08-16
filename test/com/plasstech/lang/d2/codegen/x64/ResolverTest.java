@@ -573,7 +573,7 @@ public class ResolverTest {
       @TestParameter(valuesProvider = NonDoubleTypeProvider.class) VarType varType) {
     resolver.procEntry(8);
     for (int i = 0; i < 32; ++i) {
-      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      VariableSymbol symbol = new VariableSymbol(null, "name" + i, SymbolStorage.TEMP);
       symbol.setVarType(varType);
       resolver.resolve(new TempLocation(symbol));
     }
@@ -590,7 +590,7 @@ public class ResolverTest {
   public void spillover_string() {
     resolver.procEntry(8);
     for (int i = 0; i < 32; ++i) {
-      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      VariableSymbol symbol = new VariableSymbol(null, "name" + i, SymbolStorage.TEMP);
       symbol.setVarType(VarType.STRING);
       resolver.resolve(new TempLocation(symbol));
     }
@@ -607,7 +607,7 @@ public class ResolverTest {
     VarType arrayVarType = new ArrayType(VarType.INT, 1);
     resolver.procEntry(8);
     for (int i = 0; i < 32; ++i) {
-      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      VariableSymbol symbol = new VariableSymbol(null, "name" + i, SymbolStorage.TEMP);
       symbol.setVarType(arrayVarType);
       resolver.resolve(new TempLocation(symbol));
     }
@@ -623,7 +623,7 @@ public class ResolverTest {
   public void spillover_double() {
     resolver.procEntry(8);
     for (int i = 0; i < 32; ++i) {
-      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      VariableSymbol symbol = new VariableSymbol(null, "name" + i, SymbolStorage.TEMP);
       symbol.setVarType(VarType.DOUBLE);
       resolver.resolve(new TempLocation(symbol));
     }
@@ -635,11 +635,11 @@ public class ResolverTest {
   public void spillover_mixed() {
     resolver.procEntry(8);
     for (int i = 0; i < 32; ++i) {
-      VariableSymbol symbol = new VariableSymbol("name" + i, SymbolStorage.TEMP);
+      VariableSymbol symbol = new VariableSymbol(null, "name" + i, SymbolStorage.TEMP);
       symbol.setVarType(VarType.INT);
       resolver.resolve(new TempLocation(symbol));
 
-      symbol = new VariableSymbol("double" + i, SymbolStorage.TEMP);
+      symbol = new VariableSymbol(null, "double" + i, SymbolStorage.TEMP);
       symbol.setVarType(VarType.DOUBLE);
       resolver.resolve(new TempLocation(symbol));
     }

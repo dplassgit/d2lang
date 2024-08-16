@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
@@ -29,9 +30,8 @@ import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.StaticChecker;
-import com.plasstech.lang.d2.type.SymbolTable;
+import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
 
@@ -58,9 +58,8 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   private static final String ARRAY_SIZE_NEGATIVE_ERR =
       "Invalid array size error at line %d, column %d: ARRAY size must be non-negative; was %d";
 
-  private SymbolTable symbolTable;
   private final List<Op> augmentedCode = new ArrayList<>();
-  // Maps a temp to itscorresponding long temp
+  // Maps a temp to its corresponding long temp
   private final Map<Operand, LongTempLocation> tempToLongTemp = new HashMap<>();
 
   private int id;
@@ -69,7 +68,6 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   public State execute(State input) {
     try {
       tempToLongTemp.clear();
-      this.symbolTable = input.symbolTable();
       // reads either the optimized or pre-optimized (if no optimized code)
       augment(input.lastIlCode());
       return input.setIlCode(ImmutableList.copyOf(augmentedCode));
@@ -223,16 +221,18 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   }
 
   private TempLocation allocateTemp(VarType varType) {
+    Preconditions.checkArgument(!varType.isRecord(), "Cannot allocate temp with a record");
     String name = String.format("__rttemp%d", ++id);
-    VariableSymbol symbol = symbolTable.declareTemp(name, varType);
+    VariableSymbol symbol = new VariableSymbol(null, name, SymbolStorage.TEMP);
+    symbol.setVarType(varType);
     return new TempLocation(symbol);
   }
 
   private Location allocateLongTemp(VarType varType) {
+    Preconditions.checkArgument(!varType.isRecord(), "Cannot allocate longtemp with a record");
     String name = String.format("__rtlongtemp%d", ++id);
-    // do we really need the temp in the symbol table? can we just create
-    // a VariableSymbol?
-    VariableSymbol symbol = symbolTable.declareTemp(name, varType);
+    VariableSymbol symbol = new VariableSymbol(null, name, SymbolStorage.LONG_TEMP);
+    symbol.setVarType(varType);
     return new LongTempLocation(symbol);
   }
 
@@ -246,24 +246,23 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
       return tempToLongTemp.get(maybeTemp);
     }
     VariableLocation temp = (VariableLocation) maybeTemp;
+
     // make a new symbol
     String name = String.format("__rtlongtemp%d", ++id);
-    VariableSymbol symbol = symbolTable.declareTemp(name, maybeTemp.type());
-
-    // Might need to copy the record symbol because reasons.
-    // TODO: STOP DOING THIS EVERYWHERE
-    VariableSymbol tempSymbol = temp.symbol();
-    if (tempSymbol.varType().isRecord()) {
-      RecordSymbol recordSymbol = tempSymbol.recordSymbol();
-      if (recordSymbol != null) {
-        symbol.setRecordSymbol(recordSymbol);
-      }
-    }
-
+    VariableSymbol symbol = tempSymbolToLongTempSymbol(temp.symbol(), name);
     LongTempLocation longTemp = new LongTempLocation(symbol);
+
     tempToLongTemp.put(maybeTemp, longTemp);
     emit(new Transfer(longTemp, maybeTemp, position));
     return longTemp;
+  }
+
+  private static VariableSymbol tempSymbolToLongTempSymbol(VariableSymbol tempSymbol,
+      String newName) {
+    VariableSymbol symbol =
+        new VariableSymbol(tempSymbol.symbolTable(), newName, SymbolStorage.LONG_TEMP);
+    symbol.setVarType(tempSymbol.varType());
+    return symbol;
   }
 
   private Operand divBy0Check(Operand right, Position position) {

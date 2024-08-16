@@ -201,7 +201,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
           .add("\nsection .text").addAll(emitter.all()).build();
       input =
-          input.addAsmCode(allCode).addException(new D2RuntimeException("oops", null, "Internal"));
+          input.addAsmCode(allCode).addException(
+              new D2RuntimeException(e.getMessage(), null, e.getClass().getTypeName()));
       return input;
     }
 

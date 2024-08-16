@@ -44,5 +44,4 @@ public interface SymbolTable {
   SymbolStorage storage();
 
   SymbolTable parent();
-
 }

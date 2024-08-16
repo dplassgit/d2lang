@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
+import com.plasstech.lang.d2.codegen.VariableLocation;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -17,6 +18,7 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.VariableSymbol;
 
 /**
  * Replace common subexpressions.
@@ -127,9 +129,12 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
 
     if (replacement.isTemp()) {
       // if this op's dest is a temp, make this op's dest a longtemp
-      Location longTemp =
-          LongTempLocation.create(String.format("__cselongtemp_%s", replacement.name()),
+      VariableLocation variable = (VariableLocation) replacement;
+      VariableSymbol oldSymbol = variable.symbol();
+      VariableSymbol newSymbol =
+          oldSymbol.symbolTable().declareTemp(String.format("__cselongtemp_%s", replacement.name()),
               replacement.type());
+      Location longTemp = new LongTempLocation(newSymbol);
       replaceAt(ip(), originalOp.setDestination(longTemp));
 
       // find where it's used and replace it. Since it's a temp it can only be used once.

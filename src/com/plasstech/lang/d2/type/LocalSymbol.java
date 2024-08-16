@@ -4,8 +4,8 @@ public class LocalSymbol extends VariableSymbol {
 
   private int offset;
 
-  public LocalSymbol(String name, SymbolStorage storage) {
-    super(name, storage);
+  public LocalSymbol(SymbolTable st, String name, SymbolStorage storage) {
+    super(st, name, storage);
   }
 
   /** this is ALWAYS positive */

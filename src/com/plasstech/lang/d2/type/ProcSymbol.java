@@ -51,7 +51,6 @@ public class ProcSymbol extends AbstractSymbol {
 
   public void declareParam(String name, VarType varType, int index) {
     ParamSymbol param = symtab.declareParam(name, varType, index);
-    param.setParentName(name());
     // keep a copy!
     formals.add(param);
   }

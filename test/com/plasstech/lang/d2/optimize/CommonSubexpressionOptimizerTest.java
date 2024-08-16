@@ -16,7 +16,9 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class CommonSubexpressionOptimizerTest {
@@ -25,8 +27,11 @@ public class CommonSubexpressionOptimizerTest {
   private static final Location B = LocationUtils.newParamLocation("B", VarType.INT, 0, 0);
   private static final Location C = LocationUtils.newParamLocation("C", VarType.INT, 0, 0);
   private static final Location D = LocationUtils.newParamLocation("D", VarType.INT, 0, 0);
-  private static final Location TEMP = LocationUtils.newTempLocation("temp", VarType.INT);
-  private static final Location LONG_TEMP = LocationUtils.newLongTempLocation("longtemp", null);
+
+  // Do NOT make static, because obviously we change it during the test
+  private SymbolTable symTab = new SymTab();
+  private Location TEMP = LocationUtils.newTempLocation(symTab, "temp", VarType.INT);
+  private Location LONG_TEMP = LocationUtils.newLongTempLocation(symTab, "longtemp", VarType.INT);
 
   private Optimizer optimizer = new CommonSubexpressionOptimizer(2);
 

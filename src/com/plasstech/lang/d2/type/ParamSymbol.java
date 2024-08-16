@@ -5,8 +5,8 @@ public class ParamSymbol extends VariableSymbol {
   private final int index;
   private int offset;
 
-  public ParamSymbol(String name, int index) {
-    super(name, SymbolStorage.PARAM);
+  public ParamSymbol(SymbolTable symtab, String name, int index) {
+    super(symtab, name, SymbolStorage.PARAM);
     this.index = index;
   }
 

@@ -18,7 +18,6 @@ public class DeadLongTempAssignmentOptimizerTest {
   private static final Location B = LocationUtils.newParamLocation("b", null, 0, 0);
   private static final Location C = LocationUtils.newParamLocation("c", null, 0, 0);
   private static final Location LONG_TEMP = LocationUtils.newLongTempLocation("longTemp", null);
-  private static final Location LONG_TEMP2 = LocationUtils.newLongTempLocation("longTemp2", null);
   private Optimizer optimizer = new DeadLongTempAssignmentOptimizer(2);
 
   @Test

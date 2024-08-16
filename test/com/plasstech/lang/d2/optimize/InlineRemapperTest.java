@@ -20,20 +20,23 @@ import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class InlineRemapperTest {
-  private static final TempLocation TEMP_DEST =
-      LocationUtils.newTempLocation("__dest", VarType.INT);
-  private static final TempLocation TEMP_SOURCE =
-      LocationUtils.newTempLocation("__source", VarType.INT);
-  private static final TempLocation TEMP_LEFT =
-      LocationUtils.newTempLocation("__left", VarType.INT);
-  private static final TempLocation TEMP_RIGHT =
-      LocationUtils.newTempLocation("__right", VarType.INT);
-  private static final StackLocation STACK =
-      LocationUtils.newStackLocation("stack", VarType.INT, 0);
-  private static final MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
+  private SymbolTable symTab = new SymTab();
+  private SymbolTable localSymTab = new SymTab(symTab, SymbolStorage.LOCAL);
+  private TempLocation TEMP_DEST =
+      LocationUtils.newTempLocation(symTab, "__dest", VarType.INT);
+  private TempLocation TEMP_SOURCE =
+      LocationUtils.newTempLocation(symTab, "__source", VarType.INT);
+  private TempLocation TEMP_LEFT =
+      LocationUtils.newTempLocation(symTab, "__left", VarType.INT);
+  private TempLocation TEMP_RIGHT =
+      LocationUtils.newTempLocation(symTab, "__right", VarType.INT);
+  private StackLocation STACK =
+      LocationUtils.newStackLocation(localSymTab, "stack", VarType.INT, 0);
+  private MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
 
   @Test
   public void transferConstantToStack() {

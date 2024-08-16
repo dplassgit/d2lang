@@ -23,7 +23,7 @@ public class SymTab implements SymbolTable {
     this.storage = SymbolStorage.GLOBAL;
   }
 
-  private SymTab(SymbolTable parent, SymbolStorage storage) {
+  public SymTab(SymbolTable parent, SymbolStorage storage) {
     this.parent = parent;
     this.storage = storage;
   }
@@ -105,9 +105,8 @@ public class SymTab implements SymbolTable {
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
     // parameters are always assigned, by definition.
-    ParamSymbol param = new ParamSymbol(name, index);
+    ParamSymbol param = new ParamSymbol(this, name, index);
     param.setVarType(varType).setAssigned();
-    maybeSetRecordSymbol(varType, param);
     values.put(name, param);
     return param;
   }
@@ -189,17 +188,16 @@ public class SymTab implements SymbolTable {
     //    Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown",
     // name);
     VariableSymbol sym = createVariable(name, storage);
-    maybeSetRecordSymbol(varType, sym);
     sym.setVarType(varType);
     values.put(name, sym);
     return sym;
   }
 
-  private static VariableSymbol createVariable(String name, SymbolStorage storage) {
+  private VariableSymbol createVariable(String name, SymbolStorage storage) {
     if (storage == SymbolStorage.LOCAL) {
-      return new LocalSymbol(name, storage);
+      return new LocalSymbol(this, name, storage);
     } else {
-      return new VariableSymbol(name, storage);
+      return new VariableSymbol(this, name, storage);
     }
   }
 
@@ -218,19 +216,9 @@ public class SymTab implements SymbolTable {
       sym = createVariable(name, this.storage).setVarType(varType);
     }
     VariableSymbol variableSym = (VariableSymbol) sym;
-    maybeSetRecordSymbol(varType, variableSym);
     sym.setAssigned();
     values.put(name, sym);
     return variableSym;
-  }
-
-  private void maybeSetRecordSymbol(VarType varType, VariableSymbol sym) {
-    if (varType.isRecord()) {
-      RecordSymbol recordSymbol = (RecordSymbol) getRecursive(varType.name());
-      if (recordSymbol != null) {
-        sym.setRecordSymbol(recordSymbol);
-      }
-    }
   }
 
   @Override

@@ -22,7 +22,6 @@ import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
-import com.plasstech.lang.d2.type.VariableSymbol;
 
 public class RecordCodeGeneratorTest {
   private static final String RECORD_NAME = "recordDefinitionName";
@@ -110,9 +109,6 @@ public class RecordCodeGeneratorTest {
             new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
                 null));
     VarType recordRefType = new RecordReferenceType(recordDecl.name());
-    VariableSymbol rec = symTab.declare("source", recordRefType);
-    rec.setRecordSymbol(recordDecl);
-
     Location source = LocationUtils.newMemoryAddress("source", recordRefType);
     Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 2, 0);
     Operand fieldOperand = ConstantOperand.of(fieldName);
@@ -131,9 +127,6 @@ public class RecordCodeGeneratorTest {
         .declareRecord(
             new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
                 null));
-    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
-    rec.setRecordSymbol(recordDecl);
-
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newTempLocation("dest", VarType.BYTE);
@@ -153,9 +146,6 @@ public class RecordCodeGeneratorTest {
         .declareRecord(
             new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
                 null));
-    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
-    rec.setRecordSymbol(recordDecl);
-
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newMemoryAddress("dest", VarType.BYTE);
@@ -175,9 +165,6 @@ public class RecordCodeGeneratorTest {
         .declareRecord(
             new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
                 null));
-    VariableSymbol rec = symTab.declare("source", recordDecl.varType());
-    rec.setRecordSymbol(recordDecl);
-
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newStackLocation("dest", VarType.BYTE, 12);

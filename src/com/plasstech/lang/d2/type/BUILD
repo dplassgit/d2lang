@@ -3,7 +3,6 @@ java_library(
     srcs = [
         "ProcGatherer.java",
         "RecordGatherer.java",
-        "RecordTypeAssigner.java",
         "StaticChecker.java",
     ],
     visibility = ["//visibility:public"],

@@ -31,8 +31,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.type.RecordSymbol;
-import com.plasstech.lang.d2.type.SymbolStorage;
+import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
@@ -45,6 +44,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   private static int id = 0;
 
   private final List<Op> code;
+  private final SymbolTable symtab;
   private final String suffix;
   private final Set<LongTempLocation> temps = new HashSet<>();
 
@@ -55,6 +55,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   InlineRemapper(List<Op> code, SymbolTable symtab, Level loggingLevel) {
+    this.symtab = symtab;
     this.suffix = String.format("__inline__%s", id++);
     this.code = new ArrayList<>(code);
     this.loggingLevel = loggingLevel;
@@ -71,7 +72,8 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   private LongTempLocation newLongTemp(String fullName, VarType type) {
-    LongTempLocation temp = LongTempLocation.create(fullName, type);
+    VariableSymbol symbol = symtab.declareTemp(fullName, type);
+    LongTempLocation temp = new LongTempLocation(symbol);
     temps.add(temp);
     return temp;
   }
@@ -235,37 +237,39 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   }
 
   private Location newTemp(Location source) {
-    String fullName = source.name() + suffix;
-    VariableSymbol symbol = new VariableSymbol(fullName, SymbolStorage.TEMP);
-    VarType type = source.type();
-    symbol.setVarType(type);
-    if (type.isRecord()) {
-      // TODO: STOP DOING THIS EVERYWHERE
-      if (source instanceof VariableLocation) {
-        VariableLocation location = (VariableLocation) source;
-        RecordSymbol recordSymbol = location.symbol().recordSymbol();
-        if (recordSymbol != null) {
-          symbol.setRecordSymbol(recordSymbol);
-        }
-      }
+    if (!(source instanceof VariableLocation)) {
+      throw new IllegalStateException("source is not a variable? is " + source.getClass());
     }
-    return new TempLocation(symbol);
+
+    VariableLocation location = (VariableLocation) source;
+    SymbolTable symbolTable = location.symbol().symbolTable();
+    String fullName = source.name() + suffix;
+    Symbol symbol = symbolTable.getRecursive(fullName);
+    VariableSymbol newSymbol;
+    if (symbol == null || !(symbol instanceof VariableSymbol)) {
+      newSymbol = symbolTable.declareTemp(fullName, source.type());
+    } else {
+      newSymbol = (VariableSymbol) symbol;
+    }
+    return new TempLocation(newSymbol);
   }
 
   private Operand newLongTemp(Location source) {
-    String fullName = toRemappedTempName(source.name());
-    VarType type = source.type();
-    LongTempLocation temp = LongTempLocation.create(fullName, type);
-    if (type.isRecord()) {
-      // TODO: STOP DOING THIS EVERYWHERE
-      if (source instanceof VariableLocation) {
-        VariableLocation location = (VariableLocation) source;
-        RecordSymbol recordSymbol = location.symbol().recordSymbol();
-        if (recordSymbol != null) {
-          temp.symbol().setRecordSymbol(recordSymbol);
-        }
-      }
+    if (!(source instanceof VariableLocation)) {
+      throw new IllegalStateException("source is not a variable? is " + source.getClass());
     }
+
+    VariableLocation location = (VariableLocation) source;
+    SymbolTable symbolTable = location.symbol().symbolTable();
+    String fullName = toRemappedTempName(source.name());
+    Symbol symbol = symbolTable.getRecursive(fullName);
+    VariableSymbol newSymbol;
+    if (symbol == null || !(symbol instanceof VariableSymbol)) {
+      newSymbol = symbolTable.declareTemp(fullName, source.type());
+    } else {
+      newSymbol = (VariableSymbol) symbol;
+    }
+    LongTempLocation temp = new LongTempLocation(newSymbol);
     temps.add(temp);
     return temp;
   }

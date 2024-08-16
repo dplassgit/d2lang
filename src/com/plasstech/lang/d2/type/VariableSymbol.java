@@ -1,13 +1,16 @@
 package com.plasstech.lang.d2.type;
 
+import com.google.common.base.Preconditions;
+
 public class VariableSymbol extends AbstractSymbol {
   private final SymbolStorage storage;
+  private final SymbolTable symbolTable;
   private RecordSymbol recordSymbol;
-  private String parentName;
 
-  // TODO: give the symbol its enclosing SymbolTable
-  public VariableSymbol(String name, SymbolStorage storage) {
+  // TODO: maybe get rid of SymbolStorage, because it should be in SymbolTable?
+  public VariableSymbol(SymbolTable symbolTable, String name, SymbolStorage storage) {
     super(name);
+    this.symbolTable = symbolTable;
     this.storage = storage;
   }
 
@@ -16,12 +19,18 @@ public class VariableSymbol extends AbstractSymbol {
     return storage;
   }
 
-  public VariableSymbol setRecordSymbol(RecordSymbol recordSymbol) {
-    this.recordSymbol = recordSymbol;
-    return this;
-  }
-
   public RecordSymbol recordSymbol() {
+    Preconditions.checkState(varType().isRecord(),
+        String.format("Cannot call VariableSymbol.recordSymbol on %s; not a record type",
+            this.name()));
+
+    if (recordSymbol == null) {
+      String recordName = varType().name();
+      recordSymbol = (RecordSymbol) symbolTable().getRecursive(recordName);
+      if (recordSymbol == null) {
+        throw new IllegalStateException("Record " + recordName + " not found in symtab");
+      }
+    }
     return recordSymbol;
   }
 
@@ -35,11 +44,9 @@ public class VariableSymbol extends AbstractSymbol {
     return true;
   }
 
-  public void setParentName(String name) {
-    this.parentName = name;
-  }
-
-  public String getParentName() {
-    return parentName;
+  // TODO: Maybe get rid of this and replace with some kind of "clone" method?
+  // clone(String newName)?
+  public SymbolTable symbolTable() {
+    return symbolTable;
   }
 }

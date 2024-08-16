@@ -199,13 +199,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return new TypeCheckResult(e);
     }
 
-    NodeVisitor recordAssigner = new RecordTypeAssigner(symbolTable);
-    try {
-      root.accept(recordAssigner);
-    } catch (D2RuntimeException e) {
-      return new TypeCheckResult(e);
-    }
-
     try {
       root.accept(this);
       if (!procedures.isEmpty()) {
@@ -729,10 +722,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
     // gotta make sure it exists
     if (validatePossibleRecordType(node.name(), node.varType(), node.position())) {
-      VariableSymbol symbol = symbolTable.declare(node.name(), node.varType());
-      if (!procedures.empty()) {
-        symbol.setParentName(procedures.peek().name());
-      }
+      symbolTable.declare(node.name(), node.varType());
     }
   }
 
@@ -1172,11 +1162,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       Symbol symbol = symbolTable.getRecursive(lvalue.name());
       if (symbol == null) {
         // Brand new symbol in all scopes. Assign in current scope.
-        VariableSymbol variableSymbol = symbolTable.assign(lvalue.name(), rhs.varType());
-        if (!procedures.empty()) {
-          // Tell it its parent name.
-          variableSymbol.setParentName(procedures.peek().name());
-        }
+        symbolTable.assign(lvalue.name(), rhs.varType());
       } else {
         // Already known in some scope. Update.
         if (symbol.varType().isUnknown()) {
