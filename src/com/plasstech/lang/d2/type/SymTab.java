@@ -14,13 +14,16 @@ import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 /** Symbol Table. */
 public class SymTab implements SymbolTable {
 
+  /*
+   * Only stores a single Symbol per name, so overloading (i.e., a record and proc and variable with
+   * the same name) is not supported.
+   */
   private final Map<String, Symbol> values = new HashMap<>();
   private final SymbolTable parent;
   private final SymbolStorage storage;
 
   public SymTab() {
-    this.parent = null;
-    this.storage = SymbolStorage.GLOBAL;
+    this(null, SymbolStorage.GLOBAL);
   }
 
   public SymTab(SymbolTable parent, SymbolStorage storage) {
@@ -33,24 +36,8 @@ public class SymTab implements SymbolTable {
   }
 
   @Override
-  public boolean isAssigned(String name) {
-    Symbol sym = getRecursive(name);
-    return sym != null && sym.isAssigned();
-  }
-
-  @Override
   public VarType lookup(String name) {
-    return lookup(name, true);
-  }
-
-  @Override
-  public VarType lookup(String name, boolean recurse) {
-    Symbol sym;
-    if (recurse) {
-      sym = getRecursive(name);
-    } else {
-      sym = get(name);
-    }
+    Symbol sym = get(name);
     if (sym == null) {
       return VarType.UNKNOWN;
     }
@@ -58,12 +45,12 @@ public class SymTab implements SymbolTable {
   }
 
   @Override
-  public Symbol getRecursive(String name) {
-    Symbol sym = values.get(name);
-    if (sym == null && parent != null) {
-      return parent.getRecursive(name);
+  public VarType lookupRecursive(String name) {
+    Symbol sym = getRecursive(name);
+    if (sym == null) {
+      return VarType.UNKNOWN;
     }
-    return sym;
+    return sym.varType();
   }
 
   @Override
@@ -71,10 +58,46 @@ public class SymTab implements SymbolTable {
     return values.get(name);
   }
 
-  /** Returns all symbols in this level of the table. */
   @Override
-  public ImmutableMap<String, Symbol> entries() {
-    return ImmutableMap.copyOf(values);
+  public Symbol getRecursive(String name) {
+    Symbol sym = get(name);
+    if (sym == null && parent != null) {
+      return parent.getRecursive(name);
+    }
+    return sym;
+  }
+
+  @Override
+  public <T extends Symbol> T get(String name, Class<T> clazz) {
+    Symbol sym = values.get(name);
+    // possibilities are:
+    // 1. wrong type or null
+    // 2. good!
+    if (!isInstance(sym, clazz)) {
+      // wrong type, or null
+      return null;
+    }
+    return (T) sym;
+  }
+
+  @Override
+  public <T extends Symbol> T getRecursive(String name, Class<T> clazz) {
+    Symbol sym = get(name, clazz);
+    // possibilities are:
+    // 1. wrong type or null: try parent
+    // 2. good!
+    if (sym == null && parent != null) {
+      return parent.getRecursive(name, clazz);
+    }
+    return (T) sym;
+  }
+
+  private static <T extends Symbol> boolean isInstance(Object thing, Class<T> clazz) {
+    if (thing == null) {
+      return false;
+    }
+    // might handle subclasses (vs. equals)
+    return thing.getClass().isAssignableFrom(clazz);
   }
 
   /** Returns all the variables in this level of the table. */

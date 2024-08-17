@@ -245,6 +245,7 @@ public class ILCodeGeneratorTest {
     CompilationConfiguration config = CompilationConfiguration.create(program);
     State state = new YetAnotherCompiler().compile(config);
     if (state.error()) {
+      state.exception().printStackTrace();
       fail(state.errorMessage());
     }
 

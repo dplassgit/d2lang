@@ -186,7 +186,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     expr.accept(this);
     if (expr.varType().isArray()) {
       // Need 2 globals: index and length. Can't use temps, because they're one-time-use.
-      if (globals.lookup("array_print_index") == VarType.UNKNOWN) {
+      if (globals.lookupRecursive("array_print_index") == VarType.UNKNOWN) {
         globals.declare("array_print_index", VarType.INT);
       }
       Location index = lookupLocation("array_print_index", expr.position());
@@ -194,7 +194,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       emit(new SysCall(SysCall.Call.PRINT, ConstantOperand.of("[")));
       emit(new Transfer(index, ConstantOperand.of(0), node.position()));
       // length = calculate length of array
-      if (globals.lookup("array_print_length") == VarType.UNKNOWN) {
+      if (globals.lookupRecursive("array_print_length") == VarType.UNKNOWN) {
         globals.declare("array_print_length", VarType.INT);
       }
       Location length = lookupLocation("array_print_length", expr.position());
@@ -296,7 +296,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(NewNode node) {
-    RecordSymbol symbol = (RecordSymbol) symbolTable.getRecursive(node.recordName());
+    RecordSymbol symbol = symbolTable.getRecursive(node.recordName(), RecordSymbol.class);
     TempLocation recordLocation = allocateTemp(symbol.varType());
     node.setLocation(recordLocation);
     emit(new AllocateOp(recordLocation, symbol, node.position()));

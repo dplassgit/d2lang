@@ -50,7 +50,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -67,7 +67,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3L");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.LONG);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.LONG);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -84,7 +84,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=-3");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -101,8 +101,8 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3 b=-a");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.INT);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
@@ -119,8 +119,8 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3 b=-(a+3)");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.INT);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
@@ -137,7 +137,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=true");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.BOOL);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -153,9 +153,9 @@ public class StaticCheckerTest {
   public void manyBinOps() {
     SymbolTable types = checkProgram("a=4 b=5L e=(a>=3) or not (b<3L)");
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.LONG);
-    assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.LONG);
+    assertWithMessage("type of e").that(types.lookupRecursive("e")).isEqualTo(VarType.BOOL);
   }
 
   @Test
@@ -171,8 +171,8 @@ public class StaticCheckerTest {
   @Test
   public void assignIntUnaryOK() {
     SymbolTable types = checkProgram("a=3 b=!a");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -180,7 +180,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3.0");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.DOUBLE);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -197,7 +197,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=-3.0");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.DOUBLE);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -216,8 +216,8 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3.0 b=-a");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.DOUBLE);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
@@ -233,7 +233,7 @@ public class StaticCheckerTest {
   public void assignDoubleExpr() {
     State state = safeTypeCheck("a=3.1+4.4*9.0/3.14 b=4.0 c=a>b");
     SymbolTable types = firstSymTab(state);
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.DOUBLE);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.DOUBLE);
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
     VariableSetNode var = (VariableSetNode) node.lvalue();
@@ -260,15 +260,15 @@ public class StaticCheckerTest {
   @Test
   public void lengthString() {
     SymbolTable types = checkProgram("a=length('hi')");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
     types = checkProgram("b='hi' a=length(b)");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
   }
 
   @Test
   public void lengthArray() {
     SymbolTable types = checkProgram("a=length([1,2,3])");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -280,9 +280,9 @@ public class StaticCheckerTest {
   @Test
   public void asc() {
     SymbolTable types = checkProgram("a=asc('h')");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
     types = checkProgram("b='hello' a=asc(b)");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -294,23 +294,23 @@ public class StaticCheckerTest {
   @Test
   public void chr() {
     SymbolTable types = checkProgram("a=chr(65)");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.STRING);
     types = checkProgram("b=66 a=chr(b)");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.STRING);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void assignBoolConstantUnary() {
     SymbolTable types = checkProgram("a=not true");
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void assignBoolUnary() {
     SymbolTable types = checkProgram("a=true b=not a");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.BOOL);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.BOOL);
   }
 
   @Test
@@ -318,7 +318,7 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3+4-9");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(0);
@@ -346,12 +346,12 @@ public class StaticCheckerTest {
     State state = safeTypeCheck("a=3 b=a c = b+4 d=b==c e=3<4 f=d==true print c");
     SymbolTable types = firstSymTab(state);
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
-    assertWithMessage("type of c").that(types.lookup("c")).isEqualTo(VarType.INT);
-    assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
-    assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
-    assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of c").that(types.lookupRecursive("c")).isEqualTo(VarType.INT);
+    assertWithMessage("type of e").that(types.lookupRecursive("e")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of f").that(types.lookupRecursive("f")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of d").that(types.lookupRecursive("d")).isEqualTo(VarType.BOOL);
 
     ProgramNode root = state.programNode();
     AssignmentNode node = (AssignmentNode) root.statements().statements().get(1);
@@ -373,8 +373,13 @@ public class StaticCheckerTest {
   @Test
   public void assignAfterDeclMismatch() {
     assertError("a:int b=true a=b", "declared type INT to BOOL");
-    assertError("a:bool b=a b=3", "used before assignment");
     assertError("a=3 a:bool", "already declared as INT");
+  }
+
+  @Test
+  public void usedAfterNotAssigned() {
+    assertError("a:bool b=a", "used before assignment");
+    assertError("f:proc {a:bool b=a}", "used before assignment");
   }
 
   @Test
@@ -700,20 +705,20 @@ public class StaticCheckerTest {
   public void main() {
     SymbolTable types = checkProgram("a=3 b=a c=b+4 d=b==c e=3<4 f=d==true");
 
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.INT);
-    assertWithMessage("type of c").that(types.lookup("c")).isEqualTo(VarType.INT);
-    assertWithMessage("type of d").that(types.lookup("d")).isEqualTo(VarType.BOOL);
-    assertWithMessage("type of e").that(types.lookup("e")).isEqualTo(VarType.BOOL);
-    assertWithMessage("type of f").that(types.lookup("f")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.INT);
+    assertWithMessage("type of c").that(types.lookupRecursive("c")).isEqualTo(VarType.INT);
+    assertWithMessage("type of d").that(types.lookupRecursive("d")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of e").that(types.lookupRecursive("e")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of f").that(types.lookupRecursive("f")).isEqualTo(VarType.BOOL);
   }
 
   @Test
   public void whileLoop() {
     SymbolTable types = checkProgram("i=0 while i < 30 do b = i == 1 { print i }");
 
-    assertWithMessage("type of i").that(types.lookup("i")).isEqualTo(VarType.INT);
-    assertWithMessage("type of b").that(types.lookup("b")).isEqualTo(VarType.BOOL);
+    assertWithMessage("type of i").that(types.lookupRecursive("i")).isEqualTo(VarType.INT);
+    assertWithMessage("type of b").that(types.lookupRecursive("b")).isEqualTo(VarType.BOOL);
   }
 
   @Test
@@ -755,7 +760,7 @@ public class StaticCheckerTest {
   @Test
   public void decl() {
     SymbolTable types = checkProgram("a:int a=3 b=a");
-    assertWithMessage("type of a").that(types.lookup("a")).isEqualTo(VarType.INT);
+    assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
   }
 
   @Test
@@ -967,27 +972,27 @@ public class StaticCheckerTest {
   @Test
   public void recordDefinition_simple() {
     SymbolTable symTab = checkProgram("r2: record{s:string i:int b:bool}");
-    assertThat(symTab.getRecursive("r2")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("r2", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_recursive() {
     SymbolTable symTab = checkProgram("rec: record{r:rec}");
-    assertThat(symTab.getRecursive("rec")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("rec", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_forward() {
     SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
-    assertThat(symTab.getRecursive("rec1")).isInstanceOf(RecordSymbol.class);
-    assertThat(symTab.getRecursive("rec2")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("rec1", RecordSymbol.class)).isNotNull();
+    assertThat(symTab.getRecursive("rec2", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_corecursive() {
     SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{r:rec1}");
-    assertThat(symTab.getRecursive("rec1")).isInstanceOf(RecordSymbol.class);
-    assertThat(symTab.getRecursive("rec2")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("rec1", RecordSymbol.class)).isNotNull();
+    assertThat(symTab.getRecursive("rec2", RecordSymbol.class)).isNotNull();
   }
 
   @Test
@@ -1042,7 +1047,7 @@ public class StaticCheckerTest {
   @Test
   public void variableDecl_recordType() {
     SymbolTable symTab = checkProgram("r2: record{s:string} instance: r2");
-    assertThat(symTab.getRecursive("r2")).isInstanceOf(RecordSymbol.class);
+    assertThat(symTab.getRecursive("r2", RecordSymbol.class)).isNotNull();
 
     Symbol rec = symTab.get("instance");
     assertThat(rec.isAssigned()).isFalse();
@@ -1335,7 +1340,7 @@ public class StaticCheckerTest {
                 + " a=4"
                 + " f:proc:int{return 1}"
                 + " bam = foo[3+a].bar.baz[f()].qux");
-    assertThat(symtab.lookup("bam")).isEqualTo(VarType.STRING);
+    assertThat(symtab.lookupRecursive("bam")).isEqualTo(VarType.STRING);
   }
 
   @Test
@@ -1357,21 +1362,21 @@ public class StaticCheckerTest {
   @Test
   public void noArgs() {
     SymbolTable symTab = checkProgram("a=3");
-    assertThat(symTab.lookup("ARGS")).isEqualTo(VarType.UNKNOWN);
+    assertThat(symTab.lookupRecursive("ARGS")).isEqualTo(VarType.UNKNOWN);
   }
 
   @Test
   public void simpleArgs() {
     SymbolTable symTab = checkProgram("println args[0]");
-    assertThat(symTab.lookup("ARGS")).isArray();
-    assertThat(symTab.lookup("ARGS")).hasArrayBaseType(VarType.STRING);
+    assertThat(symTab.lookupRecursive("ARGS")).isArray();
+    assertThat(symTab.lookupRecursive("ARGS")).hasArrayBaseType(VarType.STRING);
   }
 
   @Test
   public void copyArgs() {
     SymbolTable symTab = checkProgram("b=args");
-    assertThat(symTab.lookup("b")).isArray();
-    assertThat(symTab.lookup("b")).hasArrayBaseType(VarType.STRING);
+    assertThat(symTab.lookupRecursive("b")).isArray();
+    assertThat(symTab.lookupRecursive("b")).hasArrayBaseType(VarType.STRING);
   }
 
   @Test
@@ -1382,10 +1387,10 @@ public class StaticCheckerTest {
                 + "print 'length is ' println len\r\n"
                 + "a=args[0]\r\n"
                 + "println 'first is ' + a\r\n");
-    assertThat(symTab.lookup("len")).isEqualTo(VarType.INT);
-    assertThat(symTab.lookup("a")).isEqualTo(VarType.STRING);
-    assertThat(symTab.lookup("ARGS")).isArray();
-    assertThat(symTab.lookup("ARGS")).hasArrayBaseType(VarType.STRING);
+    assertThat(symTab.lookupRecursive("len")).isEqualTo(VarType.INT);
+    assertThat(symTab.lookupRecursive("a")).isEqualTo(VarType.STRING);
+    assertThat(symTab.lookupRecursive("ARGS")).isArray();
+    assertThat(symTab.lookupRecursive("ARGS")).hasArrayBaseType(VarType.STRING);
   }
 
   @Test

@@ -294,13 +294,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   public void visit(VariableNode node) {
     if (node.varType().isUnknown()) {
       // Look up variable in the (current) symbol table, and set it in the node.
-      VarType existingType = symbolTable.lookup(node.name(), true);
+      VarType existingType = symbolTable.lookupRecursive(node.name());
       if (!existingType.isUnknown()) {
-        // BUG- parameters can be referenced without being assigned...
         Symbol symbol = symbolTable.getRecursive(node.name());
         if (symbol.storage() == SymbolStorage.GLOBAL && !procedures.isEmpty()) {
           // Globals can be referenced inside a proc without being assigned.
-        } else if (!symbolTable.isAssigned(node.name())) {
+        } else if (symbol == null || !symbol.isAssigned()) {
           // can't use it
           errors.add(
               new TypeException(
@@ -311,7 +310,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         node.setVarType(existingType);
       }
     } else if (node.name().equals("ARGS")) {
-      VarType type = globals.lookup(node.name());
+      VarType type = globals.lookupRecursive(node.name());
       if (type == VarType.UNKNOWN) {
         // put it in the global symbol table
         globals.declare(node.name(), node.varType());
@@ -416,8 +415,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (operator == TokenType.DOT) {
       // Now get the record from the symbol table.
       String recordName = leftType.name();
-      Symbol symbol = symbolTable.getRecursive(recordName);
-      if (symbol == null || !symbol.varType().isRecord()) {
+      RecordSymbol recordSymbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+      if (recordSymbol == null) {
         errors.add(
             new TypeException(
                 // this might be better
@@ -434,7 +433,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
       // make sure RHS is a field in record
       String fieldName = ((VariableNode) right).name();
-      RecordSymbol recordSymbol = (RecordSymbol) symbol;
       VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
         errors.add(
@@ -710,7 +708,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(DeclarationNode node) {
     // Don't go up to the parent symbol table; this allows scoping
-    VarType existingType = symbolTable.lookup(node.name(), false);
+    VarType existingType = symbolTable.lookup(node.name());
     if (!existingType.isUnknown()) {
       errors.add(
           new TypeException(
@@ -749,7 +747,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(ArrayDeclarationNode node) {
-    VarType existingType = symbolTable.lookup(node.name(), false);
+    // Don't go up to the parent symbol table; this allows scoping
+    VarType existingType = symbolTable.lookup(node.name());
     if (!existingType.isUnknown()) {
       errors.add(
           new TypeException(
@@ -803,8 +802,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(RecordDeclarationNode node) {
-    Symbol sym = symbolTable.getRecursive(node.name());
+    RecordSymbol sym = symbolTable.getRecursive(node.name(), RecordSymbol.class);
     if (sym == null) {
+      // RecordGatherer should have already added this symbol
       throw new IllegalStateException("Cannot find record " + node.name());
     }
 
@@ -817,7 +817,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         // Make sure it exists.
         RecordReferenceType rrt = (RecordReferenceType) fieldType;
         String recordTypeName = rrt.name();
-        Symbol putativeRecordSymbol = symbolTable.getRecursive(recordTypeName);
+        RecordSymbol putativeRecordSymbol =
+            symbolTable.getRecursive(recordTypeName, RecordSymbol.class);
         if (putativeRecordSymbol == null) {
           errors.add(
               new TypeException(
@@ -1120,8 +1121,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
 
-      Symbol recordSymbol = symbolTable.getRecursive(varType.name());
-      if (recordSymbol == null || !(recordSymbol instanceof RecordSymbol)) {
+      RecordSymbol recordSymbol = symbolTable.getRecursive(varType.name(), RecordSymbol.class);
+      if (recordSymbol == null) {
         // this should never happen because the varType.isRecord, above, should have caught
         // it.
         errors.add(
@@ -1133,16 +1134,15 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
 
-      RecordSymbol record = (RecordSymbol) recordSymbol;
       // make sure string after the dot is a field in record
       String fieldName = fsn.fieldName();
-      VarType fieldType = record.fieldType(fieldName);
+      VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
         errors.add(
             new TypeException(
                 String.format(
                     "Cannot set unknown field %s of RECORD type %s",
-                    fieldName, record.name()),
+                    fieldName, recordSymbol.name()),
                 fsn.position()));
         return;
       } else if (!fieldType.compatibleWith(rhs.varType())) {
@@ -1150,7 +1150,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             new TypeException(
                 String.format(
                     "Field %s of RECORD type %s declared as %s but expression is %s",
-                    fieldName, record.name(), fieldType, rhs.varType()),
+                    fieldName, recordSymbol.name(), fieldType, rhs.varType()),
                 lvalue.position()));
       }
       lvalue.setVarType(fieldType);

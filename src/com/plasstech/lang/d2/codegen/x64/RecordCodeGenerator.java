@@ -203,7 +203,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       resolver.mov(right, RDX);
     }
 
-    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(left.type().name());
+    RecordSymbol recordSymbol = symTab.getRecursive(left.type().name(), RecordSymbol.class);
     if (recordSymbol == null) {
       VariableLocation variable = (VariableLocation) left;
       recordSymbol = variable.symbol().recordSymbol();
@@ -241,7 +241,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       fail(op.position(), "Cannot get field of non record %s", record);
     }
     VariableLocation variable = (VariableLocation) record;
-    RecordSymbol recordSymbol = (RecordSymbol) symTab.getRecursive(record.type().name());
+    RecordSymbol recordSymbol = symTab.getRecursive(record.type().name(), RecordSymbol.class);
     if (recordSymbol == null) {
       recordSymbol = variable.symbol().recordSymbol();
     }

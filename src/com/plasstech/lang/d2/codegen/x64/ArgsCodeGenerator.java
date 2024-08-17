@@ -14,7 +14,7 @@ class ArgsCodeGenerator {
   }
 
   public void generate() {
-    if (symbolTable.get("ARGS") != null) {
+    if (symbolTable.getRecursive("ARGS") != null) {
       emitter.emit("; convert argc, argv to ARGS global array");
 
       emitter.emit("mov DWORD [RSP + 16], ECX");

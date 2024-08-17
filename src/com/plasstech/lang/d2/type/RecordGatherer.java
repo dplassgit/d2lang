@@ -28,7 +28,7 @@ class RecordGatherer extends DefaultNodeVisitor {
 
   @Override
   public void visit(ProcedureNode node) {
-    ProcSymbol procSymbol = (ProcSymbol) symbolTable.get(node.name());
+    ProcSymbol procSymbol = symbolTable.get(node.name(), ProcSymbol.class);
     symbolTable = procSymbol.symTab();
     super.visit(node);
     symbolTable = symbolTable.parent();
@@ -46,6 +46,7 @@ class RecordGatherer extends DefaultNodeVisitor {
   public void visit(RecordDeclarationNode node) {
     // 1. Make sure no nested records or procs
     for (DeclarationNode field : node.fields()) {
+      // TODO: replace the instanceof
       if (field instanceof RecordDeclarationNode) {
         RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
         throw new TypeException(
