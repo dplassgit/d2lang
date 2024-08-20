@@ -7,6 +7,7 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.FALSE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
@@ -26,7 +27,6 @@ import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
@@ -43,8 +43,6 @@ public class ArithmeticOptimizerTest {
   private static final TempLocation DBL1 = LocationUtils.newTempLocation("dbl1", VarType.DOUBLE);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
-  private static final ConstantOperand<String> NULL_STRING =
-      new ConstantOperand<String>(null, VarType.STRING);
   private static final Operand CONSTANT_RANGE =
       new ConstantOperand<Range>(Range.create(1234, 2345), VarType.RANGE);
 
@@ -385,24 +383,24 @@ public class ArithmeticOptimizerTest {
   @Test
   public void bitOperations(@TestParameter({"&", "|", "^"}) String operation) {
     // TODO: don't use the interpeter here
-    TestUtils.optimizeAssertSameVariables(String.format("b=111 %s 4 println b", operation),
-        OPTIMIZER);
+    assertThatInterpreting(String.format("b=111 %s 4 println b", operation))
+        .withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test
   public void stringOperationsGlobals() {
     // TODO: don't use the interpeter here
-    TestUtils.optimizeAssertSameVariables(
-        "a='123'[0] b=length('123') c=chr(65) d=asc('a') println a println b println c println d",
-        OPTIMIZER);
+    assertThatInterpreting(
+        "a='123'[0] b=length('123') c=chr(65) d=asc('a') println a println b println c println d")
+        .withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test
   public void stringOperations() {
     // TODO: don't use the interpeter here
-    TestUtils.optimizeAssertSameVariables(
-        "p:proc {s='123' a=s[0] b=length(s) c=asc(a) d=chr(c) println s println a println b println d}",
-        OPTIMIZER);
+    assertThatInterpreting(
+        "p:proc {s='123' a=s[0] b=length(s) c=asc(a) d=chr(c) println s println a println b println d}")
+        .withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test
@@ -422,8 +420,8 @@ public class ArithmeticOptimizerTest {
       @TestParameter({"AND", "OR", "XOR"}) TokenType operator) {
 
     // TODO: don't use the interpeter here
-    TestUtils.optimizeAssertSameVariables(
-        String.format("a=%s %s %s", left, operator, right), OPTIMIZER);
+    assertThatInterpreting(String.format("a=%s %s %s", left, operator, right))
+        .withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test

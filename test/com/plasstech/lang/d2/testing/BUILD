@@ -1,6 +1,6 @@
 java_library(
-    name = "test_utils",
-    srcs = ["TestUtils.java"],
+    name = "test_code",
+    srcs = ["TestCode.java"],
     visibility = ["//visibility:public"],
     deps = [
         "//src/com/plasstech/lang/d2:executor",

@@ -19,9 +19,9 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.codegen.x64.testing.AsmUtils;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
@@ -194,6 +194,6 @@ public class RangeCodeGeneratorTest {
     op.accept(sut);
     System.err.printf("\nTEST CASE: %s\n\n", op);
     System.err.println(NEWLINE_JOINER.join(emitter.all()));
-    return TestUtils.trimComments(emitter.all());
+    return AsmUtils.trimComments(emitter.all());
   }
 }

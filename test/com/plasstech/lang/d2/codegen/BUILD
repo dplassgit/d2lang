@@ -22,7 +22,7 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type:result",
         "//src/com/plasstech/lang/d2/type:var_types",
-        "//test/com/plasstech/lang/d2/testing:test_utils",
+        "//test/com/plasstech/lang/d2/testing:test_code",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_guava_guava_testlib",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",

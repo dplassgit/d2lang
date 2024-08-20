@@ -14,7 +14,7 @@ import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
-import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.codegen.x64.testing.AsmUtils;
 
 @RunWith(TestParameterInjector.class)
 public class PrintCodeGeneratorTest {
@@ -33,7 +33,7 @@ public class PrintCodeGeneratorTest {
   public void printStringConstant() {
     SysCall op = new SysCall(Call.PRINT, ConstantOperand.of("hi"));
     sut.visit(op);
-    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    ImmutableList<String> code = AsmUtils.trimComments(emitter.all());
     assertThat(code).containsAtLeast("mov RCX, CONST_hi_0", "call printf").inOrder();
   }
 
@@ -41,7 +41,7 @@ public class PrintCodeGeneratorTest {
   public void printlnStringConstant() {
     SysCall op = new SysCall(Call.PRINTLN, ConstantOperand.of("hi"));
     sut.visit(op);
-    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    ImmutableList<String> code = AsmUtils.trimComments(emitter.all());
     assertThat(code)
         .containsAtLeast("mov RDX, CONST_hi_0", "mov RCX, PRINTLN_STRING", "call printf")
         .inOrder();
@@ -55,7 +55,7 @@ public class PrintCodeGeneratorTest {
     SysCall op = new SysCall(message,
         ImmutableList.of(ConstantOperand.of(1), ConstantOperand.of(2)));
     sut.visit(op);
-    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    ImmutableList<String> code = AsmUtils.trimComments(emitter.all());
     assertThat(code)
         .containsAtLeast("mov RCX, " + entry.name(), "mov DWORD EDX, 1", "mov DWORD R8d, 2",
             "call printf");
@@ -71,7 +71,7 @@ public class PrintCodeGeneratorTest {
         ConstantOperand.of(2),
         ConstantOperand.of(3)));
     sut.visit(op);
-    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    ImmutableList<String> code = AsmUtils.trimComments(emitter.all());
     assertThat(code)
         .containsAtLeast("mov DWORD R9d, 3", "mov RCX, " + entry.name(), "mov DWORD EDX, 1",
             "mov DWORD R8d, 2", "call printf");
@@ -88,7 +88,7 @@ public class PrintCodeGeneratorTest {
         ConstantOperand.of(3),
         ConstantOperand.of(4)));
     sut.visit(op);
-    ImmutableList<String> code = TestUtils.trimComments(emitter.all());
+    ImmutableList<String> code = AsmUtils.trimComments(emitter.all());
     assertThat(code)
         .containsAtLeast("mov DWORD R9d, 3",
             "mov DWORD ECX, 4", "push RCX",

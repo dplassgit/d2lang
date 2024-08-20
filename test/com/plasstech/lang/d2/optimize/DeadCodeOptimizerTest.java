@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
-import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.testing.TestCode;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeadCodeOptimizerTest {
@@ -31,18 +32,16 @@ public class DeadCodeOptimizerTest {
 
   @Test
   public void oneLoopBreak() {
-    TestUtils.optimizeAssertSameVariables(
-        "      oneLoopBreakDCO:proc(n:int):int {\n"
-            + "  sum = 0\n"
-            + "  i = 0 "
-            + "  while i < 10 do i = i + 1 {"
-            + "    sum = sum + 1\n"
-            + "    break"
-            + "  }"
-            + "  return sum"
-            + "}"
-            + "println oneLoopBreakDCO(10)",
-        OPTIMIZER);
+    assertThatInterpreting("      oneLoopBreakDCO:proc(n:int):int {\n"
+    + "  sum = 0\n"
+    + "  i = 0 "
+    + "  while i < 10 do i = i + 1 {"
+    + "    sum = sum + 1\n"
+    + "    break"
+    + "  }"
+    + "  return sum"
+    + "}"
+    + "println oneLoopBreakDCO(10)").withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test

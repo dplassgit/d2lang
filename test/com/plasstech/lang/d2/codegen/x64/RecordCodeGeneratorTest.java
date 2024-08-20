@@ -13,10 +13,10 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.codegen.x64.testing.AsmUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
-import com.plasstech.lang.d2.testing.TestUtils;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymTab;
@@ -178,6 +178,6 @@ public class RecordCodeGeneratorTest {
     sut.visit(op);
     System.err.printf("\nTEST CASE: %s\n\n", op);
     System.err.println(NEWLINE_JOINER.join(emitter.all()));
-    return TestUtils.trimComments(emitter.all());
+    return AsmUtils.trimComments(emitter.all());
   }
 }

@@ -2,6 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import com.plasstech.lang.d2.testing.TestUtils;
+import com.plasstech.lang.d2.testing.TestCode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -35,64 +36,59 @@ public class DeadAssignmentOptimizerTest {
 
   @Test
   public void notDeadParams() {
-    TestUtils.optimizeAssertSameVariables(
-        "      p:proc(n:int):int {" //
-            + "  n=n*2 x=n-1 return x+n " //
-            + "}" //
-            + "println p(10)",
-        optimizer);
+    assertThatInterpreting("      p:proc(n:int):int {" //
+        + "  n=n*2 x=n-1 return x+n " //
+        + "}" //
+        + "println p(10)").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
   public void notDeadArraySetGlobal() {
-    TestUtils.optimizeAssertSameVariables("a:int[2] d=1 a[d]=d println a[d]", optimizer);
+    assertThatInterpreting("a:int[2] d=1 a[d]=d println a[d]").withOptimizer(optimizer)
+        .hasSameVariables();
   }
 
   @Test
   public void notDeadArraySetLocal() {
     InterpreterResult result =
-        TestUtils.optimizeAssertSameVariables(
-            "p:proc() {a:int[2] d=1 a[d]=d print a[d]} p()", optimizer);
+        assertThatInterpreting("p:proc() {a:int[2] d=1 a[d]=d print a[d]} p()")
+            .withOptimizer(optimizer).hasSameVariables();
     assertThat(result.environment().output()).containsExactly("1");
   }
 
   @Test
   public void deadTemps() {
-    TestUtils.optimizeAssertSameVariables(
-        "      p:proc(n:int):int {"
-            + "  sum = 0 i=0 while i < n do i = i + 1 {"
-            + "    y = n * (2-1)"
-            + "    y = n * (n-1) + n"
-            + "    sum = sum + i"
-            + "  }"
-            + "  return sum"
-            + "}"
-            + "println p(10)",
-        optimizer);
+    assertThatInterpreting("      p:proc(n:int):int {"
+        + "  sum = 0 i=0 while i < n do i = i + 1 {"
+        + "    y = n * (2-1)"
+        + "    y = n * (n-1) + n"
+        + "    sum = sum + i"
+        + "  }"
+        + "  return sum"
+        + "}"
+        + "println p(10)").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
   public void recordLoopInvariant() {
-    TestUtils.optimizeAssertSameVariables(
-        "      rt: record{i:int} "
-            + "updaterec: proc(re:rt) { "
-            + "  re.i = re.i + 1 "
-            + "} "
-            + "recordloopinvariant: proc(rec:rt): int { "
-            + "  rec.i = 0"
-            + "  while rec.i < 10 { "
-            + "    updaterec(rec) "
-            + "  } "
-            + "  return rec.i "
-            + "} "
-            + "val = recordloopinvariant(new rt) "
-            + "println val",
-        optimizer);
+    assertThatInterpreting("      rt: record{i:int} "
+        + "updaterec: proc(re:rt) { "
+        + "  re.i = re.i + 1 "
+        + "} "
+        + "recordloopinvariant: proc(rec:rt): int { "
+        + "  rec.i = 0"
+        + "  while rec.i < 10 { "
+        + "    updaterec(rec) "
+        + "  } "
+        + "  return rec.i "
+        + "} "
+        + "val = recordloopinvariant(new rt) "
+        + "println val").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
   public void linkedList() {
-    TestUtils.optimizeAssertSameVariables(TestUtils.LINKED_LIST, optimizer);
+    assertThatInterpreting(TestCode.LINKED_LIST).withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
@@ -114,46 +110,40 @@ public class DeadAssignmentOptimizerTest {
 
   @Test
   public void notDeadFunctionCall_bug249() {
-    TestUtils.optimizeAssertSameVariables(
-        "      pr:proc:int {\n"
-            + "     print 'hi'\n"
-            + "     return 3\n"
-            + "    }\n"
-            + "f:proc {\n"
-            + "  x=pr()\n"
-            + "}\n"
-            + "f()",
-        optimizer);
+    assertThatInterpreting("      pr:proc:int {\n"
+        + "     print 'hi'\n"
+        + "     return 3\n"
+        + "    }\n"
+        + "f:proc {\n"
+        + "  x=pr()\n"
+        + "}\n"
+        + "f()").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
   public void notDeadFunctionCall_afterAssignment_bug249() {
-    TestUtils.optimizeAssertSameVariables(
-        "      pr:proc:int {\n"
-            + "     print 'hi'\n"
-            + "     return 3\n"
-            + "    }\n"
-            + "f:proc {\n"
-            + "  x=pr()\n"
-            + "  x=3\n"
-            + "}\n"
-            + "f()",
-        optimizer);
+    assertThatInterpreting("      pr:proc:int {\n"
+        + "     print 'hi'\n"
+        + "     return 3\n"
+        + "    }\n"
+        + "f:proc {\n"
+        + "  x=pr()\n"
+        + "  x=3\n"
+        + "}\n"
+        + "f()").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
   public void notDeadFunctionCall_beforeAssignment_bug249() {
-    TestUtils.optimizeAssertSameVariables(
-        "      pr:proc:int {\n"
-            + "     print 'hi'\n"
-            + "     return 3\n"
-            + "    }\n"
-            + "f:proc {\n"
-            + "  x=3\n"
-            + "  x=pr()\n"
-            + "}\n"
-            + "f()",
-        optimizer);
+    assertThatInterpreting("      pr:proc:int {\n"
+        + "     print 'hi'\n"
+        + "     return 3\n"
+        + "    }\n"
+        + "f:proc {\n"
+        + "  x=3\n"
+        + "  x=pr()\n"
+        + "}\n"
+        + "f()").withOptimizer(optimizer).hasSameVariables();
   }
 
   @Test
@@ -244,14 +234,12 @@ public class DeadAssignmentOptimizerTest {
 
   @Test
   public void notDeadGlobalInProc() {
-    TestUtils.optimizeAssertSameVariables(
-        "      g = 0 "
-            + "g = 1 "
-            // this 'g' should not be dead.
-            + "shortVoidGlobal:proc(n:int) { g = g + n } "
-            + "shortVoidGlobal(10) "
-            + "println g",
-        optimizer);
+    assertThatInterpreting("      g = 0 "
+        + "g = 1 "
+        // this 'g' should not be dead.
+        + "shortVoidGlobal:proc(n:int) { g = g + n } "
+        + "shortVoidGlobal(10) "
+        + "println g").withOptimizer(optimizer).hasSameVariables();
   }
 
   private static final Location B = LocationUtils.newParamLocation("b", null, 0, 0);
