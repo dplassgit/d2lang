@@ -1,0 +1,1 @@
+./scripts/dcc src/d2j/v0/v0j.d --save-temps -o v0j.exe --nooptimizeAsm && ./v0j.exe < $1

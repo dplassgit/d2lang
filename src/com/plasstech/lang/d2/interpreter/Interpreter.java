@@ -804,7 +804,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         return ~r1;
 
       case CHR:
-        return "" + (char) r1;
+        return Character.toString(r1);
 
       default:
         throw new IllegalStateException("Unknown bool/int unaryop " + op.operator());
