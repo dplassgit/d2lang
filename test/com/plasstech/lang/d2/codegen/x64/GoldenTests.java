@@ -109,7 +109,7 @@ public class GoldenTests {
             .setFilename(path)
             .setOptimize(optimize)
             .setCodeGenDebugLevel(0)
-            .setOptDebugLevel(0)
+            .setOptDebugLevel(2)
             .build();
     State result = new YetAnotherCompiler().compile(config);
     if (result.error()) {

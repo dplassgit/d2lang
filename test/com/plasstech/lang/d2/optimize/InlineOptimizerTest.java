@@ -9,7 +9,8 @@ import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.testing.TestCode;
 
 public class InlineOptimizerTest {
-  private static final Optimizer OPTIMIZER =
+  // don't make this static because it needs to be reset every test.
+  private Optimizer optimizers =
       new ILOptimizer(
           ImmutableList.of(
               new NopOptimizer(),
@@ -26,7 +27,7 @@ public class InlineOptimizerTest {
     assertThatInterpreting("      g = 0 "
         + "shortVoidNoArg:proc() { g = 3 } " //
         + "shortVoidNoArg() "
-        + "println g").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println g").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
@@ -34,19 +35,19 @@ public class InlineOptimizerTest {
     assertThatInterpreting("      g = 0"
         + "shortVoidGlobal:proc(n:int) { g = g + n } " //
         + "shortVoidGlobal(10) "
-        + "println g").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println g").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
   public void shortProc() {
     assertThatInterpreting("      shortProc:proc(n:int):int { return n + 1 } "
-        + "println shortProc(10)").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println shortProc(10)").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
   public void shortProcForward() {
     assertThatInterpreting("  println shortProc(10) "
-        + "shortProc:proc(n:int):int { println n return n + 1 }").withOptimizer(OPTIMIZER)
+        + "shortProc:proc(n:int):int { println n return n + 1 }").withOptimizer(optimizers)
         .hasNoCalls();
   }
 
@@ -60,7 +61,7 @@ public class InlineOptimizerTest {
         + "  return x"
         + "} " //
         + "r = shortProcRecord() "
-        + "println r.i").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println r.i").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
@@ -72,31 +73,37 @@ public class InlineOptimizerTest {
         + "  r.i=3 "
         + "} " //
         + "shortProcGlobalRecord() "
-        + "println r.i").withOptimizer(OPTIMIZER).hasCallsTo("shortProcGlobalRecord");
+        + "println r.i").withOptimizer(optimizers).hasCallsTo("shortProcGlobalRecord");
   }
 
   @Test
   public void shortProcWithCall() {
     assertThatInterpreting("      p:proc(n:int):int { return n+1 }"
         + "shortProcWithCall:proc(n:int):int { return p(n) } " //
-        + "println shortProcWithCall(10)").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println shortProcWithCall(10)").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
   public void medium() {
-    assertThatInterpreting("      medium:proc(c:string):bool { return c >= '1' } " //
+    assertThatInterpreting(""
+        + " medium:proc(c:string):bool { "
+        + "   println 'The string is ' "
+        + "   print c "
+        + "   print ' and its first char is ' "
+        + "   println c>= '1' "
+        + "   return c >= '1' } " //
         + "println medium('12') "
         + "println medium('0')").hasNoCalls();
   }
 
   @Test
   public void linkedList() {
-    assertThatInterpreting(TestCode.LINKED_LIST).withOptimizer(OPTIMIZER).hasSameVariables();
+    assertThatInterpreting(TestCode.LINKED_LIST).withOptimizer(optimizers).hasSameVariables();
   }
 
   @Test
   public void recordLoopInvariant() {
-    assertThatInterpreting(TestCode.RECORD_LOOP_INVARIANT).withOptimizer(OPTIMIZER)
+    assertThatInterpreting(TestCode.RECORD_LOOP_INVARIANT).withOptimizer(optimizers)
         .hasSameVariables();
   }
 
@@ -105,7 +112,7 @@ public class InlineOptimizerTest {
     assertThatInterpreting("      ignoredReturnValue:proc():int {" //
         + "  return 6 "
         + "} "
-        + "ignoredReturnValue()").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "ignoredReturnValue()").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
@@ -114,7 +121,7 @@ public class InlineOptimizerTest {
         + "  return 6 "
         + "} "
         + "ignoredReturnValueSometimes() "
-        + "println ignoredReturnValueSometimes()").withOptimizer(OPTIMIZER).hasNoCalls();
+        + "println ignoredReturnValueSometimes()").withOptimizer(optimizers).hasNoCalls();
   }
 
   @Test
@@ -128,11 +135,34 @@ public class InlineOptimizerTest {
 
   @Test
   public void multipleCalls() {
-    assertThatInterpreting("      multipleCalls:proc(c:string):bool { return c >= '0' } " //
-        + "" //
-        + "println multipleCalls('12') " //
-        + "println multipleCalls('3') " //
-        + "println multipleCalls('no') ").withOptimizer(OPTIMIZER).hasNoCalls();
+    assertThatInterpreting(""
+        + "multipleCalls:proc(c:string):bool { return c >= '0' } "
+        + "println multipleCalls('12') "
+        + "println multipleCalls('3') "
+        + "println multipleCalls('no') ").withOptimizer(optimizers).hasNoCalls();
+  }
+
+  @Test
+  public void tooManyCalls() {
+    assertThatInterpreting(
+        "      tooManyCalls:proc(c:string):bool { "
+            + "   print 'The string is ' "
+            + "   print c "
+            + "   print ' and its first char is ' "
+            + "   println c >= '5' "
+            + "   return c >= '5' } "
+            + "println tooManyCalls('1') "
+            + "println tooManyCalls('2') "
+            + "println tooManyCalls('3') "
+            + "println tooManyCalls('4') "
+            + "println tooManyCalls('5') "
+            + "println tooManyCalls('6') "
+            + "println tooManyCalls('7') "
+            + "println tooManyCalls('8') "
+            + "println tooManyCalls('9') "
+            + "println tooManyCalls('10') "
+            + "println tooManyCalls('a') ")
+        .withOptimizer(optimizers).hasCallsTo("tooManyCalls");
   }
 
   @Test
@@ -141,7 +171,7 @@ public class InlineOptimizerTest {
         + "  if n>0 {return true} else {return false} "
         + "} "
         + "println twoReturns(10) "
-        + "println twoReturns(-10) ").withOptimizer(OPTIMIZER).hasCallsTo("twoReturns");
+        + "println twoReturns(-10) ").withOptimizer(optimizers).hasCallsTo("twoReturns");
   }
 
   @Test
@@ -152,6 +182,6 @@ public class InlineOptimizerTest {
         + "  }"
         + "  return sum"
         + "}"
-        + "println longProc(10)").withOptimizer(OPTIMIZER).hasCallsTo("longProc");
+        + "println longProc(10)").withOptimizer(optimizers).hasCallsTo("longProc");
   }
 }
