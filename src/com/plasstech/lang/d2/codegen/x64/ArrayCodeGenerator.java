@@ -231,11 +231,37 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
     Operand left = op.left();
     Operand right = op.right();
+    String leftName = resolver.resolve(op.left());
+    String rightName = resolver.resolve(op.right());
+    TokenType operator = op.operator();
+    emitter.emit(
+        "; array cmp: %s = %s %s %s",
+        destName, leftName, operator, rightName);
+
+    boolean leftNull = leftName.equals("0") || left.type().isNull();
+    boolean rightNull = rightName.equals("0") || right.type().isNull();
+    if (leftNull && rightNull) {
+      // They're the same so if we want EQEQ, it's 1.
+      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.EQEQ) ? "1" : "0");
+    }
+    if (leftNull) {
+      emitter.emit("cmp QWORD %s, 0", rightName);
+      emitter.emit("%s %s  ; array cmp %s", BINARY_OPCODE.get(operator), destName, operator);
+    }
+    if (rightNull) {
+      emitter.emit("cmp QWORD %s, 0", leftName);
+      emitter.emit("%s %s  ; array cmp %s", BINARY_OPCODE.get(operator), destName, operator);
+    }
+    if (leftNull || rightNull) {
+      resolver.deallocate(left);
+      resolver.deallocate(right);
+      return;
+    }
+
     ArrayType leftArrayType = (ArrayType) left.type();
     ArrayType rightArrayType = (ArrayType) right.type();
-    TokenType operator = op.operator();
     if (leftArrayType.dimensions() != rightArrayType.dimensions() && operator == TokenType.NEQ) {
-      // Different dimensions; definitely not the same
+      // Different dimensions; definitely not the same.
       emitter.emit("mov BYTE %s, 1", destName);
       return;
     }
@@ -243,9 +269,6 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     String endLabel = Labels.nextLabel("array_cmp_short_circuit");
     String nonNullarraycmp = Labels.nextLabel("non_null_array_cmp");
     Register tempReg = resolver.allocate(VarType.INT);
-    String leftName = resolver.resolve(op.left());
-    String rightName = resolver.resolve(op.right());
-    // TODO this can be simpler
     emitter.emit("; if they're the same objects we can stop now");
     emitter.emit("mov QWORD %s, %s ; array compare setup", tempReg.name(), leftName);
     emitter.emit("cmp QWORD %s, %s", tempReg.name(), rightName);
@@ -262,46 +285,29 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emitLabel(nextTest);
     // if left == null: return op == NEQ
     nextTest = Labels.nextLabel("next_arraycmp_test");
-    if (leftName.equals("0")) {
-      emitter.emit("; left is literal null");
-      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-      emitter.emit("jmp %s", endLabel);
-    } else {
-      emitter.emit("cmp QWORD %s, 0", leftName);
-      emitter.emit("jne %s", nextTest);
-      emitter.emit("; left is null, right is not");
-      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-      emitter.emit("jmp %s", endLabel);
-    }
+    emitter.emit("cmp QWORD %s, 0", leftName);
+    emitter.emit("jne %s", nextTest);
+    emitter.emit("; left is null, right is not");
+    emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+    emitter.emit("jmp %s", endLabel);
     emitter.emit("; left is not null, test right");
     emitter.emitLabel(nextTest);
-    if (rightName.equals("0")) {
-      // if right == null: return op == NEQ
-      emitter.emit("; right is literal null");
-      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-      emitter.emit("jmp %s", endLabel);
-      // WE DON"T NEED TO GENERATE ANY MORE CODE
-    } else {
-      emitter.emit("cmp QWORD %s, 0", rightName);
-      emitter.emit("jne %s", nonNullarraycmp);
-      emitter.emit("; right is null, left is not");
-      emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
-      emitter.emit("jmp %s", endLabel);
-    }
+    emitter.emit("cmp QWORD %s, 0", rightName);
+    emitter.emit("jne %s", nonNullarraycmp);
+    emitter.emit("; right is null, left is not");
+    emitter.emit("mov BYTE %s, %s", destName, (operator == TokenType.NEQ) ? "1" : "0");
+    emitter.emit("jmp %s", endLabel);
 
     emitter.emit("; left and right both not null");
     emitter.emitLabel(nonNullarraycmp);
 
-    emitter.emit(
-        "; array cmp: %s = %s %s %s",
-        destName, resolver.resolve(left), operator, resolver.resolve(right));
-
-    // get left size, right size
+    // Need to use memcmp; get left size, right size
 
     Register leftLengthReg = resolver.allocate(VarType.INT);
     generateArrayLength(new RegisterLocation("__leftLength", leftLengthReg, VarType.INT), left);
     Register rightLengthReg = resolver.allocate(VarType.INT);
-    generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
+    generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT),
+        right);
 
     String continueLabel = Labels.nextLabel("array_memcmp");
     emitter.emit("cmp %s, %s", leftLengthReg.nameByType(VarType.INT),
@@ -332,13 +338,14 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     // calculate header (1+4*dimensions) + total length ( base type * length)
     emitter.emit(
         "imul %s, %s  ; ...*base size ...", leftLengthReg, leftArrayType.baseType().size());
-    emitter.emit("add %s, %d  ; ... +1+dims*4", leftLengthReg, 1 + leftArrayType.dimensions() * 4);
+    emitter.emit("add %s, %d  ; ... +1+dims*4", leftLengthReg,
+        1 + leftArrayType.dimensions() * 4);
     // LeftLengthReg may or may not already be in r8
     resolver.mov(VarType.INT, leftLengthReg, R8);
     resolver.deallocate(leftLengthReg);
     emitter.emitExternCall("memcmp");
     emitter.emit("cmp RAX, 0");
-    emitter.emit("%s %s  ; record cmp %s", BINARY_OPCODE.get(operator), destName, operator);
+    emitter.emit("%s %s  ; array cmp %s", BINARY_OPCODE.get(operator), destName, operator);
     registerState.condPop();
 
     emitter.emitLabel(endLabel);

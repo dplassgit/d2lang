@@ -396,6 +396,7 @@ public class Parser implements Phase {
     /** while... (dimensions) */
     expectToken(TokenType.LBRACKET);
     if (token.type() == TokenType.RBRACKET) {
+      // array declaration (without size)
       expectToken(TokenType.RBRACKET);
       return new DeclarationNode(varToken.text(), arrayType, varToken.start());
     }

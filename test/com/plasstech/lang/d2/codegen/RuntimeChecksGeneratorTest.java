@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -123,7 +124,7 @@ public class RuntimeChecksGeneratorTest {
 
     state = state.setIlCode(program);
     state = sut.execute(state);
-    // System.out.println(Joiner.on('\n').join(state.lastIlCode()));
+    System.out.println(Joiner.on('\n').join(state.lastIlCode()));
     return state.lastIlCode();
   }
 

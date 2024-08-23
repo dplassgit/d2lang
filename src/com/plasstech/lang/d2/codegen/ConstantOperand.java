@@ -154,7 +154,7 @@ public class ConstantOperand<T> implements Operand {
 
   @Override
   public boolean isNull() {
-    return value() == null;
+    return value() == null || type().isNull();
   }
 
   /** Returns true if the operand is an immediate (constant) that is more than 32 bits */

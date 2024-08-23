@@ -104,7 +104,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
 
       case LBRACKET:
         if (left.isNull()) {
-          throw new D2RuntimeException("Cannot index of NULL object", op.position(),
+          throw new D2RuntimeException("Cannot index on NULL object", op.position(),
               "Null pointer");
         }
         if (!right.isConstant()) {

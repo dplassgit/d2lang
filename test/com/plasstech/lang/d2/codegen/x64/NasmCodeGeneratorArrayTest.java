@@ -320,6 +320,15 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
+  public void compareToNull() throws Exception {
+    assertThatCompiling(DASSERTS //
+        + "a1=[1,2,3] "
+        + "assertFalse(a1 == null) "
+        + "assertFalse(null == a1) "
+        + "assertTrue(a1 != null)").executedEqualsInterpreted();
+  }
+
+  @Test
   public void compareEqual() throws Exception {
     assertThatCompiling(DASSERTS
         + "a1=[1,2,3] "
@@ -485,5 +494,43 @@ public class NasmCodeGeneratorArrayTest {
             + "data[13]=0\n"
             + " println data";
     assertThatCompiling(program).executedEqualsInterpreted();
+  }
+
+  private static final String NULL_ARRAY = ""
+      + "f:proc(a:int[]) {\n"
+      + "   println a[0]\n"
+      + "}\n"
+      + "f(null)";
+
+  @Test
+  public void nullArrayOptimized() {
+    assertThatCompiling(NULL_ARRAY).withOptimize(true)
+        .hasCompileTimeError("Cannot index on NULL object");
+  }
+
+  @Test
+  public void nullArrayNotOptimized() {
+    assertThatCompiling(NULL_ARRAY).withOptimize(false)
+        .withRuntimeError("Null pointer error").executes();
+  }
+
+  @Test
+  public void compareArrays(@TestParameter boolean optimize) {
+    String compareArrays = ""
+        + "f:proc(a:int[], b:int[], equal:bool) {\n"
+        + "  if equal { if a==b { println 'correct1' } else { exit 'incorrect1'} } \n"
+        + "  else { if a!=b { println 'correct2' } else { exit 'incorrect2'} }\n"
+        + "}\n"
+        + "a1=[1,2,3]\n"
+        + "a2=[1,2,4]\n"
+        + "a3=[1,2]\n"
+        + "print 'a1, a1, true: ' f(a1, a1, true)\n"
+        + "print 'a1, [1,2,3], true: 'f(a1, [1,2,3], true)\n"
+        + "print 'a1, a2, false: 'f(a1, a2, false)\n"
+        + "print 'a1, a3, false: 'f(a1, a3, false)\n"
+        + "print 'a1, null, false: 'f(a1, null, false)\n"
+        + "print 'null, a1, false: 'f(null, a1, false)\n";
+    ;
+    assertThatCompiling(compareArrays).withOptimize(optimize).executes();
   }
 }

@@ -106,7 +106,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
         break;
 
       case LBRACKET:
-        if (left.type() != VarType.RANGE) {
+        if (left.type().compatibleWith(VarType.NULL)) {
           left = npeCheck(left, position);
         }
         right = indexChecks(left, right, position);
@@ -163,7 +163,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     switch (operator) {
       case LENGTH:
       case ASC:
-        source = npeCheck(source, position);
+        if (source.type().compatibleWith(VarType.NULL)) {
+          source = npeCheck(source, position);
+        } else {
+          return;
+        }
         break;
 
       default:
@@ -362,6 +366,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     if (thingWithIndex.type() == VarType.RANGE) {
       emit(new Transfer(length, ConstantOperand.of(2), position));
     } else {
+      // TODO: arrays might have a known size, so this doesn't need to be done
       emit(new UnaryOp(length, TokenType.LENGTH, thingWithIndex, position));
     }
 

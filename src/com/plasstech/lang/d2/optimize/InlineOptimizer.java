@@ -22,6 +22,7 @@ import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 
 /**
@@ -199,10 +200,13 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
       ProcEntry entry = procsByName.get(procName);
       for (int i = 0; i < callOp.actuals().size(); ++i) {
         Operand actual = callOp.actuals().get(i);
+        ParamSymbol formal = entry.formals().get(i);
         code.add(
             ip,
             new Transfer(
-                inlineRemapper.remapFormal(entry.formalNames().get(i), actual.type()),
+                // use formal.varType instead of actual.varType, because actual.varType
+                // might be null, which we don't want.
+                inlineRemapper.remapFormal(formal.name(), formal.varType()),
                 actual,
                 callOp.position()));
       }

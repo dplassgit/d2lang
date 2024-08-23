@@ -228,9 +228,11 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
       // just compare right to null
       String rightName = resolver.resolve(right);
       emitter.emit("cmp QWORD %s, 0", rightName);
+      resolver.deallocate(right);
     } else {
       String leftName = resolver.resolve(left);
       emitter.emit("cmp QWORD %s, 0", leftName);
+      resolver.deallocate(left);
     }
     emitter.emit("%s %s", (operator == TokenType.NEQ) ? "setnz" : "setz", destName);
   }

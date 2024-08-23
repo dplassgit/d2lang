@@ -621,6 +621,7 @@ public class StaticCheckerTest {
     assertError("a:int[] b:int[] b=a", "before assignment");
     assertError("a:int[] a:int", "already declared");
     assertError("a:int[] a=3", "Cannot convert");
+    assertError("a:int[] b=a", "used before assignment");
   }
 
   @Test
@@ -628,6 +629,7 @@ public class StaticCheckerTest {
     checkProgram("a:int[1]");
     checkProgram("a:int[]");
     checkProgram("a:int[1] b:int[] b=a");
+    checkProgram("a:int[1] println a==null");
   }
 
   @Test
@@ -1501,6 +1503,7 @@ public class StaticCheckerTest {
         .setLastPhase(PhaseName.TYPE_CHECK).build();
     State state = new YetAnotherCompiler().compile(config);
     if (state.error()) {
+      state.errors().errors().get(0).printStackTrace();
       fail(state.errorMessage());
     }
     return state;

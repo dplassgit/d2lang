@@ -31,7 +31,9 @@ public class ArrayType extends PointerType {
 
   @Override
   final public boolean compatibleWith(VarType thatType) {
-    return this.equals(thatType);
+    // This allows arrays of different sizes to be "compatible" - which should be OK, since
+    // the runtime checks will make sure indexing is never out of bounds
+    return this.equals(thatType) || thatType.isNull();
   }
 
   final public ArrayType setKnownLength(int length) {
