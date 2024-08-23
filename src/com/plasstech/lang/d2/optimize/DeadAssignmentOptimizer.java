@@ -294,6 +294,8 @@ class DeadAssignmentOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Call op) {
+    // Remove all the globals, because they might have changed, or been read, during the call
+    globalAssignments.clear();
     ImmutableList<Operand> actualParams = op.actuals();
     for (Operand actual : actualParams) {
       markRead(actual);

@@ -91,16 +91,17 @@ public class DeadAssignmentOptimizerTest {
     assertThatInterpreting(TestCode.LINKED_LIST).withOptimizer(optimizer).hasSameVariables();
   }
 
+  private final static ProcSymbol PROC_SYMBOL =
+      new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+
   @Test
   public void deadTempsLowLevel() {
-    ProcSymbol procSym =
-        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
     ImmutableList<Op> code =
         ImmutableList.of(
             new Transfer(
                 LocationUtils.newTempLocation("temp", VarType.STRING), ConstantOperand.EMPTY_STRING,
                 null),
-            new Call(procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Call(PROC_SYMBOL, ImmutableList.of(), ImmutableList.of(), null),
             new Stop());
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimized).hasSize(2);
@@ -230,6 +231,19 @@ public class DeadAssignmentOptimizerTest {
             new Goto("label"));
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimized).isEqualTo(code);
+  }
+
+  @Test
+  public void nonDeadGlobalCall() {
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(GLOBAL, ConstantOperand.ONE, null),
+            new Call(PROC_SYMBOL, ImmutableList.of(), ImmutableList.of(), null),
+            new Transfer(GLOBAL, ConstantOperand.ZERO, null));
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(3);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.ONE);
+    assertThat(optimized.get(2)).isTransferredFrom(ConstantOperand.ZERO);
   }
 
   @Test
