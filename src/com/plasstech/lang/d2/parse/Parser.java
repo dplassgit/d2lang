@@ -391,13 +391,17 @@ public class Parser implements Phase {
   }
 
   /** declaration -> '[' expr ']' */
-  private ArrayDeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
+  private DeclarationNode arrayDecl(Token varToken, VarType baseVarType) {
+    ArrayType arrayType = new ArrayType(baseVarType, 1);
     /** while... (dimensions) */
     expectToken(TokenType.LBRACKET);
+    if (token.type() == TokenType.RBRACKET) {
+      expectToken(TokenType.RBRACKET);
+      return new DeclarationNode(varToken.text(), arrayType, varToken.start());
+    }
     // The size can be variable.
     ExprNode arraySize = expr();
     // TODO(#38): support multidimensional arrays
-    ArrayType arrayType = new ArrayType(baseVarType, 1);
     expectToken(TokenType.RBRACKET);
 
     return new ArrayDeclarationNode(varToken.text(), arrayType, varToken.start(), arraySize);

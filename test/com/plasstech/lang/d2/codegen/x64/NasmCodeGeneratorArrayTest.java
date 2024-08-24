@@ -396,6 +396,21 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
+  public void declareSizeless(@TestParameter boolean optimize) throws Exception {
+    assertThatCompiling(DASSERTS
+        + "a:int[] \n"
+        + "test:proc(a3:int[]) { \n"
+        + "  assertFalse(a == a3) \n"
+        + "  assertTrue(a != a3) \n"
+        + "  println a[0] \n"
+        + "}\n"
+        + "a1=[1, 2, 3] \n"
+        + "a=a1 \n"
+        + "a2=[1, 4] \n"
+        + "test(a2) \n").withOptimize(optimize).executedEqualsInterpreted();
+  }
+
+  @Test
   public void compareParamsSameR8Conflict() throws Exception {
     assertThatCompiling(DASSERTS
         + "test:proc(r1:int, a1:int[], a2:int[]) {"

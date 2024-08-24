@@ -738,10 +738,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 String.format(
                     "Cannot declare variable '%s' as unknown RECORD type %s", name, recordName),
                 position));
+        // invalid record, bad.
         return false;
       }
-      return true;
+      // fall through; valid record
     }
+    // valid: either valid record, or not a record.
     return true;
   }
 

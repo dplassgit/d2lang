@@ -1084,7 +1084,7 @@ public class ParserTest {
   }
 
   @Test
-  public void declArray() {
+  public void allocArray() {
     BlockNode root = parseStatements("a:int[3]");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -1098,7 +1098,20 @@ public class ParserTest {
   }
 
   @Test
-  public void declEmptyArray() {
+  public void declArray() {
+    BlockNode root = parseStatements("a:int[]");
+    List<StatementNode> statements = root.statements();
+    assertThat(statements).hasSize(1);
+
+    DeclarationNode node = (DeclarationNode) statements.get(0);
+    assertThat(node.name()).isEqualTo("a");
+    assertThat(node.varType()).isArray();
+
+    assertThat(node.varType()).hasArrayBaseType(VarType.INT);
+  }
+
+  @Test
+  public void allocEmptyArray() {
     BlockNode root = parseStatements("a:int[0]");
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);

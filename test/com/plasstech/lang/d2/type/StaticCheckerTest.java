@@ -618,11 +618,16 @@ public class StaticCheckerTest {
   public void arrayDeclError() {
     assertError("a:int[-1]", "must be non-negative; was -1");
     assertError("a:int[true]", "must be INT; was BOOL");
+    assertError("a:int[] b:int[] b=a", "before assignment");
+    assertError("a:int[] a:int", "already declared");
+    assertError("a:int[] a=3", "Cannot convert");
   }
 
   @Test
   public void arrayDecl() {
     checkProgram("a:int[1]");
+    checkProgram("a:int[]");
+    checkProgram("a:int[1] b:int[] b=a");
   }
 
   @Test
