@@ -11,6 +11,7 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
@@ -66,6 +67,12 @@ public class OpcodeSubject extends Subject {
     SysCall syscall = (SysCall) actual;
     check("isExit").that(syscall.call()).isAnyOf(SysCall.Call.MESSAGE,
         SysCall.Call.PARAMETERIZED_MESSAGE);
+  }
+
+  public void isReturning(Operand operand) {
+    Truth.assertThat(actual).isInstanceOf(Return.class);
+    Return returnOp = (Return) actual;
+    check("isReturning").that(returnOp.returnValueLocation().get()).isEqualTo(operand);
   }
 
   public static OpcodeSubject assertThat(Op actual) {

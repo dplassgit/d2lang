@@ -30,7 +30,7 @@ import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 
 @RunWith(TestParameterInjector.class)
 public class ConstantPropagationOptimizerTest {
-  private static final Optimizer OPTIMIZER =
+  private Optimizer optimizer =
       new ILOptimizer(ImmutableList.of(new NopOptimizer(), new ConstantPropagationOptimizer(2)), 2);
 
   private static final TempLocation TEMP_INT1 =
@@ -70,7 +70,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(TEMP_INT2, TEMP_INT1, null),
             new Transfer(STACK_INT1, TEMP_INT2, null));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     // The second temp assignment won't be rmeoved by this optimizer because
     // its value will never be read.
     assertThat(optimized).hasSize(2);
@@ -86,7 +86,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(TEMP_INT1, GLOBAL_INT1, null), //
             new Transfer(GLOBAL_INT2, TEMP_INT1, null));
 
-    program = OPTIMIZER.optimize(program, null);
+    program = optimizer.optimize(program, null);
     assertThat(program).hasSize(2);
     assertThat(program.get(0)).isTransferredFrom(ConstantOperand.ONE);
     assertThat(program.get(1)).isTransferredFrom(ConstantOperand.ONE);
@@ -101,7 +101,7 @@ public class ConstantPropagationOptimizerTest {
             new BinOp(GLOBAL_INT1, GLOBAL_INT2, TokenType.PLUS, ConstantOperand.ONE, null),
             new Return("", GLOBAL_INT1));
 
-    program = OPTIMIZER.optimize(program, null);
+    program = optimizer.optimize(program, null);
     assertThat(program).hasSize(3);
     Return returnOp = (Return) program.get(2);
     assertThat(returnOp.returnValueLocation()).hasValue(GLOBAL_INT1);
@@ -115,7 +115,7 @@ public class ConstantPropagationOptimizerTest {
             new UnaryOp(GLOBAL_INT1, TokenType.MINUS, GLOBAL_INT1, null),
             new Return("", GLOBAL_INT1));
 
-    program = OPTIMIZER.optimize(program, null);
+    program = optimizer.optimize(program, null);
     assertThat(program).hasSize(3);
     Return returnOp = (Return) program.get(2);
     assertThat(returnOp.returnValueLocation()).hasValue(GLOBAL_INT1);
@@ -133,7 +133,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(GLOBAL_INT1, ConstantOperand.of(2), null),
             new Return("", GLOBAL_INT2));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(program.size());
     Return returnOp = (Return) optimized.get(3);
     assertThat(returnOp.returnValueLocation()).hasValue(ConstantOperand.ONE);
@@ -150,7 +150,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(global, zero, null),
             new Inc(global, null));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
@@ -168,7 +168,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(global, one, null),
             new Dec(global, null));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
 
     ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
@@ -185,7 +185,7 @@ public class ConstantPropagationOptimizerTest {
             new SysCall(SysCall.Call.PARAMETERIZED_MESSAGE,
                 ImmutableList.of(ConstantOperand.ZERO, param)));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
     SysCall newCall = (SysCall) optimized.get(1);
     assertThat(newCall.operands().get(1)).isEqualTo(one);
@@ -199,7 +199,7 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(STACK_INT1, four, null),
             new Transfer(STACK_INT1, STACK_INT1, null));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
     assertThat(optimized.get(0)).isTransferredFrom(four);
     assertThat(optimized.get(1)).isTransferredFrom(four);
@@ -213,9 +213,21 @@ public class ConstantPropagationOptimizerTest {
             new Transfer(LONG_TEMP, four, null),
             new Transfer(STACK_INT1, LONG_TEMP, null));
 
-    ImmutableList<Op> optimized = OPTIMIZER.optimize(program, null);
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
     assertThat(optimized.get(0)).isTransferredFrom(four);
     assertThat(optimized.get(1)).isTransferredFrom(four);
+  }
+
+  @Test
+  public void transfersThenReturn_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new Transfer(GLOBAL_INT1, ConstantOperand.ONE, null),
+            new Return("proc", STACK_INT1));
+
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 }

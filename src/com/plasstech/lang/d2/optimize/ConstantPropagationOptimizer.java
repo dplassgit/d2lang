@@ -2,8 +2,11 @@ package com.plasstech.lang.d2.optimize;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -134,6 +137,15 @@ class ConstantPropagationOptimizer extends LineOptimizer {
 
     // Remove any old setting
     replacements.remove(dest);
+    // Find any values that are "dest" and remove the key, because this transfer will
+    // overwrite the value.
+    Set<Location> toRemove = new HashSet<>();
+    for (Entry<Location, Operand> pair : replacements.entrySet()) {
+      if (pair.getValue().equals(dest) && pair.getKey() instanceof Location) {
+        toRemove.add(pair.getKey());
+      }
+    }
+    toRemove.forEach(key -> replacements.remove(key));
     assignmentLocations.remove(dest);
 
     if (canCache(source)) {

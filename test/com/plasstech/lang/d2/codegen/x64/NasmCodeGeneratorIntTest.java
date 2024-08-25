@@ -215,4 +215,25 @@ public class NasmCodeGeneratorIntTest {
             op, op))
         .withOptimize(optimize).executedEqualsInterpreted();
   }
+
+  @Test
+  public void bug360() {
+    String program = ""
+        + "buffering=0\n"
+        + "setBuffering: proc(newval:int):int {\n"
+        + "  oldbuffering = buffering\n"
+        + "  buffering = newval\n"
+        + "  return oldbuffering\n"
+        + "}\n"
+        + "doit: proc(i:int) {\n"
+        + "  if i < 2 {\n"
+        + "    old = setBuffering(1)\n"
+        + "    println \"Setting buffering to 1\"\n"
+        + "    setBuffering(old)\n"
+        + "    print \"buffering now = \" println buffering\n"
+        + "  }\n"
+        + "}\n"
+        + "doit(0)\n";
+    assertThatCompiling(program).withOptimize(optimize).executedEqualsInterpreted();
+  }
 }
