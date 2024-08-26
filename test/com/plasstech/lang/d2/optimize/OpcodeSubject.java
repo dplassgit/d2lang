@@ -8,7 +8,9 @@ import com.google.common.truth.Truth;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Goto;
+import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
@@ -77,5 +79,17 @@ public class OpcodeSubject extends Subject {
 
   public static OpcodeSubject assertThat(Op actual) {
     return assertAbout(OpcodeSubject::new).that(actual);
+  }
+
+  public void isInc(Location target) {
+    Truth.assertThat(actual).isInstanceOf(Inc.class);
+    Inc incOp = (Inc) actual;
+    check("isInc").that(incOp.target()).isEqualTo(target);
+  }
+
+  public void isDec(Location target) {
+    Truth.assertThat(actual).isInstanceOf(Dec.class);
+    Dec decOp = (Dec) actual;
+    check("isDec").that(decOp.target()).isEqualTo(target);
   }
 }

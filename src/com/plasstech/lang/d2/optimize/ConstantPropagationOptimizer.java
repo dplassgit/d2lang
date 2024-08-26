@@ -69,6 +69,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (replacement == null || !replacement.isConstant()) {
       replacements.remove(op.target());
       assignmentLocations.remove(op.target());
+      removeDestFromReplacements(op.target());
       return;
     }
     deleteSource(op.target());
@@ -79,6 +80,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     assignmentLocations.put(op.target(), ip());
     // Replace with a constant of the new value
     replaceCurrent(new Transfer(op.target(), newConst, op.position()));
+    // Find any *values* that are "dest" and remove the key, because this assignment has
+    // overwritten the value.
+    removeDestFromReplacements(op.target());
   }
 
   @Override
@@ -87,6 +91,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     if (replacement == null || !replacement.isConstant()) {
       replacements.remove(op.target());
       assignmentLocations.remove(op.target());
+      removeDestFromReplacements(op.target());
       return;
     }
     deleteSource(op.target());
@@ -97,6 +102,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     assignmentLocations.put(op.target(), ip());
     // Replace with a constant of the new value
     replaceCurrent(new Transfer(op.target(), newConst, op.position()));
+    removeDestFromReplacements(op.target());
   }
 
   @Override
@@ -135,18 +141,12 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     // Get the replacement *now* in case we're about to overwrite it (in the case of a=a)
     Operand replacement = findReplacement(source, false);
 
-    // Remove any old setting
+    // Remove any old setting (previous instance of dest=something)
     replacements.remove(dest);
-    // Find any values that are "dest" and remove the key, because this transfer will
-    // overwrite the value.
-    Set<Location> toRemove = new HashSet<>();
-    for (Entry<Location, Operand> pair : replacements.entrySet()) {
-      if (pair.getValue().equals(dest) && pair.getKey() instanceof Location) {
-        toRemove.add(pair.getKey());
-      }
-    }
-    toRemove.forEach(key -> replacements.remove(key));
     assignmentLocations.remove(dest);
+    // Find any *values* that are "dest" and remove the key, because this transfer has
+    // overwritten the value. (previous instance of something=dest)
+    removeDestFromReplacements(dest);
 
     if (canCache(source)) {
       logger.at(loggingLevel).log(
@@ -170,6 +170,20 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     }
   }
 
+  /**
+   * Find "dest" as a replacement *value* in the replacements map, and remove the entire entry.
+   */
+  private void removeDestFromReplacements(Location value) {
+    Set<Location> toRemove = new HashSet<>();
+    // Accumulate them, then remove them. Otherwise we get concurrent modification exception.
+    for (Entry<Location, Operand> pair : replacements.entrySet()) {
+      if (pair.getValue().equals(value) && pair.getKey() instanceof Location) {
+        toRemove.add(pair.getKey());
+      }
+    }
+    toRemove.forEach(key -> replacements.remove(key));
+  }
+
   // never replace a non-temp with a temp
   private static boolean canCache(Operand replacement) {
     // temp = constant: true
@@ -191,6 +205,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     // This value has changed; remove any old settings
     replacements.remove(op.destination());
     assignmentLocations.remove(op.destination());
+    // Find any *values* that are "dest" and remove the key, because this assignment has
+    // overwritten the value.
+    removeDestFromReplacements(op.destination());
   }
 
   @Override
@@ -257,7 +274,9 @@ class ConstantPropagationOptimizer extends LineOptimizer {
               op.position()));
     }
 
-    // a call means potentially a change in values so we clear it all
+    // A call means potentially a change in values so we clear it all
+    // TODO: https://github.com/dplassgit/d2lang/issues/356 - this is too conservative; we only
+    // really need to clear globals and probably records & arrays
     replacements.clear();
     assignmentLocations.clear();
   }
@@ -292,12 +311,16 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       right = replacement;
     }
 
+    Location destination = op.destination();
     if (left != op.left() || right != op.right()) {
-      replaceCurrent(new BinOp(op.destination(), left, op.operator(), right, op.position()));
+      replaceCurrent(new BinOp(destination, left, op.operator(), right, op.position()));
     }
     // This value has changed; remove any old settings
-    replacements.remove(op.destination());
-    assignmentLocations.remove(op.destination());
+    replacements.remove(destination);
+    assignmentLocations.remove(destination);
+    // Find any *values* that are "dest" and remove the key, because this assignment has
+    // overwritten the value.
+    removeDestFromReplacements(destination);
   }
 
   @Override
@@ -328,10 +351,14 @@ class ConstantPropagationOptimizer extends LineOptimizer {
           new FieldSetOp(
               op.recordLocation(), op.recordSymbol(), op.field(), replacement, op.position()));
     }
+    // Find any *values* that are "dest" and remove the key, because this assignment has
+    // overwritten the value. (This may not be strictly necessary)
+    removeDestFromReplacements(op.recordLocation());
   }
 
   private void deleteSource(Operand operand) {
     if (!operand.isTemp()) {
+      // WHY?!
       return;
     }
 

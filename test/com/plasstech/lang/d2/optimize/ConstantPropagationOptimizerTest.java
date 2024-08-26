@@ -4,6 +4,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
+import java.util.Optional;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -16,6 +18,7 @@ import com.plasstech.lang.d2.codegen.MemoryAddress;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -25,6 +28,8 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 
@@ -229,5 +234,97 @@ public class ConstantPropagationOptimizerTest {
 
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void binOp_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new BinOp(GLOBAL_INT1, STACK_INT1, TokenType.PLUS, ConstantOperand.ONE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS,
+        ConstantOperand.ONE);
+  }
+
+  @Test
+  public void transfers_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new Transfer(GLOBAL_INT1, STACK_INT1, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isTransferredFrom(GLOBAL_INT1);
+  }
+
+  @Test
+  public void binOpThenReturn_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new BinOp(GLOBAL_INT1, STACK_INT1, TokenType.PLUS, ConstantOperand.ONE, null),
+            new Return("proc", STACK_INT1));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS,
+        ConstantOperand.ONE);
+    assertThat(optimized.get(2)).isReturning(STACK_INT1);
+  }
+
+  @Test
+  public void unaryOpThenReturn_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new UnaryOp(GLOBAL_INT1, TokenType.MINUS, STACK_INT1, null),
+            new Return("proc", STACK_INT1));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isUnaryOp(GLOBAL_INT1, TokenType.MINUS, GLOBAL_INT1);
+    assertThat(optimized.get(2)).isReturning(STACK_INT1);
+  }
+
+  @Test
+  public void incThenReturn_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new Inc(GLOBAL_INT1, null),
+            new Return("proc", STACK_INT1));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isInc(GLOBAL_INT1);
+    assertThat(optimized.get(2)).isReturning(STACK_INT1);
+  }
+
+  @Test
+  public void decThenReturn_bug360() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new Dec(GLOBAL_INT1, null),
+            new Return("proc", STACK_INT1));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(1)).isDec(GLOBAL_INT1);
+    assertThat(optimized.get(2)).isReturning(STACK_INT1);
+  }
+
+  @Test
+  public void callThenReturn_bug360() {
+    ProcSymbol procSymbol =
+        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.INT, null, null), null);
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new Transfer(STACK_INT1, GLOBAL_INT1, null),
+            new Call(Optional.of(GLOBAL_INT1), procSymbol, /* actuals= */ImmutableList.of(),
+                /* formals= */ImmutableList.of(),
+                null),
+            new Return("proc", STACK_INT1));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimized.get(2)).isReturning(STACK_INT1);
   }
 }
