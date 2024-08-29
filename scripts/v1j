@@ -1,0 +1,4 @@
+# ./scripts/dcc src/d2j/v0/v0j.d --save-temps -o v0j.exe --nooptimizeAsm && ./v0j.exe < $1
+rm src/d2j/v1/D2Program.java
+java src/d2j/v0/D2Program.java < src/d2j/v1/v1j.d > src/d2j/v1/D2Program.java
+java src/d2j/v1/D2Program.java < $1

@@ -44,4 +44,7 @@ bazel-testlogs
 *.com
 *.lst
 *.bas
+v0out.java
+v1out.java
+v2out.java
 

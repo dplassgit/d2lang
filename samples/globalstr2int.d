@@ -38,5 +38,6 @@ println "Should be 314159:"
 pi = makeInt()
 println pi
 if pi != 314159 {
-  exit "Bad result!"
+  print "Bad result!\n"
+  exit
 }

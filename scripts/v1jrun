@@ -1,0 +1,8 @@
+rm src/d2j/v1/D2Program.java v1out.java
+# first build v1 from v0's java
+java src/d2j/v0/D2Program.java < src/d2j/v1/v1j.d > src/d2j/v1/D2Program.java
+# Then run v1's java on the input, making v1 out
+java src/d2j/v1/D2Program.java < $1 > v1out.java
+# finally run v1out
+java v1out.java
+
