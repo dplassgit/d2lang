@@ -124,7 +124,6 @@ TYPE_VOID=LAST_TYPE+1
 numRecords = 0
 recordNames: string[MAX_RECORDS]
 numFields: int[MAX_RECORDS]
-recordSizes: int[MAX_RECORDS]
 FIELDS_PER_RECORD = 20
 // These are sparse arrays; the start index for the 0th field of each record is 20 * record num
 fieldNames: string[MAX_RECORDS * FIELDS_PER_RECORD]
@@ -1801,7 +1800,6 @@ parseReturn: proc() {
     exit
   }
 
-  currentProcName = procNames[currentProcNum]
   // if we're at the start of an expression, parse it.
   emit("return")
   if isAtStartOfExpression() {
@@ -1893,7 +1891,7 @@ generateArraySet: proc(variable: string) {
   expectToken(TOKEN_RBRACKET, ']')
   emit(']')
   expectToken(TOKEN_EQ, '=')
-  emit('=')
+  emit(' = ')
 
   expr()
   emit(';\n')
@@ -1991,7 +1989,7 @@ generateFieldSet: proc(variable: string) {
     fieldType = fieldTypes[fieldIndex]
     emit(fieldName)
     expectToken(TOKEN_EQ, '=')
-    emit("=")
+    emit(" = ")
     exprType = expr()
     // 3. make sure field type matches expr type
     checkTypes(fieldType, exprType)

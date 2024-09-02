@@ -158,9 +158,4 @@ public class PrintOptimizerTest {
     ConstantOperand<?> arg = (ConstantOperand<?>) first.arg();
     assertThat(arg.value()).isEqualTo("0y03");
   }
-
-  private void assertTotalPrintCount(InterpreterResult result, long expected) {
-    long actual = result.code().stream().filter(op -> (op instanceof SysCall)).count();
-    assertThat(actual).isEqualTo(expected);
-  }
 }

@@ -20,7 +20,6 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
-import com.plasstech.lang.d2.testing.TestCode;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeadCodeOptimizerTest {
@@ -33,15 +32,15 @@ public class DeadCodeOptimizerTest {
   @Test
   public void oneLoopBreak() {
     assertThatInterpreting("      oneLoopBreakDCO:proc(n:int):int {\n"
-    + "  sum = 0\n"
-    + "  i = 0 "
-    + "  while i < 10 do i = i + 1 {"
-    + "    sum = sum + 1\n"
-    + "    break"
-    + "  }"
-    + "  return sum"
-    + "}"
-    + "println oneLoopBreakDCO(10)").withOptimizer(OPTIMIZER).hasSameVariables();
+        + "  sum = 0\n"
+        + "  i = 0 "
+        + "  while i < 10 do i = i + 1 {"
+        + "    sum = sum + 1\n"
+        + "    break"
+        + "  }"
+        + "  return sum"
+        + "}"
+        + "println oneLoopBreakDCO(10)").withOptimizer(OPTIMIZER).hasSameVariables();
   }
 
   @Test
