@@ -326,7 +326,7 @@ startsWithBang: proc(): string {
     advanceLex()
     return Token(TOKEN_NEQ, '!=')
   }
-  print 'ERROR: Unknown character:' print chr(lexerCc) print ' ASCII code: ' print lexerCc
+  print 'ERROR: Unknown character:' + chr(lexerCc) + ' ASCII code: ' print lexerCc
   print " @ " print lexerLoc print "\n"
   exit
   return ""
@@ -403,8 +403,7 @@ makeStringLiteralToken: proc(firstQuote: int): string {
   }
 
   if lexerCc == 0 {
-    print 'ERROR: Unclosed string literal ' print value print "\n"
-    print " @ " print lexerLoc print "\n"
+    print 'ERROR: Unclosed string literal ' + value + "\n @ " print lexerLoc print "\n"
     exit
   }
 
@@ -474,7 +473,7 @@ makeSymbolToken: proc(): string {
     return Token(TOKEN_DOT, '.')
   }
 
-  print 'ERROR: Unknown character:' print chr(lexerCc) print ' ASCII code: ' print lexerCc
+  print 'ERROR: Unknown character:' + chr(lexerCc) + ' ASCII code: ' print lexerCc
   print " @ " print lexerLoc print "\n"
   exit
   return ""
@@ -482,17 +481,17 @@ makeSymbolToken: proc(): string {
 
 printToken: proc() {
   if lexTokenType == TOKEN_EOF {
-    print 'Token: EOF' print "\n"
+    print 'Token: EOF\n'
   } elif lexTokenType == TOKEN_LITERAL_CONSTANT {
-    if lexTokenVarType == TYPE_INT { print 'Int token: ' print lexTokenString print "\n" }
-    if lexTokenVarType == TYPE_BOOL { print 'Bool token: ' print lexTokenString print "\n" }
-    if lexTokenVarType == TYPE_STRING { print 'String token: ' print lexTokenString print "\n" }
+    if lexTokenVarType == TYPE_INT { print 'Int token: ' + lexTokenString + "\n" }
+    if lexTokenVarType == TYPE_BOOL { print 'Bool token: ' + lexTokenString + "\n" }
+    if lexTokenVarType == TYPE_STRING { print 'String token: ' + lexTokenString + "\n" }
   } elif lexTokenType == TOKEN_KEYWORD {
-    print 'Keyword token: ' print lexTokenString print "\n"
+    print 'Keyword token: ' + lexTokenString + "\n"
   } elif lexTokenType == TOKEN_VARIABLE {
-    print 'Variable: ' print lexTokenString print "\n"
+    print 'Variable: ' + lexTokenString + "\n"
   } else {
-    print 'Token: ' print lexTokenString print ' type: ' print lexTokenType print '\n'
+    print 'Token: ' + lexTokenString + ' type: ' print lexTokenType print '\n'
   }
 }
 
@@ -558,9 +557,9 @@ typeName: proc(type: int): string {
 
 checkTypes: proc(leftType: int, rightType: int) {
   if leftType != rightType {
-    print "ERROR: Type mismatch. Left operand is " print typeName(leftType)
-    print ", but right operand is " print typeName(rightType)
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Type mismatch. Left operand is " + typeName(leftType)
+      + ", but right operand is " + typeName(rightType)
+      + " @ " print lexerLoc print "\n"
     exit
   }
 }
@@ -579,7 +578,7 @@ advanceParser: proc() {
 expectToken: proc(expectedTokenType: int, tokenStr: string) {
   if lexTokenType != expectedTokenType  {
     print "ERROR: expected " + tokenStr + "; saw: " printToken()
-    print "@ " print lexerLoc
+    print "\n@ " print lexerLoc
     exit
   }
   advanceParser() // eat the expected token
@@ -587,8 +586,8 @@ expectToken: proc(expectedTokenType: int, tokenStr: string) {
 
 expectKeyword: proc(expectedKwType: int, tokenStr: string) {
   if lexTokenType != TOKEN_KEYWORD or lexTokenKw != expectedKwType {
-    print "ERROR: expected " print tokenStr print "; saw: " printToken()
-    print "@ " print lexerLoc
+    print "ERROR: expected " + tokenStr + "; saw: " printToken()
+    print "\n@ " print lexerLoc
     exit
   }
   advanceParser() // eat the keyword
@@ -606,8 +605,8 @@ globalTypes: int[MAX_GLOBALS]
 
 registerGlobal: proc(name: string, type: int) {
   if type == TYPE_UNKNOWN {
-    print "Internal ERROR: Cannot register global '"  print name print "' with UNKNOWN type\n"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Cannot register global '" + name + "' with UNKNOWN type\n" + "@ "
+    print lexerLoc print "\n"
     exit
   }
   i = 0 while i < numGlobals do i = i + 1 {
@@ -671,7 +670,7 @@ emit: proc(line: string) {
   // print "// " print line print "\n"
   emitBuffer[bufferIndex] = line
   bufferIndex = bufferIndex+1
-  if debug { print "// " print line print "\n"}
+  if debug { print "// " + line + "\n"}
 }
 
 spoolBuffer: proc(buffer:string[], len:int) {
@@ -682,8 +681,7 @@ spoolBuffer: proc(buffer:string[], len:int) {
 
 registerProc: proc(name: string, returnType: int) {
   if returnType == TYPE_UNKNOWN {
-    print "INTERNAL ERROR: Cannot have UNKNOWN PROC return type\n"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Cannot have UNKNOWN PROC return type\n@ " print lexerLoc print "\n"
     exit
   }
   // TODO: make sure it doesn't exist yet
@@ -699,8 +697,7 @@ setCurrentProcNum: proc(name: string) {
       return
     }
   }
-  print "INTERNAL ERROR: Cannot set current proc num for proc '" print name print "'\n"
-  print " @ " print lexerLoc print "\n"
+  print "INTERNAL ERROR: Cannot set current proc num for proc '" + name + "'\n@ " print lexerLoc print "\n"
   exit
 }
 
@@ -710,8 +707,7 @@ lookupProcReturnType: proc(name: string): int {
       return returnTypes[i]
     }
   }
-  print "INTERNAL ERROR: Cannot find PROC '" print name print "'\n"
-  print " @ " print lexerLoc print "\n"
+  print "INTERNAL ERROR: Cannot find PROC '" + name + "'\n@ " print lexerLoc print "\n"
   exit
   return -1
 }
@@ -719,8 +715,8 @@ lookupProcReturnType: proc(name: string): int {
 // returns the index of the param in the arrays
 lookupParam: proc(name: string): int {
   if currentProcNum == -1 {
-    print "INTERNAL ERROR: Cannot look up parameter " print name print " because not in a PROC"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Cannot look up parameter " + name + " because not in a PROC\n"
+    print "@ " print lexerLoc print "\n"
     exit
     return -1
   }
@@ -738,8 +734,8 @@ lookupParam: proc(name: string): int {
 // returns the index of the local in the arrays
 lookupLocal: proc(name: string): int {
   if currentProcNum == -1 {
-    print "INTERNAL ERROR: Cannot lookup local " print name print " because not in a PROC"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Cannot lookup local " + name + " because not in a PROC\n"
+    print "@ " print lexerLoc print "\n"
     exit
   }
   base = currentProcNum * 10
@@ -776,7 +772,7 @@ indent: proc() {
 //   return leftType
 // boolXor -> boolAnd (op) boolAnd (xor or ^)
 // boolAnd -> compare (op) compare (and or &&)
-// compare -> shift (op) shift 
+// compare -> shift (op) shift
 // *shift -> addSub (op) addSub (<< or >>)
 // addSub -> muldiv (op) mulDiv (+ or -)
 // mulDiv -> unary (op) unary (* or / or %)
@@ -945,9 +941,9 @@ compare: proc(): int {
 
     rightType = shift()
     if rightType != TYPE_NULL and rightType != leftType {
-      print "ERROR: Type mismatch. Left operand is " print typeName(leftType)
-      print ", but right operand is " print typeName(rightType)
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Type mismatch. Left operand is " + typeName(leftType)
+        + ", but right operand is " + typeName(rightType)
+        + " @ " print lexerLoc print "\n"
       exit
     }
 
@@ -978,9 +974,9 @@ compare: proc(): int {
 
     rightType = shift()
     if (rightType != TYPE_STRING and rightType != TYPE_NULL) {
-      print "ERROR: Type mismatch. Left operand is " print typeName(leftType)
-      print ", but right operand is " print typeName(rightType)
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Type mismatch. Left operand is " + typeName(leftType)
+        + ", but right operand is " + typeName(rightType)
+        + " @ " print lexerLoc print "\n"
       exit
     }
 
@@ -1011,7 +1007,7 @@ shift: proc(): int {
     op = lexTokenType
     advanceParser() // eat the symbol
     if op == TOKEN_SHIFT_LEFT { emit(" << ") }
-    else { emit(" >> ") } 
+    else { emit(" >> ") }
     rightType = addSub()
     checkTypes(leftType, rightType)
   }
@@ -1024,18 +1020,16 @@ addSub: proc(): int {
   if leftType == TYPE_STRING or isNumeric(leftType) {
     while lexTokenType == TOKEN_PLUS or lexTokenType == TOKEN_MINUS {
       if leftType == TYPE_BOOL {
-        print "ERROR: Cannot add or subtract booleans"
-        print " @ " print lexerLoc print "\n"
+        print "ERROR: Cannot add or subtract booleans\n@ " print lexerLoc print "\n"
         exit
       }
       if leftType == TYPE_STRING and lexTokenType == TOKEN_MINUS {
-        print "ERROR: Cannot subtract strings"
-        print " @ " print lexerLoc print "\n"
+        print "ERROR: Cannot subtract strings\n@ " print lexerLoc print "\n"
         exit
       }
       opstring = lexTokenString
       advanceParser() // eat the symbol
-      emit(" ") emit(opstring) emit(" ") 
+      emit(" ") emit(opstring) emit(" ")
       rightType = mulDiv()
       checkTypes(leftType, rightType)
     }
@@ -1048,13 +1042,12 @@ mulDiv: proc(): int {
   while isNumeric(leftType) and
       (lexTokenType == TOKEN_MULT or lexTokenType == TOKEN_DIV or lexTokenType == TOKEN_MOD) {
     if leftType == TYPE_DOUBLE and lexTokenType == TOKEN_MOD {
-      print "ERROR: Cannot take MOD of doubles"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Cannot take MOD of doubles\n@ " print lexerLoc print "\n"
       exit
     }
     opstring = lexTokenString
     advanceParser() // eat the symbol
-    emit(" ") emit(opstring) emit(" ") 
+    emit(" ") emit(opstring) emit(" ")
     rightType = unary()
     checkTypes(leftType, rightType)
   }
@@ -1088,8 +1081,7 @@ unary: proc(): int {
       spoolBuffer(unaryBuffer, count)
       return type
     }
-    print "ERROR: cannot unary minus STRINGs"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: cannot unary minus STRINGs\n@ " print lexerLoc print "\n"
     exit
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_LENGTH {
     advanceParser() // eat the length
@@ -1101,8 +1093,7 @@ unary: proc(): int {
     } elif isArrayType(type) {
       emit(".length")
     } else {
-      print "ERROR: Cannot take LENGTH of " print typeName(type) print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Cannot take LENGTH of " + typeName(type) + "\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1115,8 +1106,7 @@ unary: proc(): int {
     emit(".charAt(0)") // fun fact, it will automatically convert ot an int
     expectToken(TOKEN_RPAREN, ')')
     if type != TYPE_STRING {
-      print "ERROR: Cannot take ASC of " print typeName(type) print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Cannot take ASC of " + typeName(type) + "\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1131,8 +1121,7 @@ unary: proc(): int {
     expectToken(TOKEN_RPAREN, ')')
 
     if type != TYPE_INT {
-      print "ERROR: Cannot take CHR of " print typeName(type) print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Cannot take CHR of " + typeName(type) + "\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1159,8 +1148,7 @@ generateArrayIndex: proc(arrayType: int): int {
   emit("[")
   indexType = expr()
   if indexType != TYPE_INT {
-    print "ERROR: ARRAY index must be INT; was " print typeName(indexType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: ARRAY index must be INT; was " + typeName(indexType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -1191,8 +1179,7 @@ generateStringIndex: proc() {
   bufferIndex = oldBufferIndex
 
   if indexType != TYPE_INT {
-    print "ERROR: String index must be int; was " print typeName(indexType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: String index must be int; was " + typeName(indexType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   spoolBuffer(exprBuffer, count)
@@ -1217,8 +1204,7 @@ composite: proc(): int {
         return leftType
       }
 
-      print "ERROR: Cannot take index of " print typeName(leftType) print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Cannot take index of " + typeName(leftType) + "\n@ " print lexerLoc print "\n"
       exit
     } else {
       // field reference
@@ -1238,8 +1224,7 @@ composite: proc(): int {
         recordIndex = leftType - TYPE_RECORD_BASE
         fieldIndex = lookupField(recordIndex, fieldName)
         if fieldIndex == -1 {
-          print "ERROR: Unknown field " print fieldName print " of record type " print recordNames[recordIndex]
-          print "\n @ " print lexerLoc print "\n"
+          print "ERROR: Unknown field '" + fieldName + "' of RECORD type '" + recordNames[recordIndex] + "\n@ " print lexerLoc print "\n"
           exit
           return -1
         }
@@ -1250,8 +1235,7 @@ composite: proc(): int {
         // Overwrite return type to be *this* field's type
         leftType = fieldType
       } else {
-        print "ERROR: Cannot reference field of non-record type" print typeName(leftType)
-        print "\n @ " print lexerLoc print "\n"
+        print "ERROR: Cannot reference field of non-RECORD type" + typeName(leftType) + "\n@ " print lexerLoc print "\n"
         exit
         return -1
       }
@@ -1267,25 +1251,23 @@ generateGetVariable: proc(variable: string): int {
     return varType
   }
   if currentProcNum == -1 {
-    print "ERROR: Cannot find global variable " print variable print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Cannot find global variable " + variable + "\n@ " print lexerLoc print "\n"
     exit
   }
   index = lookupLocal(variable)
-  if index != -1 {             
+  if index != -1 {
     emit(variable)
-    return localTypes[index]   
-  }                            
-                               
+    return localTypes[index]
+  }
+
   index = lookupParam(variable)
-  if index == -1 {             
-    print "ERROR: Cannot find param " print variable print "\n"
-    print " @ " print lexerLoc print "\n"
-    exit                                                     
-  }                                                          
+  if index == -1 {
+    print "INTERNAL ERROR: Cannot find param " + variable + "\n@ " print lexerLoc print "\n"
+    exit
+  }
   emit(variable)
-  return paramTypes[index]                                   
-}              
+  return paramTypes[index]
+}
 
 generateProcCall: proc(procname: string) {
   emit(procname)
@@ -1339,7 +1321,7 @@ atom: proc(): int {
     if lexTokenVarType == TYPE_STRING {
       // string constant
       // need to escape it
-      emit('"') 
+      emit('"')
       s=lexTokenString
       i=0 while i < length(s) do i=i+1 {
         c=s[i]
@@ -1391,8 +1373,7 @@ atom: proc(): int {
 
     type = lookupProcReturnType(variable)
     if type == TYPE_VOID {
-      print "ERROR: Return type of " print variable print " is void. Cannot assign it to a variable.\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Return type of PROC " + variable + " is void. Cannot assign it to a variable.\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1419,15 +1400,13 @@ atom: proc(): int {
   } elif lexTokenType == TOKEN_KEYWORD and lexTokenKw == KW_NEW {
     advanceParser() // eat the new
     if lexTokenType != TOKEN_VARIABLE {
-      print "Expected variable after NEW; saw " print lexTokenString
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Expected variable after NEW; saw " + lexTokenString + "\n@ " print lexerLoc print "\n"
       exit
     }
     recordName = lexTokenString
     recordIndex = lookupRecord(recordName)
     if recordIndex == -1 {
-      print "Unknown record " print lexTokenString
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Unknown RECORD " + lexTokenString + "\n@ " print lexerLoc print "\n"
       exit
     }
     emit("new ") emit(recordName) emit("()")
@@ -1437,7 +1416,7 @@ atom: proc(): int {
 
 
   print "ERROR: cannot parse token in atom(): " printToken()
-  print " @ " print lexerLoc print "\n"
+  print "\n@ " print lexerLoc print "\n"
   exit
   return -1
 }
@@ -1466,7 +1445,7 @@ parseType: proc(): int {
   }
 
   print "ERROR: Unknown type " printToken()
-  print " @ " print lexerLoc print "\n"
+  print "\n@ " print lexerLoc print "\n"
   exit
   return -1
 }
@@ -1515,14 +1494,13 @@ parseVarDecl: proc(variable: string) {
   bufferIndex = oldBufferIndex
 
   if sizeType != TYPE_INT {
-    print "ARRAY size must be INT; was " print typeName(sizeType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: ARRAY size must be INT; was " + typeName(sizeType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
 
   registerOrLookUpVariable(variable, arrayType)
-  emit(variable) emit(' = new ') emit(typeName(baseType)) 
+  emit(variable) emit(' = new ') emit(typeName(baseType))
   emit('[')
   spoolBuffer(exprBuffer, count)
   emit('];\n')
@@ -1550,15 +1528,13 @@ lookupField: proc(recordIndex: int, fieldName: string): int {
 
 registerRecord: proc(name: string): int {
   if numRecords == MAX_RECORDS {
-    print "Max records already defined. Cannot add " print name
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Max records already defined. Cannot add " + name + "\n@ " print lexerLoc print "\n"
     exit
   }
   i = 0 while i < numRecords do i = i + 1 {
     // Make sure it doesn't exist yet
     if recordNames[i] == name {
-      print "Record " print name print " already declared\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: RECORD '" + name + "' already declared\n@ " print lexerLoc print "\n"
       exit
     }
   }
@@ -1606,8 +1582,7 @@ parseRecordDecl: proc(recordName: string) {
   // zero or more variable declarations, NOT followed by commas
   while lexTokenType != TOKEN_RBRACE and lexTokenType != TOKEN_EOF {
     if numFields[recIndex] == FIELDS_PER_RECORD {
-      print "More than 20 parameters declared for record " print recordName
-      print "\n @ " print lexerLoc print "\n"
+      print "INTERNAL ERROR: More than 20 fields declared for RECORD " + recordName + "\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1653,8 +1628,7 @@ parseRecordDecl: proc(recordName: string) {
 parseProc: proc(procName: string) {
   expectKeyword(KW_PROC, 'PROC')
   if currentProcNum != -1 {
-    print "Cannot define nested PROCs\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot define nested PROCs\n@ " print lexerLoc print "\n"
     exit
   }
   setCurrentProcNum(procName)
@@ -1695,16 +1669,18 @@ parseProc: proc(procName: string) {
 
   emit("\n  private static ") emit(typeName(returnType)) emit(" ") emit(procName) emit("(")
   i = 0 while i < numParams[currentProcNum] do i=i+1 {
-    emit(typeName(paramTypes[currentProcNum*4+i])) emit(" ") 
+    emit(typeName(paramTypes[currentProcNum*4+i])) emit(" ")
     emit(paramNames[currentProcNum*4+i])
     if i < numParams[currentProcNum] - 1 {
       emit(", ")
     }
   }
-  
+
   emit(") ")
 
+  indentSize = indentSize - 1
   parseBlock(true)
+  indentSize = indentSize + 1
   currentProcNum = -1
 
   preMainBufferIndex = bufferIndex
@@ -1722,13 +1698,12 @@ parseProcSignature: proc(procName: string) {
   index = 0
   while lexTokenType != TOKEN_RPAREN {
     if lexTokenType != TOKEN_VARIABLE {
-      print "Expected variable but found: " printToken()
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Expected variable but found: " printToken()
+      print "\n@ " print lexerLoc print "\n"
       exit
     }
     if numParams[myProcNum] == PARAMS_PER_PROC {
-      print "ERROR: More than 4 parameters declared for proc " print procName print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: More than 4 parameters declared for PROC '" + procName + "'\n@ " print lexerLoc print "\n"
       exit
     }
     paramName = lexTokenString
@@ -1795,8 +1770,7 @@ isAtStartOfExpression: proc(): bool {
 parseReturn: proc() {
   // if we're not in a procedure: error
   if currentProcNum == -1 {
-    print "ERROR: Cannot return outside proc\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot return outside proc\n@ " print lexerLoc print "\n"
     exit
   }
 
@@ -1814,14 +1788,13 @@ parseReturn: proc() {
 
 registerLocal: proc(name: string, type: int) {
   if type == TYPE_UNKNOWN {
-    print "ERROR: Cannot register local '" print name print "' with unknown type\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot register local '" + name + "' with unknown type\n@ " print lexerLoc print "\n"
     exit
   }
   myLocalCount = numLocals[currentProcNum]
   if myLocalCount == LOCALS_PER_PROC {
-    print "ERROR: Too many locals. Max is " print LOCALS_PER_PROC print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "INTERNAL ERROR: Too many locals defined. Max is " print LOCALS_PER_PROC
+    print "\n@ " print lexerLoc print "\n"
     exit
   }
 
@@ -1847,12 +1820,12 @@ registerOrLookUpVariable: proc(variable: string, exprType: int): int {
       emitBuffer = preMainBuffer
       bufferIndex = preMainBufferIndex
 
-      emit("  private static ") emit(typeName(varType)) emit(" ") emit(variable) 
+      emit("  private static ") emit(typeName(varType)) emit(" ") emit(variable)
       emit(";\n")
       preMainBufferIndex = bufferIndex
       emitBuffer = oldBuffer
       bufferIndex = oldBufferIndex
-    } 
+    }
     return varType
   }
 
@@ -1884,8 +1857,7 @@ generateArraySet: proc(variable: string) {
   expectToken(TOKEN_LBRACKET, '[')
   indexType = expr()
   if indexType != TYPE_INT {
-    print "ERROR: Array index must be int; was " print typeName(indexType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Array index must be int; was " + typeName(indexType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   expectToken(TOKEN_RBRACKET, ']')
@@ -1918,7 +1890,7 @@ parseStartsWithVariable: proc(semi: bool) {
     bufferIndex = oldBufferIndex
 
     // this may declare the variable
-    // we have to wait until now to output the LHS because we don't know the RHS type to 
+    // we have to wait until now to output the LHS because we don't know the RHS type to
     varType = registerOrLookUpVariable(variable, exprType)
     checkTypes(varType, exprType)
     emit(variable)
@@ -1963,7 +1935,7 @@ parseStartsWithVariable: proc(semi: bool) {
   }
 
   print "ERROR: expected one of '=' ':' '(' '[' '--' '++' but found: " printToken()
-  print " @ " print lexerLoc print "\n"
+  print "\n@ " print lexerLoc print "\n"
   exit
 }
 
@@ -1981,8 +1953,7 @@ generateFieldSet: proc(variable: string) {
     expectToken(TOKEN_VARIABLE, 'field name')
     fieldIndex = lookupField(recordIndex, fieldName)
     if fieldIndex == -1 {
-      print "ERROR: Unknown field " print fieldName print " of record " print variable
-      print "\n @ " print lexerLoc print "\n"
+      print "ERROR: Unknown field '" + fieldName + "' of RECORD " + variable + "\n@ " print lexerLoc print "\n"
       exit
     }
 
@@ -1994,8 +1965,7 @@ generateFieldSet: proc(variable: string) {
     // 3. make sure field type matches expr type
     checkTypes(fieldType, exprType)
   } else {
-    print "ERROR: variable " print variable print " is not record type."
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot set field of non-RECORD variable '" + variable + "\n@ " print lexerLoc print "\n"
     exit
   }
 }
@@ -2025,8 +1995,7 @@ parseIf: proc() {
   condType = expr()
 
   if condType != TYPE_BOOL {
-    print "ERROR: Expected boolean condition in if but found " print typeName(condType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Expected BOOL condition in IF but found " + typeName(condType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   emit(') ')
@@ -2045,8 +2014,7 @@ parseIf: proc() {
     condType = expr()
     emit(') ')
     if condType != TYPE_BOOL {
-      print "ERROR: Expected boolean condition in elif but found " print typeName(condType) print "\n"
-      print " @ " print lexerLoc print "\n"
+      print "ERROR: Expected BOOL condition in ELIF but found " + typeName(condType) + "\n@ " print lexerLoc print "\n"
       exit
     }
     parseBlock(true)
@@ -2067,8 +2035,7 @@ numWhiles=0
 
 parseBreak: proc() {
   if numWhiles == 0 {
-    print "ERROR: Cannot have break outside while loop\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot BREAK outside WHILE loop\n@ " print lexerLoc print "\n"
     exit
   }
   emit("break;\n")
@@ -2076,8 +2043,7 @@ parseBreak: proc() {
 
 parseContinue: proc() {
   if numWhiles == 0 {
-    print "ERROR: Cannot have continue outside while loop\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Cannot CONTINUE outside WHILE loop\n@ " print lexerLoc print "\n"
     exit
   }
   emit("continue;\n")
@@ -2089,8 +2055,7 @@ parseWhile: proc() {
   emit('for (; ')
   condType = expr()
   if condType != TYPE_BOOL {
-    print "ERROR: Expected boolean as 'while' condition, but found " print typeName(condType) print "\n"
-    print " @ " print lexerLoc print "\n"
+    print "ERROR: Expected BOOLean as WHILE condition, but found " + typeName(condType) + "\n@ " print lexerLoc print "\n"
     exit
   }
   emit(';')
@@ -2109,7 +2074,7 @@ parseWhile: proc() {
 
 
 parsePrint: proc(kw: int) {
-  emit('System.out.print') 
+  emit('System.out.print')
   // is this too clever?
   if kw == KW_PRINTLN { emit('ln') }
   emit('(')
@@ -2150,8 +2115,8 @@ parseStmt: proc(semi: bool) {
     return
   }
 
-  print "ERROR: Cannot parse start of statement token: "  printToken()
-  print " @ " print lexerLoc print "\n"
+  print "ERROR: Cannot parse start of statement. Saw: "  printToken()
+  print "\n@ " print lexerLoc print "\n"
   exit
 }
 
@@ -2168,7 +2133,7 @@ parseProgram: proc() {
   print "import java.io.InputStreamReader;\n\n"
 
   print "public class D2Program {\n"
-  indentSize=1
+  indentSize=2
 
   // cannot use parseblock because we need to insert the "main", below,
   // before the closing brace

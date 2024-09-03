@@ -286,9 +286,7 @@ public class D2Program {
       advanceLex();
       return Token(TOKEN_NEQ, "!=");
     }
-    System.out.print("ERROR: Unknown character:");
-    System.out.print(Character.toString(lexerCc));
-    System.out.print(" ASCII code: ");
+    System.out.print("ERROR: Unknown character:" + Character.toString(lexerCc) + " ASCII code: ");
     System.out.print(lexerCc);
     System.out.print(" @ ");
     System.out.print(lexerLoc);
@@ -366,10 +364,7 @@ public class D2Program {
       advanceLex();
     }
     if (lexerCc == 0) {
-      System.out.print("ERROR: Unclosed string literal ");
-      System.out.print(value);
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Unclosed string literal " + value + "\n @ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -440,9 +435,7 @@ public class D2Program {
       advanceLex();
       return Token(TOKEN_DOT, ".");
     }
-    System.out.print("ERROR: Unknown character:");
-    System.out.print(Character.toString(lexerCc));
-    System.out.print(" ASCII code: ");
+    System.out.print("ERROR: Unknown character:" + Character.toString(lexerCc) + " ASCII code: ");
     System.out.print(lexerCc);
     System.out.print(" @ ");
     System.out.print(lexerLoc);
@@ -453,36 +446,23 @@ public class D2Program {
 
   private static void printToken() {
     if (lexTokenType == TOKEN_EOF) {
-      System.out.print("Token: EOF");
-      System.out.print("\n");
+      System.out.print("Token: EOF\n");
     } else if (lexTokenType == TOKEN_LITERAL_CONSTANT) {
       if (lexTokenVarType == TYPE_INT) {
-        System.out.print("Int token: ");
-        System.out.print(lexTokenString);
-        System.out.print("\n");
+        System.out.print("Int token: " + lexTokenString + "\n");
       }
       if (lexTokenVarType == TYPE_BOOL) {
-        System.out.print("Bool token: ");
-        System.out.print(lexTokenString);
-        System.out.print("\n");
+        System.out.print("Bool token: " + lexTokenString + "\n");
       }
       if (lexTokenVarType == TYPE_STRING) {
-        System.out.print("String token: ");
-        System.out.print(lexTokenString);
-        System.out.print("\n");
+        System.out.print("String token: " + lexTokenString + "\n");
       }
     } else if (lexTokenType == TOKEN_KEYWORD) {
-      System.out.print("Keyword token: ");
-      System.out.print(lexTokenString);
-      System.out.print("\n");
+      System.out.print("Keyword token: " + lexTokenString + "\n");
     } else if (lexTokenType == TOKEN_VARIABLE) {
-      System.out.print("Variable: ");
-      System.out.print(lexTokenString);
-      System.out.print("\n");
+      System.out.print("Variable: " + lexTokenString + "\n");
     } else {
-      System.out.print("Token: ");
-      System.out.print(lexTokenString);
-      System.out.print(" type: ");
+      System.out.print("Token: " + lexTokenString + " type: ");
       System.out.print(lexTokenType);
       System.out.print("\n");
     }
@@ -497,11 +477,8 @@ public class D2Program {
 
   private static void checkTypes(int leftType, int rightType) {
     if (leftType != rightType) {
-      System.out.print("ERROR: Type mismatch. Left operand is ");
-      System.out.print(typeName(leftType));
-      System.out.print(", but right operand is ");
-      System.out.print(typeName(rightType));
-      System.out.print(" @ ");
+      System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
+          + ", but right operand is " + typeName(rightType) + " @ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -516,7 +493,7 @@ public class D2Program {
     if (lexTokenType != expectedTokenType) {
       System.out.print("ERROR: expected " + tokenStr + "; saw: ");
       printToken();
-      System.out.print("@ ");
+      System.out.print("\n@ ");
       System.out.print(lexerLoc);
       System.exit(-1);
     }
@@ -525,11 +502,9 @@ public class D2Program {
 
   private static void expectKeyword(int expectedKwType, String tokenStr) {
     if (lexTokenType != TOKEN_KEYWORD || lexTokenKw != expectedKwType) {
-      System.out.print("ERROR: expected ");
-      System.out.print(tokenStr);
-      System.out.print("; saw: ");
+      System.out.print("ERROR: expected " + tokenStr + "; saw: ");
       printToken();
-      System.out.print("@ ");
+      System.out.print("\n@ ");
       System.out.print(lexerLoc);
       System.exit(-1);
     }
@@ -538,10 +513,8 @@ public class D2Program {
 
   private static void registerGlobal(String name, int type) {
     if (type == TYPE_UNKNOWN) {
-      System.out.print("Internal ERROR: Cannot register global '");
-      System.out.print(name);
-      System.out.print("' with UNKNOWN type\n");
-      System.out.print(" @ ");
+      System.out.print(
+          "INTERNAL ERROR: Cannot register global '" + name + "' with UNKNOWN type\n" + "@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -573,9 +546,7 @@ public class D2Program {
     emitBuffer[bufferIndex] = line;
     bufferIndex = bufferIndex + 1;
     if (debug) {
-      System.out.print("// ");
-      System.out.print(line);
-      System.out.print("\n");
+      System.out.print("// " + line + "\n");
     }
   }
 
@@ -589,8 +560,7 @@ public class D2Program {
 
   private static void registerProc(String name, int returnType) {
     if (returnType == TYPE_UNKNOWN) {
-      System.out.print("INTERNAL ERROR: Cannot have UNKNOWN PROC return type\n");
-      System.out.print(" @ ");
+      System.out.print("INTERNAL ERROR: Cannot have UNKNOWN PROC return type\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -609,10 +579,7 @@ public class D2Program {
         return;
       }
     }
-    System.out.print("INTERNAL ERROR: Cannot set current proc num for proc '");
-    System.out.print(name);
-    System.out.print("'\n");
-    System.out.print(" @ ");
+    System.out.print("INTERNAL ERROR: Cannot set current proc num for proc '" + name + "'\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -626,10 +593,7 @@ public class D2Program {
         return returnTypes[i];
       }
     }
-    System.out.print("INTERNAL ERROR: Cannot find PROC '");
-    System.out.print(name);
-    System.out.print("'\n");
-    System.out.print(" @ ");
+    System.out.print("INTERNAL ERROR: Cannot find PROC '" + name + "'\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -638,10 +602,9 @@ public class D2Program {
 
   private static int lookupParam(String name) {
     if (currentProcNum == -1) {
-      System.out.print("INTERNAL ERROR: Cannot look up parameter ");
-      System.out.print(name);
-      System.out.print(" because not in a PROC");
-      System.out.print(" @ ");
+      System.out
+          .print("INTERNAL ERROR: Cannot look up parameter " + name + " because not in a PROC\n");
+      System.out.print("@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -662,10 +625,8 @@ public class D2Program {
 
   private static int lookupLocal(String name) {
     if (currentProcNum == -1) {
-      System.out.print("INTERNAL ERROR: Cannot lookup local ");
-      System.out.print(name);
-      System.out.print(" because not in a PROC");
-      System.out.print(" @ ");
+      System.out.print("INTERNAL ERROR: Cannot lookup local " + name + " because not in a PROC\n");
+      System.out.print("@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -805,11 +766,8 @@ public class D2Program {
       bufferIndex = 0;
       rightType = shift();
       if (rightType != TYPE_NULL && rightType != leftType) {
-        System.out.print("ERROR: Type mismatch. Left operand is ");
-        System.out.print(typeName(leftType));
-        System.out.print(", but right operand is ");
-        System.out.print(typeName(rightType));
-        System.out.print(" @ ");
+        System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
+            + ", but right operand is " + typeName(rightType) + " @ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -838,11 +796,8 @@ public class D2Program {
       bufferIndex = 0;
       rightType = shift();
       if ((rightType != TYPE_STRING && rightType != TYPE_NULL)) {
-        System.out.print("ERROR: Type mismatch. Left operand is ");
-        System.out.print(typeName(leftType));
-        System.out.print(", but right operand is ");
-        System.out.print(typeName(rightType));
-        System.out.print(" @ ");
+        System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
+            + ", but right operand is " + typeName(rightType) + " @ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -892,15 +847,13 @@ public class D2Program {
     if (leftType == TYPE_STRING || isNumeric(leftType)) {
       for (; lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_MINUS;) {
         if (leftType == TYPE_BOOL) {
-          System.out.print("ERROR: Cannot add or subtract booleans");
-          System.out.print(" @ ");
+          System.out.print("ERROR: Cannot add or subtract booleans\n@ ");
           System.out.print(lexerLoc);
           System.out.print("\n");
           System.exit(-1);
         }
         if (leftType == TYPE_STRING && lexTokenType == TOKEN_MINUS) {
-          System.out.print("ERROR: Cannot subtract strings");
-          System.out.print(" @ ");
+          System.out.print("ERROR: Cannot subtract strings\n@ ");
           System.out.print(lexerLoc);
           System.out.print("\n");
           System.exit(-1);
@@ -925,8 +878,7 @@ public class D2Program {
     for (; isNumeric(leftType) && (lexTokenType == TOKEN_MULT || lexTokenType == TOKEN_DIV
         || lexTokenType == TOKEN_MOD);) {
       if (leftType == TYPE_DOUBLE && lexTokenType == TOKEN_MOD) {
-        System.out.print("ERROR: Cannot take MOD of doubles");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Cannot take MOD of doubles\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -969,8 +921,7 @@ public class D2Program {
         spoolBuffer(unaryBuffer, count);
         return type;
       }
-      System.out.print("ERROR: cannot unary minus STRINGs");
-      System.out.print(" @ ");
+      System.out.print("ERROR: cannot unary minus STRINGs\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -984,10 +935,7 @@ public class D2Program {
       } else if (isArrayType(type)) {
         emit(".length");
       } else {
-        System.out.print("ERROR: Cannot take LENGTH of ");
-        System.out.print(typeName(type));
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Cannot take LENGTH of " + typeName(type) + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1000,10 +948,7 @@ public class D2Program {
       emit(".charAt(0)");
       expectToken(TOKEN_RPAREN, ")");
       if (type != TYPE_STRING) {
-        System.out.print("ERROR: Cannot take ASC of ");
-        System.out.print(typeName(type));
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Cannot take ASC of " + typeName(type) + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1017,10 +962,7 @@ public class D2Program {
       emit(")");
       expectToken(TOKEN_RPAREN, ")");
       if (type != TYPE_INT) {
-        System.out.print("ERROR: Cannot take CHR of ");
-        System.out.print(typeName(type));
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Cannot take CHR of " + typeName(type) + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1045,10 +987,7 @@ public class D2Program {
     int indexType;
     indexType = expr();
     if (indexType != TYPE_INT) {
-      System.out.print("ERROR: ARRAY index must be INT; was ");
-      System.out.print(typeName(indexType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: ARRAY index must be INT; was " + typeName(indexType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1076,10 +1015,7 @@ public class D2Program {
     emitBuffer = oldEmitBuffer;
     bufferIndex = oldBufferIndex;
     if (indexType != TYPE_INT) {
-      System.out.print("ERROR: String index must be int; was ");
-      System.out.print(typeName(indexType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: String index must be int; was " + typeName(indexType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1102,10 +1038,7 @@ public class D2Program {
           generateStringIndex();
           return leftType;
         }
-        System.out.print("ERROR: Cannot take index of ");
-        System.out.print(typeName(leftType));
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Cannot take index of " + typeName(leftType) + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1121,11 +1054,8 @@ public class D2Program {
           int fieldIndex;
           fieldIndex = lookupField(recordIndex, fieldName);
           if (fieldIndex == -1) {
-            System.out.print("ERROR: Unknown field ");
-            System.out.print(fieldName);
-            System.out.print(" of record type ");
-            System.out.print(recordNames[recordIndex]);
-            System.out.print("\n @ ");
+            System.out.print("ERROR: Unknown field '" + fieldName + "' of RECORD type '"
+                + recordNames[recordIndex] + "\n@ ");
             System.out.print(lexerLoc);
             System.out.print("\n");
             System.exit(-1);
@@ -1136,9 +1066,8 @@ public class D2Program {
           fieldType = fieldTypes[fieldIndex];
           leftType = fieldType;
         } else {
-          System.out.print("ERROR: Cannot reference field of non-record type");
-          System.out.print(typeName(leftType));
-          System.out.print("\n @ ");
+          System.out.print(
+              "ERROR: Cannot reference field of non-RECORD type" + typeName(leftType) + "\n@ ");
           System.out.print(lexerLoc);
           System.out.print("\n");
           System.exit(-1);
@@ -1157,10 +1086,7 @@ public class D2Program {
       return varType;
     }
     if (currentProcNum == -1) {
-      System.out.print("ERROR: Cannot find global variable ");
-      System.out.print(variable);
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("INTERNAL ERROR: Cannot find global variable " + variable + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1173,10 +1099,7 @@ public class D2Program {
     }
     index = lookupParam(variable);
     if (index == -1) {
-      System.out.print("ERROR: Cannot find param ");
-      System.out.print(variable);
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("INTERNAL ERROR: Cannot find param " + variable + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1270,10 +1193,8 @@ public class D2Program {
       int type;
       type = lookupProcReturnType(variable);
       if (type == TYPE_VOID) {
-        System.out.print("ERROR: Return type of ");
-        System.out.print(variable);
-        System.out.print(" is void. Cannot assign it to a variable.\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: Return type of PROC " + variable
+            + " is void. Cannot assign it to a variable.\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1298,9 +1219,7 @@ public class D2Program {
     } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_NEW) {
       advanceParser();
       if (lexTokenType != TOKEN_VARIABLE) {
-        System.out.print("Expected variable after NEW; saw ");
-        System.out.print(lexTokenString);
-        System.out.print(" @ ");
+        System.out.print("ERROR: Expected variable after NEW; saw " + lexTokenString + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1310,9 +1229,7 @@ public class D2Program {
       int recordIndex;
       recordIndex = lookupRecord(recordName);
       if (recordIndex == -1) {
-        System.out.print("Unknown record ");
-        System.out.print(lexTokenString);
-        System.out.print(" @ ");
+        System.out.print("ERROR: Unknown RECORD " + lexTokenString + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1325,7 +1242,7 @@ public class D2Program {
     }
     System.out.print("ERROR: cannot parse token in atom(): ");
     printToken();
-    System.out.print(" @ ");
+    System.out.print("\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -1349,7 +1266,7 @@ public class D2Program {
     }
     System.out.print("ERROR: Unknown type ");
     printToken();
-    System.out.print(" @ ");
+    System.out.print("\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -1398,10 +1315,7 @@ public class D2Program {
     emitBuffer = oldEmitBuffer;
     bufferIndex = oldBufferIndex;
     if (sizeType != TYPE_INT) {
-      System.out.print("ARRAY size must be INT; was ");
-      System.out.print(typeName(sizeType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: ARRAY size must be INT; was " + typeName(sizeType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1443,9 +1357,7 @@ public class D2Program {
 
   private static int registerRecord(String name) {
     if (numRecords == MAX_RECORDS) {
-      System.out.print("Max records already defined. Cannot add ");
-      System.out.print(name);
-      System.out.print(" @ ");
+      System.out.print("INTERNAL ERROR: Max records already defined. Cannot add " + name + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1454,10 +1366,7 @@ public class D2Program {
     i = 0;
     for (; i < numRecords; i = i + 1) {
       if (recordNames[i].compareTo(name) == 0) {
-        System.out.print("Record ");
-        System.out.print(name);
-        System.out.print(" already declared\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: RECORD '" + name + "' already declared\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1504,9 +1413,8 @@ public class D2Program {
     fieldIndex = recIndex * FIELDS_PER_RECORD;
     for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF;) {
       if (numFields[recIndex] == FIELDS_PER_RECORD) {
-        System.out.print("More than 20 parameters declared for record ");
-        System.out.print(recordName);
-        System.out.print("\n @ ");
+        System.out.print(
+            "INTERNAL ERROR: More than 20 fields declared for RECORD " + recordName + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1560,8 +1468,7 @@ public class D2Program {
   private static void parseProc(String procName) {
     expectKeyword(KW_PROC, "PROC");
     if (currentProcNum != -1) {
-      System.out.print("Cannot define nested PROCs\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot define nested PROCs\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1611,7 +1518,9 @@ public class D2Program {
       }
     }
     emit(") ");
+    indentSize = indentSize - 1;
     parseBlock(true);
+    indentSize = indentSize + 1;
     currentProcNum = -1;
     preMainBufferIndex = bufferIndex;
     emitBuffer = oldBuffer;
@@ -1628,18 +1537,15 @@ public class D2Program {
     index = 0;
     for (; lexTokenType != TOKEN_RPAREN;) {
       if (lexTokenType != TOKEN_VARIABLE) {
-        System.out.print("Expected variable but found: ");
+        System.out.print("ERROR: Expected variable but found: ");
         printToken();
-        System.out.print(" @ ");
+        System.out.print("\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
       }
       if (numParams[myProcNum] == PARAMS_PER_PROC) {
-        System.out.print("ERROR: More than 4 parameters declared for proc ");
-        System.out.print(procName);
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print("ERROR: More than 4 parameters declared for PROC '" + procName + "'\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1688,8 +1594,7 @@ public class D2Program {
 
   private static void parseReturn() {
     if (currentProcNum == -1) {
-      System.out.print("ERROR: Cannot return outside proc\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot return outside proc\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1708,10 +1613,7 @@ public class D2Program {
 
   private static void registerLocal(String name, int type) {
     if (type == TYPE_UNKNOWN) {
-      System.out.print("ERROR: Cannot register local '");
-      System.out.print(name);
-      System.out.print("' with unknown type\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot register local '" + name + "' with unknown type\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1719,10 +1621,9 @@ public class D2Program {
     int myLocalCount;
     myLocalCount = numLocals[currentProcNum];
     if (myLocalCount == LOCALS_PER_PROC) {
-      System.out.print("ERROR: Too many locals. Max is ");
+      System.out.print("INTERNAL ERROR: Too many locals defined. Max is ");
       System.out.print(LOCALS_PER_PROC);
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1788,10 +1689,7 @@ public class D2Program {
     int indexType;
     indexType = expr();
     if (indexType != TYPE_INT) {
-      System.out.print("ERROR: Array index must be int; was ");
-      System.out.print(typeName(indexType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Array index must be int; was " + typeName(indexType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1875,7 +1773,7 @@ public class D2Program {
     }
     System.out.print("ERROR: expected one of '=' ':' '(' '[' '--' '++' but found: ");
     printToken();
-    System.out.print(" @ ");
+    System.out.print("\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -1895,11 +1793,7 @@ public class D2Program {
       int fieldIndex;
       fieldIndex = lookupField(recordIndex, fieldName);
       if (fieldIndex == -1) {
-        System.out.print("ERROR: Unknown field ");
-        System.out.print(fieldName);
-        System.out.print(" of record ");
-        System.out.print(variable);
-        System.out.print("\n @ ");
+        System.out.print("ERROR: Unknown field '" + fieldName + "' of RECORD " + variable + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1913,10 +1807,7 @@ public class D2Program {
       exprType = expr();
       checkTypes(fieldType, exprType);
     } else {
-      System.out.print("ERROR: variable ");
-      System.out.print(variable);
-      System.out.print(" is not record type.");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot set field of non-RECORD variable '" + variable + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1946,10 +1837,8 @@ public class D2Program {
     int condType;
     condType = expr();
     if (condType != TYPE_BOOL) {
-      System.out.print("ERROR: Expected boolean condition in if but found ");
-      System.out.print(typeName(condType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out
+          .print("ERROR: Expected BOOL condition in IF but found " + typeName(condType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1965,10 +1854,8 @@ public class D2Program {
       condType = expr();
       emit(") ");
       if (condType != TYPE_BOOL) {
-        System.out.print("ERROR: Expected boolean condition in elif but found ");
-        System.out.print(typeName(condType));
-        System.out.print("\n");
-        System.out.print(" @ ");
+        System.out.print(
+            "ERROR: Expected BOOL condition in ELIF but found " + typeName(condType) + "\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1987,8 +1874,7 @@ public class D2Program {
 
   private static void parseBreak() {
     if (numWhiles == 0) {
-      System.out.print("ERROR: Cannot have break outside while loop\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot BREAK outside WHILE loop\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -1998,8 +1884,7 @@ public class D2Program {
 
   private static void parseContinue() {
     if (numWhiles == 0) {
-      System.out.print("ERROR: Cannot have continue outside while loop\n");
-      System.out.print(" @ ");
+      System.out.print("ERROR: Cannot CONTINUE outside WHILE loop\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -2013,10 +1898,8 @@ public class D2Program {
     int condType;
     condType = expr();
     if (condType != TYPE_BOOL) {
-      System.out.print("ERROR: Expected boolean as 'while' condition, but found ");
-      System.out.print(typeName(condType));
-      System.out.print("\n");
-      System.out.print(" @ ");
+      System.out.print(
+          "ERROR: Expected BOOLean as WHILE condition, but found " + typeName(condType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -2075,9 +1958,9 @@ public class D2Program {
       parseStartsWithVariable(semi);
       return;
     }
-    System.out.print("ERROR: Cannot parse start of statement token: ");
+    System.out.print("ERROR: Cannot parse start of statement. Saw: ");
     printToken();
-    System.out.print(" @ ");
+    System.out.print("\n@ ");
     System.out.print(lexerLoc);
     System.out.print("\n");
     System.exit(-1);
@@ -2089,7 +1972,7 @@ public class D2Program {
     System.out.print("import java.io.IOException;\n");
     System.out.print("import java.io.InputStreamReader;\n\n");
     System.out.print("public class D2Program {\n");
-    indentSize = 1;
+    indentSize = 2;
     for (; lexTokenType != TOKEN_EOF;) {
       indent();
       parseStmt(true);
