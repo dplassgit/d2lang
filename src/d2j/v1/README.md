@@ -10,15 +10,17 @@ self-host on non-x64 architectures.
 `v1j.d` supports:
    * Everything v0j.d supports, plus:
    * `DOUBLE`, `LONG`, arrays of all of the above
-   * PRINTLN 
-   * RECORDs
+   * `PRINTLN`
+   * `RECORD`s
    * Bit operations `&` `|` `!` `^` (on integral types)
    * `>>` `<<` `++` `--` operators
 
 It does not support:
    * Array literals
    * `extern`
-   * `byte` data types
+   * `byte` data type
+   * `exit "message"`
+   * arrays of objects in a `RECORD`
 
 ## To use
 
@@ -33,7 +35,7 @@ scripts/v1j samples/fib.d > fib.java
 Then you can run the generated java code:
 
 ```
-java fib.java`
+java fib.java
 ```
 
 NOTE: Not all d2lang features are supported (see above), so some of the samples
