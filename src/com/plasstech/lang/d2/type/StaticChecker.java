@@ -1,11 +1,13 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.D2RuntimeException;
@@ -216,6 +218,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return new TypeCheckResult(errors);
     } catch (IllegalArgumentException e) {
       // Closes #217 once and for all. BUT... ONCE AND FOR ALL.
+      e.printStackTrace();
+      errors.add(new D2RuntimeException(e.getMessage(), root.position(), "INTERNAL ERROR"));
+      return new TypeCheckResult(errors);
+    } catch (RuntimeException e) {
       e.printStackTrace();
       errors.add(new D2RuntimeException(e.getMessage(), root.position(), "INTERNAL ERROR"));
       return new TypeCheckResult(errors);
@@ -604,7 +610,53 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(NewNode node) {
-    validatePossibleRecordType(node.recordName(), node.varType(), node.position());
+    VarType type = node.varType();
+    String recordName = node.recordName();
+    if (validatePossibleRecordType(recordName, type, node.position())) {
+      RecordSymbol symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+      // make sure all the actual types are real
+      for (VarType actual : node.actualTypes()) {
+        if (actual instanceof UnboundType) {
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Cannot use unbound actual type %s in NEW RECORD %s",
+                      actual.name(), recordName),
+                  node.position()));
+        }
+        if (actual instanceof RecordReferenceType) {
+          RecordReferenceType ref = (RecordReferenceType) actual;
+          // make sure it exists
+          validatePossibleRecordType("actual type " + ref.name(), actual, node.position());
+        }
+      }
+
+      // instantiate the thingie
+      // Check that # of actual type variables matches the # of formal type variables.
+      ImmutableList<VarType> actualTypes = node.actualTypes();
+      // bind them
+      ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
+      if (actualTypes.size() != formalTypeNames.size()) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
+                    recordName, actualTypes.size(), formalTypeNames.size()),
+                node.position()));
+        return;
+      }
+      if (symbol.isGeneric()) {
+        Map<String, VarType> bindings = new HashMap<>();
+        for (int i = 0; i < actualTypes.size(); ++i) {
+          bindings.put(formalTypeNames.get(i), actualTypes.get(i));
+        }
+        // ohsnap - where does this go?!
+        // symbolTable.declareRecord requires a recordNODE
+        // and there's no VarType for this.
+        // also also we need this record symbol to be both "generic" *AND* bound
+        RecordSymbol boundRecord = symbol.bindTypeVariables(bindings);
+      }
+    }
   }
 
   @Override
@@ -732,8 +784,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     if (type.isRecord()) {
       RecordReferenceType recordReferenceType = (RecordReferenceType) type;
       String recordName = recordReferenceType.name();
-      Symbol symbol = symbolTable.getRecursive(recordName);
-      if (symbol == null || !symbol.varType().isRecord()) {
+      RecordSymbol symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+      if (symbol == null) {
         errors.add(
             new TypeException(
                 String.format(
@@ -743,9 +795,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return false;
       }
       // fall through; valid record
-
-      // TODO: check that # of actual type variables (for generics) matches the # of formal
-      // type variables.
       return true;
     }
     // valid: either valid record, or not a record.

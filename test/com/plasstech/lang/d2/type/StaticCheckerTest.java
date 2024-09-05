@@ -1108,6 +1108,11 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void recordUseGeneric() {
+    assertThatTypeChecking("r2: record<T> {i:T} anr2=new r2<int> x:int x=anr2.i").succeeds();
+  }
+
+  @Test
   public void variableDecl_recordType() {
     SymbolTable symTab = checkProgram("r2: record{s:string} instance: r2");
     assertThat(symTab.getRecursive("r2", RecordSymbol.class)).isNotNull();
@@ -1302,6 +1307,33 @@ public class StaticCheckerTest {
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var1=var2").hasError("to INT");
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var2=var1")
         .hasError("to r1: RECORD");
+  }
+
+  @Test
+  public void newRecord_generic() {
+    SymbolTable symTab = checkProgram("Rec:record<T>{s:T} var=new Rec<int> var1=new Rec<Double>");
+
+    Symbol var = symTab.get("var");
+    RecordReferenceType refType = (RecordReferenceType) var.varType();
+    assertThat(refType.name()).isEqualTo("Rec");
+    assertThat(refType.actualTypes()).containsExactly(VarType.INT);
+
+    var = symTab.get("var1");
+    refType = (RecordReferenceType) var.varType();
+    assertThat(refType.name()).isEqualTo("Rec");
+    assertThat(refType.actualTypes()).containsExactly(VarType.DOUBLE);
+  }
+
+  @Test
+  public void newRecord_wrongNumberOfGenerics() {
+    assertThatTypeChecking("r1:record<T>{s:string} var1=new r1")
+        .hasError("Wrong number.*saw 0, expected 1");
+    assertThatTypeChecking("r1:record{s:string} var1=new r1<int>")
+        .hasError("Wrong number.*saw 1, expected 0");
+    assertThatTypeChecking("r1:record<T>{s:string} var1=new r1<R>")
+        .hasError("unknown RECORD type R");
+    assertThatTypeChecking("r1:record<S,T>{s:string} var1=new r1<int>")
+        .hasError("Wrong number.*saw 1, expected 2");
   }
 
   @Test

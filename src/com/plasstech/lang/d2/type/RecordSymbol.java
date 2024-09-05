@@ -75,9 +75,11 @@ public class RecordSymbol extends AbstractSymbol {
 
   private final ImmutableMap<String, Field> fields;
   private final int allocatedSize;
+  private final ImmutableList<String> typeVariables;
 
   public RecordSymbol(RecordDeclarationNode node) {
     super(node.name());
+    this.typeVariables = node.formalTypeVariables();
     // This isn't *quite* true. It's more of a RecordDefinitionType
     this.setVarType(new RecordReferenceType(node.name()));
 
@@ -102,6 +104,7 @@ public class RecordSymbol extends AbstractSymbol {
       fieldBuilder.put(decl.name(), field);
       sizeToAllocate += decl.varType().size();
     }
+
     allocatedSize = sizeToAllocate;
     fields = fieldBuilder.build();
   }
@@ -121,13 +124,14 @@ public class RecordSymbol extends AbstractSymbol {
     return String.format("Record %s: %s", name(), fields);
   }
 
+  // This means it's generic - bound or unbound.
   public boolean isGeneric() {
-    for (Field field : fields.values()) {
-      if (field.type() instanceof UnboundType) {
-        return true;
-      }
-    }
-    return false;
+    return !typeVariables.isEmpty();
+  }
+
+  public boolean isBound() {
+    // Make sure no fields are unbound
+    return fields.values().stream().anyMatch(f -> f.type instanceof UnboundType) == false;
   }
 
   /** In the same order as definition */
@@ -179,6 +183,15 @@ public class RecordSymbol extends AbstractSymbol {
    * @return
    */
   public RecordSymbol bindTypeVariables(Map<String, VarType> mapping) {
-    return this;
+    if (this.isBound()) {
+      throw new IllegalStateException("Cannot bind type variables in bound record symbol");
+    }
+    // 1. bind all fields
+    // 2. ??? something about the vartype or symbol? What about the symbol table?
+    throw new IllegalStateException("bind type variables not implemneted yet");
+  }
+
+  public ImmutableList<String> formalTypeVariables() {
+    return typeVariables;
   }
 }

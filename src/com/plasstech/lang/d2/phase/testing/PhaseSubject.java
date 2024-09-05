@@ -44,7 +44,9 @@ public abstract class PhaseSubject extends Subject {
     YetAnotherCompiler compiler = new YetAnotherCompiler();
     State state = compiler.compile(this.config);
     if (state.error()) {
-      state.exception().printStackTrace(System.err);
+      if (state.exception() != null) {
+        state.exception().printStackTrace(System.err);
+      }
       fail(state.errorMessage());
     }
     return state;

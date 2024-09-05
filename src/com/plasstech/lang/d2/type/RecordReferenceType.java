@@ -13,6 +13,7 @@ public class RecordReferenceType extends PointerType {
     this(recordSymbolName, ImmutableList.of());
   }
 
+  /** Generic */
   public RecordReferenceType(String recordSymbolName, List<VarType> actualTypes) {
     super(recordSymbolName);
     this.actualTypes = ImmutableList.copyOf(actualTypes);
@@ -48,5 +49,9 @@ public class RecordReferenceType extends PointerType {
 
   public ImmutableList<VarType> actualTypes() {
     return actualTypes;
+  }
+
+  public boolean isGeneric() {
+    return !actualTypes.isEmpty();
   }
 }
