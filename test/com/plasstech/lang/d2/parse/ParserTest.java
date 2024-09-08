@@ -1,8 +1,8 @@
 package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
+import static com.plasstech.lang.d2.parse.testing.ParserSubject.assertThatParsing;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
 
@@ -14,8 +14,6 @@ import org.junit.runner.RunWith;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.plasstech.lang.d2.YetAnotherCompiler;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
@@ -48,8 +46,6 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
-import com.plasstech.lang.d2.phase.PhaseName;
-import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -57,7 +53,8 @@ import com.plasstech.lang.d2.type.VarType;
 public class ParserTest {
   @Test
   public void print() {
-    BlockNode root = parseStatements("print 123");
+    ProgramNode programNode = assertThatParsing("print 123").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     PrintNode node = (PrintNode) root.statements().get(0);
@@ -74,7 +71,8 @@ public class ParserTest {
 
   @Test
   public void println() {
-    BlockNode root = parseStatements("println 123");
+    ProgramNode programNode = assertThatParsing("println 123").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     PrintNode node = (PrintNode) root.statements().get(0);
@@ -83,7 +81,8 @@ public class ParserTest {
 
   @Test
   public void printLong() {
-    BlockNode root = parseStatements("print 123L");
+    ProgramNode programNode = assertThatParsing("print 123L").succeeds();
+    BlockNode root = programNode.statements();
 
     PrintNode node = (PrintNode) root.statements().get(0);
     ExprNode expr = node.expr();
@@ -95,34 +94,35 @@ public class ParserTest {
 
   @Test
   public void printError() {
-    assertParseError("print", "Unexpected 'EOF'");
+    assertThatParsing("print").hasError("Unexpected 'EOF'");
   }
 
   @Test
   public void printInvalidChar() {
-    assertParseError("print �hi�", "Unexpected character '�'");
-    assertParseError("print @", "Unexpected character '@'");
+    assertThatParsing("print �hi�").hasError("Unexpected character '�'");
+    assertThatParsing("print @").hasError("Unexpected character '@'");
   }
 
   @Test
   public void assignErrors() {
-    assertParseError("a=", "expected literal");
-    assertParseError("a=(3+", "expected literal");
-    assertParseError("a=3+", "expected literal");
-    assertParseError("a=3+5*", "expected literal");
-    assertParseError("a=3+*5", "expected literal");
-    assertParseError("a=3**5", "expected literal");
-    assertParseError("a=print", "expected literal");
+    assertThatParsing("a=").hasError("expected literal");
+    assertThatParsing("a=(3+").hasError("expected literal");
+    assertThatParsing("a=3+").hasError("expected literal");
+    assertThatParsing("a=3+5*").hasError("expected literal");
+    assertThatParsing("a=3+*5").hasError("expected literal");
+    assertThatParsing("a=3**5").hasError("expected literal");
+    assertThatParsing("a=print").hasError("expected literal");
   }
 
   @Test
   public void invalidVariableName() {
-    assertParseError("_hi=3", "Illegal variable name _hi");
+    assertThatParsing("_hi=3").hasError("Illegal variable name _hi");
   }
 
   @Test
   public void assignInt() {
-    BlockNode root = parseStatements("a=3");
+    ProgramNode programNode = assertThatParsing("a=3").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -137,7 +137,8 @@ public class ParserTest {
 
   @Test
   public void assignShiftLeft() {
-    BlockNode root = parseStatements("a=b<<3");
+    ProgramNode programNode = assertThatParsing("a=b<<3").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -155,7 +156,8 @@ public class ParserTest {
 
   @Test
   public void assignBoolean() {
-    BlockNode root = parseStatements("a=true b=FALSE");
+    ProgramNode programNode = assertThatParsing("a=true b=FALSE").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(2);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -173,7 +175,8 @@ public class ParserTest {
 
   @Test
   public void assignAdd() {
-    BlockNode root = parseStatements("a=3 + 4");
+    ProgramNode programNode = assertThatParsing("a=3 + 4").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -195,7 +198,8 @@ public class ParserTest {
 
   @Test
   public void assignMult() {
-    BlockNode root = parseStatements("a=3 * 4");
+    ProgramNode programNode = assertThatParsing("a=3 * 4").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -218,12 +222,13 @@ public class ParserTest {
 
   @Test
   public void assignAddChained() {
-    parseStatements("a=3+4*b-5");
+    assertThatParsing("a=3+4*b-5").succeeds();
   }
 
   @Test
   public void assign() {
-    BlockNode root = parseStatements("a=b");
+    ProgramNode programNode = assertThatParsing("a=b").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -238,7 +243,8 @@ public class ParserTest {
 
   @Test
   public void unaryMinus() {
-    BlockNode root = parseStatements("a=-b");
+    ProgramNode programNode = assertThatParsing("a=-b").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -255,7 +261,8 @@ public class ParserTest {
 
   @Test
   public void unaryMinusConstant() {
-    BlockNode root = parseStatements("a=-3");
+    ProgramNode programNode = assertThatParsing("a=-3").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -269,7 +276,8 @@ public class ParserTest {
 
   @Test
   public void unaryPlusConstant() {
-    BlockNode root = parseStatements("a=+3");
+    ProgramNode programNode = assertThatParsing("a=+3").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -283,7 +291,8 @@ public class ParserTest {
 
   @Test
   public void unaryNotConstant() {
-    BlockNode root = parseStatements("a=NOT true");
+    ProgramNode programNode = assertThatParsing("a=NOT true").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -297,22 +306,26 @@ public class ParserTest {
 
   @Test
   public void unaryBoolNotSwaps() {
-    BlockNode root = parseStatements("a=NOT (a==b)");
+    ProgramNode programNode = assertThatParsing("a=NOT (a==b)").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
     BinOpNode binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.NEQ);
+    ProgramNode node2 = assertThatParsing("a=NOT (a!=b)").succeeds();
 
-    root = parseStatements("a=NOT (a!=b)");
+    root = node2.statements();
     node = (AssignmentNode) root.statements().get(0);
     binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.EQEQ);
+    ProgramNode node3 = assertThatParsing("a=NOT (a>b)").succeeds();
 
-    root = parseStatements("a=NOT (a>b)");
+    root = node3.statements();
     node = (AssignmentNode) root.statements().get(0);
     binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.LEQ);
+    ProgramNode node4 = assertThatParsing("a=NOT (a<=b)").succeeds();
 
-    root = parseStatements("a=NOT (a<=b)");
+    root = node4.statements();
     node = (AssignmentNode) root.statements().get(0);
     binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.GT);
@@ -320,7 +333,8 @@ public class ParserTest {
 
   @Test
   public void unaryBoolNotNot() {
-    BlockNode root = parseStatements("a=NOT NOT (a==b)");
+    ProgramNode programNode = assertThatParsing("a=NOT NOT (a==b)").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
     BinOpNode binOpNode = (BinOpNode) node.expr();
     assertThat(binOpNode.operator()).isEqualTo(TokenType.EQEQ);
@@ -328,7 +342,8 @@ public class ParserTest {
 
   @Test
   public void unaryBitNot() {
-    BlockNode root = parseStatements("a=!b");
+    ProgramNode programNode = assertThatParsing("a=!b").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -342,7 +357,8 @@ public class ParserTest {
 
   @Test
   public void unaryBitNotNot() {
-    BlockNode root = parseStatements("a=!!b");
+    ProgramNode programNode = assertThatParsing("a=!!b").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -357,7 +373,8 @@ public class ParserTest {
 
   @Test
   public void unaryPlus() {
-    BlockNode root = parseStatements("a=+b");
+    ProgramNode programNode = assertThatParsing("a=+b").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -374,7 +391,8 @@ public class ParserTest {
 
   @Test
   public void unaryExpr() {
-    BlockNode root = parseStatements("a=+(b+-c)");
+    ProgramNode programNode = assertThatParsing("a=+(b+-c)").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -400,7 +418,8 @@ public class ParserTest {
   }
 
   private BlockNode assertUnaryAssignConstant(String expression, int value) {
-    BlockNode root = parseStatements(expression);
+    ProgramNode programNode = assertThatParsing(expression).succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -415,7 +434,8 @@ public class ParserTest {
 
   @Test
   public void unaryLength() {
-    BlockNode root = parseStatements("a=length('hi')");
+    ProgramNode programNode = assertThatParsing("a=length('hi')").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -432,7 +452,8 @@ public class ParserTest {
 
   @Test
   public void unaryAsc() {
-    BlockNode root = parseStatements("a=asc('hi')");
+    ProgramNode programNode = assertThatParsing("a=asc('hi')").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -449,7 +470,8 @@ public class ParserTest {
 
   @Test
   public void unaryChr() {
-    BlockNode root = parseStatements("a=chr(65)");
+    ProgramNode programNode = assertThatParsing("a=chr(65)").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -467,13 +489,14 @@ public class ParserTest {
   @Test
   public void binOpOperator(
       @TestParameter({"+", "-", "*", "/", "%", "|", "&", "^"}) String operator) {
-    parseStatements(String.format("a=b%s5", operator));
+    assertThatParsing(String.format("a=b%s5", operator)).succeeds();
   }
 
   @Test
   public void binEqualOpOperator(
       @TestParameter({"PLUS", "MINUS", "MULT", "DIV"}) TokenType operator) {
-    BlockNode block = parseStatements(String.format("a%s=b", operator.toString()));
+    ProgramNode node = assertThatParsing(String.format("a%s=b", operator.toString())).succeeds();
+    BlockNode block = node.statements();
     assertThat(block.statements()).hasSize(1);
     AssignmentNode statement = (AssignmentNode) block.statements().get(0);
     assertThat(statement.lvalue().name()).isEqualTo("a");
@@ -484,7 +507,7 @@ public class ParserTest {
 
   @Test
   public void binOpCompare(@TestParameter({">", "<", "==", "!=", "<=", ">="}) String operator) {
-    parseStatements(String.format("a=b%s5", operator));
+    assertThatParsing(String.format("a=b%s5", operator)).succeeds();
   }
 
   @Test
@@ -492,7 +515,8 @@ public class ParserTest {
     // boolean a = ((1 + 2) * (3 - 4) / (-5) == 6) == true
     // || ((2 - 3) * (4 - 5) / (-6) == 7) == false && ((3 + 4) * (5 + 6) / (-7) >=
     // (8 % 2));
-    BlockNode root = parseStatements("a=((1 + 2) * (3 - 4) / (-5) == 6) != true");
+    ProgramNode node = assertThatParsing("a=((1 + 2) * (3 - 4) / (-5) == 6) != true").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -500,20 +524,20 @@ public class ParserTest {
 
   @Test
   public void allExprTypes() {
-    BlockNode root =
-        parseStatements(
-            "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-                + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
-                + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
-                + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2");
-
+    ProgramNode node = assertThatParsing("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+        + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
+        + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
+        + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2").succeeds();
+    BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(2);
   }
 
   @Test
   public void program() {
-    BlockNode root = parseStatements("a=3 print a\n abc =   123 +a-b print 123\nprin=t");
+    ProgramNode node =
+        assertThatParsing("a=3 print a\n abc =   123 +a-b print 123\nprin=t").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(5);
@@ -527,7 +551,8 @@ public class ParserTest {
 
   @Test
   public void assignParens() {
-    BlockNode root = parseStatements("a=(3)");
+    ProgramNode programNode = assertThatParsing("a=(3)").succeeds();
+    BlockNode root = programNode.statements();
 
     assertThat(root.statements()).hasSize(1);
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -542,7 +567,8 @@ public class ParserTest {
 
   @Test
   public void parseIf() {
-    BlockNode root = parseStatements("if a==3 { print a a=4 }");
+    ProgramNode node = assertThatParsing("if a==3 { print a a=4 }").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -555,7 +581,8 @@ public class ParserTest {
 
   @Test
   public void ifEmptyBlock() {
-    BlockNode root = parseStatements("if a==3 { }");
+    ProgramNode node = assertThatParsing("if a==3 { }").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -569,16 +596,15 @@ public class ParserTest {
 
   @Test
   public void ifNested() {
-    BlockNode root =
-        parseStatements(
-            "      if a==3 { "
-                + "  if a==4 { "
-                + "   if a == 5 {"
-                + "     print a"
-                + "   } "
-                + "  }"
-                + "}"
-                + "else { print 4 print a}");
+    ProgramNode node = assertThatParsing("      if a==3 { "
+        + "  if a==4 { "
+        + "   if a == 5 {"
+        + "     print a"
+        + "   } "
+        + "  }"
+        + "}"
+        + "else { print 4 print a}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -592,7 +618,8 @@ public class ParserTest {
 
   @Test
   public void ifElse() {
-    BlockNode root = parseStatements("if a==3 { print a } else { print 4 print a}");
+    ProgramNode node = assertThatParsing("if a==3 { print a } else { print 4 print a}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -605,12 +632,11 @@ public class ParserTest {
 
   @Test
   public void ifElif() {
-    BlockNode root =
-        parseStatements(
-            "      if a==3 { print a } "
-                + "elif a==4 { print 4 print a} "
-                + "elif a==5 { print 5}"
-                + "else { print 6 print 7}");
+    ProgramNode node = assertThatParsing("      if a==3 { print a } "
+        + "elif a==4 { print 4 print a} "
+        + "elif a==5 { print 5}"
+        + "else { print 6 print 7}").succeeds();
+    BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -621,19 +647,20 @@ public class ParserTest {
 
   @Test
   public void ifError() {
-    assertParseError("if a==3 { print a } else print 4}", "expected {");
-    assertParseError("if a==3 { print a } else {print 4", "Unexpected start of statement 'EOF'");
-    assertParseError("if a==3 print a } else {print 4", "expected {");
-    assertParseError("if print a else {print 4", "expected literal");
-    assertParseError(
-        "if a==3 { print a } else  { print 4 print a} "
-            + "elif a==5 { print 5}else { print 6 print 7}",
-        "Unexpected start of statement 'ELIF'");
+    assertThatParsing("if a==3 { print a } else print 4}").hasError("expected \\{");
+    assertThatParsing("if a==3 { print a } else {print 4")
+        .hasError("Unexpected start of statement 'EOF'");
+    assertThatParsing("if a==3 print a } else {print 4").hasError("expected \\{");
+    assertThatParsing("if print a else {print 4").hasError("expected literal");
+    assertThatParsing("if a==3 { print a } else  { print 4 print a} "
+        + "elif a==5 { print 5}else { print 6 print 7}")
+        .hasError("Unexpected start of statement 'ELIF'");
   }
 
   @Test
   public void whileTrue() {
-    BlockNode root = parseStatements("while true {}");
+    ProgramNode node = assertThatParsing("while true {}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -648,7 +675,8 @@ public class ParserTest {
 
   @Test
   public void whileDo() {
-    BlockNode root = parseStatements("while true do i = 1 {}");
+    ProgramNode node = assertThatParsing("while true do i = 1 {}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -666,7 +694,8 @@ public class ParserTest {
 
   @Test
   public void whileExprDo() {
-    BlockNode root = parseStatements("while i < 30 do i = 1 {}");
+    ProgramNode node = assertThatParsing("while i < 30 do i = 1 {}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -685,7 +714,8 @@ public class ParserTest {
 
   @Test
   public void whileExprDoBlock() {
-    BlockNode root = parseStatements("while i < 30 do i = 1 {print i a=i}");
+    ProgramNode node = assertThatParsing("while i < 30 do i = 1 {print i a=i}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -698,7 +728,8 @@ public class ParserTest {
 
   @Test
   public void whileBreak() {
-    BlockNode root = parseStatements("while true {break continue}");
+    ProgramNode node = assertThatParsing("while true {break continue}").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -713,31 +744,34 @@ public class ParserTest {
 
   @Test
   public void whileDoNotAssignment() {
-    parseStatements("while true do advance(3) {}");
+    assertThatParsing("while true do advance(3) {}").succeeds();
   }
 
   @Test
   public void whileError() {
-    assertParseError("while print", "expected literal");
-    assertParseError("while a==3 print", "expected {");
-    assertParseError("while a==3 {print", "expected literal");
-    assertParseError("while a==3 do {print}", "Unexpected start of statement '{'");
-    assertParseError("while a==3 do print {print}", "expected literal");
-    assertParseError("while a==3 do a=a+1 {a=}", "expected literal");
-    assertParseError("continue", "CONTINUE found outside of WHILE");
-    assertParseError("if true {break while true {continue }}", "BREAK found outside of WHILE");
-    assertParseError("break", "BREAK found outside of WHILE");
-    assertParseError("if true {continue while true {break}}", "CONTINUE found outside of WHILE");
+    assertThatParsing("while print").hasError("expected literal");
+    assertThatParsing("while a==3 print").hasError("expected \\{");
+    assertThatParsing("while a==3 {print").hasError("expected literal");
+    assertThatParsing("while a==3 do {print}").hasError("Unexpected start of statement '\\{'");
+    assertThatParsing("while a==3 do print {print}").hasError("expected literal");
+    assertThatParsing("while a==3 do a=a+1 {a=}").hasError("expected literal");
+    assertThatParsing("continue").hasError("CONTINUE found outside of WHILE");
+    assertThatParsing("if true {break while true {continue }}")
+        .hasError("BREAK found outside of WHILE");
+    assertThatParsing("break").hasError("BREAK found outside of WHILE");
+    assertThatParsing("if true {continue while true {break}}")
+        .hasError("CONTINUE found outside of WHILE");
   }
 
   @Test
   public void mainEmpty() {
-    assertParseError("main{}", "Unexpected '{'");
+    assertThatParsing("main{}").hasError("Unexpected '\\{'");
   }
 
   @Test
   public void decl() {
-    BlockNode root = parseStatements("a:int");
+    ProgramNode node = assertThatParsing("a:int").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -749,7 +783,8 @@ public class ParserTest {
 
   @Test
   public void declBool() {
-    BlockNode root = parseStatements("a:bool");
+    ProgramNode node = assertThatParsing("a:bool").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
@@ -758,7 +793,8 @@ public class ParserTest {
 
   @Test
   public void declString() {
-    BlockNode root = parseStatements("a:string");
+    ProgramNode node = assertThatParsing("a:string").succeeds();
+    BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
     assertThat(declarationNode.varType()).isEqualTo(VarType.STRING);
@@ -766,7 +802,8 @@ public class ParserTest {
 
   @Test
   public void declByte() {
-    BlockNode root = parseStatements("a:byte");
+    ProgramNode node = assertThatParsing("a:byte").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
@@ -775,7 +812,8 @@ public class ParserTest {
 
   @Test
   public void declLong() {
-    BlockNode root = parseStatements("a:long");
+    ProgramNode node = assertThatParsing("a:long").succeeds();
+    BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
     DeclarationNode declarationNode = (DeclarationNode) statements.get(0);
@@ -784,15 +822,16 @@ public class ParserTest {
 
   @Test
   public void declError() {
-    assertParseError("a:", "expected built-in");
-    assertParseError("a::", "expected built-in");
-    assertParseError("a:print", "expected built-in");
-    assertParseError("a:void", "expected built-in");
+    assertThatParsing("a:").hasError("expected built-in");
+    assertThatParsing("a::").hasError("expected built-in");
+    assertThatParsing("a:print").hasError("expected built-in");
+    assertThatParsing("a:void").hasError("expected built-in");
   }
 
   @Test
   public void assignString() {
-    BlockNode root = parseStatements("a='hi'");
+    ProgramNode programNode = assertThatParsing("a='hi'").succeeds();
+    BlockNode root = programNode.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -808,7 +847,8 @@ public class ParserTest {
 
   @Test
   public void addStrings() {
-    BlockNode root = parseStatements("a='hi' + 'Hi'");
+    ProgramNode programNode = assertThatParsing("a='hi' + 'Hi'").succeeds();
+    BlockNode root = programNode.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -824,25 +864,25 @@ public class ParserTest {
 
   @Test
   public void procErrors() {
-    assertParseError("fib:proc(a:int b) {}", "expected )");
-    assertParseError("fib:proc(a:proc, b) {}", "expected built-in");
-    assertParseError("fib:proc(a:, b) {}", "expected built-in");
-    assertParseError("fib:proc(a:) {}", "expected built-in");
-    assertParseError("fib:proc(a {}", "expected )");
-    assertParseError("fib:proc(a:int, ) {}", "expected VARIABLE");
-    assertParseError("fib:proc(a:int) print a", "expected {");
-    assertParseError("fib:proc  print a", "expected {");
-    assertParseError("fib:proc() {return", "Unexpected start of statement 'EOF'");
-    assertParseError("fib:proc() {return {", "Unexpected start of statement '{'");
-    assertParseError("fib:proc() {return )}", "Unexpected start of statement ')'");
-    assertParseError("fib:proc(arg:void) {}", "Unexpected 'VOID'");
-    assertParseError("fib:proc(void:arg) {}", "Unexpected 'VOID'");
+    assertThatParsing("fib:proc(a:int b) {}").hasError("expected \\)");
+    assertThatParsing("fib:proc(a:proc, b) {}").hasError("expected built-in");
+    assertThatParsing("fib:proc(a:, b) {}").hasError("expected built-in");
+    assertThatParsing("fib:proc(a:) {}").hasError("expected built-in");
+    assertThatParsing("fib:proc(a {}").hasError("expected \\)");
+    assertThatParsing("fib:proc(a:int, ) {}").hasError("expected VARIABLE");
+    assertThatParsing("fib:proc(a:int) print a").hasError("expected \\{");
+    assertThatParsing("fib:proc  print a").hasError("expected \\{");
+    assertThatParsing("fib:proc() {return").hasError("Unexpected start of statement 'EOF'");
+    assertThatParsing("fib:proc() {return {").hasError("Unexpected start of statement '\\{'");
+    assertThatParsing("fib:proc() {return )}").hasError("Unexpected start of statement '\\)'");
+    assertThatParsing("fib:proc(arg:void) {}").hasError("Unexpected 'VOID'");
+    assertThatParsing("fib:proc(void:arg) {}").hasError("Unexpected 'VOID'");
   }
 
   @Test
   public void simpleProc() {
     // the simplest possible procedure
-    ProgramNode root = parseProgram("fib:proc {}");
+    ProgramNode root = assertThatParsing("fib:proc {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -850,7 +890,7 @@ public class ParserTest {
 
   @Test
   public void procWithParam() {
-    ProgramNode root = parseProgram("fib:proc(param1) {}");
+    ProgramNode root = assertThatParsing("fib:proc(param1) {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -861,7 +901,7 @@ public class ParserTest {
 
   @Test
   public void procWith2Params() {
-    ProgramNode root = parseProgram("fib:proc(param1, param2: string) {}");
+    ProgramNode root = assertThatParsing("fib:proc(param1, param2: string) {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -874,7 +914,7 @@ public class ParserTest {
 
   @Test
   public void procWithArrayParam() {
-    ProgramNode root = parseProgram("f:proc(param1:int[]) {}");
+    ProgramNode root = assertThatParsing("f:proc(param1:int[]) {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("f");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -885,7 +925,7 @@ public class ParserTest {
 
   @Test
   public void procWithByteParam() {
-    ProgramNode root = parseProgram("f:proc(param1:byte) {}");
+    ProgramNode root = assertThatParsing("f:proc(param1:byte) {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
     assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.BYTE);
@@ -893,7 +933,7 @@ public class ParserTest {
 
   @Test
   public void procWithLongParam() {
-    ProgramNode root = parseProgram("f:proc(param1:long) {}");
+    ProgramNode root = assertThatParsing("f:proc(param1:long) {}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.parameters().get(0).name()).isEqualTo("param1");
     assertThat(proc.parameters().get(0).varType()).isEqualTo(VarType.LONG);
@@ -901,7 +941,7 @@ public class ParserTest {
 
   @Test
   public void procWithLocals() {
-    ProgramNode root = parseProgram("fib:proc() {local:int}");
+    ProgramNode root = assertThatParsing("fib:proc() {local:int}").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -911,12 +951,11 @@ public class ParserTest {
   @Test
   public void fullProc() {
     ProgramNode root =
-        parseProgram(
-            "      fib:proc(typed:int, nontyped) : string {"
-                + "  typed = typed + 1"
-                + "  nontyped = typed + 1"
-                + "  return 'hi'"
-                + "}");
+        assertThatParsing("      fib:proc(typed:int, nontyped) : string {"
+            + "  typed = typed + 1"
+            + "  nontyped = typed + 1"
+            + "  return 'hi'"
+            + "}").succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -927,7 +966,7 @@ public class ParserTest {
 
   @Test
   public void procReturnVoid() {
-    ProgramNode root = parseProgram("fib:proc() {return}");
+    ProgramNode root = assertThatParsing("fib:proc() {return}").succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -937,12 +976,12 @@ public class ParserTest {
     assertThat(returnNode.expr().isPresent()).isFalse();
 
     // This is allowed, but the static checker will eventually prevent it
-    parseProgram("fib:proc() {return print 'hi'}");
+    assertThatParsing("fib:proc() {return print 'hi'}").succeeds();
   }
 
   @Test
   public void procReturnVoidExplicit() {
-    ProgramNode root = parseProgram("fib:proc(): void {return}");
+    ProgramNode root = assertThatParsing("fib:proc(): void {return}").succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -952,13 +991,13 @@ public class ParserTest {
     assertThat(returnNode.expr().isPresent()).isFalse();
 
     // This is allowed, but the static checker will eventually prevent it
-    parseProgram("fib:proc():void {return print 'hi'}");
+    assertThatParsing("fib:proc():void {return print 'hi'}").succeeds();
   }
 
   @Test
   public void externSimpleProc() {
     // the simplest possible procedure
-    ProgramNode root = parseProgram("fib:extern proc");
+    ProgramNode root = assertThatParsing("fib:extern proc").succeeds();
     ExternProcedureNode proc = (ExternProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -966,7 +1005,7 @@ public class ParserTest {
 
   @Test
   public void externProcWithParam() {
-    ProgramNode root = parseProgram("fib:extern proc(param1:string)");
+    ProgramNode root = assertThatParsing("fib:extern proc(param1:string)").succeeds();
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
@@ -977,7 +1016,8 @@ public class ParserTest {
 
   @Test
   public void externFullProc() {
-    ProgramNode root = parseProgram("fib:extern proc(typed:int, nontyped) : string");
+    ProgramNode root =
+        assertThatParsing("fib:extern proc(typed:int, nontyped) : string").succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -990,7 +1030,7 @@ public class ParserTest {
 
   @Test
   public void procCallNoArgs() {
-    ProgramNode root = parseProgram("a = doit()");
+    ProgramNode root = assertThatParsing("a = doit()").succeeds();
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
@@ -998,7 +1038,7 @@ public class ParserTest {
 
   @Test
   public void procCallAsStatement() {
-    ProgramNode root = parseProgram("doit(3)");
+    ProgramNode root = assertThatParsing("doit(3)").succeeds();
     CallNode call = (CallNode) (root.statements().statements().get(0));
 
     assertThat(call.procName()).isEqualTo("doit");
@@ -1009,7 +1049,7 @@ public class ParserTest {
 
   @Test
   public void procCallAsExpression() {
-    ProgramNode root = parseProgram("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))");
+    ProgramNode root = assertThatParsing("a = doit((3*6*(3-4)*(5-5)), (abc==doit()))").succeeds();
 
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
@@ -1018,7 +1058,7 @@ public class ParserTest {
 
   @Test
   public void procCallOneArgs() {
-    ProgramNode root = parseProgram("a = doit(1)");
+    ProgramNode root = assertThatParsing("a = doit(1)").succeeds();
 
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
@@ -1027,13 +1067,13 @@ public class ParserTest {
 
   @Test
   public void procCallErrors() {
-    assertParseError("a = doit(1 b=3", "expected )");
-    assertParseError("a = doit(1,)", "expected literal");
+    assertThatParsing("a = doit(1 b=3").hasError("expected \\)");
+    assertThatParsing("a = doit(1,)").hasError("expected literal");
   }
 
   @Test
   public void procCallMultipleArgs() {
-    ProgramNode root = parseProgram("a = doit(1, 2, 3)");
+    ProgramNode root = assertThatParsing("a = doit(1, 2, 3)").succeeds();
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
@@ -1041,7 +1081,7 @@ public class ParserTest {
 
   @Test
   public void procCallNested() {
-    ProgramNode root = parseProgram("a = doit3(1, doit1(2), doit2(3, 4))");
+    ProgramNode root = assertThatParsing("a = doit3(1, doit1(2), doit2(3, 4))").succeeds();
     AssignmentNode assignment = (AssignmentNode) (root.statements().statements().get(0));
     ExprNode expr = assignment.expr();
     assertThat(expr).isInstanceOf(CallNode.class);
@@ -1049,18 +1089,19 @@ public class ParserTest {
 
   @Test
   public void returnOutsideProc() {
-    assertParseError("return", "Cannot RETURN from outside a PROC");
-    assertParseError("f:proc{} return", "Cannot RETURN from outside a PROC");
+    assertThatParsing("return").hasError("Cannot RETURN from outside a PROC");
+    assertThatParsing("f:proc{} return").hasError("Cannot RETURN from outside a PROC");
   }
 
   @Test
   public void invalidReturn() {
-    assertParseError("f:proc {return print}", "expected literal, variable, or");
+    assertThatParsing("f:proc {return print}").hasError("expected literal, variable, or");
   }
 
   @Test
   public void arrayGet() {
-    BlockNode root = parseStatements("a=b[3+c]");
+    ProgramNode programNode = assertThatParsing("a=b[3+c]").succeeds();
+    BlockNode root = programNode.statements();
 
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -1078,14 +1119,15 @@ public class ParserTest {
 
   @Test
   public void arrayGetWeirdYetParseable() {
-    parseStatements("a=3[4+c]"); // will fail type checker
-    parseStatements("a='hi'['lol']"); // will fail type checker
-    parseStatements("a=fn()[4+c]");
+    assertThatParsing("a=3[4+c]").succeeds();
+    assertThatParsing("a='hi'['lol']").succeeds(); // will fail type checker
+    assertThatParsing("a=fn()[4+c]").succeeds(); // will fail type checker
   }
 
   @Test
   public void allocArray() {
-    BlockNode root = parseStatements("a:int[3]");
+    ProgramNode programNode = assertThatParsing("a:int[3]").succeeds();
+    BlockNode root = programNode.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -1099,7 +1141,8 @@ public class ParserTest {
 
   @Test
   public void declArray() {
-    BlockNode root = parseStatements("a:int[]");
+    ProgramNode programNode = assertThatParsing("a:int[]").succeeds();
+    BlockNode root = programNode.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -1112,7 +1155,8 @@ public class ParserTest {
 
   @Test
   public void allocEmptyArray() {
-    BlockNode root = parseStatements("a:int[0]");
+    ProgramNode programNode = assertThatParsing("a:int[0]").succeeds();
+    BlockNode root = programNode.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -1126,7 +1170,8 @@ public class ParserTest {
 
   @Test
   public void arrayDeclVariableSize() {
-    BlockNode root = parseStatements("a:int[b+3]");
+    ProgramNode programNode = assertThatParsing("a:int[b+3]").succeeds();
+    BlockNode root = programNode.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -1140,20 +1185,22 @@ public class ParserTest {
 
   @Test
   public void arrayDeclError() {
-    assertParseError("a:int[3", "expected ]");
-    assertParseError("a:int[3 4]", "expected ]");
+    assertThatParsing("a:int[3").hasError("expected ]");
+    assertThatParsing("a:int[3 4]").hasError("expected ]");
   }
 
   @Test
   @Ignore("Issue #38: Support multidimensional arrays")
   public void multiDimArrayGet() {
-    BlockNode root = parseStatements("a=b[3+c][4][5]");
+    ProgramNode node = assertThatParsing("a=b[3+c][4][5]").succeeds();
+    BlockNode root = node.statements();
     System.out.println(root);
   }
 
   @Test
   public void arraySet() {
-    BlockNode root = parseStatements("a[3] = 4");
+    ProgramNode programNode = assertThatParsing("a[3] = 4").succeeds();
+    BlockNode root = programNode.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
 
@@ -1169,26 +1216,27 @@ public class ParserTest {
 
   @Test
   public void arraySetError() {
-    assertParseError("a[3] = ", "expected literal");
-    assertParseError("a[3 = ", "expected ]");
+    assertThatParsing("a[3] = ").hasError("expected literal");
+    assertThatParsing("a[3 = ").hasError("expected ]");
   }
 
   @Test
   @Ignore("Array assignments are still unimplemented")
   public void arrayStmt() {
-    parseStatements("fn()[fn()]");
+    assertThatParsing("fn()[fn()]").succeeds();
   }
 
   @Test
   public void arrayGetError() {
-    assertParseError("a=3[4+c b", "expected ]");
-    assertParseError("a=3[4+c b]", "expected ]");
-    assertParseError("a=b[4", "expected ]");
+    assertThatParsing("a=3[4+c b").hasError("expected ]");
+    assertThatParsing("a=3[4+c b]").hasError("expected ]");
+    assertThatParsing("a=b[4").hasError("expected ]");
   }
 
   @Test
   public void arrayLiteralInts() {
-    BlockNode blockNode = parseStatements("a=[1,2,3]");
+    ProgramNode programNode = assertThatParsing("a=[1,2,3]").succeeds();
+    BlockNode blockNode = programNode.statements();
     StatementNode statementNode = blockNode.statements().get(0);
     assertThat(statementNode).isInstanceOf(AssignmentNode.class);
     AssignmentNode node = (AssignmentNode) statementNode;
@@ -1206,7 +1254,8 @@ public class ParserTest {
 
   @Test
   public void arrayLiteral() {
-    BlockNode blockNode = parseStatements("a=['1', '2']");
+    ProgramNode programNode = assertThatParsing("a=['1', '2']").succeeds();
+    BlockNode blockNode = programNode.statements();
     StatementNode statementNode = blockNode.statements().get(0);
     assertThat(statementNode).isInstanceOf(AssignmentNode.class);
     AssignmentNode node = (AssignmentNode) statementNode;
@@ -1223,7 +1272,8 @@ public class ParserTest {
 
   @Test
   public void arrayLiteralBools() {
-    BlockNode blockNode = parseStatements("a=[true, false]");
+    ProgramNode programNode = assertThatParsing("a=[true, false]").succeeds();
+    BlockNode blockNode = programNode.statements();
     StatementNode statementNode = blockNode.statements().get(0);
     assertThat(statementNode).isInstanceOf(AssignmentNode.class);
     AssignmentNode node = (AssignmentNode) statementNode;
@@ -1240,7 +1290,8 @@ public class ParserTest {
 
   @Test
   public void arrayLiteralIndex() {
-    BlockNode root = parseStatements("a=[true, false][1]");
+    ProgramNode programNode = assertThatParsing("a=[true, false][1]").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
     VariableSetNode var = (VariableSetNode) node.lvalue();
@@ -1253,27 +1304,29 @@ public class ParserTest {
 
   @Test
   public void arrayLiteralErrors() {
-    assertParseError("a=[a]", "all elements are UNKNOWN");
-    assertParseError("a=[a+1]", "all elements are UNKNOWN");
+    assertThatParsing("a=[a]").hasError("all elements are UNKNOWN");
+    assertThatParsing("a=[a+1]").hasError("all elements are UNKNOWN");
     // this is no longer checked in parser; it's in the static checker now.
     // assertParseError("a=[1,'hi']", "Inconsistent types");
   }
 
   @Test
   public void arrayLiteralEmpty() {
-    assertParseError("a=[]", "Unexpected ']'");
+    assertThatParsing("a=[]").hasError("Unexpected ']'");
   }
 
   @Test
   public void exit() {
-    BlockNode root = parseStatements("exit");
+    ProgramNode programNode = assertThatParsing("exit").succeeds();
+    BlockNode root = programNode.statements();
     ExitNode node = (ExitNode) root.statements().get(0);
     assertThat(node.exitMessage().isPresent()).isFalse();
   }
 
   @Test
   public void exit_withMessage() {
-    BlockNode root = parseStatements("exit 'sorry/not sorry'");
+    ProgramNode programNode = assertThatParsing("exit 'sorry/not sorry'").succeeds();
+    BlockNode root = programNode.statements();
     ExitNode node = (ExitNode) root.statements().get(0);
     ConstNode<String> message = (ConstNode<String>) node.exitMessage().get();
     assertThat(message.value()).isEqualTo("sorry/not sorry");
@@ -1281,7 +1334,8 @@ public class ParserTest {
 
   @Test
   public void input() {
-    BlockNode root = parseStatements("f=input");
+    ProgramNode programNode = assertThatParsing("f=input").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
     VariableSetNode var = (VariableSetNode) node.lvalue();
@@ -1293,13 +1347,14 @@ public class ParserTest {
 
   @Test
   public void input_fail() {
-    assertParseError("input(f)", "Unexpected start of statement 'INPUT'");
-    assertParseError("f=input()", "Unexpected start of statement '('");
+    assertThatParsing("input(f)").hasError("Unexpected start of statement 'INPUT'");
+    assertThatParsing("f=input()").hasError("Unexpected start of statement '\\('");
   }
 
   @Test
   public void declRecord_empty() {
-    BlockNode root = parseStatements("r: record{}");
+    ProgramNode programNode = assertThatParsing("r: record{}").succeeds();
+    BlockNode root = programNode.statements();
     RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("r");
     assertThat(node.fields()).isEmpty();
@@ -1307,7 +1362,8 @@ public class ParserTest {
 
   @Test
   public void declRecord() {
-    BlockNode root = parseStatements("R: record{i: int s: string}");
+    ProgramNode programNode = assertThatParsing("R: record{i: int s: string}").succeeds();
+    BlockNode root = programNode.statements();
     RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("R");
     assertThat(node.fields()).hasSize(2);
@@ -1319,7 +1375,8 @@ public class ParserTest {
 
   @Test
   public void declRecordRecursive() {
-    BlockNode root = parseStatements("R: record {r: R}");
+    ProgramNode programNode = assertThatParsing("R: record {r: R}").succeeds();
+    BlockNode root = programNode.statements();
     RecordDeclarationNode node = (RecordDeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("R");
     assertThat(node.fields()).hasSize(1);
@@ -1331,11 +1388,11 @@ public class ParserTest {
 
   @Test
   public void declRecord_badField() {
-    assertParseError("r: record{p:int int}", "expected VARIABLE");
-    assertParseError("r: record{int}", "expected VARIABLE");
-    assertParseError("r: record{proc}", "expected VARIABLE");
+    assertThatParsing("r: record{p:int int}").hasError("expected VARIABLE");
+    assertThatParsing("r: record{int}").hasError("expected VARIABLE");
+    assertThatParsing("r: record{proc}").hasError("expected VARIABLE");
     // the error here is actually that it's trying to parse a procedure, but meh
-    assertParseError("r: record{p:proc}", "expected");
+    assertThatParsing("r: record{p:proc}").hasError("expected");
     // not parse errors, but are type errors
     // assertParseError("r: record{p:proc{}}", "expected");-
     // assertParseError("r: record{r2:record{}}", "expected VARIABLE");
@@ -1343,7 +1400,8 @@ public class ParserTest {
 
   @Test
   public void declVar_asRecord() {
-    BlockNode root = parseStatements("a: R");
+    ProgramNode programNode = assertThatParsing("a: R").succeeds();
+    BlockNode root = programNode.statements();
     DeclarationNode node = (DeclarationNode) root.statements().get(0);
     assertThat(node.name()).isEqualTo("a");
     RecordReferenceType type = (RecordReferenceType) node.varType();
@@ -1352,7 +1410,8 @@ public class ParserTest {
 
   @Test
   public void recordAsFormalParam() {
-    BlockNode root = parseStatements("p:proc(a: R) {}");
+    ProgramNode node = assertThatParsing("p:proc(a: R) {}").succeeds();
+    BlockNode root = node.statements();
     ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     ProcedureNode.Parameter param = proc.parameters().get(0);
     assertThat(param.name()).isEqualTo("a");
@@ -1362,7 +1421,8 @@ public class ParserTest {
 
   @Test
   public void recordAsReturnType() {
-    BlockNode root = parseStatements("p:proc():R {}");
+    ProgramNode node = assertThatParsing("p:proc():R {}").succeeds();
+    BlockNode root = node.statements();
     ProcedureNode proc = (ProcedureNode) root.statements().get(0);
     RecordReferenceType type = (RecordReferenceType) proc.returnType();
     assertThat(type.name()).isEqualTo("R");
@@ -1370,7 +1430,8 @@ public class ParserTest {
 
   @Test
   public void newRecord() {
-    BlockNode root = parseStatements("R: record{i: int} rec = new R");
+    ProgramNode programNode = assertThatParsing("R: record{i: int} rec = new R").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
     NewNode node = (NewNode) assignment.expr();
     assertThat(node.recordName()).isEqualTo("R");
@@ -1380,22 +1441,24 @@ public class ParserTest {
 
   @Test
   public void newRecord_returnValue() {
-    parseStatements("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
+    assertThatParsing("r1:record{i:int} p:proc():r1{return new r1} var1=p()").succeeds();
   }
 
   @Test
   public void new_asOperand() {
-    assertParseError("R: record{i: int} rec = new R.i", "Unexpected start of statement '.'");
+    assertThatParsing("R: record{i: int} rec = new R.i")
+        .hasError("Unexpected start of statement '.'");
   }
 
   @Test
   public void newRecord_Error() {
-    assertParseError("R: record{i: int s: string} rec = new new", "expected VARIABLE");
+    assertThatParsing("R: record{i: int s: string} rec = new new").hasError("expected VARIABLE");
   }
 
   @Test
   public void recordGet() {
-    BlockNode root = parseStatements("i=rec.i");
+    ProgramNode programNode = assertThatParsing("i=rec.i").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
@@ -1405,12 +1468,13 @@ public class ParserTest {
 
   @Test
   public void ifRecordGet() {
-    parseStatements("if rec.i ==0 {print rec.i}");
+    assertThatParsing("if rec.i ==0 {print rec.i}").succeeds();
   }
 
   @Test
   public void recordGetRecursive() {
-    BlockNode root = parseStatements("s=rec.s[(a+b)] s=rec.f1.f2[3] ");
+    ProgramNode programNode = assertThatParsing("s=rec.s[(a+b)] s=rec.f1.f2[3] ").succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(BinOpNode.class);
@@ -1420,13 +1484,14 @@ public class ParserTest {
 
   @Test
   public void recordGetError() {
-    assertParseError("i = rec.[\n", "expected literal");
+    assertThatParsing("i = rec.[\n").hasError("expected literal");
   }
 
   @SuppressWarnings("unchecked")
   @Test
   public void recordSet() {
-    BlockNode root = parseStatements("rec.i = 3 rec.s = 'hi'");
+    ProgramNode node = assertThatParsing("rec.i = 3 rec.s = 'hi'").succeeds();
+    BlockNode root = node.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(0);
     FieldSetNode lvalue = (FieldSetNode) assignment.lvalue();
     assertThat(lvalue.variableName()).isEqualTo("rec");
@@ -1442,16 +1507,16 @@ public class ParserTest {
 
   @Test
   public void recordSetError() {
-    assertParseError("rec.3 = i\n", "expected VARIABLE");
+    assertThatParsing("rec.3 = i\n").hasError("expected VARIABLE");
   }
 
   @Test
   public void unsetRecordCompareToNull() {
+    ProgramNode programNode = assertThatParsing("R: record{i: int s: string}\n" //
+        + " rec: R\n"
+        + " isNull = rec == null").succeeds();
     BlockNode root =
-        parseStatements(
-            "R: record{i: int s: string}\n" //
-                + " rec: R\n"
-                + " isNull = rec == null");
+        programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
@@ -1462,32 +1527,33 @@ public class ParserTest {
 
   @Test
   public void arrayOfRecord() {
-    parseStatements("r:record{a:string} rs:r[2]");
+    assertThatParsing("r:record{a:string} rs:r[2]").succeeds();
   }
 
   @Test
   public void arrayInRecord() {
-    parseStatements("r:record{a:string[1]} anr=new r print anr.a");
+    assertThatParsing("r:record{a:string[1]} anr=new r print anr.a").succeeds();
   }
 
   @Test
   @Ignore("Bug #155")
   public void advancedLValue() {
-    parseStatements("foo[3].bar.baz[4].qux = 3");
+    assertThatParsing("foo[3].bar.baz[4].qux = 3").succeeds();
   }
 
   @Test
   public void advancedRValue() {
-    parseStatements("bam = foo.bar[3].bar.baz[4].qux");
+    assertThatParsing("bam = foo.bar[3].bar.baz[4].qux").succeeds();
+    assertThatParsing("bam = foo[3+a].bar.baz[f()].qux").succeeds();
     // this passes now (!). bug #158
-    parseStatements("bam = foo[3+a].bar.baz[f()].qux");
+    assertThatParsing("bam = foo.3").succeeds();
     // this parses but shouldn't pass static checking
-    parseStatements("bam = foo.3");
   }
 
   @Test
   public void args() {
-    BlockNode node = parseStatements("a = args[0]");
+    ProgramNode programNode = assertThatParsing("a = args[0]").succeeds();
+    BlockNode node = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) node.statements().get(0);
     ExprNode rhs = assignment.expr();
     assertThat(rhs).isInstanceOf(BinOpNode.class);
@@ -1502,33 +1568,33 @@ public class ParserTest {
 
   @Test
   public void argsLen() {
-    parseStatements(
-        "      len=length(args)\r\n"
-            + "print 'length is ' println len\r\n"
-            + "b=args\r\n"
-            + "a=args[0]\r\n"
-            + "println 'first is ' + a\r\n");
+    assertThatParsing("len=length(args)\r\n"
+        + "print 'length is ' println len\r\n"
+        + "b=args\r\n"
+        + "a=args[0]\r\n"
+        + "println 'first is ' + a\r\n").succeeds();
   }
 
   @Test
   public void badArgs() {
-    assertParseError("ARGS = 3", "Unexpected start of statement 'ARGS'");
-    assertParseError("args = 3", "Unexpected start of statement 'ARGS'");
-    assertParseError("args:int", "Unexpected start of statement 'ARGS'");
-    assertParseError("args[3]=3", "Unexpected start of statement 'ARGS'");
-    assertParseError("f:proc(args:String[]) {print args[0]}", "Unexpected 'ARGS'");
+    assertThatParsing("ARGS = 3").hasError("Unexpected start of statement 'ARGS'");
+    assertThatParsing("args = 3").hasError("Unexpected start of statement 'ARGS'");
+    assertThatParsing("args:int").hasError("Unexpected start of statement 'ARGS'");
+    assertThatParsing("args[3]=3").hasError("Unexpected start of statement 'ARGS'");
+    assertThatParsing("f:proc(args:String[]) {print args[0]}").hasError("Unexpected 'ARGS'");
   }
 
   @Test
   public void badLength() {
     // tests bug #211
-    assertParseError("x = length(string)", "Unexpected 'STRING'; expected literal");
-    assertParseError("x = length(int)", "Unexpected 'INT'; expected literal");
+    assertThatParsing("x = length(string)").hasError("Unexpected 'STRING'; expected literal");
+    assertThatParsing("x = length(int)").hasError("Unexpected 'INT'; expected literal");
   }
 
   @Test
   public void increment() {
-    BlockNode root = parseStatements("a++");
+    ProgramNode programNode = assertThatParsing("a++").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     IncDecNode node = (IncDecNode) root.statements().get(0);
@@ -1539,7 +1605,8 @@ public class ParserTest {
 
   @Test
   public void decrement() {
-    BlockNode root = parseStatements("a--");
+    ProgramNode programNode = assertThatParsing("a--").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     IncDecNode node = (IncDecNode) root.statements().get(0);
@@ -1550,7 +1617,8 @@ public class ParserTest {
 
   @Test
   public void stringIndex() {
-    BlockNode root = parseStatements("a=b[3]");
+    ProgramNode programNode = assertThatParsing("a=b[3]").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
     assertThat(node.lvalue().name()).isEqualTo("a");
@@ -1559,7 +1627,8 @@ public class ParserTest {
 
   @Test
   public void declareRange() {
-    BlockNode root = parseStatements("a:range");
+    ProgramNode programNode = assertThatParsing("a:range").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     DeclarationNode node = (DeclarationNode) root.statements().get(0);
@@ -1569,7 +1638,8 @@ public class ParserTest {
 
   @Test
   public void assignRange() {
-    BlockNode root = parseStatements("a=0:1");
+    ProgramNode programNode = assertThatParsing("a=0:1").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
@@ -1581,15 +1651,16 @@ public class ParserTest {
 
   @Test
   public void badRange() {
-    assertParseError("a=0:1:2", "':'");
-    assertParseError("a=0:", "expected literal");
+    assertThatParsing("a=0:1:2").hasError("':'");
+    assertThatParsing("a=0:").hasError("expected literal");
     // This isn't a parser error, but will be a type check error
     // assertParseError("a=(0:1):2", "COLON");
   }
 
   @Test
   public void stringSliceSimple() {
-    BlockNode root = parseStatements("c=0 a=b[c+2:3]");
+    ProgramNode programNode = assertThatParsing("c=0 a=b[c+2:3]").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(2);
 
     AssignmentNode node = (AssignmentNode) root.statements().get(1);
@@ -1601,7 +1672,8 @@ public class ParserTest {
 
   @Test
   public void stringSliceAsExpressions() {
-    BlockNode root = parseStatements("a=b[(a*(3+1)):b+1]");
+    ProgramNode programNode = assertThatParsing("a=b[(a*(3+1)):b+1]").succeeds();
+    BlockNode root = programNode.statements();
     assertThat(root.statements()).hasSize(1);
     AssignmentNode node = (AssignmentNode) root.statements().get(0);
 
@@ -1612,39 +1684,12 @@ public class ParserTest {
     BinOpNode bPlusOne = (BinOpNode) index.right();
     assertThat(bPlusOne.left()).isEqualTo(new VariableNode("b", null));
     assertThat(bPlusOne.right()).isEqualTo(new ConstNode<Integer>(1, VarType.INT, null));
-    System.err.println(expr);
   }
 
   @Test
   public void badStringSlice() {
     // not allowed yet
-    assertParseError("a=b[1:]", "expected literal");
-    assertParseError("a=b[:2]", "expected literal");
-  }
-
-  private BlockNode parseStatements(String expression) {
-    ProgramNode node = parseProgram(expression);
-    return node.statements();
-  }
-
-  private ProgramNode parseProgram(String expression) {
-    CompilationConfiguration config =
-        CompilationConfiguration.builder().setSourceCode(expression).setLastPhase(PhaseName.PARSE)
-            .build();
-    State output = new YetAnotherCompiler().compile(config);
-    output.throwOnError();
-    return output.programNode();
-  }
-
-  private void assertParseError(String expression, String errorMsgContains) {
-    CompilationConfiguration config =
-        CompilationConfiguration.builder()
-            .setSourceCode(expression)
-            .setLastPhase(PhaseName.PARSE)
-            .setExpectedErrorPhase(PhaseName.PARSE)
-            .build();
-    State output = new YetAnotherCompiler().compile(config);
-    assertWithMessage("Should be an error node").that(output.error()).isTrue();
-    assertThat(output.errorMessage()).contains(errorMsgContains);
+    assertThatParsing("a=b[1:]").hasError("expected literal");
+    assertThatParsing("a=b[:2]").hasError("expected literal");
   }
 }

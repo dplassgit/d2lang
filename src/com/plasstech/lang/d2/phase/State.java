@@ -130,10 +130,6 @@ public abstract class State {
     return toBuilder().setIlCode(ilCode).build();
   }
 
-  public State addIlCode(ImmutableList<Op> ilCode) {
-    return setIlCode(ilCode);
-  }
-
   public State addAsmCode(ImmutableList<String> asmCode) {
     return toBuilder().setAsmCode(asmCode).build();
   }

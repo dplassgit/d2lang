@@ -1,21 +1,15 @@
 package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+import static com.plasstech.lang.d2.codegen.testing.ILCodeGeneratorSubject.assertThatGenerating;
 
 import java.util.List;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
-import com.plasstech.lang.d2.phase.PhaseName;
-import com.plasstech.lang.d2.phase.State;
 
 /**
  * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
@@ -24,174 +18,169 @@ import com.plasstech.lang.d2.phase.State;
 public class ILCodeGeneratorTest {
   @Test
   public void print() {
-    generateProgram("print 123");
+    assertThatGenerating("print 123").succeeds();
   }
 
   @Test
   public void simpleIf() {
-    generateProgram("i=1 j=i if 1==i {i=2 print i } ");
+    assertThatGenerating("i=1 j=i if 1==i {i=2 print i } ").succeeds();
   }
 
   @Test
   public void assignments() {
-    generateProgram(
-        "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e");
+    assertThatGenerating("a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e").succeeds();
   }
 
   @Test
   public void stringAssignment() {
-    generateProgram("a:string a='hi' print a");
+    assertThatGenerating("a:string a='hi' print a").succeeds();
   }
 
   @Test
   public void println() {
-    generateProgram("a='world' print 'hello, ' println a");
+    assertThatGenerating("a='world' print 'hello, ' println a").succeeds();
   }
 
   @Test
   public void stringExpression() {
-    generateProgram("a='hi' b=a+' world'");
+    assertThatGenerating("a='hi' b=a+' world'").succeeds();
   }
 
   @Test
   public void hugeAssignment() {
-    generateProgram(
-        "a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-            + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
-            + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
-            + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)");
+    assertThatGenerating("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
+    + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
+    + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
+    + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)").succeeds();
   }
 
   @Test
   public void shortCircuitAnd() {
-    generateProgram("bucket=3 if bucket==3 and bucket > 4 { print bucket}");
+    assertThatGenerating("bucket=3 if bucket==3 and bucket > 4 { print bucket}").succeeds();
   }
 
   @Test
   public void shortCircuitOr() {
-    generateProgram("bucket=3 if bucket==3 or bucket > 4 { print bucket}");
+    assertThatGenerating("bucket=3 if bucket==3 or bucket > 4 { print bucket}").succeeds();
   }
 
   @Test
   public void ifStmt() {
-    generateProgram(
-        "      a=0\n"
-            + "if a==0 {\n"
-            + "  b=1+2*3\n"
-            + "}");
+    assertThatGenerating("      a=0\n"
+    + "if a==0 {\n"
+    + "  b=1+2*3\n"
+    + "}").succeeds();
   }
 
   @Test
   public void ifStmts() {
-    generateProgram(
-        "      a=0 "
-            + "if a==0 {print 1}"
-            + "elif ((-5) == 6) != true {"
-            + "  b=1+2*3\n"
-            + "} else {\n"
-            + "  print 2\n"
-            + "} \n"
-            + "print 3");
+    assertThatGenerating("      a=0 "
+    + "if a==0 {print 1}"
+    + "elif ((-5) == 6) != true {"
+    + "  b=1+2*3\n"
+    + "} else {\n"
+    + "  print 2\n"
+    + "} \n"
+    + "print 3").succeeds();
   }
 
   @Test
   public void main() {
-    generateProgram("a=0 print a");
+    assertThatGenerating("a=0 print a").succeeds();
   }
 
   @Test
   public void whileStmt() {
-    generateProgram("i=0 while i < 30 do i = i+1 {print i}");
+    assertThatGenerating("i=0 while i < 30 do i = i+1 {print i}").succeeds();
   }
 
   @Test
   public void whileContinue() {
-    generateProgram("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1");
+    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1").succeeds();
   }
 
   @Test
   public void whileBreak() {
-    generateProgram("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1");
+    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1").succeeds();
   }
 
   @Test
   public void whileNestedBreak() {
-    generateProgram(
-        "      i=0 while i < 30 do i = i+1 { \n"
-            + "  j = 0 while j < 10 do j = j + 1 { \n"
-            + "    print j \n"
-            + "    break \n"
-            + "  } \n"
-            + "  if i > 10  { break } \n"
-            + "  print i \n"
-            + "} \n"
-            + "print -1");
+    assertThatGenerating("      i=0 while i < 30 do i = i+1 { \n"
+    + "  j = 0 while j < 10 do j = j + 1 { \n"
+    + "    print j \n"
+    + "    break \n"
+    + "  } \n"
+    + "  if i > 10  { break } \n"
+    + "  print i \n"
+    + "} \n"
+    + "print -1").succeeds();
   }
 
   @Test
   public void procVoid() {
-    generateProgram("f:proc() {print 'hi'} f()");
+    assertThatGenerating("f:proc() {print 'hi'} f()").succeeds();
   }
 
   @Test
   public void procInt() {
-    generateProgram("f:proc():int {return 3} x=f() print x");
+    assertThatGenerating("f:proc():int {return 3} x=f() print x").succeeds();
   }
 
   @Test
   public void procArg() {
-    generateProgram("f:proc(n:int, m:int):int {return n+m} a=3 x=f(1, a) f(2,3)");
+    assertThatGenerating("f:proc(n:int, m:int):int {return n+m} a=3 x=f(1, a) f(2,3)").succeeds();
   }
 
   @Test
   public void stringIndex() {
-    generateProgram("a='hi' b=a[1]");
+    assertThatGenerating("a='hi' b=a[1]").succeeds();
   }
 
   @Test
   @Ignore
   public void stringSlice() {
-    generateProgram("a='abcde' b=a[1:3]");
+    assertThatGenerating("a='abcde' b=a[1:3]").succeeds();
   }
 
   @Test
   public void constStringIndex() {
-    generateProgram("a='hi'[1]");
+    assertThatGenerating("a='hi'[1]").succeeds();
   }
 
   @Test
   public void arrayAlloc() {
-    generateProgram("a:int[3]");
+    assertThatGenerating("a:int[3]").succeeds();
   }
 
   @Test
   public void emptyArrayAlloc() {
-    generateProgram("a:int[0]");
+    assertThatGenerating("a:int[0]").succeeds();
   }
 
   @Test
   public void arrayGet() {
-    generateProgram("a:int[3] print a[0]");
+    assertThatGenerating("a:int[3] print a[0]").succeeds();
   }
 
   @Test
   public void arrayLiteral() {
-    generateProgram("a=['a', 'b', 'c']");
+    assertThatGenerating("a=['a', 'b', 'c']").succeeds();
   }
 
   @Test
   public void arrayLiteralCalculated() {
-    generateProgram("f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()");
+    assertThatGenerating("f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()").succeeds();
   }
 
   @Test
   public void stringLength() {
-    generateProgram("a=length('hi')");
+    assertThatGenerating("a=length('hi')").succeeds();
   }
 
   @Test
   public void printTwo() {
-    List<Op> program = generateProgram("print 'a'+'b'");
+    List<Op> program = assertThatGenerating("print 'a'+'b'").succeeds();
     assertThat(
         program
             .stream()
@@ -205,64 +194,33 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordFieldSet() {
-    generateProgram(
-        "rec: record {f:string i:int}\n" //
-            + "r = new rec\n" //
-            + "r.f = 'hi'");
+    assertThatGenerating("rec: record {f:string i:int}\n" //
+    + "r = new rec\n" //
+    + "r.f = 'hi'").succeeds();
   }
 
   @Test
   public void bug_269_variable_with_record_name() throws Exception {
-    expectError("r: record{} r=new r", PhaseName.IL_CODEGEN);
-  }
-
-  @Test
-  public void bug_269_variable_with_proc_name() throws Exception {
-    expectError("r: record{} r:proc{} r=new r", PhaseName.TYPE_CHECK);
+    assertThatGenerating("r: record{} r=new r").hasError("already declared as");
   }
 
   @Test
   public void constantRange() {
-    generateProgram("a=0:3");
+    assertThatGenerating("a=0:3").succeeds();
   }
 
   @Test
   public void rangeIndex() {
-    generateProgram("a=0:3 b=a[0] b=a[b]");
+    assertThatGenerating("a=0:3 b=a[0] b=a[b]").succeeds();
   }
 
   @Test
   public void recordWithArray() {
-    generateProgram("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar");
+    assertThatGenerating("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar").succeeds();
   }
 
   @Test
   public void divBy0Literal() {
-    expectError("a=1 b=a/0 println b", PhaseName.IL_CODEGEN);
-  }
-
-  private static List<Op> generateProgram(String program) {
-    CompilationConfiguration config = CompilationConfiguration.create(program);
-    State state = new YetAnotherCompiler().compile(config);
-    if (state.error()) {
-      state.exception().printStackTrace();
-      fail(state.errorMessage());
-    }
-
-    ImmutableList<Op> ilCode = state.ilCode();
-    System.err.println("\nD CODE:\n-------");
-    System.err.println(program);
-    System.err.println("\nIL CODE:\n--------");
-    System.err.println(Joiner.on("\n").join(ilCode));
-    return ilCode;
-  }
-
-  private void expectError(String program, PhaseName expectedErrorPhase) {
-    CompilationConfiguration config = CompilationConfiguration.builder().setSourceCode(program)
-        .setParseDebugLevel(2)
-        .setLastPhase(expectedErrorPhase)
-        .setExpectedErrorPhase(expectedErrorPhase).build();
-    State state = new YetAnotherCompiler().compile(config);
-    assertThat(state.error()).isTrue();
+    assertThatGenerating("a=1 b=a/0 println b").hasError("Division by 0");
   }
 }

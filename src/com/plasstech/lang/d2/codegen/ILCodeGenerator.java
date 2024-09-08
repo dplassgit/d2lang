@@ -96,7 +96,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     globals = symbolTable;
     try {
       ImmutableList<Op> code = generate(input.programNode());
-      return input.addIlCode(code);
+      return input.setIlCode(code);
     } catch (D2RuntimeException re) {
       return input.addException(re);
     }

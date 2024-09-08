@@ -46,15 +46,13 @@ public class YetAnotherCompiler {
       }
     }
     if (state.error()) {
-      if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
-        return state;
-      }
+      return state;
     }
 
     // Always run the RangeCheckOptimizer even if optimizations are off.
     Phase rangeChecker = new RangeChecker();
     state = rangeChecker.execute(state);
-    if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
+    if (state.error()) {
       return state;
     }
 
@@ -62,8 +60,7 @@ public class YetAnotherCompiler {
     if (config.optimize()) {
       Phase optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
-      // throws if it needs to
-      if (shouldReturn(config, state, PhaseName.IL_OPTIMIZE)) {
+      if (state.error()) {
         return state;
       }
       if (config.optimize() && config.optDebugLevel() > 0) {
@@ -95,8 +92,9 @@ public class YetAnotherCompiler {
       // Runs all the optimizers.
       Phase optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
-      // throws if it needs to
-      shouldReturn(config, state, PhaseName.IL_OPTIMIZE);
+      if (state.error()) {
+        return state;
+      }
     }
     if (config.optimize() && config.optDebugLevel() > 0) {
       System.out.println("------------------------------");
@@ -112,34 +110,7 @@ public class YetAnotherCompiler {
   /** Return true if should return, false if continue. */
   private boolean shouldReturn(CompilationConfiguration config, State state,
       PhaseName currentPhase) {
-    // TODO: I hate this.
-    if (state.error()) {
-      if (config.expectedErrorPhase() != PhaseName.PHASE_UNDEFINED
-          && config.expectedErrorPhase() != currentPhase) {
-        // error in wrong phase
-        System.err.printf("WRONG PHASE: expected %s, was %s\n", config.expectedErrorPhase(),
-            currentPhase);
-        state.throwOnError();
-        return false;
-      }
-      if (config.expectedErrorMessage() != null
-          && !state.errorMessage().matches(config.expectedErrorMessage())) {
-        // Wrong error message
-        throw new IllegalStateException(
-            String.format("WRONG ERROR MESSAGE: expected '%s' to match '%s'",
-                state.errorMessage(),
-                config.expectedErrorMessage()));
-      }
-
-      // error in our phase, good, can stop now.
-      return true;
-    }
-    if (!state.error() && config.expectedErrorPhase() == currentPhase) {
-      // bad
-      throw new IllegalStateException(
-          "Expected error in phase " + config.expectedErrorPhase().name() + " not found");
-    }
-    // If We're at the right place, stop.
-    return currentPhase == config.lastPhase();
+    // If an error, or we're at the right place, stop.
+    return state.error() || currentPhase == config.lastPhase();
   }
 }

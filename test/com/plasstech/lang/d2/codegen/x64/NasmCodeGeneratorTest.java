@@ -487,7 +487,7 @@ public class NasmCodeGeneratorTest {
     state = state.addProgramNode(new ProgramNode(BlockNode.EMPTY));
     TypeCheckResult typeCheckResult = new TypeCheckResult(new SymTab());
     state = state.addTypecheckResult(typeCheckResult);
-    state = state.addIlCode(ops);
+    state = state.setIlCode(ops);
     state = codeGen.execute(state);
     System.err.println(Joiner.on('\n').join(state.asmCode()));
     if (state.error()) {

@@ -1,18 +1,24 @@
 java_library(
     name = "testing",
+    testonly = 1,
     srcs = [
         "EmitterSubject.java",
+        "ILCodeGeneratorSubject.java",
         "LocationUtils.java",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//src/com/plasstech/lang/d2/codegen",
         "//src/com/plasstech/lang/d2/codegen:locations",
-        "//src/com/plasstech/lang/d2/codegen:trimmers",
+        "//src/com/plasstech/lang/d2/codegen/il",
+        "//src/com/plasstech/lang/d2/phase:phase_name",
+        "//src/com/plasstech/lang/d2/phase:state",
+        "//src/com/plasstech/lang/d2/phase/testing",
         "//src/com/plasstech/lang/d2/type:storage",
         "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_truth_truth",
+        "@maven//:junit_junit",
     ],
 )

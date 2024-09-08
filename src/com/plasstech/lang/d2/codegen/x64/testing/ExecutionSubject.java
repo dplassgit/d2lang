@@ -71,7 +71,6 @@ public class ExecutionSubject extends Subject {
 
   public void hasCompileTimeError(String error) {
     YetAnotherCompiler compiler = new YetAnotherCompiler();
-    this.config = this.config.toBuilder().setExpectedErrorMessage(error).build();
     State state = compiler.compile(this.config);
     assertThat(state.error()).isTrue();
     System.err.printf("Compile time exception: %s\n", state.exception());

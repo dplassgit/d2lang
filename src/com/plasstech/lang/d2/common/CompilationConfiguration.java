@@ -24,9 +24,7 @@ public abstract class CompilationConfiguration {
         .setOptDebugLevel(0)
         .setCodeGenDebugLevel(0)
         .setOptimize(false)
-        .setRuntimeChecks(true)
-        // no error phase means all should succeed
-        .setExpectedErrorPhase(PhaseName.PHASE_UNDEFINED);
+        .setRuntimeChecks(true);
   }
 
   public abstract Builder toBuilder();
@@ -41,15 +39,6 @@ public abstract class CompilationConfiguration {
   public abstract boolean optimize();
 
   public abstract boolean runtimeChecks();
-
-  public abstract PhaseName expectedErrorPhase();
-
-  @Nullable
-  public abstract String expectedErrorMessage();
-
-  public boolean expectedError() {
-    return expectedErrorPhase() != PhaseName.PHASE_UNDEFINED;
-  }
 
   public abstract int lexDebugLevel();
 
@@ -81,28 +70,11 @@ public abstract class CompilationConfiguration {
 
     public abstract Builder setRuntimeChecks(boolean runtimeChecks);
 
-    public abstract Builder setExpectedErrorPhase(PhaseName phase);
-
-    public abstract Builder setExpectedErrorMessage(String message);
-
-    public abstract String expectedErrorMessage();
-
     public abstract Builder setFilename(String filename);
 
     abstract CompilationConfiguration autobuild();
 
     public CompilationConfiguration build() {
-      String eem = expectedErrorMessage();
-      if (eem != null && eem.length() > 0) {
-        if (!eem.startsWith(".*")) {
-          eem = ".*" + eem;
-        }
-        if (!eem.endsWith(".*")) {
-          eem = eem + ".*";
-        }
-        eem = "(?s)" + eem;
-      }
-      setExpectedErrorMessage(eem);
       return autobuild();
     }
   }
