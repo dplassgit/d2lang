@@ -28,7 +28,6 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new TempPropagationOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
             new ArithmeticOptimizer(debugLevel),
-            new AdjacentIncDecOptimizer(debugLevel),
             new AdjacentArithmeticOptimizer(debugLevel),
             new AdjacentLabelOptimizer(debugLevel),
             new CommonSubexpressionOptimizer(debugLevel),

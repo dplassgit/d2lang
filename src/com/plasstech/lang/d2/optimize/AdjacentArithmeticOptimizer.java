@@ -1,23 +1,23 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.ArrayList;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Dec;
-import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 
 /**
- * Optimizer that optimizes TEMPS of the pattern: But there's really no reason why it can't also
- * deal with non-temps...
+ * Optimizer that optimizes binary ops of the pattern:
  *
  * <pre>
  *  __temp2 = __temp1 + 2
@@ -31,7 +31,7 @@ import com.plasstech.lang.d2.type.VarType;
  *   __temp3 = __temp1 + 5
  * </pre>
  *
- * (Also works for subtraction, multiplication and division.)
+ * Also works for subtraction, multiplication and division, and increment and decrement.
  */
 class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -52,50 +52,90 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   }
 
   @Override
-  public void visit(BinOp first) {
-    TokenType firstOperator = first.operator();
-    if (first.left().type().isNumeric() && first.right().isConstant()
-        && FIRST_OPERATORS.contains(firstOperator)) {
-
-      // Potential first in sequence: foo=bar+constant
-      Op secondOp = getNext();
-      // if first is plus or minus and second is inc/dec, allow it after expanding the inc/dec.
-      if (!(secondOp instanceof BinOp)) {
-        secondOp = expand(secondOp);
-        if (secondOp == null) {
-          return;
-        }
-      }
-
-      // second in sequence
-      BinOp second = (BinOp) secondOp;
-      TokenType secondOperator = second.operator();
-      if (second.left().type().equals(first.left().type()) && second.right().isConstant()
-          && areCompatible(secondOperator, firstOperator)
-          && second.left().equals(first.destination())) {
-
-        logger.at(loggingLevel).log("Potential pair: %s and %s", first, second);
-
-        Operand combinedConstant = combine(first.right(),
-            second.right(),
-            firstOperator,
-            secondOperator);
-        if (combinedConstant == null) {
-          return;
-        }
-        if (first.destination().storage() == SymbolStorage.TEMP
-            && second.destination().storage() == SymbolStorage.TEMP) {
-          // Only do it if all are temps. Otherwise it might nop an assignment
-          deleteCurrent();
-          replaceAt(ip() + 1,
-              new BinOp(second.destination(), first.left(), firstOperator,
-                  combinedConstant, second.position()));
-        }
-      }
-    }
+  protected void preProcess() {
+    // Converts a++ to a=a+1
+    ExpandOptimizer expander = new ExpandOptimizer(2);
+    code = new ArrayList<Op>(expander.optimize(ImmutableList.copyOf(code), symtab));
   }
 
-  private boolean areCompatible(TokenType firstOperator, TokenType secondOperator) {
+  @Override
+  protected void postProcess() {
+    // Converts a=a+1 back to a++
+    ContractOptimizer contract = new ContractOptimizer(2);
+    code = new ArrayList<Op>(contract.optimize(ImmutableList.copyOf(code), symtab));
+  }
+
+  @Override
+  public void visit(BinOp first) {
+    TokenType firstOperator = first.operator();
+    // Make sure left is numeric, right is constant, and the first operator is valid.
+    if (!first.left().type().isNumeric()) {
+      return;
+    }
+    if (!first.right().isConstant()) {
+      return;
+    }
+    if (!FIRST_OPERATORS.contains(firstOperator)) {
+      return;
+    }
+
+    // Potential first in sequence: foo=bar+constant
+    BinOp second = getNext(BinOp.class);
+    if (second == null) {
+      return;
+    }
+
+    // Make sure second has compatible types with first, and that the second right
+    // operand is a constant.
+    if (!second.left().type().equals(first.left().type())) {
+      return;
+    }
+    if (!second.right().isConstant()) {
+      return;
+    }
+    TokenType secondOperator = second.operator();
+    // Can only combine certain sets of operators.
+    if (!compatibleOperators(secondOperator, firstOperator)) {
+      return;
+    }
+    // Can only combine certain operands.
+    if (!compatibleOperands(first.destination(), first.left(), second.destination(),
+        second.left())) {
+      return;
+    }
+    logger.at(loggingLevel).log("Potential pair: %s and %s", first, second);
+
+    Operand combinedConstant =
+        combine(first.right(), second.right(), firstOperator, secondOperator);
+    if (combinedConstant == null) {
+      return;
+    }
+
+    deleteCurrent();
+    replaceAt(ip() + 1,
+        new BinOp(second.destination(), first.left(), firstOperator,
+            combinedConstant, second.position()));
+  }
+
+  // Only works for 
+  //  temp1 = temp2 + constant1
+  //  temp3 = temp1 + constant2
+  // OR
+  //  var = var + constant1
+  //  var = var + constant2
+  private boolean compatibleOperands(Location firstDest, Operand firstLeft, Location secondDest,
+      Operand secondLeft) {
+    if (firstDest.isTemp() && firstDest.equals(secondLeft)) {
+      // temp1 = temp2 + constant1
+      // temp3 = temp1 + constant2
+      return true;
+    }
+    // second case; all are the same.
+    return firstDest.equals(firstLeft) && firstDest.equals(secondDest)
+        && firstDest.equals(secondLeft);
+  }
+
+  private boolean compatibleOperators(TokenType firstOperator, TokenType secondOperator) {
     if (firstOperator == secondOperator) {
       return true;
     }
@@ -167,7 +207,7 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
             return ConstantOperand.fromValue(first / second, firstOperand.type());
           }
         default:
-          break;
+          return null;
       }
     }
 
@@ -192,41 +232,62 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
             return ConstantOperand.of(firstConst.doubleValue() / secondConst.doubleValue());
           }
         default:
-          break;
+          return null;
       }
     }
+
     logger.at(loggingLevel).log("Cannot optimize operator %s yet", firstOperator);
     return null;
   }
 
-  /** "Expand" the given op - Dec becomes i=i-1 and Inc becomes i=i+1 */
-  private static BinOp expand(Op op) {
-    if (op == null) {
-      return null;
+  private static class ExpandOptimizer extends LineOptimizer {
+    ExpandOptimizer(int debugLevel) {
+      super(debugLevel);
     }
-    Expander expander = new Expander();
-    op.accept(expander);
-    return expander.expanded;
-  }
 
-  private static class Expander extends DefaultOpcodeVisitor {
-    private BinOp expanded;
-
-    @Override
-    public void visit(BinOp op) {
-      expanded = op;
+    private void expand(Op op, TokenType operand) {
+      Location destination = op.getDestination();
+      Operand one = ConstantOperand.fromValue(1, destination.type());
+      replaceCurrent(new BinOp(destination, destination, operand, one, op.position()));
     }
 
     @Override
     public void visit(Dec op) {
-      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, op.target().type());
-      expanded = new BinOp(op.target(), op.target(), TokenType.MINUS, one, op.position());
+      expand(op, TokenType.MINUS);
     }
 
     @Override
     public void visit(Inc op) {
-      ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, op.target().type());
-      expanded = new BinOp(op.target(), op.target(), TokenType.PLUS, one, op.position());
+      expand(op, TokenType.PLUS);
+    }
+  }
+
+  private static class ContractOptimizer extends LineOptimizer {
+    ContractOptimizer(int debugLevel) {
+      super(debugLevel);
+    }
+
+    @Override
+    public void visit(BinOp op) {
+      TokenType operator = op.operator();
+      if (operator != TokenType.PLUS && operator != TokenType.MINUS) {
+        return;
+      }
+      Location destination = op.destination();
+      if (!destination.type().isIntegral()) {
+        return;
+      }
+      if (!op.left().equals(destination)) {
+        return;
+      }
+      if (!ConstantOperand.isAnyIntOne(op.right())) {
+        return;
+      }
+      if (operator == TokenType.PLUS) {
+        replaceCurrent(new Inc(destination, op.position()));
+      } else {
+        replaceCurrent(new Dec(destination, op.position()));
+      }
     }
   }
 }
