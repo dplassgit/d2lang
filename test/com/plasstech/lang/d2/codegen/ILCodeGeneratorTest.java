@@ -28,7 +28,9 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void assignments() {
-    assertThatGenerating("a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e").succeeds();
+    assertThatGenerating(
+        "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e")
+        .succeeds();
   }
 
   @Test
@@ -49,9 +51,9 @@ public class ILCodeGeneratorTest {
   @Test
   public void hugeAssignment() {
     assertThatGenerating("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-    + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
-    + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
-    + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)").succeeds();
+        + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
+        + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
+        + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)").succeeds();
   }
 
   @Test
@@ -67,21 +69,21 @@ public class ILCodeGeneratorTest {
   @Test
   public void ifStmt() {
     assertThatGenerating("      a=0\n"
-    + "if a==0 {\n"
-    + "  b=1+2*3\n"
-    + "}").succeeds();
+        + "if a==0 {\n"
+        + "  b=1+2*3\n"
+        + "}").succeeds();
   }
 
   @Test
   public void ifStmts() {
     assertThatGenerating("      a=0 "
-    + "if a==0 {print 1}"
-    + "elif ((-5) == 6) != true {"
-    + "  b=1+2*3\n"
-    + "} else {\n"
-    + "  print 2\n"
-    + "} \n"
-    + "print 3").succeeds();
+        + "if a==0 {print 1}"
+        + "elif ((-5) == 6) != true {"
+        + "  b=1+2*3\n"
+        + "} else {\n"
+        + "  print 2\n"
+        + "} \n"
+        + "print 3").succeeds();
   }
 
   @Test
@@ -96,25 +98,27 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void whileContinue() {
-    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1").succeeds();
+    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10 { continue } print i} print 1")
+        .succeeds();
   }
 
   @Test
   public void whileBreak() {
-    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1").succeeds();
+    assertThatGenerating("i=0 while i < 30 do i = i+1 {if i > 10  { break } print i} print -1")
+        .succeeds();
   }
 
   @Test
   public void whileNestedBreak() {
     assertThatGenerating("      i=0 while i < 30 do i = i+1 { \n"
-    + "  j = 0 while j < 10 do j = j + 1 { \n"
-    + "    print j \n"
-    + "    break \n"
-    + "  } \n"
-    + "  if i > 10  { break } \n"
-    + "  print i \n"
-    + "} \n"
-    + "print -1").succeeds();
+        + "  j = 0 while j < 10 do j = j + 1 { \n"
+        + "    print j \n"
+        + "    break \n"
+        + "  } \n"
+        + "  if i > 10  { break } \n"
+        + "  print i \n"
+        + "} \n"
+        + "print -1").succeeds();
   }
 
   @Test
@@ -170,7 +174,8 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void arrayLiteralCalculated() {
-    assertThatGenerating("f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()").succeeds();
+    assertThatGenerating(
+        "f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()").succeeds();
   }
 
   @Test
@@ -195,8 +200,8 @@ public class ILCodeGeneratorTest {
   @Test
   public void recordFieldSet() {
     assertThatGenerating("rec: record {f:string i:int}\n" //
-    + "r = new rec\n" //
-    + "r.f = 'hi'").succeeds();
+        + "r = new rec\n" //
+        + "r.f = 'hi'").succeeds();
   }
 
   @Test
@@ -216,11 +221,17 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordWithArray() {
-    assertThatGenerating("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar").succeeds();
+    assertThatGenerating("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 print x.ar")
+        .succeeds();
   }
 
   @Test
   public void divBy0Literal() {
     assertThatGenerating("a=1 b=a/0 println b").hasError("Division by 0");
+  }
+
+  @Test
+  public void compareString() {
+    assertThatGenerating("s='hi' a=s[0]=='h'").succeeds();
   }
 }

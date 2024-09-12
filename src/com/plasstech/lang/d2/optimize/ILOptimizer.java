@@ -24,6 +24,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             new RangeChecker(), // run this just in case we have a line that might have otherwise been dead
             new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
+            new AscChrOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
             new TempPropagationOptimizer(debugLevel),
             new IncDecOptimizer(debugLevel),
