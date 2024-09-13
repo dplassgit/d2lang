@@ -54,14 +54,14 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
   @Override
   protected void preProcess() {
     // Converts a++ to a=a+1
-    ExpandOptimizer expander = new ExpandOptimizer(2);
+    ExpandOptimizer expander = new ExpandOptimizer(debugLevel);
     code = new ArrayList<Op>(expander.optimize(ImmutableList.copyOf(code), symtab));
   }
 
   @Override
   protected void postProcess() {
     // Converts a=a+1 back to a++
-    ContractOptimizer contract = new ContractOptimizer(2);
+    ContractOptimizer contract = new ContractOptimizer(debugLevel);
     code = new ArrayList<Op>(contract.optimize(ImmutableList.copyOf(code), symtab));
   }
 

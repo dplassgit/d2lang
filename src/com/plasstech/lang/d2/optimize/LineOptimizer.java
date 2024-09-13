@@ -37,10 +37,12 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   private int ip;
 
   protected final Level loggingLevel;
+  protected final int debugLevel;
   protected List<Op> code;
   protected SymbolTable symtab;
 
   LineOptimizer(int debugLevel) {
+    this.debugLevel = debugLevel;
     this.loggingLevel = toLoggingLevel(debugLevel);
   }
 
