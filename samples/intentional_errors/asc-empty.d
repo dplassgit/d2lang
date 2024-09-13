@@ -1,0 +1,2 @@
+a=""
+println asc(a)

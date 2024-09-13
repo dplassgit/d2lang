@@ -63,7 +63,7 @@ public class NasmCodeGeneratorStringTest {
   public void negativeIndexLocal() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
     assertThatCompiling(sourceCode).withOptimize(true)
-        .hasCompileTimeError("must be non-negative; was -2");
+        .hasCompileTimeError("STRING index must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -72,7 +72,7 @@ public class NasmCodeGeneratorStringTest {
   public void negativeIndexCalculated() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i*2]} f(-1)";
     assertThatCompiling(sourceCode).withOptimize(true)
-        .hasCompileTimeError("must be non-negative; was -2");
+        .hasCompileTimeError("STRING index must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -81,7 +81,7 @@ public class NasmCodeGeneratorStringTest {
   public void negativeIndexGlobal() throws Exception {
     String sourceCode = "i=-2 s='hello' print s[i]";
     assertThatCompiling(sourceCode).withOptimize(true)
-        .hasCompileTimeError("must be non-negative; was -2");
+        .hasCompileTimeError("STRING index must be non-negative; was -2");
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
@@ -401,5 +401,28 @@ public class NasmCodeGeneratorStringTest {
         + "addToSet(s, 'A')\n"
         + "e = chr(i+asc('A'))+'B'\n"
         + "print 'e: ' println e").executedEqualsInterpreted();
+  }
+
+  @Test
+  public void asc_temp_error() throws Exception {
+    assertThatCompiling("println asc('')")
+        .withRuntimeError("Cannot take ASC of empty STRING")
+        .executes();
+  }
+
+  @Test
+  public void asc_error() throws Exception {
+    assertThatCompiling("a='' println asc(a)")
+        .withRuntimeError("Cannot take ASC of empty STRING")
+        .executes();
+  }
+
+  @Test
+  public void compareString() {
+    assertThatCompiling("f:proc(s:string, first:string): bool { \n"
+        + "return s[0]=='h'\n"
+        + "} \n"
+        + "println f('hi', 'h') \n"
+        + "println f('nohi', 'n')\n").withOptimize(true).executedEqualsInterpreted();
   }
 }

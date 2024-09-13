@@ -57,6 +57,8 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
       "Invalid index error at line %d, column %d: RANGE index must be 0 or 1; was %d";
   private static final String ARRAY_SIZE_NEGATIVE_ERR =
       "Invalid array size error at line %d, column %d: ARRAY size must be non-negative; was %d";
+  private static final String EMPTY_ASC_ERR =
+      "STRING Index error at line %d, column %d: Cannot take ASC of empty STRING";
 
   private final List<Op> augmentedCode = new ArrayList<>();
   // Maps a temp to its corresponding long temp
@@ -163,11 +165,12 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     switch (operator) {
       case LENGTH:
       case ASC:
-        if (source.type().compatibleWith(VarType.NULL)) {
-          source = npeCheck(source, position);
-        } else {
-          return;
+        source = npeCheck(source, position);
+        if (operator == TokenType.ASC) {
+          // also generate length
+          source = lengthCheck(source, op.position());
         }
+
         break;
 
       default:
@@ -311,6 +314,31 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new Stop(-1));
     emit(new Label(continueLabel));
     // This may be different now
+    return operand;
+  }
+
+  private Operand lengthCheck(Operand operand, Position position) {
+    // move to longtemp if needed
+    operand = copyTempToLongTemp(operand, position);
+    // temp = length(stringThing)
+    TempLocation stringLength = allocateTemp(VarType.INT);
+    emit(new UnaryOp(stringLength, TokenType.LENGTH, operand, position));
+
+    // bad = temp == 0
+    TempLocation goodBool = allocateTemp(VarType.BOOL);
+    emit(new BinOp(goodBool, stringLength, TokenType.EQEQ, ConstantOperand.of(0), position));
+    String goodLabel = nextLabel("not_empty_for_asc");
+    // if not bad goto goodlabel
+    emit(new IfOp(goodBool, goodLabel, true, position));
+
+    // exit(-1)
+    emit(new SysCall(EMPTY_ASC_ERR,
+        ImmutableList.of(ConstantOperand.of(position.line()),
+            ConstantOperand.of(position.column()))));
+    emit(new Stop(-1));
+
+    // goodlabel:
+    emit(new Label(goodLabel));
     return operand;
   }
 

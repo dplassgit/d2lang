@@ -73,6 +73,7 @@ public class ExecutionSubject extends Subject {
     YetAnotherCompiler compiler = new YetAnotherCompiler();
     State state = compiler.compile(this.config);
     assertThat(state.error()).isTrue();
+    assertThat(state.errorMessage()).matches(error);
     System.err.printf("Compile time exception: %s\n", state.exception());
   }
 

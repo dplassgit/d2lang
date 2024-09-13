@@ -7,7 +7,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/com/plasstech/lang/d2:executor",
+        "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/codegen/il",
+        "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/parse/node",

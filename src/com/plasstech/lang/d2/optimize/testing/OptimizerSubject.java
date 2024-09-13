@@ -11,14 +11,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.InterpreterExecutor;
+import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.OpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
+import com.plasstech.lang.d2.phase.State;
 
 public class OptimizerSubject extends Subject {
   public static OptimizerSubject assertThatInterpreting(String program) {
@@ -60,6 +63,16 @@ public class OptimizerSubject extends Subject {
       op.accept(visitor);
     }
     assertThat(hasCalls[0]).isTrue();
+  }
+
+  public void hasCompileTimeError(String error) {
+    YetAnotherCompiler compiler = new YetAnotherCompiler();
+    CompilationConfiguration config =
+        CompilationConfiguration.builder().setSourceCode(code).setOptimize(true).build();
+    State state = compiler.compile(config);
+    assertThat(state.error()).isTrue();
+    assertThat(state.errorMessage()).matches(error);
+    System.err.printf("Compile time exception: %s\n", state.exception());
   }
 
   // I don't love returning InterpreterResult

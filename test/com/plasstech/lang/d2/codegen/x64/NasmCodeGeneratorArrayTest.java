@@ -260,7 +260,7 @@ public class NasmCodeGeneratorArrayTest {
     String error = "must be non-negative; was -3";
     assertThatCompiling(program)
         .withOptimize(true)
-        .hasCompileTimeError(error);
+        .hasCompileTimeError("^.*" + error + ".*$");
     assertThatCompiling(program)
         .withOptimize(false)
         .withRuntimeError(error)

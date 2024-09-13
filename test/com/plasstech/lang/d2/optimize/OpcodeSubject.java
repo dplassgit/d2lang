@@ -64,6 +64,13 @@ public class OpcodeSubject extends Subject {
     check("isUnaryOp").that(binOp.operand()).isEqualTo(operand);
   }
 
+  public void isUnaryOpOf(TokenType op, Operand operand) {
+    Truth.assertThat(actual).isInstanceOf(UnaryOp.class);
+    UnaryOp binOp = (UnaryOp) actual;
+    check("isUnaryOp").that(binOp.operator()).isEqualTo(op);
+    check("isUnaryOp").that(binOp.operand()).isEqualTo(operand);
+  }
+
   public void isExit() {
     Truth.assertThat(actual).isInstanceOf(SysCall.class);
     SysCall syscall = (SysCall) actual;

@@ -89,6 +89,12 @@ class ArithmeticOptimizer extends LineOptimizer {
 
       case ASC: {
         String value = ConstantOperand.stringValueFromConstOperand(operand);
+        if (value.length() < 1) {
+          throw new D2RuntimeException(
+              "Cannot take ASC of empty STRING",
+              op.position(),
+              "STRING index");
+        }
         char first = value.charAt(0);
         replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(first), op.position()));
       }

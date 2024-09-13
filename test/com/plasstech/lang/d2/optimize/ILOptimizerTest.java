@@ -450,4 +450,10 @@ public class ILOptimizerTest {
     String program = "a=0:3 b=0 println a[b]";
     assertThatInterpreting(program).hasSameVariables();
   }
+
+  @Test
+  public void compareString() {
+    assertThatInterpreting("s='hi' a=s[0]=='h' println a").hasSameVariables();
+  }
+
 }

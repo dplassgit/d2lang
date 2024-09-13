@@ -41,6 +41,8 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   protected List<Op> code;
   protected SymbolTable symtab;
 
+  private boolean running;
+
   LineOptimizer(int debugLevel) {
     this.debugLevel = debugLevel;
     this.loggingLevel = toLoggingLevel(debugLevel);
@@ -48,6 +50,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   @Override
   public final ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symtab) {
+    this.running = true;
     this.symtab = symtab;
     code = new ArrayList<>(input);
     preProcess();
@@ -55,6 +58,9 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     for (ip = 0; ip < code.size(); ++ip) {
       try {
         code.get(ip).accept(this);
+        if (!running) {
+          break;
+        }
       } catch (ClassCastException e) {
         logger.atSevere().withCause(e).log("Cannot optimize %s", code.get(ip).toString());
         throw e;
@@ -62,6 +68,10 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
     }
     postProcess();
     return ImmutableList.copyOf(code);
+  }
+
+  protected final void stop() {
+    this.running = false;
   }
 
   /** Can do anything it wants with this.code */

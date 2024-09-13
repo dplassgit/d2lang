@@ -39,9 +39,19 @@ public class RuntimeChecksGeneratorTest {
   @Test
   public void stringLength() {
     ImmutableList<Op> input = ImmutableList.of(
-        new UnaryOp(INT_TEMP, TokenType.LENGTH, STRING_TEMP, POSITION));
+        new UnaryOp(LocationUtils.newStackLocation("i", VarType.INT, 0), TokenType.LENGTH,
+            LocationUtils.newStackLocation("s", VarType.STRING, 0), POSITION));
     ImmutableList<Op> output = augment(input);
-    assertThat(output.size()).isGreaterThan(6);
+    assertThat(output.size()).isGreaterThan(1);
+  }
+
+  @Test
+  public void stringAsc() {
+    ImmutableList<Op> input = ImmutableList.of(
+        new UnaryOp(INT_TEMP, TokenType.ASC, STRING_TEMP, POSITION));
+    ImmutableList<Op> output = augment(input);
+    // Needs to check for null ANd length
+    assertThat(output.size()).isGreaterThan(7);
   }
 
   @Test

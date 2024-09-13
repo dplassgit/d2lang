@@ -171,7 +171,7 @@ public class RangeCodeGeneratorTest {
   @Test
   public void invalidIndexRuntime() {
     assertThatCompiling("f:proc(r:range, index:int) {print r[index]} r=3:5 f(r, 2)")
-        .withOptimize(true).hasCompileTimeError("index must be 0 or 1");
+        .withOptimize(true).hasCompileTimeError("^.*index must be 0 or 1.*$");
     assertThatCompiling("f:proc(r:range, index:int) {print r[index]} r=3:5 f(r, 2)")
         .withOptimize(false)
         .withRuntimeError("index must be 0 or 1").executes();
@@ -180,7 +180,7 @@ public class RangeCodeGeneratorTest {
   @Test
   public void invalidIndexCompileTime() {
     // This actually trips in the type checker, but, shrug.
-    assertThatCompiling("r=3:5 print r[2]").hasCompileTimeError("index must be 0 or 1");
+    assertThatCompiling("r=3:5 print r[2]").hasCompileTimeError("^.*index must be 0 or 1.*$");
   }
 
   @Test
