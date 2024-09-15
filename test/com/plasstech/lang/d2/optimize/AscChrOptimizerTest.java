@@ -7,7 +7,9 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.TempLocation;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
@@ -45,6 +47,52 @@ public class AscChrOptimizerTest {
 
     assertThat(optimized.get(0)).isBinOp(STRING_TEMP2, STRING_TEMP1, TokenType.LBRACKET,
         ConstantOperand.of(0));
+  }
+
+  @Test
+  public void ascZero_optimizes() {
+    // stemp1 = s[0]
+    // temp2 = asc(stemp1)
+    // should become:
+    // temp2 = asc(s)
+    ImmutableList<Op> program = ImmutableList.of(
+        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+        new UnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP1, null));
+
+    ImmutableList<Op> optimized = optimizers.optimize(program, null);
+    assertThat(optimizers.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    assertThat(optimized.get(0)).isUnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP2);
+  }
+
+  @Test
+  public void ascZero_not_temp_does_not_optimize() {
+    // nottemp = s[0]
+    // temp2 = asc(nottemp)
+    Location nottemp = LocationUtils.newStackLocation("nottemp", VarType.STRING, 0);
+    ImmutableList<Op> program = ImmutableList.of(
+        new BinOp(nottemp, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+        new UnaryOp(INT_TEMP1, TokenType.ASC, nottemp, null));
+
+    optimizers.optimize(program, null);
+    assertThat(optimizers.isChanged()).isFalse();
+  }
+
+  @Test
+  public void ascZero_dest_not_temp_optimizes() {
+    // temp = s[0]
+    // nottemp = asc(temp)
+    Location nottemp = LocationUtils.newStackLocation("nottemp", VarType.INT, 0);
+    ImmutableList<Op> program = ImmutableList.of(
+        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+        new UnaryOp(nottemp, TokenType.ASC, STRING_TEMP1, null));
+
+    ImmutableList<Op> optimized = optimizers.optimize(program, null);
+    assertThat(optimizers.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+
+    assertThat(optimized.get(0)).isUnaryOp(nottemp, TokenType.ASC, STRING_TEMP2);
   }
 
   @Test

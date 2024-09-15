@@ -5,26 +5,36 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.VarType;
 
 /**
  * When there's an asc next to a chr, optimizes.
  * 
  * <pre>
- * temp1 = chr(anything)
- * temp2 = asc(temp1)
+ * temp1 = chr(anyint) // must be temp
+ * anystring = asc(temp1)
  * </pre>
  * 
- * becomes `temp2 = anything`
+ * becomes `anystring = anyint`
  * 
  * <p>
  * Similarly,
  * 
  * <pre>
- * temp1 = asc(anything)
- * temp2 = chr(temp1)
+ * temp1 = asc(anystring[0]) // must be temp
+ * anystring2 = chr(temp1)
  * </pre>
  * 
- * becomes `temp2 = anything[0]`
+ * becomes `anystring2 = anything[0]`
+ * 
+ * Also,
+ * 
+ * <pre>
+ *  temp=anystring[0] // must be temp
+ *  anyint=asc(temp)
+ * </pre>
+ * 
+ * becomes `anyint=asc(anystring)`
  */
 public class AscChrOptimizer extends LineOptimizer {
   AscChrOptimizer(int debugLevel) {
@@ -66,6 +76,38 @@ public class AscChrOptimizer extends LineOptimizer {
       replaceAt(ip() + 1, new BinOp(second.destination(), first.operand(), TokenType.LBRACKET,
           ConstantOperand.of(0), first.position()));
     }
+  }
+
+  @Override
+  public void visit(BinOp first) {
+    if (first.operator() != TokenType.LBRACKET) {
+      return;
+    }
+    if (!ConstantOperand.isAnyZero(first.right())) {
+      return;
+    }
+    if (first.left().type() != VarType.STRING) {
+      return;
+    }
+    if (!first.destination().isTemp()) {
+      return;
+    }
+    // first is temp=somestring[0]
+    UnaryOp second = getNext(UnaryOp.class);
+    if (second == null) {
+      return;
+    }
+    if (second.operator() != TokenType.ASC) {
+      return;
+    }
+    if (!second.operand().equals(first.destination())) {
+      return;
+    }
+    // Second is anything=asc(temp)
+    // Replace second with anything=asc(somestring)
+    deleteCurrent();
+    replaceAt(ip() + 1,
+        second.setSource(second.operand(), first.left()));
   }
 
   private TokenType opposite(TokenType operator) {
