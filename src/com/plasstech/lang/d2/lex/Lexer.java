@@ -56,9 +56,11 @@ public class Lexer {
     Position start = Position.create(line, col);
     if (Character.isDigit(cc)) {
       return makeNumber(start);
-    } else if (Character.isLetter(cc) || cc == '_') {
+    }
+    if (Character.isLetter(cc) || cc == '_') {
       return makeText(start);
-    } else if (cc != 0) {
+    }
+    if (cc != 0) {
       return makeSymbol(start);
     }
 
@@ -341,7 +343,8 @@ public class Lexer {
       Position end = Position.create(line, col);
       advance(); // eat the =
       return new Token(TokenType.GEQ, start, end, ">=");
-    } else if (cc == '>') {
+    }
+    if (cc == '>') {
       Position end = Position.create(line, col);
       advance(); // eat the >
       return new Token(TokenType.SHIFT_RIGHT, start, end, ">>");
@@ -356,7 +359,8 @@ public class Lexer {
       Position end = Position.create(line, col);
       advance(); // eat the =
       return new Token(TokenType.LEQ, start, end, "<=");
-    } else if (cc == '<') {
+    }
+    if (cc == '<') {
       Position end = Position.create(line, col);
       advance(); // eat the <
       return new Token(TokenType.SHIFT_LEFT, start, end, "<<");

@@ -383,10 +383,8 @@ public class ParserTest {
     assertThat(var.name()).isEqualTo("a");
 
     ExprNode expr = node.expr();
-    UnaryNode unary = (UnaryNode) expr;
-    assertThat(unary.operator()).isEqualTo(TokenType.PLUS);
-    VariableNode right = (VariableNode) unary.expr();
-    assertThat(right.name()).isEqualTo("b");
+    VariableNode unary = (VariableNode) expr;
+    assertThat(unary.name()).isEqualTo("b");
   }
 
   @Test
@@ -401,7 +399,7 @@ public class ParserTest {
     assertThat(var.name()).isEqualTo("a");
 
     Node expr = node.expr();
-    UnaryNode unary = (UnaryNode) expr;
+    BinOpNode unary = (BinOpNode) expr;
     assertThat(unary.operator()).isEqualTo(TokenType.PLUS);
   }
 
@@ -524,10 +522,12 @@ public class ParserTest {
 
   @Test
   public void allExprTypes() {
-    ProgramNode node = assertThatParsing("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-        + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false & \n"
-        + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))"
-        + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2").succeeds();
+    ProgramNode node = assertThatParsing(
+        "a=((1 + 2) * (3 - 4) / (-5) == 6) != true "
+            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false "
+            + " & ((3 + 4) * (5 + 6) / (-7) >= (8 % 2)) "
+            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2")
+        .succeeds();
     BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(2);

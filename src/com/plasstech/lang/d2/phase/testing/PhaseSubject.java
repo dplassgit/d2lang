@@ -43,7 +43,6 @@ public abstract class PhaseSubject extends Subject {
   protected final State compiles() {
     YetAnotherCompiler compiler = new YetAnotherCompiler();
     State state = compiler.compile(this.config);
-    assertWithMessage("Should not have an error").that(state.error()).isFalse();
     if (state.error()) {
       state.exception().printStackTrace(System.err);
       fail(state.errorMessage());

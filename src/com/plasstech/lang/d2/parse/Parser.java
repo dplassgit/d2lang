@@ -1,14 +1,12 @@
 package com.plasstech.lang.d2.parse;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
@@ -135,19 +133,13 @@ public class Parser implements Phase {
     return program();
   }
 
-  private Token expectToken(TokenType... allowed) {
-    ImmutableList<TokenType> expected = ImmutableList.copyOf(Arrays.asList(allowed));
-    if (!expected.contains(token.type())) {
-      String expectedStr;
-      if (expected.size() == 1) {
-        expectedStr = expected.get(0).toString();
-      } else {
-        expectedStr = Joiner.on(" or ").join(expected);
-      }
-      throw new ParseException(
-          String.format("Unexpected '%s'; expected %s", token.text(), expectedStr), token.start());
+  private Token expectToken(TokenType allowed) {
+    if (allowed == token.type()) {
+      return advance();
     }
-    return advance();
+    throw new ParseException(
+        String.format("Unexpected '%s'; expected %s", token.text(), allowed),
+        token.start());
   }
 
   private ProgramNode program() {
@@ -336,42 +328,54 @@ public class Parser implements Phase {
 
   private DeclarationNode declaration(Token varToken) {
     expectToken(TokenType.COLON);
-    if (token.type().isKeyword()) {
-      TokenType declaredType = token.type();
+    TokenType declaredType = token.type();
 
-      if (declaredType == TokenType.RECORD) {
+    switch (declaredType) {
+      case RECORD:
         return parseRecordDeclaration(varToken);
-      } else if (declaredType == TokenType.PROC) {
-        return procedureDecl(varToken);
-      } else if (declaredType == TokenType.EXTERN) {
-        return externDecl(varToken);
-      }
 
-      VarType varType = VARIABLE_TYPES.get(declaredType);
-      if (varType != null) {
-        advance(); // int, string, bool
+      case PROC:
+        return procedureDecl(varToken);
+
+      case EXTERN:
+        return externDecl(varToken);
+
+      case BOOL:
+      case BYTE:
+      case DOUBLE:
+      case INT:
+      case LONG:
+      case STRING:
+      case RANGE:
+        VarType varType = VARIABLE_TYPES.get(declaredType);
+        assert (varType != null); // it should always find the varType in the map.
+        advance();
         // See if it's an array declaration and build a "compound type" from the
         // declaration, e.g., "array of int"
         if (token.type() == TokenType.LBRACKET) {
           return arrayDecl(varToken, varType);
         }
+        // Non-array declaration.
         return new DeclarationNode(varToken.text(), varType, varToken.start());
-      }
-    } else if (token.type() == TokenType.VARIABLE) {
-      Token typeToken = advance(); // eat the variable type record reference
 
-      RecordReferenceType recordReference = new RecordReferenceType(typeToken.text());
-      if (token.type() == TokenType.LBRACKET) {
-        // Array of records!
-        return arrayDecl(varToken, recordReference);
-      } else {
+      case VARIABLE:
+        Token typeToken = advance(); // eat the variable type record reference
+
+        RecordReferenceType recordReference = new RecordReferenceType(typeToken.text());
+        if (token.type() == TokenType.LBRACKET) {
+          // Array of records!
+          return arrayDecl(varToken, recordReference);
+        }
+        // Non-array declaration
         return new DeclarationNode(varToken.text(), recordReference, varToken.start());
-      }
+
+      default:
+        throw new ParseException(
+            String.format(
+                "Unexpected '%s' in declaration; expected built-in type, PROC or RECORD",
+                token.text()),
+            token.start());
     }
-    throw new ParseException(
-        String.format(
-            "Unexpected '%s' in declaration; expected built-in type, PROC or RECORD", token.text()),
-        token.start());
   }
 
   private DeclarationNode parseRecordDeclaration(Token varToken) {
@@ -488,14 +492,13 @@ public class Parser implements Phase {
     if (token.type() == TokenType.COLON) {
       VarType paramType = parseVarType(VARIABLE_TYPES);
       return new Parameter(paramName.text(), paramType, paramName.start());
-    } else {
-      // no colon, just an unknown param type
-      return new Parameter(paramName.text(), paramName.start());
     }
+    // no colon, just an unknown param type (which will fail type checking(?))
+    return new Parameter(paramName.text(), paramName.start());
   }
 
   private PrintNode print(Token printToken) {
-    expectToken(TokenType.PRINT, TokenType.PRINTLN);
+    advance();
     ExprNode expr = expr();
     return new PrintNode(expr, printToken.start(), printToken.type() == TokenType.PRINTLN);
   }
@@ -679,12 +682,17 @@ public class Parser implements Phase {
         || token.type() == TokenType.BIT_NOT
         || token.type() == TokenType.NOT) {
       advance();
-      ExprNode expr = unary();
+      ExprNode operand = unary();
+
+      if (unaryToken.type() == TokenType.PLUS) {
+        // unary +(anything) = the thing
+        return operand;
+      }
 
       if (unaryToken.type() == TokenType.NOT || unaryToken.type() == TokenType.BIT_NOT) {
-        if (expr instanceof BinOpNode) {
+        if (operand instanceof BinOpNode) {
           // optimize 'not (a==b)' to 'a!=b'
-          BinOpNode child = (BinOpNode) expr;
+          BinOpNode child = (BinOpNode) operand;
           TokenType newOperator = NOTTED_OPS.get(child.operator());
           if (newOperator == null) {
             newOperator = NOTTED_OPS.inverse().get(child.operator());
@@ -692,9 +700,10 @@ public class Parser implements Phase {
           if (newOperator != null) {
             return new BinOpNode(child.left(), newOperator, child.right());
           }
-        } else if (expr instanceof UnaryNode) {
-          // optimize 'not not x' to 'x'
-          UnaryNode child = (UnaryNode) expr;
+        }
+        if (operand instanceof UnaryNode) {
+          // optimize 'not not x' to 'x'. I hate this.
+          UnaryNode child = (UnaryNode) operand;
           TokenType secondOp = child.operator();
           if (secondOp == unaryToken.type()) {
             return child.expr();
@@ -702,51 +711,40 @@ public class Parser implements Phase {
         }
       }
 
-      if (expr.varType() == VarType.INT) {
-        // We can simplify now
-        if (unaryToken.type() == TokenType.PLUS) {
-          return expr;
-        } else if (unaryToken.type() == TokenType.MINUS) {
+      if (operand.isConstant()) {
+        // We don't really have to check for constant, because at parsing time,
+        // we only know the vartypes of constants, not variables. But it doesn't hurt.
+        VarType varType = operand.varType();
+        if (varType.isNumeric() && unaryToken.type() == TokenType.MINUS) {
+          // unary -(constant) = -constant
           @SuppressWarnings("unchecked")
-          ConstNode<Integer> in = (ConstNode<Integer>) expr;
-          return new ConstNode<Integer>(-in.value(), VarType.INT, unaryToken.start());
-        } else if (unaryToken.type() == TokenType.BIT_NOT) {
-          @SuppressWarnings("unchecked")
-          ConstNode<Integer> in = (ConstNode<Integer>) expr;
-          return new ConstNode<Integer>(~in.value(), VarType.INT, unaryToken.start());
+          ConstNode<? extends Number> cn = (ConstNode<? extends Number>) operand;
+          Number number = cn.valueAsNumber();
+          if (varType.isIntegral()) {
+            return ConstNode.fromValue(-number.longValue(), varType, unaryToken.start());
+          }
+          double value = number.doubleValue();
+          return new ConstNode<Double>(-value, varType, unaryToken.start());
         }
-      } else if (expr.varType() == VarType.LONG) {
-        // We can simplify now
-        if (unaryToken.type() == TokenType.PLUS) {
-          return expr;
-        } else if (unaryToken.type() == TokenType.MINUS) {
+        if (varType.isIntegral() && unaryToken.type() == TokenType.BIT_NOT) {
+          // unary ~(constant) = ~constant
           @SuppressWarnings("unchecked")
-          ConstNode<Long> in = (ConstNode<Long>) expr;
-          return new ConstNode<Long>(-in.value(), VarType.LONG, unaryToken.start());
-        } else if (unaryToken.type() == TokenType.BIT_NOT) {
-          @SuppressWarnings("unchecked")
-          ConstNode<Long> in = (ConstNode<Long>) expr;
-          return new ConstNode<Long>(~in.value(), VarType.LONG, unaryToken.start());
+          ConstNode<? extends Number> cn = (ConstNode<? extends Number>) operand;
+          Number number = cn.valueAsNumber();
+          return ConstNode.fromValue(~number.longValue(), varType, unaryToken.start());
         }
-      } else if (expr.varType() == VarType.DOUBLE) {
-        // We can simplify now
-        if (unaryToken.type() == TokenType.PLUS) {
-          return expr;
-        } else if (unaryToken.type() == TokenType.MINUS) {
+        if (operand.varType() == VarType.BOOL && unaryToken.type() == TokenType.NOT) {
+          // not (constant) to not constant
           @SuppressWarnings("unchecked")
-          ConstNode<Double> in = (ConstNode<Double>) expr;
-          return new ConstNode<Double>(-in.value(), VarType.DOUBLE, unaryToken.start());
-        }
-      } else if (expr.varType() == VarType.BOOL) {
-        if (unaryToken.type() == TokenType.NOT) {
-          @SuppressWarnings("unchecked")
-          ConstNode<Boolean> cn = (ConstNode<Boolean>) expr;
+          ConstNode<Boolean> cn = (ConstNode<Boolean>) operand;
           return new ConstNode<Boolean>(!cn.value(), VarType.BOOL, unaryToken.start());
         }
       }
 
-      return new UnaryNode(unaryToken.type(), expr, unaryToken.start());
-    } else if (isUnaryKeyword(token)) {
+      return new UnaryNode(unaryToken.type(), operand, unaryToken.start());
+    }
+
+    if (isUnaryKeyword(token)) {
       Token keywordToken = unaryToken;
 
       advance();
@@ -755,10 +753,13 @@ public class Parser implements Phase {
       expectToken(TokenType.RPAREN);
 
       return new UnaryNode(keywordToken.type(), expr, keywordToken.start());
-    } else if (token.type() == TokenType.NEW) {
+    }
+
+    if (token.type() == TokenType.NEW) {
       Position start = token.start();
       expectToken(TokenType.NEW);
       Token recordTypeName = expectToken(TokenType.VARIABLE);
+
       return new NewNode(recordTypeName.text(), start);
     }
 
@@ -798,11 +799,18 @@ public class Parser implements Phase {
     return left;
   }
 
+  private static <T> ConstNode<T> toConstNode(ConstToken<T> constToken) {
+    VarType varType = VARIABLE_TYPES.get(constToken.literalType());
+    assert (varType != null); // it should always find the varType in the map.
+
+    return new ConstNode<T>(constToken.value(), varType, constToken.start());
+  }
+
   /**
    * Parse an atom: a literal, variable or parenthesized expression.
    *
    * <pre>
-   * atom -> ARGS | byte | double | int | string | FALSE | TRUE | NULL | variable | procedureCall |
+   * atom -> ARGS | literal constant | FALSE | TRUE | NULL | variable | procedureCall |
    *     INPUT | '(' expr ')' | '[' arrayLiteral ']'
    * </pre>
    */
@@ -834,35 +842,20 @@ public class Parser implements Phase {
         ConstToken<?> ct = (ConstToken<?>) token;
         switch (ct.literalType()) {
           case BYTE:
-            ConstToken<Byte> bt = (ConstToken<Byte>) token;
-            advance();
-            return new ConstNode<Byte>(bt.value(), VarType.BYTE, bt.start());
-
           case DOUBLE:
-            ConstToken<Double> dt = (ConstToken<Double>) token;
-            advance();
-            return new ConstNode<Double>(dt.value(), VarType.DOUBLE, dt.start());
-
           case INT:
-            ConstToken<Integer> it = (ConstToken<Integer>) token;
-            advance();
-            return new ConstNode<Integer>(it.value(), VarType.INT, it.start());
-
           case LONG:
-            ConstToken<Long> longToken = (ConstToken<Long>) token;
-            advance();
-            return new ConstNode<Long>(longToken.value(), VarType.LONG, longToken.start());
-
           case STRING:
-            ConstToken<String> st = (ConstToken<String>) token;
             advance();
-            return new ConstNode<String>(st.value(), VarType.STRING, st.start());
+            return toConstNode(ct);
 
           default:
             throw new ParseException(
                 String.format("Unexpected '%s'; expected literal, variable, or '('", token.text()),
                 token.start());
         }
+        // no break needed
+
       case LPAREN:
         expectToken(TokenType.LPAREN);
         ExprNode expr = expr();

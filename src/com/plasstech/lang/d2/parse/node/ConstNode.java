@@ -4,7 +4,7 @@ import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
 
-/** Represents an int, boolean, string or (someday) float constant node. */
+/** Represents an int, boolean, string or float constant node. */
 public class ConstNode<T> extends AbstractNode implements ExprNode {
 
   private final T value;
@@ -54,5 +54,26 @@ public class ConstNode<T> extends AbstractNode implements ExprNode {
       return Objects.hashCode(varType(), getClass());
     }
     return Objects.hashCode(value, value.getClass(), varType(), getClass());
+  }
+
+  public Number valueAsNumber() {
+    if (!(value instanceof Number)) {
+      throw new IllegalArgumentException(
+          "Cannot get Number const from non-numeric ConstNode: " + this);
+    }
+    return (Number) value();
+  }
+
+  public static ConstNode<? extends Number> fromValue(long value, VarType type, Position position) {
+    if (type == VarType.LONG) {
+      return new ConstNode<Long>(value, type, position);
+    }
+    if (type == VarType.INT) {
+      return new ConstNode<Integer>((int) value, type, position);
+    }
+    if (type == VarType.BYTE) {
+      return new ConstNode<Byte>((byte) value, type, position);
+    }
+    throw new IllegalStateException("Cannot take fromValue of type " + type);
   }
 }
