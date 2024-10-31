@@ -21,7 +21,14 @@ class LabelCodeGenerator extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Stop op) {
-    emitter.emitExit(op.exitCode());
+    int exitCode = op.exitCode();
+    emitter.addExtern("exit");
+    if (exitCode == 0) {
+      emitter.emit("xor RCX, RCX");
+    } else {
+      emitter.emit("mov RCX, %d", exitCode);
+    }
+    emitter.emit("call exit");
   }
 
   @Override

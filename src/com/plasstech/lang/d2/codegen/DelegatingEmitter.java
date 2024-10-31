@@ -59,11 +59,6 @@ public class DelegatingEmitter implements Emitter {
   }
 
   @Override
-  public void emitExit(int exitCode) {
-    delegate.emitExit(exitCode);
-  }
-
-  @Override
   public void emitLabel(String label) {
     delegate.emitLabel(label);
   }

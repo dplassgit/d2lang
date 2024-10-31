@@ -25,7 +25,5 @@ public interface Emitter {
 
   ImmutableList<String> data();
 
-  void emitExit(int exitCode);
-
   void emitLabel(String label);
 }

@@ -46,9 +46,6 @@ public class RangeCodeGeneratorTest {
     public void emitExternCall(String call) {}
 
     @Override
-    public void emitExit(int exitCode) {}
-
-    @Override
     public void emitLabel(String label) {}
   });
   private Registers registers = new Registers();
