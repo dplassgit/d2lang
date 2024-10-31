@@ -10,12 +10,22 @@ import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ProcSymbol;
 
+/** Represents a procedure call - either local or extern */
 public class Call extends Op {
 
   private final ImmutableList<Operand> actuals;
   private final Optional<Location> destination;
   private final ImmutableList<Location> formals;
   private final ProcSymbol procSym;
+
+  public Call(
+      Location destination,
+      ProcSymbol procSym,
+      ImmutableList<Operand> actuals,
+      ImmutableList<Location> formals,
+      Position position) {
+    this(Optional.of(destination), procSym, actuals, formals, position);
+  }
 
   public Call(
       Optional<Location> destination,

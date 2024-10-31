@@ -4,6 +4,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.RecordSymbol;
 
+/** Represents "new record" */
 public class AllocateOp extends Op {
   private final RecordSymbol record;
   private final Location destination;
@@ -18,7 +19,7 @@ public class AllocateOp extends Op {
     return destination;
   }
 
-  public RecordSymbol record() {
+  public RecordSymbol recordSymbol() {
     return record;
   }
 
@@ -29,6 +30,6 @@ public class AllocateOp extends Op {
 
   @Override
   public String toString() {
-    return String.format("%s = NEW RECORD %s", destination, record.name());
+    return String.format("%s = NEW %s", destination, record.name());
   }
 }

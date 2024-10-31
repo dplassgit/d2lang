@@ -46,7 +46,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     String dest = resolver.resolve(op.destination());
     emitter.emit("mov RCX, 1");
     // Allocate at least 1 byte
-    int totalSize = Math.max(1, op.record().allocatedSize());
+    int totalSize = Math.max(1, op.recordSymbol().allocatedSize());
     emitter.emit("mov EDX, %d  ; total record size", totalSize);
     emitter.emitExternCall("calloc");
     emitter.emit("mov %s, RAX", dest);

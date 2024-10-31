@@ -3,8 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
-import java.util.Optional;
-
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -150,7 +148,7 @@ public class TempPropagationOptimizerTest {
         new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Call(Optional.of(TEMP3), procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Call(TEMP3, procSym, ImmutableList.of(), ImmutableList.of(), null),
             new Transfer(PARAM, TEMP3, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -158,7 +156,7 @@ public class TempPropagationOptimizerTest {
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isEqualTo(
-        new Call(Optional.of(PARAM), procSym, ImmutableList.of(), ImmutableList.of(), null));
+        new Call(PARAM, procSym, ImmutableList.of(), ImmutableList.of(), null));
   }
 
   @Test
@@ -167,7 +165,7 @@ public class TempPropagationOptimizerTest {
         new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Call(Optional.of(PARAM), procSym, ImmutableList.of(), ImmutableList.of(), null),
+            new Call(PARAM, procSym, ImmutableList.of(), ImmutableList.of(), null),
             new Transfer(TEMP3, PARAM, null));
 
     optimizer.optimize(program, null);

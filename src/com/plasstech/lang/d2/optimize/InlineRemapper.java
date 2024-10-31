@@ -172,7 +172,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
     if (destination == op.destination()) {
       return;
     }
-    code.set(ip, new AllocateOp(destination, op.record(), op.position()));
+    code.set(ip, new AllocateOp(destination, op.recordSymbol(), op.position()));
   }
 
   @Override

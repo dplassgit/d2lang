@@ -983,8 +983,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
   @Override
   public void visit(AllocateOp op) {
     Map<String, Object> recordAsMap = new HashMap<>();
-    for (String fieldName : op.record().fieldNames()) {
-      VarType type = op.record().fieldType(fieldName);
+    for (String fieldName : op.recordSymbol().fieldNames()) {
+      VarType type = op.recordSymbol().fieldType(fieldName);
       if (type == VarType.INT || type == VarType.BYTE) {
         recordAsMap.put(fieldName, 0);
       } else if (type == VarType.STRING) {
@@ -997,7 +997,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         // this should never happen
         recordAsMap.put(fieldName, Range.create(0, 0));
       } else if (type.isArray()) {
-        ArrayField arrayField = op.record().getArrayField(fieldName);
+        ArrayField arrayField = op.recordSymbol().getArrayField(fieldName);
         // TODO(#38) support multidimensional arrays
         int size = arrayField.sizes().get(0);
         Object[] emptyArray = createEmptyArray(arrayField.baseType(), size);

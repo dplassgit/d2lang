@@ -5,7 +5,6 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Stack;
 
 import com.google.common.collect.ImmutableList;
@@ -755,9 +754,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       call = new Call(procSym, actuals, formals, node.position());
     } else {
       // 3. put result location into node.location
-      Location location = allocateTemp(node.varType());
-      node.setLocation(location);
-      call = new Call(Optional.of(location), procSym, actuals, formals, node.position());
+      Location destination = allocateTemp(node.varType());
+      node.setLocation(destination);
+      call = new Call(destination, procSym, actuals, formals, node.position());
     }
     emit(call);
   }

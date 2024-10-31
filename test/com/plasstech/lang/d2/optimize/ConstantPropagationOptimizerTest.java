@@ -4,8 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
-import java.util.Optional;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -319,7 +317,7 @@ public class ConstantPropagationOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(STACK_INT1, GLOBAL_INT1, null),
-            new Call(Optional.of(GLOBAL_INT1), procSymbol, /* actuals= */ImmutableList.of(),
+            new Call(GLOBAL_INT1, procSymbol, /* actuals= */ImmutableList.of(),
                 /* formals= */ImmutableList.of(),
                 null),
             new Return("proc", STACK_INT1));

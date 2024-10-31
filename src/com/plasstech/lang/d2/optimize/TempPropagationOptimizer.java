@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.Optional;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
@@ -72,7 +70,7 @@ class TempPropagationOptimizer extends LineOptimizer {
         // We don't need to worry about the destination type (bug #271) because the results of
         // calls are in RAX/XMM0 which can be MOV'd to any type of defination.
         replaceAt(ip() + 1,
-            new Call(Optional.of(candidate.destination()),
+            new Call(candidate.destination(),
                 op.procSym(),
                 op.actuals(),
                 op.formals(),

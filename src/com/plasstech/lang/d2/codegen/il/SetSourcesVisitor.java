@@ -85,7 +85,6 @@ final class SetSourcesVisitor extends DefaultOpcodeVisitor {
         actuals.add(operand);
       }
     }
-    // Will this work with an empty destination?
     newOp = new Call(op.destination(), op.procSym(), ImmutableList.copyOf(actuals), op.formals(),
         op.position());
   }

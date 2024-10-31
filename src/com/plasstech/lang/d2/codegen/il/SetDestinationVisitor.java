@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.Optional;
-
 import com.plasstech.lang.d2.codegen.Location;
 
 /**
@@ -39,7 +37,7 @@ final class SetDestinationVisitor extends DefaultOpcodeVisitor {
   public void visit(Call op) {
     op.destination().ifPresent(ignored -> {
       newOp =
-          new Call(Optional.of(newDest), op.procSym(), op.actuals(), op.formals(), op.position());
+          new Call(newDest, op.procSym(), op.actuals(), op.formals(), op.position());
     });
   }
 
@@ -56,7 +54,7 @@ final class SetDestinationVisitor extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(AllocateOp op) {
-    newOp = new AllocateOp(newDest, op.record(), op.position());
+    newOp = new AllocateOp(newDest, op.recordSymbol(), op.position());
   }
 
   @Override
