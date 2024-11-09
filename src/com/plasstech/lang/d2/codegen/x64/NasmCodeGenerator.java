@@ -86,7 +86,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
   private final DelegatingEmitter emitter;
 
   public NasmCodeGenerator() {
-    this(new DelegatingEmitter(new X64Emitter()), new Registers());
+    this(new X64Emitter(), new Registers());
   }
 
   NasmCodeGenerator(Emitter emitter, Registers registers) {
@@ -156,6 +156,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
 
     emitter.emit0("main:");
     emitter.emit("mov RBP, RSP");
+    // Always assume we need gc_init.
+    emitter.emit("mov RCX, 0");
+    emitter.emit("mov RDX, 0");
+    emitter.emitExternCall("gc_init");
+
     // Convert command-line arguments to a D-style array of strings
     ArgsCodeGenerator argsGenerator = new ArgsCodeGenerator(emitter, globals);
     argsGenerator.generate();

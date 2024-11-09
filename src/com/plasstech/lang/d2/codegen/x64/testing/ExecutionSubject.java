@@ -155,7 +155,13 @@ public class ExecutionSubject extends Subject {
 
       File obj = new File(dir, sourceFilename + ".obj");
       File exe = new File(dir, sourceFilename);
-      pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
+
+      String cwd = System.getProperty("user.dir");
+      File gclib = new File(cwd, "dlib/gc.lib");
+
+      pb = new ProcessBuilder("gcc", obj.getAbsolutePath(),
+          gclib.getAbsolutePath(),
+          "-o", exe.getAbsolutePath());
       pb.directory(dir);
       process = pb.start();
       process.waitFor();

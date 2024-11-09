@@ -11,7 +11,6 @@ import org.junit.Test;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -45,7 +44,7 @@ public class NasmCodeGeneratorTest {
   private static final Location GLOBAL_RANGE =
       LocationUtils.newMemoryAddress("globalrange", VarType.RANGE);
 
-  private Emitter emitter = new X64Emitter();
+  private X64Emitter emitter = new X64Emitter();
   private Registers registers = new Registers();
   private NasmCodeGenerator codeGen;
 

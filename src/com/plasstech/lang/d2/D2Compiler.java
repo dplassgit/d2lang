@@ -163,6 +163,10 @@ public class D2Compiler {
         if (dlibFile.exists()) {
           command.add(dlib);
         }
+        command.add(String.format("%s/dlib/gc.lib", D2PATH));
+      } else {
+        String cwd = System.getProperty("user.dir");
+        command.add(cwd + "./dlib/gc.lib");
       }
       command.add("-o", exeFile.getAbsolutePath());
       pb = new ProcessBuilder(command.build());
