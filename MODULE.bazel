@@ -1,6 +1,102 @@
-###############################################################################
-# Bazel now uses Bzlmod by default to manage external dependencies.
-# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
+# - https://bazel.build/external/overview#bzlmod
+# - https://bazel.build/external/module
+module(name = "d2lang", version = "0.0.0")
+
+# We need to use `http_archive` for the version of `google_bazel_common`
+# specified below. It can go away after switching to the Bzlmodified
+# `google_bazel_common`.
 #
-# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
-###############################################################################
+# - https://bazel.build/external/migration#fetch-deps-module-extensions
+# - https://bazel.build/external/module#use_repo_rule
+# - https://bazel.build/rules/lib/repo/http
+# - https://bazel.build/rules/lib/globals/module#use_repo_rule
+http_archive = use_repo_rule(
+  "@bazel_tools//tools/build_defs/repo:http.bzl",
+  "http_archive",
+)
+
+# Find the latest versions of module dependencies on:
+#
+# - https://registry.bazel.build/
+#
+# We need to specify `rules_java` on behalf of `google_bazel_common`. When
+# switching to a newer `google_bazel_common` that supports Bzlmod, we can remove
+# `rules_java` if desired.
+bazel_dep(name = "rules_java", version = "8.9.0")
+bazel_dep(name = "rules_jvm_external", version = "6.7")
+
+# `use_extension` brings module extensions into scope for the module. All
+# extensions brought into scope will execute after resolution of the module
+# dependency graph.
+#
+# - https://bazel.build/external/extension
+# - https://bazel.build/rules/lib/globals/module#use_extension
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+# Extensions may define "tag classes" that enable a module to configure
+# attributes defining what it needs from the extension. Extension
+# implementations will have access to this configuration data via the
+# `module_ctx` object.
+#
+# - https://bazel.build/external/extension#extension_usage
+# - https://bazel.build/external/extension#extension_definition
+# - https://bazel.build/rules/lib/globals/bzl#tag_class
+# - https://bazel.build/rules/lib/toplevel/attr.html
+# - https://bazel.build/rules/lib/builtins/module_ctx#modules
+# - https://bazel.build/rules/lib/builtins/bazel_module.html#tags
+#
+# For instructions on how to configure and use `rules_jvm_external`:
+#
+# - https://github.com/bazel-contrib/rules_jvm_external
+# - https://github.com/bazel-contrib/rules_jvm_external/blob/master/docs/bzlmod.md
+#
+# These artifact coordinates are from https://repo1.maven.org/maven2
+maven.install(
+    artifacts = [
+        "junit:junit:4.13.2",
+        "com.github.pcj:google-options:jar:1.0.0",
+        "com.google.auto.value:auto-value-annotations:1.9",
+        "com.google.auto.value:auto-value:1.9",
+        "com.google.code.findbugs:jsr305:3.0.2",
+        "com.google.guava:guava:33.0.0-jre",
+        "com.google.guava:guava-testlib:33.0.0-jre",
+        "com.google.flogger:flogger:0.8",
+        "com.google.flogger:flogger-system-backend:0.8",
+        "com.google.truth:truth:1.1.5",
+        "com.google.truth.extensions:truth-java8-extension:1.1.5",
+        "com.google.testparameterinjector:test-parameter-injector:1.14",
+    ],
+    fetch_javadoc = True,
+    fetch_sources = True,
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+# A module must bring any required repositories that are created by a module
+# extension into scope by calling `use_repo` on the module extension object.
+#
+# - https://bazel.build/external/extension#extension_usage
+# - https://bazel.build/rules/lib/globals/module#use_repo
+use_repo(maven, "maven")
+
+# For how to update these values:
+# - https://github.com/google/bazel-common/tree/221ecf2922e8ebdf8e002130e9772045cfa2f464?tab=readme-ov-file#using-bazel-common
+#
+# TODO(dplassgit): Update this to use Bzlmod instead per:
+#
+# - https://github.com/google/bazel-common?tab=readme-ov-file#using-bazel-common
+# - https://bazel.build/external/module#non-registry_overrides
+# - https://bazel.build/rules/lib/globals/module#git_override
+http_archive(
+    name = "google_bazel_common",
+    sha256 = "b54410b99dd34e17dc02fc6186d478828b0d34be3876769dba338c6ccec2cea9",
+    strip_prefix = "bazel-common-221ecf2922e8ebdf8e002130e9772045cfa2f464",
+    urls = ["https://github.com/google/bazel-common/archive/221ecf2922e8ebdf8e002130e9772045cfa2f464.zip"],
+)
+
+# Our own extension that initializes non-module repositories (specifically
+# `google_bazel_common` in this case). Required because `MODULE.bazel` files
+# cannot `load()` and execute macros like `WORKSPACE`. The Bzlmodified
+# `google_bazel_common` will render this extension unnecessary.
+d2 = use_extension("//:extensions.bzl", "d2")
