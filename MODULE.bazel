@@ -6,10 +6,6 @@ module(name = "d2lang", version = "0.0.0")
 #
 # - https://registry.bazel.build/
 #
-# We need to specify `rules_java` on behalf of `google_bazel_common`. When
-# switching to a newer `google_bazel_common` that supports Bzlmod, we can remove
-# `rules_java` if desired.
-bazel_dep(name = "rules_java", version = "8.9.0")
 bazel_dep(name = "rules_jvm_external", version = "6.7")
 
 # `use_extension` brings module extensions into scope for the module. All
