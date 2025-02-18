@@ -2,19 +2,6 @@
 # - https://bazel.build/external/module
 module(name = "d2lang", version = "0.0.0")
 
-# We need to use `http_archive` for the version of `google_bazel_common`
-# specified below. It can go away after switching to the Bzlmodified
-# `google_bazel_common`.
-#
-# - https://bazel.build/external/migration#fetch-deps-module-extensions
-# - https://bazel.build/external/module#use_repo_rule
-# - https://bazel.build/rules/lib/repo/http
-# - https://bazel.build/rules/lib/globals/module#use_repo_rule
-http_archive = use_repo_rule(
-  "@bazel_tools//tools/build_defs/repo:http.bzl",
-  "http_archive",
-)
-
 # Find the latest versions of module dependencies on:
 #
 # - https://registry.bazel.build/
@@ -81,22 +68,13 @@ maven.install(
 use_repo(maven, "maven")
 
 # For how to update these values:
-# - https://github.com/google/bazel-common/tree/221ecf2922e8ebdf8e002130e9772045cfa2f464?tab=readme-ov-file#using-bazel-common
-#
-# TODO(dplassgit): Update this to use Bzlmod instead per:
-#
 # - https://github.com/google/bazel-common?tab=readme-ov-file#using-bazel-common
 # - https://bazel.build/external/module#non-registry_overrides
 # - https://bazel.build/rules/lib/globals/module#git_override
-http_archive(
-    name = "google_bazel_common",
-    sha256 = "b54410b99dd34e17dc02fc6186d478828b0d34be3876769dba338c6ccec2cea9",
-    strip_prefix = "bazel-common-221ecf2922e8ebdf8e002130e9772045cfa2f464",
-    urls = ["https://github.com/google/bazel-common/archive/221ecf2922e8ebdf8e002130e9772045cfa2f464.zip"],
-)
 
-# Our own extension that initializes non-module repositories (specifically
-# `google_bazel_common` in this case). Required because `MODULE.bazel` files
-# cannot `load()` and execute macros like `WORKSPACE`. The Bzlmodified
-# `google_bazel_common` will render this extension unnecessary.
-d2 = use_extension("//:extensions.bzl", "d2")
+bazel_dep(name = "google_bazel_common")
+git_override(
+    module_name = "google_bazel_common",
+    commit = "1a0839806501e7f7e8dd7663644895dbc593827e",
+    remote = "https://github.com/google/bazel-common",
+)
