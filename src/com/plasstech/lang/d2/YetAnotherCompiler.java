@@ -49,7 +49,7 @@ public class YetAnotherCompiler {
       return state;
     }
 
-    // Always run the RangeCheckOptimizer even if optimizations are off.
+    // Always run RangeChecks even if optimizations are off.
     Phase rangeChecker = new RangeChecker();
     state = rangeChecker.execute(state);
     if (state.error()) {
