@@ -18,7 +18,7 @@ import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 /** Represents a symbol in the symbol table for a record type definition. */
 public class RecordSymbol extends AbstractSymbol {
 
-  public class Field {
+  public static class Field {
     private final String name;
     private final VarType type;
     private final int offset;
@@ -47,7 +47,7 @@ public class RecordSymbol extends AbstractSymbol {
     }
   }
 
-  public class ArrayField extends Field {
+  public static class ArrayField extends Field {
     private final VarType baseType;
     private final ImmutableList<Integer> sizes;
     private final ArrayType arrayType;
@@ -75,17 +75,33 @@ public class RecordSymbol extends AbstractSymbol {
 
   private final ImmutableMap<String, Field> fields;
   private final int allocatedSize;
-  private final ImmutableList<String> typeVariables;
+  private final ImmutableList<String> unboundTypeVariables;
+  private final String baseName;
 
-  public RecordSymbol(RecordDeclarationNode node) {
-    super(node.name());
-    this.typeVariables = node.formalTypeVariables();
-    // This isn't *quite* true. It's more of a RecordDefinitionType
-    this.setVarType(new RecordReferenceType(node.name()));
+  private RecordSymbol(String fqName,
+      String baseName,
+      List<String> formalTypeVariables,
+      Map<String, Field> fields,
+      int allocatedSize) {
+    super(fqName);
+    this.baseName = baseName;
+    this.unboundTypeVariables = ImmutableList.copyOf(formalTypeVariables);
+    this.fields = ImmutableMap.copyOf(fields);
+    this.allocatedSize = allocatedSize;
+  }
 
+  private RecordSymbol(String baseName,
+      ImmutableList<String> formalTypeVariables,
+      List<DeclarationNode> declaredFields) {
+    super(RecordDeclarationNode.fqName(baseName, formalTypeVariables));
+    this.baseName = baseName;
+    this.unboundTypeVariables = formalTypeVariables;
+    this.setVarType(new RecordReferenceType(baseName,
+        formalTypeVariables.stream().map(name -> new UnboundType(name))
+            .collect(toImmutableList())));
     ImmutableMap.Builder<String, Field> fieldBuilder = ImmutableMap.builder();
     int sizeToAllocate = 0;
-    for (DeclarationNode decl : node.fields()) {
+    for (DeclarationNode decl : declaredFields) {
       Field field;
       if (decl.varType().isArray()) {
         ArrayType arrayType = (ArrayType) decl.varType();
@@ -105,8 +121,12 @@ public class RecordSymbol extends AbstractSymbol {
       sizeToAllocate += decl.varType().size();
     }
 
-    allocatedSize = sizeToAllocate;
-    fields = fieldBuilder.build();
+    this.allocatedSize = sizeToAllocate;
+    this.fields = fieldBuilder.build();
+  }
+
+  public RecordSymbol(RecordDeclarationNode node) {
+    this(node.baseName(), node.formalTypeVariables(), node.fields());
   }
 
   public int allocatedSize() {
@@ -126,12 +146,7 @@ public class RecordSymbol extends AbstractSymbol {
 
   // This means it's generic - bound or unbound.
   public boolean isGeneric() {
-    return !typeVariables.isEmpty();
-  }
-
-  public boolean isBound() {
-    // Make sure no fields are unbound
-    return fields.values().stream().anyMatch(f -> f.type instanceof UnboundType) == false;
+    return !unboundTypeVariables.isEmpty();
   }
 
   /** In the same order as definition */
@@ -176,22 +191,72 @@ public class RecordSymbol extends AbstractSymbol {
   }
 
   /**
-   * Returns a new RecordSymbol which is this one with all the generic field types mapped to
-   * concrete vartypes.
+   * Returns a new RecordSymbol which is this one with all the generic field types bound to concrete
+   * vartypes.
    * 
    * @param mapping from variable type to concrete type.
    * @return
    */
-  public RecordSymbol bindTypeVariables(Map<String, VarType> mapping) {
-    if (this.isBound()) {
-      throw new IllegalStateException("Cannot bind type variables in bound record symbol");
+  public RecordSymbol bind(Map<String, VarType> mapping) {
+    if (!isGeneric()) {
+      throw new IllegalStateException(
+          "Cannot bind type variables in non-generic or already bound record symbol "
+              + this.toString());
     }
-    // 1. bind all fields
-    // 2. ??? something about the vartype or symbol? What about the symbol table?
-    throw new IllegalStateException("bind type variables not implemneted yet");
+    // Make sure all the unbound variables are accounted for in the mapping.
+    Preconditions.checkArgument(
+        unboundTypeVariables.stream()
+            .filter(unboundName -> mapping.containsKey(unboundName))
+            .count() == unboundTypeVariables.size());
+    // To make the right fq name, we need to go in the *same order* as the unbound names.
+    List<VarType> boundTypes = unboundTypeVariables.stream()
+        .map(unboundName -> mapping.get(unboundName)).toList();
+    String fqName = RecordReferenceType.toFqName(baseName, boundTypes);
+    ImmutableMap.Builder<String, Field> newFields = ImmutableMap.builder();
+    int newAllocatedSize = 0;
+    for (Map.Entry<String, Field> entry : fields.entrySet()) {
+      Field field = entry.getValue();
+      String name = entry.getKey();
+      Field newField = field; // default
+      int fieldSize = field.type().size();
+
+      if (field instanceof ArrayField arrayField) {
+        // Might have to bind it if it's an array of records
+        ArrayType arrayType = arrayField.arrayType;
+        if (arrayType.baseType().isRecord()) {
+          RecordReferenceType baseType = (RecordReferenceType) arrayType.baseType();
+          if (baseType.isGeneric() && !baseType.isBound()) {
+            baseType = baseType.bind(mapping);
+            arrayType = new ArrayType(baseType, arrayType.dimensions());
+            field =
+                new ArrayField(
+                    field.name,
+                    arrayType,
+                    newAllocatedSize,
+                    arrayField.sizes());
+          }
+        }
+      } else if (field.type instanceof UnboundType unboundType) {
+        VarType boundType = mapping.get(unboundType.name());
+        if (boundType == null) {
+          throw new IllegalStateException("Could not find unbound type " + unboundType.name());
+        }
+        newField = new Field(name, boundType, newAllocatedSize);
+        fieldSize = 8; // force it to 8 bytes, the maximum, so generic method codegen will
+        // work even for small types.
+      } else if (field.type instanceof RecordReferenceType subfield) {
+        newField = new Field(name, subfield.bind(mapping), newAllocatedSize);
+      }
+
+      newFields.put(name, newField);
+      newAllocatedSize += fieldSize;
+    }
+
+    return new RecordSymbol(fqName, baseName, unboundTypeVariables, newFields.build(),
+        newAllocatedSize);
   }
 
   public ImmutableList<String> formalTypeVariables() {
-    return typeVariables;
+    return unboundTypeVariables;
   }
 }

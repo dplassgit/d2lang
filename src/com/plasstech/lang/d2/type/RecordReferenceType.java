@@ -1,22 +1,70 @@
 package com.plasstech.lang.d2.type;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType extends PointerType {
+  private final ImmutableList<UnboundType> formalTypes;
   private final ImmutableList<VarType> actualTypes;
+  private String baseName;
+  private String fqName;
 
-  public RecordReferenceType(String recordSymbolName) {
-    this(recordSymbolName, ImmutableList.of());
+  public static String toFqName(String recordName, List<? extends VarType> actualTypes) {
+    if (actualTypes.size() > 0) {
+      return String.format("%s<%s>", recordName,
+          Joiner.on(", ").join(actualTypes.stream().map(VarType::toString).toList()));
+    } else {
+      return recordName;
+    }
   }
 
-  /** Generic */
-  public RecordReferenceType(String recordSymbolName, List<VarType> actualTypes) {
-    super(recordSymbolName);
+  /**
+   * @param baseName the base name
+   */
+  public RecordReferenceType(String baseName) {
+    this(baseName, ImmutableList.of(), ImmutableList.of());
+  }
+
+  /**
+   * @param baseName the base name
+   * @param formalTypes the formal types
+   */
+  public RecordReferenceType(String baseName, List<UnboundType> formalTypes) {
+    this(baseName, formalTypes, ImmutableList.of());
+  }
+
+  /**
+   * @param baseName the base name
+   * @param formalTypes the formal types. They may be empty if we don't know yet
+   * @param actualTypes the actual types. They may be empty if it's not generic.
+   */
+  public RecordReferenceType(String baseName, List<UnboundType> formalTypes,
+      List<VarType> actualTypes) {
+    super(baseName);
+    this.formalTypes = ImmutableList.copyOf(formalTypes);
     this.actualTypes = ImmutableList.copyOf(actualTypes);
+    if (actualTypes.size() > 0) {
+      this.fqName = toFqName(baseName, actualTypes);
+    } else if (formalTypes.size() > 0) {
+      // I'm not sure about this...
+      this.fqName = toFqName(baseName, formalTypes);
+    } else {
+      this.fqName = baseName;
+    }
+    this.baseName = baseName;
+  }
+
+  public String fqName() {
+    return fqName;
+  }
+
+  public String baseName() {
+    return baseName;
   }
 
   @Override
@@ -44,7 +92,11 @@ public class RecordReferenceType extends PointerType {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name(), size()) + 7;
+    return Objects.hash(name(), actualTypes(), size()) + 7;
+  }
+
+  public ImmutableList<UnboundType> formalTypes() {
+    return formalTypes;
   }
 
   public ImmutableList<VarType> actualTypes() {
@@ -52,6 +104,32 @@ public class RecordReferenceType extends PointerType {
   }
 
   public boolean isGeneric() {
+    return !actualTypes.isEmpty() || !formalTypes.isEmpty();
+  }
+
+  public boolean isBound() {
     return !actualTypes.isEmpty();
+  }
+
+  public RecordReferenceType bind(Map<String, VarType> mapping) {
+    if (!actualTypes.isEmpty()) {
+      // Already bound
+      throw new IllegalStateException(
+          "Cannot re-bind an already bound RECORD " + toString());
+    }
+    if (formalTypes.isEmpty()) {
+      throw new IllegalStateException(
+          "Cannot bind a non-generic RECORD " + toString());
+    }
+    if (mapping.size() != formalTypes.size()) {
+      throw new IllegalStateException(
+          String.format("Wrong number of actual type parameters to RECORD %s; expected %d, saw %d",
+              toString(), formalTypes.size(), mapping.size()));
+    }
+    List<VarType> actuals =
+        formalTypes.stream().map(unboundType -> mapping.get(unboundType.name())).toList();
+    // DBP this is probably wrong, because we have no way to get back to
+    // the un-fully-qualified name. But do we ever need to?
+    return new RecordReferenceType(baseName(), formalTypes, actuals);
   }
 }

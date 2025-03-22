@@ -1517,7 +1517,7 @@ public class ParserTest {
     BlockNode root = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(1);
     NewNode node = (NewNode) assignment.expr();
-    assertThat(node.recordName()).isEqualTo("R");
+    assertThat(node.baseRecordName()).isEqualTo("R");
     RecordReferenceType type = (RecordReferenceType) node.varType();
     assertThat(type.name()).isEqualTo("R");
   }

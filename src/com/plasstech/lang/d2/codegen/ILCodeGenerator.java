@@ -295,7 +295,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(NewNode node) {
-    RecordSymbol symbol = symbolTable.getRecursive(node.recordName(), RecordSymbol.class);
+    RecordSymbol symbol =
+        symbolTable.getRecursive(node.fullyQualifiedRecordName(), RecordSymbol.class);
     TempLocation recordLocation = allocateTemp(symbol.varType());
     node.setLocation(recordLocation);
     emit(new AllocateOp(recordLocation, symbol, node.position()));

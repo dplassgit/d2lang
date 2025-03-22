@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -182,7 +183,11 @@ public class SymTab implements SymbolTable {
 
   @Override
   public RecordSymbol declareRecord(RecordDeclarationNode node) {
-    Symbol sym = getRecursive(node.name());
+    // it was binding it with formals, e.g., Rec<T: unbound>
+    // but that will not let us look it up later in a NewNode which doesn't
+    // have the formals, so we store it by baseName
+    String name = node.baseName();
+    Symbol sym = getRecursive(name);
     if (sym != null) {
       throw new TypeException(
           String.format(
@@ -191,8 +196,22 @@ public class SymTab implements SymbolTable {
           node.position());
     }
     RecordSymbol recordSymbol = new RecordSymbol(node);
-    values.put(node.name(), recordSymbol);
+    values.put(name, recordSymbol);
     return recordSymbol;
+  }
+
+  @Override
+  public void declareBoundRecordSymbol(RecordSymbol boundRecord, Position pos) {
+    // We have to use the FULL name here
+    Symbol sym = getRecursive(boundRecord.name());
+    if (sym != null) {
+      throw new TypeException(
+          String.format(
+              "'%s' already declared as %s. Cannot be redeclared as RECORD.",
+              boundRecord.name(), sym.varType()),
+          pos);
+    }
+    values.put(boundRecord.name(), boundRecord);
   }
 
   // It's only declared.

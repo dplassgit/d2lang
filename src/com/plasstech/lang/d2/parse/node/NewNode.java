@@ -12,7 +12,9 @@ import com.plasstech.lang.d2.type.VarType;
 public class NewNode extends AbstractNode implements ExprNode {
 
   private final String recordName;
+  // Actual bound types (for generic formals)
   private final ImmutableList<VarType> actualTypes;
+  private final String fqName;
 
   public NewNode(String recordName, Position position) {
     this(recordName, ImmutableList.of(), position);
@@ -21,12 +23,17 @@ public class NewNode extends AbstractNode implements ExprNode {
   public NewNode(String recordName, List<VarType> actualTypes, Position position) {
     super(position);
     this.recordName = recordName;
+    this.fqName = RecordReferenceType.toFqName(recordName, actualTypes);
     this.actualTypes = ImmutableList.copyOf(actualTypes);
-    this.setVarType(new RecordReferenceType(recordName, actualTypes));
+    this.setVarType(new RecordReferenceType(recordName, ImmutableList.of(), actualTypes));
   }
 
-  public String recordName() {
+  public String baseRecordName() {
     return recordName;
+  }
+
+  public String fullyQualifiedRecordName() {
+    return fqName;
   }
 
   @Override

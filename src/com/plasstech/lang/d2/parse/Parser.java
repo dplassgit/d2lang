@@ -387,7 +387,8 @@ public class Parser implements Phase {
       actualTypes = commaSeparatedTypes();
       expectToken(TokenType.GT);
     }
-    return new RecordReferenceType(recordName, actualTypes);
+    // We don't have the formal type names at this point.
+    return new RecordReferenceType(recordName, ImmutableList.of(), actualTypes);
   }
 
   private DeclarationNode parseRecordDeclaration(Token varToken) {
@@ -845,6 +846,7 @@ public class Parser implements Phase {
       if (token.type() == TokenType.VARIABLE) {
         // Record type.
         Token typeToken = advance(); // eat the record type
+        // WHAT ABOUT <FOO>?!
         return new RecordReferenceType(typeToken.text());
       }
 

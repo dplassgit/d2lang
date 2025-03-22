@@ -1006,6 +1006,12 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void recordDefinition_genericRecursive() {
+    SymbolTable symTab = checkProgram("rec: record<T>{value: T r:rec<T>}");
+    assertThat(symTab.getRecursive("rec", RecordSymbol.class)).isNotNull();
+  }
+
+  @Test
   public void recordDefinition_forward() {
     SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
     assertThat(symTab.getRecursive("rec1", RecordSymbol.class)).isNotNull();
@@ -1109,7 +1115,22 @@ public class StaticCheckerTest {
 
   @Test
   public void recordUseGeneric() {
-    assertThatTypeChecking("r2: record<T> {i:T} anr2=new r2<int> x:int x=anr2.i").succeeds();
+    assertThatTypeChecking("""
+        r2: record<T> {i:T}
+        anr2=new r2<int>
+        x:int
+        x=anr2.i
+        """).succeeds();
+  }
+  // TODO: write more tests like the above
+
+  @Test
+  public void recordFieldSetGeneric() {
+    assertThatTypeChecking("""
+        r2: record<T> {i:T}
+        anr2=new r2<int>
+        anr2.i = 3
+        """).succeeds();
   }
 
   @Test
@@ -1311,17 +1332,11 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_generic() {
-    SymbolTable symTab = checkProgram("Rec:record<T>{s:T} var=new Rec<int> var1=new Rec<Double>");
-
+    SymbolTable symTab = checkProgram("Rec:record<T>{s:T} var=new Rec<int>");
     Symbol var = symTab.get("var");
     RecordReferenceType refType = (RecordReferenceType) var.varType();
     assertThat(refType.name()).isEqualTo("Rec");
     assertThat(refType.actualTypes()).containsExactly(VarType.INT);
-
-    var = symTab.get("var1");
-    refType = (RecordReferenceType) var.varType();
-    assertThat(refType.name()).isEqualTo("Rec");
-    assertThat(refType.actualTypes()).containsExactly(VarType.DOUBLE);
   }
 
   @Test

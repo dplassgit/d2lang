@@ -6,7 +6,9 @@ module(name = "d2lang", version = "0.0.0")
 #
 # - https://registry.bazel.build/
 #
-bazel_dep(name = "rules_jvm_external", version = "6.7")
+bazel_dep(name = "rules_jvm_external", version = "6.8")
+bazel_dep(name = "rules_java", version = "8.14.0")
+
 
 # `use_extension` brings module extensions into scope for the module. All
 # extensions brought into scope will execute after resolution of the module

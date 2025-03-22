@@ -420,12 +420,12 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
     if (operator == TokenType.DOT) {
       // Now get the record from the symbol table.
-      String recordName = leftType.name();
+      RecordReferenceType rrt = (RecordReferenceType) leftType;
+      String recordName = rrt.fqName();
       RecordSymbol recordSymbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
       if (recordSymbol == null) {
         errors.add(
             new TypeException(
-                // this might be better
                 String.format("Unknown RECORD type '%s'", recordName), left.position()));
         return;
       }
@@ -611,9 +611,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(NewNode node) {
     VarType type = node.varType();
-    String recordName = node.recordName();
+    String recordName = node.fullyQualifiedRecordName();
     if (validatePossibleRecordType(recordName, type, node.position())) {
-      RecordSymbol symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+      // need to look up the symbol by base name and then bind it.
+      RecordSymbol symbol = symbolTable.getRecursive(node.baseRecordName(), RecordSymbol.class);
       // make sure all the actual types are real
       for (VarType actual : node.actualTypes()) {
         if (actual instanceof UnboundType) {
@@ -632,10 +633,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
 
       // instantiate the thingie
-      // Check that # of actual type variables matches the # of formal type variables.
       ImmutableList<VarType> actualTypes = node.actualTypes();
-      // bind them
       ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
+      // Check that # of actual type variables matches the # of formal type variables.
       if (actualTypes.size() != formalTypeNames.size()) {
         errors.add(
             new TypeException(
@@ -645,16 +645,20 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 node.position()));
         return;
       }
+      // bind them
       if (symbol.isGeneric()) {
         Map<String, VarType> bindings = new HashMap<>();
         for (int i = 0; i < actualTypes.size(); ++i) {
           bindings.put(formalTypeNames.get(i), actualTypes.get(i));
         }
-        // ohsnap - where does this go?!
-        // symbolTable.declareRecord requires a recordNODE
-        // and there's no VarType for this.
-        // also also we need this record symbol to be both "generic" *AND* bound
-        RecordSymbol boundRecord = symbol.bindTypeVariables(bindings);
+        RecordSymbol boundRecord = symbol.bind(bindings);
+        symbolTable.declareBoundRecordSymbol(boundRecord, node.position());
+        // DBP ah, it's not (re)setting the type of the node correctly
+        // how did it ever set the type of this node to start with?
+        // probably in record gatherer? No.
+        // it's in the constructor of NewNode. It *tries* to set it to
+        // the fully-qualified name (e.g., recordname<int, string>) but
+        // the formals are missing. 
       }
     }
   }
@@ -783,8 +787,14 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private boolean validatePossibleRecordType(String name, VarType type, Position position) {
     if (type.isRecord()) {
       RecordReferenceType recordReferenceType = (RecordReferenceType) type;
-      String recordName = recordReferenceType.name();
+      String recordName = recordReferenceType.fqName();
       RecordSymbol symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+      if (symbol != null) {
+        return true;
+      }
+      // Try it with the base name
+      recordName = recordReferenceType.baseName();
+      symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
       if (symbol == null) {
         errors.add(
             new TypeException(
@@ -794,8 +804,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         // invalid record, bad.
         return false;
       }
-      // fall through; valid record
-      return true;
     }
     // valid: either valid record, or not a record.
     return true;
@@ -858,7 +866,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(RecordDeclarationNode node) {
-    RecordSymbol sym = symbolTable.getRecursive(node.name(), RecordSymbol.class);
+    RecordSymbol sym = symbolTable.getRecursive(node.baseName(), RecordSymbol.class);
     if (sym == null) {
       // RecordGatherer should have already added this symbol
       throw new IllegalStateException("Cannot find record " + node.name());
@@ -1178,7 +1186,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
 
-      RecordSymbol recordSymbol = symbolTable.getRecursive(varType.name(), RecordSymbol.class);
+      RecordReferenceType rrt = (RecordReferenceType) varType;
+      // Look up by full-qualified name.
+      RecordSymbol recordSymbol = symbolTable.getRecursive(rrt.fqName(), RecordSymbol.class);
       if (recordSymbol == null) {
         // this should never happen because the varType.isRecord, above, should have caught
         // it.

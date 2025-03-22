@@ -1,6 +1,7 @@
 package com.plasstech.lang.d2.type;
 
 import com.google.common.collect.ImmutableMap;
+import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
@@ -61,6 +62,8 @@ public interface SymbolTable {
   BlockSymbol enterBlock(BlockNode node);
 
   RecordSymbol declareRecord(RecordDeclarationNode node);
+
+  void declareBoundRecordSymbol(RecordSymbol symbol, Position pos);
 
   // It's only declared.
   VariableSymbol declare(String name, VarType varType);

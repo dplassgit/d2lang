@@ -12,22 +12,32 @@ public class RecordDeclarationNode extends DeclarationNode {
 
   private final List<DeclarationNode> fields;
   private final ImmutableList<String> formalTypeVariables;
+  private final String baseName;
 
-  /**
-   * @param name the name of the record
-   */
-  public RecordDeclarationNode(String name, List<DeclarationNode> fields, Position start) {
-    this(name, fields, start, ImmutableList.of());
+  public static String fqName(String baseName, List<String> formalTypeVariables) {
+    if (formalTypeVariables.size() == 0) {
+      return baseName;
+    }
+    return String.format("%s<%s>", baseName,
+        Joiner.on(", ").join(formalTypeVariables.stream().map(v -> v + ": unbound").toList()));
   }
 
   /**
-   * @param name the name of the record
+   * @param baseName the name of the record
+   */
+  public RecordDeclarationNode(String baseName, List<DeclarationNode> fields, Position start) {
+    this(baseName, fields, start, ImmutableList.of());
+  }
+
+  /**
+   * @param baseName the name of the record
    * @param formalTypeVariables zero or more type variables (for generic records)
    */
-  public RecordDeclarationNode(String name, List<DeclarationNode> fields, Position start,
+  public RecordDeclarationNode(String baseName, List<DeclarationNode> fields, Position start,
       List<String> formalTypeVariables) {
     // Technically this node doesn't have a type because it's not a referenceable *variable*
-    super(name, new RecordReferenceType(name), start);
+    super(fqName(baseName, formalTypeVariables), new RecordReferenceType(baseName), start);
+    this.baseName = baseName;
     this.fields = fields;
     this.formalTypeVariables = ImmutableList.copyOf(formalTypeVariables);
   }
@@ -35,6 +45,23 @@ public class RecordDeclarationNode extends DeclarationNode {
   /** The fields declared in this record definition. */
   public List<DeclarationNode> fields() {
     return fields;
+  }
+
+  public String baseName() {
+    return baseName;
+  }
+
+  /**
+   * If not empty, the formal type variables for this possibly generic type. For example:
+   *
+   * <pre>
+   * r: record<S, T> {}
+   * </pre>
+   *
+   * it will be S and T.
+   */
+  public ImmutableList<String> formalTypeVariables() {
+    return formalTypeVariables;
   }
 
   @Override
@@ -49,18 +76,5 @@ public class RecordDeclarationNode extends DeclarationNode {
             ? String.format("<%s>", Joiner.on(", ").join(formalTypeVariables))
             : "",
         fields());
-  }
-
-  /**
-   * If not empty, the formal type variables for this possibly generic type. For example:
-   *
-   * <pre>
-   * r: record<S, T> {}
-   * </pre>
-   *
-   * it will be S and T.
-   */
-  public ImmutableList<String> formalTypeVariables() {
-    return formalTypeVariables;
   }
 }
