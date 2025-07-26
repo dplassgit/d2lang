@@ -215,6 +215,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
       return new TypeCheckResult(symbolTable);
     } catch (D2RuntimeException e) {
+      e.printStackTrace();
+      errors.add(e);
       return new TypeCheckResult(errors);
     } catch (IllegalArgumentException e) {
       // Closes #217 once and for all. BUT... ONCE AND FOR ALL.

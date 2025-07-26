@@ -384,7 +384,7 @@ public class Parser implements Phase {
     if (token.type() == TokenType.LT) {
       // < comma-separated vartypes >
       expectToken(TokenType.LT);
-      actualTypes = commaSeparatedTypes();
+      actualTypes = commaSeparatedTypes(ImmutableList.of());
       expectToken(TokenType.GT);
     }
     // We don't have the formal type names at this point.
@@ -438,26 +438,50 @@ public class Parser implements Phase {
       // Maybe a record, maybe a formal type
       Token typeToken = advance();
       String name = typeToken.text();
+      VarType baseType;
       if (formalTypeVariables.contains(name)) {
         // Field type is from formal type parameter
-        VarType varType = new UnboundType(name);
-        // TODO: support arrays of unbound types in a record.
-        return new DeclarationNode(varToken.text(), varType, varToken.start());
+        baseType = new UnboundType(name);
+      } else {
+        // else field type is record
+        baseType = parseRecordReference(name, formalTypeVariables);
       }
-      // else field type is record
-      // TODO: support unbound type variables
-      RecordReferenceType recordReference = parseBoundGenericRecordReference(name);
       if (token.type() == TokenType.LBRACKET) {
-        // Array of records!
-        return arrayDecl(varToken, recordReference);
+        // Array of records or unbound formals (not 100% supported downstream yet)
+        return arrayDecl(varToken, baseType);
       }
-      return new DeclarationNode(varToken.text(), recordReference, varToken.start());
+      return new DeclarationNode(varToken.text(), baseType, varToken.start());
     }
     throw new ParseException(
         String.format(
             "Unexpected '%s' in RECORD declaration; expected built-in type or RECORD reference",
             token.text()),
         token.start());
+  }
+
+  private RecordReferenceType parseRecordReference(String recordName,
+      List<String> formalTypeNames) {
+    List<VarType> actualTypes = ImmutableList.of();
+    List<UnboundType> formalTypes = ImmutableList.of();
+    if (token.type() == TokenType.LT) {
+      // < comma-separated vartypes >
+      expectToken(TokenType.LT);
+      List<VarType> types = commaSeparatedTypes(formalTypeNames);
+      // Post-process the types. They must either all be unbound
+      // or none unbound.
+      long numUnbound = types.stream().filter(v -> v instanceof UnboundType).count();
+      if (numUnbound == 0) {
+        actualTypes = types;
+      } else if (numUnbound == types.size()) {
+        formalTypes = types.stream().map(v -> (UnboundType) v).toList();
+      } else if (numUnbound > 0) {
+        // some are unbound but not all. let's consider this an error.
+        throw new ParseException(
+            "Cannot mix bound and unbound types in record reference", token.start());
+      }
+      expectToken(TokenType.GT);
+    }
+    return new RecordReferenceType(recordName, formalTypes, actualTypes);
   }
 
   /** declaration -> '[' expr ']' */
@@ -832,7 +856,7 @@ public class Parser implements Phase {
       List<VarType> actualTypes = ImmutableList.of();
       if (token.type() == TokenType.LT) {
         expectToken(TokenType.LT);
-        actualTypes = commaSeparatedTypes();
+        actualTypes = commaSeparatedTypes(ImmutableList.of());
         expectToken(TokenType.GT);
       }
       return new NewNode(recordTypeName.text(), actualTypes, start);
@@ -841,12 +865,16 @@ public class Parser implements Phase {
     return compositeDereference();
   }
 
-  private List<VarType> commaSeparatedTypes() {
+  private List<VarType> commaSeparatedTypes(List<String> formalTypeVariables) {
     return commaSeparated(() -> {
       if (token.type() == TokenType.VARIABLE) {
         // Record type.
         Token typeToken = advance(); // eat the record type
-        // WHAT ABOUT <FOO>?!
+        if (formalTypeVariables.contains(typeToken.text())) {
+          // <T>
+          return new UnboundType(typeToken.text());
+        }
+        // TODO: WHAT ABOUT List<T>?!
         return new RecordReferenceType(typeToken.text());
       }
 
@@ -855,7 +883,7 @@ public class Parser implements Phase {
       if (paramType != null) {
         // We have a param type
         advance(); // eat the param type
-        // possibly an array. see if there's an open and close bracket
+        // TODO: possibly an array. see if there's an open and close bracket
         return paramType;
       }
       throw new ParseException(

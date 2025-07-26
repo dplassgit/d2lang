@@ -1050,7 +1050,7 @@ public class StaticCheckerTest {
   @Test
   public void recordDefinition_duplicate() {
     assertThatTypeChecking("r: record{f:int} r:record{b:bool}")
-        .hasError("'r' already declared as r: RECORD");
+        .hasError("'r' already declared as RECORD r");
   }
 
   @Test
@@ -1080,7 +1080,7 @@ public class StaticCheckerTest {
   @Test
   public void recordDefinition_error_duplicateName() {
     assertThatTypeChecking("r: record{f:int} r:record{b:bool}")
-        .hasError("'r' already declared as r: RECORD");
+        .hasError("'r' already declared as RECORD r");
   }
 
   @Test
@@ -1114,7 +1114,7 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void recordUseGeneric() {
+  public void recordFieldGetGeneric() {
     assertThatTypeChecking("""
         r2: record<T> {i:T}
         anr2=new r2<int>
@@ -1122,7 +1122,6 @@ public class StaticCheckerTest {
         x=anr2.i
         """).succeeds();
   }
-  // TODO: write more tests like the above
 
   @Test
   public void recordFieldSetGeneric() {
@@ -1131,6 +1130,78 @@ public class StaticCheckerTest {
         anr2=new r2<int>
         anr2.i = 3
         """).succeeds();
+  }
+
+  @Test
+  public void recordFieldGetSetGeneric() {
+    assertThatTypeChecking("""
+        r2: record<T> {i:T}
+        anr2=new r2<int>
+        anr2.i = anr2.i
+        """).succeeds();
+  }
+
+  @Test
+  public void recordFieldGetSetGenericMultipleFields() {
+    assertThatTypeChecking("""
+        r2: record<T> {i:T j:T}
+        anr2=new r2<int>
+        anr2.i = anr2.j
+        """).succeeds();
+  }
+
+  @Test
+  public void recordFieldGetSetGenericMultipleGenerics() {
+    assertThatTypeChecking("""
+        r2: record<S, T> {i:S j:T}
+        anr2=new r2<int, int>
+        anr2.i = anr2.j
+        """).succeeds();
+  }
+
+  @Test
+  public void recordFieldGetSetGenericMultipleGenericsMismatch() {
+    assertThatTypeChecking("""
+        r2: record<S, T> {i:S j:T}
+        anr2=new r2<int, double>
+        anr2.i = anr2.j
+        """).hasError("but expression is DOUBLE");
+  }
+
+  @Test
+  public void recursiveGeneneric() {
+    SymbolTable symTab = checkProgram("""
+        list: record<T> {value:T next:list<T>}
+        head = new list<int>
+        second = new list<int>
+        head.next = second
+        """);
+
+    RecordSymbol listSymbol = symTab.get("list", RecordSymbol.class);
+    assertThat(listSymbol.fieldType("value")).isInstanceOf(UnboundType.class);
+    assertThat(listSymbol.fieldType("next")).isInstanceOf(RecordReferenceType.class);
+
+    RecordSymbol boundListSymbol = symTab.get("list<INT>", RecordSymbol.class);
+    assertThat(boundListSymbol.fieldType("value")).isEqualTo(VarType.INT);
+    assertThat(boundListSymbol.fieldType("next")).isInstanceOf(RecordReferenceType.class);
+
+    VariableSymbol head = symTab.get("head", VariableSymbol.class);
+    VarType vt = head.varType();
+    assertThat(vt.isRecord()).isTrue();
+    RecordReferenceType rrt = (RecordReferenceType) vt;
+    assertThat(rrt.isBound()).isTrue();
+    RecordSymbol recordSymbol = head.recordSymbol();
+    assertThat(recordSymbol.fieldType("value")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void recursiveGeneneric_mismatch() {
+    assertThatTypeChecking("""
+        list: record<T> {value:T next:list<T>}
+        head = new list<int>
+        second = new list<string>
+        head.next = second
+        """).hasError("but expression is RECORD list<STRING>");
   }
 
   @Test
@@ -1244,7 +1315,6 @@ public class StaticCheckerTest {
   @Test
   public void assignRecordType_inferred() {
     SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
-    System.err.println(symTab);
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1257,24 +1327,24 @@ public class StaticCheckerTest {
   @Test
   public void assignRecordType_mismatch() {
     assertThatTypeChecking("r1:record{} var1:r1 var1=null var2:int var2=var1")
-        .hasError("to r1: RECORD");
+        .hasError("to RECORD r1");
     assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1")
-        .hasError("to r1: RECORD");
+        .hasError("to RECORD r1");
     assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2")
-        .hasError("to r2: RECORD");
+        .hasError("to RECORD r2");
     assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2")
-        .hasError("to r2: RECORD");
+        .hasError("to RECORD r2");
     assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var2=var1")
-        .hasError("to r1: RECORD");
+        .hasError("to RECORD r1");
   }
 
   @Test
   public void assignRecordType_procReturnMismatch() {
     assertThatTypeChecking("r1:record{i:int} r2:record{} p:proc():r1{return new r2}")
-        .hasError("but RETURN statement was of type r2: RECORD");
+        .hasError("but RETURN statement was of type RECORD r2");
     assertThatTypeChecking(
         "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()")
-        .hasError("type r1: RECORD to r2: RECORD");
+        .hasError("type RECORD r1 to RECORD r2");
   }
 
   @Test
@@ -1321,13 +1391,13 @@ public class StaticCheckerTest {
   public void newRecord_mismatch() {
     assertThatTypeChecking(
         "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1")
-        .hasError("to r1: RECORD");
+        .hasError("r2 to RECORD r1");
     assertThatTypeChecking(
         "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2")
-        .hasError("to r2: RECORD");
+        .hasError("r1 to RECORD r2");
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var1=var2").hasError("to INT");
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var2=var1")
-        .hasError("to r1: RECORD");
+        .hasError("to RECORD r1");
   }
 
   @Test

@@ -205,11 +205,8 @@ public class SymTab implements SymbolTable {
     // We have to use the FULL name here
     Symbol sym = getRecursive(boundRecord.name());
     if (sym != null) {
-      throw new TypeException(
-          String.format(
-              "'%s' already declared as %s. Cannot be redeclared as RECORD.",
-              boundRecord.name(), sym.varType()),
-          pos);
+      // Already declared, which is fine!
+      return;
     }
     values.put(boundRecord.name(), boundRecord);
   }

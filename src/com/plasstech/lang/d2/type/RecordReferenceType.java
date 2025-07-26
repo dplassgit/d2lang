@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 /** A forward (or backward) reference to a record type. */
@@ -79,7 +80,7 @@ public class RecordReferenceType extends PointerType {
 
   @Override
   public String toString() {
-    return String.format("%s: RECORD", name());
+    return String.format("RECORD %s", fqName());
   }
 
   @Override
@@ -112,24 +113,15 @@ public class RecordReferenceType extends PointerType {
   }
 
   public RecordReferenceType bind(Map<String, VarType> mapping) {
-    if (!actualTypes.isEmpty()) {
-      // Already bound
-      throw new IllegalStateException(
-          "Cannot re-bind an already bound RECORD " + toString());
-    }
-    if (formalTypes.isEmpty()) {
-      throw new IllegalStateException(
-          "Cannot bind a non-generic RECORD " + toString());
-    }
-    if (mapping.size() != formalTypes.size()) {
-      throw new IllegalStateException(
-          String.format("Wrong number of actual type parameters to RECORD %s; expected %d, saw %d",
-              toString(), formalTypes.size(), mapping.size()));
-    }
+    Preconditions.checkState(actualTypes.isEmpty(),
+        "Cannot re-bind an already bound RECORD %s", toString());
+    Preconditions.checkState(!formalTypes.isEmpty(),
+        "Cannot bind a non-generic RECORD %s", toString());
+    Preconditions.checkState(mapping.size() == formalTypes.size(),
+        "Wrong number of actual type parameters to RECORD %s; expected %s, saw %s",
+        toString(), formalTypes.size(), mapping.size());
     List<VarType> actuals =
         formalTypes.stream().map(unboundType -> mapping.get(unboundType.name())).toList();
-    // DBP this is probably wrong, because we have no way to get back to
-    // the un-fully-qualified name. But do we ever need to?
     return new RecordReferenceType(baseName(), formalTypes, actuals);
   }
 }

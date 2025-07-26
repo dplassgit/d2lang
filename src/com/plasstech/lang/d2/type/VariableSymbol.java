@@ -25,7 +25,8 @@ public class VariableSymbol extends AbstractSymbol {
             this.name()));
 
     if (recordSymbol == null) {
-      String recordName = varType().name();
+      RecordReferenceType rrt = (RecordReferenceType) varType();
+      String recordName = rrt.fqName();
       recordSymbol = symbolTable().getRecursive(recordName, RecordSymbol.class);
       if (recordSymbol == null) {
         throw new IllegalStateException("Record " + recordName + " not found in symtab");

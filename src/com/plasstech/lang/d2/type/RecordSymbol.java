@@ -198,16 +198,15 @@ public class RecordSymbol extends AbstractSymbol {
    * @return
    */
   public RecordSymbol bind(Map<String, VarType> mapping) {
-    if (!isGeneric()) {
-      throw new IllegalStateException(
-          "Cannot bind type variables in non-generic or already bound record symbol "
-              + this.toString());
-    }
+    Preconditions.checkState(isGeneric(),
+        "Cannot bind type variables in non-generic or already bound record symbol "
+            + this.toString());
+
     // Make sure all the unbound variables are accounted for in the mapping.
     Preconditions.checkArgument(
-        unboundTypeVariables.stream()
-            .filter(unboundName -> mapping.containsKey(unboundName))
+        unboundTypeVariables.stream().filter(unboundName -> mapping.containsKey(unboundName))
             .count() == unboundTypeVariables.size());
+
     // To make the right fq name, we need to go in the *same order* as the unbound names.
     List<VarType> boundTypes = unboundTypeVariables.stream()
         .map(unboundName -> mapping.get(unboundName)).toList();
@@ -242,10 +241,12 @@ public class RecordSymbol extends AbstractSymbol {
           throw new IllegalStateException("Could not find unbound type " + unboundType.name());
         }
         newField = new Field(name, boundType, newAllocatedSize);
-        fieldSize = 8; // force it to 8 bytes, the maximum, so generic method codegen will
+        // force it to 8 bytes, the maximum, so generic method codegen will
         // work even for small types.
+        fieldSize = 8;
       } else if (field.type instanceof RecordReferenceType subfield) {
         newField = new Field(name, subfield.bind(mapping), newAllocatedSize);
+        fieldSize = 8;
       }
 
       newFields.put(name, newField);
@@ -254,6 +255,7 @@ public class RecordSymbol extends AbstractSymbol {
 
     return new RecordSymbol(fqName, baseName, unboundTypeVariables, newFields.build(),
         newAllocatedSize);
+
   }
 
   public ImmutableList<String> formalTypeVariables() {
