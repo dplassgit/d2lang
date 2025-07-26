@@ -653,12 +653,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         }
         RecordSymbol boundRecord = symbol.bind(bindings);
         symbolTable.declareBoundRecordSymbol(boundRecord, node.position());
-        // DBP ah, it's not (re)setting the type of the node correctly
-        // how did it ever set the type of this node to start with?
-        // probably in record gatherer? No.
-        // it's in the constructor of NewNode. It *tries* to set it to
-        // the fully-qualified name (e.g., recordname<int, string>) but
-        // the formals are missing. 
       }
     }
   }
