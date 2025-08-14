@@ -28,6 +28,8 @@ class LabelCodeGenerator extends DefaultOpcodeVisitor {
     } else {
       emitter.emit("mov RCX, %d", exitCode);
     }
+    emitter.emit("; align stack to 16:");
+    emitter.emit("and RSP, 0xFFFFFFFFFFFFFFF0");
     emitter.emit("call exit");
   }
 

@@ -42,28 +42,43 @@ public class NasmCodeGeneratorStringTest {
   }
 
   @Test
-  public void oobeIndex() throws Exception {
+  public void oobeIndexOpt() throws Exception {
     String sourceCode = "f:proc() {s='hello' print s[10]} f()";
     assertThatCompiling(sourceCode).withOptimize(true)
         .hasCompileTimeError("STRING index out of bounds \\(length 5\\); was 10");
+  }
+
+  @Test
+  public void oobeIndexNoOpt() throws Exception {
+    String sourceCode = "f:proc() {s='hello' print s[10]} f()";
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
 
   @Test
-  public void oobeIndexVariable() throws Exception {
+  public void oobeIndexVariableOpt() throws Exception {
     String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
     assertThatCompiling(sourceCode).withOptimize(true)
         .hasCompileTimeError("STRING index out of bounds.*length 5.*was 10");
+  }
+
+  @Test
+  public void oobeIndexVariableNoOpt() throws Exception {
+    String sourceCode = "f:proc(i:int) {s='hello' print s[i]} f(10)";
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("STRING index out of bounds (length 5); was 10").executes();
   }
 
   @Test
-  public void negativeIndexLocal() throws Exception {
+  public void negativeIndexLocalOpt() throws Exception {
     String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
     assertThatCompiling(sourceCode).withOptimize(true)
         .hasCompileTimeError("STRING index must be non-negative; was -2");
+  }
+
+  @Test
+  public void negativeIndexLocalNoOpt() throws Exception {
+    String sourceCode = "f:proc() {i=-2 s='hello' print s[i]} f()";
     assertThatCompiling(sourceCode).withOptimize(false)
         .withRuntimeError("must be non-negative; was -2").executes();
   }
