@@ -86,13 +86,11 @@ emitNpeCheck: proc {
   print "  mov RCX, CONST_" println npeMessageIndex
   println "  mov RDX, [RBP + 16]  ; line #"
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
-  println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 
   emitLabel(okLabel)
@@ -132,13 +130,11 @@ emitIndexPositiveCheck: proc {
   println "  mov RDX, [RBP + 16]  ; line #"
   println "  mov R8D, EAX" // actual index
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
-  println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 
   emitLabel(okLabel)
@@ -180,13 +176,11 @@ generateArrayIndexInRangeCheck: proc {
   print "  mov RDX, " println lexer.line
   println "  mov R9d, EAX" // actual index
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
-  println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 
   emitLabel(inRangeLabel)
@@ -595,13 +589,11 @@ generateStringIndex: proc {
   println "  mov R8d, EAX" // length
   println "  mov R9d, EBX" // index
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
-  println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 
   // continue:
@@ -1610,7 +1602,6 @@ parsePrint: proc(isPrintln: bool) {
     exit
   }
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
   if isPrintln {
     // char 10=newline
@@ -1618,7 +1609,6 @@ parsePrint: proc(isPrintln: bool) {
     println "  extern putchar"
     println "  call putchar"
   }
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
 }
@@ -1635,14 +1625,13 @@ generateExit: proc {
     print "  mov RCX, CONST_" println messageIndex
     println "  mov RDX, RAX"
     println "  sub RSP, 0x20"
-    println "  extern printf"
     println "  call printf"
-    println "  extern _flushall"
     println "  call _flushall"
     println "  add RSP, 0x20\n"
   }
 
   println "  mov RCX, -1"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 }
 
@@ -1723,7 +1712,9 @@ emitGlobalTable: proc {
 parseProgram: proc {
   println "; compiled by " + VERSION
   println "global main"
-  println "extern exit\n"
+  println "extern exit"
+  println "extern printf"
+  println "extern _flushall\n"
   println "section .text"
   println "main:"
   while lexTokenType != TOKEN_EOF {
@@ -1732,6 +1723,7 @@ parseProgram: proc {
     print "\n"
   }
   println "  xor RCX, RCX"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit\n"
 
   if npeCheckNeeded {

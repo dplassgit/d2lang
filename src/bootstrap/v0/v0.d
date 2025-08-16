@@ -1740,6 +1740,7 @@ parseStmt: proc() {
       return
     } elif kw == KW_EXIT {
       print "  mov RCX, -1\n"
+      print "  and RSP, 0xfffffffffffffff0\n"
       print "  call exit\n"
       return
     } elif kw == KW_IF {
@@ -1812,6 +1813,7 @@ parseProgram: proc() {
     parseStmt()
   }
   print "  mov RCX, 0\n"
+  print "  and RSP, 0xfffffffffffffff0\n"
   print "  call exit\n\n"
 
   if numStrings > 0 or numGlobals > 0 {

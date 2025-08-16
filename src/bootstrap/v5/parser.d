@@ -89,13 +89,11 @@ emitNpeCheckProc: proc {
   emitNum("mov RCX, CONST_", npeMessageIndex)
   emit("mov RDX, [RBP + 16]  ; line #")
   emit("sub RSP, 0x20")
-  emit("extern printf")
   emit("call printf")
-  emit("extern _flushall")
   emit("call _flushall")
   emit("add RSP, 0x20")
   emit("mov RCX, -1")
-  emit("extern exit")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit")
 
   emitLabel(okLabel)
@@ -132,13 +130,11 @@ emitIndexPositiveCheckProc: proc {
   emit("mov RDX, [RBP + 16]  ; line #")
   emit("mov R8D, EAX") // actual index
   emit("sub RSP, 0x20")
-  emit("extern printf")
   emit("call printf")
-  emit("extern _flushall")
   emit("call _flushall")
   emit("add RSP, 0x20")
   emit("mov RCX, -1")
-  emit("extern exit")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit")
 
   emitLabel(okLabel)
@@ -178,13 +174,11 @@ generateArrayIndexInRangeCheck: proc {
   emitNum("mov RDX, ", parser.lexer.line)
   emit("mov R9d, EAX") // actual index
   emit("sub RSP, 0x20")
-  emit("extern printf")
   emit("call printf")
-  emit("extern _flushall")
   emit("call _flushall")
   emit("add RSP, 0x20")
   emit("mov RCX, -1")
-  emit("extern exit")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit")
 
   emitLabel(inRangeLabel)
@@ -804,13 +798,11 @@ generateStringIndex: proc {
   emit("mov R8d, EAX") // length
   emit("mov R9d, EBX") // index
   emit("sub RSP, 0x20")
-  emit("extern printf")
   emit("call printf")
-  emit("extern _flushall")
   emit("call _flushall")
   emit("add RSP, 0x20")
   emit("mov RCX, -1")
-  emit("extern exit")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit")
 
   // continue:
@@ -1902,6 +1894,7 @@ parsePrint: proc(isPrintln: bool) {
     index = addStringConstant("0y%02x")
     emitNum("mov RCX, CONST_", index)
     ax = makeRegister(A_REG, exprType)
+    emit("xor RDX, RDX")
     emit("mov DL, " + ax)
 
   } elif exprType == TYPE_LONG {
@@ -1921,7 +1914,6 @@ parsePrint: proc(isPrintln: bool) {
     exit
   }
   emit("sub RSP, 0x20")
-  emit("extern printf")
   emit("call printf")
   if isPrintln {
     // char 10=newline
@@ -1929,7 +1921,6 @@ parsePrint: proc(isPrintln: bool) {
     emit("extern putchar")
     emit("call putchar")
   }
-  emit("extern _flushall")
   emit("call _flushall")
   emit("add RSP, 0x20")
 }
@@ -1946,14 +1937,13 @@ generateExit: proc {
     emitNum("mov RCX, CONST_", messageIndex)
     emit("mov RDX, RAX")
     emit("sub RSP, 0x20")
-    emit("extern printf")
     emit("call printf")
-    emit("extern _flushall")
     emit("call _flushall")
     emit("add RSP, 0x20\n")
   }
 
   emit("mov RCX, -1")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit")
 }
 
@@ -2066,7 +2056,9 @@ emitGlobalTable: proc {
 parseProgram: proc(self: Parser) {
   emit0("; compiled by " + VERSION)
   emit0("global main")
-  emit0("extern exit\n")
+  emit0("extern exit")
+  emit0("extern printf")
+  emit0("extern _flushall\n")
   emit0("section .text")
   emit0("main:")
 
@@ -2078,6 +2070,7 @@ parseProgram: proc(self: Parser) {
     emit0("")
   }
   emit("xor RCX, RCX")
+  emit("and RSP, 0xfffffffffffffff0")
   emit("call exit\n")
 
   if self.npeCheckNeeded {

@@ -78,7 +78,8 @@ generateNpeTest: proc() {
   print "  mov RDX, " print lexCurrentLine print "\n"
   emitExtern("printf")
   print "  mov RCX, -1\n"
-  emitExtern("exit")
+  print "  and RSP, 0xfffffffffffffff0\n"
+  print "  call exit\n"
 
   emitLabel(oklabel)
 }
@@ -431,7 +432,8 @@ generateIndexPositiveCheck: proc() {
   emitExtern("printf")
   emitExtern("_flushall")
   print "  mov RCX, -1\n"
-  emitExtern("exit")
+  print "  and RSP, 0xfffffffffffffff0\n"
+  print "  call exit\n"
 
   emitLabel(oklabel)
 }
@@ -1369,9 +1371,7 @@ parsePrint: proc(isPrintln: bool) {
     exit
   }
   print "  sub RSP, 0x20\n"
-  print "  extern printf\n"
   print "  call printf  ; print " print typeName(exprType) print "\n"
-  print "  extern _flushall\n"
   print "  call _flushall\n"
   print "  add RSP, 0x20\n\n"
   if isPrintln {
@@ -1391,6 +1391,7 @@ parseStmt: proc() {
       return
     } elif kw == KW_EXIT {
       print "  mov RCX, -1\n"
+      print "  and RSP, 0xfffffffffffffff0\n"
       print "  call exit\n"
       return
     } elif kw == KW_IF {
@@ -1457,13 +1458,16 @@ emitGlobalTable: proc() {
 parseProgram: proc() {
   print "; compiled by " print VERSION print "\n"
   print "global main\n"
-  print "extern exit\n\n"
+  print "extern exit\n"
+  print "extern printf\n"
+  print "extern _flushall\n\n"
   print "section .text\n"
   print "main:\n"
   while lexTokenType != TOKEN_EOF {
     parseStmt()
   }
   print "  mov RCX, 0\n"
+  print "  and RSP, 0xfffffffffffffff0\n"
   print "  call exit\n\n"
 
   if numStrings > 0 or numGlobals > 0 {

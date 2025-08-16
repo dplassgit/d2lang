@@ -79,13 +79,11 @@ generateNpeTest: proc {
   print "  mov RCX, CONST_" println npeMessageIndex
   print "  mov RDX, " print lexer.line println "  ; line #"
   println "  sub RSP, 0x20"
-  println "  extern printf"
   println "  call printf"
-  println "  extern _flushall"
   println "  call _flushall"
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
-  println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit\n"
 
   emitLabel(oklabel)
@@ -452,6 +450,7 @@ generateIndexPositiveCheck: proc(type: string) {
   println "  add RSP, 0x20"
   println "  mov RCX, -1"
   println "  extern exit"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 
   emitLabel(oklabel)
@@ -1420,6 +1419,7 @@ generateExit: proc {
   }
 
   println "  mov RCX, -1"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit"
 }
 
@@ -1497,9 +1497,11 @@ emitGlobalTable: proc {
 }
 
 parseProgram: proc {
-  println "; compiled by " + VERSION
+  print "; compiled by " println VERSION
   println "global main"
-  println "extern exit\n"
+  println "extern exit"
+  println "extern printf"
+  println "extern _flushall\n"
   println "section .text"
   println "main:"
   while lexTokenType != TOKEN_EOF {
@@ -1508,6 +1510,7 @@ parseProgram: proc {
     print "\n"
   }
   println "  xor RCX, RCX"
+  println "  and RSP, 0xfffffffffffffff0"
   println "  call exit\n"
 
   if stringTable.head != null or numGlobals > 0 {
