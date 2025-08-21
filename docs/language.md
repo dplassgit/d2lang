@@ -83,7 +83,7 @@ i=0 while i < 30 do i =i+1 {
 Original (D1):
 
 ```
-proc foo(a:map,b,c) returns int {
+proc foo(a:int[3],b,c) returns int {
   d=a[b]+c()
   return d
 }
@@ -92,7 +92,7 @@ proc foo(a:map,b,c) returns int {
 Intermediate grammar:
 
 ```
-foo:proc(a:map,b,c) returns int
+foo:proc(a:int[3],b,c) returns int
 {
   d=a[b]+c()
   return d
@@ -102,7 +102,9 @@ foo:proc(a:map,b,c) returns int
 Final:
 
 ```
-foo:proc(a:map,b,c) : int {
+// Note the current version of the compiler won't compile this yet
+// due to the missing parameter types
+foo: proc(a: int[3], b, c): int {
   d=a[b]+c()
   return d
 }
@@ -113,7 +115,7 @@ Eventually the return type will be optional. But not implemented yet.
 
 ## Chars and strings
 
-No "character" type - only strings, like Python. I *really* like the Python syntax for substrings.
+There is no "character" type - only strings, like Python. I *really* like the Python syntax for substrings.
 
 ```
 "foo"[3]
