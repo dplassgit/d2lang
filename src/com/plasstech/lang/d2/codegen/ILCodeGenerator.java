@@ -66,6 +66,7 @@ import com.plasstech.lang.d2.type.BlockSymbol;
 import com.plasstech.lang.d2.type.LocalSymbol;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.ProcSymbol;
+import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.Symbol;
@@ -824,25 +825,33 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     @Override
     public void visit(FieldSetNode fsn) {
       Symbol sym = symbolTable.getRecursive(fsn.variableName());
-      if (sym != null) {
-        Location recordLocation = lookupLocation(fsn.variableName(), null);
-        VarType varType = sym.varType();
-        if (!varType.isRecord()) {
-          fail(fsn.position(), "Can't set field on non-record type; was %s",
-              varType.name());
-        }
-        Symbol hopefullyRecordSymbol = symbolTable.getRecursive(varType.name());
-
-        String fieldName = fsn.fieldName();
-
-        RecordSymbol recordSymbol = (RecordSymbol) hopefullyRecordSymbol;
-        emit(
-            new FieldSetOp(
-                recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
-      } else {
+      if (sym == null) {
         fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
             fsn.variableName());
       }
+      Location recordLocation = lookupLocation(fsn.variableName(), null);
+      VarType varType = sym.varType();
+      if (varType instanceof RecordReferenceType rrt) {
+        Symbol hopefullyRecordSymbol = symbolTable.getRecursive(rrt.fqName());
+        if (hopefullyRecordSymbol instanceof RecordSymbol recordSymbol) {
+          if (!recordSymbol.isBound()) {
+            fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+                fsn.variableName());
+            return;
+          }
+          String fieldName = fsn.fieldName();
+          emit(
+              new FieldSetOp(
+                  recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
+          return;
+        } else if (hopefullyRecordSymbol == null) {
+          fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+              fsn.variableName());
+          return;
+        }
+      }
+      fail(fsn.position(), "Can't set field on non-record type; was %s",
+          varType.name());
     }
 
     @Override

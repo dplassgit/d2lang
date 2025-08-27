@@ -373,6 +373,11 @@ class Resolver implements RegistersInterface {
   }
 
   void mov(Operand source, Operand destination) {
+    if (source.type() == null) {
+      emitter.emit("; FAILURE: source.type is null; source name %s dest name %s", source.toString(),
+          destination.toString());
+      throw new NullPointerException(String.format("%s type is null!", source.toString()));
+    }
     ResolvedOperand destRo = resolveFully(destination);
     ResolvedOperand sourceRo = resolveFully(source); // this may put it in a register
     if (sourceRo.name().equals(destRo.name())) {

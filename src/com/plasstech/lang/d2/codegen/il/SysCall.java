@@ -78,7 +78,7 @@ public class SysCall extends Op {
 
       case PARAMETERIZED_MESSAGE:
         return String.format(
-            "printf(\"ERROR: %s, %d, %d, %s)", ESCAPER.escape(arg().toString()), line, column,
+            "printf(\"ERROR: %s\", %s)", ESCAPER.escape(arg().toString()),
             Joiner.on(",").join(operands().subList(1, operands.size())));
 
       case INPUT:

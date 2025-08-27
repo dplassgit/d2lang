@@ -274,4 +274,14 @@ public class SymTab implements SymbolTable {
   public SymbolTable parent() {
     return parent;
   }
+
+  @Override
+  public SymbolTable getOwner(Symbol symbol) {
+    SymbolTable source = this;
+    String name = symbol.varType().name();
+    while (source != null && source.get(name) == null) {
+      source = source.parent();
+    }
+    return source;
+  }
 }

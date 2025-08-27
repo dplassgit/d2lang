@@ -784,7 +784,6 @@ public class StaticCheckerTest {
   @Test
   public void proc() {
     checkProgram("fib:proc() {a=3} a=true");
-    checkProgram("fib:proc(n) : int { n=3 return n}");
     checkProgram("fib:proc(n:int) : int { n=3 return n}");
     checkProgram("fib:proc(n1:int, n2:int) : int { n1=3 n2=n1 return n1}");
     checkProgram("a=true fib:proc() {a:int a=3} ");
@@ -794,6 +793,12 @@ public class StaticCheckerTest {
             + " return false"
             + "} level1()");
     checkProgram("fib:proc(a:int[]) {a[0]=3} fib([1,2,3])");
+  }
+
+  @Test
+  public void undeclared_param() {
+    assertThatTypeChecking("fib:proc(n) : int { n=3 return n}")
+        .hasError("Could not determine type of parameter 'n'");
   }
 
   @Test
@@ -1133,6 +1138,16 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void recordFieldSetGenericFromReturnValue() {
+    assertThatTypeChecking("""
+        r2: record<T> {i:T}
+        new_list: proc: r2<int> { return new r2<int> }
+        anr2=new_list()
+        anr2.i = 3
+        """).succeeds();
+  }
+
+  @Test
   public void recordFieldGetSetGeneric() {
     assertThatTypeChecking("""
         r2: record<T> {i:T}
@@ -1192,6 +1207,42 @@ public class StaticCheckerTest {
     assertThat(rrt.isBound()).isTrue();
     RecordSymbol recordSymbol = head.recordSymbol();
     assertThat(recordSymbol.fieldType("value")).isEqualTo(VarType.INT);
+  }
+
+  @Test
+  public void returnBoundGeneric() {
+    assertThatTypeChecking("""
+         list: record<T> {
+           value: int
+           next: list<T>
+         }
+
+         new_list: proc(): list<int>{
+           return new list<int>
+         }
+         ell = new_list()
+        """).succeeds();
+  }
+
+  @Test
+  public void boundGenericParam() {
+    assertThatTypeChecking("""
+         list: record<T> {
+           value: int
+           next: list<T>
+         }
+
+         append: proc(it:list<int>, newvalue:int) {
+           head: list<int>
+           head = it
+           while head.next != null do head = head.next {
+           }
+
+           node = new list<int>
+           node.value = newvalue
+           head.next = node
+         }
+        """).succeeds();
   }
 
   @Test

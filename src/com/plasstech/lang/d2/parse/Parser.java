@@ -387,7 +387,7 @@ public class Parser implements Phase {
       actualTypes = commaSeparatedTypes(ImmutableList.of());
       expectToken(TokenType.GT);
     }
-    // We don't have the formal type names at this point.
+    // We don't have the *formal* type names at this point.
     return new RecordReferenceType(recordName, ImmutableList.of(), actualTypes);
   }
 

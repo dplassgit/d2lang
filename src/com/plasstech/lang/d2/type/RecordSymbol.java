@@ -77,6 +77,7 @@ public class RecordSymbol extends AbstractSymbol {
   private final int allocatedSize;
   private final ImmutableList<String> unboundTypeVariables;
   private final String baseName;
+  private final boolean bound;
 
   private RecordSymbol(String fqName,
       String baseName,
@@ -88,6 +89,7 @@ public class RecordSymbol extends AbstractSymbol {
     this.unboundTypeVariables = ImmutableList.copyOf(formalTypeVariables);
     this.fields = ImmutableMap.copyOf(fields);
     this.allocatedSize = allocatedSize;
+    this.bound = true;
   }
 
   private RecordSymbol(String baseName,
@@ -123,6 +125,7 @@ public class RecordSymbol extends AbstractSymbol {
 
     this.allocatedSize = sizeToAllocate;
     this.fields = fieldBuilder.build();
+    this.bound = formalTypeVariables.isEmpty();
   }
 
   public RecordSymbol(RecordDeclarationNode node) {
@@ -144,9 +147,14 @@ public class RecordSymbol extends AbstractSymbol {
     return String.format("Record %s: %s", name(), fields);
   }
 
-  // This means it's generic - bound or unbound.
+  /** It's generic - bound or unbound. */
   public boolean isGeneric() {
     return !unboundTypeVariables.isEmpty();
+  }
+
+  /** It's generic and bound, or not generic. */
+  public boolean isBound() {
+    return !isGeneric() || bound;
   }
 
   /** In the same order as definition */
@@ -253,8 +261,12 @@ public class RecordSymbol extends AbstractSymbol {
       newAllocatedSize += fieldSize;
     }
 
-    return new RecordSymbol(fqName, baseName, unboundTypeVariables, newFields.build(),
+    RecordSymbol rs = new RecordSymbol(fqName, baseName, unboundTypeVariables, newFields.build(),
         newAllocatedSize);
+    rs.setVarType(new RecordReferenceType(baseName,
+        unboundTypeVariables.stream().map(name -> new UnboundType(name)).collect(toImmutableList()),
+        boundTypes));
+    return rs;
 
   }
 

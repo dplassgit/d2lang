@@ -205,6 +205,24 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
+  public void genericRecordFieldSet() {
+    assertThatGenerating("""
+        rec: record<T> {f:T}
+        r = new rec<string>
+        r.f = 'hi'
+        """).succeeds();
+  }
+
+  @Test
+  public void genericRecordFieldGet() {
+    assertThatGenerating("""
+        rec: record<T> {f:T}
+        r = new rec<string>
+        x = r.f
+        """).succeeds();
+  }
+
+  @Test
   public void bug_269_variable_with_record_name() throws Exception {
     assertThatGenerating("r: record{} r=new r").hasError("already declared as");
   }

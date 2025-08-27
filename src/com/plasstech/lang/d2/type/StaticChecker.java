@@ -627,35 +627,34 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                       actual.name(), recordName),
                   node.position()));
         }
-        if (actual instanceof RecordReferenceType) {
-          RecordReferenceType ref = (RecordReferenceType) actual;
+        if (actual instanceof RecordReferenceType ref) {
           // make sure it exists
           validatePossibleRecordType("actual type " + ref.name(), actual, node.position());
         }
       }
 
-      // instantiate the thingie
-      ImmutableList<VarType> actualTypes = node.actualTypes();
-      ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
-      // Check that # of actual type variables matches the # of formal type variables.
-      if (actualTypes.size() != formalTypeNames.size()) {
-        errors.add(
-            new TypeException(
-                String.format(
-                    "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
-                    recordName, actualTypes.size(), formalTypeNames.size()),
-                node.position()));
-        return;
-      }
-      // bind them
-      if (symbol.isGeneric()) {
-        Map<String, VarType> bindings = new HashMap<>();
-        for (int i = 0; i < actualTypes.size(); ++i) {
-          bindings.put(formalTypeNames.get(i), actualTypes.get(i));
-        }
-        RecordSymbol boundRecord = symbol.bind(bindings);
-        symbolTable.declareBoundRecordSymbol(boundRecord, node.position());
-      }
+      //      // instantiate the thingie
+      //      ImmutableList<VarType> actualTypes = node.actualTypes();
+      //      ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
+      //      // Check that # of actual type variables matches the # of formal type variables.
+      //      if (actualTypes.size() != formalTypeNames.size()) {
+      //        errors.add(
+      //            new TypeException(
+      //                String.format(
+      //                    "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
+      //                    recordName, actualTypes.size(), formalTypeNames.size()),
+      //                node.position()));
+      //        return;
+      //      }
+      //      // bind them
+      //      if (symbol.isGeneric()) {
+      //        Map<String, VarType> bindings = new HashMap<>();
+      //        for (int i = 0; i < actualTypes.size(); ++i) {
+      //          bindings.put(formalTypeNames.get(i), actualTypes.get(i));
+      //        }
+      //        RecordSymbol boundRecord = symbol.bind(bindings);
+      //        symbolTable.declareBoundRecordSymbol(boundRecord, node.position());
+      //      }
     }
   }
 
@@ -780,25 +779,50 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
    * Returns false if it's a record type that is invalid, true otherwise (not a record type, or a
    * valid record)
    */
-  private boolean validatePossibleRecordType(String name, VarType type, Position position) {
-    if (type.isRecord()) {
-      RecordReferenceType recordReferenceType = (RecordReferenceType) type;
+  private boolean validatePossibleRecordType(String nameForMessage, VarType type,
+      Position position) {
+    if (type instanceof RecordReferenceType recordReferenceType) {
       String recordName = recordReferenceType.fqName();
       RecordSymbol symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
-      if (symbol != null) {
-        return true;
-      }
-      // Try it with the base name
-      recordName = recordReferenceType.baseName();
-      symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
       if (symbol == null) {
+        // Try it with the base name
+        recordName = recordReferenceType.baseName();
+        symbol = symbolTable.getRecursive(recordName, RecordSymbol.class);
+        if (symbol == null) {
+          errors.add(
+              new TypeException(
+                  String.format(
+                      "Cannot declare variable '%s' as unknown RECORD type %s", nameForMessage,
+                      recordName),
+                  position));
+          // invalid record, bad.
+          return false;
+        }
+      }
+
+      // Bind the thing in the thing
+      ImmutableList<VarType> actualTypes = recordReferenceType.actualTypes();
+      ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
+      // Check that # of actual type variables matches the # of formal type variables.
+      if (actualTypes.size() != formalTypeNames.size()) {
         errors.add(
             new TypeException(
                 String.format(
-                    "Cannot declare variable '%s' as unknown RECORD type %s", name, recordName),
+                    "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
+                    recordName, actualTypes.size(), formalTypeNames.size()),
                 position));
-        // invalid record, bad.
         return false;
+      }
+      // bind them
+      if (symbol.isGeneric() && !symbol.isBound()) {
+        Map<String, VarType> bindings = new HashMap<>();
+        for (int i = 0; i < actualTypes.size(); ++i) {
+          bindings.put(formalTypeNames.get(i), actualTypes.get(i));
+        }
+        RecordSymbol boundRecord = symbol.bind(bindings);
+        // Use the table where the symbol was created.
+        SymbolTable originalTable = symbolTable.getOwner(symbol);
+        originalTable.declareBoundRecordSymbol(boundRecord, position);
       }
     }
     // valid: either valid record, or not a record.
@@ -951,9 +975,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
 
-    // process the statements in the procedure:
-    node.block().accept(this);
-
     // make sure args all have a type
     for (Parameter param : node.parameters()) {
       VarType type = symbolTable.get(param.name()).varType();
@@ -967,6 +988,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 node.position()));
       }
     }
+
+    // process the statements in the procedure:
+    node.block().accept(this);
 
     // make sure that all codepaths have a return
     if (node.returnType() != VarType.VOID) {
@@ -982,9 +1006,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             new TypeException(
                 String.format("Not all codepaths end with RETURN for PROC '%s'", node.name()),
                 node.position()));
-      } else {
-        validatePossibleRecordType("return type", node.returnType(), node.position());
       }
+      validatePossibleRecordType("return type", node.returnType(), node.position());
     }
     procedures.pop();
     symbolTable = symbolTable.parent();
@@ -1161,6 +1184,16 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     public void visit(FieldSetNode fsn) {
       // Get the record from the symbol table.
       Symbol variableSymbol = symbolTable.getRecursive(fsn.variableName());
+      if (variableSymbol == null) {
+        errors.add(
+            new TypeException(
+                String.format(
+                    "Cannot set field of variable '%s'; not a known RECORD",
+                    lvalue.name()),
+                lvalue.position()));
+        return;
+      }
+
       if (variableSymbol.varType() == VarType.PROC) {
         // can't assign to a proc
         errors.add(
@@ -1171,8 +1204,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
                 lvalue.position()));
         return;
       }
+
       VarType varType = variableSymbol.varType();
-      if (variableSymbol == null || !varType.isRecord()) {
+      if (!varType.isRecord()) {
         errors.add(
             new TypeException(
                 String.format(

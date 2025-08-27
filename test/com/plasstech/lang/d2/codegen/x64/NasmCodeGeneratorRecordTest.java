@@ -16,6 +16,11 @@ public class NasmCodeGeneratorRecordTest {
   }
 
   @Test
+  public void alloc_generic() throws Exception {
+    assertThatCompiling("r: record<T>{i:T s:string} x=new r<int>").executedEqualsInterpreted();
+  }
+
+  @Test
   public void allocEmpty() throws Exception {
     assertThatCompiling("r: record{} x=new r").executedEqualsInterpreted();
   }

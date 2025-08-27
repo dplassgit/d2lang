@@ -74,4 +74,6 @@ public interface SymbolTable {
   SymbolStorage storage();
 
   SymbolTable parent();
+
+  SymbolTable getOwner(Symbol symbol);
 }
