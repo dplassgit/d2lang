@@ -3,23 +3,31 @@ package com.plasstech.lang.d2.parse.node;
 import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
 import java.util.List;
+import com.plasstech.lang.d2.type.VarType;
 
 /** Represents a node for calling a procedure with actual parameters */
 public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   private final String procName;
+  private final List<VarType> actualTypes;
   private final List<ExprNode> actuals;
   private final boolean isStatement;
 
-  public CallNode(Position position, String procName, List<ExprNode> actuals, boolean isStatement) {
-    super(position);
+  public CallNode(Position start, String procName, List<VarType> actualTypes,
+      List<ExprNode> actualParams, boolean isStatement) {
+    super(start);
     this.procName = procName;
-    this.actuals = actuals;
+    this.actuals = actualParams;
+    this.actualTypes = actualTypes;
     this.isStatement = isStatement;
   }
 
   public String procName() {
     return procName;
+  }
+
+  public List<VarType> actualTypes() {
+    return actualTypes;
   }
 
   public List<ExprNode> actuals() {
@@ -54,6 +62,6 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(procName, actuals, isStatement, varType(), getClass());
+    return Objects.hashCode(procName, actualTypes, actuals, isStatement, varType(), getClass());
   }
 }

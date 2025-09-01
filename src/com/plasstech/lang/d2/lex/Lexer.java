@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 
-public class Lexer {
+public class Lexer implements LexerInterface {
   private final String text;
 
   private int line, col; // current line & column
@@ -43,6 +43,7 @@ public class Lexer {
     return cc;
   }
 
+  @Override
   public Token nextToken() {
     // skip unwanted whitespace
     while (cc == ' ' || cc == '\n' || cc == '\t' || cc == '\r') {

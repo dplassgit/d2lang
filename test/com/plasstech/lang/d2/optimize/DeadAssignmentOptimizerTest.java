@@ -27,6 +27,7 @@ import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.testing.TestCode;
 import com.plasstech.lang.d2.type.ProcSymbol;
@@ -40,8 +41,9 @@ public class DeadAssignmentOptimizerTest {
   private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
   private static final Location B = LocationUtils.newParamLocation("b", VarType.INT, 0, 0);
   private static final Location C = LocationUtils.newParamLocation("c", VarType.INT, 0, 0);
-  private static final ProcSymbol PROC_SYMBOL =
-      new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+  private final static ProcSymbol PROC_SYMBOL =
+      new ProcSymbol(
+          new ProcedureNode("f", ImmutableList.of(), VarType.VOID, BlockNode.EMPTY, null), null);
 
   @Test
   public void notDeadParams() {

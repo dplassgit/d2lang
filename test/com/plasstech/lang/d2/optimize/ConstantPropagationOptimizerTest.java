@@ -27,6 +27,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -307,7 +308,8 @@ public class ConstantPropagationOptimizerTest {
   @Test
   public void callThenReturn_bug360() {
     ProcSymbol procSymbol =
-        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.INT, null, null), null);
+        new ProcSymbol(
+            new ProcedureNode("f", ImmutableList.of(), VarType.INT, BlockNode.EMPTY, null), null);
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(STACK_INT1, GLOBAL_INT1, null),

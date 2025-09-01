@@ -611,7 +611,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     VarType type = node.varType();
     String recordName = node.fullyQualifiedRecordName();
     if (validatePossibleRecordType(recordName, type, node.position())) {
-      // need to look up the symbol by base name and then bind it.
       // make sure all the actual types are real
       for (VarType actual : node.actualTypes()) {
         if (actual instanceof UnboundType) {

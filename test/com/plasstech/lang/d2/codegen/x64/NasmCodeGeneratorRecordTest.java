@@ -40,9 +40,13 @@ public class NasmCodeGeneratorRecordTest {
   public void declaredInProc_setField() throws Exception {
     assertThatCompiling(
             """
-            f:proc:int{ rt: record{i:int s:string} x=new rt x.i=3 x.i=x.i+1 return x.i}
-            println f()
-            """)
+        f:proc:int{
+          rt: record{i:int s:string}
+          x=new rt x.i=3 x.i=x.i+1
+          return x.i
+        }
+        println f()
+        """)
         .executedEqualsInterpreted();
   }
 
@@ -465,6 +469,27 @@ public class NasmCodeGeneratorRecordTest {
                 if nr.i != nr.j { exit "Should have been equal"}
                 """,
                 op, op))
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void genericRecordParam() throws Exception {
+    // This is failing
+    assertThatCompiling(
+            """
+        r:record<T>{s:T i:int rec:r<T>}
+
+        f:proc(rec:r<string>): int {
+           amt = rec.i
+           println rec.s
+           return amt * 3
+        }
+
+        nr = new r<string>
+        nr.i = 100
+        nr.s = "nr"
+        println f(nr)
+        """)
         .executedEqualsInterpreted();
   }
 }

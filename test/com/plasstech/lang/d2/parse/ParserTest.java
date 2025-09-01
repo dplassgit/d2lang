@@ -37,6 +37,7 @@ import com.plasstech.lang.d2.parse.node.NewNode;
 import com.plasstech.lang.d2.parse.node.Node;
 import com.plasstech.lang.d2.parse.node.PrintNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
+import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ReturnNode;
@@ -45,6 +46,7 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.parse.node.WhileNode;
+import com.plasstech.lang.d2.type.BoundType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
@@ -95,6 +97,11 @@ public class ParserTest {
   @Test
   public void printError() {
     assertThatParsing("print").hasError("Unexpected 'EOF'");
+  }
+
+  @Test
+  public void printInvalidChar() {
+    assertThatParsing("print @").hasError("Unexpected character '@'");
   }
 
   @Test
@@ -527,10 +534,12 @@ public class ParserTest {
   public void allExprTypes() {
     ProgramNode node =
         assertThatParsing(
-                "a=((1 + 2) * (3 - 4) / (-5) == 6) != true "
-                    + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false "
-                    + " & ((3 + 4) * (5 + 6) / (-7) >= (8 % 2)) "
-                    + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2")
+                """
+        a=((1 + 2) * (3 - 4) / (-5) == 6) != true
+           | ((2 - 3) * (4 - 5) / (-6) < 7) == !false
+           & ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))
+        b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2
+        """)
             .succeeds();
     BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
@@ -540,7 +549,13 @@ public class ParserTest {
   @Test
   public void program() {
     ProgramNode node =
-        assertThatParsing("a=3 print a\n abc =   123 +a-b print 123\nprin=t").succeeds();
+        assertThatParsing(
+                """
+            a=3 print a
+            abc =   123 +a-b print 123
+            prin=t
+            """)
+            .succeeds();
     BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
@@ -602,14 +617,16 @@ public class ParserTest {
   public void ifNested() {
     ProgramNode node =
         assertThatParsing(
-                "      if a==3 { "
-                    + "  if a==4 { "
-                    + "   if a == 5 {"
-                    + "     print a"
-                    + "   } "
-                    + "  }"
-                    + "}"
-                    + "else { print 4 print a}")
+                """
+        if a==3 {
+           if a==4 {
+            if a == 5 {
+              print a
+            }
+           }
+         }
+         else { print 4 print a}
+         """)
             .succeeds();
     BlockNode root = node.statements();
 
@@ -641,10 +658,12 @@ public class ParserTest {
   public void ifElif() {
     ProgramNode node =
         assertThatParsing(
-                "      if a==3 { print a } "
-                    + "elif a==4 { print 4 print a} "
-                    + "elif a==5 { print 5}"
-                    + "else { print 6 print 7}")
+                """
+        if a==3 { print a }
+        elif a==4 { print 4 print a}
+        elif a==5 { print 5}
+        else { print 6 print 7}
+        """)
             .succeeds();
     BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
@@ -663,8 +682,10 @@ public class ParserTest {
     assertThatParsing("if a==3 print a } else {print 4").hasError("expected \\{");
     assertThatParsing("if print a else {print 4").hasError("expected literal");
     assertThatParsing(
-            "if a==3 { print a } else  { print 4 print a} "
-                + "elif a==5 { print 5}else { print 6 print 7}")
+            """
+        if a==3 { print a } else  { print 4 print a}
+        elif a==5 { print 5}else { print 6 print 7}
+        """)
         .hasError("Unexpected start of statement 'ELIF'");
   }
 
@@ -897,6 +918,7 @@ public class ParserTest {
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
     assertThat(proc.returnType()).isEqualTo(VarType.VOID);
+    assertThat(proc.formalTypeVariables()).isEmpty();
   }
 
   @Test
@@ -963,11 +985,13 @@ public class ParserTest {
   public void fullProc() {
     ProgramNode root =
         assertThatParsing(
-                "      fib:proc(typed:int, nontyped) : string {"
-                    + "  typed = typed + 1"
-                    + "  nontyped = typed + 1"
-                    + "  return 'hi'"
-                    + "}")
+                """
+            fib:proc(typed:int, nontyped) : string {
+              typed = typed + 1
+              nontyped = typed + 1
+              return 'hi'
+            }
+            """)
             .succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
@@ -1423,12 +1447,12 @@ public class ParserTest {
     assertThatParsing("r: record<>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<(3)>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<record>{i: T s: UV}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<T, 1>{}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<>{}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<(3)>{}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<record>{}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<T,>{}").hasError("expected VARIABLE");
-    // assertThatParsing("r: record<int>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<T, 1>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<(3)>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<record>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<T,>{}").hasError("expected VARIABLE");
+    assertThatParsing("r: record<int>{}").hasError("expected VARIABLE");
   }
 
   @Test
@@ -1553,7 +1577,15 @@ public class ParserTest {
 
   @Test
   public void newRecord_returnValue() {
-    assertThatParsing("r1:record{i:int} p:proc():r1{return new r1} var1=p()").succeeds();
+    assertThatParsing(
+            """
+        r1:record{i:int}
+        p:proc: r1{
+          return new r1
+        }
+        var1=p()
+        """)
+        .succeeds();
   }
 
   @Test
@@ -1596,7 +1628,7 @@ public class ParserTest {
 
   @Test
   public void recordGetError() {
-    assertThatParsing("i = rec.[\n").hasError("expected literal");
+    assertThatParsing("i = rec.[").hasError("expected literal");
   }
 
   @SuppressWarnings("unchecked")
@@ -1661,9 +1693,8 @@ public class ParserTest {
   public void advancedRValue() {
     assertThatParsing("bam = foo.bar[3].bar.baz[4].qux").succeeds();
     assertThatParsing("bam = foo[3+a].bar.baz[f()].qux").succeeds();
-    // this passes now (!). bug #158
-    assertThatParsing("bam = foo.3").succeeds();
     // this parses but shouldn't pass static checking
+    assertThatParsing("bam = foo.3").succeeds();
   }
 
   @Test
@@ -1814,6 +1845,7 @@ public class ParserTest {
   }
 
   @Test
+<<<<<<< HEAD
   public void arraySlotOperatorArraySlot() {
     assertThatParsing("foo[3] = foo[3] + 3").succeeds();
   }
@@ -1831,5 +1863,84 @@ public class ParserTest {
   @Test
   public void fieldOperatorEq(@TestParameter({"+", "*", "-", "/"}) String op) {
     assertThatParsing(String.format("foo.bar %s= 3", op)).succeeds();
+  }
+
+  @Test
+  public void genericProc() {
+    ProgramNode programNode = assertThatParsing("""
+        f: proc<T>(x: T): T {
+          return x
+        }
+        """).succeeds();
+    ProcedureNode proc = (ProcedureNode) programNode.statements().statements().get(0);
+    assertThat(proc.formalTypeVariables()).containsExactly("T");
+
+    Parameter param = proc.parameters().get(0);
+    assertThat(param.varType()).isInstanceOf(BoundType.class);
+    BoundType paramType = (BoundType) param.varType();
+    assertThat(paramType.name()).isEqualTo("T");
+
+    VarType returnType = proc.returnType();
+    assertThat(returnType).isInstanceOf(BoundType.class);
+    assertThat(returnType).isEqualTo(paramType);
+  }
+
+  @Test
+  public void genericProcWithGenericRecord() {
+    ProgramNode programNode = assertThatParsing("""
+        f: proc<T>(r: rec<T>): T {
+          return r.v
+        }
+        """)
+            .succeeds();
+    ProcedureNode proc = (ProcedureNode) programNode.statements().statements().get(0);
+    assertThat(proc.formalTypeVariables()).containsExactly("T");
+
+    Parameter param = proc.parameters().get(0);
+    assertThat(param.varType()).isInstanceOf(RecordReferenceType.class);
+
+    RecordReferenceType paramType = (RecordReferenceType) param.varType();
+    assertThat(paramType.isGeneric()).isTrue();
+    assertThat(paramType.formalTypes()).hasSize(1);
+    assertThat(paramType.actualTypes()).hasSize(1);
+    UnboundType formalType = paramType.formalTypes().get(0);
+    assertThat(formalType.name()).isEqualTo("T");
+
+    VarType returnType = proc.returnType();
+    assertThat(returnType).isInstanceOf(BoundType.class);
+    assertThat(returnType).isEqualTo(paramType);
+  }
+
+  @Test
+  public void callGenericProc() {
+    ProgramNode programNode = assertThatParsing("""
+        f: proc<T, U>(r: rec<T>): U {
+          return r.v
+        }
+        v = f<int, string>(r)
+        """)
+        .succeeds();
+    StatementNode statement = programNode.statements().statements().get(1);
+    assertThat(statement).isInstanceOf(AssignmentNode.class);
+    AssignmentNode assignment = (AssignmentNode) statement;
+    ExprNode rhs = assignment.expr();
+    assertThat(rhs).isInstanceOf(CallNode.class);
+    CallNode call = (CallNode) rhs;
+    assertThat(call.actualTypes()).containsExactly(VarType.INT, VarType.STRING).inOrder();
+  }
+
+  @Test
+  public void callGenericProcAsStatement() {
+    ProgramNode programNode = assertThatParsing("""
+        f: proc<T, U>(r: rec<T>): U {
+          return r.v
+        }
+        f<int, string>(r)
+        """)
+        .succeeds();
+    StatementNode statement = programNode.statements().statements().get(1);
+    assertThat(statement).isInstanceOf(CallNode.class);
+    CallNode call = (CallNode) statement;
+    assertThat(call.actualTypes()).containsExactly(VarType.INT, VarType.STRING).inOrder();
   }
 }

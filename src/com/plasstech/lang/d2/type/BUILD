@@ -55,6 +55,7 @@ java_library(
     name = "var_types",
     srcs = [
         "ArrayType.java",
+        "BoundType.java",
         "DefaultVarType.java",
         "NullType.java",
         "PointerType.java",

@@ -13,11 +13,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
+import com.plasstech.lang.d2.common.StatusOr;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.lex.ConstToken;
-import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.lex.LexerInterface;
 import com.plasstech.lang.d2.lex.ScannerException;
 import com.plasstech.lang.d2.lex.Token;
+import com.plasstech.lang.d2.lex.TransactionalLexer;
+import com.plasstech.lang.d2.lex.TransactionalLexer.Transaction;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.ArrayLiteralNode;
 import com.plasstech.lang.d2.parse.node.ArraySetNode;
@@ -105,13 +108,13 @@ public class Parser implements Phase {
           TokenType.DIV_EQ,
           TokenType.DIV);
 
-  private final Lexer lexer;
+  private final TransactionalLexer lexer;
   private Token token;
   private int inWhile;
   private int inProc;
 
-  public Parser(Lexer lexer) {
-    this.lexer = lexer;
+  public Parser(LexerInterface lexer) {
+    this.lexer = TransactionalLexer.wrap(lexer);
   }
 
   private Token advance() {
@@ -293,7 +296,8 @@ public class Parser implements Phase {
 
       // Procedure call: variable(comma-separated-list)
       case LPAREN:
-        return procedureCall(variable, true);
+      case LT:
+        return procedureCallStatement(variable);
 
       default:
         break;
@@ -415,10 +419,7 @@ public class Parser implements Phase {
   private RecordReferenceType parseBoundGenericRecordReference(String recordName) {
     List<VarType> actualTypes = ImmutableList.of();
     if (token.type() == TokenType.LT) {
-      // < comma-separated vartypes >
-      expectToken(TokenType.LT);
-      actualTypes = commaSeparatedTypes(ImmutableList.of());
-      expectToken(TokenType.GT);
+      actualTypes = actualTypes();
     }
     // We don't have the *formal* type names at this point.
     return new RecordReferenceType(recordName, ImmutableList.of(), actualTypes);
@@ -427,18 +428,7 @@ public class Parser implements Phase {
   private DeclarationNode parseRecordDeclaration(Token varToken) {
     expectToken(TokenType.RECORD);
 
-    List<String> formalTypeVariables = ImmutableList.of();
-    if (token.type() == TokenType.LT) {
-      expectToken(TokenType.LT);
-      formalTypeVariables =
-          commaSeparated(
-              () -> {
-                Token next = expectToken(TokenType.VARIABLE);
-                String name = next.text();
-                return name;
-              });
-      expectToken(TokenType.GT);
-    }
+    List<String> formalTypeVariables = parseFormalTypeNames();
     expectToken(TokenType.LBRACE);
 
     // read field declarations
@@ -452,6 +442,20 @@ public class Parser implements Phase {
     expectToken(TokenType.RBRACE);
     return new RecordDeclarationNode(
         varToken.text(), fieldNodes, varToken.start(), formalTypeVariables);
+  }
+
+  private List<String> parseFormalTypeNames() {
+    List<String> formalTypeVariables = ImmutableList.of();
+    if (token.type() == TokenType.LT) {
+      expectToken(TokenType.LT);
+      formalTypeVariables = commaSeparated(() -> {
+        Token next = expectToken(TokenType.VARIABLE);
+        String name = next.text();
+        return name;
+      });
+      expectToken(TokenType.GT);
+    }
+    return formalTypeVariables;
   }
 
   private DeclarationNode fieldDeclaration(Token varToken, List<String> formalTypeVariables) {
@@ -539,31 +543,33 @@ public class Parser implements Phase {
   private ProcedureNode procedureDecl(Token varToken) {
     inProc++;
     expectToken(TokenType.PROC);
-    List<Parameter> params = formalParams();
+    List<String> formalTypeNames = parseFormalTypeNames();
+    List<Parameter> params = formalParams(formalTypeNames);
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType(RETURN_TYPES);
+      returnType = parseVarType(RETURN_TYPES, formalTypeNames);
     }
     BlockNode statements = block();
     inProc--;
-    return new ProcedureNode(varToken.text(), params, returnType, statements, varToken.start());
+    return new ProcedureNode(varToken.text(), params, formalTypeNames, returnType, statements,
+        varToken.start());
   }
 
   private DeclarationNode externDecl(Token varToken) {
     expectToken(TokenType.EXTERN);
     expectToken(TokenType.PROC);
 
-    List<Parameter> params = formalParams();
+    List<Parameter> params = formalParams(ImmutableList.of());
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType(RETURN_TYPES);
+      returnType = parseVarType(RETURN_TYPES, ImmutableList.of());
     }
     return new ExternProcedureNode(varToken.text(), params, returnType, varToken.start());
   }
 
-  private List<Parameter> formalParams() {
+  private List<Parameter> formalParams(List<String> formalTypeVariables) {
     List<Parameter> params = new ArrayList<>();
     if (token.type() != TokenType.LPAREN) {
       return params;
@@ -575,19 +581,23 @@ public class Parser implements Phase {
       return params;
     }
 
-    params = commaSeparated(() -> formalParam());
+    params = commaSeparated(() -> formalParam(formalTypeVariables));
     expectToken(TokenType.RPAREN);
     return params;
   }
 
   /** Parses colon followed by var type. */
-  private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap) {
+  private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap,
+      List<String> formalTypeNames) {
     expectToken(TokenType.COLON);
     if (token.type() == TokenType.VARIABLE) {
       // Record type.
       Token recordTypeToken = expectToken(TokenType.VARIABLE);
-      // TODO: allow unbound type variables.
-      return parseBoundGenericRecordReference(recordTypeToken.text());
+      String typeName = recordTypeToken.text();
+      if (formalTypeNames.contains(typeName)) {
+        return new UnboundType(typeName);
+      }
+      return parseRecordReference(typeName, formalTypeNames);
     }
 
     TokenType declaredType = token.type();
@@ -609,10 +619,10 @@ public class Parser implements Phase {
         token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
   }
 
-  private Parameter formalParam() {
+  private Parameter formalParam(List<String> formalTypeNames) {
     Token paramName = expectToken(TokenType.VARIABLE);
     if (token.type() == TokenType.COLON) {
-      VarType paramType = parseVarType(VARIABLE_TYPES);
+      VarType paramType = parseVarType(VARIABLE_TYPES, formalTypeNames);
       return new Parameter(paramName.text(), paramType, paramName.start());
     }
     // no colon, just an unknown param type (which will fail type checking(?))
@@ -665,19 +675,27 @@ public class Parser implements Phase {
     return new WhileNode(condition, doStatement, block, kt.start());
   }
 
-  private CallNode procedureCall(Token varToken, boolean isStatement) {
+  private CallNode procedureCall(Token varToken, List<VarType> actualTypes, boolean isStatement) {
     expectToken(TokenType.LPAREN);
-
-    List<ExprNode> actuals;
+    List<ExprNode> actualParams;
     if (token.type() == TokenType.RPAREN) {
-      actuals = ImmutableList.of();
+      actualParams = ImmutableList.of();
     } else {
-      actuals = commaSeparatedExpressions();
+      actualParams = commaSeparatedExpressions();
     }
 
     expectToken(TokenType.RPAREN);
 
-    return new CallNode(varToken.start(), varToken.text(), actuals, isStatement);
+    return new CallNode(varToken.start(), varToken.text(), actualTypes, actualParams, isStatement);
+  }
+
+  private CallNode procedureCallStatement(Token varToken) {
+    List<VarType> actualTypes = ImmutableList.of();
+    if (token.type() == TokenType.LT) {
+      // parse <type, type, type>
+      actualTypes = actualTypes();
+    }
+    return procedureCall(varToken, actualTypes, true);
   }
 
   private List<ExprNode> commaSeparatedExpressions() {
@@ -885,14 +903,32 @@ public class Parser implements Phase {
       // then create a new type from the record.
       List<VarType> actualTypes = ImmutableList.of();
       if (token.type() == TokenType.LT) {
-        expectToken(TokenType.LT);
-        actualTypes = commaSeparatedTypes(ImmutableList.of());
-        expectToken(TokenType.GT);
+        actualTypes = actualTypes();
       }
       return new NewNode(recordTypeName.text(), actualTypes, start);
     }
 
     return compositeDereference();
+  }
+
+  // Parses <type, type, ... > where they are *actual* types, so no unbound types are allowed. 
+  private List<VarType> actualTypes() {
+    StatusOr<List<VarType>> statusOr = maybeActualTypes();
+    if (statusOr.isOk()) {
+      return statusOr.value();
+    }
+    throw statusOr.exception();
+  }
+
+  private StatusOr<List<VarType>> maybeActualTypes() {
+    try {
+      expectToken(TokenType.LT);
+      List<VarType> actualTypes = commaSeparatedTypes(ImmutableList.of());
+      expectToken(TokenType.GT);
+      return StatusOr.ok(actualTypes);
+    } catch (ParseException pe) {
+      return StatusOr.error(pe);
+    }
   }
 
   private List<VarType> commaSeparatedTypes(List<String> formalTypeVariables) {
@@ -1021,11 +1057,26 @@ public class Parser implements Phase {
       case VARIABLE:
         Token varToken = token;
         advance();
-        if (token.type() == TokenType.LPAREN) {
-          return procedureCall(varToken, false);
+        Token afterVar = token;
+        List<VarType> actualTypes = ImmutableList.of();
+        if (token.type() == TokenType.LT) {
+          Transaction t = lexer.startTransaction();
+          StatusOr<List<VarType>> maybeActualTypes = maybeActualTypes();
+          if (maybeActualTypes.isOk()) {
+            actualTypes = maybeActualTypes.value();
+            afterVar = token;
+            t.commit();
+          } else {
+            token = afterVar;
+            t.rollback();
+          }
+        }
+        if (afterVar.type() == TokenType.LPAREN) {
+          return procedureCall(varToken, actualTypes, false);
         } else {
           return new VariableNode(varToken.text(), varToken.start());
         }
+
       default:
         throw new ParseException(
             token.start(), "Unexpected '%s'; expected literal, variable, or '('", token.text());

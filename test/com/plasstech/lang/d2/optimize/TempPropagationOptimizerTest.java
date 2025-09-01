@@ -18,6 +18,7 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
+import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -150,7 +151,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void procCall() {
     ProcSymbol procSym =
-        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+        new ProcSymbol(
+            new ProcedureNode("f", ImmutableList.of(), VarType.VOID, BlockNode.EMPTY, null), null);
     ImmutableList<Op> program =
         ImmutableList.of(
             new Call(TEMP3, procSym, ImmutableList.of(), ImmutableList.of(), null),
@@ -167,7 +169,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void procCallNotTemp() {
     ProcSymbol procSym =
-        new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
+        new ProcSymbol(
+            new ProcedureNode("f", ImmutableList.of(), VarType.VOID, BlockNode.EMPTY, null), null);
     ImmutableList<Op> program =
         ImmutableList.of(
             new Call(PARAM, procSym, ImmutableList.of(), ImmutableList.of(), null),

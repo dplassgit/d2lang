@@ -12,12 +12,16 @@ public class ProcSymbol extends AbstractSymbol {
   private final ProcedureNode node;
   private final List<ParamSymbol> formals = new ArrayList<>();
   private final SymbolTable symtab;
+  private final boolean isGeneric;
+  private final ImmutableList<String> formalTypeVariables;
 
   public ProcSymbol(ProcedureNode node, SymbolTable symTab) {
     super(node.name());
     this.node = node;
     symtab = symTab;
     this.setVarType(VarType.PROC);
+    this.formalTypeVariables = ImmutableList.copyOf(node.formalTypeVariables());
+    this.isGeneric = node.formalTypeVariables().size() > 0;
   }
 
   public String mungedName() {
@@ -51,7 +55,6 @@ public class ProcSymbol extends AbstractSymbol {
 
   public void declareParam(String name, VarType varType, int index) {
     ParamSymbol param = symtab.declareParam(name, varType, index);
-    // keep a copy!
     formals.add(param);
   }
 
@@ -65,5 +68,13 @@ public class ProcSymbol extends AbstractSymbol {
 
   public boolean isExtern() {
     return false;
+  }
+
+  public boolean isGeneric() {
+    return isGeneric;
+  }
+
+  public ImmutableList<String> getFormalTypeVariables() {
+    return formalTypeVariables;
   }
 }

@@ -39,7 +39,7 @@ public class StaticCheckerTest {
 
   @Test
   public void printVoid() {
-    assertThatTypeChecking("f:proc{} print f()").hasError("Cannot print VOID");
+    assertThatTypeChecking("f: proc { } print f()").hasError("Cannot print VOID");
   }
 
   @Test
@@ -370,43 +370,43 @@ public class StaticCheckerTest {
 
   @Test
   public void assignAfterDeclMismatch() {
-    assertThatTypeChecking("a:int b=true a=b").hasError("declared type INT to BOOL");
-    assertThatTypeChecking("a=3 a:bool").hasError("already declared as INT");
+    assertThatTypeChecking("a: int b=true a=b").hasError("declared type INT to BOOL");
+    assertThatTypeChecking("a=3 a: bool").hasError("already declared as INT");
   }
 
   @Test
   public void usedAfterNotAssigned() {
-    assertThatTypeChecking("a:bool b=a").hasError("used before assignment");
-    assertThatTypeChecking("f:proc {a:bool b=a}").hasError("used before assignment");
+    assertThatTypeChecking("a: bool b=a").hasError("used before assignment");
+    assertThatTypeChecking("f: proc { a: bool b=a }").hasError("used before assignment");
   }
 
   @Test
   public void declArray() {
-    checkProgram("a:int[3]");
-    checkProgram("b=3 a:int[b]");
-    checkProgram("b:proc():int {return 0} a:string[b()]");
-    checkProgram("a:int[3] b=a");
-    checkProgram("a:int[3] b:int[3] b=a");
+    checkProgram("a: int[3]");
+    checkProgram("b=3 a: int[b]");
+    checkProgram("b: proc(): int { return 0 } a: string[b()]");
+    checkProgram("a: int[3] b=a");
+    checkProgram("a: int[3] b: int[3] b=a");
   }
 
   @Test
   public void declEmptyArray() {
     // These are both allowed
-    checkProgram("a:int[0]");
-    checkProgram("b=0 a:int[b]");
+    checkProgram("a: int[0]");
+    checkProgram("b=0 a: int[b]");
   }
 
   @Test
   public void arrayDeclMismatch() {
-    assertThatTypeChecking("a:int[b]")
+    assertThatTypeChecking("a: int[b]")
         .hasError("Indeterminable size for ARRAY variable 'a'; must be INT");
-    assertThatTypeChecking("a:int[false]").hasError("must be INT; was BOOL");
-    assertThatTypeChecking("a:int['hi']").hasError("must be INT; was STRING");
-    assertThatTypeChecking("a:string['hi']").hasError("must be INT; was STRING");
-    assertThatTypeChecking("b:proc():string {return ''} a:string[b()]")
+    assertThatTypeChecking("a: int[false]").hasError("must be INT; was BOOL");
+    assertThatTypeChecking("a: int['hi']").hasError("must be INT; was STRING");
+    assertThatTypeChecking("a: string['hi']").hasError("must be INT; was STRING");
+    assertThatTypeChecking("b: proc(): string { return '' } a: string[b()]")
         .hasError("must be INT; was STRING");
     // this fails in an unexpected way but at least it fails.
-    assertThatTypeChecking("b:proc() {} a:string[b]")
+    assertThatTypeChecking("b: proc() { } a: string[b]")
         .hasError("Variable 'b' used before assignment");
   }
 
@@ -460,7 +460,7 @@ public class StaticCheckerTest {
 
   @Test
   public void stringComparator() {
-    SymbolTable symTab = checkProgram("b:bool b='hi' == 'bye'");
+    SymbolTable symTab = checkProgram("b: bool b='hi' == 'bye'");
     assertThat(symTab.get("b").varType()).isEqualTo(VarType.BOOL);
   }
 
@@ -590,13 +590,13 @@ public class StaticCheckerTest {
     assertThatTypeChecking("a=[1,true]").hasError("Inconsistent type");
     assertThatTypeChecking("b=3 a=[true,b]").hasError("Inconsistent type");
     assertThatTypeChecking("a=[true,b]").hasError("Indeterminable type");
-    assertThatTypeChecking("a:int[2] a[0]=[1,2]")
+    assertThatTypeChecking("a: int[2] a[0]=[1,2]")
         .hasError("declared as ARRAY of INT but.*ARRAY of INT");
   }
 
   @Test
   public void arrayLiteralGood() {
-    SymbolTable symTab = checkProgram("f:proc():int {return 1} a=[1,f()]");
+    SymbolTable symTab = checkProgram("f: proc(): int { return 1 } a=[1,f()]");
     VarType varType = symTab.get("a").varType();
     assertThat(varType).isArray();
     assertThat(varType).hasArrayBaseType(VarType.INT);
@@ -616,35 +616,35 @@ public class StaticCheckerTest {
 
   @Test
   public void arraySet() {
-    SymbolTable symTab = checkProgram("a:int[1] a[0]=1");
+    SymbolTable symTab = checkProgram("a: int[1] a[0]=1");
     assertThat(symTab.get("a").varType()).isArray();
 
-    checkProgram("b=3 a:int[1] a[b+1]=1");
+    checkProgram("b=3 a: int[1] a[b+1]=1");
   }
 
   @Test
   public void arrayDeclError() {
-    assertThatTypeChecking("a:int[-1]").hasError("must be non-negative; was -1");
-    assertThatTypeChecking("a:int[true]").hasError("must be INT; was BOOL");
-    assertThatTypeChecking("a:int[] b:int[] b=a").hasError("before assignment");
-    assertThatTypeChecking("a:int[] a:int").hasError("already declared");
-    assertThatTypeChecking("a:int[] a=3").hasError("Cannot convert");
-    assertThatTypeChecking("a:int[] b=a").hasError("used before assignment");
+    assertThatTypeChecking("a: int[-1]").hasError("must be non-negative; was -1");
+    assertThatTypeChecking("a: int[true]").hasError("must be INT; was BOOL");
+    assertThatTypeChecking("a: int[] b: int[] b=a").hasError("before assignment");
+    assertThatTypeChecking("a: int[] a: int").hasError("already declared");
+    assertThatTypeChecking("a: int[] a=3").hasError("Cannot convert");
+    assertThatTypeChecking("a: int[] b=a").hasError("used before assignment");
   }
 
   @Test
   public void arrayDecl() {
-    checkProgram("a:int[1]");
-    checkProgram("a:int[]");
-    checkProgram("a:int[1] b:int[] b=a");
-    checkProgram("a:int[1] println a==null");
+    checkProgram("a: int[1]");
+    checkProgram("a: int[]");
+    checkProgram("a: int[1] b: int[] b=a");
+    checkProgram("a: int[1] println a==null");
   }
 
   @Test
   public void arraySetTypeError() {
-    assertThatTypeChecking("a:int[1] a[0]='hi'").hasError("declared as ARRAY of INT but.*STRING");
-    assertThatTypeChecking("a:bool[1] a[0]=3").hasError("declared as ARRAY of BOOL but.*INT");
-    assertThatTypeChecking("a:string[1] a[0]=true")
+    assertThatTypeChecking("a: int[1] a[0]='hi'").hasError("declared as ARRAY of INT but.*STRING");
+    assertThatTypeChecking("a: bool[1] a[0]=3").hasError("declared as ARRAY of BOOL but.*INT");
+    assertThatTypeChecking("a: string[1] a[0]=true")
         .hasError("declared as ARRAY of STRING but.*BOOL");
     assertThatTypeChecking("a[0]=true").hasError("Unknown variable 'a' used as ARRAY");
     assertThatTypeChecking("a=3 a[0]=1").hasError("used as ARRAY; was INT");
@@ -652,19 +652,20 @@ public class StaticCheckerTest {
 
   @Test
   public void arraySetIndexError() {
-    assertThatTypeChecking("a:int[1] a['hi']=1").hasError("ARRAY index must be INT; was STRING");
-    assertThatTypeChecking("a:int[1] a[true]=1").hasError("ARRAY index must be INT; was BOOL");
-    assertThatTypeChecking("b='hi' a:int[1] a[b]=1")
+    assertThatTypeChecking("a: int[1] a['hi']=1").hasError("ARRAY index must be INT; was STRING");
+    assertThatTypeChecking("a: int[1] a[true]=1").hasError("ARRAY index must be INT; was BOOL");
+    assertThatTypeChecking("b='hi' a: int[1] a[b]=1")
         .hasError("ARRAY index must be INT; was STRING");
-    assertThatTypeChecking("b=true a:int[1] a[b]=1").hasError("ARRAY index must be INT; was BOOL");
-    assertThatTypeChecking("a:int[1] a[-1]=1").hasError("ARRAY index must be non-negative; was -1");
+    assertThatTypeChecking("b=true a: int[1] a[b]=1").hasError("ARRAY index must be INT; was BOOL");
+    assertThatTypeChecking("a: int[1] a[-1]=1")
+        .hasError("ARRAY index must be non-negative; was -1");
   }
 
   @Test
   public void arrayGetIndexError() {
-    assertThatTypeChecking("a:int[1] print a['hi']").hasError("must be INT; was STRING");
-    assertThatTypeChecking("a:int[1] print a[true]").hasError("must be INT; was BOOL");
-    assertThatTypeChecking("a:int[1] print a[-1]").hasError("must be non-negative; was -1");
+    assertThatTypeChecking("a: int[1] print a['hi']").hasError("must be INT; was STRING");
+    assertThatTypeChecking("a: int[1] print a[true]").hasError("must be INT; was BOOL");
+    assertThatTypeChecking("a: int[1] print a[-1]").hasError("must be non-negative; was -1");
   }
 
   @Test
@@ -679,7 +680,7 @@ public class StaticCheckerTest {
 
   @Test
   public void ifElifElse() {
-    checkProgram("a=1 if a==1 { print a } elif a == 2 {print 2} else {print 3}");
+    checkProgram("a=1 if a==1 { print a  } elif a == 2 { print 2 } else { print 3 }");
   }
 
   @Test
@@ -695,7 +696,7 @@ public class StaticCheckerTest {
 
   @Test
   public void if_notBoolNested_error() {
-    assertThatTypeChecking("a=1 if a==1 { if (a==1) { if b {print a } } }").hasError("UNKNOWN");
+    assertThatTypeChecking("a=1 if a==1 { if (a==1) { if b { print a } } }").hasError("UNKNOWN");
   }
 
   @Test
@@ -705,17 +706,17 @@ public class StaticCheckerTest {
 
   @Test
   public void if_duplicated_cases() {
-    assertThatTypeChecking("a=1 if a==1 { print a } elif a == 1 {print 'a'} ")
+    assertThatTypeChecking("a=1 if a==1 { print a } elif a == 1 { print 'a' }")
         .hasError("Duplicate expression a == 1");
-    assertThatTypeChecking("a='hi' if a==input { print a } elif a == input {print 'a'} ")
+    assertThatTypeChecking("a='hi' if a==input { print a } elif a == input { print 'a' }")
         .hasError("Duplicate expression a == INPUT");
-    assertThatTypeChecking("a=1 if a==1 OR a == 2 { print a } elif a == 1 OR a == 2 {print 'a'} ")
+    assertThatTypeChecking("a=1 if a==1 OR a == 2 { print a } elif a == 1 OR a == 2 { print 'a' }")
         .hasError("Duplicate expression a == 1 OR a == 2");
   }
 
   @Test
   public void else_error() {
-    assertThatTypeChecking("a=1 if a==1 {} else {a=b }").hasError("Indeterminable");
+    assertThatTypeChecking("a=1 if a==1 { } else { a=b }").hasError("Indeterminable");
   }
 
   @Test
@@ -742,225 +743,247 @@ public class StaticCheckerTest {
   public void while_errors() {
     assertThatTypeChecking("while a { print a }").hasError("UNKNOWN");
     assertThatTypeChecking("while 1 { print 1 }").hasError("INT");
-    assertThatTypeChecking("while true do i = false + 1 {}").hasError("Cannot apply");
-    assertThatTypeChecking("while true {i = false + 1}").hasError("Cannot apply");
+    assertThatTypeChecking("while true do i = false + 1 { }").hasError("Cannot apply");
+    assertThatTypeChecking("while true { i = false + 1 }").hasError("Cannot apply");
   }
 
   @Test
   public void decl_errors() {
-    assertThatTypeChecking("b=3 a=b a:int").hasError("already declared as INT");
-    assertThatTypeChecking("a=3 a:bool").hasError("already declared as INT");
-    assertThatTypeChecking("a:bool a:int").hasError("already declared as BOOL");
-    assertThatTypeChecking("a:bool a:bool").hasError("already declared as BOOL");
+    assertThatTypeChecking("b=3 a=b a: int").hasError("already declared as INT");
+    assertThatTypeChecking("a=3 a: bool").hasError("already declared as INT");
+    assertThatTypeChecking("a: bool a: int").hasError("already declared as BOOL");
+    assertThatTypeChecking("a: bool a: bool").hasError("already declared as BOOL");
     // This may or may not be an error later
-    assertThatTypeChecking("a:int b=a").hasError("'a' used before assign");
-    assertThatTypeChecking("a:int a=true").hasError("declared type INT to BOOL");
-    assertThatTypeChecking("a:string a=true").hasError("declared type STRING to BOOL");
-    assertThatTypeChecking("a:int a=''").hasError("declared type INT to STRING");
+    assertThatTypeChecking("a: int b=a").hasError("'a' used before assign");
+    assertThatTypeChecking("a: int a=true").hasError("declared type INT to BOOL");
+    assertThatTypeChecking("a: string a=true").hasError("declared type STRING to BOOL");
+    assertThatTypeChecking("a: int a=''").hasError("declared type INT to STRING");
   }
 
   @Test
   public void globalDecls_neverUndefined() {
     // Tests bug#39
     checkProgram(
-        "      a:string "
-            + "p: proc {"
-            + "  print a"
-            + "}"
-            + "setup: proc {"
-            + "  a = 'hi'"
-            + "}"
-            + "setup() "
-            + "p()");
+        """
+        a: string
+        p: proc {
+          print a
+         }
+        setup: proc {
+          a = 'hi'
+         }
+        setup()
+        p()
+        """);
   }
 
   @Test
   public void decl() {
-    SymbolTable types = checkProgram("a:int a=3 b=a");
+    SymbolTable types = checkProgram("a: int a=3 b=a");
     assertWithMessage("type of a").that(types.lookupRecursive("a")).isEqualTo(VarType.INT);
   }
 
   @Test
   public void proc() {
-    checkProgram("fib:proc() {a=3} a=true");
-    checkProgram("fib:proc(n:int) : int { n=3 return n}");
-    checkProgram("fib:proc(n1:int, n2:int) : int { n1=3 n2=n1 return n1}");
-    checkProgram("a=true fib:proc() {a:int a=3} ");
+    checkProgram("fib: proc() { a=3 } a=true");
+    checkProgram("fib: proc(n: int) : int { n=3 return n }");
+    checkProgram("fib: proc(n1: int, n2: int) : int { n1=3 n2=n1 return n1 }");
+    checkProgram("a=true fib: proc() { a: int a=3 }");
     checkProgram(
-        "level1:proc() : bool { "
-            + " level2:proc() : int  {n=3 return n}"
-            + " return false"
-            + "} level1()");
-    checkProgram("fib:proc(a:int[]) {a[0]=3} fib([1,2,3])");
+        """
+        level1: proc() : bool {
+             level2: proc() : int  { n=3 return n }
+             return false
+             }
+        level1()
+        """);
+    checkProgram("fib: proc(a: int[]) { a[0]=3 } fib([1,2,3])");
   }
 
   @Test
   public void undeclared_param() {
-    assertThatTypeChecking("fib:proc(n) : int { n=3 return n}")
+    assertThatTypeChecking("fib: proc(n) : int { n=3 return n }")
         .hasError("Could not determine type of parameter 'n'");
   }
 
   @Test
   public void procRecursive() {
     checkProgram(
-        "fib:proc(n:int) : int {"
-            + "  if n <= 1 {"
-            + "    return n"
-            + "  } else {"
-            + "    return fib(n-1) + fib(n-2)"
-            + "  }"
-            + "}"
-            + "");
+        """
+        fib: proc(n: int) : int {
+          if n <= 1 {
+            return n
+           } else {
+            return fib(n-1) + fib(n-2)
+           }
+         }
+        """);
   }
 
   @Test
   public void procIterative() {
     checkProgram(
-        "fib2:proc (n:int) : int {"
-            + " n1 = 0 "
-            + " n2 = 1 "
-            + " nth = 0 "
-            + " i=1 while i < n do i = i + 1 { "
-            + "  nth = n1 + n2 "
-            + "  n1 = n2 "
-            + "  n2 = nth "
-            + " } "
-            + " return nth "
-            + "}");
+        """
+        fib2: proc (n: int) : int {
+          n1 = 0
+          n2 = 1
+          nth = 0
+          i=1 while i < n do i = i + 1 {
+            nth = n1 + n2
+            n1 = n2
+            n2 = nth
+           }
+          return nth
+         }
+        """);
   }
 
   @Test
   public void procParams_errors() {
-    assertThatTypeChecking("fib:proc(n1):int {return n1}")
+    assertThatTypeChecking("fib: proc(n1): int { return n1 }")
         .hasError("Indeterminable type for RETURN statement");
-    assertThatTypeChecking("fib:proc(a, b, a) {}").hasError("Duplicate parameter");
-    assertThatTypeChecking("fib:proc() {a=3 a=true}").hasError("declared type INT to BOOL");
-    assertThatTypeChecking("a=true fib:proc() {a=3}").hasError("declared type BOOL to INT");
-    assertThatTypeChecking("fib:proc(n1) {}").hasError("determine type of parameter");
-    assertThatTypeChecking("fib:proc(n:int) {} fib(true)").hasError("found BOOL, expected INT");
-    assertThatTypeChecking("fib:proc(a:int[]) {a[0]=3} fib(1)")
+    assertThatTypeChecking("fib: proc(a, b, a) { }").hasError("Duplicate parameter");
+    assertThatTypeChecking("fib: proc() { a=3 a=true }").hasError("declared type INT to BOOL");
+    assertThatTypeChecking("a=true fib: proc() { a=3 }").hasError("declared type BOOL to INT");
+    assertThatTypeChecking("fib: proc(n1) { }").hasError("determine type of parameter");
+    assertThatTypeChecking("fib: proc(n: int) { } fib(true)").hasError("found BOOL, expected INT");
+    assertThatTypeChecking("fib: proc(a: int[]) { a[0]=3 } fib(1)")
         .hasError("expected 1-d ARRAY of INT");
-    assertThatTypeChecking("fib:proc(a:int) {a=3} fib([1])").hasError("found 1-d ARRAY of INT");
-    assertThatTypeChecking("fib:proc(n1:rec){} ").hasError("unknown RECORD type rec");
+    assertThatTypeChecking("fib: proc(a: int) { a=3 } fib([1])").hasError("found 1-d ARRAY of INT");
+    assertThatTypeChecking("fib: proc(n1: rec) { }").hasError("unknown RECORD type rec");
   }
 
   @Test
   public void proc5Params() {
     checkProgram(
-        "       add5:proc(a:int,b:int,c:int,d:int,e:int):int {return a+b+c+d+e}"
-            + " println add5(1,2,3,4,5) ");
+        """
+                     add5: proc(a: int,b: int,c: int,d: int,e: int): int { return a+b+c+d+e }
+
+        println add5(1,2,3,4,5)
+        """);
   }
 
   @Test
   public void externProc() {
-    checkProgram("fib:extern proc()");
-    checkProgram("fib:extern proc(n:int) ");
-    checkProgram("fib:extern proc(n1:int, n2:int)");
-    checkProgram("level1:extern proc(): bool b=level1()");
-    checkProgram("fib:extern proc(a:int[]) fib([1,2,3])");
-    checkProgram("rec:record {} fib:extern proc(n1:rec)");
+    checkProgram("fib: extern proc()");
+    checkProgram("fib: extern proc(n: int)");
+    checkProgram("fib: extern proc(n1: int, n2: int)");
+    checkProgram("level1: extern proc(): bool b=level1()");
+    checkProgram("fib: extern proc(a: int[]) fib([1,2,3])");
+    checkProgram("rec: record { } fib: extern proc(n1: rec)");
   }
 
   @Test
   public void externProcParams_errors() {
-    assertThatTypeChecking("fib:extern proc(n1) ").hasError("determine type of parameter");
-    assertThatTypeChecking("fib:extern proc(n1:rec) ").hasError("unknown RECORD type rec");
-    assertThatTypeChecking("fib:extern proc(a, b, a)").hasError("Duplicate parameter");
-    assertThatTypeChecking("fib:extern proc(n:int) fib(true)").hasError("found BOOL, expected INT");
-    assertThatTypeChecking("fib:extern proc(a:int[]) fib(1)").hasError("expected 1-d ARRAY of INT");
-    assertThatTypeChecking("fib:extern proc(a:int) fib([1])").hasError("found 1-d ARRAY of INT");
+    assertThatTypeChecking("fib: extern proc(n1)").hasError("determine type of parameter");
+    assertThatTypeChecking("fib: extern proc(n1: rec)").hasError("unknown RECORD type rec");
+    assertThatTypeChecking("fib: extern proc(a, b, a)").hasError("Duplicate parameter");
+    assertThatTypeChecking("fib: extern proc(n: int) fib(true)")
+        .hasError("found BOOL, expected INT");
+    assertThatTypeChecking("fib: extern proc(a: int[]) fib(1)")
+        .hasError("expected 1-d ARRAY of INT");
+    assertThatTypeChecking("fib: extern proc(a: int) fib([1])").hasError("found 1-d ARRAY of INT");
   }
 
   @Test
   public void return_mismatch() {
-    assertThatTypeChecking("fib:proc():bool {return 3}")
+    assertThatTypeChecking("fib: proc(): bool { return 3 }")
         .hasError("declared to return BOOL but RETURN statement was of type INT");
-    assertThatTypeChecking("fib:proc(a):int {a='hi' return a}").hasError("INT.*STRING");
-    assertThatTypeChecking("fib:proc(a:int) {a=3 return a}").hasError("VOID.*INT");
+    assertThatTypeChecking("fib: proc(a): int { a='hi' return a }").hasError("INT.*STRING");
+    assertThatTypeChecking("fib: proc(a: int) { a=3 return a }").hasError("VOID.*INT");
 
-    assertThatTypeChecking("fib:proc() {return 3}").hasError("VOID.*INT");
-    assertThatTypeChecking("fib:proc():int {return}").hasError("INT.*VOID");
+    assertThatTypeChecking("fib: proc() { return 3 }").hasError("VOID.*INT");
+    assertThatTypeChecking("fib: proc(): int { return }").hasError("INT.*VOID");
   }
 
   @Test
   public void return_required() {
-    assertThatTypeChecking("fib:proc():int {}").hasError("Not all codepaths");
-    assertThatTypeChecking("fib:proc():bool { if false { return false } }")
+    assertThatTypeChecking("fib: proc(): int { }").hasError("Not all codepaths");
+    assertThatTypeChecking("fib: proc(): bool { if false { return false  } }")
         .hasError("Not all codepaths");
     assertThatTypeChecking(
-            "fib:proc():bool {"
-                + "if false {"
-                + "  if true {"
-                + "    return false"
-                + "  } elif false {"
-                + "    return true"
-                + "  } else {"
-                + "    print 'hi'"
-                + "  }"
-                + "}"
-                + "}")
+            """
+        fib: proc(): bool {
+        if false {
+          if true {
+            return false
+           } elif false {
+            return true
+           } else {
+            print 'hi'
+           }
+         }
+         }
+        """)
         .hasError("Not all codepaths");
-    assertThatTypeChecking("fib:proc():bool {if false {return false} else {print 'hi'}}")
-        .hasError("Not all codepaths");
-    assertThatTypeChecking(
-            "fob:proc():int {"
-                + "if (false) {"
-                + "  if (true) {"
-                + "  } elif (3==3) {"
-                + "  } else {"
-                + "  }"
-                + "} elif (3==3) {"
-                + "  if (true) {"
-                + "    return 3"
-                + "  } elif (3==3) {"
-                + "    return 3"
-                + "  } else {"
-                + "    return 3"
-                + "  }"
-                + "}"
-                + "}")
+
+    assertThatTypeChecking("fib: proc(): bool { if false { return false } else { print 'hi' } }")
         .hasError("Not all codepaths");
     assertThatTypeChecking(
-            "      head:proc{}\r\n"
-                + "head=[1]\r\n"
-                + "bar:proc:int{\r\n"
-                + "  if true {\r\n"
-                + "    return head[0]\r\n"
-                + "  }"
-                + "}")
+            """
+        fob: proc(): int {
+        if (false) {
+          if (true) {
+           } elif (3==3) {
+           } else {
+           }
+         } elif (3==3) {
+          if (true) {
+            return 3
+           } elif (3==3) {
+            return 3
+           } else {
+            return 3
+           }
+         }
+        }""")
+        .hasError("Not all codepaths");
+
+    assertThatTypeChecking(
+            """
+        head: proc { }
+          head=[1]
+          bar: proc: int{
+            if true {
+              return head[0]
+             }
+           }
+          """)
         .hasError("Not all codepaths");
   }
 
   @Test
   public void callErrors() {
     assertThatTypeChecking("foo(3)").hasError("PROC 'foo' is undefined");
-    assertThatTypeChecking("a:int a(3)").hasError("PROC 'a' is undefined");
-    assertThatTypeChecking("fib:proc(){inner:proc(){}} inner(3)")
+    assertThatTypeChecking("a: int a(3)").hasError("PROC 'a' is undefined");
+    assertThatTypeChecking("fib: proc() { inner: proc() { } } inner(3)")
         .hasError("PROC 'inner' is undefined");
     // wrong number of params
-    assertThatTypeChecking("fib:proc(){} fib(3)")
+    assertThatTypeChecking("fib: proc() { } fib(3)")
         .hasError("Wrong number of arguments in call to PROC 'fib': found 1, expected 0");
-    assertThatTypeChecking("fib:proc(n:int){} fib(3, 4)")
+    assertThatTypeChecking("fib: proc(n: int) { } fib(3, 4)")
         .hasError("Wrong number of arguments in call to PROC 'fib': found 2, expected 1");
     // indeterminable arg type
-    assertThatTypeChecking("fib:proc(n) {fib(n)}")
+    assertThatTypeChecking("fib: proc(n) { fib(n) }")
         .hasError("Indeterminable type for parameter 'n' of PROC 'fib'");
     // wrong arg type
-    assertThatTypeChecking("fib:proc(n:int) {} fib(false)")
+    assertThatTypeChecking("fib: proc(n: int) { } fib(false)")
         .hasError("Incorrect type of parameter 'n' to PROC 'fib': found BOOL, expected INT");
     // can't assign to void
-    assertThatTypeChecking("fib:proc(n:int) {} x=fib(3)")
+    assertThatTypeChecking("fib: proc(n: int) { } x=fib(3)")
         .hasError("Cannot assign value of VOID expression");
   }
 
   @Test
   public void callInnerProc() {
     checkProgram(
-        "      level1: proc(): bool {\n"
-            + "  level2: proc(): int {n=3 return n}\n"
-            + "  m=level2()\n"
-            + "  return m==3\n"
-            + "}\n");
+        """
+        level1: proc(): bool {
+          level2: proc(): int { n=3 return n }
+          m=level2()
+          return m==3
+        }
+        """);
   }
 
   @Test
@@ -983,19 +1006,19 @@ public class StaticCheckerTest {
 
   @Test
   public void input_errors() {
-    assertThatTypeChecking("f:int f=input").hasError("declared type INT to STRING");
+    assertThatTypeChecking("f: int f=input").hasError("declared type INT to STRING");
     assertThatTypeChecking("f=5 f=input").hasError("declared type INT to STRING");
   }
 
   @Test
   public void recordDefinition_empty() {
-    SymbolTable symTab = checkProgram("r: record{}");
+    SymbolTable symTab = checkProgram("r: record { }");
     assertThat(symTab.getRecursive("r")).isInstanceOf(RecordSymbol.class);
   }
 
   @Test
   public void recordDefinition_simple() {
-    SymbolTable symTab = checkProgram("r2: record{s:string i:int b:bool}");
+    SymbolTable symTab = checkProgram("r2: record { s: string i: int b: bool }");
     RecordSymbol recordSymbol = symTab.getRecursive("r2", RecordSymbol.class);
     assertThat(recordSymbol).isNotNull();
     assertThat(recordSymbol.isGeneric()).isFalse();
@@ -1003,119 +1026,153 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_generic() {
-    SymbolTable symTab = checkProgram("r2: record<T, U> {s:T i:U b:bool}");
+    SymbolTable symTab = checkProgram("r2: record<T, U> { s: T i: U b: bool }");
     RecordSymbol record = symTab.getRecursive("r2", RecordSymbol.class);
     assertThat(record).isNotNull();
     assertThat(record.isGeneric()).isTrue();
   }
 
   @Test
+  public void procDecl_generic() {
+    SymbolTable symTab =
+        checkProgram(
+            """
+        r: record<T> { s: T }
+        f: proc<U>(rec: r<U>): U {
+          return rec.s
+         }
+        """);
+    RecordSymbol record = symTab.getRecursive("r", RecordSymbol.class);
+    assertThat(record).isNotNull();
+    assertThat(record.isGeneric()).isTrue();
+    ProcSymbol proc = symTab.getRecursive("f", ProcSymbol.class);
+    assertThat(proc).isNotNull();
+    assertThat(proc.isGeneric()).isTrue();
+  }
+
+  @Test
   public void recordDefinition_recursive() {
-    SymbolTable symTab = checkProgram("rec: record{r:rec}");
+    SymbolTable symTab = checkProgram("rec: record { r: rec }");
     assertThat(symTab.getRecursive("rec", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_genericRecursive() {
-    SymbolTable symTab = checkProgram("rec: record<T>{value: T r:rec<T>}");
+    SymbolTable symTab = checkProgram("rec: record<T>{ value: T r: rec<T> }");
     assertThat(symTab.getRecursive("rec", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_forward() {
-    SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{i:int}");
+    SymbolTable symTab = checkProgram("rec1: record { r: rec2 } rec2: record { i: int }");
     assertThat(symTab.getRecursive("rec1", RecordSymbol.class)).isNotNull();
     assertThat(symTab.getRecursive("rec2", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_corecursive() {
-    SymbolTable symTab = checkProgram("rec1: record{r:rec2} rec2: record{r:rec1}");
+    SymbolTable symTab = checkProgram("rec1: record { r: rec2 } rec2: record { r: rec1 }");
     assertThat(symTab.getRecursive("rec1", RecordSymbol.class)).isNotNull();
     assertThat(symTab.getRecursive("rec2", RecordSymbol.class)).isNotNull();
   }
 
   @Test
   public void recordDefinition_errors() {
-    assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
+    assertThatTypeChecking("r: record { i: int f: int f: bool i: int b: bool }")
         .hasError("Duplicate field\\(s\\) 'f, i' declared in RECORD 'r'");
-    assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");
-    assertThatTypeChecking("s=3 r:record{a:string[s]} anr=new r print anr.a")
+    assertThatTypeChecking("r: record { f: dne }").hasError("unknown RECORD type dne");
+    assertThatTypeChecking("s=3 r: record { a: string[s] } anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
-    assertThatTypeChecking("r:record{a:string[1+1]} anr=new r print anr.a")
+    assertThatTypeChecking("r: record { a: string[1+1] } anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
-    assertThatTypeChecking("r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]")
+    assertThatTypeChecking("r: record { as: string[1] } anr=new r aa=anr.as x=3 x=aa[0]")
         .hasError("declared type INT to STRING");
-    assertThatTypeChecking("r: record{i:int f:int f:bool i:int b:bool}")
+    assertThatTypeChecking("r: record { i: int f: int f: bool i: int b: bool }")
         .hasError("Duplicate field\\(s\\) 'f, i' declared in RECORD 'r'");
-    assertThatTypeChecking("r: record{f:dne}").hasError("unknown RECORD type dne");
-    assertThatTypeChecking("s=3 r:record{a:string[s]} anr=new r print anr.a")
+    assertThatTypeChecking("r: record { f: dne }").hasError("unknown RECORD type dne");
+    assertThatTypeChecking("s=3 r: record { a: string[s] } anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
-    assertThatTypeChecking("r:record{a:string[1+1]} anr=new r print anr.a")
+    assertThatTypeChecking("r: record { a: string[1+1] } anr=new r print anr.a")
         .hasError("ARRAYs in RECORDs must have constant size");
-    assertThatTypeChecking("r:record{as:string[1]} anr=new r aa=anr.as x=3 x=aa[0]")
+    assertThatTypeChecking("r: record { as: string[1] } anr=new r aa=anr.as x=3 x=aa[0]")
         .hasError("declared type INT to STRING");
   }
 
   @Test
   public void recordDefinition_duplicate() {
-    assertThatTypeChecking("r: record{f:int} r:record{b:bool}")
+    assertThatTypeChecking("r: record { f: int } r: record { b: bool }")
         .hasError("'r' already declared as RECORD r");
   }
 
   @Test
   public void recordDefinition_redeclaredAsRecord() {
-    assertThatTypeChecking("r: int r:record{b:bool}").hasError("redeclared as INT");
+    assertThatTypeChecking("r: int r: record { b: bool }").hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_redeclaredAsInt() {
-    assertThatTypeChecking("r:record{b:bool} r: int").hasError("redeclared as INT");
+    assertThatTypeChecking("r: record { b: bool } r: int").hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_redeclaredInProc() {
-    assertThatTypeChecking("      f:proc{\n" + "  r: int \n" + "  r:record{b:bool}\n" + "}\n")
+    assertThatTypeChecking(
+            """
+        f: proc {
+          r: int
+          r: record { b: bool }
+        }
+        """)
         .hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_redeclaredInIf() {
-    assertThatTypeChecking("if true {r: int r:record{b:bool}}").hasError("redeclared as INT");
-    assertThatTypeChecking("if true {r:record{b:bool} r: int}").hasError("redeclared as INT");
+    assertThatTypeChecking("if true { r: int r: record { b: bool } }")
+        .hasError("redeclared as INT");
+    assertThatTypeChecking("if true { r: record { b: bool } r: int }")
+        .hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_error_duplicateName() {
-    assertThatTypeChecking("r: record{f:int} r:record{b:bool}")
+    assertThatTypeChecking("r: record { f: int } r: record { b: bool }")
         .hasError("'r' already declared as RECORD r");
   }
 
   @Test
   public void recordDefinition_error_redeclaredAsRecord() {
-    assertThatTypeChecking("r: int r:record{b:bool}").hasError("redeclared as INT");
+    assertThatTypeChecking("r: int r: record { b: bool }").hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_error_redeclaredAsInt() {
-    assertThatTypeChecking("r:record{b:bool} r: int").hasError("redeclared as INT");
+    assertThatTypeChecking("r: record { b: bool } r: int").hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_error_redeclaredInProc() {
-    assertThatTypeChecking("      f:proc{\n" + "  r: int \n" + "  r:record{b:bool}\n" + "}\n")
+    assertThatTypeChecking(
+            """
+        f: proc {
+          r: int
+          r: record { b: bool }
+        }
+        """)
         .hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_error_redeclaredInIf() {
-    assertThatTypeChecking("if true {r: int r:record{b:bool}}").hasError("redeclared as INT");
-    assertThatTypeChecking("if true {r:record{b:bool} r: int}").hasError("redeclared as INT");
+    assertThatTypeChecking("if true { r: int r: record { b: bool } }")
+        .hasError("redeclared as INT");
+    assertThatTypeChecking("if true { r: record { b: bool } r: int }")
+        .hasError("redeclared as INT");
   }
 
   @Test
   public void recordDefinition_error_repeatedGeneric() {
-    assertThatTypeChecking("r2: record<T, S, S, T, U> {s:T b:bool}")
+    assertThatTypeChecking("r2: record<T, S, S, T, U> { s: T b: bool }")
         .hasError("Duplicate formal type\\(s\\) 'S, T'");
   }
 
@@ -1123,11 +1180,11 @@ public class StaticCheckerTest {
   public void recordFieldGetGeneric() {
     assertThatTypeChecking(
             """
-            r2: record<T> {i:T}
-            anr2=new r2<int>
-            x:int
-            x=anr2.i
-            """)
+        r2: record<T> { i: T }
+        anr2=new r2<int>
+        x: int
+        x=anr2.i
+        """)
         .succeeds();
   }
 
@@ -1135,10 +1192,10 @@ public class StaticCheckerTest {
   public void recordFieldSetGeneric() {
     assertThatTypeChecking(
             """
-            r2: record<T> {i:T}
-            anr2=new r2<int>
-            anr2.i = 3
-            """)
+        r2: record<T> { i: T }
+        anr2=new r2<int>
+        anr2.i = 3
+        """)
         .succeeds();
   }
 
@@ -1146,11 +1203,11 @@ public class StaticCheckerTest {
   public void recordFieldSetGenericFromReturnValue() {
     assertThatTypeChecking(
             """
-            r2: record<T> {i:T}
-            new_list: proc: r2<int> { return new r2<int> }
-            anr2=new_list()
-            anr2.i = 3
-            """)
+        r2: record<T> { i: T }
+        new_list: proc: r2<int> { return new r2<int> }
+        anr2=new_list()
+        anr2.i = 3
+        """)
         .succeeds();
   }
 
@@ -1158,10 +1215,10 @@ public class StaticCheckerTest {
   public void recordFieldGetSetGeneric() {
     assertThatTypeChecking(
             """
-            r2: record<T> {i:T}
-            anr2=new r2<int>
-            anr2.i = anr2.i
-            """)
+        r2: record<T> { i: T }
+        anr2=new r2<int>
+        anr2.i = anr2.i
+        """)
         .succeeds();
   }
 
@@ -1169,10 +1226,10 @@ public class StaticCheckerTest {
   public void recordFieldGetSetGenericMultipleFields() {
     assertThatTypeChecking(
             """
-            r2: record<T> {i:T j:T}
-            anr2=new r2<int>
-            anr2.i = anr2.j
-            """)
+        r2: record<T> { i: T j: T }
+        anr2=new r2<int>
+        anr2.i = anr2.j
+        """)
         .succeeds();
   }
 
@@ -1180,10 +1237,10 @@ public class StaticCheckerTest {
   public void recordFieldGetSetGenericMultipleGenerics() {
     assertThatTypeChecking(
             """
-            r2: record<S, T> {i:S j:T}
-            anr2=new r2<int, int>
-            anr2.i = anr2.j
-            """)
+        r2: record<S, T> { i: S j: T }
+        anr2=new r2<int, int>
+        anr2.i = anr2.j
+        """)
         .succeeds();
   }
 
@@ -1191,10 +1248,10 @@ public class StaticCheckerTest {
   public void recordFieldGetSetGenericMultipleGenericsMismatch() {
     assertThatTypeChecking(
             """
-            r2: record<S, T> {i:S j:T}
-            anr2=new r2<int, double>
-            anr2.i = anr2.j
-            """)
+        r2: record<S, T> { i: S j: T }
+        anr2=new r2<int, double>
+        anr2.i = anr2.j
+        """)
         .hasError("but expression is DOUBLE");
   }
 
@@ -1203,11 +1260,11 @@ public class StaticCheckerTest {
     SymbolTable symTab =
         checkProgram(
             """
-            list: record<T> {value:T next:list<T>}
-            head = new list<int>
-            second = new list<int>
-            head.next = second
-            """);
+        list: record<T> { value: T next: list<T> }
+        head = new list<int>
+        second = new list<int>
+        head.next = second
+        """);
 
     RecordSymbol listSymbol = symTab.get("list", RecordSymbol.class);
     assertThat(listSymbol.fieldType("value")).isInstanceOf(UnboundType.class);
@@ -1230,16 +1287,16 @@ public class StaticCheckerTest {
   public void returnBoundGeneric() {
     assertThatTypeChecking(
             """
-             list: record<T> {
-               value: int
-               next: list<T>
-             }
+        list: record<T> {
+          value: int
+          next: list<T>
+        }
 
-             new_list: proc(): list<int>{
-               return new list<int>
-             }
-             ell = new_list()
-            """)
+        new_list: proc(): list<int> {
+          return new list<int>
+        }
+        ell = new_list()
+        """)
         .succeeds();
   }
 
@@ -1247,22 +1304,21 @@ public class StaticCheckerTest {
   public void boundGenericParam() {
     assertThatTypeChecking(
             """
-             list: record<T> {
-               value: int
-               next: list<T>
-             }
+        list: record<T> {
+          value: int
+          next: list<T>
+        }
 
-             append: proc(it:list<int>, newvalue:int) {
-               head: list<int>
-               head = it
-               while head.next != null do head = head.next {
-               }
+        append: proc(it: list<int>, newvalue: int) {
+          head: list<int>
+          head = it
+          while head.next != null do head = head.next { }
 
-               node = new list<int>
-               node.value = newvalue
-               head.next = node
-             }
-            """)
+          node = new list<int>
+          node.value = newvalue
+          head.next = node
+        }
+        """)
         .succeeds();
   }
 
@@ -1270,17 +1326,17 @@ public class StaticCheckerTest {
   public void recursiveGeneneric_mismatch() {
     assertThatTypeChecking(
             """
-            list: record<T> {value:T next:list<T>}
-            head = new list<int>
-            second = new list<string>
-            head.next = second
-            """)
+        list: record<T> { value: T next: list<T> }
+        head = new list<int>
+        second = new list<string>
+        head.next = second
+        """)
         .hasError("but expression is RECORD list<STRING>");
   }
 
   @Test
   public void variableDecl_recordType() {
-    SymbolTable symTab = checkProgram("r2: record{s:string} instance: r2");
+    SymbolTable symTab = checkProgram("r2: record { s: string } instance: r2");
     assertThat(symTab.getRecursive("r2", RecordSymbol.class)).isNotNull();
 
     Symbol rec = symTab.get("instance");
@@ -1297,13 +1353,13 @@ public class StaticCheckerTest {
 
   @Test
   public void variableDecl_recordLikeTypeButNotQuiteRecordType() {
-    assertThatTypeChecking("p:proc(){} instance: p")
+    assertThatTypeChecking("p: proc() { } instance: p")
         .hasError("Cannot declare variable 'instance' as unknown RECORD type p");
   }
 
   @Test
   public void paramDecl_recordType() {
-    SymbolTable symTab = checkProgram("r1: record{s:string} p:proc(instance:r1){}");
+    SymbolTable symTab = checkProgram("r1: record { s: string } p: proc(instance: r1) { }");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
     ParamSymbol instance = proc.formal(0);
     RecordReferenceType r1 = (RecordReferenceType) instance.varType();
@@ -1312,13 +1368,13 @@ public class StaticCheckerTest {
 
   @Test
   public void paramDecl_errorRecordType() {
-    assertThatTypeChecking("p:proc(instance:r1){}")
+    assertThatTypeChecking("p: proc(instance: r1) { }")
         .hasError("Cannot declare variable 'instance' as unknown RECORD type r1");
   }
 
   @Test
   public void returnType_recordType() {
-    SymbolTable symTab = checkProgram("r1: record{s:string} p:proc:r1{return null}");
+    SymbolTable symTab = checkProgram("r1: record { s: string } p: proc: r1{ return null }");
     ProcSymbol proc = (ProcSymbol) symTab.get("p");
     RecordReferenceType r1 = (RecordReferenceType) proc.returnType();
     assertThat(r1.name()).isEqualTo("r1");
@@ -1326,13 +1382,14 @@ public class StaticCheckerTest {
 
   @Test
   public void returnType_errorRecordType() {
-    assertThatTypeChecking("p:proc:r1 {return null}")
+    assertThatTypeChecking("p: proc: r1 { return null }")
         .hasError("Cannot declare variable 'return type' as unknown RECORD type r1");
   }
 
   @Test
   public void assignRecordType() {
-    SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2:r1 var2=var1");
+    SymbolTable symTab =
+        checkProgram("r1: record { s: string } var1: r1 var1=null var2: r1 var2=var1");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1345,7 +1402,8 @@ public class StaticCheckerTest {
   @Test
   public void recordType_compare() {
     SymbolTable symTab =
-        checkProgram("r1:record{s:string} var1=new r1 var2 = new r1 if var1==var2 { print 'same'}");
+        checkProgram(
+            "r1: record { s: string } var1=new r1 var2 = new r1 if var1==var2 { print 'same' }");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1358,7 +1416,7 @@ public class StaticCheckerTest {
   @Test
   public void recordType_compareToNull() {
     SymbolTable symTab =
-        checkProgram("r1:record{s:string} var1=new r1 if var1!=null { print 'not null'}");
+        checkProgram("r1: record { s: string } var1=new r1 if var1!=null { print 'not null' }");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1366,23 +1424,23 @@ public class StaticCheckerTest {
 
   @Test
   public void nullEquality() {
-    checkProgram("if null != null { print 'not null'}");
-    checkProgram("if null == null { print 'not null'}");
-    checkProgram("s='' if null == s {print 'not 3'}");
-    checkProgram("s='' if s == null {print 'not 3'}");
-    checkProgram("a=[3] if null != a {print 'not 3'}");
-    checkProgram("rt:record{} r = new rt if r != null {print 'not 3'}");
+    checkProgram("if null != null { print 'not null' }");
+    checkProgram("if null == null { print 'not null' }");
+    checkProgram("s='' if null == s { print 'not 3' }");
+    checkProgram("s='' if s == null { print 'not 3' }");
+    checkProgram("a=[3] if null != a { print 'not 3' }");
+    checkProgram("rt: record { } r = new rt if r != null { print 'not 3' }");
   }
 
   @Test
   public void nullErrors() {
-    assertThatTypeChecking("s='' if null > s { print 'not null'}")
+    assertThatTypeChecking("s='' if null > s { print 'not null' }")
         .hasError("Cannot apply > operator to left operand of type NULL");
-    assertThatTypeChecking("if null < null { print 'not null'}")
+    assertThatTypeChecking("if null < null { print 'not null' }")
         .hasError("Cannot apply < operator to left operand of type NULL");
-    assertThatTypeChecking("if not null {print 'not null'}")
+    assertThatTypeChecking("if not null { print 'not null' }")
         .hasError("Cannot apply NOT operator to NULL expression");
-    assertThatTypeChecking("if null == 3 {print 'not 3'}")
+    assertThatTypeChecking("if null == 3 { print 'not 3' }")
         .hasError("Incompatible types for.*NULL.*INT");
   }
 
@@ -1426,9 +1484,9 @@ public class StaticCheckerTest {
         .hasError("Cannot apply \\?\\? operator to left operand of type INT");
     assertThatTypeChecking(
             """
-            rec1:record{} r1=new rec1
-            rec2:record{} r2=new rec2
-            c= r1??r2
+			rec1:record{} r1=new rec1
+			rec2:record{} r2=new rec2
+			c= r1??r2
             """)
         .hasError("Incompatible types for operator \\?\\?.*rec1.*rec2");
     assertThatTypeChecking(
@@ -1442,7 +1500,7 @@ public class StaticCheckerTest {
 
   @Test
   public void assignRecordType_inferred() {
-    SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
+    SymbolTable symTab = checkProgram("r1: record { s: string } var1: r1 var1=null var2=var1");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1454,30 +1512,33 @@ public class StaticCheckerTest {
 
   @Test
   public void assignRecordType_mismatch() {
-    assertThatTypeChecking("r1:record{} var1:r1 var1=null var2:int var2=var1")
+    assertThatTypeChecking("r1: record { } var1: r1 var1=null var2: int var2=var1")
         .hasError("to RECORD r1");
-    assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=var1")
+    assertThatTypeChecking("r1: record { } r2: record { } var1: r1 var1=null var2: r2 var2=var1")
         .hasError("to RECORD r1");
-    assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2")
+    assertThatTypeChecking(
+            "r1: record { } r2: record { } var1: r1 var1=null var2: r2 var2=null var1=var2")
         .hasError("to RECORD r2");
-    assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var1=var2")
+    assertThatTypeChecking(
+            "r1: record { } r2: record { } var1: r1 var1=null var2: r2 var2=null var1=var2")
         .hasError("to RECORD r2");
-    assertThatTypeChecking("r1:record{} r2:record{} var1:r1 var1=null var2:r2 var2=null var2=var1")
+    assertThatTypeChecking(
+            "r1: record { } r2: record { } var1: r1 var1=null var2: r2 var2=null var2=var1")
         .hasError("to RECORD r1");
   }
 
   @Test
   public void assignRecordType_procReturnMismatch() {
-    assertThatTypeChecking("r1:record{i:int} r2:record{} p:proc():r1{return new r2}")
+    assertThatTypeChecking("r1: record { i: int } r2: record { } p: proc(): r1{ return new r2 }")
         .hasError("but RETURN statement was of type RECORD r2");
     assertThatTypeChecking(
-            "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()")
+            "r1: record { i: int } r2: record { } p: proc(): r2{ return new r2 } var1: r1 var1=p()")
         .hasError("type RECORD r1 to RECORD r2");
   }
 
   @Test
   public void newRecord() {
-    SymbolTable symTab = checkProgram("r1:record{s:string} var1=new r1");
+    SymbolTable symTab = checkProgram("r1: record { s: string } var1=new r1");
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType = (RecordReferenceType) var1.varType();
     assertThat(refType.name()).isEqualTo("r1");
@@ -1486,7 +1547,7 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_assign() {
-    SymbolTable symTab = checkProgram("r1:record{s:string} var1=new r1 var2=var1");
+    SymbolTable symTab = checkProgram("r1: record { s: string } var1=new r1 var2=var1");
 
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
@@ -1501,7 +1562,8 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_procReturnsRecord() {
-    SymbolTable symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p()");
+    SymbolTable symTab =
+        checkProgram("r1: record { i: int } p: proc(): r1{ return new r1 } var1=p()");
 
     Symbol var1 = symTab.get("var1");
     RecordReferenceType refType1 = (RecordReferenceType) var1.varType();
@@ -1512,25 +1574,27 @@ public class StaticCheckerTest {
   @Test
   public void newRecord_unknown() {
     assertThatTypeChecking("var1=new r2").hasError("unknown RECORD type r2");
-    assertThatTypeChecking("r1:record{s:string} var1=new r2").hasError("unknown RECORD type r2");
+    assertThatTypeChecking("r1: record { s: string } var1=new r2")
+        .hasError("unknown RECORD type r2");
   }
 
   @Test
   public void newRecord_mismatch() {
     assertThatTypeChecking(
-            "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1")
+            "r1: record { s: string } r2: record { s: string } var1=new r1 var2 = new r2 var2=var1")
         .hasError("r2 to RECORD r1");
     assertThatTypeChecking(
-            "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2")
+            "r1: record { s: string } r2: record { s: string } var1=new r1 var2 = new r2 var1=var2")
         .hasError("r1 to RECORD r2");
-    assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var1=var2").hasError("to INT");
-    assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var2=var1")
+    assertThatTypeChecking("r1: record { s: string } var1=new r1 var2=1 var1=var2")
+        .hasError("to INT");
+    assertThatTypeChecking("r1: record { s: string } var1=new r1 var2=1 var2=var1")
         .hasError("to RECORD r1");
   }
 
   @Test
   public void newRecord_generic() {
-    SymbolTable symTab = checkProgram("Rec:record<T>{s:T} var=new Rec<int>");
+    SymbolTable symTab = checkProgram("Rec: record<T>{ s: T } var=new Rec<int>");
     Symbol var = symTab.get("var");
     RecordReferenceType refType = (RecordReferenceType) var.varType();
     assertThat(refType.name()).isEqualTo("Rec");
@@ -1539,19 +1603,19 @@ public class StaticCheckerTest {
 
   @Test
   public void newRecord_wrongNumberOfGenerics() {
-    assertThatTypeChecking("r1:record<T>{s:string} var1=new r1")
+    assertThatTypeChecking("r1: record<T>{ s: string } var1=new r1")
         .hasError("Wrong number.*saw 0, expected 1");
-    assertThatTypeChecking("r1:record{s:string} var1=new r1<int>")
+    assertThatTypeChecking("r1: record { s: string } var1=new r1<int>")
         .hasError("Wrong number.*saw 1, expected 0");
-    assertThatTypeChecking("r1:record<T>{s:string} var1=new r1<R>")
+    assertThatTypeChecking("r1: record<T>{ s: string } var1=new r1<R>")
         .hasError("unknown RECORD type R");
-    assertThatTypeChecking("r1:record<S,T>{s:string} var1=new r1<int>")
+    assertThatTypeChecking("r1: record<S,T>{ s: string } var1=new r1<int>")
         .hasError("Wrong number.*saw 1, expected 2");
   }
 
   @Test
   public void fieldGet() {
-    SymbolTable symTab = checkProgram("r1:record{s:string i:int} var1=new r1 ii=var1.i");
+    SymbolTable symTab = checkProgram("r1: record { s: string i: int } var1=new r1 ii=var1.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1560,7 +1624,7 @@ public class StaticCheckerTest {
   @Test
   public void fieldGet_nested() {
     SymbolTable symTab =
-        checkProgram("r1:record{i:int} r2:record{rone:r1} var2=new r2 ii=var2.rone.i");
+        checkProgram("r1: record { i: int } r2: record { rone: r1 } var2=new r2 ii=var2.rone.i");
     Symbol symbol = symTab.get("ii");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1568,7 +1632,7 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_recursive() {
-    SymbolTable symTab = checkProgram("r1:record{i:int next:r1} var1=new r1 var2=var1.next");
+    SymbolTable symTab = checkProgram("r1: record { i: int next: r1 } var1=new r1 var2=var1.next");
 
     Symbol var2 = symTab.get("var2");
     RecordReferenceType refType2 = (RecordReferenceType) var2.varType();
@@ -1578,7 +1642,8 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_procReturn() {
-    SymbolTable symTab = checkProgram("r1:record{i:int} p:proc():r1{return new r1} var1=p().i");
+    SymbolTable symTab =
+        checkProgram("r1: record { i: int } p: proc(): r1 { return new r1 } var1=p().i");
 
     Symbol var1 = symTab.get("var1");
     assertThat(var1.varType()).isEqualTo(VarType.INT);
@@ -1586,9 +1651,9 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldGet_mismatch() {
-    assertThatTypeChecking("r1:record{s:string i:int} var1=new r1 ss:string ss=var1.i")
+    assertThatTypeChecking("r1: record { s: string i: int } var1=new r1 ss: string ss=var1.i")
         .hasError("STRING to INT");
-    assertThatTypeChecking("r1:record{s:string i:int} var1=new r1 ss='string' ss=var1.i")
+    assertThatTypeChecking("r1: record { s: string i: int } var1=new r1 ss='string' ss=var1.i")
         .hasError("STRING to INT");
     assertThatTypeChecking("ss='string' ss2=ss.i")
         .hasError("Cannot apply . operator to left operand of type STRING");
@@ -1596,15 +1661,15 @@ public class StaticCheckerTest {
 
   @Test
   public void record_badOp() {
-    assertThatTypeChecking("r1:record{s:string i:int} var1=new r1 var2=var1+1")
+    assertThatTypeChecking("r1: record { s: string i: int } var1=new r1 var2=var1+1")
         .hasError("Incompatible types for operator +");
-    assertThatTypeChecking("r1:record{s:string i:int} var1=new r1 var2=1+var1")
+    assertThatTypeChecking("r1: record { s: string i: int } var1=new r1 var2=1+var1")
         .hasError("Incompatible types for operator +");
   }
 
   @Test
   public void fieldSet() {
-    SymbolTable symTab = checkProgram("r1:record{i:int} var1=new r1 var1.i=3 var2=var1.i");
+    SymbolTable symTab = checkProgram("r1: record { i: int } var1=new r1 var1.i=3 var2=var1.i");
     Symbol symbol = symTab.get("var2");
     assertThat(symbol.isAssigned()).isTrue();
     assertThat(symbol.varType()).isEqualTo(VarType.INT);
@@ -1612,35 +1677,42 @@ public class StaticCheckerTest {
 
   @Test
   public void fieldSet_error() {
-    assertThatTypeChecking("r1:record{i:int} var1=new r1 var1.i=true").hasError("is BOOL");
-    assertThatTypeChecking("r1:record{i:int s:string} var1=new r1 var1.i=var1.s")
+    assertThatTypeChecking("r1: record { i: int } var1=new r1 var1.i=true").hasError("is BOOL");
+    assertThatTypeChecking("r1: record { i: int s: string } var1=new r1 var1.i=var1.s")
         .hasError("is STRING");
-    assertThatTypeChecking("r1:record{s:string} var1=new r1 var1.s=0").hasError("is INT");
+    assertThatTypeChecking("r1: record { s: string } var1=new r1 var1.s=0").hasError("is INT");
   }
 
   @Test
   public void arrayOfRecord() {
     checkProgram(
-        "      r:record{a:string} rs:r[2]"
-            + "tr = new r "
-            + "rs[0] = tr "
-            + "tr.a='hi' "
-            + "println tr.a");
+        """
+        r: record { a: string }
+        rs: r[2]
+        tr = new r
+        rs[0] = tr
+        tr.a='hi'
+        println tr.a
+        """);
   }
 
   @Test
   public void arrayOfRecordError() {
     assertThatTypeChecking(
-            "      r:record{a:string} " //
-                + "ar:r[2] "
-                + "ai:int[2] "
-                + "ar=ai")
+            """
+        r: record { a: string }
+        ar: r[2]
+        ai: int[2]
+        ar=ai
+        """)
         .hasError("ARRAY of r to 1-d ARRAY of INT");
     assertThatTypeChecking(
-            "      r:record{a:string} " //
-                + "ar:r[2] "
-                + "ai:int[2] "
-                + "ai=ar")
+            """
+        r: record { a: string }
+        ar: r[2]
+        ai: int[2]
+        ai=ar
+        """)
         .hasError("ARRAY of INT to 1-d ARRAY of r");
   }
 
@@ -1648,25 +1720,29 @@ public class StaticCheckerTest {
   public void advancedRValue() {
     SymbolTable symtab =
         checkProgram(
-            "      r1:record{bar:r2} r2:record{baz:r3[1]} r3:record{qux:string}"
-                + " foo:r1[3]"
-                + " a=4"
-                + " f:proc:int{return 1}"
-                + " bam = foo[3+a].bar.baz[f()].qux");
+            """
+            r1: record { bar: r2 }
+            r2: record { baz: r3[1] }
+            r3: record { qux: string }
+            foo: r1[3]
+            a=4
+            f: proc: int { return 1 }
+            bam = foo[3+a].bar.baz[f()].qux
+            """);
     assertThat(symtab.lookupRecursive("bam")).isEqualTo(VarType.STRING);
   }
 
   @Test
   public void invalidFieldName() {
-    assertThatTypeChecking("r1:record{field:string} foo=new r1 bam = foo.3")
+    assertThatTypeChecking("r1: record { field: string } foo=new r1 bam = foo.3")
         .hasError("Cannot use expression 3 to get field of RECORD type r1");
-    assertThatTypeChecking("r1:record{field:string} foo=new r1 bam = foo.'hi'")
+    assertThatTypeChecking("r1: record { field: string } foo=new r1 bam = foo.'hi'")
         .hasError("Cannot use expression 'hi' to get field of RECORD type r1");
-    assertThatTypeChecking("r1:record{field:string} foo=new r1 bam = foo.'field'")
+    assertThatTypeChecking("r1: record { field: string } foo=new r1 bam = foo.'field'")
         .hasError("Cannot use expression 'field' to get field of RECORD type r1");
-    assertThatTypeChecking("r1:record{field:string} foo=new r1 bam = foo.true")
+    assertThatTypeChecking("r1: record { field: string } foo=new r1 bam = foo.true")
         .hasError("true to get field of RECORD type r1");
-    assertThatTypeChecking("r1:record{field:string} foo=new r1 f='field' bam = foo.f")
+    assertThatTypeChecking("r1: record { field: string } foo=new r1 f='field' bam = foo.f")
         .hasError("unknown field f");
   }
 
@@ -1694,10 +1770,12 @@ public class StaticCheckerTest {
   public void complexArgs() {
     SymbolTable symTab =
         checkProgram(
-            "      len=length(args)\r\n"
-                + "print 'length is ' println len\r\n"
-                + "a=args[0]\r\n"
-                + "println 'first is ' + a\r\n");
+            """
+            len=length(args)
+            print 'length is ' println len
+            a=args[0]
+            println 'first is ' + a
+            """);
     assertThat(symTab.lookupRecursive("len")).isEqualTo(VarType.INT);
     assertThat(symTab.lookupRecursive("a")).isEqualTo(VarType.STRING);
     assertThat(symTab.lookupRecursive("ARGS")).isArray();
@@ -1706,17 +1784,17 @@ public class StaticCheckerTest {
 
   @Test
   public void badArgs() {
-    assertThatTypeChecking("a:bool a=args").hasError("Cannot convert");
-    assertThatTypeChecking("a:bool a=args[0]").hasError("Cannot convert");
-    assertThatTypeChecking("a:bool a=length(args)").hasError("Cannot convert");
+    assertThatTypeChecking("a: bool a=args").hasError("Cannot convert");
+    assertThatTypeChecking("a: bool a=args[0]").hasError("Cannot convert");
+    assertThatTypeChecking("a: bool a=length(args)").hasError("Cannot convert");
   }
 
   @Test
   public void unknownWhile() {
     // Tests bug #204
-    assertThatTypeChecking("while x < 3 { println x}")
+    assertThatTypeChecking("while x < 3 { println x }")
         .hasError("Indeterminable type for expression x");
-    assertThatTypeChecking("while 3 < x { println x}")
+    assertThatTypeChecking("while 3 < x { println x }")
         .hasError("Indeterminable type for expression x");
   }
 
@@ -1724,7 +1802,7 @@ public class StaticCheckerTest {
   public void unknownBracket() {
     // Tests bug #205
     assertThatTypeChecking("x=a[3]").hasError("Indeterminable type for expression a");
-    assertThatTypeChecking("p:proc() {x=a[3]}").hasError("Indeterminable type for expression a");
+    assertThatTypeChecking("p: proc() { x=a[3] }").hasError("Indeterminable type for expression a");
   }
 
   @Test
@@ -1736,19 +1814,18 @@ public class StaticCheckerTest {
   @Test
   public void alreadyDeclaredAsProc() {
     // tests bug #214
-    assertThatTypeChecking("head:proc{} head=[1] bar:proc:int{return head[0]}")
-        .hasError("Cannot convert variable 'head' from declared type PROC");
-    assertThatTypeChecking("head:proc{} r:record{} head=new r")
-        .hasError("Cannot convert variable 'head' from declared type PROC");
-    assertThatTypeChecking("head:proc{} head.f=3")
-        .hasError("Cannot set field of variable 'head.f' of type PROC; not a known RECORD");
-    assertThatTypeChecking("head:proc{} foo:proc {head[1]=3}").hasError("used as ARRAY; was PROC");
+    assertThatTypeChecking("head: proc { } head=[1] bar: proc: int{ return head[0] }")
+        .hasError("PROC cannot be used as ARRAY");
+    assertThatTypeChecking("head: proc { } r: record { } head=new r").hasError("PROC to RECORD");
+    assertThatTypeChecking("head: proc { } head.f=3").hasError("not a known RECORD");
+    assertThatTypeChecking("head: proc { } foo: proc { head[1]=3 }")
+        .hasError("used as ARRAY; was PROC");
   }
 
   @Test
   public void badUnary() {
     // Tests bug #217
-    assertThatTypeChecking("if not a { print 'sorry'}")
+    assertThatTypeChecking("if not a { print 'sorry' }")
         .hasError("Indeterminable type for expression a");
   }
 
@@ -1790,7 +1867,8 @@ public class StaticCheckerTest {
 
   @Test
   public void bug_269_variable_with_proc_name() throws Exception {
-    assertThatTypeChecking("r: record{} r:proc{} r=new r").hasError("already declared as PROC");
+    assertThatTypeChecking("r: record { } r: proc { } r=new r")
+        .hasError("already declared as PROC");
   }
 
   @Test

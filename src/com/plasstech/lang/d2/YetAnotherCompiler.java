@@ -6,6 +6,7 @@ import com.plasstech.lang.d2.codegen.ILCodeGeneratorPart2;
 import com.plasstech.lang.d2.codegen.RuntimeChecksGenerator;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.lex.Lexer;
+import com.plasstech.lang.d2.lex.LexerInterface;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.RangeChecker;
 import com.plasstech.lang.d2.parse.Parser;
@@ -19,7 +20,7 @@ public class YetAnotherCompiler {
 
   public State compile(CompilationConfiguration config) {
     State state = State.create(config.sourceCode()).build().addFilename(config.filename());
-    Lexer lexer = new Lexer(state.sourceCode());
+    LexerInterface lexer = new Lexer(state.sourceCode());
     Phase parser = new Parser(lexer);
     state = parser.execute(state);
     if (config.parseDebugLevel() > 0) {

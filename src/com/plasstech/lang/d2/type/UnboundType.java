@@ -6,11 +6,12 @@ package com.plasstech.lang.d2.type;
  * <pre>
  *  genrecord: record<T> {f: T}
  * </pre>
- *
- * The "T" is the GenericType. Field `f`'s type is an UnboundType with "T" as its name.
+ * 
+ * The "T" is a formal type of the RecordReferenceType; its type is UnboundType. Similarly, field
+ * `f`'s type is an UnboundType with "T" as its name.
  */
 public class UnboundType extends SimpleType {
   public UnboundType(String name) {
-    super(name);
+    super(name, 8);
   }
 }

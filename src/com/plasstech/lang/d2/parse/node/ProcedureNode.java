@@ -1,5 +1,6 @@
 package com.plasstech.lang.d2.parse.node;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
@@ -26,14 +27,21 @@ public class ProcedureNode extends DeclarationNode {
   private final BlockNode block;
   private final ImmutableList<Parameter> parameters;
   private final VarType returnType;
+  private final ImmutableList<String> formalTypeVariables;
 
   public ProcedureNode(
       String name, List<Parameter> params, VarType returnType, BlockNode block, Position start) {
-    super(name, returnType, start);
+    this(name, params, ImmutableList.of(), returnType, block, start);
+  }
 
+  public ProcedureNode(String name, List<Parameter> params, List<String> formalTypeVariables,
+      VarType returnType, BlockNode block, Position start) {
+    super(name, returnType, start);
+    Preconditions.checkArgument(block != null, "`block` cannot be null");
     this.parameters = ImmutableList.copyOf(params);
+    this.formalTypeVariables = ImmutableList.copyOf(formalTypeVariables);
     this.returnType = returnType;
-    this.block = (block != null) ? block : BlockNode.EMPTY;
+    this.block = block;
   }
 
   public ImmutableList<Parameter> parameters() {
@@ -57,5 +65,9 @@ public class ProcedureNode extends DeclarationNode {
   @Override
   public String toString() {
     return String.format("%s: PROC(%s): %s {\n%s\n}", name(), parameters, returnType, block);
+  }
+
+  public ImmutableList<String> formalTypeVariables() {
+    return formalTypeVariables;
   }
 }
