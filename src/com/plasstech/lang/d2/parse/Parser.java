@@ -776,14 +776,13 @@ public class Parser implements Phase {
       ExprNode operand = unary();
 
       if (unaryToken.type() == TokenType.PLUS) {
-        // unary +(anything) = the thing
+        // Peep-hole optimization of unary +(thing) = thing
         return operand;
       }
 
       if (unaryToken.type() == TokenType.NOT || unaryToken.type() == TokenType.BIT_NOT) {
-        if (operand instanceof BinOpNode) {
-          // optimize 'not (a==b)' to 'a!=b'
-          BinOpNode child = (BinOpNode) operand;
+        if (operand instanceof BinOpNode child) {
+          // Peep-hole optimization of 'not (a==b)' to 'a!=b'
           TokenType newOperator = NOTTED_OPS.get(child.operator());
           if (newOperator == null) {
             newOperator = NOTTED_OPS.inverse().get(child.operator());
@@ -792,9 +791,8 @@ public class Parser implements Phase {
             return new BinOpNode(child.left(), newOperator, child.right());
           }
         }
-        if (operand instanceof UnaryNode) {
-          // optimize 'not not x' to 'x'. I hate this.
-          UnaryNode child = (UnaryNode) operand;
+        if (operand instanceof UnaryNode child) {
+          // Peep-hole optimization of 'not not x' to 'x'.
           TokenType secondOp = child.operator();
           if (secondOp == unaryToken.type()) {
             return child.expr();
