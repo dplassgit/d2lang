@@ -10,8 +10,8 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameter.TestParameterValuesProvider;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
@@ -560,9 +560,9 @@ public class ResolverTest {
         .inOrder();
   }
 
-  private static class NonDoubleTypeProvider implements TestParameterValuesProvider {
+  private static class NonDoubleTypeProvider extends TestParameterValuesProvider {
     @Override
-    public List<VarType> provideValues() {
+    public List<VarType> provideValues(Context context) {
       return ImmutableList.of(VarType.BYTE, VarType.SHORT, VarType.INT, VarType.LONG,
           VarType.BOOL, VarType.RANGE);
     }
