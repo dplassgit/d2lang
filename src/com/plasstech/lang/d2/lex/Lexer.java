@@ -53,7 +53,7 @@ public class Lexer {
       advance();
     }
 
-    Position start = Position.create(line, col);
+    Position start = new Position(line, col);
     if (Character.isDigit(cc)) {
       return makeNumber(start);
     }
@@ -86,7 +86,7 @@ public class Lexer {
     if (value.startsWith("_")) {
       throw new ScannerException(String.format("Illegal variable name %s", value), start);
     }
-    Position end = Position.create(line, col);
+    Position end = new Position(line, col);
     try {
       // Figure out which keyword it is
       TokenType keywordType = TokenType.valueOf(value.toUpperCase());
@@ -121,7 +121,7 @@ public class Lexer {
           throw new ScannerException(String.format("Byte constant too big 0y%s", sb), start);
         }
         try {
-          Position end = Position.create(line, col);
+          Position end = new Position(line, col);
           // Cannot use Byte.parseByte because it rejects "some" values, huh.
           int value = Integer.parseInt(sb.toString(), 16);
           return new ConstToken<Byte>(TokenType.BYTE, (byte) value, sb.toString(), start, end);
@@ -143,7 +143,7 @@ public class Lexer {
         advance();
       }
       try {
-        Position end = Position.create(line, col);
+        Position end = new Position(line, col);
         double value = Double.parseDouble(sb.toString());
         return new ConstToken<Double>(TokenType.DOUBLE, value, start, end);
       } catch (Exception e) {
@@ -153,7 +153,7 @@ public class Lexer {
       // making a long
       try {
         advance();
-        Position end = Position.create(line, col);
+        Position end = new Position(line, col);
         long value = Long.parseLong(sb.toString());
         sb.append(cc);
         return new ConstToken<Long>(TokenType.LONG, value, start, end);
@@ -162,7 +162,7 @@ public class Lexer {
       }
     }
     try {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       int value = Integer.parseInt(sb.toString());
       return new ConstToken<Integer>(TokenType.INT, value, start, end);
     } catch (Exception e) {
@@ -262,7 +262,7 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the first *
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.MULT_EQ, start, end, "*=");
     }
@@ -273,12 +273,12 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the first +
     if (cc == '+') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the second +
       return new Token(TokenType.INCREMENT, start, end, "++");
     }
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.PLUS_EQ, start, end, "+=");
     }
@@ -289,12 +289,12 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the first -
     if (cc == '-') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the second -
       return new Token(TokenType.DECREMENT, start, end, "--");
     }
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.MINUS_EQ, start, end, "-=");
     }
@@ -318,7 +318,7 @@ public class Lexer {
       return nextToken(); // risky, but /shrug.
     }
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.DIV_EQ, start, end, "/=");
     }
@@ -329,7 +329,7 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the !
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.NEQ, start, end, "!=");
     }
@@ -340,12 +340,12 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the >
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.GEQ, start, end, ">=");
     }
     if (cc == '>') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the >
       return new Token(TokenType.SHIFT_RIGHT, start, end, ">>");
     }
@@ -356,12 +356,12 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the <
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the =
       return new Token(TokenType.LEQ, start, end, "<=");
     }
     if (cc == '<') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the <
       return new Token(TokenType.SHIFT_LEFT, start, end, "<<");
     }
@@ -372,7 +372,7 @@ public class Lexer {
     char oc = cc;
     advance(); // eat the =
     if (cc == '=') {
-      Position end = Position.create(line, col);
+      Position end = new Position(line, col);
       advance(); // eat the second =
       return new Token(TokenType.EQEQ, start, end, "==");
     }
@@ -411,7 +411,7 @@ public class Lexer {
     }
 
     advance(); // eat the closing tick/quote
-    Position end = Position.create(line, col);
+    Position end = new Position(line, col);
     return new ConstToken<String>(TokenType.STRING, sb.toString(), start, end);
   }
 }

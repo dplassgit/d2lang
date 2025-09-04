@@ -43,8 +43,8 @@ public class RangeCheckerTest {
 
   private static final Operand RANGE_TEMP = LocationUtils.newTempLocation("range", VarType.RANGE);
 
-  private static final Range RANGE_NEG_START = Range.create(-1, 0);
-  private static final Range RANGE_NEG_END = Range.create(1, -1);
+  private static final Range RANGE_NEG_START = new Range(-1, 0);
+  private static final Range RANGE_NEG_END = new Range(1, -1);
 
   @Test
   public void negativeArraySize() {

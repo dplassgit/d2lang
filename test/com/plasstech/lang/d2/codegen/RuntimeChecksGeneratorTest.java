@@ -30,7 +30,7 @@ public class RuntimeChecksGeneratorTest {
   private static final Location INT_TEMP = LocationUtils.newTempLocation("inttemp", VarType.INT);
   private static final Operand STRING_TEMP =
       LocationUtils.newTempLocation("stringtemp", VarType.STRING);
-  private static final Position POSITION = Position.create(1, 1);
+  private static final Position POSITION = new Position(1, 1);
   private static final ArrayType ARRAY_TYPE = new ArrayType(VarType.INT, 1);
   private static final Location ARRAY_TEMP = LocationUtils.newTempLocation("arraytemp", ARRAY_TYPE);
 

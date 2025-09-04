@@ -64,7 +64,7 @@ public class RangeCodeGeneratorTest {
 
   @Test
   public void transferFromConstantRange() {
-    Range range = Range.create(3, 4);
+    Range range = new Range(3, 4);
     ConstantOperand<Range> constRange = new ConstantOperand<Range>(range, VarType.RANGE);
 
     Transfer op = new Transfer(TEMP_RANGE, constRange, null);

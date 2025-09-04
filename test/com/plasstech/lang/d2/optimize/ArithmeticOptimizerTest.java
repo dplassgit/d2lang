@@ -44,7 +44,7 @@ public class ArithmeticOptimizerTest {
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
   private static final Operand CONSTANT_RANGE =
-      new ConstantOperand<Range>(Range.create(1234, 2345), VarType.RANGE);
+      new ConstantOperand<Range>(new Range(1234, 2345), VarType.RANGE);
 
   @Test
   public void varPlusVarBecomesShift() {
@@ -599,7 +599,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList
             .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(Range.create(2, 4), VarType.RANGE), null));
+                new ConstantOperand<Range>(new Range(2, 4), VarType.RANGE), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -612,7 +612,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList
             .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(Range.create(-1, 4), VarType.RANGE), null));
+                new ConstantOperand<Range>(new Range(-1, 4), VarType.RANGE), null));
     RuntimeException exception =
         assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
     assertThat(exception).hasMessageThat().contains("must be non-negative");
@@ -624,7 +624,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList
             .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(Range.create(1, 10), VarType.RANGE), null));
+                new ConstantOperand<Range>(new Range(1, 10), VarType.RANGE), null));
     RuntimeException exception =
         assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
     assertThat(exception).hasMessageThat().contains("out of bounds (length 6); was 10");
@@ -636,7 +636,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList
             .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(Range.create(2, 2), VarType.RANGE), null));
+                new ConstantOperand<Range>(new Range(2, 2), VarType.RANGE), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);

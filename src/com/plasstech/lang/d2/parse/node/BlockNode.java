@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.common.Position;
 
 /** Represents a list of statements - a block inside a function/method/procedure. */
 public class BlockNode extends AbstractNode {
-  public static final BlockNode EMPTY = new BlockNode(Position.create(0, 0));
+  public static final BlockNode EMPTY = new BlockNode(new Position(0, 0));
   // attempting to make a unique hashcode
   private static int id = 0;
 

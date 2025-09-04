@@ -450,7 +450,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private Object visitIntBinOp(BinOp op, int left, int right) {
     switch (op.operator()) {
       case COLON:
-        return Range.create(left, right);
+        return new Range(left, right);
 
       case DIV:
         return left / right;
@@ -995,7 +995,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
         recordAsMap.put(fieldName, 0.0);
       } else if (type == VarType.RANGE) {
         // this should never happen
-        recordAsMap.put(fieldName, Range.create(0, 0));
+        recordAsMap.put(fieldName, new Range(0, 0));
       } else if (type.isArray()) {
         ArrayField arrayField = op.recordSymbol().getArrayField(fieldName);
         // TODO(#38) support multidimensional arrays

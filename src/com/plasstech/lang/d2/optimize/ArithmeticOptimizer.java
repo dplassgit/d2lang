@@ -291,7 +291,7 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   private void optimizeColon(BinOp op, Operand left, Operand right) {
     if (left.isConstant() && right.isConstant()) {
-      Range range = Range.create(ConstantOperand.valueFromConstOperand(left).intValue(),
+      Range range = new Range(ConstantOperand.valueFromConstOperand(left).intValue(),
           ConstantOperand.valueFromConstOperand(right).intValue());
       ConstantOperand<Range> constRange = new ConstantOperand<Range>(range, VarType.RANGE);
       replaceCurrent(new Transfer(op.destination(), constRange, op.position()));
