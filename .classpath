@@ -13,8 +13,8 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/auto-value-1.8.1.jar"/>
-	<classpathentry kind="lib" path="lib/auto-value-annotations-1.6.2.jar" sourcepath="lib/auto-value-1.8.1-sources.jar"/>
+	<classpathentry kind="lib" path="lib/auto-value-1.11.0.jar"/>
+	<classpathentry kind="lib" path="lib/auto-value-annotations-1.11.0.jar"/>
 	<classpathentry kind="lib" path="lib/failureaccess-1.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/flogger-0.6.jar"/>
 	<classpathentry kind="lib" path="lib/flogger-system-backend-0.6.jar"/>
