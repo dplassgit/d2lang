@@ -28,7 +28,6 @@ gen_java_tests(
         "//test/com/plasstech/lang/d2/testing:test_code",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
-        "@maven//:com_google_truth_extensions_truth_java8_extension",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",
     ],

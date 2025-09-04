@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth8.assertThat;
 import static com.plasstech.lang.d2.parse.testing.ParserSubject.assertThatParsing;
 import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
