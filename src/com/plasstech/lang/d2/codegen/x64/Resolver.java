@@ -11,9 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.annotation.Nullable;
-
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -602,75 +599,5 @@ class Resolver implements RegistersInterface {
   @Override
   public void touch(Register r) {
     registers.touch(r);
-  }
-
-  @AutoValue
-  abstract static class ResolvedOperand implements Operand {
-    abstract Operand operand();
-
-    @Nullable
-    abstract Location location();
-
-    abstract String name();
-
-    @Nullable
-    abstract Register register();
-
-    @Override
-    public VarType type() {
-      return operand().type();
-    }
-
-    @Override
-    public boolean isConstant() {
-      return operand().isConstant();
-    }
-
-    @Override
-    public boolean isRegister() {
-      return register() != null;
-    }
-
-    @Override
-    public SymbolStorage storage() {
-      return operand().storage();
-    }
-
-    @Override
-    public String toString() {
-      return name();
-    }
-
-    public ResolvedOperand setRegister(Register reg) {
-      if (reg == null) {
-        return this;
-      }
-      return this.toBuilder().setRegister(reg).build();
-    }
-
-    public static ResolvedOperand create(Operand operand, String name) {
-      Builder builder = new AutoValue_Resolver_ResolvedOperand.Builder().setOperand(operand)
-          .setName(name);
-      if (operand instanceof Location) {
-        // I wish this was easier
-        builder.setLocation((Location) operand);
-      }
-      return builder.build();
-    }
-
-    public abstract Builder toBuilder();
-
-    @AutoValue.Builder
-    abstract static class Builder {
-      abstract Builder setOperand(Operand operand);
-
-      abstract Builder setLocation(Location location);
-
-      abstract Builder setName(String name);
-
-      abstract Builder setRegister(Register register);
-
-      abstract ResolvedOperand build();
-    }
   }
 }

@@ -17,7 +17,6 @@ import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
-import com.plasstech.lang.d2.codegen.x64.Resolver.ResolvedOperand;
 import com.plasstech.lang.d2.type.PrintFormats;
 import com.plasstech.lang.d2.type.PrintFormats.Format;
 import com.plasstech.lang.d2.type.VarType;
