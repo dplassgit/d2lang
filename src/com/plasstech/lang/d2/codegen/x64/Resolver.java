@@ -80,8 +80,8 @@ class Resolver implements RegistersInterface {
    * register (nullable)
    */
   ResolvedOperand resolveFully(Operand operand) {
-    if (operand instanceof ResolvedOperand) {
-      return (ResolvedOperand) operand;
+    if (operand instanceof ResolvedOperand resolvedAlready) {
+      return resolvedAlready;
     }
     String name = resolve(operand);
     return ResolvedOperand.create(operand, name).setRegister(toRegister(operand));

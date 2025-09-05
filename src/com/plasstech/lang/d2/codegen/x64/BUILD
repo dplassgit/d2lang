@@ -54,7 +54,7 @@ java_library(
 
 java_plugin(
     name = "auto_plugin",
-    processor_class = "com.google.auto.value.processor.AutoValueProcessor",
+    processor_class = "com.google.auto.value.processor.AutoBuilderProcessor",
     deps = ["@maven//:com_google_auto_value_auto_value"],
 )
 
