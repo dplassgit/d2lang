@@ -41,12 +41,12 @@ public abstract class Op {
 
   /** Get the destination of this opcode. It may return null */
   public Location getDestination() {
-    return new GetDestination().getDestination(this);
+    return new GetDestination().execute(this);
   }
 
   /** Get the sources of this opcode. It may return an empty list. */
   public ImmutableList<Operand> getSources() {
-    return new GetSources().getSources(this);
+    return new GetSources().execute(this);
   }
 
   /**
@@ -54,7 +54,7 @@ public abstract class Op {
    * for the Op (e.g., ProcEntry), it returns `this`.
    */
   public Op setDestination(Location newDestination) {
-    return new SetDestination().setDestination(this, newDestination);
+    return new SetDestination(newDestination).execute(this);
   }
 
   /**
@@ -63,7 +63,7 @@ public abstract class Op {
    * ProcEntry), it returns `this`.
    */
   public Op setSource(Operand oldSource, Operand newSource) {
-    return new SetSources().setSource(this, oldSource, newSource);
+    return new SetSources(oldSource, newSource).execute(this);
   }
 
   public static List<Op> removeMatchingOps(List<Op> program,

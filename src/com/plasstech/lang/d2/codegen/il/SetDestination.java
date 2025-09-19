@@ -7,12 +7,15 @@ import com.plasstech.lang.d2.codegen.Location;
  * new destination instead of the old one.
  */
 final class SetDestination {
-  private Location newDest;
+  private final Location newDest;
   private Op newOp;
 
-  Op setDestination(Op input, Location newDest) {
-    this.newOp = input;
-    this.newDest = newDest;
+  public SetDestination(Location newDestination) {
+    this.newDest = newDestination;
+  }
+
+  Op execute(Op input) {
+    newOp = input;
     input.accept(new Visitor());
     // TODO: maybe double check that we have the right dest?
     return newOp;

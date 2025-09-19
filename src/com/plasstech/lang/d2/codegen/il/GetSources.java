@@ -12,7 +12,7 @@ import com.plasstech.lang.d2.codegen.Operand;
 final class GetSources {
   private final List<Operand> sources = new ArrayList<>();
 
-  ImmutableList<Operand> getSources(Op opcode) {
+  ImmutableList<Operand> execute(Op opcode) {
     sources.clear();
     opcode.accept(new Visitor());
     return ImmutableList.copyOf(sources);

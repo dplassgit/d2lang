@@ -8,7 +8,7 @@ import com.plasstech.lang.d2.codegen.Location;
 final class GetDestination {
   private Location dest = null;
 
-  public Location getDestination(Op opcode) {
+  Location execute(Op opcode) {
     dest = null;
     opcode.accept(new Visitor());
     return dest;

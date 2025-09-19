@@ -11,14 +11,17 @@ import com.plasstech.lang.d2.codegen.Operand;
  * source into the new one.
  */
 final class SetSources {
-  private Operand newSource;
-  private Operand oldSource;
+  private final Operand oldSource;
+  private final Operand newSource;
   private Op newOp;
 
-  Op setSource(Op input, Operand oldSource, Operand newSource) {
-    this.newOp = input;
+  public SetSources(Operand oldSource, Operand newSource) {
     this.oldSource = oldSource;
     this.newSource = newSource;
+  }
+
+  Op execute(Op input) {
+    newOp = input;
     input.accept(new Visitor());
     // TODO: maybe double check that we have the right source?
     return newOp;
@@ -129,9 +132,7 @@ final class SetSources {
     public void visit(ProcEntry op) {}
 
     @Override
-    public void visit(Dec op) {
-      // TODO: should this be done?
-    }
+    public void visit(Dec op) {}
 
     @Override
     public void visit(Inc op) {}
