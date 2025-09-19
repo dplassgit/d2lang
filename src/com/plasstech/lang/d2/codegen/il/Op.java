@@ -41,12 +41,12 @@ public abstract class Op {
 
   /** Get the destination of this opcode. It may return null */
   public Location getDestination() {
-    return new GetDestinationVisitor().getDestination(this);
+    return new GetDestination().getDestination(this);
   }
 
   /** Get the sources of this opcode. It may return an empty list. */
   public ImmutableList<Operand> getSources() {
-    return new GetSourcesVisitor().getSources(this);
+    return new GetSources().getSources(this);
   }
 
   /**
