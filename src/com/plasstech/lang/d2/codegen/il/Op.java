@@ -54,7 +54,7 @@ public abstract class Op {
    * for the Op (e.g., ProcEntry), it returns `this`.
    */
   public Op setDestination(Location newDestination) {
-    return new SetDestinationVisitor().setDest(this, newDestination);
+    return new SetDestination().setDestination(this, newDestination);
   }
 
   /**
@@ -63,7 +63,7 @@ public abstract class Op {
    * ProcEntry), it returns `this`.
    */
   public Op setSource(Operand oldSource, Operand newSource) {
-    return new SetSourcesVisitor().setSource(this, oldSource, newSource);
+    return new SetSources().setSource(this, oldSource, newSource);
   }
 
   public static List<Op> removeMatchingOps(List<Op> program,
