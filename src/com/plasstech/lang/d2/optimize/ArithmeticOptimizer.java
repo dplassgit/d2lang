@@ -45,8 +45,7 @@ class ArithmeticOptimizer extends LineOptimizer {
               new Transfer(op.destination(), ConstantOperand.of(value.length()), op.position()));
           return;
         }
-        if (operand.type().isArray()) {
-          ArrayType arrayType = (ArrayType) operand.type();
+        if (operand.type() instanceof ArrayType arrayType) {
           arrayType.knownLength().ifPresent(length -> {
             replaceCurrent(
                 new Transfer(op.destination(), ConstantOperand.of(length), op.position()));
@@ -715,10 +714,6 @@ class ArithmeticOptimizer extends LineOptimizer {
       BinOp op, Operand left, Operand right, BinaryOperator<Double> fun) {
 
     if (left.isConstant() && right.isConstant() && left.type() == VarType.DOUBLE) {
-      //      ConstantOperand<Double> leftConstant = (ConstantOperand<Double>) left;
-      //      ConstantOperand<Double> rightConstant = (ConstantOperand<Double>) right;
-      //      double leftval = leftConstant.value();
-      //      double rightval = rightConstant.value();
       double leftValue = ConstantOperand.valueFromConstOperand(left).doubleValue();
       double rightValue = ConstantOperand.valueFromConstOperand(right).doubleValue();
       Location destination = op.destination();
@@ -740,12 +735,12 @@ class ArithmeticOptimizer extends LineOptimizer {
       BinOp op, Operand left, Operand right, BinaryOperator<Boolean> fun) {
 
     if (left.isConstant() && right.isConstant() && left.type() == VarType.BOOL) {
-      boolean leftVal = left.equals(ConstantOperand.TRUE);
-      boolean rightVal = right.equals(ConstantOperand.TRUE);
+      boolean leftIsTrue = left.equals(ConstantOperand.TRUE);
+      boolean rightIsTrue = right.equals(ConstantOperand.TRUE);
       Location destination = op.destination();
       replaceCurrent(
           new Transfer(
-              destination, ConstantOperand.of(fun.apply(leftVal, rightVal)), op.position()));
+              destination, ConstantOperand.of(fun.apply(leftIsTrue, rightIsTrue)), op.position()));
       return true;
     }
     return false;
