@@ -470,9 +470,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       if (leftType == VarType.STRING && rightType != VarType.INT && rightType != VarType.RANGE) {
         errors.add(
             new TypeException(
-                String.format("Index of STRING variable '%s' must be INT or RANGE; was %s", left,
-                    rightType),
-                right.position()));
+                right.position(),
+                "Index of STRING variable '%s' must be INT or RANGE; was %s", left,
+                rightType));
         return;
       }
       if (right.isConstant()) {
@@ -480,10 +480,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         if (index.value() < 0) {
           errors.add(
               new TypeException(
-                  String.format(
-                      "Index of %s variable '%s' must be non-negative; was %d",
-                      left.varType().name().toUpperCase(), left, index.value()),
-                  right.position()));
+                  right.position(),
+                  "Index of %s variable '%s' must be non-negative; was %d",
+                  left.varType().name().toUpperCase(), left, index.value()));
         }
       }
 
@@ -499,11 +498,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           // we know it's not negative.
           if (value > 1) {
             errors.add(
-                new InvalidIndexException(
-                    String.format(
-                        RANGE_INDEX_OUT_OF_RANGE,
-                        left, value),
-                    right.position()));
+                new InvalidIndexException(right.position(), RANGE_INDEX_OUT_OF_RANGE, left, value));
           }
         });
         node.setVarType(VarType.INT);
@@ -512,17 +507,14 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
       if (leftType.isUnknown()) {
         errors.add(
-            new TypeException(
-                String.format("Indeterminable type used as ARRAY: %s", left), left.position()));
+            new TypeException(left.position(), "Indeterminable type used as ARRAY: %s", left));
         // note return; can't do anything.
         return;
       }
 
       // bug #214
       if (!(leftType instanceof ArrayType)) {
-        errors.add(
-            new TypeException(
-                String.format("%s cannot be used as ARRAY", leftType), left.position()));
+        errors.add(new TypeException(left.position(), "%s cannot be used as ARRAY", leftType));
         return;
       }
       // TODO: Generalize this, e.g., have a "baseType" method on VarType
@@ -534,10 +526,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     } else if (!leftType.compatibleWith(rightType)) {
       errors.add(
           new TypeException(
-              String.format(
-                  "Incompatible types for operator %s; left operand is %s but right is %s",
-                  operator, leftType, rightType),
-              left.position()));
+              left.position(),
+              "Incompatible types for operator %s; left operand is %s but right is %s",
+              operator, leftType, rightType));
       // All bets are off if left and right are not compatible
       return;
     }
@@ -559,10 +550,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             && leftConstant.get() > rightConstant.get()) {
           errors.add(
               new TypeException(
-                  String.format(
-                      "RANGE values must be non-descending; was %d:%d", leftConstant.get(),
-                      rightConstant.get()),
-                  left.position()));
+                  left.position(),
+                  "RANGE values must be non-descending; was %d:%d", leftConstant.get(),
+                  rightConstant.get()));
         }
         node.setVarType(VarType.RANGE);
         // Good.
@@ -594,7 +584,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     String recordName = node.fullyQualifiedRecordName();
     if (validatePossibleRecordType(recordName, type, node.position())) {
       // need to look up the symbol by base name and then bind it.
-      RecordSymbol symbol = symbolTable.getRecursive(node.baseRecordName(), RecordSymbol.class);
       // make sure all the actual types are real
       for (VarType actual : node.actualTypes()) {
         if (actual instanceof UnboundType) {
@@ -609,29 +598,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           validatePossibleRecordType("actual type " + ref.name(), actual, node.position());
         }
       }
-
-      //      // instantiate the thingie
-      //      ImmutableList<VarType> actualTypes = node.actualTypes();
-      //      ImmutableList<String> formalTypeNames = symbol.formalTypeVariables();
-      //      // Check that # of actual type variables matches the # of formal type variables.
-      //      if (actualTypes.size() != formalTypeNames.size()) {
-      //        errors.add(
-      //            new TypeException(
-      //                String.format(
-      //                    "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
-      //                    recordName, actualTypes.size(), formalTypeNames.size()),
-      //                node.position()));
-      //        return;
-      //      }
-      //      // bind them
-      //      if (symbol.isGeneric()) {
-      //        Map<String, VarType> bindings = new HashMap<>();
-      //        for (int i = 0; i < actualTypes.size(); ++i) {
-      //          bindings.put(formalTypeNames.get(i), actualTypes.get(i));
-      //        }
-      //        RecordSymbol boundRecord = symbol.bind(bindings);
-      //        symbolTable.declareBoundRecordSymbol(boundRecord, node.position());
-      //      }
     }
   }
 

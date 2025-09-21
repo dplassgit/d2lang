@@ -84,7 +84,7 @@ public class Lexer {
 
     String value = sb.toString();
     if (value.startsWith("_")) {
-      throw new ScannerException(String.format("Illegal variable name %s", value), start);
+      throw new ScannerException(start, "Illegal variable name %s", value);
     }
     Position end = new Position(line, col);
     try {
@@ -115,10 +115,10 @@ public class Lexer {
           advance();
         }
         if (sb.length() == 0) {
-          throw new ScannerException("Invalid byte constant", start);
+          throw new ScannerException(start, "Invalid byte constant");
         }
         if (sb.length() > 2) {
-          throw new ScannerException(String.format("Byte constant too big 0y%s", sb), start);
+          throw new ScannerException(start, "Byte constant too big 0y%s", sb);
         }
         try {
           Position end = new Position(line, col);
@@ -126,7 +126,7 @@ public class Lexer {
           int value = Integer.parseInt(sb.toString(), 16);
           return new ConstToken<Byte>(TokenType.BYTE, (byte) value, sb.toString(), start, end);
         } catch (Exception e) {
-          throw new ScannerException(String.format("Byte constant out of range 0y%s", sb), start);
+          throw new ScannerException(start, "Byte constant out of range 0y%s", sb);
         }
       }
     }
@@ -147,7 +147,7 @@ public class Lexer {
         double value = Double.parseDouble(sb.toString());
         return new ConstToken<Double>(TokenType.DOUBLE, value, start, end);
       } catch (Exception e) {
-        throw new ScannerException(String.format("Double constant too big %s", sb), start);
+        throw new ScannerException(start, "Double constant too big %s", sb);
       }
     } else if (cc == 'L' || cc == 'l') {
       // making a long
@@ -158,7 +158,7 @@ public class Lexer {
         sb.append(cc);
         return new ConstToken<Long>(TokenType.LONG, value, start, end);
       } catch (Exception e) {
-        throw new ScannerException(String.format("Long constant too big %s", sb), start);
+        throw new ScannerException(start, "Long constant too big %s", sb);
       }
     }
     try {
@@ -166,7 +166,7 @@ public class Lexer {
       int value = Integer.parseInt(sb.toString());
       return new ConstToken<Integer>(TokenType.INT, value, start, end);
     } catch (Exception e) {
-      throw new ScannerException(String.format("Integer constant too big %s", sb), start);
+      throw new ScannerException(start, "Integer constant too big %s", sb);
     }
   }
 
@@ -254,7 +254,7 @@ public class Lexer {
         return new Token(TokenType.DOT, start, oc);
 
       default:
-        throw new ScannerException(String.format("Unexpected character '%c'", cc), start);
+        throw new ScannerException(start, "Unexpected character '%c'", cc);
     }
   }
 
@@ -398,7 +398,7 @@ public class Lexer {
       } else {
         Character escaped = BACKSLASH_ESCAPE_MAP.get(cc);
         if (escaped == null) {
-          throw new ScannerException("Unknown backslash escape: \\" + cc, start);
+          throw new ScannerException(start, "Unknown backslash escape: %c", cc);
         }
         sb.append(escaped);
         escape = false;
@@ -407,7 +407,7 @@ public class Lexer {
     }
 
     if (cc == 0) {
-      throw new ScannerException("Unclosed string literal", start);
+      throw new ScannerException(start, "Unclosed string literal");
     }
 
     advance(); // eat the closing tick/quote

@@ -39,6 +39,7 @@ import com.plasstech.lang.d2.type.VariableSymbol;
  * For certain ops, add runtime checks: NPE and index checks. Much of this used to be in
  * ILCodeGenerator but was split out so we can optimize first (and after!)
  */
+// TODO: write a unit test for this class
 public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -167,6 +168,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
       case ASC:
         source = npeCheck(source, position);
         if (operator == TokenType.ASC) {
+          // TODO: write a test for this
           // also generate length
           source = lengthCheck(source, op.position());
         }
@@ -198,8 +200,9 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
       if (constantSize >= 0) {
         return;
       }
-      throw new ArraySizeException("ARRAY size must be non-negative; was " + constantSize,
-          op.position());
+      // TODO: write a test for this
+      throw new ArraySizeException(
+          op.position(), "ARRAY size must be non-negative; was %d", constantSize);
     }
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
     Position position = op.position();
@@ -379,10 +382,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
       int indexNum = ConstantOperand.valueFromConstOperand(index).intValue();
       if (indexNum < 0 || indexNum > 1) {
         throw new InvalidIndexException(
-            String.format(
-                StaticChecker.RANGE_INDEX_OUT_OF_RANGE,
-                thingWithIndex.toString(), indexNum),
-            position);
+            position, StaticChecker.RANGE_INDEX_OUT_OF_RANGE, thingWithIndex.toString(), indexNum);
       }
       return index;
     }

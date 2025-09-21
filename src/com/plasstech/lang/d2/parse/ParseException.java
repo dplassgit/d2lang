@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 public class ParseException extends D2RuntimeException {
   private static final long serialVersionUID = 8675309L;
 
-  public ParseException(String message, Position position) {
-    super(message, position, "Parse");
+  public ParseException(Position position, String format, Object... params) {
+    super(String.format(format, params), position, "Parse");
   }
 }

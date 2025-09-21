@@ -138,9 +138,7 @@ public class Parser implements Phase {
     if (allowed == token.type()) {
       return advance();
     }
-    throw new ParseException(
-        String.format("Unexpected '%s'; expected %s", token.text(), allowed),
-        token.start());
+    throw new ParseException(token.start(), "Unexpected '%s'; expected %s", token.text(), allowed);
   }
 
   private ProgramNode program() {
@@ -177,14 +175,14 @@ public class Parser implements Phase {
     switch (token.type()) {
       case BREAK:
         if (inWhile == 0) {
-          throw new ParseException("BREAK found outside of WHILE block", token.start());
+          throw new ParseException(token.start(), "BREAK found outside of WHILE block");
         }
         advance();
         return new BreakNode(token.start());
 
       case CONTINUE:
         if (inWhile == 0) {
-          throw new ParseException("CONTINUE found outside of WHILE block", token.start());
+          throw new ParseException(token.start(), "CONTINUE found outside of WHILE block");
         }
         advance();
         return new ContinueNode(token.start());
@@ -212,15 +210,14 @@ public class Parser implements Phase {
         return whileStmt;
 
       default:
-        throw new ParseException(
-            String.format("Unexpected start of statement '%s'", token.text()), token.start());
+        throw new ParseException(token.start(), "Unexpected start of statement '%s'", token.text());
     }
   }
 
   private ReturnNode returnStmt(Position start) {
     expectToken(TokenType.RETURN);
     if (inProc == 0) {
-      throw new ParseException("Cannot RETURN from outside a PROC", start);
+      throw new ParseException(start, "Cannot RETURN from outside a PROC");
     }
 
     // If it's the start of an expression, read the whole expression...
@@ -236,7 +233,7 @@ public class Parser implements Phase {
     // If it's the start of an expression, read the whole expression...
     // (Except INPUT, which is forbidden.)
     if (token.type() == TokenType.INPUT) {
-      throw new ParseException("Use of INPUT is not allowed in EXIT statements", token.start());
+      throw new ParseException(token.start(), "Use of INPUT is not allowed in EXIT statements");
     }
     if (EXPRESSION_STARTS.contains(token.type())) {
       return new ExitNode(start, expr());
@@ -298,8 +295,7 @@ public class Parser implements Phase {
       default:
         break;
     }
-    throw new ParseException(
-        String.format("Unexpected '%s'; expected '=' or ':'", token.text()), token.start());
+    throw new ParseException(token.start(), "Unexpected '%s'; expected '=' or ':'", token.text());
   }
 
   private StatementNode arraySlotAssignment(Token variable) {
@@ -372,10 +368,9 @@ public class Parser implements Phase {
 
       default:
         throw new ParseException(
-            String.format(
-                "Unexpected '%s' in declaration; expected built-in type, PROC or RECORD",
-                token.text()),
-            token.start());
+            token.start(),
+            "Unexpected '%s' in declaration; expected built-in type, PROC or RECORD",
+            token.text());
     }
   }
 
@@ -453,10 +448,9 @@ public class Parser implements Phase {
       return new DeclarationNode(varToken.text(), baseType, varToken.start());
     }
     throw new ParseException(
-        String.format(
-            "Unexpected '%s' in RECORD declaration; expected built-in type or RECORD reference",
-            token.text()),
-        token.start());
+        token.start(),
+        "Unexpected '%s' in RECORD declaration; expected built-in type or RECORD reference",
+        token.text());
   }
 
   private RecordReferenceType parseRecordReference(String recordName,
@@ -477,7 +471,7 @@ public class Parser implements Phase {
       } else if (numUnbound > 0) {
         // some are unbound but not all. let's consider this an error.
         throw new ParseException(
-            "Cannot mix bound and unbound types in record reference", token.start());
+            token.start(), "Cannot mix bound and unbound types in record reference");
       }
       expectToken(TokenType.GT);
     }
@@ -574,8 +568,7 @@ public class Parser implements Phase {
       return paramType;
     }
     throw new ParseException(
-        String.format("Unexpected '%s'; expected built-in or RECORD type", token.text()),
-        token.start());
+        token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
   }
 
   private Parameter formalParam() {
@@ -885,8 +878,7 @@ public class Parser implements Phase {
         return paramType;
       }
       throw new ParseException(
-          String.format("Unexpected '%s'; expected built-in or RECORD type", token.text()),
-          token.start());
+          token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
     });
   }
 
@@ -975,8 +967,8 @@ public class Parser implements Phase {
 
           default:
             throw new ParseException(
-                String.format("Unexpected '%s'; expected literal, variable, or '('", token.text()),
-                token.start());
+                token.start(),
+                "Unexpected '%s'; expected literal, variable, or '('", token.text());
         }
         // no break needed
 
@@ -1001,8 +993,7 @@ public class Parser implements Phase {
         }
       default:
         throw new ParseException(
-            String.format("Unexpected '%s'; expected literal, variable, or '('", token.text()),
-            token.start());
+            token.start(), "Unexpected '%s'; expected literal, variable, or '('", token.text());
     }
   }
 
@@ -1012,7 +1003,7 @@ public class Parser implements Phase {
     List<ExprNode> values = commaSeparatedExpressions();
     if (values.isEmpty()) {
       // will this ever be allowed?
-      throw new ParseException("Empty array constants are not allowed yet", openBracket.start());
+      throw new ParseException(openBracket.start(), "Empty array constants are not allowed yet");
     }
 
     expectToken(TokenType.RBRACKET);
@@ -1026,7 +1017,7 @@ public class Parser implements Phase {
             .findFirst();
     if (!baseType.isPresent()) {
       throw new ParseException(
-          "Cannot determine type of array; all elements are UNKNOWN", openBracket.start());
+          openBracket.start(), "Cannot determine type of array; all elements are UNKNOWN");
     }
 
     return new ArrayLiteralNode(openBracket.start(), values, baseType.get());

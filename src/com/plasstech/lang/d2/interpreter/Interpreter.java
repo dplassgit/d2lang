@@ -903,7 +903,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
             line = reader.readLine();
           }
         } catch (IOException e) {
-          throw new InterpreterException("Could not read standard in", e.getMessage());
+          throw new D2RuntimeException(String.format("Could not read stdin: %s", e.getMessage()),
+              null, "Interpreter");
         }
 
         setValue((Location) op.arg(), input);

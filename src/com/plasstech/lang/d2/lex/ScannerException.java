@@ -6,7 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 public class ScannerException extends D2RuntimeException {
   private static final long serialVersionUID = 5L;
 
-  public ScannerException(String message, Position position) {
-    super(message, position, "Scanner");
+  public ScannerException(Position position, String format, Object... params) {
+    super(String.format(format, params), position, "Scanner");
   }
 }

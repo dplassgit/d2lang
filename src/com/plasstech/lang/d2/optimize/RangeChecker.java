@@ -53,8 +53,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
     }
     int size = ConstantOperand.valueFromConstOperand(op.sizeLocation()).intValue();
     if (size < 0) {
-      throw new ArraySizeException("ARRAY size must be non-negative; was " + size,
-          op.position());
+      throw new ArraySizeException(op.position(), "ARRAY size must be non-negative; was %d", size);
     }
   }
 
@@ -95,6 +94,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
         break;
 
       case DOT:
+        // TODO: write a test for this
         if (left.isNull()) {
           throw new D2RuntimeException(
               String.format("Cannot retrieve field %s of NULL RECORD", right.toString()),
@@ -104,6 +104,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
 
       case LBRACKET:
         if (left.isNull()) {
+          // TODO: write a test for this
           throw new D2RuntimeException("Cannot index on NULL object", op.position(),
               "Null pointer");
         }
@@ -115,28 +116,25 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
           if (left.type() == VarType.RANGE) {
             if (index < 0 || index > 1) {
               throw new InvalidIndexException(
-                  String.format("RANGE index must be 0 or 1; was %d", index), op.position());
+                  op.position(), "RANGE index must be 0 or 1; was %d", index);
             }
           }
           if (index < 0) {
             throw new InvalidIndexException(
-                String.format("%s index must be non-negative; was %d", left.type(), index),
-                op.position());
+                op.position(), "%s index must be non-negative; was %d", left.type(), index);
           }
         }
         if (right.type() == VarType.RANGE) {
           Range range = ConstantOperand.rangeValueFromConstOperand(right);
           if (range.start() < 0) {
             throw new InvalidIndexException(
-                String.format("%s RANGE start index must be non-negative; was %d", left.type(),
-                    range.start()),
-                op.position());
+                op.position(),
+                "%s RANGE start index must be non-negative; was %d", left.type(), range.start());
           }
           if (range.end() < 0) {
             throw new InvalidIndexException(
-                String.format("%s RANGE end index must be non-negative; was %d", left.type(),
-                    range.end()),
-                op.position());
+                op.position(),
+                "%s RANGE end index must be non-negative; was %d", left.type(), range.end());
           }
         }
         break;
@@ -157,13 +155,14 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
     }
     int size = ConstantOperand.valueFromConstOperand(op.index()).intValue();
     if (size < 0) {
-      throw new InvalidIndexException("ARRAY index must be non-negative; was " + size,
-          op.position());
+      throw new InvalidIndexException(
+          op.position(), "ARRAY index must be non-negative; was %d", size);
     }
   }
 
   @Override
   public void visit(FieldSetOp op) {
+    // TODO: write a test for this
     Operand record = op.source();
     if (record.isNull()) {
       throw new D2RuntimeException(

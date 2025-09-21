@@ -6,11 +6,7 @@ import com.plasstech.lang.d2.common.Position;
 public class TypeException extends D2RuntimeException {
   private static final long serialVersionUID = 314159L;
 
-  public TypeException(String message, Position position) {
-    super(message, position, "Type");
-  }
-
   public TypeException(Position position, String format, Object... params) {
-    this(String.format(format, params), position);
+    super(String.format(format, params), position, "Type");
   }
 }

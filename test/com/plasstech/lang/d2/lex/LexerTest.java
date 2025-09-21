@@ -135,8 +135,9 @@ public class LexerTest {
 
   @Test
   public void tooLongLong() { // heh
-    Lexer lexer = new Lexer(String.format("%d0", Long.MAX_VALUE));
-    assertThrows(ScannerException.class, () -> lexer.nextToken());
+    Lexer lexer = new Lexer(String.format("%d0L", Long.MAX_VALUE));
+    ScannerException exception = assertThrows(ScannerException.class, () -> lexer.nextToken());
+    assertThat(exception).hasMessageThat().contains("Long constant too big");
   }
 
   @Test
