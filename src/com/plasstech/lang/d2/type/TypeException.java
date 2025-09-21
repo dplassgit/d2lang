@@ -9,4 +9,8 @@ public class TypeException extends D2RuntimeException {
   public TypeException(String message, Position position) {
     super(message, position, "Type");
   }
+
+  public TypeException(Position position, String format, Object... params) {
+    this(String.format(format, params), position);
+  }
 }

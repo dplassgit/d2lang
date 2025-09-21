@@ -49,9 +49,8 @@ class ProcGatherer extends DefaultNodeVisitor {
     }
     if (!duplicates.isEmpty()) {
       throw new TypeException(
-          String.format(
-              "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name()),
-          node.position());
+          node.position(),
+          "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name());
     }
 
     // Add this procedure to the symbol table
@@ -81,9 +80,8 @@ class ProcGatherer extends DefaultNodeVisitor {
     }
     if (!duplicates.isEmpty()) {
       throw new TypeException(
-          String.format(
-              "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name()),
-          node.position());
+          node.position(),
+          "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name());
     }
 
     // Add this procedure to the symbol table

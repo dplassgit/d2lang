@@ -135,13 +135,11 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   private Location lookupLocation(String name, Position position) {
     Symbol symbol = symbolTable.getRecursive(name);
     if (symbol == null) {
-      throw new TypeException(
-          String.format("Cannot find symbol '%s'", name), position);
+      throw new TypeException(position, "Cannot find symbol '%s'", name);
     }
     if (!(symbol instanceof VariableSymbol)) {
-      throw new TypeException(
-          String.format("%s already declared as %s; cannot be redeclared", name, symbol.varType()),
-          position);
+      throw new TypeException(position, "%s already declared as %s; cannot be redeclared", name,
+          symbol.varType());
     }
     VariableSymbol variable = (VariableSymbol) symbol;
     switch (variable.storage()) {

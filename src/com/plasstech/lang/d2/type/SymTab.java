@@ -140,10 +140,9 @@ public class SymTab implements SymbolTable {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
       throw new TypeException(
-          String.format(
-              "%s already declared as %s. Cannot be redeclared as procedure.",
-              node.name(), sym.varType()),
-          node.position());
+          node.position(),
+          "%s already declared as %s. Cannot be redeclared as procedure.",
+          node.name(), sym.varType());
     }
     SymTab child = spawn();
     ExternProcSymbol procSymbol = new ExternProcSymbol(node, child);
@@ -156,10 +155,9 @@ public class SymTab implements SymbolTable {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
       throw new TypeException(
-          String.format(
-              "%s already declared as %s. Cannot be redeclared as PROC.",
-              node.name(), sym.varType()),
-          node.position());
+          node.position(),
+          "%s already declared as %s. Cannot be redeclared as PROC.",
+          node.name(), sym.varType());
     }
     SymTab child = spawn();
     ProcSymbol procSymbol = new ProcSymbol(node, child);
@@ -190,10 +188,9 @@ public class SymTab implements SymbolTable {
     Symbol sym = getRecursive(name);
     if (sym != null) {
       throw new TypeException(
-          String.format(
-              "'%s' already declared as %s. Cannot be redeclared as RECORD.",
-              node.name(), sym.varType()),
-          node.position());
+          node.position(),
+          "'%s' already declared as %s. Cannot be redeclared as RECORD.",
+          node.name(), sym.varType());
     }
     RecordSymbol recordSymbol = new RecordSymbol(node);
     values.put(name, recordSymbol);

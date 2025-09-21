@@ -51,21 +51,19 @@ class RecordGatherer extends DefaultNodeVisitor {
       if (field instanceof RecordDeclarationNode) {
         RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
         throw new TypeException(
-            String.format(
-                "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name()),
-            field.position());
+            field.position(),
+            "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name());
       } else if (field instanceof ProcedureNode) {
         ProcedureNode proc = (ProcedureNode) field;
         throw new TypeException(
-            String.format(
-                "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name()),
-            field.position());
+            field.position(),
+            "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name());
       } else if (field instanceof ArrayDeclarationNode) {
         ArrayDeclarationNode anode = (ArrayDeclarationNode) field;
         // TODO(#38) support multidimensional arrays
         ExprNode sizeNode = anode.sizeExpr();
         if (!sizeNode.isConstant()) {
-          throw new TypeException("ARRAYs in RECORDs must have constant size", sizeNode.position());
+          throw new TypeException(sizeNode.position(), "ARRAYs in RECORDs must have constant size");
         }
       }
     }
@@ -86,10 +84,9 @@ class RecordGatherer extends DefaultNodeVisitor {
     }
     if (!duplicates.isEmpty()) {
       throw new TypeException(
-          String.format(
-              "Duplicate field(s) '%s' declared in RECORD '%s'",
-              Joiner.on(", ").join(duplicates), node.name()),
-          node.position());
+          node.position(),
+          "Duplicate field(s) '%s' declared in RECORD '%s'",
+          Joiner.on(", ").join(duplicates), node.name());
     }
 
     duplicates.clear();
@@ -104,10 +101,9 @@ class RecordGatherer extends DefaultNodeVisitor {
     }
     if (duplicates.size() > 0) {
       throw new TypeException(
-          String.format(
-              "Duplicate formal type(s) '%s' declared in RECORD '%s'",
-              Joiner.on(", ").join(duplicates), node.name()),
-          node.position());
+          node.position(),
+          "Duplicate formal type(s) '%s' declared in RECORD '%s'",
+          Joiner.on(", ").join(duplicates), node.name());
     }
 
     // Add this record to the symbol table
