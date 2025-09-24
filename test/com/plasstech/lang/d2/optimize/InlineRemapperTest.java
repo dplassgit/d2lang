@@ -18,30 +18,30 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class InlineRemapperTest {
-  private SymbolTable symTab = new SymTab();
-  private SymbolTable localSymTab = new SymTab(symTab, SymbolStorage.LOCAL);
-  private TempLocation TEMP_DEST =
-      LocationUtils.newTempLocation(symTab, "__dest", VarType.INT);
-  private TempLocation TEMP_SOURCE =
-      LocationUtils.newTempLocation(symTab, "__source", VarType.INT);
-  private TempLocation TEMP_LEFT =
-      LocationUtils.newTempLocation(symTab, "__left", VarType.INT);
-  private TempLocation TEMP_RIGHT =
-      LocationUtils.newTempLocation(symTab, "__right", VarType.INT);
-  private StackLocation STACK =
-      LocationUtils.newStackLocation(localSymTab, "stack", VarType.INT, 0);
-  private MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
+  private SymbolTable symbolTable = new SymbolTable();
+  private SymbolTable localSymbolTable = new SymbolTable(symbolTable, SymbolStorage.LOCAL);
+
+  private final TempLocation TEMP_DEST =
+      LocationUtils.newTempLocation(symbolTable, "__dest", VarType.INT);
+  private final TempLocation TEMP_SOURCE =
+      LocationUtils.newTempLocation(symbolTable, "__source", VarType.INT);
+  private final TempLocation TEMP_LEFT =
+      LocationUtils.newTempLocation(symbolTable, "__left", VarType.INT);
+  private final TempLocation TEMP_RIGHT =
+      LocationUtils.newTempLocation(symbolTable, "__right", VarType.INT);
+  private final StackLocation STACK =
+      LocationUtils.newStackLocation(localSymbolTable, "stack", VarType.INT, 0);
+  private final MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
 
   @Test
   public void transferConstantToStack() {
     ImmutableList<Op> input = ImmutableList.of(new Transfer(STACK, ConstantOperand.ONE, null));
-    List<Op> mapped = new InlineRemapper(input, new SymTab()).remap();
+    List<Op> mapped = new InlineRemapper(input, symbolTable).remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).startsWith("_stack__inline__");
     assertThat(op.source().isConstant()).isTrue();
@@ -52,7 +52,7 @@ public class InlineRemapperTest {
     ImmutableList<Op> input = ImmutableList.of(
         new Transfer(STACK, ConstantOperand.ONE, null),
         new Transfer(STACK, ConstantOperand.ZERO, null));
-    InlineRemapper mapper = new InlineRemapper(input, new SymTab());
+    InlineRemapper mapper = new InlineRemapper(input, symbolTable);
     List<Op> mapped = mapper.remap();
     Transfer op = (Transfer) mapped.get(0);
     Location destination = op.destination();
@@ -64,7 +64,7 @@ public class InlineRemapperTest {
   public void transferConstantToTemp() {
     List<Op> mapped =
         new InlineRemapper(
-            ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), new SymTab())
+            ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -75,7 +75,7 @@ public class InlineRemapperTest {
   public void transferTemps() {
     List<Op> mapped =
         new InlineRemapper(ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE, null)),
-            new SymTab())
+            symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -85,7 +85,8 @@ public class InlineRemapperTest {
   @Test
   public void transferFromTemp() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE, null)), new SymTab())
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE, null)),
+            symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("_stack__inline__");
@@ -95,7 +96,7 @@ public class InlineRemapperTest {
   @Test
   public void transferNoTemps() {
     List<Op> mapped =
-        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), new SymTab())
+        new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("_stack__inline__");
@@ -107,7 +108,7 @@ public class InlineRemapperTest {
     List<Op> mapped =
         new InlineRemapper(
             ImmutableList.of(new BinOp(TEMP_DEST, STACK, TokenType.PLUS, MEMORY, null)),
-            new SymTab())
+            symbolTable)
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().name()).contains("__dest__inline__");
@@ -121,7 +122,7 @@ public class InlineRemapperTest {
     List<Op> mapped =
         new InlineRemapper(
             ImmutableList.of(new BinOp(STACK, TEMP_LEFT, TokenType.AND, TEMP_RIGHT, null)),
-            new SymTab())
+            symbolTable)
             .remap();
     BinOp op = (BinOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("_stack__inline__");
@@ -135,7 +136,7 @@ public class InlineRemapperTest {
     List<Op> mapped =
         new InlineRemapper(
             ImmutableList.of(new UnaryOp(STACK, TokenType.MINUS, TEMP_SOURCE, null)),
-            new SymTab())
+            symbolTable)
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
     assertThat(op.destination().toString()).startsWith("_stack__inline__");

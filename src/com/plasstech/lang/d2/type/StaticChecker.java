@@ -171,7 +171,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   private ProgramNode root;
 
-  private SymbolTable symbolTable = new SymTab();
+  private SymbolTable symbolTable = new SymbolTable();
   private SymbolTable globals = symbolTable;
   private final Stack<ProcSymbol> procedures = new Stack<>();
   private final Set<ProcSymbol> needsReturn = new HashSet<>();
@@ -760,7 +760,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         RecordSymbol boundRecord = symbol.bind(bindings);
         // Use the table where the symbol was created.
         SymbolTable originalTable = symbolTable.getOwner(symbol);
-        originalTable.declareBoundRecordSymbol(boundRecord, position);
+        originalTable.declareBoundRecordSymbol(boundRecord);
       }
     }
     // valid: either valid record, or not a record.

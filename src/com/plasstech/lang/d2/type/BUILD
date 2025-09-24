@@ -38,7 +38,6 @@ java_library(
 java_library(
     name = "symbols",
     srcs = glob(["*Symbol.java"]) + [
-        "SymTab.java",
         "SymbolTable.java",
     ],
     visibility = ["//visibility:public"],

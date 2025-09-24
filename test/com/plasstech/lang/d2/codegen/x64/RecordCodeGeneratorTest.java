@@ -22,7 +22,6 @@ import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.RecordSymbol;
-import com.plasstech.lang.d2.type.SymTab;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
@@ -30,25 +29,20 @@ import com.plasstech.lang.d2.type.VarType;
 public class RecordCodeGeneratorTest {
   private static final String RECORD_NAME = "recordDefinitionName";
   private static final String UNBOUND_RECORD_NAME = "list";
-
   private static final Joiner NEWLINE_JOINER = Joiner.on("\n");
-
-  private SymbolTable symTab = new SymTab();
-
   private static final VarType RECORD_TYPE = new RecordReferenceType(RECORD_NAME);
   private static final Location LEFT_RECORD = LocationUtils.newTempLocation("left", RECORD_TYPE);
   private static final Location RIGHT_RECORD =
       LocationUtils.newStackLocation("right", RECORD_TYPE, 4);
   private static final Location BOOL_DESTINATION =
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
-
   private static final Operand NULL = new ConstantOperand<Void>(null, VarType.NULL);
-
   private static final VarType UNBOUND_TYPE = new UnboundType("T");
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
   private Resolver resolver = new Resolver(registers, null, null, emitter);
+  private final SymbolTable symTab = new SymbolTable();
 
   private RecordCodeGenerator generator = new RecordCodeGenerator(resolver, symTab, emitter);
   private RecordSymbol nonGenericRecord;
@@ -66,7 +60,7 @@ public class RecordCodeGeneratorTest {
             ImmutableList.of(UNBOUND_TYPE.name())));
     boundRecord =
         unboundRecord.bind(ImmutableMap.of(UNBOUND_TYPE.name(), VarType.INT));
-    symTab.declareBoundRecordSymbol(boundRecord, null);
+    symTab.declareBoundRecordSymbol(boundRecord);
   }
 
   @Test

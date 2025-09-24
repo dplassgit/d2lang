@@ -26,7 +26,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.phase.State;
-import com.plasstech.lang.d2.type.SymTab;
+import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
 
@@ -485,7 +485,7 @@ public class NasmCodeGeneratorTest {
   private State generate(ImmutableList<Op> ops) {
     State state = State.create();
     state = state.addProgramNode(new ProgramNode(BlockNode.EMPTY));
-    TypeCheckResult typeCheckResult = new TypeCheckResult(new SymTab());
+    TypeCheckResult typeCheckResult = new TypeCheckResult(new SymbolTable());
     state = state.addTypecheckResult(typeCheckResult);
     state = state.setIlCode(ops);
     state = codeGen.execute(state);
