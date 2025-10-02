@@ -478,6 +478,42 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
+  public void multDivNegOne(
+      @TestParameter({"MULT", "DIV"}) TokenType operand,
+      @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
+
+    Location dest = LocationUtils.newTempLocation("dest", varType);
+    Operand left = LocationUtils.newTempLocation("operand", varType);
+    ConstantOperand<? extends Number> negOne = ConstantOperand.fromValue(-1, varType);
+
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isUnaryOp(dest, TokenType.MINUS, left);
+  }
+
+  @Test
+  public void multDivNegTwo(
+      @TestParameter({"MULT", "DIV"}) TokenType operand,
+      @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
+
+    Location dest = LocationUtils.newTempLocation("dest", varType);
+    Operand left = LocationUtils.newTempLocation("operand", varType);
+    ConstantOperand<? extends Number> negOne = ConstantOperand.fromValue(-2, varType);
+
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
+
+    optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
   public void opZeroUnchanged(
       @TestParameter(
         {"PLUS", "MINUS", "SHIFT_LEFT", "SHIFT_RIGHT", "BIT_XOR", "BIT_OR"}

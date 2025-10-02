@@ -374,6 +374,11 @@ class ArithmeticOptimizer extends LineOptimizer {
       replaceCurrent(new Transfer(op.destination(), left, op.position()));
       return;
     }
+    // dest = left / -1 => dest = -left
+    if (isAnyNegativeOne(right)) {
+      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, op.left(), op.position()));
+      return;
+    }
     if (right.isConstant() && right.type() == VarType.INT) {
       int power = powerOfTwo(right);
       if (power != 0) {
@@ -536,6 +541,11 @@ class ArithmeticOptimizer extends LineOptimizer {
     if (isAnyOne(right)) {
       // replace with destination = left
       replaceCurrent(new Transfer(op.destination(), left, op.position()));
+      return;
+    }
+    // dest = left * -1 => dest = -left
+    if (isAnyNegativeOne(right)) {
+      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, op.left(), op.position()));
       return;
     }
     // Only deal with shifting ints left. I'm lazy.
@@ -748,5 +758,13 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   private static boolean isAnyOne(Operand operand) {
     return ConstantOperand.isAnyIntOne(operand) || operand.equals(ConstantOperand.ONE_DBL);
+  }
+
+  private static boolean isAnyNegativeOne(Operand operand) {
+    if (!operand.isConstant()) {
+      return false;
+    }
+    Number co = ConstantOperand.valueFromConstOperand(operand);
+    return co.longValue() == -1L;
   }
 }
