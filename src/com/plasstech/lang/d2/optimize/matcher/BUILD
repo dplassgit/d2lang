@@ -1,5 +1,5 @@
 java_library(
-    name = "optimize",
+    name = "matcher",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
@@ -7,14 +7,7 @@ java_library(
         "//src/com/plasstech/lang/d2/codegen:locations",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
-        "//src/com/plasstech/lang/d2/optimize/matcher",
-        "//src/com/plasstech/lang/d2/parse/node",
-        "//src/com/plasstech/lang/d2/phase",
-        "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type",
-        "//src/com/plasstech/lang/d2/type:print_formats",
-        "//src/com/plasstech/lang/d2/type:storage",
-        "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "@maven//:com_google_flogger_flogger",
         "@maven//:com_google_guava_guava",

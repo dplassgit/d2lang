@@ -1,24 +1,34 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
-import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.common.DivisionByZeroException;
+import com.plasstech.lang.d2.common.InvalidIndexException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.matcher.BinOpLeftRightOptimizer;
+import com.plasstech.lang.d2.optimize.matcher.BinOpOptimizer;
+import com.plasstech.lang.d2.optimize.matcher.Matchers;
+import com.plasstech.lang.d2.optimize.matcher.OpcodeOptimizer;
+import com.plasstech.lang.d2.optimize.matcher.UnaryOpOptimizer;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 
+/**
+ * Constant folding and single-line opcode simplification optimizations, via a declarative list of
+ * optimizations.
+ */
 class ArithmeticOptimizer extends LineOptimizer {
   ArithmeticOptimizer(int debugLevel) {
     super(debugLevel);
@@ -26,745 +36,479 @@ class ArithmeticOptimizer extends LineOptimizer {
 
   @Override
   public void visit(UnaryOp op) {
-    Operand operand = op.operand();
-    if (operand.type() == VarType.RANGE && op.operator() == TokenType.LENGTH) {
-      // ranges are always size 2, even if non constant.
-      replaceCurrent(
-          new Transfer(op.destination(), ConstantOperand.of(2), op.position()));
-      return;
-    }
-
-    if (!operand.isConstant() && !operand.type().isArray()) {
-      return;
-    }
-    switch (op.operator()) {
-      case LENGTH:
-        if (operand.type() == VarType.STRING) {
-          String value = ConstantOperand.stringValueFromConstOperand(operand);
-          replaceCurrent(
-              new Transfer(op.destination(), ConstantOperand.of(value.length()), op.position()));
-          return;
-        }
-        if (operand.type() instanceof ArrayType arrayType) {
-          arrayType.knownLength().ifPresent(length -> {
-            replaceCurrent(
-                new Transfer(op.destination(), ConstantOperand.of(length), op.position()));
-          });
-          return;
-        }
+    for (OpcodeOptimizer optimizer : UNOP_OPTIMIZERS) {
+      if (optimizer.matches(op)) {
+        Op newOp = optimizer.optimize(op);
+        replaceCurrent(newOp);
         return;
-
-      case NOT: {
-        boolean isTrue = operand.equals(ConstantOperand.TRUE);
-        replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(!isTrue), op.position()));
       }
-        return;
-
-      case BIT_NOT: {
-        long oldValue = ConstantOperand.valueFromConstOperand(operand).longValue();
-        replaceCurrent(
-            new Transfer(op.destination(),
-                ConstantOperand.fromValue(~oldValue, operand.type()), op.position()));
-      }
-        return;
-
-      case MINUS: {
-        Number oldValue = ConstantOperand.valueFromConstOperand(operand);
-        if (operand.type().isIntegral()) {
-          replaceCurrent(
-              new Transfer(op.destination(),
-                  ConstantOperand.fromValue(-oldValue.longValue(), operand.type()), op.position()));
-        } else {
-          replaceCurrent(
-              new Transfer(op.destination(), ConstantOperand.of(-oldValue.doubleValue()),
-                  op.position()));
-        }
-      }
-        return;
-
-      case PLUS:
-        replaceCurrent(new Transfer(op.destination(), operand, op.position()));
-        return;
-
-      case ASC: {
-        String value = ConstantOperand.stringValueFromConstOperand(operand);
-        if (value.length() < 1) {
-          throw new D2RuntimeException(
-              "Cannot take ASC of empty STRING",
-              op.position(),
-              "STRING index");
-        }
-        char first = value.charAt(0);
-        replaceCurrent(new Transfer(op.destination(), ConstantOperand.of(first), op.position()));
-      }
-        return;
-
-      case CHR: {
-        int oldValue = ConstantOperand.valueFromConstOperand(operand).intValue();
-        int value = oldValue & 0xff;
-        replaceCurrent(
-            new Transfer(
-                op.destination(),
-                ConstantOperand.of(Character.valueOf((char) value).toString()),
-                op.position()));
-      }
-        return;
-
-      default:
-        return;
     }
   }
 
   @Override
   public void visit(BinOp op) {
-    Operand left = op.left();
-    Operand right = op.right();
-    TokenType operator = op.operator();
-
-    switch (operator) {
-      case COLON:
-        optimizeColon(op, left, right);
+    for (OpcodeOptimizer optimizer : BINOP_OPTIMIZERS) {
+      if (optimizer.matches(op)) {
+        Op newOp = optimizer.optimize(op);
+        replaceCurrent(newOp);
         return;
+      }
+    }
+  }
 
-      case MULT:
-        optimizeMultiply(op, left, right);
-        return;
+  private static final List<OpcodeOptimizer> BINOP_OPTIMIZERS = ImmutableList.of(
+      // Fold integral constants
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.PLUS, Matchers.isIntegralConstant(),
+          optimizeIntBinOp((left, right) -> left + right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.MINUS, Matchers.isIntegralConstant(),
+          optimizeIntBinOp((left, right) -> left - right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.MULT, Matchers.isIntegralConstant(),
+          optimizeIntBinOp((left, right) -> left * right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(),
+          TokenType.DIV,
+          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isConstant()),
+          optimizeIntBinOp((left, right) -> left / right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.SHIFT_LEFT, Matchers.isIntegralConstant(),
+          optimizeIntBinOp((left, right) -> left << right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.SHIFT_RIGHT, Matchers.isIntegralConstant(),
+          optimizeIntBinOp((left, right) -> left >> right)),
+      new BinOpOptimizer(
+          Matchers.isIntegralConstant(), TokenType.MOD,
+          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isConstant()),
+          optimizeIntBinOp((left, right) -> left % right)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.BIT_AND, Matchers.isConstant(),
+          optimizeIntBinOp((left, right) -> left & right)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.BIT_OR, Matchers.isConstant(),
+          optimizeIntBinOp((left, right) -> left | right)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.BIT_XOR, Matchers.isConstant(),
+          optimizeIntBinOp((left, right) -> left ^ right)),
 
-      case PLUS:
-        optimizeAdd(op, left, right);
-        return;
+      // Fold comparisons
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.EQEQ, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() == 0)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.NEQ, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() != 0)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.LT, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() < 0)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.GT, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() > 0)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.LEQ, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() <= 0)),
+      new BinOpOptimizer(
+          Matchers.isConstant(), TokenType.GEQ, Matchers.isConstant(),
+          optimizeComparison(
+              (a, b) -> //
+              ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
+                  .result() >= 0)),
+      // x == x => true
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.EQEQ, TokenType.LEQ, TokenType.GEQ),
+          transferFrom(ConstantOperand.TRUE)),
+      // x != x => false
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.NEQ, TokenType.LT, TokenType.GT),
+          transferFrom(ConstantOperand.FALSE)),
 
-      case MINUS:
-        optimizeSubtract(op, left, right);
-        return;
+      // Fold double constants
+      new BinOpOptimizer(Matchers.isDoubleConstant(), TokenType.PLUS, Matchers.isDoubleConstant(),
+          optimizeDoubleBinOp((left, right) -> left + right)),
+      new BinOpOptimizer(Matchers.isDoubleConstant(), TokenType.MINUS, Matchers.isDoubleConstant(),
+          optimizeDoubleBinOp((left, right) -> left - right)),
+      new BinOpOptimizer(Matchers.isDoubleConstant(), TokenType.MULT, Matchers.isDoubleConstant(),
+          optimizeDoubleBinOp((left, right) -> left * right)),
+      new BinOpOptimizer(
+          Matchers.isDoubleConstant(),
+          TokenType.DIV,
+          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isDoubleConstant()),
+          optimizeDoubleBinOp((left, right) -> left / right)),
 
-      case DIV:
-        optimizeDivide(op, left, right);
-        return;
+      // Fold String constants
+      // constand a + constant b
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
+          TokenType.PLUS,
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
+          op -> {
+            BinOp binop = (BinOp) op;
+            String left = ConstantOperand.stringValueFromConstOperand(binop.left());
+            String right = ConstantOperand.stringValueFromConstOperand(binop.right());
+            return new Transfer(op.getDestination(),
+                ConstantOperand.of(left + right), op.position());
+          }),
+      // anything + empty = anything
+      new BinOpOptimizer(
+          Matchers.hasType(VarType.STRING),
+          TokenType.PLUS,
+          Matchers.isEqualTo(ConstantOperand.EMPTY_STRING),
+          transferFromLeft()),
+      // empty + anything = anything
+      new BinOpOptimizer(
+          Matchers.isEqualTo(ConstantOperand.EMPTY_STRING),
+          TokenType.PLUS,
+          Matchers.hasType(VarType.STRING),
+          transferFromRight()),
 
-      case MOD:
-        optimizeModulo(op, left, right);
-        return;
-
-      case SHIFT_LEFT:
-        optimizeShiftLeft(op, left, right);
-        return;
-
-      case SHIFT_RIGHT:
-        optimizeShiftRight(op, left, right);
-        return;
-
-      case BIT_AND:
-        optimizeBitAnd(op, left, right);
-        return;
-
-      case BIT_OR:
-        optimizeBitOr(op, left, right);
-        return;
-
-      case BIT_XOR:
-        optimizeBitXor(op, left, right);
-        return;
-
-      case AND:
-        optimizeAnd(op, left, right);
-        return;
-
-      case OR:
-        optimizeOr(op, left, right);
-        return;
-
-      case XOR:
-        optimizeBoolArith(op, left, right, (t, u) -> t ^ u);
-        return;
-
-      case EQEQ:
-      case NEQ:
-        optimizeEq(op, (a, b) -> Objects.equal(a, b) == (operator == TokenType.EQEQ));
-        return;
-
-      case LEQ:
-        optimizeCompare(
-            op,
-            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
-                .result() <= 0);
-        return;
-
-      case LT:
-        optimizeCompare(
-            op,
-            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
-                .result() < 0);
-        return;
-
-      case GEQ:
-        optimizeCompare(
-            op,
-            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
-                .result() >= 0);
-        return;
-
-      case GT:
-        optimizeCompare(
-            op,
-            (a, b) -> ComparisonChain.start().compare(a, b, Ordering.natural().nullsFirst())
-                .result() > 0);
-        return;
-
-      case LBRACKET:
-        // Replace "abc"[0] with "a".
-        // Only works for constant strings and constant int indexes (modulo constant propagation!)
-        if (left.isConstant() && right.isConstant()) {
-          if (left.type() == VarType.STRING) {
-            optimizeConstantStringBinOp(op, left, right);
-            return;
-          }
-          if (left.type() == VarType.RANGE) {
-            int index = ConstantOperand.valueFromConstOperand(right).intValue();
-            if (index < 0 || index > 1) {
-              return;
+      // Other simplifications
+      // a=b*-1 or b/-1 -> a=-b
+      new BinOpOptimizer(
+          Matchers.any(),
+          ImmutableList.of(TokenType.MULT, TokenType.DIV),
+          Matchers.isAnyNegativeOne(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            return new UnaryOp(op.getDestination(), TokenType.MINUS, binop.left(), op.position());
+          }),
+      // a * (power of 2) -> a << (log of power of 2)
+      new BinOpOptimizer(Matchers.hasType(VarType.INT), TokenType.MULT, Matchers.isPowerOf2(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            int right = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            int power = Integer.numberOfTrailingZeros(right);
+            return new BinOp(op.getDestination(), binop.left(), TokenType.SHIFT_LEFT,
+                ConstantOperand.of(power), op.position());
+          }),
+      // a / (power of 2) -> a >> (log of power of 2)
+      new BinOpOptimizer(Matchers.hasType(VarType.INT), TokenType.DIV, Matchers.isPowerOf2(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            int right = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            int power = Integer.numberOfTrailingZeros(right);
+            return new BinOp(op.getDestination(), binop.left(), TokenType.SHIFT_RIGHT,
+                ConstantOperand.of(power), op.position());
+          }),
+      // a=b*0 or b&0 -> a=0
+      new BinOpOptimizer(
+          Matchers.any(), ImmutableList.of(TokenType.MULT, TokenType.BIT_AND), Matchers.isAnyZero(),
+          transferFromRight()),
+      // a=b+0 or b|0 or b-0 or b^0 -> a=b
+      new BinOpOptimizer(
+          Matchers.any(),
+          ImmutableList.of(TokenType.PLUS, TokenType.BIT_OR, TokenType.MINUS, TokenType.BIT_XOR,
+              TokenType.SHIFT_LEFT, TokenType.SHIFT_RIGHT),
+          Matchers.isAnyZero(),
+          transferFromLeft()),
+      // a=0/b -> a=0
+      new BinOpOptimizer(Matchers.isAnyZero(), TokenType.DIV, Matchers.not(Matchers.isAnyZero()),
+          transferFromLeft()),
+      // a=b*1 or b/1 -> a=b
+      new BinOpOptimizer(
+          Matchers.any(), ImmutableList.of(TokenType.MULT, TokenType.DIV), Matchers.isAnyOne(),
+          transferFromLeft()),
+      // x - x = 0
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.MINUS, TokenType.MOD),
+          transferFromZero()),
+      // x / x = 1
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.DIV), transferFrom(1)),
+      // x + x = x<<1, only for int
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.PLUS), op -> {
+        BinOp binop = (BinOp) op;
+        Operand left = binop.left();
+        return new BinOp(op.getDestination(), left, TokenType.SHIFT_LEFT, ConstantOperand.of(1),
+            op.position());
+      }, Matchers.hasType(VarType.INT), Matchers.any()),
+      // 0 - x = -x
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isAnyZero(), Matchers.isIntegralConstant()),
+          TokenType.MINUS,
+          Matchers.any(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            return new UnaryOp(op.getDestination(), TokenType.MINUS, binop.right(), op.position());
+          }),
+      // x and false = false
+      new BinOpOptimizer(Matchers.any(), TokenType.AND, Matchers.isEqualTo(ConstantOperand.FALSE),
+          transferFrom(ConstantOperand.FALSE)),
+      // x and true = x
+      new BinOpOptimizer(Matchers.any(), TokenType.AND, Matchers.isEqualTo(ConstantOperand.TRUE),
+          transferFromLeft()),
+      // x and x, x or x = x
+      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.AND, TokenType.OR),
+          transferFromLeft()),
+      // x or false = x
+      new BinOpOptimizer(Matchers.any(), TokenType.OR, Matchers.isEqualTo(ConstantOperand.FALSE),
+          transferFromLeft()),
+      // x or true = true
+      new BinOpOptimizer(Matchers.any(), TokenType.OR, Matchers.isEqualTo(ConstantOperand.TRUE),
+          transferFrom(ConstantOperand.TRUE)),
+      // constant string indexed with a constant int:
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
+          TokenType.LBRACKET,
+          Matchers.isIntegralConstant(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            String s = ConstantOperand.stringValueFromConstOperand(binop.left());
+            int i = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            if (i >= s.length()) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "STRING index out of bounds (length %d); was %d",
+                  s.length(), i);
             }
-            Range range = ConstantOperand.rangeValueFromConstOperand(left);
-            int value = range.value(index);
-            replaceCurrent(
-                new Transfer(op.destination(),
-                    ConstantOperand.of(value),
-                    op.position()));
-          }
+
+            return new Transfer(op.getDestination(), ConstantOperand.of(s.substring(i, i + 1)),
+                op.position());
+          }),
+      // Constant range indexed with a constant index
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.RANGE)),
+          TokenType.LBRACKET,
+          Matchers.isIntegralConstant(),
+          op -> {
+            BinOp binop = (BinOp) op;
+            Range r = ConstantOperand.rangeValueFromConstOperand(binop.left());
+            int i = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            if (i < 0) {
+              throw new InvalidIndexException(
+                  op.position(), "RANGE slice start must be non-negative; was %d", i);
+            }
+            if (i > 1) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "RANGE index out of bounds (length 2); was %d",
+                  i);
+            }
+
+            return new Transfer(op.getDestination(), ConstantOperand.of(r.value(i)),
+                op.position());
+          }),
+      // constant string indexed with constant range
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
+          TokenType.LBRACKET,
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.RANGE)),
+          op -> {
+            BinOp binop = (BinOp) op;
+            String s = ConstantOperand.stringValueFromConstOperand(binop.left());
+            Range range = ConstantOperand.rangeValueFromConstOperand(binop.right());
+            if (range.start() < 0) {
+              throw new InvalidIndexException(
+                  op.position(), "STRING slice start must be non-negative; was %d", range.start());
+            }
+            if (range.end() > s.length()) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "STRING slice out of bounds (length %d); was %d",
+                  s.length(), range.end());
+            }
+            return new Transfer(
+                binop.destination(),
+                ConstantOperand.of(s.substring(range.start(), range.end())),
+                op.position());
+          }),
+      new BinOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.INT)),
+          TokenType.COLON,
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.INT)),
+          op -> {
+            BinOp binop = (BinOp) op;
+            int left = ConstantOperand.valueFromConstOperand(binop.left()).intValue();
+            int right = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            Range range = new Range(left, right);
+            return new Transfer(op.getDestination(),
+                new ConstantOperand<Range>(range, VarType.RANGE),
+                op.position());
+          }),
+
+      // Fold boolean constants 
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.AND, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left && right)),
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.OR, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left || right)),
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.XOR, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left ^ right)));
+
+  private static final List<OpcodeOptimizer> UNOP_OPTIMIZERS = ImmutableList.of(
+      // length(range) is always 2
+      new UnaryOpOptimizer(Matchers.hasType(VarType.RANGE), TokenType.LENGTH,
+          op -> new Transfer(op.getDestination(), ConstantOperand.of(2), op.position())),
+      // Length(constant string) is known
+      new UnaryOpOptimizer(Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
+          TokenType.LENGTH,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            String s = ConstantOperand.stringValueFromConstOperand(unop.operand());
+            return new Transfer(op.getDestination(), ConstantOperand.of(s.length()), op.position());
+          }),
+      // Length(array with known length)
+      new UnaryOpOptimizer(operand -> {
+        if (!operand.type().isArray()) {
+          return false;
         }
-        return;
+        ArrayType arrayType = (ArrayType) operand.type();
+        return arrayType.knownLength().isPresent();
+      },
+          TokenType.LENGTH,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            ArrayType arrayType = (ArrayType) unop.operand().type();
 
-      default:
-        break;
-    }
+            return new Transfer(unop.destination(),
+                ConstantOperand.of(arrayType.knownLength().get()),
+                op.position());
+          }),
+      // not true is false
+      new UnaryOpOptimizer(Matchers.isEqualTo(ConstantOperand.TRUE), TokenType.NOT,
+          transferFrom(ConstantOperand.FALSE)),
+      // not false is true
+      new UnaryOpOptimizer(Matchers.isEqualTo(ConstantOperand.FALSE), TokenType.NOT,
+          transferFrom(ConstantOperand.TRUE)),
+      // -(C) becomes -C for all numbers
+      new UnaryOpOptimizer(Matchers.isIntegralConstant(), TokenType.MINUS,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            long operand = ConstantOperand.valueFromConstOperand(unop.operand())
+                .longValue();
+            return new Transfer(op.getDestination(),
+                ConstantOperand.fromValue(-operand, unop.operand().type()), op.position());
+          }),
+      new UnaryOpOptimizer(Matchers.isDoubleConstant(), TokenType.MINUS,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            double operand = ConstantOperand.valueFromConstOperand(unop.operand()).doubleValue();
+            return new Transfer(op.getDestination(), ConstantOperand.of(-operand), op.position());
+          }),
+      // Bit not: ~(C) becomes ~C for all numbers
+      new UnaryOpOptimizer(Matchers.isIntegralConstant(), TokenType.BIT_NOT,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            long operand = ConstantOperand.valueFromConstOperand(unop.operand()).longValue();
+            return new Transfer(op.getDestination(),
+                ConstantOperand.fromValue(~operand, unop.operand().type()), op.position());
+          }),
+      // +x = x
+      new UnaryOpOptimizer(Matchers.any(), TokenType.PLUS,
+          op -> new Transfer(op.getDestination(), op.getSources().get(0), op.position())),
+
+      // chr(constant) -> constant.toString
+      new UnaryOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.INT)), TokenType.CHR,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            Operand operand = unop.operand();
+            int oldValue = ConstantOperand.valueFromConstOperand(operand).intValue();
+            int value = oldValue & 0xff;
+            return new Transfer(
+                unop.destination(),
+                ConstantOperand.of(Character.valueOf((char) value).toString()),
+                op.position());
+          }),
+      // asc(constant) -> constant
+      new UnaryOpOptimizer(
+          Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)), TokenType.ASC,
+          op -> {
+            UnaryOp unop = (UnaryOp) op;
+            Operand operand = unop.operand();
+            String value = ConstantOperand.stringValueFromConstOperand(operand);
+            if (value.length() < 1) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "Cannot take ASC of empty STRING");
+            }
+            char first = value.charAt(0);
+            return new Transfer(
+                unop.destination(),
+                ConstantOperand.of(first),
+                op.position());
+          }));
+
+  private static Function<Op, Op> optimizeIntBinOp(BinaryOperator<Long> fun) {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      long left = ConstantOperand.valueFromConstOperand(binop.left()).longValue();
+      long right = ConstantOperand.valueFromConstOperand(binop.right()).longValue();
+      return new Transfer(op.getDestination(),
+          ConstantOperand.fromValue(fun.apply(left, right), binop.left().type()), op.position());
+    };
   }
 
-  private void optimizeConstantStringBinOp(BinOp op, Operand left, Operand right) {
-    String value = ConstantOperand.stringValueFromConstOperand(left);
-    if (right.type() == VarType.INT) {
-      int index = ConstantOperand.valueFromConstOperand(right).intValue();
-      if (index < 0) {
-        return;
-      }
-      if (index >= value.length()) {
-        throw new D2RuntimeException(
-            String.format(
-                "STRING index out of bounds (length %d); was %d",
-                value.length(),
-                index),
-            op.position(),
-            "STRING index");
-      }
-      replaceCurrent(
-          new Transfer(
-              op.destination(),
-              ConstantOperand.of(String.valueOf(value.charAt(index))),
-              op.position()));
-      return;
-    }
-    if (right.type() == VarType.RANGE) {
-      // constant range, constant string.
-      Range range = ConstantOperand.rangeValueFromConstOperand(right);
-      if (range.start() < 0) {
-        throw new D2RuntimeException(
-            String.format("must be non-negative; was %d", range.start()),
-            op.position(),
-            "String slice start");
-      }
-      if (range.end() > value.length()) {
-        throw new D2RuntimeException(
-            String.format(
-                "out of bounds (length %d); was %d",
-                value.length(),
-                range.end()),
-            op.position(),
-            "String slice end");
-      }
-      replaceCurrent(
-          new Transfer(
-              op.destination(),
-              ConstantOperand.of(value.substring(range.start(), range.end())),
-              op.position()));
-    }
+  private static Function<Op, Op> optimizeComparison(
+      BiPredicate<Comparable<?>, Comparable<?>> fun) {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      ConstantOperand<?> left = (ConstantOperand<?>) binop.left();
+      ConstantOperand<?> right = (ConstantOperand<?>) binop.right();
+      Comparable<?> leftval = (Comparable<?>) left.value();
+      Comparable<?> rightval = (Comparable<?>) right.value();
+      return new Transfer(op.getDestination(), ConstantOperand.of(fun.test(leftval, rightval)),
+          op.position());
+    };
   }
 
-  private void optimizeColon(BinOp op, Operand left, Operand right) {
-    if (left.isConstant() && right.isConstant()) {
-      Range range = new Range(ConstantOperand.valueFromConstOperand(left).intValue(),
-          ConstantOperand.valueFromConstOperand(right).intValue());
-      ConstantOperand<Range> constRange = new ConstantOperand<Range>(range, VarType.RANGE);
-      replaceCurrent(new Transfer(op.destination(), constRange, op.position()));
-    }
+  private static Function<Op, Op> optimizeDoubleBinOp(BinaryOperator<Double> fun) {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      double left = ConstantOperand.valueFromConstOperand(binop.left()).doubleValue();
+      double right = ConstantOperand.valueFromConstOperand(binop.right()).doubleValue();
+      return new Transfer(op.getDestination(),
+          ConstantOperand.of(fun.apply(left, right)), op.position());
+    };
   }
 
-  private void optimizeBitXor(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(right)) {
-      // a ^ 0 == a
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeIntegralArith(op, left, right, (t, u) -> t ^ u);
+  private static Function<Op, Op> optimizeBoolBinOp(BinaryOperator<Boolean> fun) {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      boolean left = binop.left().equals(ConstantOperand.TRUE);
+      boolean right = binop.right().equals(ConstantOperand.TRUE);
+      return new Transfer(op.getDestination(),
+          ConstantOperand.of(fun.apply(left, right)), op.position());
+    };
   }
 
-  /** Bit "or" (for ints, longs or bytes.) */
-  private void optimizeBitOr(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(right)) {
-      // a | 0 == a
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    if (left.equals(right)) {
-      // a|a == a
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeIntegralArith(op, left, right, (t, u) -> t | u);
+  private static Function<Op, Op> transferFrom(Operand source) {
+    return op -> new Transfer(op.getDestination(), source, op.position());
   }
 
-  private void optimizeBitAnd(BinOp op, Operand left, Operand right) {
-    // a & 0 = 0. Note: don't have to test for any zero on left because
-    // the associative optimizer makes sure it's on the right.
-    if (ConstantOperand.isAnyZero(right)) {
-      // a & 0 = 0 
-      replaceCurrent(new Transfer(op.destination(), right, op.position()));
-      return;
-    }
-    if (left.equals(right)) {
-      // x&x=x
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeIntegralArith(op, left, right, (t, u) -> t & u);
+  private static Function<Op, Op> transferFrom(long value) {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      return new Transfer(op.getDestination(),
+          ConstantOperand.fromValue(value, binop.left().type()), op.position());
+    };
   }
 
-  private void optimizeModulo(BinOp op, Operand left, Operand right) {
-    if (isAnyOne(right) || left.equals(right)) {
-      replaceCurrent(
-          new Transfer(op.destination(), ConstantOperand.fromValue(0, left.type()), op.position()));
-      return;
-    }
-    if (ConstantOperand.isAnyZero(right)) {
-      // Taken care of elsewhere.
-      return;
-    }
-    try {
-      optimizeIntegralArith(op, left, right, (t, u) -> t % u);
-    } catch (ArithmeticException e) {
-      throw new D2RuntimeException("Modulo by 0", op.position(), "Arithmetic");
-    }
+  private static Function<Op, Op> transferFromZero() {
+    return transferFrom(0);
   }
 
-  private void optimizeDivide(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(left)) {
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    if (ConstantOperand.isAnyZero(right)) {
-      // Taken care of elsewhere.
-      return;
-    }
-    if (left.equals(right)) {
-      replaceCurrent(new Transfer(op.destination(), ConstantOperand.fromValue(1, left.type()),
-          op.position()));
-      return;
-    }
-    if (isAnyOne(right)) {
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    // dest = left / -1 => dest = -left
-    if (isAnyNegativeOne(right)) {
-      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, op.left(), op.position()));
-      return;
-    }
-    if (right.isConstant() && right.type() == VarType.INT) {
-      int power = powerOfTwo(right);
-      if (power != 0) {
-        replaceCurrent(
-            new BinOp(
-                op.destination(),
-                left,
-                TokenType.SHIFT_RIGHT,
-                ConstantOperand.of(power),
-                op.position()));
-        return;
-      }
-    }
-    try {
-      if (optimizeIntegralArith(op, left, right, (t, u) -> t / u)) {
-        return;
-      }
-      if (optimizeDoubleArith(op, left, right, (t, u) -> t / u)) {
-        return;
-      }
-    } catch (ArithmeticException e) {
-      throw new DivisionByZeroException(op.position());
-    }
+  private static Function<Op, Op> transferFromLeft() {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      return new Transfer(op.getDestination(), binop.left(), op.position());
+    };
   }
 
-  private void optimizeShiftLeft(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(right)) {
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeIntegralArith(op, left, right, (t, u) -> t << u);
-  }
-
-  private void optimizeShiftRight(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(right)) {
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeIntegralArith(op, left, right, (t, u) -> t >> u);
-  }
-
-  private void optimizeSubtract(BinOp op, Operand left, Operand right) {
-    if (left.equals(ConstantOperand.ZERO)
-        || left.equals(ConstantOperand.ZERO_BYTE)
-        || left.equals(ConstantOperand.ZERO_LONG)) {
-      // NOTE: NOT for Doubles.
-      // Replace with destination = -right
-      // This may not be any better than 0-right...
-      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, right, op.position()));
-      return;
-    }
-    if (ConstantOperand.isAnyZero(right)) {
-      // dest = left - 0
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    if (left.equals(right)) {
-      // dest = a - a = 0
-      ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, left.type());
-      replaceCurrent(new Transfer(op.destination(), zero, op.position()));
-      return;
-    }
-    if (optimizeIntegralArith(op, left, right, (t, u) -> t - u)) {
-      return;
-    }
-    if (optimizeDoubleArith(op, left, right, (t, u) -> t - u)) {
-      return;
-    }
-  }
-
-  private void optimizeAdd(BinOp op, Operand left, Operand right) {
-    if (ConstantOperand.isAnyZero(right)) {
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    if (optimizeIntegralArith(op, left, right, (t, u) -> (t + u))) {
-      return;
-    }
-    if (optimizeDoubleArith(op, left, right, (t, u) -> t + u)) {
-      return;
-    }
-    // foo = a+a -> foo = a<<1
-    if (left.equals(right) && left.type() == VarType.INT) {
-      replaceCurrent(
-          new BinOp(
-              op.destination(), left, TokenType.SHIFT_LEFT, ConstantOperand.ONE, op.position()));
-      return;
-    }
-    if (left.isConstant() && right.isConstant()) {
-      // Strings
-      if (right.type().isNull()) {
-        return;
-      }
-      @SuppressWarnings("unchecked")
-      ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
-      if (leftConstant.value() == null) {
-        return;
-      }
-      @SuppressWarnings("unchecked")
-      ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
-      if (rightConstant.value() == null) {
-        return;
-      }
-      replaceCurrent(
-          new Transfer(
-              op.destination(),
-              ConstantOperand.of(leftConstant.value() + rightConstant.value()),
-              op.position()));
-      return;
-    }
-
-    // Replace a + "" with a
-    if (left.type() == VarType.STRING) {
-      if (left.isConstant()) {
-        @SuppressWarnings("unchecked")
-        ConstantOperand<String> leftConstant = (ConstantOperand<String>) left;
-        if (left.type().isNull() || leftConstant.value() == null) {
-          return;
-        }
-        if (leftConstant.value().isEmpty()) {
-          replaceCurrent(new Transfer(op.destination(), right, op.position()));
-          return;
-        }
-      }
-      if (right.isConstant()) {
-        @SuppressWarnings("unchecked")
-        ConstantOperand<String> rightConstant = (ConstantOperand<String>) right;
-        if (right.type().isNull() || rightConstant.value() == null) {
-          return;
-        }
-        if (rightConstant.value().isEmpty()) {
-          // Left might be null but not propagated yet...
-          replaceCurrent(new Transfer(op.destination(), left, op.position()));
-          return;
-        }
-      }
-    }
-  }
-
-  private void optimizeMultiply(BinOp op, Operand left, Operand right) {
-    if (optimizeIntegralArith(op, left, right, (t, u) -> t * u)) {
-      return;
-    }
-    if (optimizeDoubleArith(op, left, right, (t, u) -> t * u)) {
-      return;
-    }
-
-    // Don't have to compare left to zero because either:
-    // 1. it's a constant, which means right is also a constant (because we already swapped)
-    //    and we already took care of it above in a call to optimize*Arith
-    // 2. it's not a constant, so we only need to check right
-    if (ConstantOperand.isAnyZero(right)) {
-      // replace with destination = 0
-      replaceCurrent(new Transfer(op.destination(), right, op.position()));
-      return;
-    }
-    // Don't have to check left for 1 because of the same reasons as zero, above.
-    if (isAnyOne(right)) {
-      // replace with destination = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    // dest = left * -1 => dest = -left
-    if (isAnyNegativeOne(right)) {
-      replaceCurrent(new UnaryOp(op.destination(), TokenType.MINUS, op.left(), op.position()));
-      return;
-    }
-    // Only deal with shifting ints left. I'm lazy.
-    if (right.isConstant() && left.type() == VarType.INT) {
-      int power = powerOfTwo(right);
-      if (power != 0) {
-        replaceCurrent(
-            new BinOp(
-                op.destination(),
-                left,
-                TokenType.SHIFT_LEFT,
-                ConstantOperand.of(power),
-                op.position()));
-        return;
-      }
-    }
-  }
-
-  private static int powerOfTwo(Operand operand) {
-    @SuppressWarnings("unchecked")
-    ConstantOperand<Integer> oc = (ConstantOperand<Integer>) operand;
-    int value = oc.value();
-    if (value < 2) {
-      return 0;
-    }
-    int test = 1;
-    int power = 0;
-    // I'm sure there's a way to do this with logs
-    do {
-      if (test == value) {
-        return power;
-      }
-      test *= 2;
-      power++;
-    } while (test <= value && power < 32);
-    return 0;
-  }
-
-  private void optimizeAnd(BinOp op, Operand left, Operand right) {
-    if (right.equals(ConstantOperand.FALSE)) {
-      // left and false = false
-      replaceCurrent(new Transfer(op.destination(), ConstantOperand.FALSE, op.position()));
-      return;
-    }
-    if (right.equals(ConstantOperand.TRUE)) {
-      // left and true == left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-    optimizeBoolArith(op, left, right, (t, u) -> t && u);
-  }
-
-  // this is for BOOLEAN or.
-  private void optimizeOr(BinOp op, Operand left, Operand right) {
-    if (optimizeBoolArith(op, left, right, (t, u) -> t || u)) {
-      return;
-    }
-    if (right.equals(ConstantOperand.TRUE)) {
-      // anything or true = true
-      replaceCurrent(new Transfer(op.destination(), ConstantOperand.TRUE, op.position()));
-      return;
-    }
-    if (right.equals(ConstantOperand.FALSE)) {
-      // left or false = left
-      replaceCurrent(new Transfer(op.destination(), left, op.position()));
-      return;
-    }
-  }
-
-  /**
-   * If both operands are constants, apply the given function to the constants and replace the
-   * opcode with result. E.g., op=3<4 becomes op=true
-   *
-   * @return true if both operands are constants.
-   */
-  private boolean optimizeCompare(BinOp op, BiPredicate<Comparable<?>, Comparable<?>> fun) {
-    Location destination = op.destination();
-    Operand left = op.left();
-    Operand right = op.right();
-
-    if (left.equals(right)) {
-      // they're equal, so we can optimize it. If it's LEQ or GEQ, we pass TRUE, otherwise FALSE.
-      replaceCurrent(
-          new Transfer(
-              destination,
-              ConstantOperand.of(op.operator() == TokenType.LEQ || op.operator() == TokenType.GEQ
-                  || op.operator() == TokenType.EQEQ),
-              op.position()));
-      return true;
-    }
-    if (left.isConstant() && right.isConstant()) {
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-      Comparable<?> leftval = (Comparable<?>) leftConstant.value();
-      Comparable<?> rightval = (Comparable<?>) rightConstant.value();
-
-      try {
-        boolean result = fun.test(leftval, rightval);
-        replaceCurrent(new Transfer(destination, ConstantOperand.of(result), op.position()));
-        return true;
-      } catch (NullPointerException npe) {
-        throw new D2RuntimeException("Null pointer error", op.position(), "Null pointer");
-      }
-    }
-    return false;
-  }
-
-  /**
-   * If both operands are constants, apply the given function to the constants and replace the
-   * opcode with result. E.g., t = 'a' == 'b' becomes t = false
-   *
-   * <p>
-   * If both operands are not constants, apply the == function and if they pass, replace the opcode
-   * with true. E.g., t=a==a becomes t=true. This does not work for t=a!=b because it still has to
-   * compare at runtime the values of a and b are the same or not.
-   *
-   * @return true if both objects are constants or they pass fun.test
-   */
-  private boolean optimizeEq(BinOp op, BiPredicate<Object, Object> fun) {
-    Location destination = op.destination();
-    Operand left = op.left();
-    Operand right = op.right();
-
-    if (left.isConstant() && right.isConstant()) {
-      ConstantOperand<?> leftConstant = (ConstantOperand<?>) left;
-      ConstantOperand<?> rightConstant = (ConstantOperand<?>) right;
-      replaceCurrent(
-          new Transfer(
-              destination,
-              ConstantOperand.of(fun.test(leftConstant.value(), rightConstant.value())),
-              op.position()));
-      return true;
-    }
-    if (left.equals(right)) {
-      // replace t = a == a with t = true
-      // replace t = a != a with t = false
-      replaceCurrent(
-          new Transfer(
-              destination, ConstantOperand.of(op.operator() == TokenType.EQEQ), op.position()));
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * If both operands are constant integrals, apply the given function to them and replace the
-   * opcode with the new constant. E.g., t=3*2 becomes t=6
-   *
-   * @return true if both operands are integral constants.
-   */
-  private boolean optimizeIntegralArith(
-      BinOp op, Operand left, Operand right, BinaryOperator<Long> fun) {
-
-    if (left.isConstant() && right.isConstant() && left.type().isIntegral()) {
-      long leftValue = ConstantOperand.valueFromConstOperand(left).longValue();
-      long rightValue = ConstantOperand.valueFromConstOperand(right).longValue();
-      Location destination = op.destination();
-      replaceCurrent(
-          new Transfer(
-              destination,
-              ConstantOperand.fromValue(fun.apply(leftValue, rightValue), left.type()),
-              op.position()));
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * If both operands are constant doubles, apply the given function to them and replace the opcode
-   * with the new constant. E.g., t=3.14*2.0 becomes t=6.28
-   *
-   * @return true if both operands are double constants.
-   */
-  private boolean optimizeDoubleArith(
-      BinOp op, Operand left, Operand right, BinaryOperator<Double> fun) {
-
-    if (left.isConstant() && right.isConstant() && left.type() == VarType.DOUBLE) {
-      double leftValue = ConstantOperand.valueFromConstOperand(left).doubleValue();
-      double rightValue = ConstantOperand.valueFromConstOperand(right).doubleValue();
-      Location destination = op.destination();
-      replaceCurrent(
-          new Transfer(
-              destination, ConstantOperand.of(fun.apply(leftValue, rightValue)), op.position()));
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * If both operands are constant booleans, apply the given function to those booleans and replace
-   * the opcode with the new constant. E.g., t=true or false becomes t=true
-   *
-   * @return true if both operands are boolean constants.
-   */
-  private boolean optimizeBoolArith(
-      BinOp op, Operand left, Operand right, BinaryOperator<Boolean> fun) {
-
-    if (left.isConstant() && right.isConstant() && left.type() == VarType.BOOL) {
-      boolean leftIsTrue = left.equals(ConstantOperand.TRUE);
-      boolean rightIsTrue = right.equals(ConstantOperand.TRUE);
-      Location destination = op.destination();
-      replaceCurrent(
-          new Transfer(
-              destination, ConstantOperand.of(fun.apply(leftIsTrue, rightIsTrue)), op.position()));
-      return true;
-    }
-    return false;
-  }
-
-  private static boolean isAnyOne(Operand operand) {
-    return ConstantOperand.isAnyIntOne(operand) || operand.equals(ConstantOperand.ONE_DBL);
-  }
-
-  private static boolean isAnyNegativeOne(Operand operand) {
-    if (!operand.isConstant()) {
-      return false;
-    }
-    Number co = ConstantOperand.valueFromConstOperand(operand);
-    return co.longValue() == -1L;
+  private static Function<Op, Op> transferFromRight() {
+    return op -> {
+      BinOp binop = (BinOp) op;
+      return new Transfer(op.getDestination(), binop.right(), op.position());
+    };
   }
 }

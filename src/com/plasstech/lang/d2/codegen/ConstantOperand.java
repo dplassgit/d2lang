@@ -184,6 +184,10 @@ public class ConstantOperand<T> implements Operand {
         || operand.equals(ONE_BYTE);
   }
 
+  public static boolean isAnyOne(Operand operand) {
+    return isAnyIntOne(operand) || operand.equals(ConstantOperand.ONE_DBL);
+  }
+
   public static Number valueFromConstOperand(Operand operand) {
     if (!(operand instanceof ConstantOperand)) {
       throw new IllegalArgumentException(

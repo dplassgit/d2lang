@@ -13,7 +13,7 @@ import com.plasstech.lang.d2.type.SymbolTable;
 
 public class ILOptimizer extends DefaultOptimizer implements Phase {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private Level loggingLevel;
+  private final Level loggingLevel;
   private final ImmutableList<Optimizer> children;
 
   public ILOptimizer(int debugLevel) {
@@ -68,6 +68,7 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
 
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> input, SymbolTable symbolTable) {
+    long start = System.currentTimeMillis();
     setChanged(false);
 
     ImmutableList<Op> program = ImmutableList.copyOf(input);
@@ -107,6 +108,9 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
     } finally {
       logger.at(loggingLevel).log("Iterations: %d\n", iterations);
     }
+    long end = System.currentTimeMillis();
+
+    logger.at(loggingLevel).log("Optimization took %d msec", end - start);
     return program;
   }
 }
