@@ -93,26 +93,15 @@ public class Matchers {
   }
 
   public static Matcher isPowerOf2() {
-    return op -> {
-      if (!(isIntegralConstant().matches(op))) {
-        return false;
-      }
-      int value = ConstantOperand.valueFromConstOperand(op).intValue();
-      return (value >= 2) && ((value & (value - 1)) == 0);
-    };
+    return and(isIntegralConstant(),
+        op -> {
+          int value = ConstantOperand.valueFromConstOperand(op).intValue();
+          return (value >= 2) && ((value & (value - 1)) == 0);
+        });
   }
 
   public static Matcher isNegativeConstant() {
-    return op -> {
-      if (!(isConstant().matches(op))) {
-        return false;
-      }
-      if (!(isNumeric().matches(op))) {
-        return false;
-      }
-
-      Number value = ConstantOperand.valueFromConstOperand(op);
-      return value.doubleValue() < 0;
-    };
+    return and(isConstant(), isNumeric(),
+        op -> ConstantOperand.valueFromConstOperand(op).doubleValue() < 0);
   }
 }

@@ -242,11 +242,9 @@ class ArithmeticOptimizer extends LineOptimizer {
             BinOp binop = (BinOp) op;
             return new UnaryOp(op.getDestination(), TokenType.MINUS, binop.right(), op.position());
           }),
-      // a = b + (-1) => a = b - 1
+      // a = b + (-C) => a = b - C
       new BinOpOptimizer(
-          Matchers.any(),
-          TokenType.PLUS,
-          Matchers.isNegativeConstant(),
+          Matchers.any(), TokenType.PLUS, Matchers.isNegativeConstant(),
           op -> {
             BinOp binop = (BinOp) op;
             if (binop.right().type().equals(VarType.DOUBLE)) {
@@ -260,9 +258,10 @@ class ArithmeticOptimizer extends LineOptimizer {
             return new BinOp(op.getDestination(), binop.left(), TokenType.MINUS,
                 ConstantOperand.fromValue(-value, binop.right().type()), op.position());
           }),
-      // a = b - (-1) => a = b + 1
-      new BinOpOptimizer(Matchers.any(), TokenType.MINUS,
-          Matchers.and(Matchers.isConstant(), Matchers.isNegativeConstant()), op -> {
+      // a = b - (-C) => a = b + C
+      new BinOpOptimizer(
+          Matchers.any(), TokenType.MINUS, Matchers.isNegativeConstant(),
+          op -> {
             BinOp binop = (BinOp) op;
             if (binop.right().type().equals(VarType.DOUBLE)) {
               double value = ConstantOperand.valueFromConstOperand(binop.right()).doubleValue();
