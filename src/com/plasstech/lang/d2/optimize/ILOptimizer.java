@@ -22,7 +22,6 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
             // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
             new NopOptimizer(),
             new RangeChecker(), // run this just in case we have a line that might have otherwise been dead
-            new NormalizeNegativesOptimizer(debugLevel),
             new AssociativeOptimizer(debugLevel),
             new AscChrOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),
