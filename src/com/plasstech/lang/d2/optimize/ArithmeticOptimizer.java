@@ -68,9 +68,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           Matchers.isIntegralConstant(), TokenType.MULT, Matchers.isIntegralConstant(),
           optimizeIntBinOp((left, right) -> left * right)),
       new BinOpOptimizer(
-          Matchers.isIntegralConstant(),
-          TokenType.DIV,
-          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isConstant()),
+          Matchers.isIntegralConstant(), TokenType.DIV, Matchers.not(Matchers.isAnyZero()),
           optimizeIntBinOp((left, right) -> left / right)),
       new BinOpOptimizer(
           Matchers.isIntegralConstant(), TokenType.SHIFT_LEFT, Matchers.isIntegralConstant(),
@@ -79,8 +77,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           Matchers.isIntegralConstant(), TokenType.SHIFT_RIGHT, Matchers.isIntegralConstant(),
           optimizeIntBinOp((left, right) -> left >> right)),
       new BinOpOptimizer(
-          Matchers.isIntegralConstant(), TokenType.MOD,
-          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isConstant()),
+          Matchers.isIntegralConstant(), TokenType.MOD, Matchers.not(Matchers.isAnyZero())
           optimizeIntBinOp((left, right) -> left % right)),
       new BinOpOptimizer(
           Matchers.isConstant(), TokenType.BIT_AND, Matchers.isConstant(),
@@ -144,9 +141,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       new BinOpOptimizer(Matchers.isDoubleConstant(), TokenType.MULT, Matchers.isDoubleConstant(),
           optimizeDoubleBinOp((left, right) -> left * right)),
       new BinOpOptimizer(
-          Matchers.isDoubleConstant(),
-          TokenType.DIV,
-          Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isDoubleConstant()),
+          Matchers.isDoubleConstant(), TokenType.DIV, Matchers.not(Matchers.isAnyZero()),
           optimizeDoubleBinOp((left, right) -> left / right)),
 
       // Fold String constants
@@ -235,9 +230,7 @@ class ArithmeticOptimizer extends LineOptimizer {
       }, Matchers.hasType(VarType.INT), Matchers.any()),
       // 0 - x = -x
       new BinOpOptimizer(
-          Matchers.and(Matchers.isAnyZero(), Matchers.isIntegralConstant()),
-          TokenType.MINUS,
-          Matchers.any(),
+          Matchers.isAnyZero(), TokenType.MINUS, Matchers.any(),
           op -> {
             BinOp binop = (BinOp) op;
             return new UnaryOp(op.getDestination(), TokenType.MINUS, binop.right(), op.position());
@@ -512,3 +505,4 @@ class ArithmeticOptimizer extends LineOptimizer {
     };
   }
 }
+
