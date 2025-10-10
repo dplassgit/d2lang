@@ -149,6 +149,14 @@ class ArithmeticOptimizer extends LineOptimizer {
           Matchers.and(Matchers.not(Matchers.isAnyZero()), Matchers.isDoubleConstant()),
           optimizeDoubleBinOp((left, right) -> left / right)),
 
+      // Fold boolean constants 
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.AND, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left && right)),
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.OR, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left || right)),
+      new BinOpOptimizer(Matchers.isConstant(), TokenType.XOR, Matchers.isConstant(),
+          optimizeBoolBinOp((left, right) -> left ^ right)),
+
       // Fold String constants
       // constand a + constant b
       new BinOpOptimizer(
@@ -244,7 +252,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           }),
       // a = b + (-C) => a = b - C
       new BinOpOptimizer(
-          Matchers.any(), TokenType.PLUS, Matchers.isNegativeConstant(),
+          Matchers.isNumeric(), TokenType.PLUS, Matchers.isNegativeConstant(),
           op -> {
             BinOp binop = (BinOp) op;
             if (binop.right().type().equals(VarType.DOUBLE)) {
@@ -260,7 +268,7 @@ class ArithmeticOptimizer extends LineOptimizer {
           }),
       // a = b - (-C) => a = b + C
       new BinOpOptimizer(
-          Matchers.any(), TokenType.MINUS, Matchers.isNegativeConstant(),
+          Matchers.isNumeric(), TokenType.MINUS, Matchers.isNegativeConstant(),
           op -> {
             BinOp binop = (BinOp) op;
             if (binop.right().type().equals(VarType.DOUBLE)) {
@@ -275,10 +283,12 @@ class ArithmeticOptimizer extends LineOptimizer {
                 ConstantOperand.fromValue(-value, binop.right().type()), op.position());
           }),
       // x and false = false
-      new BinOpOptimizer(Matchers.any(), TokenType.AND, Matchers.isEqualTo(ConstantOperand.FALSE),
+      new BinOpOptimizer(Matchers.hasType(VarType.BOOL), TokenType.AND,
+          Matchers.isEqualTo(ConstantOperand.FALSE),
           transferFrom(ConstantOperand.FALSE)),
       // x and true = x
-      new BinOpOptimizer(Matchers.any(), TokenType.AND, Matchers.isEqualTo(ConstantOperand.TRUE),
+      new BinOpOptimizer(Matchers.hasType(VarType.BOOL), TokenType.AND,
+          Matchers.isEqualTo(ConstantOperand.TRUE),
           transferFromLeft()),
       // x and x, x or x = x
       new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.AND, TokenType.OR),
@@ -347,15 +357,7 @@ class ArithmeticOptimizer extends LineOptimizer {
             Range range = new Range(left, right);
             return new Transfer(op.getDestination(),
                 new ConstantOperand<Range>(range, VarType.RANGE), op.position());
-          }),
-
-      // Fold boolean constants 
-      new BinOpOptimizer(Matchers.isConstant(), TokenType.AND, Matchers.isConstant(),
-          optimizeBoolBinOp((left, right) -> left && right)),
-      new BinOpOptimizer(Matchers.isConstant(), TokenType.OR, Matchers.isConstant(),
-          optimizeBoolBinOp((left, right) -> left || right)),
-      new BinOpOptimizer(Matchers.isConstant(), TokenType.XOR, Matchers.isConstant(),
-          optimizeBoolBinOp((left, right) -> left ^ right)));
+          }));
 
   private static final List<OpcodeOptimizer> UNOP_OPTIMIZERS = ImmutableList.of(
       // length(range) is always 2
@@ -370,13 +372,10 @@ class ArithmeticOptimizer extends LineOptimizer {
             return new Transfer(op.getDestination(), ConstantOperand.of(s.length()), op.position());
           }),
       // Length(array with known length)
-      new UnaryOpOptimizer(operand -> {
-        if (!operand.type().isArray()) {
-          return false;
-        }
+      new UnaryOpOptimizer(Matchers.and(Matchers.isArray(), operand -> {
         ArrayType arrayType = (ArrayType) operand.type();
         return arrayType.knownLength().isPresent();
-      },
+      }),
           TokenType.LENGTH,
           op -> {
             UnaryOp unop = (UnaryOp) op;

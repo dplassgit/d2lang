@@ -38,9 +38,10 @@ public class ArithmeticOptimizerTest {
 
   private static final TempLocation INT1 = LocationUtils.newTempLocation("int1", VarType.INT);
   private static final TempLocation INT2 = LocationUtils.newTempLocation("int2", VarType.INT);
-  private static final TempLocation STRING_TEMP =
-      LocationUtils.newTempLocation("temp3", VarType.STRING);
+  private static final TempLocation STR1 = LocationUtils.newTempLocation("str1", VarType.STRING);
+  private static final TempLocation STR2 = LocationUtils.newTempLocation("str2", VarType.STRING);
   private static final TempLocation DBL1 = LocationUtils.newTempLocation("dbl1", VarType.DOUBLE);
+
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
   private static final ConstantOperand<String> CONSTANT_B = ConstantOperand.of("b");
   private static final Operand CONSTANT_RANGE =
@@ -310,7 +311,7 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusVarStrings() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, STRING_TEMP, TokenType.PLUS, STRING_TEMP, null));
+        ImmutableList.of(new BinOp(INT1, STR1, TokenType.PLUS, STR1, null));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
@@ -318,21 +319,21 @@ public class ArithmeticOptimizerTest {
   @Test
   public void varPlusEmptyStringRight() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, STRING_TEMP, TokenType.PLUS, EMPTY_STRING, null));
+        ImmutableList.of(new BinOp(INT1, STR1, TokenType.PLUS, EMPTY_STRING, null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
+    assertThat(optimized.get(0)).isTransferredFrom(STR1);
   }
 
   @Test
   public void varPlusEmptyStringLeft() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, EMPTY_STRING, TokenType.PLUS, STRING_TEMP, null));
+        ImmutableList.of(new BinOp(INT1, EMPTY_STRING, TokenType.PLUS, STR1, null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized.get(0)).isTransferredFrom(STRING_TEMP);
+    assertThat(optimized.get(0)).isTransferredFrom(STR1);
   }
 
   @Test
@@ -343,7 +344,7 @@ public class ArithmeticOptimizerTest {
     Operand left = ConstantOperand.of(leftValue);
     Operand right = ConstantOperand.of(rightValue);
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(STRING_TEMP, left, TokenType.PLUS, right, null));
+        ImmutableList.of(new BinOp(STR1, left, TokenType.PLUS, right, null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimizer.isChanged()).isTrue();
@@ -370,6 +371,52 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized.get(2)).isTransferredFrom(TRUE);
     assertThat(optimized.get(3)).isTransferredFrom(TRUE);
     assertThat(optimized.get(4)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(5)).isTransferredFrom(FALSE);
+  }
+
+  @Test
+  public void compareBooleansTrueTrue() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(INT1, TRUE, TokenType.EQEQ, TRUE, null),
+            new BinOp(INT1, TRUE, TokenType.NEQ, TRUE, null),
+            new BinOp(INT1, TRUE, TokenType.LEQ, TRUE, null),
+            new BinOp(INT1, TRUE, TokenType.GEQ, TRUE, null),
+            new BinOp(INT1, TRUE, TokenType.LT, TRUE, null),
+            new BinOp(INT1, TRUE, TokenType.GT, TRUE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(6);
+    assertThat(optimized.get(0)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(1)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(2)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(3)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(4)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(5)).isTransferredFrom(FALSE);
+  }
+
+  @Test
+  public void compareBooleansFalseTrue() {
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(INT1, FALSE, TokenType.EQEQ, TRUE, null),
+            new BinOp(INT1, FALSE, TokenType.NEQ, TRUE, null),
+            new BinOp(INT1, FALSE, TokenType.LEQ, TRUE, null),
+            new BinOp(INT1, FALSE, TokenType.GEQ, TRUE, null),
+            new BinOp(INT1, FALSE, TokenType.LT, TRUE, null),
+            new BinOp(INT1, FALSE, TokenType.GT, TRUE, null));
+
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+
+    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimized).hasSize(6);
+    assertThat(optimized.get(0)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(1)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(2)).isTransferredFrom(TRUE);
+    assertThat(optimized.get(3)).isTransferredFrom(FALSE);
+    assertThat(optimized.get(4)).isTransferredFrom(TRUE);
     assertThat(optimized.get(5)).isTransferredFrom(FALSE);
   }
 
@@ -539,24 +586,10 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
-  public void boolAndItself() {
+  public void boolWithItself(@TestParameter({"AND", "OR"}) TokenType tokenType) {
     Location left = LocationUtils.newMemoryAddress("left", VarType.BOOL);
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, left, TokenType.AND, left, null));
-
-    ImmutableList<Op> optimized = optimizer.optimize(program, null);
-
-    assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-
-    assertThat(optimized.get(0)).isTransferredFrom(left);
-  }
-
-  @Test
-  public void boolOrItself() {
-    Location left = LocationUtils.newMemoryAddress("left", VarType.BOOL);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, left, TokenType.OR, left, null));
+        ImmutableList.of(new BinOp(INT1, left, tokenType, left, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -697,7 +730,7 @@ public class ArithmeticOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             // Previously, it was only testing if index was > length, but it needed to be >=
-            new BinOp(STRING_TEMP, CONSTANT_A, TokenType.LBRACKET, ConstantOperand.of(1), null));
+            new BinOp(STR1, CONSTANT_A, TokenType.LBRACKET, ConstantOperand.of(1), null));
 
     assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
   }
@@ -1045,11 +1078,11 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isFalse();
   }
 
+  // not true is false
   @Test
   public void unaryNotConstant(@TestParameter boolean value) {
     ImmutableList<Op> program =
-        ImmutableList.of(new UnaryOp(INT1, TokenType.NOT,
-            ConstantOperand.of(value), null));
+        ImmutableList.of(new UnaryOp(INT1, TokenType.NOT, ConstantOperand.of(value), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -1058,6 +1091,7 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of(!value));
   }
 
+  // 10-anything is unchnaged
   @Test
   public void notZeroSubOperandUnchanged(
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
@@ -1072,5 +1106,62 @@ public class ArithmeticOptimizerTest {
 
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void plusPositiveIsUnchanged() {
+    ImmutableList<Op> input =
+        ImmutableList.of(new BinOp(INT1, INT2, TokenType.PLUS, ConstantOperand.of(2), null));
+    optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void multiplyNegativeIsUnchanged() {
+    ImmutableList<Op> input =
+        ImmutableList.of(new BinOp(INT1, INT2, TokenType.MULT, ConstantOperand.of(-2), null));
+    optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void addingStringsAreNotChanged() {
+    ImmutableList<Op> input =
+        ImmutableList
+            .of(new BinOp(STR1, STR2, TokenType.PLUS, ConstantOperand.of("hi"), null));
+    optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isFalse();
+  }
+
+  @Test
+  public void plusNegativeBecomesSubtraction(
+      @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
+
+    Location loc = LocationUtils.newTempLocation("loc", varType);
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, loc, TokenType.PLUS, ConstantOperand.fromValue(-2, varType), null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isBinOp(loc, loc, TokenType.MINUS,
+        ConstantOperand.fromValue(2, varType));
+  }
+
+  @Test
+  public void minusNegativeBecomesAddition(
+      @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
+
+    Location loc = LocationUtils.newTempLocation("loc", varType);
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, loc, TokenType.MINUS, ConstantOperand.fromValue(-2, varType), null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isBinOp(loc, loc, TokenType.PLUS,
+        ConstantOperand.fromValue(2, varType));
   }
 }
