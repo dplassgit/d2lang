@@ -26,7 +26,7 @@ public abstract class Location implements Operand {
     return name();
   }
 
-  public Location baseLocation() {
+  public final Location baseLocation() {
     return this;
   }
 

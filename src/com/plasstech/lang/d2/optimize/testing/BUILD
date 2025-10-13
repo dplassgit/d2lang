@@ -15,6 +15,7 @@ java_library(
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/phase:phase_name",
         "//src/com/plasstech/lang/d2/phase:state",
+        "//src/com/plasstech/lang/d2/type:symbols",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_truth_truth",
     ],

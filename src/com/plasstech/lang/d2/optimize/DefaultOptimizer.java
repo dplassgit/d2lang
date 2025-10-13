@@ -1,9 +1,9 @@
 package com.plasstech.lang.d2.optimize;
 
-abstract class DefaultOptimizer implements Optimizer {
+public abstract class DefaultOptimizer implements Optimizer {
   private boolean changed;
 
-  final void setChanged(boolean changed) {
+  final protected void setChanged(boolean changed) {
     this.changed = changed;
   }
 
