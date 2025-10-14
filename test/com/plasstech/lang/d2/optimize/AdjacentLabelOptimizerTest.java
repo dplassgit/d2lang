@@ -14,11 +14,11 @@ import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AdjacentLabelOptimizerTest {
-  private final Optimizer OPTIMIZERS =
-      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new AdjacentLabelOptimizer(2)), 2);
+  private final Optimizer optimizer = new OptimizerWithNop(new AdjacentLabelOptimizer(2));
 
   private static final Label LABEL1 = new Label("l1");
   private static final Label LABEL2 = new Label("l2");
@@ -31,8 +31,8 @@ public class AdjacentLabelOptimizerTest {
   public void labelLabelDeletesSecond() {
     ImmutableList<Op> program = ImmutableList.of(LABEL1, LABEL2);
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isEqualTo(LABEL1);
   }
@@ -41,8 +41,8 @@ public class AdjacentLabelOptimizerTest {
   public void labelLabelReplacesGotoSecond() {
     ImmutableList<Op> program = ImmutableList.of(new Goto(LABEL2.label()), LABEL1, LABEL2);
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Goto gotoOp = (Goto) optimized.get(0);
     assertThat(gotoOp.label()).isEqualTo(LABEL1.label());
@@ -50,11 +50,14 @@ public class AdjacentLabelOptimizerTest {
   }
 
   @Test
-  public void labelLabelLabelReplacesGotoThird() {
+  public void labelLabelLabelRemovesSecond() {
     ImmutableList<Op> program = ImmutableList.of(new Goto(LABEL3.label()), LABEL1, LABEL2, LABEL3);
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
+    // Run again
+    optimized = optimizer.optimize(optimized, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     Goto gotoOp = (Goto) optimized.get(0);
     assertThat(gotoOp.label()).isEqualTo(LABEL1.label());
@@ -66,8 +69,8 @@ public class AdjacentLabelOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(new IfOp(CONDITION, LABEL2.label(), false), LABEL1, LABEL2);
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
     IfOp ifOp = (IfOp) optimized.get(0);
     assertThat(ifOp.destination()).isEqualTo(LABEL1.label());
@@ -84,8 +87,8 @@ public class AdjacentLabelOptimizerTest {
             LABEL2,
             new IfOp(CONDITION, LABEL3.label(), false));
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(3);
     IfOp ifOp = (IfOp) optimized.get(0);
     assertThat(ifOp.destination()).isEqualTo(LABEL1.label());
@@ -100,8 +103,8 @@ public class AdjacentLabelOptimizerTest {
   public void separatedLabelsNotAffected() {
     ImmutableList<Op> program = ImmutableList.of(LABEL1, OP, LABEL2);
 
-    ImmutableList<Op> optimized = OPTIMIZERS.optimize(program, null);
-    assertThat(OPTIMIZERS.isChanged()).isFalse();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
     assertThat(optimized).isEqualTo(program);
   }
 }

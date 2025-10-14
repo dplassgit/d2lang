@@ -49,6 +49,20 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     tempAssignments.clear();
   }
 
+  @Override
+  protected void postProcess() {
+    // any assignments that aren't erased are candidates for removal
+    for (int ip : assignments.values()) {
+      deleteAt(ip);
+    }
+    for (int ip : globalAssignments.values()) {
+      deleteAt(ip);
+    }
+    for (int ip : tempAssignments.values()) {
+      deleteAt(ip);
+    }
+  }
+
   private void recordAssignment(Location destination) {
     switch (destination.storage()) {
       case TEMP:
@@ -94,7 +108,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   }
 
   // This can never be called with a temp, because temps aren't reassigned.
-  private boolean killIfReassigned(Location destination) {
+  private boolean forgetIfReassigned(Location destination) {
     if (destination.storage() == SymbolStorage.GLOBAL) {
       Integer loc = globalAssignments.get(destination.baseLocation());
       if (loc != null) {
@@ -203,14 +217,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(ArrayAlloc op) {
     markRead(op.sizeLocation());
     Location dest = op.destination();
-    killIfReassigned(dest);
+    forgetIfReassigned(dest);
     recordAssignment(dest);
   }
 
   @Override
   public void visit(AllocateOp op) {
     Location dest = op.destination();
-    killIfReassigned(dest);
+    forgetIfReassigned(dest);
     recordAssignment(dest);
   }
 
@@ -242,7 +256,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Transfer op) {
     Location dest = op.destination();
     markRead(op.source());
-    killIfReassigned(dest);
+    forgetIfReassigned(dest);
     recordAssignment(dest);
   }
 
@@ -250,14 +264,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Inc op) {
     Location dest = op.target();
     markRead(dest);
-    killIfReassigned(dest);
+    forgetIfReassigned(dest);
     recordAssignment(dest);
   }
 
   @Override
   public void visit(DeallocateTemp op) {
     // ugh, we remove deallocates, so this is never run, so non-read longtemps aren't killed.
-    if (killIfReassigned(op.temp())) {
+    if (forgetIfReassigned(op.temp())) {
       deleteCurrent();
     }
   }
@@ -266,14 +280,14 @@ class DeadAssignmentOptimizer extends LineOptimizer {
   public void visit(Dec op) {
     Location dest = op.target();
     markRead(dest);
-    killIfReassigned(dest);
+    forgetIfReassigned(dest);
     recordAssignment(dest);
   }
 
   @Override
   public void visit(UnaryOp op) {
     markRead(op.operand());
-    killIfReassigned(op.destination());
+    forgetIfReassigned(op.destination());
     recordAssignment(op.destination());
   }
 
@@ -301,7 +315,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
       markRead(actual);
     }
     op.destination().ifPresent(dest -> {
-      killIfReassigned(dest);
+      forgetIfReassigned(dest);
       recordAssignment(dest);
     });
   }
@@ -316,7 +330,7 @@ class DeadAssignmentOptimizer extends LineOptimizer {
     // Ignore records???
     markRead(op.left());
     markRead(op.right());
-    killIfReassigned(op.destination());
+    forgetIfReassigned(op.destination());
     recordAssignment(op.destination());
   }
 }

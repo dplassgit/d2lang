@@ -16,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -34,8 +35,7 @@ public class TempPropagationOptimizerTest {
   private static final Location DTEMP2 = LocationUtils.newTempLocation("dtemp2", VarType.DOUBLE);
   private static final Location DTEMP3 = LocationUtils.newTempLocation("dtemp3", VarType.DOUBLE);
 
-  private Optimizer optimizer =
-      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new TempPropagationOptimizer(2)), 0);
+  private Optimizer optimizer = new OptimizerWithNop(new TempPropagationOptimizer(2));
 
   @Test
   public void inc_noOptimization() {

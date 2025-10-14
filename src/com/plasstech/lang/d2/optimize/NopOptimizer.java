@@ -10,7 +10,7 @@ import com.plasstech.lang.d2.type.SymbolTable;
 /**
  * Removes Nop operations from the IL program.
  */
-class NopOptimizer extends DefaultOptimizer {
+public final class NopOptimizer extends DefaultOptimizer {
   @Override
   public ImmutableList<Op> optimize(ImmutableList<Op> program, SymbolTable symtab) {
     List<Op> noNops = Op.removeMatchingOps(program, Nop.class);

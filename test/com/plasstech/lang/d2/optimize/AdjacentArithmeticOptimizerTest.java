@@ -21,17 +21,13 @@ import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.NumericTypeProvider;
 
 @RunWith(TestParameterInjector.class)
 public class AdjacentArithmeticOptimizerTest {
-  private final Optimizer optimizers =
-      new ILOptimizer(
-          ImmutableList.of(
-              new NopOptimizer(),
-              new AdjacentArithmeticOptimizer(2)),
-          2);
+  private final Optimizer optimizer = new OptimizerWithNop(new AdjacentArithmeticOptimizer(2));
 
   private static final TempLocation TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
@@ -64,8 +60,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.PLUS, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.PLUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.PLUS, two);
@@ -80,8 +76,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP2, TokenType.PLUS, one, null),
         new Inc(TEMP2, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP2, TokenType.PLUS, two);
@@ -94,8 +90,8 @@ public class AdjacentArithmeticOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(
         new Inc(TEMP2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -107,8 +103,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP2, TokenType.PLUS, one, null),
         new Dec(TEMP2, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP2, TokenType.PLUS, zero);
@@ -122,8 +118,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(VAR1, null),
         new BinOp(TEMP2, VAR1, TokenType.PLUS, one, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -135,8 +131,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(VAR1, VAR1, TokenType.PLUS, one, null),
         new BinOp(TEMP2, VAR1, TokenType.PLUS, one, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -147,8 +143,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(VAR1, VAR1, TokenType.PLUS, one, null),
         new BinOp(VAR1, VAR1, TokenType.PLUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isBinOp(VAR1, VAR1, TokenType.PLUS, two);
   }
@@ -159,8 +155,8 @@ public class AdjacentArithmeticOptimizerTest {
 
     ImmutableList<Op> program = ImmutableList.of(new Dec(VAR1, null), new Inc(VAR2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -169,8 +165,8 @@ public class AdjacentArithmeticOptimizerTest {
 
     ImmutableList<Op> program = ImmutableList.of(new Inc(VAR1, null), new Dec(VAR2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -182,8 +178,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.BIT_OR, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.BIT_OR, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.BIT_OR, three);
@@ -198,8 +194,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.BIT_AND, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.BIT_AND, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.BIT_AND, one);
@@ -215,8 +211,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.BIT_XOR, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.BIT_XOR, four, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.BIT_XOR,
@@ -230,8 +226,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.MULT, two, null),
         new BinOp(TEMP3, TEMP2, TokenType.MULT, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     Operand six = ConstantOperand.fromValue(6, varType);
@@ -244,8 +240,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.PLUS, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.MULT, one, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -255,8 +251,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.PLUS, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.MINUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.PLUS, zero);
@@ -269,8 +265,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.MINUS, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.PLUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, zero);
@@ -283,8 +279,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.MINUS, two, null),
         new BinOp(TEMP3, TEMP2, TokenType.PLUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, one);
@@ -297,8 +293,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.MINUS, one, null),
         new BinOp(TEMP3, TEMP2, TokenType.MINUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MINUS, two);
@@ -311,8 +307,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.fromValue(5, varType), null),
         new BinOp(TEMP3, TEMP2, TokenType.DIV, two, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.DIV,
@@ -326,8 +322,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.fromValue(20, varType), null),
         new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.fromValue(10, varType), null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.DIV, two);
@@ -342,8 +338,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.fromValue(2, varType), null),
         new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.fromValue(10, varType), null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -355,8 +351,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.DIV, ConstantOperand.fromValue(2, varType), null),
         new BinOp(TEMP3, TEMP2, TokenType.MULT, ConstantOperand.fromValue(10, varType), null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.DIV, ConstantOperand.of(0.2));
@@ -369,8 +365,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(TEMP2, TEMP1, TokenType.MULT, ConstantOperand.fromValue(20, varType), null),
         new BinOp(TEMP3, TEMP2, TokenType.DIV, ConstantOperand.fromValue(5, varType), null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(TEMP3, TEMP1, TokenType.MULT,
@@ -385,8 +381,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(VAR1, null),
         new Inc(VAR2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -395,8 +391,8 @@ public class AdjacentArithmeticOptimizerTest {
 
     ImmutableList<Op> program = ImmutableList.of(new Inc(VAR1, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -407,8 +403,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(typedVar1, null),
         new Inc(typedVar1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS, two);
@@ -422,8 +418,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(typedVar1, null),
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, two, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS, three);
@@ -436,8 +432,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, two, null),
         new Inc(typedVar1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS, three);
@@ -449,8 +445,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, two, null),
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS,
@@ -465,8 +461,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, two, null),
         new Dec(typedVar1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isInc(typedVar1);
@@ -479,8 +475,8 @@ public class AdjacentArithmeticOptimizerTest {
         new BinOp(typedVar1, typedVar1, TokenType.MINUS, ConstantOperand.fromValue(4, varType),
             null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS,
         ConstantOperand.fromValue(-2, varType));
@@ -494,8 +490,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(typedVar1, null),
         new BinOp(typedVar1, typedVar1, TokenType.MINUS, two, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS,
         ConstantOperand.fromValue(-1, varType));
@@ -509,8 +505,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Dec(typedVar1, null),
         new Dec(typedVar1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.MINUS, two);
@@ -524,8 +520,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Dec(typedVar1, null),
         new BinOp(typedVar1, typedVar1, TokenType.MINUS, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.MINUS,
@@ -540,8 +536,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Dec(typedVar1, null),
         new BinOp(typedVar1, typedVar1, TokenType.PLUS, three, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.MINUS,
@@ -556,8 +552,8 @@ public class AdjacentArithmeticOptimizerTest {
         new Inc(typedVar1, null),
         new BinOp(typedVar1, typedVar1, TokenType.MINUS, one, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(typedVar1, typedVar1, TokenType.PLUS, zero);

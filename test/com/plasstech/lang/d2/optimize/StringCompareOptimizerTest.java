@@ -15,16 +15,13 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 
 public class StringCompareOptimizerTest {
-  private final Optimizer optimizers =
-      new ILOptimizer(
-          ImmutableList.of(
-              new NopOptimizer(),
-              new StringCompareOptimizer(2)),
-          2);
+  private final Optimizer optimizer = new OptimizerWithNop(new StringCompareOptimizer(2));
+
   private final SymbolTable symTab = new SymbolTable();
 
   private static final TempLocation STRING_TEMP1 =
@@ -48,8 +45,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(3);
 
     assertThat(optimized.get(0)).isUnaryOpOf(TokenType.ASC, STRING_TEMP2);
@@ -65,8 +62,8 @@ public class StringCompareOptimizerTest {
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ,
             LocationUtils.newMemoryAddress("s", VarType.STRING), null));
 
-    optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -75,8 +72,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(1), null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
-    optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -85,8 +82,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, INT_TEMP1, null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
-    optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -96,8 +93,8 @@ public class StringCompareOptimizerTest {
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null),
         new Return("proc"));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(4);
 
     assertThat(optimized.get(3)).isInstanceOf(Return.class);
@@ -116,8 +113,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(3);
 
     assertThat(optimized.get(0)).isUnaryOpOf(TokenType.ASC, STRING_TEMP2);
@@ -134,8 +131,8 @@ public class StringCompareOptimizerTest {
             TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
-    optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -144,8 +141,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, ConstantOperand.of("hi"), null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.FALSE);
   }
@@ -156,8 +153,8 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.NEQ, ConstantOperand.of("hi"), null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.TRUE);
   }
@@ -168,7 +165,7 @@ public class StringCompareOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.LT, ConstantOperand.of("hi"), null));
 
-    optimizers.optimize(program, symTab);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, symTab);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 }

@@ -19,48 +19,53 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 @RunWith(TestParameterInjector.class)
 public class PrintOptimizerTest {
 
-  private static final Optimizer OPTIMIZER =
+  private final Optimizer optimizer =
       new ILOptimizer(
           ImmutableList.of(
               new NopOptimizer(),
+              // This is needed since print("hi") becomes
+              // _temp="hi"
+              // syscall(PRINT, _temp)
+              // which won't get optimized by the PrintOptimizer. So we have to make sure it becomes
+              // syscall(PRINT, "hi")
               new ConstantPropagationOptimizer(0),
               new PrintOptimizer(2)),
           0);
 
   @Test
   public void twoInARow() {
-    assertThatInterpreting("print 'hello' print 'world'").withOptimizer(OPTIMIZER)
+    assertThatInterpreting("print 'hello' print 'world'").withOptimizer(optimizer)
         .hasExpectedSysCallCount(1);
   }
 
   @Test
   public void notTwoInARow() {
-    assertThatInterpreting("print 'hello' print 3").withOptimizer(OPTIMIZER)
+    assertThatInterpreting("print 'hello' print 3").withOptimizer(optimizer)
         .hasExpectedSysCallCount(1);
   }
 
   @Test
   public void twoInARowInAMethod() {
     assertThatInterpreting("f:proc {a='hello' print a print 'world'} f()")
-        .withOptimizer(OPTIMIZER).hasExpectedSysCallCount(1);
+        .withOptimizer(optimizer).hasExpectedSysCallCount(1);
   }
 
   @Test
   public void threeInARow() {
-    assertThatInterpreting("print 'hello' print 'world' print 'bye'").withOptimizer(OPTIMIZER)
+    assertThatInterpreting("print 'hello' print 'world' print 'bye'").withOptimizer(optimizer)
         .hasExpectedSysCallCount(1);
   }
 
   @Test
   public void notThreeInARow() {
     assertThatInterpreting("print 'hello' a=3 print 'world' print 'bye'")
-        .withOptimizer(OPTIMIZER).hasExpectedSysCallCount(2);
+        .withOptimizer(optimizer).hasExpectedSysCallCount(2);
   }
 
   @Test
   public void println() {
     InterpreterResult result =
-        assertThatInterpreting("println 'hello' print 'world'").withOptimizer(OPTIMIZER)
+        assertThatInterpreting("println 'hello' print 'world'").withOptimizer(optimizer)
             .hasExpectedSysCallCount(1);
     List<String> output = result.environment().output();
     assertThat(output.get(0)).isEqualTo("hello\nworld");
@@ -69,7 +74,7 @@ public class PrintOptimizerTest {
   @Test
   public void printlnTwoStrings() {
     InterpreterResult result =
-        assertThatInterpreting("println 'hello' println 'world'").withOptimizer(OPTIMIZER)
+        assertThatInterpreting("println 'hello' println 'world'").withOptimizer(optimizer)
             .hasExpectedSysCallCount(1);
 
     SysCall call = (SysCall) result.code().get(0);
@@ -100,13 +105,13 @@ public class PrintOptimizerTest {
 
   @Test
   public void technicallyNotTwoInARowButStillCounts() {
-    assertThatInterpreting("println 'hello'").withOptimizer(OPTIMIZER).hasExpectedSysCallCount(1);
+    assertThatInterpreting("println 'hello'").withOptimizer(optimizer).hasExpectedSysCallCount(1);
   }
 
   @Test
   public void printConstantBool(@TestParameter boolean val) {
     InterpreterResult result =
-        assertThatInterpreting(String.format("print %s", val)).withOptimizer(OPTIMIZER)
+        assertThatInterpreting(String.format("print %s", val)).withOptimizer(optimizer)
             .hasSameVariables();
 
     ImmutableList<Op> code = result.code();
@@ -118,7 +123,7 @@ public class PrintOptimizerTest {
   @Test
   public void printConstantInt() {
     InterpreterResult result =
-        assertThatInterpreting("print 3").withOptimizer(OPTIMIZER).hasSameVariables();
+        assertThatInterpreting("print 3").withOptimizer(optimizer).hasSameVariables();
 
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
@@ -129,7 +134,7 @@ public class PrintOptimizerTest {
   @Test
   public void printConstantLong() {
     InterpreterResult result =
-        assertThatInterpreting("print 3L").withOptimizer(OPTIMIZER).hasSameVariables();
+        assertThatInterpreting("print 3L").withOptimizer(optimizer).hasSameVariables();
 
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
@@ -140,7 +145,7 @@ public class PrintOptimizerTest {
   @Test
   public void printConstantNull() {
     InterpreterResult result =
-        assertThatInterpreting("print null").withOptimizer(OPTIMIZER).hasSameVariables();
+        assertThatInterpreting("print null").withOptimizer(optimizer).hasSameVariables();
 
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
@@ -151,7 +156,7 @@ public class PrintOptimizerTest {
   @Test
   public void printConstantByte() {
     InterpreterResult result =
-        assertThatInterpreting("print 0y03").withOptimizer(OPTIMIZER).hasSameVariables();
+        assertThatInterpreting("print 0y03").withOptimizer(optimizer).hasSameVariables();
 
     ImmutableList<Op> code = result.code();
     SysCall first = (SysCall) code.get(0);
