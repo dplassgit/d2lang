@@ -11,10 +11,10 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
 
 public class NopOptimizerTest {
+  private final Optimizer optimizer = new NopOptimizer();
+
   private static final Op PROC_EXIT = new ProcExit("name", 0, 0);
   private static final Op LABEL = new Label("keepme");
-
-  private Optimizer optimizer = new NopOptimizer();
 
   @Test
   public void empty() {

@@ -14,15 +14,11 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.VarType;
 
 public class AscChrOptimizerTest {
-  private final Optimizer optimizers =
-      new ILOptimizer(
-          ImmutableList.of(
-              new NopOptimizer(),
-              new AscChrOptimizer(2)),
-          2);
+  private final Optimizer optimizer = new OptimizerWithNop(new AscChrOptimizer(2));
 
   private static final TempLocation INT_TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final TempLocation INT_TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
@@ -41,8 +37,8 @@ public class AscChrOptimizerTest {
         new UnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP1, null),
         new UnaryOp(STRING_TEMP2, TokenType.CHR, INT_TEMP1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isBinOp(STRING_TEMP2, STRING_TEMP1, TokenType.LBRACKET,
@@ -59,8 +55,8 @@ public class AscChrOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new UnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isUnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP2);
@@ -75,8 +71,8 @@ public class AscChrOptimizerTest {
         new BinOp(nottemp, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new UnaryOp(INT_TEMP1, TokenType.ASC, nottemp, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -88,8 +84,8 @@ public class AscChrOptimizerTest {
         new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
         new UnaryOp(nottemp, TokenType.ASC, STRING_TEMP1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isUnaryOp(nottemp, TokenType.ASC, STRING_TEMP2);
@@ -101,8 +97,8 @@ public class AscChrOptimizerTest {
         new UnaryOp(INT_TEMP1, TokenType.ASC, STRING_TEMP1, null),
         new UnaryOp(STRING_TEMP2, TokenType.CHR, INT_TEMP2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -115,8 +111,8 @@ public class AscChrOptimizerTest {
         new UnaryOp(STRING_TEMP1, TokenType.CHR, INT_TEMP1, null),
         new UnaryOp(INT_TEMP2, TokenType.ASC, STRING_TEMP1, null));
 
-    ImmutableList<Op> optimized = optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isTrue();
+    ImmutableList<Op> optimized = optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
     assertThat(optimized.get(0)).isTransferredFrom(INT_TEMP1);
@@ -128,8 +124,8 @@ public class AscChrOptimizerTest {
         new UnaryOp(STRING_TEMP1, TokenType.CHR, INT_TEMP1, null),
         new UnaryOp(INT_TEMP2, TokenType.ASC, STRING_TEMP2, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
@@ -138,7 +134,7 @@ public class AscChrOptimizerTest {
         new UnaryOp(STRING_TEMP1, TokenType.CHR, INT_TEMP1, null),
         new UnaryOp(INT_TEMP2, TokenType.LENGTH, STRING_TEMP1, null));
 
-    optimizers.optimize(program, null);
-    assertThat(optimizers.isChanged()).isFalse();
+    optimizer.optimize(program, null);
+    assertThat(optimizer.isChanged()).isFalse();
   }
 }

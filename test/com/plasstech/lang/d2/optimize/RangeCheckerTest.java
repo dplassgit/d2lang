@@ -28,7 +28,7 @@ import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
 public class RangeCheckerTest {
-  private final static Optimizer CHECKER = new RangeChecker();
+  private final Optimizer checker = new RangeChecker();
 
   private static final TempLocation INT_TEMP =
       LocationUtils.newTempLocation("inttemp", VarType.INT);
@@ -192,6 +192,6 @@ public class RangeCheckerTest {
   }
 
   private void run(ImmutableList<Op> program) {
-    CHECKER.optimize(program, null);
+    checker.optimize(program, null);
   }
 }

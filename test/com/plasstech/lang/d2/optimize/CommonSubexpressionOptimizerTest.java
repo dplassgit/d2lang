@@ -22,6 +22,8 @@ import com.plasstech.lang.d2.type.VarType;
 
 public class CommonSubexpressionOptimizerTest {
 
+  private final Optimizer optimizer = new CommonSubexpressionOptimizer(2);
+
   private static final Location A = LocationUtils.newParamLocation("A", VarType.INT, 0, 0);
   private static final Location B = LocationUtils.newParamLocation("B", VarType.INT, 0, 0);
   private static final Location C = LocationUtils.newParamLocation("C", VarType.INT, 0, 0);
@@ -31,8 +33,6 @@ public class CommonSubexpressionOptimizerTest {
   private SymbolTable symTab = new SymbolTable();
   private Location TEMP = LocationUtils.newTempLocation(symTab, "temp", VarType.INT);
   private Location LONG_TEMP = LocationUtils.newLongTempLocation(symTab, "longtemp", VarType.INT);
-
-  private Optimizer optimizer = new CommonSubexpressionOptimizer(2);
 
   @Test
   public void allParams() {

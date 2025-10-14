@@ -25,6 +25,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
@@ -32,8 +33,7 @@ import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 
 @RunWith(TestParameterInjector.class)
 public class ConstantPropagationOptimizerTest {
-  private Optimizer optimizer =
-      new ILOptimizer(ImmutableList.of(new NopOptimizer(), new ConstantPropagationOptimizer(2)), 2);
+  private final Optimizer optimizer = new OptimizerWithNop(new ConstantPropagationOptimizer(2));
 
   private static final TempLocation TEMP_INT1 =
       LocationUtils.newTempLocation("__temp1", VarType.INT);

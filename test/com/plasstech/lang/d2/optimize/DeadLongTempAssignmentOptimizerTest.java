@@ -1,7 +1,6 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 
@@ -12,17 +11,19 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 
 public class DeadLongTempAssignmentOptimizerTest {
+  private final Optimizer optimizer = new OptimizerWithNop(new DeadLongTempAssignmentOptimizer(2));
+
   private static final Location A = LocationUtils.newParamLocation("a", null, 0, 0);
   private static final Location B = LocationUtils.newParamLocation("b", null, 0, 0);
   private static final Location C = LocationUtils.newParamLocation("c", null, 0, 0);
   private static final Location LONG_TEMP = LocationUtils.newLongTempLocation("longTemp", null);
-  private Optimizer optimizer = new DeadLongTempAssignmentOptimizer(2);
 
   @Test
   public void noCode_isUnchanged() {
-    ImmutableList<Op> output = execute(ImmutableList.of());
+    ImmutableList<Op> output = optimizer.optimize(ImmutableList.of(), null);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEmpty();
   }
@@ -30,7 +31,7 @@ public class DeadLongTempAssignmentOptimizerTest {
   @Test
   public void noLongTemps_isUnchanged() {
     ImmutableList<Op> code = ImmutableList.of(new BinOp(A, B, TokenType.PLUS, C, null));
-    ImmutableList<Op> output = execute(code);
+    ImmutableList<Op> output = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isFalse();
     assertThat(output).isEqualTo(code);
   }
@@ -41,7 +42,7 @@ public class DeadLongTempAssignmentOptimizerTest {
         new Transfer(LONG_TEMP, A, null),
         new Transfer(A, LONG_TEMP, null));
 
-    execute(code);
+    optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
 
@@ -50,10 +51,9 @@ public class DeadLongTempAssignmentOptimizerTest {
     ImmutableList<Op> code = ImmutableList.of(
         new Transfer(LONG_TEMP, A, null));
 
-    ImmutableList<Op> optimized = execute(code);
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(1);
-    assertThat(optimized.get(0)).isNop();
+    assertThat(optimized).isEmpty();
   }
 
   @Test
@@ -64,13 +64,8 @@ public class DeadLongTempAssignmentOptimizerTest {
         new Transfer(LONG_TEMP, B, null),
         new Transfer(A, B, null));
 
-    ImmutableList<Op> optimized = execute(code);
+    ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
-    assertThat(optimized).hasSize(4);
-    assertThat(optimized.get(2)).isNop();
-  }
-
-  private ImmutableList<Op> execute(ImmutableList<Op> code) {
-    return optimizer.optimize(code, null);
+    assertThat(optimized).hasSize(3);
   }
 }

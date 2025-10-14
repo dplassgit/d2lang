@@ -31,6 +31,8 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 
 public class DeadAssignmentOptimizerTest {
+  private final Optimizer optimizer = new OptimizerWithNop(new DeadAssignmentOptimizer(2));
+
   private static final Location LONG_TEMP =
       LocationUtils.newLongTempLocation("longtemp", VarType.INT);
   private static final Location GLOBAL = LocationUtils.newMemoryAddress("global", VarType.INT);
@@ -38,8 +40,6 @@ public class DeadAssignmentOptimizerTest {
   private static final Location C = LocationUtils.newParamLocation("c", VarType.INT, 0, 0);
   private static final ProcSymbol PROC_SYMBOL =
       new ProcSymbol(new ProcedureNode("f", ImmutableList.of(), VarType.VOID, null, null), null);
-
-  private Optimizer optimizer = new OptimizerWithNop(new DeadAssignmentOptimizer(2));
 
   @Test
   public void notDeadParams() {

@@ -21,7 +21,7 @@ import com.plasstech.lang.d2.type.VarType;
 
 @RunWith(TestParameterInjector.class)
 public class AssociativeOptimizerTest {
-  private Optimizer optimizer = new AssociativeOptimizer(2);
+  private final Optimizer optimizer = new AssociativeOptimizer(2);
 
   private static final Location TEMP1 = LocationUtils.newTempLocation("temp1", VarType.INT);
   private static final Location TEMP2 = LocationUtils.newTempLocation("temp2", VarType.INT);
