@@ -170,8 +170,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   @Override
   public void visit(PrintNode node) {
     Node expr = node.expr();
-    if (expr.varType() == VarType.STRING && expr instanceof BinOpNode) {
-      BinOpNode binop = (BinOpNode) expr;
+    if (expr.varType() == VarType.STRING && expr instanceof BinOpNode binop) {
       if (binop.operator() == TokenType.PLUS) {
         // If adding two strings, print each one individually
         ExprNode left = binop.left();

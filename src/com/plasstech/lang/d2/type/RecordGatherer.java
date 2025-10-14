@@ -47,19 +47,15 @@ class RecordGatherer extends DefaultNodeVisitor {
   public void visit(RecordDeclarationNode node) {
     // 1. Make sure no nested records or procs
     for (DeclarationNode field : node.fields()) {
-      // TODO: replace the instanceof
-      if (field instanceof RecordDeclarationNode) {
-        RecordDeclarationNode subRecord = (RecordDeclarationNode) field;
+      if (field instanceof RecordDeclarationNode subRecord) {
         throw new TypeException(
             field.position(),
             "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name());
-      } else if (field instanceof ProcedureNode) {
-        ProcedureNode proc = (ProcedureNode) field;
+      } else if (field instanceof ProcedureNode proc) {
         throw new TypeException(
             field.position(),
             "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name());
-      } else if (field instanceof ArrayDeclarationNode) {
-        ArrayDeclarationNode anode = (ArrayDeclarationNode) field;
+      } else if (field instanceof ArrayDeclarationNode anode) {
         // TODO(#38) support multidimensional arrays
         ExprNode sizeNode = anode.sizeExpr();
         if (!sizeNode.isConstant()) {

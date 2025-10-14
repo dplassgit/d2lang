@@ -191,9 +191,9 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(Call op) {
-      if (op.destination().isPresent()) {
-        setters.add(op.destination().get().baseLocation());
-      }
+      op.destination().ifPresent(
+          destination -> setters.add(destination.baseLocation()));
+
       for (Operand actual : op.actuals()) {
         if (!actual.isConstant()) {
           getters.add(actual);
@@ -224,13 +224,14 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(Return op) {
-      if (op.returnValueLocation().isPresent()) {
-        if (!op.returnValueLocation().get().isConstant()) {
-          // oh this is tricky, if we're returning
-          // foo.bar, then we have to ugh....
-          getters.add(op.returnValueLocation().get());
-        }
-      }
+      op.returnValueLocation().ifPresent(
+          location -> {
+            if (!location.isConstant()) {
+              // oh this is tricky, if we're returning
+              // foo.bar, then we have to ugh....
+              getters.add(location);
+            }
+          });
     }
 
     @Override

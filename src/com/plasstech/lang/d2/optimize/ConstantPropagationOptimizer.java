@@ -382,9 +382,8 @@ class ConstantPropagationOptimizer extends LineOptimizer {
       return null;
     }
 
-    if (operand instanceof Location) {
+    if (operand instanceof Location sourceLocation) {
       // look it up
-      Location sourceLocation = (Location) operand;
       Operand replacement = replacements.get(sourceLocation);
       if (deleteSource && replacement != null) {
         deleteSource(operand);

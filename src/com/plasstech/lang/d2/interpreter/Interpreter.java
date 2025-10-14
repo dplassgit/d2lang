@@ -178,8 +178,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   public void visit(ArraySet op) {
     int index = (Integer) resolve(op.index());
     Object array = resolve(op.array());
-    if (array instanceof Object[]) {
-      Object[] arrayValue = (Object[]) array;
+    if (array instanceof Object[] arrayValue) {
       arrayValue[index] = resolve(op.source());
     } else {
       List<Object> arrayList = (List<Object>) array;
@@ -216,8 +215,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
   private void gotoLabel(String dest) {
     for (int i = 0; i < code.size(); ++i) {
       Op op = code.get(i);
-      if (op instanceof Label) {
-        Label label = (Label) op;
+      if (op instanceof Label label) {
         if (label.label().equals(dest)) {
           ip = i;
           return;

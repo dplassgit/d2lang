@@ -142,10 +142,7 @@ class TempPropagationOptimizer extends LineOptimizer {
       ParamLocation param = (ParamLocation) candidate.destination();
       return param.index() <= 3;
     }
-    if (source.type() == VarType.DOUBLE) {
-      // double constants are globals, so we can't typically use them as a right-hand-side
-      return false;
-    }
+    // Otherwise, not.
     return false;
   }
 }

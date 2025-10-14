@@ -38,17 +38,16 @@ public class PrintFormats {
   }
 
   /** Format the given literal as a String. */
-  public static String formatLiteral(Object thing) {
-    if (thing instanceof Double) {
-      double d = (double) thing;
+  public static String formatLiteral(Object obj) {
+    if (obj instanceof Double d) {
       BigDecimal bd = BigDecimal.valueOf(d).round(MathContext.DECIMAL64).stripTrailingZeros();
       return bd.toPlainString();
     }
-    Format format = getFormat(thing);
+    Format format = getFormat(obj);
     if (format == null) {
       return "null";
     }
-    return String.format(format.javaSpec, thing);
+    return String.format(format.javaSpec, obj);
   }
 
   /** Get the format for the given boolean. Might not be useful. */
@@ -62,14 +61,14 @@ public class PrintFormats {
   }
 
   /** Get the format for the given object. Returns null if it cannot be formatted. */
-  public static Format getFormat(Object thing) {
-    if (thing == null) {
+  public static Format getFormat(Object obj) {
+    if (obj == null) {
       return Format.NULL;
     }
-    if (thing instanceof Boolean) {
-      return getFormat(thing == Boolean.TRUE);
+    if (obj instanceof Boolean) {
+      return getFormat(obj == Boolean.TRUE);
     }
-    return FORMATS.get(thing.getClass());
+    return FORMATS.get(obj.getClass());
   }
 
   // Unusual location of private data because they're implementation details

@@ -963,9 +963,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     for (StatementNode stmt : node.statements()) {
-      if (stmt instanceof IfNode) {
+      if (stmt instanceof IfNode ifNode) {
         // for each 'if':
-        IfNode ifNode = (IfNode) stmt;
         boolean ok = true;
         for (Case ifCase : ifNode.cases()) {
           // make sure all the "case" arms have a return

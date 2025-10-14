@@ -126,8 +126,7 @@ class DeadCodeOptimizer extends LineOptimizer {
             Op testOp2 = code.get(testIp2);
             if (testOp2 instanceof Label) {
               continue;
-            } else if (testOp2 instanceof Goto) {
-              Goto otherGoto = (Goto) testOp2;
+            } else if (testOp2 instanceof Goto otherGoto) {
               logger.at(loggingLevel).log(
                   "Replacing double hop from %s to %s", op.label(), otherGoto.label());
               replaceCurrent(new Goto(otherGoto.label()));
