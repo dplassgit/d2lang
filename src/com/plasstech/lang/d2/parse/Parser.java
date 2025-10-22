@@ -671,7 +671,15 @@ public class Parser implements Phase {
 
   /** EXPRESSIONS */
   private ExprNode expr() {
-    return range();
+    return lowest();
+  }
+
+  private ExprNode lowest() {
+    return nullCoalesce();
+  }
+
+  private ExprNode nullCoalesce() {
+    return binOpFn(ImmutableSet.of(TokenType.NULL_COALESCE), () -> range());
   }
 
   private ExprNode range() {

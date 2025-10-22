@@ -25,7 +25,7 @@ public class ILOptimizerDriver {
       YetAnotherCompiler yac = new YetAnotherCompiler();
       CompilationConfiguration config =
           CompilationConfiguration.builder().setSourceCode(sourceCode)
-              .setLastPhase(PhaseName.IL_OPTIMIZE)
+              .setLastPhase(PhaseName.IL_OPTIMIZE1)
               .setOptDebugLevel(2)
               .setOptimize(true)
               .build();

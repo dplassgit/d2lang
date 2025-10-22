@@ -21,6 +21,8 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/phase:phase_name",
         "//src/com/plasstech/lang/d2/phase:state",
         "//src/com/plasstech/lang/d2/type:result",
+        "//src/com/plasstech/lang/d2/type:storage",
+        "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "//test/com/plasstech/lang/d2/testing:test_code",
         "@maven//:com_google_guava_guava",

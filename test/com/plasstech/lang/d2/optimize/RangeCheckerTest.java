@@ -140,7 +140,7 @@ public class RangeCheckerTest {
             .of(new UnaryOp(STRING_TEMP, operator, NULL_STRING, null));
     RuntimeException exception =
         assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat().contains("Null pointer error");
+    assertThat(exception).hasMessageThat().contains("Null pointer");
   }
 
   @Test

@@ -2,6 +2,7 @@ package com.plasstech.lang.d2;
 
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.ILCodeGenerator;
+import com.plasstech.lang.d2.codegen.ILCodeGeneratorPart2;
 import com.plasstech.lang.d2.codegen.RuntimeChecksGenerator;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.lex.Lexer;
@@ -45,14 +46,13 @@ public class YetAnotherCompiler {
         System.out.println(Joiner.on("\n").join(state.ilCode()));
       }
     }
-    if (state.error()) {
+    if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
       return state;
     }
 
-    // Always run RangeChecks even if optimizations are off.
     Phase rangeChecker = new RangeChecker();
     state = rangeChecker.execute(state);
-    if (state.error()) {
+    if (shouldReturn(config, state, PhaseName.RANGE_CHECKS)) {
       return state;
     }
 
@@ -60,9 +60,6 @@ public class YetAnotherCompiler {
     if (config.optimize()) {
       Phase optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
-      if (state.error()) {
-        return state;
-      }
       if (config.optimize() && config.optDebugLevel() > 0) {
         System.out.println("------------------------------");
         System.out.println("\nFIRST OPTIMIZED INTERMEDIATE CODE:");
@@ -70,6 +67,32 @@ public class YetAnotherCompiler {
           System.out.println(Joiner.on("\n").join(state.lastIlCode()));
         }
         System.out.println("------------------------------");
+      }
+      if (shouldReturn(config, state, PhaseName.IL_OPTIMIZE1)) {
+        return state;
+      }
+    }
+
+    Phase part2 = new ILCodeGeneratorPart2();
+    state = part2.execute(state);
+    if (shouldReturn(config, state, PhaseName.IL_CODEGEN_PART2)) {
+      return state;
+    }
+
+    // Run all the optimizers again
+    if (config.optimize()) {
+      Phase optimizer = new ILOptimizer(config.optDebugLevel());
+      state = optimizer.execute(state);
+      if (config.optimize() && config.optDebugLevel() > 0) {
+        System.out.println("------------------------------");
+        System.out.println("\nSECOND OPTIMIZED INTERMEDIATE CODE:");
+        if (state.lastIlCode() != null) {
+          System.out.println(Joiner.on("\n").join(state.lastIlCode()));
+        }
+        System.out.println("------------------------------");
+      }
+      if (shouldReturn(config, state, PhaseName.IL_OPTIMIZE2)) {
+        return state;
       }
     }
 
@@ -83,20 +106,17 @@ public class YetAnotherCompiler {
           System.out.println(Joiner.on("\n").join(state.ilCode()));
         }
       }
-    }
-    if (shouldReturn(config, state, PhaseName.IL_CODEGEN)) {
-      return state;
+      if (shouldReturn(config, state, PhaseName.RUNTIME_CHECKS)) {
+        return state;
+      }
     }
 
     if (config.optimize()) {
       // Runs all the optimizers.
       Phase optimizer = new ILOptimizer(config.optDebugLevel());
       state = optimizer.execute(state);
-      if (state.error()) {
-        return state;
-      }
     }
-    if (config.optimize() && config.optDebugLevel() > 0) {
+    if ((config.optimize() && config.optDebugLevel() > 0) || config.codeGenDebugLevel() > 0) {
       System.out.println("------------------------------");
       System.out.println("\nFINAL INTERMEDIATE CODE:");
       if (state.lastIlCode() != null) {

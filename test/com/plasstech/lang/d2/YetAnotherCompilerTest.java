@@ -72,7 +72,7 @@ public class YetAnotherCompilerTest {
     CompilationConfiguration config = CompilationConfiguration.builder()
         .setOptDebugLevel(2)
         .setOptimize(true)
-        .setLastPhase(PhaseName.IL_OPTIMIZE)
+        .setLastPhase(PhaseName.ASM_OPTIMIZE)
         .setSourceCode("f:proc(a:int, b:int) {c=a+b d=(a+b)*(a+b)+c println d} f(1, 2)")
         .build();
     State result = yac.compile(config);

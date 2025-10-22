@@ -3,8 +3,7 @@ package com.plasstech.lang.d2.common;
 public class D2RuntimeException extends RuntimeException {
 
   private static final long serialVersionUID = 212555L;
-  private final Position position;
-  private final String type;
+  private final String fullMessage;
 
   /**
    * @param message details about the error
@@ -12,17 +11,20 @@ public class D2RuntimeException extends RuntimeException {
    * @param type type of error, e.g., "Arithmetic"
    */
   public D2RuntimeException(String message, Position position, String type) {
-    super(message);
-    this.position = position;
-    this.type = type;
+    super(message.length() > 0 ? message : type);
+
+    String fullMessage = type + " error";
+    if (position != null) {
+      fullMessage += String.format(" at %s", position.toString());
+    }
+    if (!getMessage().isEmpty()) {
+      fullMessage += ": " + getMessage();
+    }
+    this.fullMessage = fullMessage;
   }
 
   @Override
   public String toString() {
-    if (position != null) {
-      return String.format("%s error at %s: %s", type, position, getMessage());
-    } else {
-      return String.format("%s error: %s", type, getMessage());
-    }
+    return fullMessage;
   }
 }

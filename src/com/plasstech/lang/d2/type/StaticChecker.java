@@ -100,7 +100,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.GEQ,
           TokenType.NEQ,
           TokenType.PLUS,
-          TokenType.LBRACKET
+          TokenType.LBRACKET,
+          TokenType.NULL_COALESCE // ??
       /** Token.Type.MOD // eventually */
       );
 
@@ -119,7 +120,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
   private static final Set<TokenType> NULL_OPERATORS =
       ImmutableSet.of(
           TokenType.EQEQ,
-          TokenType.NEQ);
+          TokenType.NEQ,
+          TokenType.NULL_COALESCE);
 
   // NOTE: Does not include arrays or records.
   private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
@@ -167,7 +169,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       ImmutableSet.of(VarType.BYTE, VarType.DOUBLE, VarType.INT, VarType.LONG, VarType.STRING);
 
   private static final Set<TokenType> ARRAY_OPERATORS =
-      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET);
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.LBRACKET, TokenType.NULL_COALESCE);
 
   private ProgramNode root;
 
@@ -533,34 +535,44 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
     }
 
+    if (operator == TokenType.NULL_COALESCE) {
+      if (leftType.isNull()) {
+        node.setVarType(rightType);
+      } else {
+        node.setVarType(leftType);
+      }
+      return;
+    }
+
     if ((COMPARABLE_VARTYPES.contains(leftType) && COMPARISION_OPERATORS.contains(operator))
         || (leftType.isArray() && ARRAY_OPERATORS.contains(operator))
         || ((leftType.isRecord() || leftType.isNull()) && RECORD_COMPARATORS.contains(operator))) {
       node.setVarType(VarType.BOOL);
-    } else {
-      if (leftType.isUnknown()) {
-        // Can't do much more. Fixed bug #204
-        return;
-      }
-
-      if (operator == TokenType.COLON) {
-        Optional<Integer> leftConstant = assertNotNegativeConst(left, "RANGE values");
-        Optional<Integer> rightConstant = assertNotNegativeConst(right, "RANGE values");
-        if (leftConstant.isPresent() && rightConstant.isPresent()
-            && leftConstant.get() > rightConstant.get()) {
-          errors.add(
-              new TypeException(
-                  left.position(),
-                  "RANGE values must be non-descending; was %d:%d", leftConstant.get(),
-                  rightConstant.get()));
-        }
-        node.setVarType(VarType.RANGE);
-        // Good.
-        return;
-      }
-
-      node.setVarType(leftType);
+      return;
     }
+
+    if (leftType.isUnknown()) {
+      // Can't do much more. Fixed bug #204
+      return;
+    }
+
+    if (operator == TokenType.COLON) {
+      Optional<Integer> leftConstant = assertNotNegativeConst(left, "RANGE values");
+      Optional<Integer> rightConstant = assertNotNegativeConst(right, "RANGE values");
+      if (leftConstant.isPresent() && rightConstant.isPresent()
+          && leftConstant.get() > rightConstant.get()) {
+        errors.add(
+            new TypeException(
+                left.position(),
+                "RANGE values must be non-descending; was %d:%d", leftConstant.get(),
+                rightConstant.get()));
+      }
+      node.setVarType(VarType.RANGE);
+      // Good.
+      return;
+    }
+
+    node.setVarType(leftType);
   }
 
   private Optional<Integer> assertNotNegativeConst(ExprNode node, String objectType) {

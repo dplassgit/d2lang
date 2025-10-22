@@ -77,6 +77,7 @@ public enum TokenType {
   COLON(":"),
   COMMA(","),
   DOT("."),
+  NULL_COALESCE("??"),
   // For future expansion:
   SHORT(true), // "short" keyword/type 
   CHAR(true), // indicates the "char" keyword

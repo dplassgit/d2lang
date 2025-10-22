@@ -63,7 +63,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
       case LENGTH:
       case ASC:
         if (op.operand().isNull()) {
-          throw new D2RuntimeException("Null pointer error", op.position(), "Null");
+          throw new D2RuntimeException("", op.position(), "Null pointer");
         }
         break;
 

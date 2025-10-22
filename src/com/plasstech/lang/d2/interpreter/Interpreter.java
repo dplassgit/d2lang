@@ -338,6 +338,12 @@ public class Interpreter extends DefaultOpcodeVisitor {
       case LT:
         return false;
 
+      case NULL_COALESCE:
+        if (leftNull) {
+          return right;
+        }
+        return left;
+
       default:
         throw new IllegalStateException("Unknown null binop " + op);
     }

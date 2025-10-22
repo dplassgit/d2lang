@@ -400,8 +400,21 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     //      value is true
     //    valuissetlabel
 
+    // if node.operator == NULLCOALESCE: generate:
+    //   if right is atomic, generate:
+    //    dest = left ?? right, and part 2 will "expand" it thusly:
+
+    //    longtemp = left
+    //    temp = longtemp == null
+    //    if not temp goto end
+    //    generate right
+    //    longtemp = right
+    //    end:
+    //    dest = longtemp
+
     String resultIsFalseLabel = Labels.nextLabel("short_circuit_result_false");
     String resultIsTrueLabel = Labels.nextLabel("short_circuit_result_true");
+    Location nullDest = null;
     boolean rightAtomic = isAtomic(node.right());
     if (!rightAtomic) {
       switch (operator) {
@@ -413,6 +426,20 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         case OR:
           emit(new IfOp(left, resultIsTrueLabel, false, node.position()));
           // ... to be continued
+          break;
+
+        case NULL_COALESCE: {
+          //    longtemp = left
+          nullDest = allocateLongTemp(destination.type());
+          emit(new Transfer(nullDest, left, node.position()));
+          //    temp = longtemp == null
+          Location temp = allocateTemp(VarType.BOOL);
+          Operand nullOfAppropriateType = new ConstantOperand<Void>(null, left.type());
+          emit(new BinOp(temp, nullDest, TokenType.EQEQ, nullOfAppropriateType, node.position()));
+          //    if not temp goto end
+          emit(new IfOp(temp, resultIsFalseLabel, true, node.position()));
+          // ... to be continued
+        }
           break;
 
         default:
@@ -483,6 +510,19 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
           // valueIsSetLabel:
           emit(new Label(valueIsSetLabel));
+          // NOTE RETURN
+          return;
+        }
+        break;
+
+      case NULL_COALESCE:
+        if (!rightAtomic) {
+          //    longtemp = right
+          emit(new Transfer(nullDest, right, node.position()));
+          //    end:
+          emit(new Label(resultIsFalseLabel));
+          //    dest = longtemp
+          emit(new Transfer(destination, nullDest, node.position()));
           // NOTE RETURN
           return;
         }

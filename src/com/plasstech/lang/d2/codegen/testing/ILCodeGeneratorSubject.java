@@ -18,7 +18,7 @@ public class ILCodeGeneratorSubject extends PhaseSubject {
   }
 
   private ILCodeGeneratorSubject(FailureMetadata metadata, String code) {
-    super(metadata, code, PhaseName.IL_CODEGEN);
+    super(metadata, code, PhaseName.RANGE_CHECKS);
   }
 
   public List<Op> succeeds() {

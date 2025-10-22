@@ -1128,4 +1128,66 @@ public class ArithmeticOptimizerTest {
     assertThat(optimized.get(0)).isBinOp(loc, loc, TokenType.PLUS,
         ConstantOperand.fromValue(2, varType));
   }
+
+  @Test
+  public void coalesceNullLhs() {
+    // null??anything -> anything
+    Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
+    ConstantOperand<String> rhs = ConstantOperand.of("hi");
+    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, nullOp, TokenType.NULL_COALESCE, rhs, null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(rhs);
+  }
+
+  @Test
+  public void coalesceNullRhs() {
+    // anything??null -> anything
+    Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
+    ConstantOperand<String> lhs = ConstantOperand.of("hi");
+    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, lhs, TokenType.NULL_COALESCE, nullOp, null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(lhs);
+  }
+
+  @Test
+  public void coalesceNulls() {
+    // null??null-> null
+    Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
+    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, nullOp, TokenType.NULL_COALESCE, nullOp, null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(nullOp);
+  }
+
+  @Test
+  public void coalesceSame() {
+    // anything??anything-> anything
+    Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
+    ConstantOperand<String> lhs = ConstantOperand.of("hi");
+    ImmutableList<Op> input =
+        ImmutableList.of(
+            new BinOp(loc, lhs, TokenType.NULL_COALESCE, lhs, null));
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0)).isTransferredFrom(lhs);
+  }
 }

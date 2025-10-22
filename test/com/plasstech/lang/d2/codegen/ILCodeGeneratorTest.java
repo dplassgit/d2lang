@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.ILCodeGeneratorSubject.assertThatGenerating;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,7 +16,7 @@ import com.plasstech.lang.d2.common.TokenType;
 
 /**
  * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
- * program, *not* that the code is correct.
+ * program, *not* that the code is necessarily *correct*.
  */
 public class ILCodeGeneratorTest {
   @Test
@@ -61,78 +62,87 @@ public class ILCodeGeneratorTest {
         """).succeeds();
   }
 
+  private static boolean containsMatchingBinOp(List<Op> ops, Predicate<BinOp> predicate) {
+    boolean found = false;
+    for (Op op : ops) {
+      if (op instanceof BinOp binOp) {
+        found |= predicate.test(binOp);
+      }
+    }
+    return found;
+  }
+
   @Test
   public void shortCircuitAnd() {
     List<Op> ops = assertThatGenerating("bucket=3 x = bucket==3 and bucket > 4").succeeds();
     // Assert that ops doesn't contain an AND
-    for (Op op : ops) {
-      if (op instanceof BinOp binOp) {
-        assertThat(binOp.operator()).isNotEqualTo(TokenType.AND);
-      }
-    }
+    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.AND)))
+        .isFalse();
   }
 
   @Test
   public void noShortCircuitAnd() {
     List<Op> ops = assertThatGenerating("bucket = 4 x = bucket == 3 and false").succeeds();
     // Assert that ops contains an AND
-    boolean found = false;
-    for (Op op : ops) {
-      if (op instanceof BinOp binOp) {
-        if (binOp.operator() == TokenType.AND) {
-          found = true;
-          break;
-        }
-      }
-    }
-    assertThat(found).isTrue();
+    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.AND)))
+        .isTrue();
   }
 
   @Test
   public void shortCircuitOr() {
     List<Op> ops = assertThatGenerating("bucket=3 x = bucket==3 or bucket > 4").succeeds();
     // Assert that ops doesn't contain an OR
-    for (Op op : ops) {
-      if (op instanceof BinOp binOp) {
-        assertThat(binOp.operator()).isNotEqualTo(TokenType.OR);
-      }
-    }
+    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.OR)))
+        .isFalse();
   }
 
   @Test
   public void noShortCircuitOr() {
     List<Op> ops = assertThatGenerating("bucket = 4 x = bucket == 3 or false").succeeds();
     // Assert that ops contains an or
-    boolean found = false;
-    for (Op op : ops) {
-      if (op instanceof BinOp binOp) {
-        if (binOp.operator() == TokenType.OR) {
-          found = true;
-          break;
-        }
-      }
-    }
-    assertThat(found).isTrue();
+    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.OR)))
+        .isTrue();
+  }
+
+  @Test
+  public void nullCoalesceSimple() {
+    List<Op> ops = assertThatGenerating("a='' b=null c=a??b").succeeds();
+    assertThat(
+        containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
+        .isTrue();
+  }
+
+  @Test
+  public void nullCoalesceComplex() {
+    List<Op> ops = assertThatGenerating("f:proc:string{ return null} a='' c=a??f()").succeeds();
+    // Assert that ops doesn't contain NULL_COALESCE
+    assertThat(
+        containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
+        .isFalse();
   }
 
   @Test
   public void ifStmt() {
-    assertThatGenerating("      a=0\n"
-        + "if a==0 {\n"
-        + "  b=1+2*3\n"
-        + "}").succeeds();
+    assertThatGenerating("""
+        a=0
+        if a==0 {
+          b=1+2*3
+        }
+        """).succeeds();
   }
 
   @Test
   public void ifStmts() {
-    assertThatGenerating("      a=0 "
-        + "if a==0 {print 1}"
-        + "elif ((-5) == 6) != true {"
-        + "  b=1+2*3\n"
-        + "} else {\n"
-        + "  print 2\n"
-        + "} \n"
-        + "print 3").succeeds();
+    assertThatGenerating("""
+        a=0
+        if a==0 {print 1}
+        elif ((-5) == 6) != true {
+          b=1+2*3
+        } else {
+          print 2
+        }
+        print 3
+        """).succeeds();
   }
 
   @Test
@@ -159,15 +169,17 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void whileNestedBreak() {
-    assertThatGenerating("      i=0 while i < 30 do i = i+1 { \n"
-        + "  j = 0 while j < 10 do j = j + 1 { \n"
-        + "    print j \n"
-        + "    break \n"
-        + "  } \n"
-        + "  if i > 10  { break } \n"
-        + "  print i \n"
-        + "} \n"
-        + "print -1").succeeds();
+    assertThatGenerating("""
+        i=0 while i < 30 do i = i + 1 {
+          j = 0 while j < 10 do j = j + 1 {
+            print j
+            break
+          }
+          if i > 10  { break }
+          print i
+        }
+        print -1
+        """).succeeds();
   }
 
   @Test
@@ -248,9 +260,11 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void recordFieldSet() {
-    assertThatGenerating("rec: record {f:string i:int}\n" //
-        + "r = new rec\n" //
-        + "r.f = 'hi'").succeeds();
+    assertThatGenerating("""
+        rec: record {f:string i:int}
+        r = new rec
+        r.f = 'hi'
+        """).succeeds();
   }
 
   @Test

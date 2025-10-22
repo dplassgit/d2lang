@@ -186,21 +186,21 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void lengthNullLocal() throws Exception {
     String program = "f:proc {a='hello' a=null println length(a)} f()";
-    assertThatCompiling(program).withOptimize(true).hasCompileTimeError("Null pointer error");
-    assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer error")
+    assertThatCompiling(program).withOptimize(true).hasCompileTimeError("Null pointer");
+    assertThatCompiling(program).withOptimize(false).withRuntimeError("Null pointer")
         .executes();
   }
 
   @Test
   public void lengthNullGlobal() throws Exception {
     assertThatCompiling("a='hello' a=null println length(a)").withOptimize(true)
-        .hasCompileTimeError("Null pointer error");
+        .hasCompileTimeError("Null pointer");
     assertThatCompiling("a='hello' a=null println length(a)").withOptimize(false)
-        .withRuntimeError("Null pointer error").executes();
+        .withRuntimeError("Null pointer").executes();
     assertThatCompiling("a:string a=null println length(a)").withOptimize(true)
-        .hasCompileTimeError("Null pointer error");
+        .hasCompileTimeError("Null pointer");
     assertThatCompiling("a:string a=null println length(a)").withOptimize(false)
-        .withRuntimeError("Null pointer error").executes();
+        .withRuntimeError("Null pointer").executes();
   }
 
   @Test

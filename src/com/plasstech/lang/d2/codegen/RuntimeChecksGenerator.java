@@ -64,12 +64,14 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   private final List<Op> augmentedCode = new ArrayList<>();
   // Maps a temp to its corresponding long temp
   private final Map<Operand, LongTempLocation> tempToLongTemp = new HashMap<>();
+  private boolean changed;
 
   @Override
   public State execute(State input) {
     try {
       tempToLongTemp.clear();
-      // reads either the optimized or pre-optimized (if no optimized code)
+      augmentedCode.clear();
+      // lastIlCode reads either the optimized or pre-optimized (if no optimized code)
       augment(input.lastIlCode());
       return input.setIlCode(ImmutableList.copyOf(augmentedCode));
     } catch (D2RuntimeException re) {
@@ -79,14 +81,20 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
   private ImmutableList<Op> augment(ImmutableList<Op> code) {
     for (Op op : code) {
-      int length = augmentedCode.size();
+      changed = false;
       op.accept(this);
-      if (length == augmentedCode.size()) {
+      if (!changed) {
         // The "accept/visit" didn't change anything; add this op manually.
         augmentedCode.add(op);
       }
     }
     return code;
+  }
+
+  private void emit(Op op) {
+    changed = true;
+    logger.atFine().log("%s", op.toString());
+    augmentedCode.add(op);
   }
 
   @Override
@@ -216,11 +224,6 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new Label(nonNegativeIndexLabel));
 
     emit(new ArrayAlloc(op.destination(), op.arrayType(), size, position));
-  }
-
-  private void emit(Op op) {
-    logger.atFine().log("%s", op.toString());
-    augmentedCode.add(op);
   }
 
   private TempLocation allocateTemp(VarType varType) {

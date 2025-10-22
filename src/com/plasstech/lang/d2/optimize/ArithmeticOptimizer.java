@@ -290,8 +290,9 @@ class ArithmeticOptimizer extends LineOptimizer {
       new BinOpOptimizer(Matchers.hasType(VarType.BOOL), TokenType.AND,
           Matchers.isEqualTo(ConstantOperand.TRUE),
           transferFromLeft()),
-      // x and x, x or x = x
-      new BinOpLeftRightOptimizer(ImmutableList.of(TokenType.AND, TokenType.OR),
+      // x and x, x or x, x ?? x = x 
+      new BinOpLeftRightOptimizer(
+          ImmutableList.of(TokenType.AND, TokenType.OR, TokenType.NULL_COALESCE),
           transferFromLeft()),
       // x or false = x
       new BinOpOptimizer(Matchers.any(), TokenType.OR, Matchers.isEqualTo(ConstantOperand.FALSE),
@@ -299,6 +300,13 @@ class ArithmeticOptimizer extends LineOptimizer {
       // x or true = true
       new BinOpOptimizer(Matchers.any(), TokenType.OR, Matchers.isEqualTo(ConstantOperand.TRUE),
           transferFrom(ConstantOperand.TRUE)),
+      // x ?? null = x
+      // null ?? x = x
+      new BinOpOptimizer(Matchers.any(), TokenType.NULL_COALESCE, Matchers.hasType(VarType.NULL),
+          transferFromLeft()),
+      new BinOpOptimizer(Matchers.hasType(VarType.NULL), TokenType.NULL_COALESCE, Matchers.any(),
+          transferFromRight()),
+
       // constant string indexed with a constant int:
       new BinOpOptimizer(Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
           TokenType.LBRACKET, Matchers.isIntegralConstant(), op -> {

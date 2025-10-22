@@ -53,7 +53,7 @@ public class LexerTest {
 
   @Test
   public void doubleSymbols() {
-    Lexer lexer = new Lexer("==<=>=!=>><<++-- += -=");
+    Lexer lexer = new Lexer("==<=>=!=>><<++-- += -= ??");
     Token token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.EQEQ);
     token = lexer.nextToken();
@@ -74,14 +74,16 @@ public class LexerTest {
     assertThat(token.type()).isEqualTo(TokenType.PLUS_EQ);
     token = lexer.nextToken();
     assertThat(token.type()).isEqualTo(TokenType.MINUS_EQ);
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.NULL_COALESCE);
   }
 
   @Test
   public void invalidSingleChars() {
     assertThrows(ScannerException.class, () -> new Lexer("@").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("?.").nextToken());
     assertThrows(ScannerException.class, () -> new Lexer(";").nextToken());
-    assertThrows(ScannerException.class, () -> new Lexer("�").nextToken());
-    assertThrows(ScannerException.class, () -> new Lexer("�").nextToken());
+    assertThrows(ScannerException.class, () -> new Lexer("#").nextToken());
   }
 
   @Test

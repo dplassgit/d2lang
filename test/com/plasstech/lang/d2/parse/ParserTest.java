@@ -98,12 +98,6 @@ public class ParserTest {
   }
 
   @Test
-  public void printInvalidChar() {
-    assertThatParsing("print �hi�").hasError("Unexpected character '�'");
-    assertThatParsing("print @").hasError("Unexpected character '@'");
-  }
-
-  @Test
   public void assignErrors() {
     assertThatParsing("a=").hasError("expected literal");
     assertThatParsing("a=(3+").hasError("expected literal");
@@ -486,8 +480,16 @@ public class ParserTest {
 
   @Test
   public void binOpOperator(
-      @TestParameter({"+", "-", "*", "/", "%", "|", "&", "^"}) String operator) {
-    assertThatParsing(String.format("a=b%s5", operator)).succeeds();
+      @TestParameter({"+", "-", "*", "/", "%", "|", "&", "^", "??"}) String operator) {
+    ProgramNode programNode = assertThatParsing(String.format("a=b%s5", operator)).succeeds();
+    BlockNode root = programNode.statements();
+    assertThat(root.statements()).hasSize(1);
+
+    AssignmentNode node = (AssignmentNode) root.statements().get(0);
+
+    ExprNode expr = node.expr();
+    BinOpNode binop = (BinOpNode) expr;
+    assertThat(binop.operator().toString()).isEqualTo(operator);
   }
 
   @Test
@@ -1611,9 +1613,11 @@ public class ParserTest {
 
   @Test
   public void unsetRecordCompareToNull() {
-    ProgramNode programNode = assertThatParsing("R: record{i: int s: string}\n" //
-        + " rec: R\n"
-        + " isNull = rec == null").succeeds();
+    ProgramNode programNode = assertThatParsing("""
+        R: record{i: int s: string}
+        rec: R
+        isNull = rec == null
+        """).succeeds();
     BlockNode root =
         programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
@@ -1667,11 +1671,13 @@ public class ParserTest {
 
   @Test
   public void argsLen() {
-    assertThatParsing("len=length(args)\r\n"
-        + "print 'length is ' println len\r\n"
-        + "b=args\r\n"
-        + "a=args[0]\r\n"
-        + "println 'first is ' + a\r\n").succeeds();
+    assertThatParsing("""
+        len=length(args)
+        print 'length is ' println len
+        b=args
+        a=args[0]
+        println 'first is ' + a
+        """).succeeds();
   }
 
   @Test

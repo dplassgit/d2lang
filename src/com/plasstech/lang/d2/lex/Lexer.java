@@ -253,6 +253,14 @@ public class Lexer {
         advance();
         return new Token(TokenType.DOT, start, oc);
 
+      case '?':
+        advance();
+        if (cc == '?') {
+          advance();
+          return new Token(TokenType.NULL_COALESCE, start, oc);
+        }
+        // fall through
+
       default:
         throw new ScannerException(start, "Unexpected character '%c'", cc);
     }

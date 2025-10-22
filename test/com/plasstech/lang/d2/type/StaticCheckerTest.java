@@ -1364,6 +1364,58 @@ public class StaticCheckerTest {
   }
 
   @Test
+  public void nullCoalesce_ok() {
+    SymbolTable table = checkProgram("a='' b='' c = a??b");
+    Symbol symbol = table.getRecursive("c");
+    VarType vt = symbol.varType();
+    assertThat(vt).isEqualTo(VarType.STRING);
+
+    table = checkProgram("a='' b=null c = a??b");
+    symbol = table.getRecursive("c");
+    vt = symbol.varType();
+    assertThat(vt).isEqualTo(VarType.STRING);
+
+    table = checkProgram("a=null b='' c = a??b");
+    symbol = table.getRecursive("c");
+    vt = symbol.varType();
+    assertThat(vt).isEqualTo(VarType.STRING);
+
+    table = checkProgram("rec:record{} r1=new rec r2 = new rec c = r1??r2");
+    symbol = table.getRecursive("c");
+    vt = symbol.varType();
+    assertThat(vt.isRecord());
+    assertThat(vt.name()).isEqualTo("rec");
+
+    table = checkProgram("rec:record{} r2 = new rec c = null??r2");
+    symbol = table.getRecursive("c");
+    vt = symbol.varType();
+    assertThat(vt.isRecord());
+    assertThat(vt.name()).isEqualTo("rec");
+  }
+
+  @Test
+  public void nullCoalesce_error() {
+    assertThatTypeChecking("a='' b=[1,2,3] c=a??b")
+        .hasError("Incompatible types for operator \\?\\?.*STRING.*ARRAY");
+    assertThatTypeChecking("a='' b=1 c=a??b")
+        .hasError("Incompatible types for operator \\?\\?;.*STRING.*INT");
+    assertThatTypeChecking("a=1 b='' c=a??b")
+        .hasError("Cannot apply \\?\\? operator to left operand of type INT");
+    assertThatTypeChecking("""
+        rec1:record{} r1=new rec1
+        rec2:record{} r2=new rec2
+        c= r1??r2
+        """)
+        .hasError("Incompatible types for operator \\?\\?.*rec1.*rec2");
+    assertThatTypeChecking("""
+        rec1:record{} r1=new rec1
+        rec2:record{} c:rec2 c = null
+        c = r1??c
+        """)
+        .hasError("Incompatible types for operator \\?\\?.*rec1.*rec2");
+  }
+
+  @Test
   public void assignRecordType_inferred() {
     SymbolTable symTab = checkProgram("r1:record{s:string} var1:r1 var1=null var2=var1");
     Symbol var1 = symTab.get("var1");

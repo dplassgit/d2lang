@@ -145,6 +145,10 @@ public class SymbolTable {
     return declareVariable(name, varType, SymbolStorage.TEMP);
   }
 
+  public VariableSymbol declareLongTemp(String name, VarType varType) {
+    return declareVariable(name, varType, SymbolStorage.LONG_TEMP);
+  }
+
   /**
    * Declare a param with the given index in this table.
    */
