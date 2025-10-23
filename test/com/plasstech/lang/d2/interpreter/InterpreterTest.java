@@ -464,7 +464,7 @@ public class InterpreterTest {
 
   @Test
   public void stringFullSlice() throws Exception {
-    String code = "s='123456' a=0:length(s) print s[a]";
+    String code = "s='123456' r=0:length(s) print s[r]";
     Environment env = execute(code, true);
     assertThat(env.output()).containsExactly("123456");
   }

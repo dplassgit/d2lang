@@ -304,31 +304,19 @@ class ArithmeticOptimizer extends LineOptimizer {
           TokenType.LBRACKET, Matchers.isIntegralConstant(), op -> {
             BinOp binop = (BinOp) op;
             String s = ConstantOperand.stringValueFromConstOperand(binop.left());
-            int i = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
-            if (i >= s.length()) {
-              throw new InvalidIndexException(op.position(),
-                  "STRING index out of bounds (length %d); was %d", s.length(), i);
-            }
-
-            return new Transfer(op.getDestination(), ConstantOperand.of(s.substring(i, i + 1)),
+            int index = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            return new Transfer(op.getDestination(),
+                ConstantOperand.of(s.substring(index, index + 1)),
                 op.position());
           }),
       // Constant range indexed with a constant index
       new BinOpOptimizer(Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.RANGE)),
           TokenType.LBRACKET, Matchers.isIntegralConstant(), op -> {
             BinOp binop = (BinOp) op;
-            Range r = ConstantOperand.rangeValueFromConstOperand(binop.left());
-            int i = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
-            if (i < 0) {
-              throw new InvalidIndexException(op.position(),
-                  "RANGE slice start must be non-negative; was %d", i);
-            }
-            if (i > 1) {
-              throw new InvalidIndexException(op.position(),
-                  "RANGE index out of bounds (length 2); was %d", i);
-            }
-
-            return new Transfer(op.getDestination(), ConstantOperand.of(r.value(i)), op.position());
+            Range range = ConstantOperand.rangeValueFromConstOperand(binop.left());
+            int index = ConstantOperand.valueFromConstOperand(binop.right()).intValue();
+            return new Transfer(op.getDestination(), ConstantOperand.of(range.value(index)),
+                op.position());
           }),
       // constant string indexed with constant range
       new BinOpOptimizer(Matchers.and(Matchers.isConstant(), Matchers.hasType(VarType.STRING)),
@@ -337,14 +325,6 @@ class ArithmeticOptimizer extends LineOptimizer {
             BinOp binop = (BinOp) op;
             String s = ConstantOperand.stringValueFromConstOperand(binop.left());
             Range range = ConstantOperand.rangeValueFromConstOperand(binop.right());
-            if (range.start() < 0) {
-              throw new InvalidIndexException(op.position(),
-                  "STRING slice start must be non-negative; was %d", range.start());
-            }
-            if (range.end() > s.length()) {
-              throw new InvalidIndexException(op.position(),
-                  "STRING slice out of bounds (length %d); was %d", s.length(), range.end());
-            }
             return new Transfer(binop.destination(),
                 ConstantOperand.of(s.substring(range.start(), range.end())), op.position());
           }),

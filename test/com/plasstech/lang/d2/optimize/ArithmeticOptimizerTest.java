@@ -8,7 +8,6 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
-import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +23,6 @@ import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
-import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
@@ -726,16 +724,6 @@ public class ArithmeticOptimizerTest {
   }
 
   @Test
-  public void stringIndexOutOfRange() {
-    ImmutableList<Op> program =
-        ImmutableList.of(
-            // Previously, it was only testing if index was > length, but it needed to be >=
-            new BinOp(STR1, CONSTANT_A, TokenType.LBRACKET, ConstantOperand.of(1), null));
-
-    assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
-  }
-
-  @Test
   public void modItself(
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
@@ -978,30 +966,6 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.of("34"));
-  }
-
-  @Test
-  public void constantStringSliceNegativeStart() {
-    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
-    ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(-1, 4), VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
-    assertThat(exception).hasMessageThat().contains("must be non-negative");
-  }
-
-  @Test
-  public void constantStringSliceEndTooHigh() {
-    Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
-    ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(1, 10), VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> optimizer.optimize(program, null));
-    assertThat(exception).hasMessageThat().contains("out of bounds (length 6); was 10");
   }
 
   @Test

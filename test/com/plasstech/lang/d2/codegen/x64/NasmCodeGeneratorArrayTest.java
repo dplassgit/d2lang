@@ -14,9 +14,16 @@ import com.plasstech.lang.d2.type.testing.PrimitiveTypeProvider;
 public class NasmCodeGeneratorArrayTest {
   // TODO: test print
 
-  private static final String DASSERTS =
-      " assertTrue:proc(b:bool) {if not b {exit 'sorry'} else {println 'true, as expected'}} "
-          + "assertFalse:proc(b:bool) {if b {exit 'sorry'}  else {println 'false, as expected'}} ";
+  private static final String DASSERTS = """
+      assertTrue:proc(b:bool) {
+          if not b {exit 'sorry'} else {
+          println 'true, as expected'
+          }
+      }
+      assertFalse:proc(b:bool) {
+        if b {exit 'sorry'} else {println 'false, as expected'}
+      }
+      """;
 
   @Test
   public void arrayDeclConstantSize(
@@ -84,23 +91,23 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void emptyArrayAsParam() throws Exception {
-    assertThatCompiling(
-        "f:proc(a:string[]): int { return length(a)} "
-            + "e:string[0] "
-            + "println f(['hi', 'there']) "
-            + "println f(e)")
-        .executedEqualsInterpreted();
+    assertThatCompiling("""
+        f:proc(a:string[]): int { return length(a)}
+        e:string[0]
+        println f(['hi', 'there'])
+        println f(e)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void arraySetAndGetString() throws Exception {
-    assertThatCompiling(
-        "      x:string[2]\n"
-            + "x[0]='hi' \n"
-            + "x[1]=x[0]+ ' there' \n"
-            + "println \"Should be 'hi there'\" \n"
-            + "println x[1]")
-        .executedEqualsInterpreted();
+    assertThatCompiling("""
+        x:string[2]
+        x[0]='hi'
+        x[1]=x[0]+ ' there'
+        println "Should be 'hi there'"
+        println x[1]
+        """).executedEqualsInterpreted();
   }
 
   @Test
@@ -164,10 +171,13 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void arrayLengthConstantSizeInProc() throws Exception {
-    assertThatCompiling("      p:proc {" //
-        + "  x:int[4] print length(x)" //
-        + "}" //
-        + "p()").executedEqualsInterpreted();
+    assertThatCompiling("""
+        p:proc {
+            x:int[4]
+            print length(x)
+        }
+        p()
+        """).executedEqualsInterpreted();
   }
 
   @Test
@@ -189,18 +199,23 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void arrayParam() throws Exception {
-    assertThatCompiling("       arrayParam:proc(arr:int[]) {"
-        + "   println 'Should print 2' print arr[1]"
-        + " }"
-        + " arrayParam([1,2])").executedEqualsInterpreted();
+    assertThatCompiling("""
+        arrayParam:proc(arr:int[]) {
+          println 'Should print 2'
+          print arr[1]
+        }
+        arrayParam([1,2])
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void byteArrayParam() throws Exception {
-    assertThatCompiling("       arrayParam:proc(arr:byte[]) {"
-        + "   println 'Should print 2' print arr[1]"
-        + " }"
-        + " arrayParam([0y1, 0y2])").executedEqualsInterpreted();
+    assertThatCompiling("""
+        arrayParam:proc(arr:byte[]) {
+          println 'Should print 2' print arr[1]
+        }
+        arrayParam([0y1, 0y2])
+        """).executedEqualsInterpreted();
   }
 
   private void assertError(boolean optimize, String program, String error) {
@@ -287,25 +302,26 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void arrayOfRecord() throws Exception {
-    assertThatCompiling(
-        "      r:record{a:string} \r"
-            + "recordarray:r[2] \r"
-            + "recordarray[1] = new r \r"
-            + "second = recordarray[1] \r"
-            + "second.a='hi' \r"
-            + "println 'Should be hi' \r"
-            + "println recordarray[1].a \r" // this line is failing. wth
-            + "println second.a \r"
-            + "println 'Should be null' \r"
-            + "if recordarray[0] == null { \r"
-            + "  println 'null' \r"
-            + "} else { exit 'should have been null' }\r"
-            + "println 'Should be not null'  \r"
-            + "if recordarray[1] != null { \r"
-            + "  println 'not null' \r"
-            + "} else { \r"
-            + " exit 'should not have been null' \r"
-            + "} ")
+    assertThatCompiling("""
+        r:record{a:string}
+        recordarray:r[2]
+        recordarray[1] = new r
+        second = recordarray[1]
+        second.a='hi'
+        println 'Should be hi'
+        println recordarray[1].a // this line is failing. wth
+        println second.a
+        println 'Should be null'
+        if recordarray[0] == null {
+          println 'null'
+        } else { exit 'should have been null' }
+        println 'Should be not null'
+        if recordarray[1] != null {
+          println 'not null'
+        } else {
+          exit 'should not have been null'
+        }
+        """)
         //        .withOptDebugLevel(2)
         //        .withCodeGenDebugLevel(2)
         .executedEqualsInterpreted();
@@ -313,122 +329,133 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void compareSelf() throws Exception {
-    assertThatCompiling(DASSERTS //
-        + "a1=[1,2,3] "
-        + "assertTrue(a1 == a1) "
-        + "assertFalse(a1 != a1)").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a1=[1,2,3]
+        assertTrue(a1 == a1)
+        assertFalse(a1 != a1)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareToNull() throws Exception {
-    assertThatCompiling(DASSERTS //
-        + "a1=[1,2,3] "
-        + "assertFalse(a1 == null) "
-        + "assertFalse(null == a1) "
-        + "assertTrue(a1 != null)").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a1=[1,2,3]
+        assertFalse(a1 == null)
+        assertFalse(null == a1)
+        assertTrue(a1 != null)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareEqual() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "a1=[1,2,3] "
-        + "a2=[1,2,3] "
-        + "assertTrue(a1 == a2) "
-        + "assertFalse(a1 != a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a1=[1,2,3]
+        a2=[1,2,3]
+        assertTrue(a1 == a2)
+        assertFalse(a1 != a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareSameSizes() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "a1=[1,2,3] "
-        + "a2=[1,2,4] "
-        + "assertFalse(a1 == a2) "
-        + "assertTrue(a1 != a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a1=[1,2,3]
+        a2=[1,2,4]
+        assertFalse(a1 == a2)
+        assertTrue(a1 != a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareDifferentSizes() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "a1=[1,2,3] " //
-        + "a2=[1,2] "
-        + "assertFalse(a1 == a2) "
-        + "assertTrue(a1 != a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a1=[1,2,3]
+        a2=[1,2]
+        assertFalse(a1 == a2)
+        assertTrue(a1 != a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareDifferentSizesLocals() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "test:proc {"
-        + "  a1=[1,2,3] " //
-        + "  a2=[1,2] "
-        + "  assertFalse(a1 == a2) "
-        + "  assertTrue(a1 != a2)"
-        + "}"
-        + "test() ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        test:proc {
+          a1=[1,2,3]
+          a2=[1,2]
+          assertFalse(a1 == a2)
+          assertTrue(a1 != a2)
+        }
+        test()
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareDifferentSizesParams() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "test:proc(r1:int, r2:int, r3:int) {"
-        + "  a1=[1, 2, 3] " //
-        + "  a2=[1, 2, 3] "
-        + "  a1[0] = r1"
-        + "  assertFalse(a1 == a2) "
-        + "  assertTrue(a1 != a2)"
-        + "}"
-        + "test(2, 3, 4) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        test:proc(r1:int, r2:int, r3:int) {
+          a1=[1, 2, 3]
+          a2=[1, 2, 3]
+          a1[0] = r1
+          assertFalse(a1 == a2)
+          assertTrue(a1 != a2)
+        }
+        test(2, 3, 4)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareParamsSame() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "test:proc(a1:int[], a2:int[]) {"
-        + "  assertTrue(a1 == a2) "
-        + "  assertFalse(a1 != a2)"
-        + "}"
-        + "a1=[1, 2, 3] " //
-        + "a2=[1, 2, 3] "
-        + "test(a1, a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        test:proc(a1:int[], a2:int[]) {
+          assertTrue(a1 == a2)
+          assertFalse(a1 != a2)
+        }
+        a1=[1, 2, 3]
+        a2=[1, 2, 3]
+        test(a1, a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void compareParamsNotSame() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "test:proc(a1:int[], a2:int[]) {"
-        + "  assertFalse(a1 == a2) "
-        + "  assertTrue(a1 != a2)"
-        + "}"
-        + "a1=[1, 2, 3] "
-        + "a2=[1, 4] "
-        + "test(a1, a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        test:proc(a1:int[], a2:int[]) {
+          assertFalse(a1 == a2)
+          assertTrue(a1 != a2)
+        }
+        a1=[1, 2, 3]
+        a2=[1, 4]
+        test(a1, a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
   public void declareSizeless(@TestParameter boolean optimize) throws Exception {
-    assertThatCompiling(DASSERTS
-        + "a:int[] \n"
-        + "test:proc(a3:int[]) { \n"
-        + "  assertFalse(a == a3) \n"
-        + "  assertTrue(a != a3) \n"
-        + "  println a[0] \n"
-        + "}\n"
-        + "a1=[1, 2, 3] \n"
-        + "a=a1 \n"
-        + "a2=[1, 4] \n"
-        + "test(a2) \n").withOptimize(optimize).executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+        a:int[]
+        test:proc(a3:int[]) {
+          assertFalse(a == a3)
+          assertTrue(a != a3)
+          println a[0]
+        }
+        a1=[1, 2, 3]
+        a=a1
+        a2=[1, 4]
+        test(a2)
+        """).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
   public void compareParamsSameR8Conflict() throws Exception {
-    assertThatCompiling(DASSERTS
-        + "test:proc(r1:int, a1:int[], a2:int[]) {"
-        + "  assertTrue(a1 == a2) "
-        + "  assertFalse(a1 != a2)"
-        + "}"
-        + "a1=[1, 2, 3] " //
-        + "a2=[1, 2, 3] "
-        + "test(1, a1, a2) ").executedEqualsInterpreted();
+    assertThatCompiling(DASSERTS + """
+            test:proc(r1:int, a1:int[], a2:int[]) {
+              assertTrue(a1 == a2)
+              assertFalse(a1 != a2)
+            }
+            a1=[1, 2, 3]
+            a2=[1, 2, 3]
+            test(1, a1, a2)
+        """).executedEqualsInterpreted();
   }
 
   @Test
@@ -476,36 +503,38 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void assignments() throws Exception {
-    String program =
-        "      data:int[14]\n"
-            + "data[0]=2\n"
-            + "data[1]=1\n"
-            + "data[2]=4\n"
-            + "data[3]=5\n"
-            + "data[4]=20\n"
-            + "data[5]=40\n"
-            + "data[6]=1\n"
-            + "data[7]=9\n"
-            + "data[8]=100\n"
-            + "data[9]=0\n"
-            + "data[10]=8\n"
-            + "data[11]=6\n"
-            + "data[12]=98\n"
-            + "data[13]=0\n"
-            + " println data";
+    String program = """
+        data:int[14]
+        data[0]=2
+        data[1]=1
+        data[2]=4
+        data[3]=5
+        data[4]=20
+        data[5]=40
+        data[6]=1
+        data[7]=9
+        data[8]=100
+        data[9]=0
+        data[10]=8
+        data[11]=6
+        data[12]=98
+        data[13]=0
+        println data
+        """;
     assertThatCompiling(program).executedEqualsInterpreted();
   }
 
-  private static final String NULL_ARRAY = ""
-      + "f:proc(a:int[]) {\n"
-      + "   println a[0]\n"
-      + "}\n"
-      + "f(null)";
+  private static final String NULL_ARRAY = """
+      f:proc(a:int[]) {
+         println a[0]
+      }
+      f(null)
+      """;
 
   @Test
   public void nullArrayOptimized() {
     assertThatCompiling(NULL_ARRAY).withOptimize(true)
-        .hasCompileTimeError("Cannot index on NULL object");
+        .hasCompileTimeError("Cannot index into NULL object");
   }
 
   @Test
@@ -516,21 +545,21 @@ public class NasmCodeGeneratorArrayTest {
 
   @Test
   public void compareArrays(@TestParameter boolean optimize) {
-    String compareArrays = ""
-        + "f:proc(a:int[], b:int[], equal:bool) {\n"
-        + "  if equal { if a==b { println 'correct1' } else { exit 'incorrect1'} } \n"
-        + "  else { if a!=b { println 'correct2' } else { exit 'incorrect2'} }\n"
-        + "}\n"
-        + "a1=[1,2,3]\n"
-        + "a2=[1,2,4]\n"
-        + "a3=[1,2]\n"
-        + "print 'a1, a1, true: ' f(a1, a1, true)\n"
-        + "print 'a1, [1,2,3], true: 'f(a1, [1,2,3], true)\n"
-        + "print 'a1, a2, false: 'f(a1, a2, false)\n"
-        + "print 'a1, a3, false: 'f(a1, a3, false)\n"
-        + "print 'a1, null, false: 'f(a1, null, false)\n"
-        + "print 'null, a1, false: 'f(null, a1, false)\n";
-    ;
+    String compareArrays = """
+        f:proc(a:int[], b:int[], equal:bool) {
+          if equal { if a==b { println 'correct1' } else { exit 'incorrect1'} }
+          else { if a!=b { println 'correct2' } else { exit 'incorrect2'} }
+        }
+        a1=[1,2,3]
+        a2=[1,2,4]
+        a3=[1,2]
+        print 'a1, a1, true: ' f(a1, a1, true)
+        print 'a1, [1,2,3], true: 'f(a1, [1,2,3], true)
+        print 'a1, a2, false: 'f(a1, a2, false)
+        print 'a1, a3, false: 'f(a1, a3, false)
+        print 'a1, null, false: 'f(a1, null, false)
+        print 'null, a1, false: 'f(null, a1, false)
+        """;
     assertThatCompiling(compareArrays).withOptimize(optimize).executes();
   }
 }

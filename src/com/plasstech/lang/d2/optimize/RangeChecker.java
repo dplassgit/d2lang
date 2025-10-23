@@ -94,7 +94,6 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
         break;
 
       case DOT:
-        // TODO: write a test for this
         if (left.isNull()) {
           throw new D2RuntimeException(
               String.format("Cannot retrieve field %s of NULL RECORD", right.toString()),
@@ -104,8 +103,7 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
 
       case LBRACKET:
         if (left.isNull()) {
-          // TODO: write a test for this
-          throw new D2RuntimeException("Cannot index on NULL object", op.position(),
+          throw new D2RuntimeException("Cannot index into NULL object", op.position(),
               "Null pointer");
         }
         if (!right.isConstant()) {
@@ -123,6 +121,15 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
             throw new InvalidIndexException(
                 op.position(), "%s index must be non-negative; was %d", left.type(), index);
           }
+          if (left.isConstant() && left.type() == VarType.STRING) {
+            String value = ConstantOperand.stringValueFromConstOperand(left);
+            if (index >= value.length()) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "STRING index out of bounds (length %d); was %d",
+                  value.length(), index);
+            }
+          }
         }
         if (right.type() == VarType.RANGE) {
           Range range = ConstantOperand.rangeValueFromConstOperand(right);
@@ -135,6 +142,21 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
             throw new InvalidIndexException(
                 op.position(),
                 "%s RANGE end index must be non-negative; was %d", left.type(), range.end());
+          }
+          if (left.isConstant() && left.type() == VarType.STRING) {
+            String value = ConstantOperand.stringValueFromConstOperand(left);
+            if (range.start() >= value.length()) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "STRING start RANGE out of bounds (length %d); was %d",
+                  value.length(), range.start());
+            }
+            if (range.end() > value.length()) {
+              throw new InvalidIndexException(
+                  op.position(),
+                  "STRING end RANGE out of bounds (length %d); was %d",
+                  value.length(), range.end());
+            }
           }
         }
         break;
@@ -162,11 +184,10 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
 
   @Override
   public void visit(FieldSetOp op) {
-    // TODO: write a test for this
-    Operand record = op.source();
+    Operand record = op.recordLocation();
     if (record.isNull()) {
       throw new D2RuntimeException(
-          String.format("Cannot set field %s of NULL RECORD", op.field()), op.position(),
+          String.format("Cannot set field \"%s\" of NULL RECORD", op.field()), op.position(),
           "Null pointer");
     }
   }
