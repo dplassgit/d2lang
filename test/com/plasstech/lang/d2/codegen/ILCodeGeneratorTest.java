@@ -8,8 +8,10 @@ import java.util.List;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
+import com.plasstech.lang.d2.common.TokenType;
 
 /**
  * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
@@ -49,21 +51,68 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
-  public void hugeAssignment() {
-    assertThatGenerating("a=((1 + 2) * (3 - 4) / (-5) == 6) != true\n"
-        + " or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and \n"
-        + " ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))\n"
-        + "b=(1+2*3-4/5==6!=true) or (2-3*4-5/-6<7==not a) and (3+4*5+6/-7>=8%2)").succeeds();
+  public void hugeAssignments() {
+    assertThatGenerating("""
+        a=((1 + 2) * (3 - 4) / (-5) == 6) != true
+          or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and
+          ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))
+        b=(1 + 2 * 3 - 4 / 5 == 6 != true) or (2 - 3 * 4 - 5 /- 6 < 7 == not a)
+          and (3 + 4 * 5 + 6 / -7 >= 8 % 2)
+        """).succeeds();
   }
 
   @Test
   public void shortCircuitAnd() {
-    assertThatGenerating("bucket=3 if bucket==3 and bucket > 4 { print bucket}").succeeds();
+    List<Op> ops = assertThatGenerating("bucket=3 x = bucket==3 and bucket > 4").succeeds();
+    // Assert that ops doesn't contain an AND
+    for (Op op : ops) {
+      if (op instanceof BinOp binOp) {
+        assertThat(binOp.operator()).isNotEqualTo(TokenType.AND);
+      }
+    }
+  }
+
+  @Test
+  public void noShortCircuitAnd() {
+    List<Op> ops = assertThatGenerating("bucket = 4 x = bucket == 3 and false").succeeds();
+    // Assert that ops contains an AND
+    boolean found = false;
+    for (Op op : ops) {
+      if (op instanceof BinOp binOp) {
+        if (binOp.operator() == TokenType.AND) {
+          found = true;
+          break;
+        }
+      }
+    }
+    assertThat(found).isTrue();
   }
 
   @Test
   public void shortCircuitOr() {
-    assertThatGenerating("bucket=3 if bucket==3 or bucket > 4 { print bucket}").succeeds();
+    List<Op> ops = assertThatGenerating("bucket=3 x = bucket==3 or bucket > 4").succeeds();
+    // Assert that ops doesn't contain an OR
+    for (Op op : ops) {
+      if (op instanceof BinOp binOp) {
+        assertThat(binOp.operator()).isNotEqualTo(TokenType.OR);
+      }
+    }
+  }
+
+  @Test
+  public void noShortCircuitOr() {
+    List<Op> ops = assertThatGenerating("bucket = 4 x = bucket == 3 or false").succeeds();
+    // Assert that ops contains an or
+    boolean found = false;
+    for (Op op : ops) {
+      if (op instanceof BinOp binOp) {
+        if (binOp.operator() == TokenType.OR) {
+          found = true;
+          break;
+        }
+      }
+    }
+    assertThat(found).isTrue();
   }
 
   @Test

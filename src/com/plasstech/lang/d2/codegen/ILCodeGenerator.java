@@ -409,19 +409,22 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
     String resultIsFalseLabel = nextLabel("short_circuit_result_false");
     String resultIsTrueLabel = nextLabel("short_circuit_result_true");
-    switch (operator) {
-      case AND:
-        emit(new IfOp(left, resultIsFalseLabel, true, node.position()));
-        // ... to be continued
-        break;
+    boolean rightAtomic = isAtomic(node.right());
+    if (!rightAtomic) {
+      switch (operator) {
+        case AND:
+          emit(new IfOp(left, resultIsFalseLabel, true, node.position()));
+          // ... to be continued
+          break;
 
-      case OR:
-        emit(new IfOp(left, resultIsTrueLabel, false, node.position()));
-        // ... to be continued
-        break;
+        case OR:
+          emit(new IfOp(left, resultIsTrueLabel, false, node.position()));
+          // ... to be continued
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
     }
 
     Node rightNode = node.right();
@@ -453,47 +456,58 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         }
         break;
 
-      case AND: {
-        // value = right (we know left is true, therefore value is true AND right = right)
-        String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
-        emit(new Transfer(destination, right, node.position()));
-        // goto valueIsSetLabel
-        emit(new Goto(valueIsSetLabel));
+      case AND:
+        if (!rightAtomic) {
+          // value = right (we know left is true, therefore value is true AND right = right)
+          String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+          emit(new Transfer(destination, right, node.position()));
+          // goto valueIsSetLabel
+          emit(new Goto(valueIsSetLabel));
 
-        // resultisfalse:
-        emit(new Label(resultIsFalseLabel));
-        //   value=false
-        emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
+          // resultisfalse:
+          emit(new Label(resultIsFalseLabel));
+          //   value=false
+          emit(new Transfer(destination, ConstantOperand.FALSE, node.position()));
 
-        // valueIsSetLabel: (continue)
-        emit(new Label(valueIsSetLabel));
-      }
+          // valueIsSetLabel: (continue)
+          emit(new Label(valueIsSetLabel));
+          // NOTE RETURN
+          return;
+        }
         break;
 
-      case OR: {
-        String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
-        // value = right (we know left is false, so value is false OR right = right)
-        emit(new Transfer(destination, right, node.position()));
-        // goto valueIsSetLabel
-        emit(new Goto(valueIsSetLabel));
+      case OR:
+        if (!rightAtomic) {
+          String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+          // value = right (we know left is false, so value is false OR right = right)
+          emit(new Transfer(destination, right, node.position()));
+          // goto valueIsSetLabel
+          emit(new Goto(valueIsSetLabel));
 
-        // resultistrue:
-        emit(new Label(resultIsTrueLabel));
-        //   value=true
-        emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
-        // valueIsSetLabel:
-        emit(new Label(valueIsSetLabel));
-      }
+          // resultistrue:
+          emit(new Label(resultIsTrueLabel));
+          //   value=true
+          emit(new Transfer(destination, ConstantOperand.TRUE, node.position()));
+          // valueIsSetLabel:
+          emit(new Label(valueIsSetLabel));
+          // NOTE RETURN
+          return;
+        }
         break;
 
       default:
         break;
     }
 
-    // do not do this for AND or OR because it's already taken care of
-    if (operator != TokenType.AND && operator != TokenType.OR) {
-      emit(new BinOp(destination, left, operator, right, node.position()));
+    emit(new BinOp(destination, left, operator, right, node.position()));
+  }
+
+  private static boolean isAtomic(ExprNode node) {
+    if (node instanceof BinOp binOp) {
+      return binOp.operator() == TokenType.DOT;
     }
+    return node instanceof VariableNode || node instanceof ConstNode
+        || node instanceof ArrayLiteralNode;
   }
 
   private Operand npeCheck(Operand operand, Position position) {
