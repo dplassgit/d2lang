@@ -65,8 +65,6 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   // Maps a temp to its corresponding long temp
   private final Map<Operand, LongTempLocation> tempToLongTemp = new HashMap<>();
 
-  private int id;
-
   @Override
   public State execute(State input) {
     try {
@@ -209,7 +207,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     size = copyTempToLongTemp(size, position);
     emit(new BinOp(nonNegativeIndex, size, TokenType.GEQ, ConstantOperand.of(0), position));
     // if nonnegativeindex: goto good
-    String nonNegativeIndexLabel = nextLabel("non_negative_index");
+    String nonNegativeIndexLabel = Labels.nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
     emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR,
         ImmutableList.of(ConstantOperand.of(position.line()),
@@ -225,14 +223,9 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     augmentedCode.add(op);
   }
 
-  private String nextLabel(String prefix) {
-    // leading underscore is an illegal character so this will never conflict.
-    return String.format("__rt%s_%d", prefix, ++id);
-  }
-
   private TempLocation allocateTemp(VarType varType) {
     Preconditions.checkArgument(!varType.isRecord(), "Cannot allocate temp with a record");
-    String name = String.format("__rttemp%d", ++id);
+    String name = Labels.nextLabel("rttemp");
     VariableSymbol symbol = new VariableSymbol(null, name, SymbolStorage.TEMP);
     symbol.setVarType(varType);
     return new TempLocation(symbol);
@@ -240,7 +233,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
   private Location allocateLongTemp(VarType varType) {
     Preconditions.checkArgument(!varType.isRecord(), "Cannot allocate longtemp with a record");
-    String name = String.format("__rtlongtemp%d", ++id);
+    String name = Labels.nextLabel("rtlongtemp");
     VariableSymbol symbol = new VariableSymbol(null, name, SymbolStorage.LONG_TEMP);
     symbol.setVarType(varType);
     return new LongTempLocation(symbol);
@@ -258,7 +251,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     VariableLocation temp = (VariableLocation) maybeTemp;
 
     // make a new symbol
-    String name = String.format("__rtlongtemp%d", ++id);
+    String name = Labels.nextLabel("rtlongtemp");
     VariableSymbol symbol = tempSymbolToLongTempSymbol(temp.symbol(), name);
     LongTempLocation longTemp = new LongTempLocation(symbol);
 
@@ -330,7 +323,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     // bad = temp == 0
     TempLocation goodBool = allocateTemp(VarType.BOOL);
     emit(new BinOp(goodBool, stringLength, TokenType.EQEQ, ConstantOperand.of(0), position));
-    String goodLabel = nextLabel("not_empty_for_asc");
+    String goodLabel = Labels.nextLabel("not_empty_for_asc");
     // if not bad goto goodlabel
     emit(new IfOp(goodBool, goodLabel, true, position));
 
@@ -403,7 +396,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
     emit(new BinOp(indexInBounds, index, TokenType.LT, length, position));
     // if indexInBounds, goto good
-    String indexInBoundsLabel = nextLabel("index_in_bounds");
+    String indexInBoundsLabel = Labels.nextLabel("index_in_bounds");
     emit(new IfOp(indexInBounds, indexInBoundsLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
       emit(new SysCall(STRING_INDEX_OOB_ERR,
@@ -432,7 +425,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     Location nonNegativeIndex = allocateTemp(VarType.BOOL);
     emit(new BinOp(nonNegativeIndex, index, TokenType.GEQ, ConstantOperand.of(0), position));
     // if nonnegativeindex: goto good
-    String nonNegativeIndexLabel = nextLabel("non_negative_index");
+    String nonNegativeIndexLabel = Labels.nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
       emit(new SysCall(STRING_INDEX_NEGATIVE_ERR,

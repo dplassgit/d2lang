@@ -102,8 +102,8 @@ class PrintCodeGenerator extends DefaultOpcodeVisitor {
         emitter.emit("mov RCX, EXIT_MSG");
       } else if (op.call() == SysCall.Call.PARAMETERIZED_MESSAGE) {
         // The arg is a string constant. Need to get its entry so we can get its name.
-        ConstantOperand<String> constOp = (ConstantOperand<String>) op.arg();
-        ConstEntry<String> entry = stringTable.lookup(constOp.value());
+        String constValue = ConstantOperand.stringValueFromConstOperand(op.arg());
+        ConstEntry<String> entry = stringTable.lookup(constValue);
         List<Operand> operands = op.operands();
 
         for (int i = 1; i < operands.size(); ++i) {

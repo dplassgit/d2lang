@@ -10,7 +10,6 @@ import com.google.common.collect.ImmutableList;
 /** Stores a table of DoubleEntry values, mapped by... double value. */
 public class DoubleTable implements ConstTable<Double> {
   private final Map<Double, DoubleEntry> entries = new HashMap<>();
-  private int index;
 
   @Override
   public void add(Double value) {
@@ -34,7 +33,7 @@ public class DoubleTable implements ConstTable<Double> {
         sanitizedNameValue.append('_');
       }
     }
-    return String.format("DOUBLE_%s_%d", sanitizedNameValue, index++);
+    return Labels.nextGlobal(String.format("DOUBLE_%s", sanitizedNameValue));
   }
 
   @Override

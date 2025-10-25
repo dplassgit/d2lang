@@ -22,7 +22,15 @@ public class StringTable implements ConstTable<String> {
             return b.hashCode() - a.hashCode();
           });
   private final Map<String, StringEntry> entries = new HashMap<>();
-  private int index;
+  private final Labels labels;
+
+  public StringTable() {
+    this(Labels.instance());
+  }
+
+  public StringTable(Labels labels) {
+    this.labels = labels;
+  }
 
   @Override
   public void add(String value) {
@@ -78,7 +86,7 @@ public class StringTable implements ConstTable<String> {
         break;
       }
     }
-    return String.format("CONST_%s_%d", sanitizedNameValue, index++);
+    return labels.generateGlobal(String.format("CONST_%s", sanitizedNameValue));
   }
 
   @Override

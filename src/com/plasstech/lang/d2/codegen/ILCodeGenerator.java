@@ -88,8 +88,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
   private final Stack<String> whileBreaks = new Stack<>();
   private final Stack<String> whileContinues = new Stack<>();
 
-  private int id;
-
   @Override
   public State execute(State input) {
     symbolTable = input.symbolTable();
@@ -113,19 +111,14 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     operations.add(op);
   }
 
-  private String nextLabel(String prefix) {
-    // leading underscore is an illegal character so this will never conflict.
-    return String.format("__%s_%d", prefix, ++id);
-  }
-
   private TempLocation allocateTemp(VarType varType) {
-    String name = String.format("__temp%d", ++id);
+    String name = Labels.nextLabel("temp");
     VariableSymbol symbol = symbolTable.declareTemp(name, varType);
     return new TempLocation(symbol);
   }
 
   private Location allocateLongTemp(VarType varType) {
-    String name = String.format("__longtemp%d", ++id);
+    String name = Labels.nextLabel("longtemp");
     // do we really need the temp in the symbol table? can we just create
     // a VariableSymbol?
     VariableSymbol symbol = symbolTable.declareTemp(name, varType);
@@ -201,10 +194,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       // mov [__length], [RBX + 1] ; get length from first dimension
       emit(new UnaryOp(tempLength, TokenType.LENGTH, expr.location(), node.position()));
       emit(new Transfer(length, tempLength, null));
-      String loopLabel = nextLabel("array_print_loop");
+      String loopLabel = Labels.nextLabel("array_print_loop");
       // loop:
       emit(new Label(loopLabel));
-      String endLoopLabel = nextLabel("array_print_loop_end");
+      String endLoopLabel = Labels.nextLabel("array_print_loop_end");
       //   compare index to length
       TempLocation compare = allocateTemp(VarType.BOOL);
       emit(new BinOp(compare, index, TokenType.EQEQ, length, node.position()));
@@ -407,8 +400,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     //      value is true
     //    valuissetlabel
 
-    String resultIsFalseLabel = nextLabel("short_circuit_result_false");
-    String resultIsTrueLabel = nextLabel("short_circuit_result_true");
+    String resultIsFalseLabel = Labels.nextLabel("short_circuit_result_false");
+    String resultIsTrueLabel = Labels.nextLabel("short_circuit_result_true");
     boolean rightAtomic = isAtomic(node.right());
     if (!rightAtomic) {
       switch (operator) {
@@ -459,7 +452,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       case AND:
         if (!rightAtomic) {
           // value = right (we know left is true, therefore value is true AND right = right)
-          String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+          String valueIsSetLabel = Labels.nextLabel("short_circuit_value_is_set");
           emit(new Transfer(destination, right, node.position()));
           // goto valueIsSetLabel
           emit(new Goto(valueIsSetLabel));
@@ -478,7 +471,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
       case OR:
         if (!rightAtomic) {
-          String valueIsSetLabel = nextLabel("short_circuit_value_is_set");
+          String valueIsSetLabel = Labels.nextLabel("short_circuit_value_is_set");
           // value = right (we know left is false, so value is false OR right = right)
           emit(new Transfer(destination, right, node.position()));
           // goto valueIsSetLabel
@@ -576,10 +569,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(IfNode node) {
-    String after = nextLabel("after_if");
+    String after = Labels.nextLabel("after_if");
 
     for (IfNode.Case ifCase : node.cases()) {
-      String nextLabel = nextLabel("elif");
+      String nextLabel = Labels.nextLabel("elif");
 
       Node cond = ifCase.condition();
       cond.accept(this);
@@ -612,9 +605,9 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // ..if while condition is true, goto loop_begin
     // loop_end: ("break" target)
 
-    String before = nextLabel(Label.LOOP_BEGIN_PREFIX);
-    String increment = nextLabel(Label.LOOP_INCREMENT_PREFIX);
-    String after = nextLabel(Label.LOOP_END_PREFIX);
+    String before = Labels.nextLabel(Label.LOOP_BEGIN_PREFIX);
+    String increment = Labels.nextLabel(Label.LOOP_INCREMENT_PREFIX);
+    String after = Labels.nextLabel(Label.LOOP_END_PREFIX);
     whileContinues.push(increment);
     whileBreaks.push(after);
 
@@ -701,7 +694,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     symbolTable = procSymbol.symTab();
 
     // Guard to prevent just falling into this method
-    String afterLabel = nextLabel("after_proc_" + node.name());
+    String afterLabel = Labels.nextLabel("after_proc_" + node.name());
 
     emit(new Goto(afterLabel));
 
