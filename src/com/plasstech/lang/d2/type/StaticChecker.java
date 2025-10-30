@@ -377,7 +377,10 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     left.accept(this);
 
     ExprNode right = node.right();
-    right.accept(this);
+    if (node.operator() != TokenType.DOT) {
+      // The RHS of a field dereference will be checked down below. 
+      right.accept(this);
+    }
 
     VarType leftType = left.varType();
     if (leftType.isUnknown()) {

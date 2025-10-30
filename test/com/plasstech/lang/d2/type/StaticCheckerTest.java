@@ -1761,6 +1761,43 @@ public class StaticCheckerTest {
     assertThatTypeChecking("r: record{} r:proc{} r=new r").hasError("already declared as PROC");
   }
 
+  @Test
+  public void bug_385_global_field_name_and_function() throws Exception {
+    checkProgram("""
+        rt: record {f : string}
+        a = new rt
+        a.f = "field"
+        println a.f
+
+        f: proc { }
+        """);
+  }
+
+  @Test
+  public void bug_385_bad_global_field_name_and_function() throws Exception {
+    assertThatTypeChecking("""
+        rt: record {f : string}
+        a = new rt
+        a.f = "field"
+        println a.x
+
+        f: proc { }
+        """).hasError("unknown field x");
+  }
+
+  @Test
+  public void bug_385_local_field_name_and_function() throws Exception {
+    checkProgram("""
+        rt: record {f : string}
+
+        f: proc {
+          a = new rt
+          a.f = "field"
+          println a.f
+        }
+        """);
+  }
+
   private static SymbolTable checkProgram(String program) {
     return firstSymTab(assertThatTypeChecking(program).succeeds());
   }
