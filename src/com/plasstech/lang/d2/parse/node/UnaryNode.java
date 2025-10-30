@@ -1,11 +1,23 @@
 package com.plasstech.lang.d2.parse.node;
 
+import java.util.Set;
+
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 
 public class UnaryNode extends AbstractNode implements ExprNode {
+  public static final Set<TokenType> UNARY_OPERATORS =
+      ImmutableSet.of(
+          TokenType.PLUS,
+          TokenType.BIT_NOT,
+          TokenType.NOT,
+          TokenType.MINUS);
+  public static final Set<TokenType> UNARY_KEYWORDS =
+      ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
 
   private final TokenType operator;
 
@@ -13,6 +25,10 @@ public class UnaryNode extends AbstractNode implements ExprNode {
 
   public UnaryNode(TokenType operator, ExprNode expr, Position position) {
     super(position);
+    Preconditions.checkArgument(
+        UNARY_OPERATORS.contains(operator) || UNARY_KEYWORDS.contains(operator),
+        "Invalid opType " + operator.name());
+
     this.operator = operator;
     this.expr = expr;
   }

@@ -93,9 +93,6 @@ public class Parser implements Phase {
           TokenType.TRUE,
           TokenType.VARIABLE);
 
-  private static final Set<TokenType> UNARY_KEYWORDS =
-      ImmutableSet.of(TokenType.LENGTH, TokenType.ASC, TokenType.CHR);
-
   private static final ImmutableMap<TokenType, TokenType> OP_EQ_TO_OP =
       ImmutableMap.of(TokenType.PLUS_EQ, TokenType.PLUS,
           TokenType.MINUS_EQ, TokenType.MINUS,
@@ -769,10 +766,7 @@ public class Parser implements Phase {
 
   private ExprNode unary() {
     Token unaryToken = token;
-    if (token.type() == TokenType.MINUS
-        || token.type() == TokenType.PLUS
-        || token.type() == TokenType.BIT_NOT
-        || token.type() == TokenType.NOT) {
+    if (UnaryNode.UNARY_OPERATORS.contains(token.type())) {
       advance();
       ExprNode operand = unary();
 
@@ -834,7 +828,7 @@ public class Parser implements Phase {
       return new UnaryNode(unaryToken.type(), operand, unaryToken.start());
     }
 
-    if (isUnaryKeyword(token)) {
+    if (UnaryNode.UNARY_KEYWORDS.contains(token.type())) {
       Token keywordToken = unaryToken;
 
       advance();
@@ -888,10 +882,6 @@ public class Parser implements Phase {
       throw new ParseException(
           token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
     });
-  }
-
-  private static boolean isUnaryKeyword(Token token) {
-    return UNARY_KEYWORDS.contains(token.type());
   }
 
   /**
