@@ -19,7 +19,8 @@ java_library(
         ":auto",
         ":registers",
         "//src/com/plasstech/lang/d2/codegen",  # for emitter, etc.
-        "//src/com/plasstech/lang/d2/codegen:location",  # for locaiton, operand
+        "//src/com/plasstech/lang/d2/codegen:labels",
+        "//src/com/plasstech/lang/d2/codegen:location",  # for location, operand
         "//src/com/plasstech/lang/d2/codegen:locations",  # for ConstantOperand, ParamLocatoin, etc.
         "//src/com/plasstech/lang/d2/codegen/il",  # for IL ops
         "//src/com/plasstech/lang/d2/common",

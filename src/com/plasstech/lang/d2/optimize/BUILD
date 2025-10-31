@@ -3,6 +3,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//src/com/plasstech/lang/d2/codegen:labels",
         "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/codegen:locations",
         "//src/com/plasstech/lang/d2/codegen/il",

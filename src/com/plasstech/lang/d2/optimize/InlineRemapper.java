@@ -8,6 +8,7 @@ import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -41,8 +42,6 @@ class InlineRemapper extends DefaultOpcodeVisitor {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final Level loggingLevel;
 
-  private static int id = 0;
-
   private final List<Op> code;
   private final SymbolTable symtab;
   private final String suffix;
@@ -56,7 +55,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
 
   InlineRemapper(List<Op> code, SymbolTable symtab, Level loggingLevel) {
     this.symtab = symtab;
-    this.suffix = String.format("__inline__%s", id++);
+    this.suffix = Labels.nextLabel("inline");
     this.code = new ArrayList<>(code);
     this.loggingLevel = loggingLevel;
   }

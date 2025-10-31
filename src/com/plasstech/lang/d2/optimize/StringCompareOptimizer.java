@@ -4,6 +4,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
+import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -75,7 +76,7 @@ public class StringCompareOptimizer extends LineOptimizer {
         ConstantOperand.stringValueFromConstOperand(second.right());
     if (rightConstant.length() != 1) {
       // We know what to do with == and !=, so we can just replace it now.
-      // Can't deal with inequlaities because "a" < "bc" is unknown at compile time
+      // Can't deal with inequalities because "a" < "bc" is unknown at compile time
       if (second.operator() == TokenType.EQEQ) {
         // replace with false
         deleteCurrent();
@@ -110,10 +111,8 @@ public class StringCompareOptimizer extends LineOptimizer {
     stop();
   }
 
-  static int id = 0;
-
   private TempLocation newTemp(VarType type) {
-    VariableSymbol symbol = symtab.declareTemp(String.format("__stringcompare_%d", id++), type);
+    VariableSymbol symbol = symtab.declareTemp(Labels.nextLabel("stringcompare"), type);
     TempLocation temp = new TempLocation(symbol);
     return temp;
   }

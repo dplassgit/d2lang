@@ -15,14 +15,21 @@ LOCATION_SRCS = [
 ]
 
 java_library(
+    name = "labels",
+    srcs = ["Labels.java"],
+    visibility = ["//visibility:public"]
+)
+
+java_library(
     name = "codegen",
     srcs = glob(
         ["*.java"],
-        exclude = LOCATION_SRCS + LOCATION_IMPL_SRCS,
+        exclude = LOCATION_SRCS + LOCATION_IMPL_SRCS + ["Labels.java"],
     ),
     visibility = ["//visibility:public"],
     deps = [
         ":auto",
+        ":labels",
         ":location",
         ":locations",
         "//src/com/plasstech/lang/d2/codegen/il",
