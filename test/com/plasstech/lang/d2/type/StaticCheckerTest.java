@@ -1708,12 +1708,13 @@ public class StaticCheckerTest {
   public void alreadyDeclaredAsProc() {
     // tests bug #214
     assertThatTypeChecking("head:proc{} head=[1] bar:proc:int{return head[0]}")
-        .hasError("already declared as PROC");
+        .hasError("Cannot convert variable 'head' from declared type PROC");
     assertThatTypeChecking("head:proc{} r:record{} head=new r")
-        .hasError("already declared as PROC");
+        .hasError("Cannot convert variable 'head' from declared type PROC");
     assertThatTypeChecking("head:proc{} head.f=3")
-        .hasError("Cannot dereference.*already declared as PROC");
-    assertThatTypeChecking("head:proc{} foo:proc {head[1]=3}").hasError("used as ARRAY; was PROC");
+        .hasError("Cannot set field of variable 'head.f' of type PROC; not a known RECORD");
+    assertThatTypeChecking("head:proc{} foo:proc {head[1]=3}")
+        .hasError("used as ARRAY; was PROC");
   }
 
   @Test
