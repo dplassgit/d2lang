@@ -1089,16 +1089,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       return;
     }
     VarType type = symbol.varType();
-    if (type == VarType.PROC) {
-      // can't assign to a proc
-      // TODO: write a test for this block
-      errors.add(
-          new TypeException(
-              node.position(),
-              "Cannot %screment '%s'; already declared as PROC",
-              node.isIncrement() ? "in" : "de", node.name()));
-      return;
-    }
+
     if (!VarType.INTEGRAL_TYPES.contains(type)) {
       // It was already in the symbol table, but not aintegral
       errors.add(
@@ -1130,16 +1121,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
             new TypeException(
                 lvalue.position(),
                 "Cannot set field of variable '%s'; not a known RECORD",
-                lvalue.name()));
-        return;
-      }
-
-      if (variableSymbol.varType() == VarType.PROC) {
-        // can't assign to a proc
-        errors.add(
-            new TypeException(
-                lvalue.position(),
-                "Cannot dereference '%s' as RECORD; already declared as PROC",
                 lvalue.name()));
         return;
       }
@@ -1202,14 +1183,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         // Already known in some scope. Update.
         if (symbol.varType().isUnknown()) {
           symbol.setVarType(rhs.varType());
-        } else if (symbol.varType() == VarType.PROC) {
-          // can't assign to a proc
-          errors.add(
-              new TypeException(
-                  lvalue.position(),
-                  "Cannot assign '%s' as %s; already declared as PROC",
-                  lvalue.name(), rhs.varType()));
-          return;
         } else if (!symbol.varType().compatibleWith(rhs.varType())) {
           // It was already in the symbol table. Possible that it's wrong.
           errors.add(
