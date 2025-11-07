@@ -511,6 +511,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         return;
       }
       if (leftType.isUnknown()) {
+        // TODO: write a test for this block
         errors.add(
             new TypeException(left.position(), "Indeterminable type used as ARRAY: %s", left));
         // note return; can't do anything.
@@ -555,6 +556,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     }
 
     if (leftType.isUnknown()) {
+      // TODO: write a test for this block
       // Can't do much more. Fixed bug #204
       return;
     }
@@ -649,6 +651,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     switch (node.operator()) {
       case LENGTH:
         if (exprType != VarType.STRING && !exprType.isArray()) {
+          // TODO: write a test for this block
           errors.add(
               new TypeException(expr.position(), "Cannot apply LENGTH function to %s expression",
                   exprType));
@@ -787,6 +790,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     // Don't go up to the parent symbol table; this allows scoping
     VarType existingType = symbolTable.lookup(node.name());
     if (!existingType.isUnknown()) {
+      // TODO: write a test for this block
       errors.add(
           new TypeException(
               node.position(),
@@ -897,9 +901,11 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     boolean innerProc = sym == null;
     ProcSymbol procSymbol = null;
     if (sym == null) {
+      // TODO: write a test for this block
       // nested proc; spawn symbol table & assign to the node.
       procSymbol = symbolTable.declareProc(node);
     } else if (sym.varType() != VarType.PROC) {
+      // TODO: write a test for this block
       errors.add(
           new TypeException(
               node.position(),
@@ -1026,6 +1032,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     VarType actualReturnType = node.varType();
 
     if (actualReturnType.isUnknown()) {
+      // TODO: write a test for this block
       errors.add(
           new TypeException(node.position(), "Indeterminable type for RETURN statement: %s", node));
     }
@@ -1046,6 +1053,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       message.accept(this);
       VarType actualMessageType = message.varType();
       if (actualMessageType.isUnknown()) {
+        // TODO: write a test for this block
         errors.add(
             new TypeException(
                 node.position(), "Indeterminable type for EXIT message: %s", message));
@@ -1059,6 +1067,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       }
     }
     if (!procedures.isEmpty()) {
+      // TODO: write a test for this block
       ProcSymbol proc = procedures.peek();
       if (proc != null) {
         needsReturn.remove(proc);
@@ -1082,6 +1091,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
     VarType type = symbol.varType();
     if (type == VarType.PROC) {
       // can't assign to a proc
+      // TODO: write a test for this block
       errors.add(
           new TypeException(
               node.position(),
@@ -1115,6 +1125,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       // Get the record from the symbol table.
       Symbol variableSymbol = symbolTable.getRecursive(fsn.variableName());
       if (variableSymbol == null) {
+        // TODO: write a test for this block
         errors.add(
             new TypeException(
                 lvalue.position(),
@@ -1135,6 +1146,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
       VarType varType = variableSymbol.varType();
       if (!varType.isRecord()) {
+        // TODO: write a test for this block
         errors.add(
             new TypeException(
                 lvalue.position(),
@@ -1149,6 +1161,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       if (recordSymbol == null) {
         // this should never happen because the varType.isRecord, above, should have caught
         // it.
+        // TODO: write a test for this block
         errors.add(
             new TypeException(
                 fsn.position(),
@@ -1161,6 +1174,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
       String fieldName = fsn.fieldName();
       VarType fieldType = recordSymbol.fieldType(fieldName);
       if (fieldType == VarType.UNKNOWN) {
+        // TODO: write a test for this block
         errors.add(
             new TypeException(
                 fsn.position(),
