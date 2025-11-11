@@ -1,7 +1,8 @@
 # dlib
 
-The D2 standard library. Set the `D2PATH` environment variable and the 
-compiler will automatically link against `dlib.obj`.
+The D2 standard library. Set the `D2PATH` environment variable and the
+compiler will automatically link against `dlib.obj`, assuming it exists.
+
 
 ## Methods
 
@@ -41,6 +42,5 @@ not in dlib:
 
 `llround: extern proc(d: double): long`
 
-(Note: in the C Runtime Library, `long long` is 64 bits, `int` is 32 bits.)
-
+(Note: in the C Runtime Library, `long long` is 64 bits, and `int` is 32 bits.)
 

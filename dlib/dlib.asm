@@ -1,8 +1,10 @@
-extern calloc
+;; Imports
+;extern calloc
 extern sprintf
 extern strncpy
 extern strstr
 
+;; Exports
 global btoi
 global btos
 global ifind
@@ -21,9 +23,9 @@ ifind:
   ; first string in rcx
   ; second string in rdx
   push rcx
-  sub RSP, 0x20
+  sub rsp, 0x20
   call strstr
-  add RSP, 0x20
+  add rsp, 0x20
   pop rcx
   ; result in rax
   cmp rax, 0
@@ -49,9 +51,9 @@ substr:
   push rdx
   mov rcx, r8
   mov rdx, 1
-  sub RSP, 0x20
+  sub rsp, 0x20
   call calloc
-  add RSP, 0x20
+  add rsp, 0x20
   ; rax has new string
   pop rdx
   pop rcx
@@ -63,9 +65,9 @@ substr:
   mov rdx, rcx   ; source into rdx
   mov rcx, rax   ; dest from rax to rcx
   mov r8, 1      ; size
-  sub RSP, 0x20
+  sub rsp, 0x20
   call strncpy   ; destination is returned.
-  add RSP, 0x20
+  add rsp, 0x20
 
   ret
 
@@ -73,24 +75,24 @@ substr:
 ; btoi: extern proc(b: byte): int
 btoi:
   xor rax, rax
-  ; sign-extend 
+  ; sign-extend
   movsx eax, cl
   ret
 
 ; itod: extern proc(i: int): double
-itod: 
-	cvtsi2sd xmm0, ecx
-	ret
+itod:
+  cvtsi2sd xmm0, ecx
+  ret
 
 ; ltod: extern proc(el: long): double
-ltod: 
-	cvtsi2sd xmm0, rcx
-	ret
+ltod:
+  cvtsi2sd xmm0, rcx
+  ret
 
 
 ; btos: extern proc(b: byte): string
 btos:
-  ;sprintf(result, "0y%02x", input)
+  ; sprintf(result, "0y%02x", input)
   and rcx, 0x000000ff
   mov rdx, SPRINTF_BYTE
   ; allocate 5 bytes: "0yxx" + 1
@@ -100,24 +102,25 @@ btos:
 
 ; itos: extern proc(i: int): string
 itos:
-  ;sprintf(result, "%d", input)
+  ; sprintf(result, "%d", input)
   mov rdx, SPRINTF_INT
-  ; allocate 12 bytes: -2,147,483,648 is the MNN (11 plus 1 for null)
+  ; allocate 12 bytes: -2147483648 is the MNN (11 plus 1 for null)
   mov r8, 12
   jmp xtos ; tail recursion
 
 
 ; ltos: extern proc(ell: long): string
 ltos:
-  ;sprintf(result, "%lld", input)
+  ; sprintf(result, "%lld", input)
   mov rdx, SPRINTF_LONG
+  ; allocate 21 bytes: -9223372036854775808 is the MNN (20 plus 1 for null)
   mov r8, 21
   jmp xtos ; tail recursion
 
 ; parameters:
 ; rcx: value
-; rdx: sprintf
-; r8: size
+; rdx: sprintf format/pattern
+; r8: string size
 xtos:
   push rcx ; save the input (value)
   push rdx ; save the input (format)
@@ -125,18 +128,18 @@ xtos:
   ; allocate r8 bytes
   mov rcx, r8
   mov rdx, 1
-  sub RSP, 0x20
+  sub rsp, 0x20
   call calloc
-  add RSP, 0x20
+  add rsp, 0x20
   ; rax has new string
 
   mov rcx, rax
   pop rdx
   pop r8  ; input was in RCX, now in R8
   push rax ; save result
-  sub RSP, 0x20
+  sub rsp, 0x20
   call sprintf
-  add RSP, 0x20
+  add rsp, 0x20
   pop rax ; return it
   ret
 
