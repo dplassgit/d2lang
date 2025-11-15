@@ -60,4 +60,20 @@ public class D2OptionsTest {
     assertThrows(
         OptionsParsingException.class, () -> optionsParser.parse(ImmutableList.of("--target=xyz")));
   }
+
+  @Test
+  public void compileAndAssembleOnlyImpliesSaveTemps() throws Exception {
+    optionsParser.parse(ImmutableList.of("-c"));
+    D2Options options = optionsParser.getOptions(D2Options.class);
+    assertThat(options.compileAndAssembleOnly).isTrue();
+    assertThat(options.saveTemps).isFalse();
+  }
+
+  @Test
+  public void compileOnlyImpliesSaveTemps() throws Exception {
+    optionsParser.parse(ImmutableList.of("-S"));
+    D2Options options = optionsParser.getOptions(D2Options.class);
+    assertThat(options.compileOnly).isTrue();
+    assertThat(options.saveTemps).isTrue();
+  }
 }

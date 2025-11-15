@@ -92,14 +92,15 @@ public class D2Options extends OptionsBase {
       name = "compileOnly",
       abbrev = 'S',
       help = "Compile only; do not assemble or link (generates .asm).",
-      defaultValue = "false"
+      defaultValue = "false",
+      implicitRequirements = {"--save-temps"}
   )
   public boolean compileOnly;
 
   @Option(
       name = "compileAndAssembleOnly",
       abbrev = 'c',
-      help = "Compile and assemble; do not link (generates .asm and .obj).",
+      help = "Compile and assemble; do not link (generates .obj).",
       defaultValue = "false"
   )
   public boolean compileAndAssembleOnly;
