@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.testing;
+package com.plasstech.lang.d2.type.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 

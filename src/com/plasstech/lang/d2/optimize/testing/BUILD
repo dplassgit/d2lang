@@ -8,6 +8,7 @@ java_library(
     deps = [
         "//src/com/plasstech/lang/d2:executor",
         "//src/com/plasstech/lang/d2:yet_another_compiler",
+        "//src/com/plasstech/lang/d2/codegen:location",
         "//src/com/plasstech/lang/d2/codegen/il",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",

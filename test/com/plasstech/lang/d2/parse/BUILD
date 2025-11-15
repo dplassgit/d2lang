@@ -9,7 +9,7 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/parse/node",
         "//src/com/plasstech/lang/d2/parse/testing",
         "//src/com/plasstech/lang/d2/type:var_types",
-        "//test/com/plasstech/lang/d2/testing",
+        "//src/com/plasstech/lang/d2/type/testing",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",

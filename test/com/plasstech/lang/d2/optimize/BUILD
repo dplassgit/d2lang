@@ -24,7 +24,6 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/type:symbols",
         "//src/com/plasstech/lang/d2/type:var_types",
         "//src/com/plasstech/lang/d2/type/testing",
-        "//test/com/plasstech/lang/d2/testing",
         "//test/com/plasstech/lang/d2/testing:test_code",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_testparameterinjector_test_parameter_injector",

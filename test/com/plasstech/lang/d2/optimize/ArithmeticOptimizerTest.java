@@ -6,7 +6,7 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.EMPTY_STRING;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.FALSE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
-import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
 import org.junit.Test;

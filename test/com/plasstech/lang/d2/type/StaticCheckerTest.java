@@ -2,8 +2,8 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
 import static com.plasstech.lang.d2.type.testing.StaticCheckerSubject.assertThatTypeChecking;
+import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

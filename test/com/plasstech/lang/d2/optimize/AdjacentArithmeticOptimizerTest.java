@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
-import static com.plasstech.lang.d2.optimize.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
 import org.junit.Before;
 import org.junit.Test;

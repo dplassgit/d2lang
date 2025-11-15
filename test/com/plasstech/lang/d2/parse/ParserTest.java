@@ -2,7 +2,7 @@ package com.plasstech.lang.d2.parse;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.parse.testing.ParserSubject.assertThatParsing;
-import static com.plasstech.lang.d2.testing.VarTypeSubject.assertThat;
+import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import java.util.List;
