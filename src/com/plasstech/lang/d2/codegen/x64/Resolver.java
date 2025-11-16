@@ -2,15 +2,6 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -30,6 +21,14 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Resolves temp and other variables and keeps track if they're in registers or not. TODO: rename
@@ -49,13 +48,14 @@ class Resolver implements RegistersInterface {
   private final DelegatingEmitter emitter;
   private final Deque<Emitter> emitters = new ArrayDeque<>();
 
-  private static final Comparator<Register> REGISTER_NAME_COMPARATOR = new Comparator<Register>() {
-    @Override
-    public int compare(Register arg0, Register arg1) {
-      // This doesn't sort in enum order but it doesn't matter.
-      return arg0.name().compareTo(arg1.name());
-    }
-  };
+  private static final Comparator<Register> REGISTER_NAME_COMPARATOR =
+      new Comparator<Register>() {
+        @Override
+        public int compare(Register arg0, Register arg1) {
+          // This doesn't sort in enum order but it doesn't matter.
+          return arg0.name().compareTo(arg1.name());
+        }
+      };
   private final Set<Register> usedRegisters = new TreeSet<>(REGISTER_NAME_COMPARATOR);
   private boolean inProc;
   private int localBytes;
@@ -203,22 +203,24 @@ class Resolver implements RegistersInterface {
     if (reg != null) {
       emitter.emit("; Deallocating %s from %s", operand, reg);
       aliases.remove(operandName);
-      emitter.emit("; removing reverse allocation of %s (%s) to %s", reg,
-          reverseAllocations.get(reg),
-          operandName);
+      emitter.emit(
+          "; removing reverse allocation of %s (%s) to %s",
+          reg, reverseAllocations.get(reg), operandName);
       reverseAllocations.remove(reg, operandName);
       // This is broken; there may still be a forward allocation
       if (!reverseAllocations.containsKey(reg)) {
         registers.deallocate(reg);
       } else {
-        emitter.emit("; NOT deallocating %s because it's still used: %s", reg,
-            reverseAllocations.get(reg));
+        emitter.emit(
+            "; NOT deallocating %s because it's still used: %s", reg, reverseAllocations.get(reg));
       }
     }
     offsets.remove(operandName);
   }
 
-  /** @return the equivalent register, or null if none. */
+  /**
+   * @return the equivalent register, or null if none.
+   */
   Register toRegister(Operand source) {
     if (source.isConstant()) {
       return null;
@@ -361,7 +363,8 @@ class Resolver implements RegistersInterface {
   }
 
   void mov(VarType type, Register source, Register destination) {
-    mov(new RegisterLocation("_sourceRegister", source, type),
+    mov(
+        new RegisterLocation("_sourceRegister", source, type),
         new RegisterLocation("_destRegister", destination, type));
   }
 
@@ -371,8 +374,9 @@ class Resolver implements RegistersInterface {
 
   void mov(Operand source, Operand destination) {
     if (source.type() == null) {
-      emitter.emit("; FAILURE: source.type is null; source name %s dest name %s", source.toString(),
-          destination.toString());
+      emitter.emit(
+          "; FAILURE: source.type is null; source name %s dest name %s",
+          source.toString(), destination.toString());
       throw new NullPointerException(String.format("%s type is null!", source.toString()));
     }
     ResolvedOperand destRo = resolveFully(destination);
@@ -514,8 +518,8 @@ class Resolver implements RegistersInterface {
       }
       throw new IllegalStateException("No alias or offset for temp: " + oldAlias);
     }
-    emitter.emit("; Aliasing %s (%s) to %s (%s)", newAliasName, newAlias.storage(), reg,
-        oldAliasName);
+    emitter.emit(
+        "; Aliasing %s (%s) to %s (%s)", newAliasName, newAlias.storage(), reg, oldAliasName);
     aliases.put(newAliasName, reg);
     reverseAllocations.put(reg, newAliasName);
   }

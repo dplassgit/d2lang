@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Objects;
-
 import com.plasstech.lang.d2.type.VariableSymbol;
+import java.util.Objects;
 
 public class MemoryAddress extends VariableLocation {
   public MemoryAddress(VariableSymbol variable) {

@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.Optional;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -9,6 +7,7 @@ import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ProcSymbol;
+import java.util.Optional;
 
 /** Represents a procedure call - either local or extern */
 public class Call extends Op {

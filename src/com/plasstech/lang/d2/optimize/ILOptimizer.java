@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.logging.Level;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -10,6 +8,7 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.logging.Level;
 
 public class ILOptimizer extends DefaultOptimizer implements Phase {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -19,9 +18,10 @@ public class ILOptimizer extends DefaultOptimizer implements Phase {
   public ILOptimizer(int debugLevel) {
     this(
         ImmutableList.of(
-            // Always run Nop at the top, so subsequent phases don't have to worry about Nops. 
+            // Always run Nop at the top, so subsequent phases don't have to worry about Nops.
             new NopOptimizer(),
-            new RangeChecker(), // run this just in case we have a line that might have otherwise been dead
+            new RangeChecker(), // run this just in case we have a line that might have otherwise
+                                // been dead
             new AssociativeOptimizer(debugLevel),
             new AscChrOptimizer(debugLevel),
             new ConstantPropagationOptimizer(debugLevel),

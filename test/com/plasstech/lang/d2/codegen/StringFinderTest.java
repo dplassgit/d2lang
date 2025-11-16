@@ -2,11 +2,10 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import org.junit.Test;
 
 public class StringFinderTest {
   private StringFinder sf = new StringFinder();

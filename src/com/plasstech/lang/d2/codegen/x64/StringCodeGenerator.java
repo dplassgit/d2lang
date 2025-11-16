@@ -10,8 +10,6 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 import static com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator.COMPARISON_OPCODE;
 
-import java.util.Map;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -26,10 +24,9 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
 
-/**
- * Generate NASM code for string operations. TODO: There may be resolve/deallocate mismatches
- */
+/** Generate NASM code for string operations. TODO: There may be resolve/deallocate mismatches */
 class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   private static final Map<NullPair, String> LT_CONSTANT_MAP =
@@ -144,18 +141,21 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
   /**
    * Generate:
-   * <p>
-   * dest = chr(source), where source is a number, or
-   * <p>
-   * dest = length(source) whrere source is a string
+   *
+   * <p>dest = chr(source), where source is a number, or
+   *
+   * <p>dest = length(source) whrere source is a string
    */
   @Override
   public void visit(UnaryOp op) {
     switch (op.operator()) {
       case CHR:
         if (op.operand().type() != VarType.INT) {
-          fail("Code generation", op.position(),
-              "Cannot apply %s to %s expression; must be string", op.operator(),
+          fail(
+              "Code generation",
+              op.position(),
+              "Cannot apply %s to %s expression; must be string",
+              op.operator(),
               op.operand().type());
         }
         generateChr(op);
@@ -412,7 +412,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
     // low 32 bits of "range" are still in "range"
     // 1a. calculate length = end - start + 1
-    emitter.emit("sub %s, %s  ; calculate length = end - start",
+    emitter.emit(
+        "sub %s, %s  ; calculate length = end - start",
         range.nameByType(VarType.INT), start.nameByType(VarType.INT));
     // now 'range' has length + 1 (for null)
     emitter.emit("inc %s", range.nameByType(VarType.INT));
@@ -500,8 +501,8 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
 
     emitter.emitLabel(justConcatenate);
     emitter.emit(
-        "add %s, %s  ; Total new string length", leftLengthReg.nameByType(VarType.INT),
-        rightLengthReg.nameByType(VarType.INT));
+        "add %s, %s  ; Total new string length",
+        leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
     emitter.emit("inc %s  ; Plus 1 for end of string", leftLengthReg.nameByType(VarType.INT));
     emitter.emit("; deallocating right length from %s", rightLengthReg);
     resolver.deallocate(rightLengthReg);

@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
-
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * If there are two labels in a row, delete the 2nd and replace all gotos to the 2nd, to be gotos to
@@ -53,5 +52,4 @@ class AdjacentLabelOptimizer extends LineOptimizer {
       }
     }
   }
-
 }

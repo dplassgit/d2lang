@@ -48,14 +48,15 @@ public class InterpreterDriver {
 
     InterpreterExecutor ee =
         new InterpreterExecutor(
-            CompilationConfiguration.builder()
-                .setSourceCode(text)
-                .setLexDebugLevel(options.debuglex)
-                .setParseDebugLevel(options.debugparse)
-                .setTypeDebugLevel(options.debugtype)
-                .setCodeGenDebugLevel(options.debugcodegen)
-                .setOptDebugLevel(options.debugopt)
-                .setOptimize(options.optimize).build())
+                CompilationConfiguration.builder()
+                    .setSourceCode(text)
+                    .setLexDebugLevel(options.debuglex)
+                    .setParseDebugLevel(options.debugparse)
+                    .setTypeDebugLevel(options.debugtype)
+                    .setCodeGenDebugLevel(options.debugcodegen)
+                    .setOptDebugLevel(options.debugopt)
+                    .setOptimize(options.optimize)
+                    .build())
             .setIntDebugLevel(options.debugint)
             .setInteractive(true);
 

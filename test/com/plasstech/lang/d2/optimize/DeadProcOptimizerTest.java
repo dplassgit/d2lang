@@ -14,15 +14,15 @@ public class DeadProcOptimizerTest {
 
   @Test
   public void dead_proc() {
-    assertThatInterpreting("a=3"
-        + " f:proc(b:int):int { return b + 1}"
-        + " println a").withOptimizer(optimizer).hasNoCalls();
+    assertThatInterpreting("a=3" + " f:proc(b:int):int { return b + 1}" + " println a")
+        .withOptimizer(optimizer)
+        .hasNoCalls();
   }
 
   @Test
   public void not_dead_proc() {
-    assertThatInterpreting("a=3"
-        + " f:proc(b:int):int { return b + 1}"
-        + " println f(a)").withOptimizer(optimizer).hasCallsTo("f");
+    assertThatInterpreting("a=3" + " f:proc(b:int):int { return b + 1}" + " println f(a)")
+        .withOptimizer(optimizer)
+        .hasCallsTo("f");
   }
 }

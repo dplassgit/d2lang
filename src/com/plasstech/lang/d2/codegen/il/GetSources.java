@@ -1,14 +1,11 @@
 package com.plasstech.lang.d2.codegen.il;
 
+import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.Operand;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
-import com.plasstech.lang.d2.codegen.Operand;
-
-/**
- * Gets all sources of an opcode.
- */
+/** Gets all sources of an opcode. */
 final class GetSources {
   private final List<Operand> sources = new ArrayList<>();
 
@@ -37,9 +34,11 @@ final class GetSources {
 
     @Override
     public void visit(Return op) {
-      op.returnValueLocation().ifPresent(source -> {
-        sources.add(source);
-      });
+      op.returnValueLocation()
+          .ifPresent(
+              source -> {
+                sources.add(source);
+              });
     }
 
     @Override

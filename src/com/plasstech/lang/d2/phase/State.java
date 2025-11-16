@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.phase;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import javax.annotation.Nullable;
-
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -12,6 +10,7 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.parse.node.ProgramNode;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
+import javax.annotation.Nullable;
 
 @AutoValue
 public abstract class State {

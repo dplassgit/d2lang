@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Location;
@@ -13,6 +11,7 @@ import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
 
 class DoubleCodeGenerator extends DefaultOpcodeVisitor {
   private static final Map<TokenType, String> BINARY_OPCODE =
@@ -88,10 +87,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
       String rightName = resolver.resolve(op.right());
       emitter.emit(
           "%s %s, %s ; double %s",
-          BINARY_OPCODE.get(operator),
-          tempReg.name(),
-          rightName,
-          operator);
+          BINARY_OPCODE.get(operator), tempReg.name(), rightName, operator);
       resolver.mov(tempReg, dest);
       resolver.deallocate(tempReg);
       // NOTE RETURN
@@ -100,11 +96,7 @@ class DoubleCodeGenerator extends DefaultOpcodeVisitor {
     String rightName = resolver.resolve(op.right());
     String destName = dest.name();
     emitter.emit(
-        "%s %s, %s ; double %s",
-        BINARY_OPCODE.get(operator),
-        destName,
-        rightName,
-        operator);
+        "%s %s, %s ; double %s", BINARY_OPCODE.get(operator), destName, rightName, operator);
     // nasmCodeGenerator does the deallocs
   }
 

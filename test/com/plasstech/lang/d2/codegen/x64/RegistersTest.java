@@ -2,9 +2,8 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class RegistersTest {
   private Registers registers = new Registers();

@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.common;
 
-import javax.annotation.Nullable;
-
 import com.google.auto.value.AutoValue;
 import com.plasstech.lang.d2.phase.PhaseName;
+import javax.annotation.Nullable;
 
 @AutoValue
 public abstract class CompilationConfiguration {

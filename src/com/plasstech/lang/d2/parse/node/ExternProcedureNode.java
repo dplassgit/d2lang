@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
 
 /** A procedure node that indicates an "extern"ally defined procedure. */
 public class ExternProcedureNode extends ProcedureNode {

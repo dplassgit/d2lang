@@ -39,10 +39,11 @@ final class SetDestination {
 
     @Override
     public void visit(Call op) {
-      op.destination().ifPresent(ignored -> {
-        newOp =
-            new Call(newDest, op.procSym(), op.actuals(), op.formals(), op.position());
-      });
+      op.destination()
+          .ifPresent(
+              ignored -> {
+                newOp = new Call(newDest, op.procSym(), op.actuals(), op.formals(), op.position());
+              });
     }
 
     @Override
@@ -52,8 +53,7 @@ final class SetDestination {
 
     @Override
     public void visit(FieldSetOp op) {
-      newOp = new FieldSetOp(newDest, op.recordSymbol(), op.field(), op.source(),
-          op.position());
+      newOp = new FieldSetOp(newDest, op.recordSymbol(), op.field(), op.source(), op.position());
     }
 
     @Override
@@ -63,8 +63,9 @@ final class SetDestination {
 
     @Override
     public void visit(ArraySet op) {
-      newOp = new ArraySet(newDest, op.arrayType(), op.index(), op.source(), op.isArrayLiteral(),
-          op.position());
+      newOp =
+          new ArraySet(
+              newDest, op.arrayType(), op.index(), op.source(), op.isArrayLiteral(), op.position());
     }
 
     @Override

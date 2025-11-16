@@ -4,8 +4,6 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
@@ -22,6 +20,7 @@ import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.Field;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
 
 class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
@@ -58,8 +57,7 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
     //    String recordLoc = resolver.resolve(op.recordLocation());
     Register calcReg = resolver.allocate(VarType.INT);
     // 1. if not already in register, put record location into a register
-    emitter.emit(
-        "; put record location in register for calculations");
+    emitter.emit("; put record location in register for calculations");
     resolver.mov(op.recordLocation(), calcReg);
 
     // 2. get offset of field
@@ -291,8 +289,9 @@ class RecordCodeGenerator extends DefaultOpcodeVisitor {
 
       // 1. get source into indirectReg, e.g., mov BYTE indirectReg.sized, [calcReg]
       VarType type = destination.type();
-      emitter.emit("mov %s %s, [%s]  ; load from memory into indirect register", size,
-          indirectReg.nameByType(type), calcReg);
+      emitter.emit(
+          "mov %s %s, [%s]  ; load from memory into indirect register",
+          size, indirectReg.nameByType(type), calcReg);
       // 2. put indirect reg into destination, e.g., mov BYTE destRo.name(), indirectReg
       // note, this doesn't need movq because we're not moving to a XMM register
       emitter.emit("; store into memory from indirect register");

@@ -2,9 +2,7 @@ package com.plasstech.lang.d2.codegen.il;
 
 import com.plasstech.lang.d2.codegen.Location;
 
-/**
- * Gets the destination of an opcode.
- */
+/** Gets the destination of an opcode. */
 final class GetDestination {
   private Location dest = null;
 
@@ -42,9 +40,11 @@ final class GetDestination {
 
     @Override
     public void visit(Call op) {
-      op.destination().ifPresent(destination -> {
-        dest = destination;
-      });
+      op.destination()
+          .ifPresent(
+              destination -> {
+                dest = destination;
+              });
     }
 
     @Override

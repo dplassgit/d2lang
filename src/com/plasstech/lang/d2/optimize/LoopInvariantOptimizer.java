@@ -1,11 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
@@ -28,6 +22,11 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * If a variable is set in the loop but none of its dependencies are modified in the loop -> it's an
@@ -145,12 +144,10 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
         // we can lift this one.
         Operand leftOp = op.left();
         boolean leftOk =
-            leftOp.storage() != SymbolStorage.GLOBAL
-                && !finder.setters.contains(leftOp);
+            leftOp.storage() != SymbolStorage.GLOBAL && !finder.setters.contains(leftOp);
         Operand rightOp = op.right();
         boolean rightOk =
-            rightOp.storage() != SymbolStorage.GLOBAL
-                && !finder.setters.contains(rightOp);
+            rightOp.storage() != SymbolStorage.GLOBAL && !finder.setters.contains(rightOp);
         if (leftOk && rightOk) {
           logger.at(loggingLevel).log(
               "Lifting binary assignment to %s invariant: %s", op.destination().storage(), op);
@@ -191,8 +188,7 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(Call op) {
-      op.destination().ifPresent(
-          destination -> setters.add(destination.baseLocation()));
+      op.destination().ifPresent(destination -> setters.add(destination.baseLocation()));
 
       for (Operand actual : op.actuals()) {
         if (!actual.isConstant()) {
@@ -224,14 +220,15 @@ class LoopInvariantOptimizer extends DefaultOptimizer {
 
     @Override
     public void visit(Return op) {
-      op.returnValueLocation().ifPresent(
-          location -> {
-            if (!location.isConstant()) {
-              // oh this is tricky, if we're returning
-              // foo.bar, then we have to ugh....
-              getters.add(location);
-            }
-          });
+      op.returnValueLocation()
+          .ifPresent(
+              location -> {
+                if (!location.isConstant()) {
+                  // oh this is tricky, if we're returning
+                  // foo.bar, then we have to ugh....
+                  getters.add(location);
+                }
+              });
     }
 
     @Override

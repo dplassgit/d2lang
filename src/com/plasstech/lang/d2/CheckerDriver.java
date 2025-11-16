@@ -11,7 +11,7 @@ import com.plasstech.lang.d2.phase.State;
 
 /**
  * To run:
- * 
+ *
  * <pre>
  * bazel run src/com/plasstech/lang/d2:CheckerDriver -- $PWD/samples/helloworld.d
  * </pre>
@@ -24,7 +24,8 @@ public class CheckerDriver {
       String sourceCode = new String(Files.readAllBytes(Paths.get(filename)));
       YetAnotherCompiler yac = new YetAnotherCompiler();
       CompilationConfiguration config =
-          CompilationConfiguration.builder().setSourceCode(sourceCode)
+          CompilationConfiguration.builder()
+              .setSourceCode(sourceCode)
               .setTypeDebugLevel(2)
               .setLastPhase(PhaseName.TYPE_CHECK)
               .build();

@@ -3,16 +3,14 @@ package com.plasstech.lang.d2.codegen;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.ILCodeGeneratorSubject.assertThatGenerating;
 
-import java.util.List;
-import java.util.function.Predicate;
-
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.common.TokenType;
+import java.util.List;
+import java.util.function.Predicate;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
@@ -32,7 +30,7 @@ public class ILCodeGeneratorTest {
   @Test
   public void assignments() {
     assertThatGenerating(
-        "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e")
+            "a=3 b=-a c=b+4 d=(3-c)/(a*b+9) print c e=true f=not e g=a==b h=(a>b) or (c!=d) and e")
         .succeeds();
   }
 
@@ -53,13 +51,15 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void hugeAssignments() {
-    assertThatGenerating("""
-        a=((1 + 2) * (3 - 4) / (-5) == 6) != true
-          or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and
-          ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))
-        b=(1 + 2 * 3 - 4 / 5 == 6 != true) or (2 - 3 * 4 - 5 /- 6 < 7 == not a)
-          and (3 + 4 * 5 + 6 / -7 >= 8 % 2)
-        """).succeeds();
+    assertThatGenerating(
+            """
+            a=((1 + 2) * (3 - 4) / (-5) == 6) != true
+              or ((2 - 3) * (4 - 5) / (-6) < 7) == not false and
+              ((3 + 4) * (5 + 6) / (-7) >= (8 % 2))
+            b=(1 + 2 * 3 - 4 / 5 == 6 != true) or (2 - 3 * 4 - 5 /- 6 < 7 == not a)
+              and (3 + 4 * 5 + 6 / -7 >= 8 % 2)
+            """)
+        .succeeds();
   }
 
   private static boolean containsMatchingBinOp(List<Op> ops, Predicate<BinOp> predicate) {
@@ -100,15 +100,14 @@ public class ILCodeGeneratorTest {
   public void noShortCircuitOr() {
     List<Op> ops = assertThatGenerating("bucket = 4 x = bucket == 3 or false").succeeds();
     // Assert that ops contains an or
-    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.OR)))
-        .isTrue();
+    assertThat(containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.OR))).isTrue();
   }
 
   @Test
   public void nullCoalesceSimple() {
     List<Op> ops = assertThatGenerating("a='' b=null c=a??b").succeeds();
     assertThat(
-        containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
+            containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
         .isTrue();
   }
 
@@ -117,32 +116,36 @@ public class ILCodeGeneratorTest {
     List<Op> ops = assertThatGenerating("f:proc:string{ return null} a='' c=a??f()").succeeds();
     // Assert that ops doesn't contain NULL_COALESCE
     assertThat(
-        containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
+            containsMatchingBinOp(ops, binOp -> binOp.operator().equals(TokenType.NULL_COALESCE)))
         .isFalse();
   }
 
   @Test
   public void ifStmt() {
-    assertThatGenerating("""
-        a=0
-        if a==0 {
-          b=1+2*3
-        }
-        """).succeeds();
+    assertThatGenerating(
+            """
+            a=0
+            if a==0 {
+              b=1+2*3
+            }
+            """)
+        .succeeds();
   }
 
   @Test
   public void ifStmts() {
-    assertThatGenerating("""
-        a=0
-        if a==0 {print 1}
-        elif ((-5) == 6) != true {
-          b=1+2*3
-        } else {
-          print 2
-        }
-        print 3
-        """).succeeds();
+    assertThatGenerating(
+            """
+            a=0
+            if a==0 {print 1}
+            elif ((-5) == 6) != true {
+              b=1+2*3
+            } else {
+              print 2
+            }
+            print 3
+            """)
+        .succeeds();
   }
 
   @Test
@@ -169,17 +172,19 @@ public class ILCodeGeneratorTest {
 
   @Test
   public void whileNestedBreak() {
-    assertThatGenerating("""
-        i=0 while i < 30 do i = i + 1 {
-          j = 0 while j < 10 do j = j + 1 {
-            print j
-            break
-          }
-          if i > 10  { break }
-          print i
-        }
-        print -1
-        """).succeeds();
+    assertThatGenerating(
+            """
+            i=0 while i < 30 do i = i + 1 {
+              j = 0 while j < 10 do j = j + 1 {
+                print j
+                break
+              }
+              if i > 10  { break }
+              print i
+            }
+            print -1
+            """)
+        .succeeds();
   }
 
   @Test
@@ -236,7 +241,8 @@ public class ILCodeGeneratorTest {
   @Test
   public void arrayLiteralCalculated() {
     assertThatGenerating(
-        "f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()").succeeds();
+            "f:proc():string { return 'b'} b:proc() {a:string[4] a=['a', f(), 'c']} b()")
+        .succeeds();
   }
 
   @Test
@@ -248,41 +254,46 @@ public class ILCodeGeneratorTest {
   public void printTwo() {
     List<Op> program = assertThatGenerating("print 'a'+'b'").succeeds();
     assertThat(
-        program
-            .stream()
-            .filter(
-                op -> {
-                  return op instanceof SysCall;
-                })
-            .count())
+            program.stream()
+                .filter(
+                    op -> {
+                      return op instanceof SysCall;
+                    })
+                .count())
         .isEqualTo(2);
   }
 
   @Test
   public void recordFieldSet() {
-    assertThatGenerating("""
-        rec: record {f:string i:int}
-        r = new rec
-        r.f = 'hi'
-        """).succeeds();
+    assertThatGenerating(
+            """
+            rec: record {f:string i:int}
+            r = new rec
+            r.f = 'hi'
+            """)
+        .succeeds();
   }
 
   @Test
   public void genericRecordFieldSet() {
-    assertThatGenerating("""
-        rec: record<T> {f:T}
-        r = new rec<string>
-        r.f = 'hi'
-        """).succeeds();
+    assertThatGenerating(
+            """
+            rec: record<T> {f:T}
+            r = new rec<string>
+            r.f = 'hi'
+            """)
+        .succeeds();
   }
 
   @Test
   public void genericRecordFieldGet() {
-    assertThatGenerating("""
-        rec: record<T> {f:T}
-        r = new rec<string>
-        x = r.f
-        """).succeeds();
+    assertThatGenerating(
+            """
+            rec: record<T> {f:T}
+            r = new rec<string>
+            x = r.f
+            """)
+        .succeeds();
   }
 
   @Test

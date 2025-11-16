@@ -4,8 +4,6 @@ import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import java.util.Map;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
@@ -22,6 +20,7 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.phase.State;
+import java.util.Map;
 
 public class OptimizerSubject extends Subject {
   public static OptimizerSubject assertThatInterpreting(String program) {

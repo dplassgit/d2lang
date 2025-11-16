@@ -4,9 +4,6 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
-import java.util.List;
-import java.util.Set;
-
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -20,6 +17,8 @@ import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.type.PrintFormats;
 import com.plasstech.lang.d2.type.PrintFormats.Format;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
+import java.util.Set;
 
 /** Generates NASM code for printing things. */
 class PrintCodeGenerator extends DefaultOpcodeVisitor {

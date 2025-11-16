@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.codegen.x64.optimize;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.common.collect.ImmutableList;
 
 /** Remove a jmp after a ret */
 class RetJmpOptimizer extends Optimizer {

@@ -2,18 +2,16 @@ package com.plasstech.lang.d2.type.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 
-import javax.annotation.Nullable;
-
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import javax.annotation.Nullable;
 
 /** A Truth extension that works with VarTypes. */
 public class VarTypeSubject extends Subject {
 
-  @Nullable
-  private final VarType actual;
+  @Nullable private final VarType actual;
 
   private VarTypeSubject(FailureMetadata metadata, @Nullable VarType actual) {
     super(metadata, actual);

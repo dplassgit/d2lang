@@ -77,7 +77,8 @@ class RangeCodeGenerator extends DefaultOpcodeVisitor {
     // 1. mov left into dest
     if (destRo.isRegister()) {
       // if dest is a register, need to specify the 32 bit version
-      emitter.emit("mov DWORD %s, %s   ; move left to dest",
+      emitter.emit(
+          "mov DWORD %s, %s   ; move left to dest",
           destRo.register().nameByType(VarType.INT), leftRo.name());
     } else {
       emitter.emit("; move left to dest");
@@ -85,26 +86,22 @@ class RangeCodeGenerator extends DefaultOpcodeVisitor {
     }
 
     // 2. shift dest 32 times so that left is in the upper 32 bits
-    emitter.emit("shl QWORD %s, 32  ; shift dest left 32 to make room for right",
-        destRo.name());
+    emitter.emit("shl QWORD %s, 32  ; shift dest left 32 to make room for right", destRo.name());
     // 3. add right (lower 32 bits)
     if (rightRo.isConstant()) {
-      emitter.emit("add %s, %s  ; right part of range 1b",
-          destRo.name(),
-          rightRo);
+      emitter.emit("add %s, %s  ; right part of range 1b", destRo.name(), rightRo);
     } else if (rightRo.isRegister()) {
-      emitter.emit("add QWORD %s, %s  ; right part of range 1",
-          destRo.name(),
-          rightRo.register().nameByType(VarType.RANGE));
+      emitter.emit(
+          "add QWORD %s, %s  ; right part of range 1",
+          destRo.name(), rightRo.register().nameByType(VarType.RANGE));
     } else {
       // We need to add 2 8-byte values, otherwise
       // it will truncate the 8-byte destination when adding the 4 byte source/right.
       Register tempReg = resolver.allocate(VarType.INT);
       emitter.emit("; move right to temp register");
       resolver.mov(rightRo, tempReg);
-      emitter.emit("add %s, %s  ; right part of range 2",
-          destRo.name(),
-          tempReg.nameByType(VarType.RANGE));
+      emitter.emit(
+          "add %s, %s  ; right part of range 2", destRo.name(), tempReg.nameByType(VarType.RANGE));
       resolver.deallocate(tempReg);
     }
     resolver.deallocate(op.left());
@@ -122,7 +119,7 @@ class RangeCodeGenerator extends DefaultOpcodeVisitor {
       if (value == 0) {
         emitter.emit("sar %s, 32", rangeReg);
       } else {
-        // don't modify rangeReg - note, we can probably optimize this a little bit 
+        // don't modify rangeReg - note, we can probably optimize this a little bit
       }
     } else {
       // put index into rcx

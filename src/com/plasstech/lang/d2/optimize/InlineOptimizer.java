@@ -1,11 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -24,6 +18,11 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.type.ParamSymbol;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Replaces calls to small functions (up to 10 opcodes with no loops) with the equivalent code
@@ -128,8 +127,7 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
             if (returnCount > 1) {
               // only 0 or 1 returns are allowed
               logger.at(loggingLevel).log(
-                  "NOT inlining '%s' because it has too many RETURNs",
-                  op.name());
+                  "NOT inlining '%s' because it has too many RETURNs", op.name());
               return;
             }
           }
@@ -182,9 +180,11 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
         if (callOp.destination().isPresent()) {
           // if op is assigned to a return value, copy that
           // from the "return" statement
-          remapped.set(returnOpIndex,
+          remapped.set(
+              returnOpIndex,
               new Transfer(
-                  callOp.destination().get(), returnOp.returnValueLocation().get(),
+                  callOp.destination().get(),
+                  returnOp.returnValueLocation().get(),
                   callOp.position()));
         } else {
           // No destination. remove the op
@@ -228,8 +228,7 @@ class InlineOptimizer extends DefaultOpcodeVisitor implements Optimizer {
 
     ProcEntry entry = procsByName.get(procName);
 
-    boolean hasReturn =
-        codeToRemap.stream().filter(op -> op instanceof Return).count() > 0;
+    boolean hasReturn = codeToRemap.stream().filter(op -> op instanceof Return).count() > 0;
     int numParams = entry.formalNames().size();
 
     int locAdded = usageCount * (inlinedCodeSize + numParams + (hasReturn ? 1 : 0));

@@ -14,7 +14,11 @@ public class ArraySet extends Op {
   private final boolean isArrayLiteral;
 
   public ArraySet(
-      Location array, ArrayType arrayType, Operand index, Operand source, boolean isArrayLiteral,
+      Location array,
+      ArrayType arrayType,
+      Operand index,
+      Operand source,
+      boolean isArrayLiteral,
       Position position) {
     super(position);
     this.arrayType = arrayType;

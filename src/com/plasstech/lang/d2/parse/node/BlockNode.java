@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
+import java.util.List;
 
 /** Represents a list of statements - a block inside a function/method/procedure. */
 public class BlockNode extends AbstractNode {
@@ -21,8 +20,7 @@ public class BlockNode extends AbstractNode {
 
   public BlockNode(List<StatementNode> statements, Position position) {
     super(position);
-    this.name = String.format("block @ %d, %d (%d)", position.line(), position.column(),
-        id++);
+    this.name = String.format("block @ %d, %d (%d)", position.line(), position.column(), id++);
     this.statements = statements;
   }
 

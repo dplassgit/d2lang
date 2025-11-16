@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.logging.Level;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.logging.Level;
 
 public interface Optimizer {
   ImmutableList<Op> optimize(ImmutableList<Op> program, SymbolTable symtab);

@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
 
 /**
  * Represents the size of a datatype. See https://www.nasm.us/doc/nasmdoc3.html#section-3.2.1 for

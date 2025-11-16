@@ -6,7 +6,7 @@ class StringType extends PointerType {
   }
 
   @Override
-  final public boolean compatibleWith(VarType that) {
+  public final boolean compatibleWith(VarType that) {
     return super.compatibleWith(that) || that.isNull();
   }
 }

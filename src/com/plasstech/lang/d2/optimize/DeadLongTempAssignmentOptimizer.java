@@ -1,11 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -13,13 +7,18 @@ import com.plasstech.lang.d2.codegen.il.Nop;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * If there are any assignments to a long temp without a subsequent read, remove the assignment. Hm,
  * maybe we can use this elsewhere?
  */
 class DeadLongTempAssignmentOptimizer implements Optimizer {
-  private final static FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final Level loggingLevel;
 
   public DeadLongTempAssignmentOptimizer(int debugLevel) {
@@ -44,7 +43,8 @@ class DeadLongTempAssignmentOptimizer implements Optimizer {
         }
       }
       Operand dest = opcode.getDestination();
-      if (dest != null && dest.storage() == SymbolStorage.LONG_TEMP
+      if (dest != null
+          && dest.storage() == SymbolStorage.LONG_TEMP
           && !longTempsRead.contains(dest)) {
         // 3. We are writing to this long temp but have never read from it. Delete it.
         isChanged = true;
@@ -56,9 +56,7 @@ class DeadLongTempAssignmentOptimizer implements Optimizer {
   }
 
   private void replaceAt(List<Op> code, int ip, Op opcode, Op newOp) {
-    logger
-        .at(loggingLevel)
-        .log("REPLACING ip %d: %s with %s", ip, opcode, newOp);
+    logger.at(loggingLevel).log("REPLACING ip %d: %s with %s", ip, opcode, newOp);
     code.set(ip, newOp);
   }
 

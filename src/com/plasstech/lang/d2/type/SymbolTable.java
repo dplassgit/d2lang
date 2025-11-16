@@ -1,15 +1,14 @@
 package com.plasstech.lang.d2.type;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SymbolTable {
   /*
@@ -33,9 +32,7 @@ public class SymbolTable {
     return new SymbolTable(this, SymbolStorage.LOCAL);
   }
 
-  /**
-   * Looks up the symbol in this symbol table. If not found, returns VarType.UNKNOWN
-   */
+  /** Looks up the symbol in this symbol table. If not found, returns VarType.UNKNOWN */
   public VarType lookup(String name) {
     Symbol sym = get(name);
     if (sym == null) {
@@ -47,7 +44,7 @@ public class SymbolTable {
   /**
    * Looks up the symbol in this symbol table, and if it's not found, asks its parent.
    *
-   * If not found in any symbol table, returns VarType.UNKNOWN
+   * <p>If not found in any symbol table, returns VarType.UNKNOWN
    */
   public VarType lookupRecursive(String name) {
     Symbol sym = getRecursive(name);
@@ -57,9 +54,7 @@ public class SymbolTable {
     return sym.varType();
   }
 
-  /**
-   * Looks up the symbol in this symbol table. If not found, returns null;
-   */
+  /** Looks up the symbol in this symbol table. If not found, returns null; */
   public Symbol get(String name) {
     return values.get(name);
   }
@@ -67,7 +62,7 @@ public class SymbolTable {
   /**
    * Looks up the symbol in this symbol table, and if it's not found, asks its parent.
    *
-   * If not found in any symbol table, returns null.
+   * <p>If not found in any symbol table, returns null.
    */
   public Symbol getRecursive(String name) {
     Symbol sym = get(name);
@@ -131,16 +126,12 @@ public class SymbolTable {
   /** Returns all the variables in this level of the table. */
   public ImmutableMap<String, Symbol> variables() {
     return ImmutableMap.copyOf(
-        values
-            .entrySet()
-            .stream()
+        values.entrySet().stream()
             .filter(e -> e.getValue().isVariable())
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
   }
 
-  /**
-   * Declare a temp in this symbol table.
-   */
+  /** Declare a temp in this symbol table. */
   public VariableSymbol declareTemp(String name, VarType varType) {
     return declareVariable(name, varType, SymbolStorage.TEMP);
   }
@@ -149,9 +140,7 @@ public class SymbolTable {
     return declareVariable(name, varType, SymbolStorage.LONG_TEMP);
   }
 
-  /**
-   * Declare a param with the given index in this table.
-   */
+  /** Declare a param with the given index in this table. */
   public ParamSymbol declareParam(String name, VarType varType, int index) {
     Preconditions.checkState(
         !values.containsKey(name),
@@ -169,16 +158,15 @@ public class SymbolTable {
     return param;
   }
 
-  /**
-   * Declare an extern proc.
-   */
+  /** Declare an extern proc. */
   public ExternProcSymbol declareProc(ExternProcedureNode node) {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
       throw new TypeException(
           node.position(),
           "%s already declared as %s. Cannot be redeclared as procedure.",
-          node.name(), sym.varType());
+          node.name(),
+          sym.varType());
     }
     SymbolTable child = spawn();
     ExternProcSymbol procSymbol = new ExternProcSymbol(node, child);
@@ -186,16 +174,15 @@ public class SymbolTable {
     return procSymbol;
   }
 
-  /**
-   * Declare a proc.
-   */
+  /** Declare a proc. */
   public ProcSymbol declareProc(ProcedureNode node) {
     Symbol sym = getRecursive(node.name());
     if (sym != null) {
       throw new TypeException(
           node.position(),
           "%s already declared as %s. Cannot be redeclared as PROC.",
-          node.name(), sym.varType());
+          node.name(),
+          sym.varType());
     }
     SymbolTable child = spawn();
     ProcSymbol procSymbol = new ProcSymbol(node, child);
@@ -212,7 +199,7 @@ public class SymbolTable {
     if (blockSymbol != null) {
       return blockSymbol;
     }
-    // Don't do a spawn because the block's storage must be the same as its parent's, and spawn 
+    // Don't do a spawn because the block's storage must be the same as its parent's, and spawn
     // always creates a "local" symbol table.
     SymbolTable child = new SymbolTable(this, this.storage);
     blockSymbol = new BlockSymbol(node, child);
@@ -220,9 +207,7 @@ public class SymbolTable {
     return blockSymbol;
   }
 
-  /**
-   * Declare a record in the current symbol table.
-   */
+  /** Declare a record in the current symbol table. */
   public RecordSymbol declareRecord(RecordDeclarationNode node) {
     // it was binding it with formals, e.g., Rec<T: unbound>
     // but that will not let us look it up later in a NewNode which doesn't
@@ -233,16 +218,15 @@ public class SymbolTable {
       throw new TypeException(
           node.position(),
           "'%s' already declared as %s. Cannot be redeclared as RECORD.",
-          node.name(), sym.varType());
+          node.name(),
+          sym.varType());
     }
     RecordSymbol recordSymbol = new RecordSymbol(node);
     values.put(name, recordSymbol);
     return recordSymbol;
   }
 
-  /**
-   * Declare a bound record in the current symbol table.
-   */
+  /** Declare a bound record in the current symbol table. */
   public void declareBoundRecordSymbol(RecordSymbol boundRecord) {
     // We have to use the FULL name here
     Symbol sym = getRecursive(boundRecord.name());
@@ -281,9 +265,7 @@ public class SymbolTable {
     }
   }
 
-  /**
-   * Note that the given variable is assigned to the given type. Creates the symbol.
-   */
+  /** Note that the given variable is assigned to the given type. Creates the symbol. */
   public VariableSymbol assign(String name, VarType varType) {
     Preconditions.checkArgument(!varType.isUnknown(), "Cannot set type of %s to unknown", name);
     Symbol sym = values.get(name);
@@ -316,9 +298,7 @@ public class SymbolTable {
     return parent;
   }
 
-  /**
-   * Find the SymbolTable in which the given symbol was created.
-   */
+  /** Find the SymbolTable in which the given symbol was created. */
   public SymbolTable getOwner(Symbol symbol) {
     SymbolTable source = this;
     String name = symbol.varType().name();

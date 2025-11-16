@@ -2,10 +2,9 @@ package com.plasstech.lang.d2.parse.node;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class NewNodeTest {
 

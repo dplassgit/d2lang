@@ -3,11 +3,6 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 
-import java.util.List;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -24,6 +19,9 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
+import java.util.List;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ResolverTest {
@@ -71,7 +69,7 @@ public class ResolverTest {
       LocationUtils.newTempLocation("__tempi", VarType.INT);
   private static final TempLocation TEMP_STRING =
       LocationUtils.newTempLocation("__temps", VarType.STRING);
-  private final static ProcExit PROC_EXIT = new ProcExit("proc", 0, 0);
+  private static final ProcExit PROC_EXIT = new ProcExit("proc", 0, 0);
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
   private Registers registers = new Registers();
@@ -563,8 +561,8 @@ public class ResolverTest {
   private static class NonDoubleTypeProvider extends TestParameterValuesProvider {
     @Override
     public List<VarType> provideValues(Context context) {
-      return ImmutableList.of(VarType.BYTE, VarType.SHORT, VarType.INT, VarType.LONG,
-          VarType.BOOL, VarType.RANGE);
+      return ImmutableList.of(
+          VarType.BYTE, VarType.SHORT, VarType.INT, VarType.LONG, VarType.BOOL, VarType.RANGE);
     }
   }
 
@@ -580,9 +578,8 @@ public class ResolverTest {
     resolver.procExit(PROC_EXIT);
 
     String registerName = IntRegister.RBX.name();
-    assertThat(emitter).containsAtLeast(
-        "sub RSP, 0xb0",
-        String.format("mov [RBP - 16], %s", registerName))
+    assertThat(emitter)
+        .containsAtLeast("sub RSP, 0xb0", String.format("mov [RBP - 16], %s", registerName))
         .inOrder();
   }
 
@@ -596,10 +593,7 @@ public class ResolverTest {
     }
     resolver.procExit(PROC_EXIT);
 
-    assertThat(emitter).containsAtLeast(
-        "sub RSP, 0xb0",
-        "mov [RBP - 16], RBX")
-        .inOrder();
+    assertThat(emitter).containsAtLeast("sub RSP, 0xb0", "mov [RBP - 16], RBX").inOrder();
   }
 
   @Test
@@ -613,10 +607,7 @@ public class ResolverTest {
     }
     resolver.procExit(PROC_EXIT);
 
-    assertThat(emitter).containsAtLeast(
-        "sub RSP, 0xb0",
-        "mov [RBP - 16], RBX")
-        .inOrder();
+    assertThat(emitter).containsAtLeast("sub RSP, 0xb0", "mov [RBP - 16], RBX").inOrder();
   }
 
   @Test
@@ -646,10 +637,7 @@ public class ResolverTest {
     resolver.procExit(PROC_EXIT);
 
     assertThat(emitter)
-        .containsAtLeast(
-            "sub RSP, 0x130",
-            "mov [RBP - 16], RBX",
-            "movq [RBP - 40], XMM4")
+        .containsAtLeast("sub RSP, 0x130", "mov [RBP - 16], RBX", "movq [RBP - 40], XMM4")
         .inOrder();
   }
 }

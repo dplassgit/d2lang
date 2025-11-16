@@ -1,14 +1,13 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.escape.Escaper;
 import com.google.common.escape.Escapers;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
+import java.util.List;
+import java.util.stream.Collectors;
 
 // An opcode.
 public abstract class Op {
@@ -66,11 +65,7 @@ public abstract class Op {
     return new SetSources(oldSource, newSource).execute(this);
   }
 
-  public static List<Op> removeMatchingOps(List<Op> program,
-      Class<? extends Op> clazz) {
-    return program
-        .stream()
-        .filter(op -> !op.getClass().equals(clazz))
-        .collect(Collectors.toList());
+  public static List<Op> removeMatchingOps(List<Op> program, Class<? extends Op> clazz) {
+    return program.stream().filter(op -> !op.getClass().equals(clazz)).collect(Collectors.toList());
   }
 }

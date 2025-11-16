@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.type;
 
-import java.util.Set;
-
 import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
 /** The type of an expression or variable. */
 public interface VarType {
@@ -21,7 +20,7 @@ public interface VarType {
 
   /**
    * @return a name that uniquely describes this type. For example, "string",
-   *         "proc:(int,string):bool", "array:int"
+   *     "proc:(int,string):bool", "array:int"
    */
   String name();
 
@@ -48,10 +47,9 @@ public interface VarType {
     return that == this;
   }
 
-  final Set<VarType> NUMERIC_TYPES = ImmutableSet
-      .of(VarType.BYTE, VarType.INT, VarType.LONG, VarType.DOUBLE);
-  final Set<VarType> INTEGRAL_TYPES =
-      ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG);
+  final Set<VarType> NUMERIC_TYPES =
+      ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG, VarType.DOUBLE);
+  final Set<VarType> INTEGRAL_TYPES = ImmutableSet.of(VarType.BYTE, VarType.INT, VarType.LONG);
 
   default boolean isIntegral() {
     return INTEGRAL_TYPES.contains(this);

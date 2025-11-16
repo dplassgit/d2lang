@@ -1,17 +1,15 @@
 package com.plasstech.lang.d2.optimize.matcher;
 
-import java.util.function.Function;
-
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
+import java.util.function.Function;
 
-/**
- * Optimizes a single UnOp opcode.
- */
-public record UnaryOpOptimizer(Matcher operandMatcher, TokenType operator,
-    Function<Op, Op> transformer) implements OpcodeOptimizer {
+/** Optimizes a single UnOp opcode. */
+public record UnaryOpOptimizer(
+    Matcher operandMatcher, TokenType operator, Function<Op, Op> transformer)
+    implements OpcodeOptimizer {
 
   @Override
   public Op optimize(Op target) {

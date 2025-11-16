@@ -1,12 +1,5 @@
 package com.plasstech.lang.d2.parse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
@@ -55,6 +48,12 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Parser implements Phase {
 
@@ -70,7 +69,8 @@ public class Parser implements Phase {
           .build();
 
   private static final ImmutableMap<TokenType, VarType> RETURN_TYPES =
-      ImmutableMap.<TokenType, VarType>builder().putAll(VARIABLE_TYPES)
+      ImmutableMap.<TokenType, VarType>builder()
+          .putAll(VARIABLE_TYPES)
           .put(TokenType.VOID, VarType.VOID)
           .build();
 
@@ -94,10 +94,15 @@ public class Parser implements Phase {
           TokenType.VARIABLE);
 
   private static final ImmutableMap<TokenType, TokenType> OP_EQ_TO_OP =
-      ImmutableMap.of(TokenType.PLUS_EQ, TokenType.PLUS,
-          TokenType.MINUS_EQ, TokenType.MINUS,
-          TokenType.MULT_EQ, TokenType.MULT,
-          TokenType.DIV_EQ, TokenType.DIV);
+      ImmutableMap.of(
+          TokenType.PLUS_EQ,
+          TokenType.PLUS,
+          TokenType.MINUS_EQ,
+          TokenType.MINUS,
+          TokenType.MULT_EQ,
+          TokenType.MULT,
+          TokenType.DIV_EQ,
+          TokenType.DIV);
 
   private final Lexer lexer;
   private Token token;
@@ -389,11 +394,13 @@ public class Parser implements Phase {
     List<String> formalTypeVariables = ImmutableList.of();
     if (token.type() == TokenType.LT) {
       expectToken(TokenType.LT);
-      formalTypeVariables = commaSeparated(() -> {
-        Token next = expectToken(TokenType.VARIABLE);
-        String name = next.text();
-        return name;
-      });
+      formalTypeVariables =
+          commaSeparated(
+              () -> {
+                Token next = expectToken(TokenType.VARIABLE);
+                String name = next.text();
+                return name;
+              });
       expectToken(TokenType.GT);
     }
     expectToken(TokenType.LBRACE);
@@ -407,8 +414,8 @@ public class Parser implements Phase {
     }
 
     expectToken(TokenType.RBRACE);
-    return new RecordDeclarationNode(varToken.text(), fieldNodes, varToken.start(),
-        formalTypeVariables);
+    return new RecordDeclarationNode(
+        varToken.text(), fieldNodes, varToken.start(), formalTypeVariables);
   }
 
   private DeclarationNode fieldDeclaration(Token varToken, List<String> formalTypeVariables) {
@@ -450,8 +457,8 @@ public class Parser implements Phase {
         token.text());
   }
 
-  private RecordReferenceType parseRecordReference(String recordName,
-      List<String> formalTypeNames) {
+  private RecordReferenceType parseRecordReference(
+      String recordName, List<String> formalTypeNames) {
     List<VarType> actualTypes = ImmutableList.of();
     List<UnboundType> formalTypes = ImmutableList.of();
     if (token.type() == TokenType.LT) {
@@ -537,9 +544,7 @@ public class Parser implements Phase {
     return params;
   }
 
-  /**
-   * Parses colon followed by var type.
-   */
+  /** Parses colon followed by var type. */
   private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap) {
     expectToken(TokenType.COLON);
     if (token.type() == TokenType.VARIABLE) {
@@ -733,17 +738,13 @@ public class Parser implements Phase {
   /**
    * Parse from the current location, repeatedly call "nextRule", e.g.,:
    *
-   * <p>
-   * here -> nextRule (tokentype nextRule)*
+   * <p>here -> nextRule (tokentype nextRule)*
    *
-   * <p>
-   * where tokentype is in tokenTypes
+   * <p>where tokentype is in tokenTypes
    *
-   * <p>
-   * Example, in the grammar:
+   * <p>Example, in the grammar:
    *
-   * <p>
-   * expr -> term (+- term)*
+   * <p>expr -> term (+- term)*
    */
   private ExprNode binOpFn(Set<TokenType> tokenTypes, Supplier<ExprNode> nextRule) {
     ExprNode left = nextRule.get();
@@ -859,29 +860,30 @@ public class Parser implements Phase {
   }
 
   private List<VarType> commaSeparatedTypes(List<String> formalTypeVariables) {
-    return commaSeparated(() -> {
-      if (token.type() == TokenType.VARIABLE) {
-        // Record type.
-        Token typeToken = advance(); // eat the record type
-        if (formalTypeVariables.contains(typeToken.text())) {
-          // <T>
-          return new UnboundType(typeToken.text());
-        }
-        // TODO: WHAT ABOUT List<T>?!
-        return new RecordReferenceType(typeToken.text());
-      }
+    return commaSeparated(
+        () -> {
+          if (token.type() == TokenType.VARIABLE) {
+            // Record type.
+            Token typeToken = advance(); // eat the record type
+            if (formalTypeVariables.contains(typeToken.text())) {
+              // <T>
+              return new UnboundType(typeToken.text());
+            }
+            // TODO: WHAT ABOUT List<T>?!
+            return new RecordReferenceType(typeToken.text());
+          }
 
-      TokenType declaredType = token.type();
-      VarType paramType = VARIABLE_TYPES.get(declaredType);
-      if (paramType != null) {
-        // We have a param type
-        advance(); // eat the param type
-        // TODO: possibly an array. see if there's an open and close bracket
-        return paramType;
-      }
-      throw new ParseException(
-          token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
-    });
+          TokenType declaredType = token.type();
+          VarType paramType = VARIABLE_TYPES.get(declaredType);
+          if (paramType != null) {
+            // We have a param type
+            advance(); // eat the param type
+            // TODO: possibly an array. see if there's an open and close bracket
+            return paramType;
+          }
+          throw new ParseException(
+              token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
+        });
   }
 
   /**
@@ -965,10 +967,9 @@ public class Parser implements Phase {
 
           default:
             throw new ParseException(
-                token.start(),
-                "Unexpected '%s'; expected literal, variable, or '('", token.text());
+                token.start(), "Unexpected '%s'; expected literal, variable, or '('", token.text());
         }
-        // no break needed
+      // no break needed
 
       case LPAREN:
         expectToken(TokenType.LPAREN);
@@ -1008,8 +1009,7 @@ public class Parser implements Phase {
 
     // First implementation: find the first non-unknown value and use it
     Optional<VarType> baseType =
-        values
-            .stream()
+        values.stream()
             .map(Node::varType)
             .filter(varType -> varType != VarType.UNKNOWN)
             .findFirst();

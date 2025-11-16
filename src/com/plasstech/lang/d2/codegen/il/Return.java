@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.Optional;
-
 import com.plasstech.lang.d2.codegen.Operand;
+import java.util.Optional;
 
 public class Return extends Op {
 

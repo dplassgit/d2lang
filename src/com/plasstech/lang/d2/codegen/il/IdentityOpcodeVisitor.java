@@ -2,9 +2,7 @@ package com.plasstech.lang.d2.codegen.il;
 
 import java.util.function.Consumer;
 
-/**
- * An OpcodeVisitor that runs the same code for all methods.
- */
+/** An OpcodeVisitor that runs the same code for all methods. */
 public abstract class IdentityOpcodeVisitor implements OpcodeVisitor {
   private final Consumer<Op> fn;
 

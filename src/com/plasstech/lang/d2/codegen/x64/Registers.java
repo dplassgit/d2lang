@@ -3,13 +3,12 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.XmmRegister.XMM0;
 
+import com.plasstech.lang.d2.common.D2RuntimeException;
+import com.plasstech.lang.d2.type.VarType;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import com.plasstech.lang.d2.common.D2RuntimeException;
-import com.plasstech.lang.d2.type.VarType;
 
 class Registers implements RegistersInterface {
   // these are the USED registers

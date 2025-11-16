@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -18,6 +16,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class IncDecOptimizerTest {
   private final IncDecOptimizer optimizer = new IncDecOptimizer(2);
@@ -46,8 +45,7 @@ public class IncDecOptimizerTest {
   @Test
   public void incSimple() {
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(STACK, STACK, TokenType.PLUS, ConstantOperand.ONE, null));
+        ImmutableList.of(new BinOp(STACK, STACK, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
@@ -57,12 +55,10 @@ public class IncDecOptimizerTest {
 
   @Test
   public void noOptimizeDouble() {
-    StackLocation dbl =
-        LocationUtils.newStackLocation("stack", VarType.DOUBLE, 0);
+    StackLocation dbl = LocationUtils.newStackLocation("stack", VarType.DOUBLE, 0);
 
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(dbl, dbl, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
+        ImmutableList.of(new BinOp(dbl, dbl, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
 
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -71,8 +67,7 @@ public class IncDecOptimizerTest {
   @Test
   public void decSimple() {
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(STACK, STACK, TokenType.MINUS, ConstantOperand.ONE_BYTE, null));
+        ImmutableList.of(new BinOp(STACK, STACK, TokenType.MINUS, ConstantOperand.ONE_BYTE, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();

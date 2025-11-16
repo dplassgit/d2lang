@@ -2,9 +2,6 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -25,6 +22,8 @@ import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Before;
+import org.junit.Test;
 
 public class RecordCodeGeneratorTest {
   private static final String RECORD_NAME = "recordDefinitionName";
@@ -54,12 +53,14 @@ public class RecordCodeGeneratorTest {
     nonGenericRecord =
         symTab.declareRecord(new RecordDeclarationNode(RECORD_NAME, ImmutableList.of(), null));
 
-    RecordSymbol unboundRecord = symTab
-        .declareRecord(new RecordDeclarationNode(UNBOUND_RECORD_NAME,
-            ImmutableList.of(new DeclarationNode("value", UNBOUND_TYPE, null)), null,
-            ImmutableList.of(UNBOUND_TYPE.name())));
-    boundRecord =
-        unboundRecord.bind(ImmutableMap.of(UNBOUND_TYPE.name(), VarType.INT));
+    RecordSymbol unboundRecord =
+        symTab.declareRecord(
+            new RecordDeclarationNode(
+                UNBOUND_RECORD_NAME,
+                ImmutableList.of(new DeclarationNode("value", UNBOUND_TYPE, null)),
+                null,
+                ImmutableList.of(UNBOUND_TYPE.name())));
+    boundRecord = unboundRecord.bind(ImmutableMap.of(UNBOUND_TYPE.name(), VarType.INT));
     symTab.declareBoundRecordSymbol(boundRecord);
   }
 
@@ -118,10 +119,10 @@ public class RecordCodeGeneratorTest {
     String fieldName = "fieldName";
     DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
     DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
-    RecordSymbol recordDecl = symTab
-        .declareRecord(
-            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
-                null));
+    RecordSymbol recordDecl =
+        symTab.declareRecord(
+            new RecordDeclarationNode(
+                "recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2), null));
     VarType recordRefType = new RecordReferenceType(recordDecl.name());
     Location source = LocationUtils.newMemoryAddress("source", recordRefType);
     Location dest = LocationUtils.newParamLocation("dest", VarType.BYTE, 2, 0);
@@ -137,10 +138,10 @@ public class RecordCodeGeneratorTest {
     String fieldName = "fieldName";
     DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
     DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
-    RecordSymbol recordDecl = symTab
-        .declareRecord(
-            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
-                null));
+    RecordSymbol recordDecl =
+        symTab.declareRecord(
+            new RecordDeclarationNode(
+                "recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2), null));
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newTempLocation("dest", VarType.BYTE);
@@ -156,10 +157,10 @@ public class RecordCodeGeneratorTest {
     String fieldName = "fieldName";
     DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
     DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
-    RecordSymbol recordDecl = symTab
-        .declareRecord(
-            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
-                null));
+    RecordSymbol recordDecl =
+        symTab.declareRecord(
+            new RecordDeclarationNode(
+                "recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2), null));
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newMemoryAddress("dest", VarType.BYTE);
@@ -175,10 +176,10 @@ public class RecordCodeGeneratorTest {
     String fieldName = "fieldName";
     DeclarationNode fieldDecl1 = new DeclarationNode(fieldName + "0", VarType.LONG, null);
     DeclarationNode fieldDecl2 = new DeclarationNode(fieldName, VarType.BYTE, null);
-    RecordSymbol recordDecl = symTab
-        .declareRecord(
-            new RecordDeclarationNode("recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2),
-                null));
+    RecordSymbol recordDecl =
+        symTab.declareRecord(
+            new RecordDeclarationNode(
+                "recordWithField", ImmutableList.of(fieldDecl1, fieldDecl2), null));
     Location source = LocationUtils.newMemoryAddress("source", recordDecl.varType());
 
     Location dest = LocationUtils.newStackLocation("dest", VarType.BYTE, 12);

@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 
 /** Represents an absolute string constant in the data section of the nasm file. */
 class StringConstant extends StringEntry {

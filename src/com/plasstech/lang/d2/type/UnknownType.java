@@ -9,23 +9,23 @@ final class UnknownType extends DefaultVarType {
   }
 
   @Override
-  final public int size() {
+  public final int size() {
     throw new IllegalStateException("Should not try to get size of UNKNOWN");
   }
 
   @Override
-  final public String toString() {
+  public final String toString() {
     return name();
   }
 
   @Override
-  final public boolean equals(Object obj) {
+  public final boolean equals(Object obj) {
     // Yes this is intentionally strict.
     return this == obj;
   }
 
   @Override
-  final public int hashCode() {
+  public final int hashCode() {
     return Objects.hash(name(), 16);
   }
 }

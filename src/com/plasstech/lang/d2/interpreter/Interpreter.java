@@ -1,16 +1,5 @@
 package com.plasstech.lang.d2.interpreter;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.logging.Level;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -48,6 +37,16 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.logging.Level;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final int MAX_ITERATIONS = 10000000;
@@ -294,9 +293,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
 
       default:
         throw new IllegalStateException(
-            String.format(
-                "Unknown range binop %s; left %s, right %s",
-                op, left, right));
+            String.format("Unknown range binop %s; left %s, right %s", op, left, right));
     }
   }
 
@@ -411,7 +408,7 @@ public class Interpreter extends DefaultOpcodeVisitor {
           return left == null;
 
         case GT:
-          // not null > null
+        // not null > null
         case NEQ:
           // not null != null
           return left != null;
@@ -907,8 +904,8 @@ public class Interpreter extends DefaultOpcodeVisitor {
             line = reader.readLine();
           }
         } catch (IOException e) {
-          throw new D2RuntimeException(String.format("Could not read stdin: %s", e.getMessage()),
-              null, "Interpreter");
+          throw new D2RuntimeException(
+              String.format("Could not read stdin: %s", e.getMessage()), null, "Interpreter");
         }
 
         setValue((Location) op.arg(), input);
@@ -917,7 +914,6 @@ public class Interpreter extends DefaultOpcodeVisitor {
       default:
         break;
     }
-
   }
 
   @Override

@@ -3,8 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -20,6 +18,7 @@ import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class TempPropagationOptimizerTest {
   private static final Location PARAM = LocationUtils.newParamLocation("param", VarType.INT, 0, 0);
@@ -56,8 +55,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void stack_noOptimization() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP3, TEMP1, TokenType.PLUS, TEMP2, null),
-            new Transfer(LOCAL, TEMP3, null));
+        ImmutableList.of(
+            new BinOp(TEMP3, TEMP1, TokenType.PLUS, TEMP2, null), new Transfer(LOCAL, TEMP3, null));
 
     optimizer.optimize(program, null);
 
@@ -67,7 +66,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void stack_addLocal_success() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP3, TEMP1, TokenType.PLUS, ConstantOperand.of(3), null),
+        ImmutableList.of(
+            new BinOp(TEMP3, TEMP1, TokenType.PLUS, ConstantOperand.of(3), null),
             new Transfer(LOCAL, TEMP3, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -80,8 +80,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void success() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP3, TEMP1, TokenType.PLUS, TEMP2, null),
-            new Transfer(PARAM, TEMP3, null));
+        ImmutableList.of(
+            new BinOp(TEMP3, TEMP1, TokenType.PLUS, TEMP2, null), new Transfer(PARAM, TEMP3, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
@@ -93,7 +93,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void doubleConstantOptimized() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.of(1.0), null),
+        ImmutableList.of(
+            new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.of(1.0), null),
             new Transfer(DPARAM, DTEMP2, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -106,7 +107,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void doubleOptimized() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DTEMP3, DTEMP1, TokenType.PLUS, DTEMP2, null),
+        ImmutableList.of(
+            new BinOp(DTEMP3, DTEMP1, TokenType.PLUS, DTEMP2, null),
             new Transfer(DPARAM, DTEMP3, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
@@ -119,7 +121,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void doubleLocal_notOptimized() {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.of(1.0), null),
+        ImmutableList.of(
+            new BinOp(DTEMP2, DTEMP1, TokenType.PLUS, ConstantOperand.of(1.0), null),
             new Transfer(DLOCAL, DTEMP2, null));
 
     optimizer.optimize(program, null);
@@ -129,8 +132,8 @@ public class TempPropagationOptimizerTest {
   @Test
   public void unaryOp_success() {
     ImmutableList<Op> program =
-        ImmutableList.of(new UnaryOp(TEMP3, TokenType.MINUS, TEMP2, null),
-            new Transfer(PARAM, TEMP3, null));
+        ImmutableList.of(
+            new UnaryOp(TEMP3, TokenType.MINUS, TEMP2, null), new Transfer(PARAM, TEMP3, null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -155,8 +158,8 @@ public class TempPropagationOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(1);
 
-    assertThat(optimized.get(0)).isEqualTo(
-        new Call(PARAM, procSym, ImmutableList.of(), ImmutableList.of(), null));
+    assertThat(optimized.get(0))
+        .isEqualTo(new Call(PARAM, procSym, ImmutableList.of(), ImmutableList.of(), null));
   }
 
   @Test

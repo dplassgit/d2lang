@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.google.common.base.Preconditions;
 import com.plasstech.lang.d2.common.Position;
+import java.util.List;
+import java.util.Optional;
 
 /** If/elif/else node. */
 public class IfNode extends AbstractNode implements StatementNode {

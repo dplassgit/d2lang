@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.lex;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
+import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -259,7 +258,7 @@ public class Lexer {
           advance();
           return new Token(TokenType.NULL_COALESCE, start, oc);
         }
-        // fall through
+      // fall through
 
       default:
         throw new ScannerException(start, "Unexpected character '%c'", cc);

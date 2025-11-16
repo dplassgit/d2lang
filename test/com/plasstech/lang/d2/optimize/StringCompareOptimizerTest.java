@@ -3,8 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -18,6 +16,7 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class StringCompareOptimizerTest {
   private final Optimizer optimizer = new OptimizerWithNop(new StringCompareOptimizer(2));
@@ -28,8 +27,7 @@ public class StringCompareOptimizerTest {
       LocationUtils.newTempLocation("stemp1", VarType.STRING);
   private static final TempLocation STRING_TEMP2 =
       LocationUtils.newTempLocation("stemp2", VarType.STRING);
-  private static final TempLocation INT_TEMP1 =
-      LocationUtils.newTempLocation("itemp", VarType.INT);
+  private static final TempLocation INT_TEMP1 = LocationUtils.newTempLocation("itemp", VarType.INT);
   private static final Location BOOL_TEMP1 = LocationUtils.newTempLocation("btemp1", VarType.BOOL);
   private static final ConstantOperand<String> CONSTANT_STRING = ConstantOperand.of("h");
 
@@ -41,9 +39,10 @@ public class StringCompareOptimizerTest {
     // temp1 = asc(s)
     // temp3 = asc('h')
     // temp2 = temp1 == temp3
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isTrue();
@@ -51,16 +50,25 @@ public class StringCompareOptimizerTest {
 
     assertThat(optimized.get(0)).isUnaryOpOf(TokenType.ASC, STRING_TEMP2);
     assertThat(optimized.get(1)).isUnaryOpOf(TokenType.ASC, CONSTANT_STRING);
-    assertThat(optimized.get(2)).isBinOp(BOOL_TEMP1, optimized.get(0).getDestination(),
-        TokenType.EQEQ, optimized.get(1).getDestination());
+    assertThat(optimized.get(2))
+        .isBinOp(
+            BOOL_TEMP1,
+            optimized.get(0).getDestination(),
+            TokenType.EQEQ,
+            optimized.get(1).getDestination());
   }
 
   @Test
   public void nonConstRhs_does_not_optimize() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ,
-            LocationUtils.newMemoryAddress("s", VarType.STRING), null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(
+                BOOL_TEMP1,
+                STRING_TEMP1,
+                TokenType.EQEQ,
+                LocationUtils.newMemoryAddress("s", VarType.STRING),
+                null));
 
     optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isFalse();
@@ -68,9 +76,10 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void compareIndex1_does_not_optimize() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(1), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(1), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
     optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isFalse();
@@ -78,9 +87,10 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void compareIndexNonConstant_does_not_optimize() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, INT_TEMP1, null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, INT_TEMP1, null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
     optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isFalse();
@@ -88,10 +98,11 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void compareIndex0_does_not_disturb_later_ops() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null),
-        new Return("proc"));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null),
+            new Return("proc"));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isTrue();
@@ -109,9 +120,10 @@ public class StringCompareOptimizerTest {
     // temp3 = asc('h')
     // nontemp = temp1 == temp3
     StackLocation localBool = LocationUtils.newStackLocation("dest", VarType.BOOL, 0);
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isTrue();
@@ -119,17 +131,26 @@ public class StringCompareOptimizerTest {
 
     assertThat(optimized.get(0)).isUnaryOpOf(TokenType.ASC, STRING_TEMP2);
     assertThat(optimized.get(1)).isUnaryOpOf(TokenType.ASC, CONSTANT_STRING);
-    assertThat(optimized.get(2)).isBinOp(localBool, optimized.get(0).getDestination(),
-        TokenType.EQEQ, optimized.get(1).getDestination());
+    assertThat(optimized.get(2))
+        .isBinOp(
+            localBool,
+            optimized.get(0).getDestination(),
+            TokenType.EQEQ,
+            optimized.get(1).getDestination());
   }
 
   @Test
   public void nonTempintermediateDest_does_not_optimize() {
     StackLocation localBool = LocationUtils.newStackLocation("dest", VarType.BOOL, 0);
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(LocationUtils.newStackLocation("dest", VarType.STRING, 0), STRING_TEMP2,
-            TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(
+                LocationUtils.newStackLocation("dest", VarType.STRING, 0),
+                STRING_TEMP2,
+                TokenType.LBRACKET,
+                ConstantOperand.of(0),
+                null),
+            new BinOp(localBool, STRING_TEMP1, TokenType.EQEQ, CONSTANT_STRING, null));
 
     optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isFalse();
@@ -137,9 +158,10 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void tooBigRhs_optimizes_eqeq() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, ConstantOperand.of("hi"), null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.EQEQ, ConstantOperand.of("hi"), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isTrue();
@@ -149,9 +171,10 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void tooBigRhs_optimizes_neq() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.NEQ, ConstantOperand.of("hi"), null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.NEQ, ConstantOperand.of("hi"), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isTrue();
@@ -161,9 +184,10 @@ public class StringCompareOptimizerTest {
 
   @Test
   public void tooBigRhs_does_no_optimize_lt() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
-        new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.LT, ConstantOperand.of("hi"), null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(STRING_TEMP1, STRING_TEMP2, TokenType.LBRACKET, ConstantOperand.of(0), null),
+            new BinOp(BOOL_TEMP1, STRING_TEMP1, TokenType.LT, ConstantOperand.of("hi"), null));
 
     optimizer.optimize(program, symTab);
     assertThat(optimizer.isChanged()).isFalse();

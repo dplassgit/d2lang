@@ -79,7 +79,7 @@ public enum TokenType {
   DOT("."),
   NULL_COALESCE("??"),
   // For future expansion:
-  SHORT(true), // "short" keyword/type 
+  SHORT(true), // "short" keyword/type
   CHAR(true), // indicates the "char" keyword
   DELETE(true), // free a new
   FOR(true), // for (x in array/list/range)

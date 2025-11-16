@@ -3,9 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -30,6 +27,8 @@ import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ConstantPropagationOptimizerTest {
@@ -52,16 +51,18 @@ public class ConstantPropagationOptimizerTest {
   @Test
   public void twoTransfers() {
     /**
+     *
+     *
      * <pre>
      * t1 = 1
      * t2 = t1
      * s1 = t2
-     * 
+     *
      * should become
-     * // t1 = 1 
+     * // t1 = 1
      * t2 = 1
      * s1 = t2
-     * 
+     *
      * // t2 = 1
      * s1 = 1
      * </pre>
@@ -142,15 +143,12 @@ public class ConstantPropagationOptimizerTest {
   }
 
   @Test
-  public void inc(
-      @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
+  public void inc(@TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
     Location global = LocationUtils.newMemoryAddress("global", varType);
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(global, zero, null),
-            new Inc(global, null));
+        ImmutableList.of(new Transfer(global, zero, null), new Inc(global, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
@@ -160,15 +158,12 @@ public class ConstantPropagationOptimizerTest {
   }
 
   @Test
-  public void dec(
-      @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
+  public void dec(@TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
     Location global = LocationUtils.newMemoryAddress("global", varType);
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new Transfer(global, one, null),
-            new Dec(global, null));
+        ImmutableList.of(new Transfer(global, one, null), new Dec(global, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
@@ -184,8 +179,8 @@ public class ConstantPropagationOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(param, one, null),
-            new SysCall(SysCall.Call.PARAMETERIZED_MESSAGE,
-                ImmutableList.of(ConstantOperand.ZERO, param)));
+            new SysCall(
+                SysCall.Call.PARAMETERIZED_MESSAGE, ImmutableList.of(ConstantOperand.ZERO, param)));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
@@ -198,8 +193,7 @@ public class ConstantPropagationOptimizerTest {
     ConstantOperand<Integer> four = ConstantOperand.of(4);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(STACK_INT1, four, null),
-            new Transfer(STACK_INT1, STACK_INT1, null));
+            new Transfer(STACK_INT1, four, null), new Transfer(STACK_INT1, STACK_INT1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
@@ -212,8 +206,7 @@ public class ConstantPropagationOptimizerTest {
     ConstantOperand<Integer> four = ConstantOperand.of(4);
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(LONG_TEMP, four, null),
-            new Transfer(STACK_INT1, LONG_TEMP, null));
+            new Transfer(LONG_TEMP, four, null), new Transfer(STACK_INT1, LONG_TEMP, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
     assertThat(optimized).hasSize(2);
@@ -241,8 +234,8 @@ public class ConstantPropagationOptimizerTest {
             new BinOp(GLOBAL_INT1, STACK_INT1, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimized.get(1)).isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS,
-        ConstantOperand.ONE);
+    assertThat(optimized.get(1))
+        .isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS, ConstantOperand.ONE);
   }
 
   @Test
@@ -265,8 +258,8 @@ public class ConstantPropagationOptimizerTest {
             new Return("proc", STACK_INT1));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimized.get(1)).isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS,
-        ConstantOperand.ONE);
+    assertThat(optimized.get(1))
+        .isBinOp(GLOBAL_INT1, GLOBAL_INT1, TokenType.PLUS, ConstantOperand.ONE);
     assertThat(optimized.get(2)).isReturning(STACK_INT1);
   }
 
@@ -316,8 +309,11 @@ public class ConstantPropagationOptimizerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new Transfer(STACK_INT1, GLOBAL_INT1, null),
-            new Call(GLOBAL_INT1, procSymbol, /* actuals= */ImmutableList.of(),
-                /* formals= */ImmutableList.of(),
+            new Call(
+                GLOBAL_INT1,
+                procSymbol,
+                /* actuals= */ ImmutableList.of(),
+                /* formals= */ ImmutableList.of(),
                 null),
             new Return("proc", STACK_INT1));
 

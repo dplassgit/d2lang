@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Objects;
 import com.plasstech.lang.d2.common.Position;
+import java.util.List;
 
 /** Represents a node for calling a procedure with actual parameters */
 public class CallNode extends AbstractNode implements ExprNode, StatementNode {
@@ -39,7 +38,7 @@ public class CallNode extends AbstractNode implements ExprNode, StatementNode {
 
   /**
    * @return {code}true{/code} if this node is a statement (i.e., not part of an expression). Note
-   *         that the proc may return a value but it is going to be ignored.
+   *     that the proc may return a value but it is going to be ignored.
    */
   public boolean isStatement() {
     return isStatement;

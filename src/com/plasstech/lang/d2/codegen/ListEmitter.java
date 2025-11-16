@@ -1,15 +1,12 @@
 package com.plasstech.lang.d2.codegen;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.google.common.collect.ImmutableList;
-
-/**
- * Partial implementation of Emitter that stores most everything in a list. Or a set.
- */
+/** Partial implementation of Emitter that stores most everything in a list. Or a set. */
 public abstract class ListEmitter implements Emitter {
 
   private final List<String> code = new ArrayList<>();

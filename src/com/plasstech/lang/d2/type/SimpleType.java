@@ -17,7 +17,7 @@ class SimpleType extends DefaultVarType {
   }
 
   @Override
-  final public int size() {
+  public final int size() {
     return size;
   }
 

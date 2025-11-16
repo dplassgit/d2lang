@@ -9,31 +9,30 @@ import com.plasstech.lang.d2.type.VarType;
 
 /**
  * When there's an asc next to a chr, optimizes.
- * 
+ *
  * <pre>
  * temp1 = chr(anyint) // must be temp
  * anystring = asc(temp1)
  * </pre>
- * 
+ *
  * becomes `anystring = anyint`
- * 
- * <p>
- * Similarly,
- * 
+ *
+ * <p>Similarly,
+ *
  * <pre>
  * temp1 = asc(anystring[0]) // must be temp
  * anystring2 = chr(temp1)
  * </pre>
- * 
+ *
  * becomes `anystring2 = anything[0]`
- * 
- * Also,
- * 
+ *
+ * <p>Also,
+ *
  * <pre>
  *  temp=anystring[0] // must be temp
  *  anyint=asc(temp)
  * </pre>
- * 
+ *
  * becomes `anyint=asc(anystring)`
  */
 public class AscChrOptimizer extends LineOptimizer {
@@ -73,8 +72,14 @@ public class AscChrOptimizer extends LineOptimizer {
       // temp2 = chr(temp1)
       // becomes `temp2 = anything[0]`
       deleteCurrent();
-      replaceAt(ip() + 1, new BinOp(second.destination(), first.operand(), TokenType.LBRACKET,
-          ConstantOperand.of(0), first.position()));
+      replaceAt(
+          ip() + 1,
+          new BinOp(
+              second.destination(),
+              first.operand(),
+              TokenType.LBRACKET,
+              ConstantOperand.of(0),
+              first.position()));
     }
   }
 
@@ -106,8 +111,7 @@ public class AscChrOptimizer extends LineOptimizer {
     // Second is anything=asc(temp)
     // Replace second with anything=asc(somestring)
     deleteCurrent();
-    replaceAt(ip() + 1,
-        second.setSource(second.operand(), first.left()));
+    replaceAt(ip() + 1, second.setSource(second.operand(), first.left()));
   }
 
   private TokenType opposite(TokenType operator) {

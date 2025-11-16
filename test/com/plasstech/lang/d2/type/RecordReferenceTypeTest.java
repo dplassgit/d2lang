@@ -3,10 +3,9 @@ package com.plasstech.lang.d2.type;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 
 public class RecordReferenceTypeTest {
   private static final ImmutableMap<String, VarType> BINDING =
@@ -43,23 +42,29 @@ public class RecordReferenceTypeTest {
 
   @Test
   public void bind_nongeneric() {
-    assertThrows(IllegalStateException.class, () -> {
-      SIMPLE_RECORD.bind(BINDING);
-    });
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          SIMPLE_RECORD.bind(BINDING);
+        });
   }
 
   @Test
   public void bind_bound() {
-    assertThrows(IllegalStateException.class, () -> {
-      BOUND_RECORD.bind(BINDING);
-    });
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          BOUND_RECORD.bind(BINDING);
+        });
   }
 
   @Test
   public void bind_wrongCount() {
-    assertThrows(IllegalStateException.class, () -> {
-      UNBOUND_RECORD.bind(ImmutableMap.of());
-    });
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          UNBOUND_RECORD.bind(ImmutableMap.of());
+        });
   }
 
   @Test

@@ -5,8 +5,9 @@ package com.plasstech.lang.d2.codegen.il;
  */
 public abstract class ImplementedOnlyOpcodeVisitor extends IdentityOpcodeVisitor {
   protected ImplementedOnlyOpcodeVisitor() {
-    super((op) -> {
-      throw new UnsupportedOperationException("Cannot execute " + op);
-    });
+    super(
+        (op) -> {
+          throw new UnsupportedOperationException("Cannot execute " + op);
+        });
   }
 }

@@ -3,6 +3,12 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 import static org.junit.Assert.fail;
 
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
+import com.plasstech.lang.d2.YetAnotherCompiler;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.State;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,23 +16,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
-import com.plasstech.lang.d2.YetAnotherCompiler;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
-import com.plasstech.lang.d2.phase.State;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
 public class GoldenTests {
 
-  @TestParameter
-  boolean optimize;
+  @TestParameter boolean optimize;
 
   @Test
   public void compileNonGoldenSample(

@@ -3,9 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -26,6 +23,8 @@ import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class RangeCheckerTest {
@@ -53,93 +52,91 @@ public class RangeCheckerTest {
   public void negativeArraySize() {
     ImmutableList<Op> program =
         ImmutableList.of(new ArrayAlloc(ARRAY_TEMP, ARRAY_TYPE, ConstantOperand.of(-1), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("ARRAY size must be non-negative; was -1");
   }
 
   @Test
   public void negativeArrayIndex() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, ARRAY_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(INT_TEMP, ARRAY_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("index must be non-negative; was -1");
-
   }
 
   @Test
   public void divBy0(@TestParameter({"DIV", "MOD"}) TokenType op) {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, ARRAY_TEMP, op, ConstantOperand.of(0), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(new BinOp(INT_TEMP, ARRAY_TEMP, op, ConstantOperand.of(0), null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Division by 0");
   }
 
   @Test
   public void negativeStringIndex() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, STRING_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(INT_TEMP, STRING_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("STRING index must be non-negative; was -1");
   }
 
   @Test
   public void negativeStringSliceStart() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, STRING_TEMP, TokenType.LBRACKET,
-                new ConstantOperand<Range>(RANGE_NEG_START, VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat()
+        ImmutableList.of(
+            new BinOp(
+                INT_TEMP,
+                STRING_TEMP,
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(RANGE_NEG_START, VarType.RANGE),
+                null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
+    assertThat(exception)
+        .hasMessageThat()
         .contains("STRING RANGE start index must be non-negative; was -1");
   }
 
   @Test
   public void negativeStringSliceEnd() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, STRING_TEMP, TokenType.LBRACKET,
-                new ConstantOperand<Range>(RANGE_NEG_END, VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat()
+        ImmutableList.of(
+            new BinOp(
+                INT_TEMP,
+                STRING_TEMP,
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(RANGE_NEG_END, VarType.RANGE),
+                null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
+    assertThat(exception)
+        .hasMessageThat()
         .contains("STRING RANGE end index must be non-negative; was -1");
   }
 
   @Test
   public void rangeIndexNeg1() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, RANGE_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(INT_TEMP, RANGE_TEMP, TokenType.LBRACKET, ConstantOperand.of(-1), null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("RANGE index must be 0 or 1; was -1");
   }
 
   @Test
   public void rangeIndex2() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT_TEMP, RANGE_TEMP, TokenType.LBRACKET, ConstantOperand.of(2), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(INT_TEMP, RANGE_TEMP, TokenType.LBRACKET, ConstantOperand.of(2), null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("RANGE index must be 0 or 1; was 2");
   }
 
   @Test
   public void nullLength(@TestParameter({"LENGTH", "ASC"}) TokenType operator) {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new UnaryOp(STRING_TEMP, operator, NULL_STRING, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(new UnaryOp(STRING_TEMP, operator, NULL_STRING, null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Null pointer");
   }
 
@@ -147,8 +144,7 @@ public class RangeCheckerTest {
   public void varStringPlusNull() {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(STRING_TEMP, STRING_TEMP, TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
   }
 
@@ -156,20 +152,17 @@ public class RangeCheckerTest {
   public void varNullPlusString() {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(STRING_TEMP, NULL_STRING, TokenType.PLUS, STRING_TEMP, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
   }
 
   @Test
   public void nullArraySet() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(0), NULL_LOCATION, false,
-                null));
+        ImmutableList.of(
+            new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(0), NULL_LOCATION, false, null));
 
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot set value of NULL ARRAY");
   }
 
@@ -178,30 +171,25 @@ public class RangeCheckerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(STRING_TEMP, NULL_LOCATION, TokenType.DOT, ConstantOperand.of("f"), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot retrieve field \"f\" of NULL RECORD");
   }
 
   @Test
   public void nullFieldSet() {
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new FieldSetOp(NULL_LOCATION, null, "f", null, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(new FieldSetOp(NULL_LOCATION, null, "f", null, null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot set field \"f\" of NULL RECORD");
   }
 
   @Test
   public void negativeArraySet() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(-1), ARRAY_TEMP, false,
-                null));
+        ImmutableList.of(
+            new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(-1), ARRAY_TEMP, false, null));
 
-    RuntimeException exception =
-        assertThrows(InvalidIndexException.class, () -> run(program));
+    RuntimeException exception = assertThrows(InvalidIndexException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("ARRAY index must be non-negative; was -1");
   }
 
@@ -210,8 +198,7 @@ public class RangeCheckerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(STRING_TEMP, ConstantOperand.of("hi"), TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
   }
 
@@ -219,9 +206,13 @@ public class RangeCheckerTest {
   public void constantStringSliceExactOk() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(0, 6), VarType.RANGE), null));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(0, 6), VarType.RANGE),
+                null));
     run(program);
   }
 
@@ -229,11 +220,14 @@ public class RangeCheckerTest {
   public void constantStringSliceStartTooHigh() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(10, 4), VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(10, 4), VarType.RANGE),
+                null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("out of bounds (length 6); was 10");
   }
 
@@ -241,11 +235,14 @@ public class RangeCheckerTest {
   public void constantStringSliceEndTooHigh() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(1, 10), VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(1, 10), VarType.RANGE),
+                null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("out of bounds (length 6); was 10");
   }
 
@@ -253,11 +250,14 @@ public class RangeCheckerTest {
   public void constantStringSliceNegativeStart() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(-1, 4), VarType.RANGE), null));
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(-1, 4), VarType.RANGE),
+                null));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("must be non-negative");
   }
 
@@ -267,8 +267,7 @@ public class RangeCheckerTest {
         ImmutableList.of(
             new BinOp(STR1, CONSTANT_A, TokenType.LBRACKET, ConstantOperand.of(1), null));
 
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("out of bounds (length 1); was 1");
   }
 
@@ -278,8 +277,7 @@ public class RangeCheckerTest {
         ImmutableList.of(
             new BinOp(STR1, NULL_LOCATION, TokenType.LBRACKET, ConstantOperand.of(1), null));
 
-    RuntimeException exception =
-        assertThrows(D2RuntimeException.class, () -> run(program));
+    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot index into NULL");
   }
 

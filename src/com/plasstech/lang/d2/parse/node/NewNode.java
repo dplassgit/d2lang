@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
 
 /** This is similar to a UnaryNode, except a little simpler. */
 public class NewNode extends AbstractNode implements ExprNode {

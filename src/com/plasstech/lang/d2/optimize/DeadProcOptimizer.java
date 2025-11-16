@@ -1,14 +1,13 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.ProcEntry;
 import com.plasstech.lang.d2.codegen.il.ProcExit;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 class DeadProcOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

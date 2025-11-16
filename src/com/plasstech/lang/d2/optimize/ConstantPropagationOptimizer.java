@@ -1,13 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -29,17 +21,24 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Optimizes
- * 
+ *
  * <pre>
  * temp1 = 3
  * b = temp1 + 1
  * </pre>
- * 
+ *
  * into:
- * 
+ *
  * <pre>
  * b = 3 + 1
  * </pre>
@@ -170,9 +169,7 @@ class ConstantPropagationOptimizer extends LineOptimizer {
     }
   }
 
-  /**
-   * Find "dest" as a replacement *value* in the replacements map, and remove the entire entry.
-   */
+  /** Find "dest" as a replacement *value* in the replacements map, and remove the entire entry. */
   private void removeDestFromReplacements(Location value) {
     Set<Location> toRemove = new HashSet<>();
     // Accumulate them, then remove them. Otherwise we get concurrent modification exception.

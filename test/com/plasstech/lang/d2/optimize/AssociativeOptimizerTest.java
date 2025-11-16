@@ -5,9 +5,6 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -18,6 +15,8 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class AssociativeOptimizerTest {
@@ -30,10 +29,10 @@ public class AssociativeOptimizerTest {
 
   @Test
   public void constOpConst_doesNotSwap(
-      @TestParameter(
-        {"LT", "GT", "GEQ", "LEQ",
-            "PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
-      ) TokenType operator) {
+      @TestParameter({
+            "LT", "GT", "GEQ", "LEQ", "PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"
+          })
+          TokenType operator) {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, ZERO, null));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -41,9 +40,8 @@ public class AssociativeOptimizerTest {
 
   @Test
   public void varOpConst_doesNotSwap(
-      @TestParameter(
-        {"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
-      ) TokenType operator) {
+      @TestParameter({"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"})
+          TokenType operator) {
 
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, TEMP1, operator, ONE, null));
 
@@ -54,9 +52,8 @@ public class AssociativeOptimizerTest {
 
   @Test
   public void constOpVar_swapsInts(
-      @TestParameter(
-        {"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"}
-      ) TokenType operator) {
+      @TestParameter({"PLUS", "MULT", "BIT_AND", "BIT_OR", "BIT_XOR", "EQEQ", "NEQ"})
+          TokenType operator) {
 
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, TEMP1, null));
 
@@ -83,9 +80,8 @@ public class AssociativeOptimizerTest {
   @Test
   public void constOpVar_doesNotSwapStrings() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(STRING_TEMP, ConstantOperand.of("hi"), TokenType.PLUS, STRING_TEMP,
-                null));
+        ImmutableList.of(
+            new BinOp(STRING_TEMP, ConstantOperand.of("hi"), TokenType.PLUS, STRING_TEMP, null));
 
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -97,8 +93,7 @@ public class AssociativeOptimizerTest {
     Location booltemp = LocationUtils.newTempLocation("booltemp", VarType.BOOL);
     ConstantOperand<String> hi = ConstantOperand.of("hi");
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(booltemp, hi, operator, STRING_TEMP, null));
+        ImmutableList.of(new BinOp(booltemp, hi, operator, STRING_TEMP, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 

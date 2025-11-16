@@ -4,14 +4,13 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertAbout;
 import static java.util.Arrays.asList;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Ordered;
 import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.codegen.Trimmers;
+import java.util.List;
 
 public class EmitterSubject extends Subject {
   public static EmitterSubject assertThat(Emitter actual) {
@@ -53,9 +52,7 @@ public class EmitterSubject extends Subject {
   }
 
   public void doesNotContain(String line) {
-    check("contains")
-        .that(trimAll(actual.all()))
-        .doesNotContain(optionallyTrim(line));
+    check("contains").that(trimAll(actual.all())).doesNotContain(optionallyTrim(line));
   }
 
   public Ordered containsAtLeast(String... lines) {
@@ -73,9 +70,7 @@ public class EmitterSubject extends Subject {
     if (trimIt) {
       return Trimmers.trim(all);
     } else {
-      return all.stream()
-          .filter(s -> !s.isEmpty())
-          .collect(toImmutableList());
+      return all.stream().filter(s -> !s.isEmpty()).collect(toImmutableList());
     }
   }
 

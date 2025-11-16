@@ -109,45 +109,37 @@ public class D2Program {
     resetLexer();
   }
 
-
   private static void resetLexer() {
     lexerLoc = 0;
     lexerCc = 0;
     advanceLex();
   }
 
-
   private static String nextToken() {
-    for (; (lexerCc == 32 || lexerCc == 10 || lexerCc == 9 || lexerCc == 13);) {
+    for (; (lexerCc == 32 || lexerCc == 10 || lexerCc == 9 || lexerCc == 13); ) {
       advanceLex();
     }
     if (lexerCc != 0) {
       if (isDigit(lexerCc)) {
         return makeIntToken();
-      }
-      else if (isLetter(lexerCc)) {
+      } else if (isLetter(lexerCc)) {
         return makeTextToken();
-      }
-      else {
+      } else {
         return makeSymbolToken();
       }
     }
-    return Token(TOKEN_EOF,"");
+    return Token(TOKEN_EOF, "");
   }
-
 
   private static void advanceLex() {
     if (lexerLoc < lexerText.length()) {
       lexerCc = lexerText.substring(lexerLoc, lexerLoc + 1).charAt(0);
-    }
-    else {
+    } else {
       lexerCc = 0;
     }
     lexerLoc = lexerLoc + 1;
-    if (debug) {
-    }
+    if (debug) {}
   }
-
 
   private static String Token(int type, String value) {
     lexTokenType = type;
@@ -163,7 +155,6 @@ public class D2Program {
     return "t " + toString(type) + " " + value;
   }
 
-
   private static String IntToken(int value, String valueAsString) {
     lexTokenType = TOKEN_INT;
     lexTokenString = valueAsString;
@@ -172,7 +163,6 @@ public class D2Program {
     lexTokenBool = false;
     return "i " + valueAsString;
   }
-
 
   private static String BoolToken(boolean value, String valueAsString) {
     lexTokenType = TOKEN_BOOL;
@@ -183,7 +173,6 @@ public class D2Program {
     return "b " + lexTokenString;
   }
 
-
   private static String KeywordToken(int value, String valueAsString) {
     lexTokenType = TOKEN_KEYWORD;
     lexTokenString = valueAsString;
@@ -192,7 +181,6 @@ public class D2Program {
     lexTokenBool = false;
     return "k " + lexTokenString;
   }
-
 
   private static String toString(int i) {
     if (i == 0) {
@@ -206,21 +194,17 @@ public class D2Program {
     return val;
   }
 
-
   private static boolean isLetter(int c) {
     return (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95;
   }
-
 
   private static boolean isDigit(int c) {
     return c >= 48 && c <= 57;
   }
 
-
   private static boolean isLetterOrDigit(int c) {
     return isLetter(c) || isDigit(c);
   }
-
 
   private static String makeTextToken() {
     String value;
@@ -229,23 +213,22 @@ public class D2Program {
       value = value + Character.toString(lexerCc);
       advanceLex();
     }
-    for (; isLetterOrDigit(lexerCc);) {
+    for (; isLetterOrDigit(lexerCc); ) {
       value = value + Character.toString(lexerCc);
       advanceLex();
     }
     if (value.compareTo("true") == 0 || value.compareTo("false") == 0) {
-      return BoolToken(value.compareTo("true") == 0,value);
+      return BoolToken(value.compareTo("true") == 0, value);
     }
     int i;
     i = 0;
     for (; i < KEYWORDS.length; i = i + 1) {
       if (value.compareTo(KEYWORDS[i]) == 0) {
-        return KeywordToken(i,value);
+        return KeywordToken(i, value);
       }
     }
-    return Token(TOKEN_VARIABLE,value);
+    return Token(TOKEN_VARIABLE, value);
   }
-
 
   private static String makeIntToken() {
     int value;
@@ -256,30 +239,27 @@ public class D2Program {
       value = value * 10 + lexerCc - 48;
       value_as_string = value_as_string + Character.toString(lexerCc);
     }
-    return IntToken(value,value_as_string);
+    return IntToken(value, value_as_string);
   }
-
 
   private static String startsWithSlash() {
     advanceLex();
     if (lexerCc == 47) {
       advanceLex();
-      for (; lexerCc != 10 && lexerCc != 0; advanceLex()) {
-      }
+      for (; lexerCc != 10 && lexerCc != 0; advanceLex()) {}
       if (lexerCc != 0) {
         advanceLex();
       }
       return nextToken();
     }
-    return Token(TOKEN_DIV,"/");
+    return Token(TOKEN_DIV, "/");
   }
-
 
   private static String startsWithBang() {
     advanceLex();
     if (lexerCc == 61) {
       advanceLex();
-      return Token(TOKEN_NEQ,"!=");
+      return Token(TOKEN_NEQ, "!=");
     }
     System.out.print("Unknown character:");
     System.out.print(Character.toString(lexerCc));
@@ -292,52 +272,46 @@ public class D2Program {
     return "";
   }
 
-
   private static String startsWithGt() {
     advanceLex();
     if (lexerCc == 61) {
       advanceLex();
-      return Token(TOKEN_GEQ,">=");
+      return Token(TOKEN_GEQ, ">=");
     }
-    return Token(TOKEN_GT,">");
+    return Token(TOKEN_GT, ">");
   }
-
 
   private static String startsWithLt() {
     advanceLex();
     if (lexerCc == 61) {
       advanceLex();
-      return Token(TOKEN_LEQ,"<=");
+      return Token(TOKEN_LEQ, "<=");
     }
-    return Token(TOKEN_LT,"<");
+    return Token(TOKEN_LT, "<");
   }
-
 
   private static String startsWithEq() {
     advanceLex();
     if (lexerCc == 61) {
       advanceLex();
-      return Token(TOKEN_EQEQ,"==");
+      return Token(TOKEN_EQEQ, "==");
     }
-    return Token(TOKEN_EQ,"=");
+    return Token(TOKEN_EQ, "=");
   }
-
 
   private static String makeStringLiteralToken(int firstQuote) {
     advanceLex();
     String sb;
     sb = "";
-    for (; lexerCc != firstQuote && lexerCc != 0;) {
+    for (; lexerCc != firstQuote && lexerCc != 0; ) {
       if (lexerCc == 92) {
         advanceLex();
         if (lexerCc == 110) {
           sb = sb + Character.toString(10);
-        }
-        else if (lexerCc == 92) {
+        } else if (lexerCc == 92) {
           sb = sb + Character.toString(92);
         }
-      }
-      else {
+      } else {
         sb = sb + Character.toString(lexerCc);
       }
       advanceLex();
@@ -352,78 +326,60 @@ public class D2Program {
       System.exit(-1);
     }
     advanceLex();
-    return Token(TOKEN_STRING,sb);
+    return Token(TOKEN_STRING, sb);
   }
-
 
   private static String makeSymbolToken() {
     int oc;
     oc = lexerCc;
     if (oc == 61) {
       return startsWithEq();
-    }
-    else if (oc == 60) {
+    } else if (oc == 60) {
       return startsWithLt();
-    }
-    else if (oc == 62) {
+    } else if (oc == 62) {
       return startsWithGt();
-    }
-    else if (oc == 43) {
+    } else if (oc == 43) {
       advanceLex();
-      return Token(TOKEN_PLUS,"+");
-    }
-    else if (oc == 45) {
+      return Token(TOKEN_PLUS, "+");
+    } else if (oc == 45) {
       advanceLex();
-      return Token(TOKEN_MINUS,"-");
-    }
-    else if (oc == 40) {
+      return Token(TOKEN_MINUS, "-");
+    } else if (oc == 40) {
       advanceLex();
-      return Token(TOKEN_LPAREN,"(");
-    }
-    else if (oc == 41) {
+      return Token(TOKEN_LPAREN, "(");
+    } else if (oc == 41) {
       advanceLex();
-      return Token(TOKEN_RPAREN,")");
-    }
-    else if (oc == 42) {
+      return Token(TOKEN_RPAREN, ")");
+    } else if (oc == 42) {
       advanceLex();
-      return Token(TOKEN_MULT,"*");
-    }
-    else if (oc == 47) {
+      return Token(TOKEN_MULT, "*");
+    } else if (oc == 47) {
       return startsWithSlash();
-    }
-    else if (oc == 37) {
+    } else if (oc == 37) {
       advanceLex();
-      return Token(TOKEN_MOD,"%");
-    }
-    else if (oc == 33) {
+      return Token(TOKEN_MOD, "%");
+    } else if (oc == 33) {
       return startsWithBang();
-    }
-    else if (oc == 123) {
+    } else if (oc == 123) {
       advanceLex();
-      return Token(TOKEN_LBRACE,"{");
-    }
-    else if (oc == 125) {
+      return Token(TOKEN_LBRACE, "{");
+    } else if (oc == 125) {
       advanceLex();
-      return Token(TOKEN_RBRACE,"}");
-    }
-    else if (oc == 91) {
+      return Token(TOKEN_RBRACE, "}");
+    } else if (oc == 91) {
       advanceLex();
-      return Token(TOKEN_LBRACKET,"[");
-    }
-    else if (oc == 93) {
+      return Token(TOKEN_LBRACKET, "[");
+    } else if (oc == 93) {
       advanceLex();
-      return Token(TOKEN_RBRACKET,"]");
-    }
-    else if (oc == 58) {
+      return Token(TOKEN_RBRACKET, "]");
+    } else if (oc == 58) {
       advanceLex();
-      return Token(TOKEN_COLON,":");
-    }
-    else if (oc == 34 || oc == 39) {
+      return Token(TOKEN_COLON, ":");
+    } else if (oc == 34 || oc == 39) {
       return makeStringLiteralToken(oc);
-    }
-    else if (oc == 44) {
+    } else if (oc == 44) {
       advanceLex();
-      return Token(TOKEN_COMMA,",");
+      return Token(TOKEN_COMMA, ",");
     }
     System.out.print("ERROR: Unknown character:");
     System.out.print(Character.toString(lexerCc));
@@ -436,41 +392,33 @@ public class D2Program {
     return "";
   }
 
-
   private static void printToken() {
     if (lexTokenType == TOKEN_EOF) {
       System.out.print("Token: EOF");
       System.out.print("\n");
-    }
-    else if (lexTokenType == TOKEN_INT) {
+    } else if (lexTokenType == TOKEN_INT) {
       System.out.print("Int token: ");
       System.out.print(lexTokenInt);
       System.out.print("\n");
-    }
-    else if (lexTokenType == TOKEN_STRING) {
+    } else if (lexTokenType == TOKEN_STRING) {
       System.out.print("String token: \"");
       System.out.print(lexTokenString);
       System.out.print("\"\n");
-    }
-    else if (lexTokenType == TOKEN_BOOL) {
+    } else if (lexTokenType == TOKEN_BOOL) {
       if (lexTokenBool) {
         System.out.print("Bool token: true\n");
-      }
-      else {
+      } else {
         System.out.print("Bool token: false\n");
       }
-    }
-    else if (lexTokenType == TOKEN_KEYWORD) {
+    } else if (lexTokenType == TOKEN_KEYWORD) {
       System.out.print("Keyword token: ");
       System.out.print(lexTokenString);
       System.out.print("\n");
-    }
-    else if (lexTokenType == TOKEN_VARIABLE) {
+    } else if (lexTokenType == TOKEN_VARIABLE) {
       System.out.print("Variable: ");
       System.out.print(lexTokenString);
       System.out.print("\n");
-    }
-    else {
+    } else {
       System.out.print("Token: ");
       System.out.print(lexTokenString);
       System.out.print(" type: ");
@@ -479,13 +427,10 @@ public class D2Program {
     }
   }
 
-
   private static void advanceParser() {
     nextToken();
-    if (debug) {
-    }
+    if (debug) {}
   }
-
 
   private static void expectToken(int expectedTokenType, String tokenStr) {
     if (lexTokenType != expectedTokenType) {
@@ -497,7 +442,6 @@ public class D2Program {
     }
     advanceParser();
   }
-
 
   private static void expectKeyword(int expectedKwType, String tokenStr) {
     if (lexTokenType != TOKEN_KEYWORD || lexTokenKw != expectedKwType) {
@@ -511,7 +455,6 @@ public class D2Program {
     }
     advanceParser();
   }
-
 
   private static void registerGlobal(String name, int type) {
     if (type == TYPE_UNKNOWN) {
@@ -534,11 +477,10 @@ public class D2Program {
       System.out.print("// Adding global name " + name);
       System.out.print("\n");
     }
-    globalNames[numGlobals]=name;
-    globalTypes[numGlobals]=type;
+    globalNames[numGlobals] = name;
+    globalTypes[numGlobals] = type;
     numGlobals = numGlobals + 1;
   }
-
 
   private static int lookupGlobal(String name) {
     int i;
@@ -551,12 +493,10 @@ public class D2Program {
     return TYPE_UNKNOWN;
   }
 
-
   private static void emit(String line) {
-    emitBuffer[bufferIndex]=line;
+    emitBuffer[bufferIndex] = line;
     bufferIndex = bufferIndex + 1;
   }
-
 
   private static void spoolBuffer(String[] buffer, int start, int end) {
     int i;
@@ -566,7 +506,6 @@ public class D2Program {
     }
   }
 
-
   private static void registerProc(String name, int returnType) {
     if (returnType == TYPE_UNKNOWN) {
       System.out.print("ERROR: Cannot have unknown proc return type\n");
@@ -575,11 +514,10 @@ public class D2Program {
       System.out.print("\n");
       System.exit(-1);
     }
-    procNames[numProcs]=name;
-    returnTypes[numProcs]=returnType;
+    procNames[numProcs] = name;
+    returnTypes[numProcs] = returnType;
     numProcs = numProcs + 1;
   }
-
 
   private static void setCurrentProcNum(String name) {
     int i;
@@ -599,7 +537,6 @@ public class D2Program {
     System.exit(-1);
   }
 
-
   private static int lookupProcReturnType(String name) {
     int i;
     i = 0;
@@ -617,7 +554,6 @@ public class D2Program {
     System.exit(-1);
     return -1;
   }
-
 
   private static int lookupParam(String name) {
     if (currentProcNum == -1) {
@@ -643,7 +579,6 @@ public class D2Program {
     return -1;
   }
 
-
   private static int lookupLocal(String name) {
     if (currentProcNum == -1) {
       System.out.print("ERROR: Cannot lookup local ");
@@ -667,17 +602,15 @@ public class D2Program {
     return -1;
   }
 
-
   private static int expr() {
     return boolOr();
   }
-
 
   private static int boolOr() {
     int leftType;
     leftType = boolAnd();
     if (lexTokenType == TOKEN_KEYWORD && leftType == TYPE_BOOL) {
-      for (; lexTokenKw == KW_OR;) {
+      for (; lexTokenKw == KW_OR; ) {
         advanceParser();
         emit(" || ");
         boolAnd();
@@ -686,12 +619,11 @@ public class D2Program {
     return leftType;
   }
 
-
   private static int boolAnd() {
     int leftType;
     leftType = compare();
     if (lexTokenType == TOKEN_KEYWORD && leftType == TYPE_BOOL) {
-      for (; lexTokenKw == KW_AND;) {
+      for (; lexTokenKw == KW_AND; ) {
         advanceParser();
         emit(" && ");
         compare();
@@ -699,7 +631,6 @@ public class D2Program {
     }
     return leftType;
   }
-
 
   private static int compare() {
     int leftType;
@@ -734,10 +665,9 @@ public class D2Program {
         emit(" ");
         emit(opstring);
         emit(" null");
-      }
-      else {
+      } else {
         emit(".compareTo(");
-        spoolBuffer(addSubBuffer,0,count);
+        spoolBuffer(addSubBuffer, 0, count);
         emit(") ");
         emit(opstring);
         emit(" 0");
@@ -747,11 +677,10 @@ public class D2Program {
     return leftType;
   }
 
-
   private static int addSub() {
     int leftType;
     leftType = mulDiv();
-    for (; lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_MINUS;) {
+    for (; lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_MINUS; ) {
       String opstring;
       opstring = lexTokenString;
       advanceParser();
@@ -789,11 +718,14 @@ public class D2Program {
     return leftType;
   }
 
-
   private static int mulDiv() {
     int leftType;
     leftType = unary();
-    for (; leftType == TYPE_INT && (lexTokenType == TOKEN_MULT || lexTokenType == TOKEN_DIV || lexTokenType == TOKEN_MOD);) {
+    for (;
+        leftType == TYPE_INT
+            && (lexTokenType == TOKEN_MULT
+                || lexTokenType == TOKEN_DIV
+                || lexTokenType == TOKEN_MOD); ) {
       String opstring;
       opstring = lexTokenString;
       advanceParser();
@@ -805,14 +737,12 @@ public class D2Program {
     return leftType;
   }
 
-
   private static int unary() {
     int type;
-        if (lexTokenType == TOKEN_PLUS) {
+    if (lexTokenType == TOKEN_PLUS) {
       advanceParser();
       return unary();
-    }
-    else if (lexTokenType == TOKEN_MINUS) {
+    } else if (lexTokenType == TOKEN_MINUS) {
       advanceParser();
       String[] unaryBuffer;
       unaryBuffer = new String[100];
@@ -829,7 +759,7 @@ public class D2Program {
       bufferIndex = oldBufferIndex;
       if (type == TYPE_INT) {
         emit("-");
-        spoolBuffer(unaryBuffer,0,count);
+        spoolBuffer(unaryBuffer, 0, count);
         return type;
       }
       System.out.print("ERROR: cannot codegen negative non-ints yet\n");
@@ -837,19 +767,16 @@ public class D2Program {
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
-    }
-    else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_LENGTH) {
+    } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_LENGTH) {
       advanceParser();
-      expectToken(TOKEN_LPAREN,"(");
+      expectToken(TOKEN_LPAREN, "(");
       type = expr();
-      expectToken(TOKEN_RPAREN,")");
+      expectToken(TOKEN_RPAREN, ")");
       if (type == TYPE_STRING) {
         emit(".length()");
-      }
-      else if (isArrayType(type)) {
+      } else if (isArrayType(type)) {
         emit(".length");
-      }
-      else {
+      } else {
         System.out.print("ERROR: Cannot take LENGTH of ");
         System.out.print(TYPE_NAMES[type]);
         System.out.print("\n");
@@ -859,13 +786,12 @@ public class D2Program {
         System.exit(-1);
       }
       return TYPE_INT;
-    }
-    else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ASC) {
+    } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ASC) {
       advanceParser();
-      expectToken(TOKEN_LPAREN,"(");
+      expectToken(TOKEN_LPAREN, "(");
       type = expr();
       emit(".charAt(0)");
-      expectToken(TOKEN_RPAREN,")");
+      expectToken(TOKEN_RPAREN, ")");
       if (type != TYPE_STRING) {
         System.out.print("ERROR: Cannot take ASC of ");
         System.out.print(TYPE_NAMES[type]);
@@ -876,14 +802,13 @@ public class D2Program {
         System.exit(-1);
       }
       return TYPE_INT;
-    }
-    else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_CHR) {
+    } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_CHR) {
       advanceParser();
-      expectToken(TOKEN_LPAREN,"(");
+      expectToken(TOKEN_LPAREN, "(");
       emit("Character.toString(");
       type = expr();
       emit(")");
-      expectToken(TOKEN_RPAREN,")");
+      expectToken(TOKEN_RPAREN, ")");
       if (type != TYPE_INT) {
         System.out.print("ERROR: Cannot take CHR of ");
         System.out.print(TYPE_NAMES[type]);
@@ -898,16 +823,13 @@ public class D2Program {
     return composite();
   }
 
-
   private static boolean isArrayType(int type) {
     return type > TYPE_ARRAY && type <= TYPE_STRING_ARRAY;
   }
 
-
   private static int toBaseType(int arrayType) {
     return arrayType - TYPE_ARRAY;
   }
-
 
   private static int generateArrayIndex(int arrayType) {
     int baseType;
@@ -924,11 +846,10 @@ public class D2Program {
       System.out.print("\n");
       System.exit(-1);
     }
-    expectToken(TOKEN_RBRACKET,"]");
+    expectToken(TOKEN_RBRACKET, "]");
     emit("]");
     return baseType;
   }
-
 
   private static void generateStringIndex() {
     emit(".substring(");
@@ -942,7 +863,7 @@ public class D2Program {
     bufferIndex = 0;
     int indexType;
     indexType = expr();
-    expectToken(TOKEN_RBRACKET,"]");
+    expectToken(TOKEN_RBRACKET, "]");
     int count;
     count = bufferIndex;
     emitBuffer = oldEmitBuffer;
@@ -956,22 +877,20 @@ public class D2Program {
       System.out.print("\n");
       System.exit(-1);
     }
-    spoolBuffer(exprBuffer,0,count);
+    spoolBuffer(exprBuffer, 0, count);
     emit(", ");
-    spoolBuffer(exprBuffer,0,count);
+    spoolBuffer(exprBuffer, 0, count);
     emit(" + 1)");
   }
-
 
   private static int composite() {
     int leftType;
     leftType = atom();
     if (lexTokenType == TOKEN_LBRACKET) {
-      expectToken(TOKEN_LBRACKET,"[");
+      expectToken(TOKEN_LBRACKET, "[");
       if (isArrayType(leftType)) {
         return generateArrayIndex(leftType);
-      }
-      else if (leftType == TYPE_STRING) {
+      } else if (leftType == TYPE_STRING) {
         generateStringIndex();
         return leftType;
       }
@@ -985,7 +904,6 @@ public class D2Program {
     }
     return leftType;
   }
-
 
   private static int generateGetVariable(String variable) {
     int varType;
@@ -1023,14 +941,13 @@ public class D2Program {
     return paramTypes[index];
   }
 
-
   private static void generateProcCall(String procname) {
     emit(procname);
-    expectToken(TOKEN_LPAREN,"(");
+    expectToken(TOKEN_LPAREN, "(");
     emit("(");
     int numArgs;
     numArgs = 0;
-    for (; lexTokenType != TOKEN_RPAREN && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RPAREN && lexTokenType != TOKEN_EOF; ) {
       numArgs = numArgs + 1;
       int argType;
       argType = expr();
@@ -1039,21 +956,34 @@ public class D2Program {
         advanceParser();
       }
     }
-    expectToken(TOKEN_RPAREN,")");
+    expectToken(TOKEN_RPAREN, ")");
     emit(")");
   }
-
 
   private static void generateInput() {
     emit("__d2_input()");
     needsInput = true;
   }
 
-
   private static void outputInput() {
-    System.out.print("\n  private static String __d2_input() {\n    String input = \"\";\n    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n    try {\n      String line = reader.readLine();\n      while (line != null) {\n        input += line + \"\\n\";\n        line = reader.readLine();\n      }\n    } catch (IOException e) {\n      throw new RuntimeException(\"Could not read standard in\", e);\n    }\n    return input;\n  }\n");
+    System.out.print(
+        "\n"
+            + "  private static String __d2_input() {\n"
+            + "    String input = \"\";\n"
+            + "    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n"
+            + "    try {\n"
+            + "      String line = reader.readLine();\n"
+            + "      while (line != null) {\n"
+            + "        input += line + \"\\n"
+            + "\";\n"
+            + "        line = reader.readLine();\n"
+            + "      }\n"
+            + "    } catch (IOException e) {\n"
+            + "      throw new RuntimeException(\"Could not read standard in\", e);\n"
+            + "    }\n"
+            + "    return input;\n"
+            + "  }\n");
   }
-
 
   private static int atom() {
     if (lexTokenType == TOKEN_STRING) {
@@ -1068,16 +998,13 @@ public class D2Program {
         if (c.compareTo("\n") == 0) {
           emit("\\n");
           continue;
-        }
-        else if (c.compareTo("") == 0) {
+        } else if (c.compareTo("") == 0) {
           emit("\\r");
           continue;
-        }
-        else if (c.compareTo("\"") == 0) {
+        } else if (c.compareTo("\"") == 0) {
           emit("\\\"");
           continue;
-        }
-        else if (c.compareTo("\\") == 0) {
+        } else if (c.compareTo("\\") == 0) {
           emit("\\\\");
           continue;
         }
@@ -1086,27 +1013,23 @@ public class D2Program {
       emit("\"");
       advanceParser();
       return TYPE_STRING;
-    }
-    else if (lexTokenType == TOKEN_INT) {
+    } else if (lexTokenType == TOKEN_INT) {
       String intval;
       intval = lexTokenString;
       advanceParser();
       emit(intval);
       return TYPE_INT;
-    }
-    else if (lexTokenType == TOKEN_BOOL) {
+    } else if (lexTokenType == TOKEN_BOOL) {
       boolean boolval;
       boolval = lexTokenBool;
       advanceParser();
       if (boolval) {
         emit("true");
-      }
-      else {
+      } else {
         emit("false");
       }
       return TYPE_BOOL;
-    }
-    else if (lexTokenType == TOKEN_VARIABLE) {
+    } else if (lexTokenType == TOKEN_VARIABLE) {
       String variable;
       variable = lexTokenString;
       advanceParser();
@@ -1128,22 +1051,19 @@ public class D2Program {
         System.exit(-1);
       }
       return type;
-    }
-    else if (lexTokenType == TOKEN_LPAREN) {
-      expectToken(TOKEN_LPAREN,"(");
+    } else if (lexTokenType == TOKEN_LPAREN) {
+      expectToken(TOKEN_LPAREN, "(");
       emit("(");
       int exprType;
       exprType = expr();
-      expectToken(TOKEN_RPAREN,")");
+      expectToken(TOKEN_RPAREN, ")");
       emit(")");
       return exprType;
-    }
-    else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_INPUT) {
+    } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_INPUT) {
       advanceParser();
       generateInput();
       return TYPE_STRING;
-    }
-    else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_NULL) {
+    } else if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_NULL) {
       advanceParser();
       emit("null");
       return TYPE_VOID;
@@ -1156,7 +1076,6 @@ public class D2Program {
     System.exit(-1);
     return -1;
   }
-
 
   private static int parseType() {
     int i;
@@ -1176,20 +1095,19 @@ public class D2Program {
     return -1;
   }
 
-
   private static void parseVarDecl(String variable) {
     int baseType;
     baseType = parseType();
     if (lexTokenType != TOKEN_LBRACKET) {
-      registerOrLookUpVariable(variable,baseType);
+      registerOrLookUpVariable(variable, baseType);
       return;
     }
     int arrayType;
     arrayType = baseType + TYPE_ARRAY;
-    expectToken(TOKEN_LBRACKET,"[");
+    expectToken(TOKEN_LBRACKET, "[");
     if (lexTokenType == TOKEN_RBRACKET) {
-      expectToken(TOKEN_RBRACKET,"]");
-      registerOrLookUpVariable(variable,arrayType);
+      expectToken(TOKEN_RBRACKET, "]");
+      registerOrLookUpVariable(variable, arrayType);
       return;
     }
     String[] exprBuffer;
@@ -1215,19 +1133,18 @@ public class D2Program {
       System.out.print("\n");
       System.exit(-1);
     }
-    expectToken(TOKEN_RBRACKET,"]");
-    registerOrLookUpVariable(variable,arrayType);
+    expectToken(TOKEN_RBRACKET, "]");
+    registerOrLookUpVariable(variable, arrayType);
     emit(variable);
     emit(" = new ");
     emit(TYPE_NAMES[baseType]);
     emit("[");
-    spoolBuffer(exprBuffer,0,count);
+    spoolBuffer(exprBuffer, 0, count);
     emit("];\n");
   }
 
-
   private static void parseProc(String procName) {
-    expectKeyword(KW_PROC,"PROC");
+    expectKeyword(KW_PROC, "PROC");
     if (currentProcNum != -1) {
       System.out.print("ERROR: cannot define nested procs\n");
       System.out.print(" @ ");
@@ -1236,23 +1153,22 @@ public class D2Program {
       System.exit(-1);
     }
     setCurrentProcNum(procName);
-    expectToken(TOKEN_LPAREN,"(");
-    for (; lexTokenType != TOKEN_RPAREN;) {
-      expectToken(TOKEN_VARIABLE,"variable");
-      expectToken(TOKEN_COLON,":");
+    expectToken(TOKEN_LPAREN, "(");
+    for (; lexTokenType != TOKEN_RPAREN; ) {
+      expectToken(TOKEN_VARIABLE, "variable");
+      expectToken(TOKEN_COLON, ":");
       parseType();
       if (lexTokenType == TOKEN_LBRACKET) {
-        expectToken(TOKEN_LBRACKET,"[");
-        expectToken(TOKEN_RBRACKET,"]");
+        expectToken(TOKEN_LBRACKET, "[");
+        expectToken(TOKEN_RBRACKET, "]");
       }
       if (lexTokenType == TOKEN_COMMA) {
         advanceParser();
-      }
-      else {
+      } else {
         break;
       }
     }
-    expectToken(TOKEN_RPAREN,")");
+    expectToken(TOKEN_RPAREN, ")");
     int oldBufferIndex;
     oldBufferIndex = bufferIndex;
     String[] oldBuffer;
@@ -1289,16 +1205,15 @@ public class D2Program {
     bufferIndex = oldBufferIndex;
   }
 
-
   private static void parseProcSignature(String procName) {
-    expectToken(TOKEN_LPAREN,"(");
+    expectToken(TOKEN_LPAREN, "(");
     int myProcNum;
     myProcNum = numProcs;
     int paramIndex;
     paramIndex = myProcNum * PARAMS_PER_PROC;
     int index;
     index = 0;
-    for (; lexTokenType != TOKEN_RPAREN;) {
+    for (; lexTokenType != TOKEN_RPAREN; ) {
       if (lexTokenType != TOKEN_VARIABLE) {
         System.out.print("ERROR: expected variable but found: ");
         printToken();
@@ -1319,44 +1234,53 @@ public class D2Program {
       String paramName;
       paramName = lexTokenString;
       advanceParser();
-      expectToken(TOKEN_COLON,":");
+      expectToken(TOKEN_COLON, ":");
       int type;
       type = parseType();
       if (lexTokenType == TOKEN_LBRACKET) {
-        expectToken(TOKEN_LBRACKET,"[");
-        expectToken(TOKEN_RBRACKET,"]");
+        expectToken(TOKEN_LBRACKET, "[");
+        expectToken(TOKEN_RBRACKET, "]");
         type = type + TYPE_ARRAY;
       }
-      paramNames[paramIndex]=paramName;
-      paramTypes[paramIndex]=type;
+      paramNames[paramIndex] = paramName;
+      paramTypes[paramIndex] = type;
       paramIndex = paramIndex + 1;
       index = index + 1;
-      numParams[myProcNum]=numParams[myProcNum] + 1;
+      numParams[myProcNum] = numParams[myProcNum] + 1;
       if (lexTokenType == TOKEN_COMMA) {
         advanceParser();
-      }
-      else {
+      } else {
         break;
       }
     }
-    expectToken(TOKEN_RPAREN,")");
+    expectToken(TOKEN_RPAREN, ")");
     int returnType;
     returnType = TYPE_VOID;
     if (lexTokenType == TOKEN_COLON) {
       advanceParser();
       returnType = parseType();
     }
-    registerProc(procName,returnType);
+    registerProc(procName, returnType);
   }
-
 
   private static boolean isAtStartOfExpression() {
     if (lexTokenType == TOKEN_KEYWORD) {
-      return lexTokenKw == KW_ASC || lexTokenKw == KW_CHR || lexTokenKw == KW_INPUT || lexTokenKw == KW_LENGTH || lexTokenKw == KW_NEW || lexTokenKw == KW_NOT;
+      return lexTokenKw == KW_ASC
+          || lexTokenKw == KW_CHR
+          || lexTokenKw == KW_INPUT
+          || lexTokenKw == KW_LENGTH
+          || lexTokenKw == KW_NEW
+          || lexTokenKw == KW_NOT;
     }
-    return lexTokenType == TOKEN_INT || lexTokenType == TOKEN_BOOL || lexTokenType == TOKEN_STRING || lexTokenType == TOKEN_BIT_NOT || lexTokenType == TOKEN_LPAREN || lexTokenType == TOKEN_MINUS || lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_VARIABLE;
+    return lexTokenType == TOKEN_INT
+        || lexTokenType == TOKEN_BOOL
+        || lexTokenType == TOKEN_STRING
+        || lexTokenType == TOKEN_BIT_NOT
+        || lexTokenType == TOKEN_LPAREN
+        || lexTokenType == TOKEN_MINUS
+        || lexTokenType == TOKEN_PLUS
+        || lexTokenType == TOKEN_VARIABLE;
   }
-
 
   private static void parseReturn() {
     if (currentProcNum == -1) {
@@ -1392,7 +1316,6 @@ public class D2Program {
     emit(";\n");
   }
 
-
   private static void registerLocal(String name, int type) {
     if (type == TYPE_UNKNOWN) {
       System.out.print("ERROR: Cannot register local '");
@@ -1416,11 +1339,10 @@ public class D2Program {
     }
     int base;
     base = currentProcNum * LOCALS_PER_PROC + myLocalCount;
-    localNames[base]=name;
-    localTypes[base]=type;
-    numLocals[currentProcNum]=myLocalCount + 1;
+    localNames[base] = name;
+    localTypes[base] = type;
+    numLocals[currentProcNum] = myLocalCount + 1;
   }
-
 
   private static int registerOrLookUpVariable(String variable, int exprType) {
     int varType;
@@ -1429,7 +1351,7 @@ public class D2Program {
     isGlobal = varType != TYPE_UNKNOWN || currentProcNum == -1;
     if (isGlobal) {
       if (varType == TYPE_UNKNOWN) {
-        registerGlobal(variable,exprType);
+        registerGlobal(variable, exprType);
         varType = exprType;
         System.out.print(("  private static "));
         System.out.print((TYPE_NAMES[varType]));
@@ -1449,9 +1371,8 @@ public class D2Program {
     index = lookupLocal(variable);
     if (index != -1) {
       varType = localTypes[index];
-    }
-    else {
-      registerLocal(variable,exprType);
+    } else {
+      registerLocal(variable, exprType);
       varType = exprType;
       emit(TYPE_NAMES[varType]);
       emit(" ");
@@ -1462,11 +1383,10 @@ public class D2Program {
     return varType;
   }
 
-
   private static void generateArraySet(String variable) {
     emit(variable);
     emit("[");
-    expectToken(TOKEN_LBRACKET,"[");
+    expectToken(TOKEN_LBRACKET, "[");
     int indexType;
     indexType = expr();
     if (indexType != TYPE_INT) {
@@ -1478,14 +1398,13 @@ public class D2Program {
       System.out.print("\n");
       System.exit(-1);
     }
-    expectToken(TOKEN_RBRACKET,"]");
+    expectToken(TOKEN_RBRACKET, "]");
     emit("]");
-    expectToken(TOKEN_EQ,"=");
+    expectToken(TOKEN_EQ, "=");
     emit("=");
     expr();
     emit(";\n");
   }
-
 
   private static void parseStartsWithVariable(boolean semi) {
     String variable;
@@ -1508,10 +1427,10 @@ public class D2Program {
       emitBuffer = oldEmitBuffer;
       bufferIndex = oldBufferIndex;
       int varType;
-      varType = registerOrLookUpVariable(variable,exprType);
+      varType = registerOrLookUpVariable(variable, exprType);
       emit(variable);
       emit(" = ");
-      spoolBuffer(exprBuffer,0,count);
+      spoolBuffer(exprBuffer, 0, count);
       if (semi) {
         emit(";\n");
       }
@@ -1529,25 +1448,21 @@ public class D2Program {
         System.exit(-1);
       }
       return;
-    }
-    else if (lexTokenType == TOKEN_COLON) {
+    } else if (lexTokenType == TOKEN_COLON) {
       advanceParser();
       if (lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_PROC) {
         parseProc(variable);
-      }
-      else {
+      } else {
         parseVarDecl(variable);
       }
       return;
-    }
-    else if (lexTokenType == TOKEN_LPAREN) {
+    } else if (lexTokenType == TOKEN_LPAREN) {
       generateProcCall(variable);
       if (semi) {
         emit(";\n");
       }
       return;
-    }
-    else if (lexTokenType == TOKEN_LBRACKET) {
+    } else if (lexTokenType == TOKEN_LBRACKET) {
       generateArraySet(variable);
       return;
     }
@@ -1559,7 +1474,6 @@ public class D2Program {
     System.exit(-1);
   }
 
-
   private static void indent() {
     int i;
     i = 0;
@@ -1568,25 +1482,23 @@ public class D2Program {
     }
   }
 
-
   private static void parseBlock(boolean emitBraces) {
-    expectToken(TOKEN_LBRACE,"{");
+    expectToken(TOKEN_LBRACE, "{");
     if (emitBraces) {
       emit("{\n");
     }
     indentSize = indentSize + 1;
-    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF; ) {
       indent();
       parseStmt(true);
     }
-    expectToken(TOKEN_RBRACE,"}");
+    expectToken(TOKEN_RBRACE, "}");
     indentSize = indentSize - 1;
     if (emitBraces) {
       indent();
       emit("}\n");
     }
   }
-
 
   private static void parseIf() {
     emit("if (");
@@ -1603,7 +1515,7 @@ public class D2Program {
     }
     emit(") ");
     parseBlock(true);
-    for (; lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ELIF;) {
+    for (; lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ELIF; ) {
       indentSize = indentSize - 1;
       indent();
       indentSize = indentSize + 1;
@@ -1632,7 +1544,6 @@ public class D2Program {
     }
   }
 
-
   private static void parseBreak() {
     if (numWhiles == 0) {
       System.out.print("ERROR: Cannot have break outside while loop\n");
@@ -1644,7 +1555,6 @@ public class D2Program {
     emit("break;\n");
   }
 
-
   private static void parseContinue() {
     if (numWhiles == 0) {
       System.out.print("ERROR: Cannot have continue outside while loop\n");
@@ -1655,7 +1565,6 @@ public class D2Program {
     }
     emit("continue;\n");
   }
-
 
   private static void parseWhile() {
     emit("for (; ");
@@ -1681,52 +1590,42 @@ public class D2Program {
     numWhiles = numWhiles - 1;
   }
 
-
   private static void parsePrint() {
     emit("System.out.print(");
     expr();
     emit(");\n");
   }
 
-
   private static void parseStmt(boolean semi) {
     if (lexTokenType == TOKEN_EOF) {
       return;
-    }
-    else if (lexTokenType == TOKEN_KEYWORD) {
+    } else if (lexTokenType == TOKEN_KEYWORD) {
       int kw;
       kw = lexTokenKw;
       advanceParser();
       if (kw == KW_PRINT) {
         parsePrint();
         return;
-      }
-      else if (kw == KW_EXIT) {
+      } else if (kw == KW_EXIT) {
         emit("System.exit(-1);\n");
         return;
-      }
-      else if (kw == KW_IF) {
+      } else if (kw == KW_IF) {
         parseIf();
         return;
-      }
-      else if (kw == KW_WHILE) {
+      } else if (kw == KW_WHILE) {
         parseWhile();
         return;
-      }
-      else if (kw == KW_BREAK) {
+      } else if (kw == KW_BREAK) {
         parseBreak();
         return;
-      }
-      else if (kw == KW_CONTINUE) {
+      } else if (kw == KW_CONTINUE) {
         parseContinue();
         return;
-      }
-      else if (kw == KW_RETURN) {
+      } else if (kw == KW_RETURN) {
         parseReturn();
         return;
       }
-    }
-    else if (lexTokenType == TOKEN_VARIABLE) {
+    } else if (lexTokenType == TOKEN_VARIABLE) {
       parseStartsWithVariable(semi);
       return;
     }
@@ -1738,7 +1637,6 @@ public class D2Program {
     System.exit(-1);
   }
 
-
   private static void parseProgram() {
     System.out.print("package d2j;\n\n");
     System.out.print("import java.io.BufferedReader;\n");
@@ -1746,7 +1644,7 @@ public class D2Program {
     System.out.print("import java.io.InputStreamReader;\n\n");
     System.out.print("public class D2Program {\n");
     indentSize = 1;
-    for (; lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_EOF; ) {
       indent();
       parseStmt(true);
     }
@@ -1770,9 +1668,8 @@ public class D2Program {
     System.out.print("  }\n}\n");
   }
 
-
   private static void procFinder() {
-    for (; lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_EOF; ) {
       if (lexTokenType == TOKEN_VARIABLE) {
         String variable;
         variable = lexTokenString;
@@ -1790,7 +1687,6 @@ public class D2Program {
     }
   }
 
-
   private static void initParser() {
     String text;
     text = __d2_input();
@@ -1798,20 +1694,29 @@ public class D2Program {
     advanceParser();
   }
 
-
-  private static String __d2_input() {
-    String input = "";
-    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    try {
-      String line = reader.readLine();
-      while (line != null) {
-        input += line + "\n";
-        line = reader.readLine();
-      }
-    } catch (IOException e) {
-      throw new RuntimeException("Could not read standard in", e);
-    }
-    return input;
+  private static String __d2_input() {
+
+    String input = "";
+
+    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+    try {
+
+      String line = reader.readLine();
+
+      while (line != null) {
+
+        input += line + "\n";
+
+        line = reader.readLine();
+      }
+
+    } catch (IOException e) {
+
+      throw new RuntimeException("Could not read standard in", e);
+    }
+
+    return input;
   }
 
   public static void main(String args[]) {
@@ -1869,40 +1774,40 @@ public class D2Program {
     KW_NEW = 23;
     KW_PRINTLN = 24;
     KEYWORDS = new String[25];
-  KEYWORDS[KW_PRINT]="print";
-  KEYWORDS[KW_IF]="if";
-  KEYWORDS[KW_ELSE]="else";
-  KEYWORDS[KW_ELIF]="elif";
-  KEYWORDS[KW_PROC]="proc";
-  KEYWORDS[KW_RETURN]="return";
-  KEYWORDS[KW_WHILE]="while";
-  KEYWORDS[KW_DO]="do";
-  KEYWORDS[KW_BREAK]="break";
-  KEYWORDS[KW_CONTINUE]="continue";
-  KEYWORDS[KW_INT]="int";
-  KEYWORDS[KW_BOOL]="bool";
-  KEYWORDS[KW_STRING]="string";
-  KEYWORDS[KW_NULL]="null";
-  KEYWORDS[KW_INPUT]="input";
-  KEYWORDS[KW_LENGTH]="length";
-  KEYWORDS[KW_CHR]="chr";
-  KEYWORDS[KW_ASC]="asc";
-  KEYWORDS[KW_EXIT]="exit";
-  KEYWORDS[KW_AND]="and";
-  KEYWORDS[KW_OR]="or";
-  KEYWORDS[KW_NOT]="not";
-  KEYWORDS[KW_RECORD]="record";
-  KEYWORDS[KW_NEW]="new";
-  KEYWORDS[KW_PRINTLN]="println";
+    KEYWORDS[KW_PRINT] = "print";
+    KEYWORDS[KW_IF] = "if";
+    KEYWORDS[KW_ELSE] = "else";
+    KEYWORDS[KW_ELIF] = "elif";
+    KEYWORDS[KW_PROC] = "proc";
+    KEYWORDS[KW_RETURN] = "return";
+    KEYWORDS[KW_WHILE] = "while";
+    KEYWORDS[KW_DO] = "do";
+    KEYWORDS[KW_BREAK] = "break";
+    KEYWORDS[KW_CONTINUE] = "continue";
+    KEYWORDS[KW_INT] = "int";
+    KEYWORDS[KW_BOOL] = "bool";
+    KEYWORDS[KW_STRING] = "string";
+    KEYWORDS[KW_NULL] = "null";
+    KEYWORDS[KW_INPUT] = "input";
+    KEYWORDS[KW_LENGTH] = "length";
+    KEYWORDS[KW_CHR] = "chr";
+    KEYWORDS[KW_ASC] = "asc";
+    KEYWORDS[KW_EXIT] = "exit";
+    KEYWORDS[KW_AND] = "and";
+    KEYWORDS[KW_OR] = "or";
+    KEYWORDS[KW_NOT] = "not";
+    KEYWORDS[KW_RECORD] = "record";
+    KEYWORDS[KW_NEW] = "new";
+    KEYWORDS[KW_PRINTLN] = "println";
     lexerText = "";
     lexerLoc = 0;
     lexerCc = 0;
-            lexTokenType = 0;
+    lexTokenType = 0;
     lexTokenString = "";
     lexTokenInt = 0;
     lexTokenKw = 0;
     lexTokenBool = false;
-                                        TYPE_UNKNOWN = 0;
+    TYPE_UNKNOWN = 0;
     TYPE_INT = 1;
     TYPE_BOOL = 2;
     TYPE_STRING = 3;
@@ -1912,32 +1817,32 @@ public class D2Program {
     TYPE_STRING_ARRAY = 7;
     TYPE_VOID = 8;
     D_TYPE_NAMES = new String[10];
-  D_TYPE_NAMES[TYPE_UNKNOWN]="unknown";
-  D_TYPE_NAMES[TYPE_INT]="int";
-  D_TYPE_NAMES[TYPE_BOOL]="bool";
-  D_TYPE_NAMES[TYPE_STRING]="string";
-  D_TYPE_NAMES[TYPE_INT_ARRAY]="int[]";
-  D_TYPE_NAMES[TYPE_BOOL_ARRAY]="bool[]";
-  D_TYPE_NAMES[TYPE_STRING_ARRAY]="string[]";
-  D_TYPE_NAMES[TYPE_VOID]="void";
+    D_TYPE_NAMES[TYPE_UNKNOWN] = "unknown";
+    D_TYPE_NAMES[TYPE_INT] = "int";
+    D_TYPE_NAMES[TYPE_BOOL] = "bool";
+    D_TYPE_NAMES[TYPE_STRING] = "string";
+    D_TYPE_NAMES[TYPE_INT_ARRAY] = "int[]";
+    D_TYPE_NAMES[TYPE_BOOL_ARRAY] = "bool[]";
+    D_TYPE_NAMES[TYPE_STRING_ARRAY] = "string[]";
+    D_TYPE_NAMES[TYPE_VOID] = "void";
     TYPE_NAMES = new String[10];
-  TYPE_NAMES[TYPE_UNKNOWN]="unknown";
-  TYPE_NAMES[TYPE_INT]="int";
-  TYPE_NAMES[TYPE_BOOL]="boolean";
-  TYPE_NAMES[TYPE_STRING]="String";
-  TYPE_NAMES[TYPE_INT_ARRAY]="int[]";
-  TYPE_NAMES[TYPE_BOOL_ARRAY]="boolean[]";
-  TYPE_NAMES[TYPE_STRING_ARRAY]="String[]";
-  TYPE_NAMES[TYPE_VOID]="void";
-          numGlobals = 0;
+    TYPE_NAMES[TYPE_UNKNOWN] = "unknown";
+    TYPE_NAMES[TYPE_INT] = "int";
+    TYPE_NAMES[TYPE_BOOL] = "boolean";
+    TYPE_NAMES[TYPE_STRING] = "String";
+    TYPE_NAMES[TYPE_INT_ARRAY] = "int[]";
+    TYPE_NAMES[TYPE_BOOL_ARRAY] = "boolean[]";
+    TYPE_NAMES[TYPE_STRING_ARRAY] = "String[]";
+    TYPE_NAMES[TYPE_VOID] = "void";
+    numGlobals = 0;
     MAX_GLOBALS = 200;
     globalNames = new String[MAX_GLOBALS];
     globalTypes = new int[MAX_GLOBALS];
-        globBuffer = new String[2000];
+    globBuffer = new String[2000];
     procBufferIndex = 0;
     procBuffer = new String[20000];
     bufferIndex = 0;
-      emitBuffer = globBuffer;
+    emitBuffer = globBuffer;
     MAX_NUM_PROCS = 100;
     numProcs = 0;
     procNames = new String[MAX_NUM_PROCS];
@@ -1951,13 +1856,13 @@ public class D2Program {
     localNames = new String[MAX_NUM_PROCS * LOCALS_PER_PROC];
     localTypes = new int[MAX_NUM_PROCS * LOCALS_PER_PROC];
     currentProcNum = -1;
-                                              needsInput = false;
-                              indentSize = 0;
-          numWhiles = 0;
-                  initParser();
-  procFinder();
-  resetLexer();
-  advanceParser();
-  parseProgram();
+    needsInput = false;
+    indentSize = 0;
+    numWhiles = 0;
+    initParser();
+    procFinder();
+    resetLexer();
+    advanceParser();
+    parseProgram();
   }
 }

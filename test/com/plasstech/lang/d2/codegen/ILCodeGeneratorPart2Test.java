@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -15,6 +13,7 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class ILCodeGeneratorPart2Test {
   private Phase part2 = new ILCodeGeneratorPart2();
@@ -26,8 +25,8 @@ public class ILCodeGeneratorPart2Test {
 
   @Test
   public void noChange() {
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(TEMP, STRING_OPERAND, TokenType.PLUS, NULL_OPERAND, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(new BinOp(TEMP, STRING_OPERAND, TokenType.PLUS, NULL_OPERAND, null));
     State state = State.create().setIlCode(program);
     state = part2.execute(state);
     assertThat(state.ilCode()).isEqualTo(program);
@@ -38,8 +37,9 @@ public class ILCodeGeneratorPart2Test {
     long preAugmentTempcount = countVarsByStorage(SymbolStorage.LONG_TEMP);
     assertThat(preAugmentTempcount).isEqualTo(0);
 
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(TEMP, STRING_OPERAND, TokenType.NULL_COALESCE, NULL_OPERAND, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(TEMP, STRING_OPERAND, TokenType.NULL_COALESCE, NULL_OPERAND, null));
     State state = State.create().setIlCode(program).addTypecheckResult(new TypeCheckResult(symTab));
 
     state = part2.execute(state);
@@ -55,8 +55,9 @@ public class ILCodeGeneratorPart2Test {
     long preAugmentTempcount = countVarsByStorage(SymbolStorage.LONG_TEMP);
     assertThat(preAugmentTempcount).isEqualTo(0);
 
-    ImmutableList<Op> program = ImmutableList.of(
-        new BinOp(GLOBAL, STRING_OPERAND, TokenType.NULL_COALESCE, NULL_OPERAND, null));
+    ImmutableList<Op> program =
+        ImmutableList.of(
+            new BinOp(GLOBAL, STRING_OPERAND, TokenType.NULL_COALESCE, NULL_OPERAND, null));
     State state = State.create().setIlCode(program).addTypecheckResult(new TypeCheckResult(symTab));
 
     state = part2.execute(state);
@@ -68,10 +69,6 @@ public class ILCodeGeneratorPart2Test {
   }
 
   private long countVarsByStorage(SymbolStorage symbolStorage) {
-    return symTab.variables()
-        .values()
-        .stream()
-        .filter(s -> s.storage() == symbolStorage)
-        .count();
+    return symTab.variables().values().stream().filter(s -> s.storage() == symbolStorage).count();
   }
 }

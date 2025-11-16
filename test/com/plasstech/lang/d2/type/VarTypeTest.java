@@ -2,19 +2,17 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class VarTypeTest {
   @Test
   public void fromName(
-      @TestParameter(
-        {"BYTE", "INT", "LONG", "DOUBLE", "BOOL", "STRING", "VOID", "UNKNOWN", "NULL"}
-      ) String name) {
+      @TestParameter({"BYTE", "INT", "LONG", "DOUBLE", "BOOL", "STRING", "VOID", "UNKNOWN", "NULL"})
+          String name) {
     assertThat(VarType.fromName(name)).isNotNull();
   }
 

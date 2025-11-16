@@ -29,7 +29,6 @@ public class LocationUtils {
     VariableSymbol symbol = new VariableSymbol(null, name, SymbolStorage.GLOBAL);
     symbol.setVarType(varType);
     return new MemoryAddress(symbol);
-
   }
 
   public static TempLocation newTempLocation(String name, VarType varType) {
@@ -49,14 +48,14 @@ public class LocationUtils {
     return new TempLocation(symbol);
   }
 
-  public static LongTempLocation newLongTempLocation(SymbolTable symTab, String name,
-      VarType varType) {
+  public static LongTempLocation newLongTempLocation(
+      SymbolTable symTab, String name, VarType varType) {
     VariableSymbol symbol = symTab.declareTemp(name, varType);
     return new LongTempLocation(symbol);
   }
 
-  public static StackLocation newStackLocation(SymbolTable symTab, String name, VarType varType,
-      int offset) {
+  public static StackLocation newStackLocation(
+      SymbolTable symTab, String name, VarType varType, int offset) {
     LocalSymbol symbol = (LocalSymbol) symTab.assign(name, varType);
     symbol.setOffset(offset);
     return new StackLocation(symbol);

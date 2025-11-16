@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
+import java.util.List;
 
 public class SysCall extends Op {
 
@@ -32,9 +31,12 @@ public class SysCall extends Op {
   }
 
   public SysCall(String parameterizedMessage, List<Operand> operands) {
-    this(Call.PARAMETERIZED_MESSAGE,
-        ImmutableList.<Operand>builder().add(ConstantOperand.of(parameterizedMessage))
-            .addAll(operands).build());
+    this(
+        Call.PARAMETERIZED_MESSAGE,
+        ImmutableList.<Operand>builder()
+            .add(ConstantOperand.of(parameterizedMessage))
+            .addAll(operands)
+            .build());
   }
 
   public SysCall(Call call, List<Operand> operands) {
@@ -78,7 +80,8 @@ public class SysCall extends Op {
 
       case PARAMETERIZED_MESSAGE:
         return String.format(
-            "printf(\"ERROR: %s\", %s)", ESCAPER.escape(arg().toString()),
+            "printf(\"ERROR: %s\", %s)",
+            ESCAPER.escape(arg().toString()),
             Joiner.on(",").join(operands().subList(1, operands.size())));
 
       case INPUT:

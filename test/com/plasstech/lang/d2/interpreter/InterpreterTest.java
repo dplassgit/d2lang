@@ -2,14 +2,13 @@ package com.plasstech.lang.d2.interpreter;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.base.Joiner;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class InterpreterTest {
@@ -422,8 +421,7 @@ public class InterpreterTest {
   }
 
   @Test
-  public void assignDouble(
-      @TestParameter boolean optimize) throws Exception {
+  public void assignDouble(@TestParameter boolean optimize) throws Exception {
     execute("a=3.14 b=a print b print a", optimize);
   }
 
@@ -470,11 +468,14 @@ public class InterpreterTest {
   }
 
   private Environment execute(String program, boolean optimize) {
-    InterpreterExecutor ee = new InterpreterExecutor(
-        CompilationConfiguration.builder().setSourceCode(program)
-            .setOptimize(optimize)
-            .setCodeGenDebugLevel(2)
-            .setOptDebugLevel(2).build());
+    InterpreterExecutor ee =
+        new InterpreterExecutor(
+            CompilationConfiguration.builder()
+                .setSourceCode(program)
+                .setOptimize(optimize)
+                .setCodeGenDebugLevel(2)
+                .setOptDebugLevel(2)
+                .build());
     InterpreterResult result = ee.execute();
     System.out.println(ee.state().programNode());
 

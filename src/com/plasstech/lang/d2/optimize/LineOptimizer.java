@@ -1,9 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.LogSites;
@@ -30,6 +26,9 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.SymbolTable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
 
 abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   protected final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -80,12 +79,16 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
   /** Can do anything it wants with this.code */
   protected void postProcess() {}
 
-  /** @return the opcode at the next IP, if it's in range. Otherwise, return null. */
+  /**
+   * @return the opcode at the next IP, if it's in range. Otherwise, return null.
+   */
   protected final Op getNext() {
     return getOpAt(ip() + 1);
   }
 
-  /** @return the opcode at the given IP, if it's in range. Otherwise, return null. */
+  /**
+   * @return the opcode at the given IP, if it's in range. Otherwise, return null.
+   */
   private final Op getOpAt(int theIp) {
     if (theIp < code.size()) {
       return code.get(theIp);
@@ -95,7 +98,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   /**
    * @return the opcode at the next IP, if it's in range and the desired type. Otherwise, return
-   *         null.
+   *     null.
    */
   protected final <T extends Op> T getNext(Class<T> clazz) {
     return getOpAt(ip() + 1, clazz);
@@ -103,7 +106,7 @@ abstract class LineOptimizer extends DefaultOptimizer implements OpcodeVisitor {
 
   /**
    * @return the opcode at the given IP, if it's in range and the desired type. Otherwise, return
-   *         null.
+   *     null.
    */
   protected final <T extends Op> T getOpAt(int theIp, Class<T> clazz) {
     Op op = getOpAt(theIp);

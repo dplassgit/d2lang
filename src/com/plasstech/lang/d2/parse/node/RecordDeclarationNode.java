@@ -1,11 +1,10 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.RecordReferenceType;
+import java.util.List;
 
 /** A parse node for a record definition declaration. */
 public class RecordDeclarationNode extends DeclarationNode {
@@ -18,7 +17,9 @@ public class RecordDeclarationNode extends DeclarationNode {
     if (formalTypeVariables.size() == 0) {
       return baseName;
     }
-    return String.format("%s<%s>", baseName,
+    return String.format(
+        "%s<%s>",
+        baseName,
         Joiner.on(", ").join(formalTypeVariables.stream().map(v -> v + ": unbound").toList()));
   }
 
@@ -33,7 +34,10 @@ public class RecordDeclarationNode extends DeclarationNode {
    * @param baseName the name of the record
    * @param formalTypeVariables zero or more type variables (for generic records)
    */
-  public RecordDeclarationNode(String baseName, List<DeclarationNode> fields, Position start,
+  public RecordDeclarationNode(
+      String baseName,
+      List<DeclarationNode> fields,
+      Position start,
       List<String> formalTypeVariables) {
     // Technically this node doesn't have a type because it's not a referenceable *variable*
     super(fqName(baseName, formalTypeVariables), new RecordReferenceType(baseName), start);
@@ -71,7 +75,9 @@ public class RecordDeclarationNode extends DeclarationNode {
 
   @Override
   public String toString() {
-    return String.format("%s: RECORD%s{%s}", name(),
+    return String.format(
+        "%s: RECORD%s{%s}",
+        name(),
         (formalTypeVariables != null && formalTypeVariables.size() > 0)
             ? String.format("<%s>", Joiner.on(", ").join(formalTypeVariables))
             : "",

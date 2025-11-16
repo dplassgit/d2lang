@@ -152,7 +152,7 @@ public class D2Program {
   }
 
   private static String nextToken() {
-    for (; (lexerCc == 32 || lexerCc == 10 || lexerCc == 9 || lexerCc == 13);) {
+    for (; (lexerCc == 32 || lexerCc == 10 || lexerCc == 9 || lexerCc == 13); ) {
       advanceLex();
     }
     if (lexerCc != 0) {
@@ -229,7 +229,7 @@ public class D2Program {
       value = value + Character.toString(lexerCc);
       advanceLex();
     }
-    for (; isLetterOrDigit(lexerCc);) {
+    for (; isLetterOrDigit(lexerCc); ) {
       value = value + Character.toString(lexerCc);
       advanceLex();
     }
@@ -350,7 +350,7 @@ public class D2Program {
     advanceLex();
     String value;
     value = "";
-    for (; lexerCc != firstQuote && lexerCc != 0;) {
+    for (; lexerCc != firstQuote && lexerCc != 0; ) {
       if (lexerCc == 92) {
         advanceLex();
         if (lexerCc == 110) {
@@ -477,8 +477,12 @@ public class D2Program {
 
   private static void checkTypes(int leftType, int rightType) {
     if (leftType != rightType) {
-      System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
-          + ", but right operand is " + typeName(rightType) + " @ ");
+      System.out.print(
+          "ERROR: Type mismatch. Left operand is "
+              + typeName(leftType)
+              + ", but right operand is "
+              + typeName(rightType)
+              + " @ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
@@ -602,8 +606,8 @@ public class D2Program {
 
   private static int lookupParam(String name) {
     if (currentProcNum == -1) {
-      System.out
-          .print("INTERNAL ERROR: Cannot look up parameter " + name + " because not in a PROC\n");
+      System.out.print(
+          "INTERNAL ERROR: Cannot look up parameter " + name + " because not in a PROC\n");
       System.out.print("@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
@@ -661,7 +665,7 @@ public class D2Program {
     leftType = boolXor();
     int rightType;
     if (leftType == TYPE_BOOL) {
-      for (; lexTokenKw == KW_OR;) {
+      for (; lexTokenKw == KW_OR; ) {
         advanceParser();
         emit(" || ");
         rightType = boolXor();
@@ -669,7 +673,7 @@ public class D2Program {
       }
     }
     if (isIntegral(leftType)) {
-      for (; lexTokenType == TOKEN_BIT_OR;) {
+      for (; lexTokenType == TOKEN_BIT_OR; ) {
         advanceParser();
         emit(" | ");
         rightType = boolXor();
@@ -684,7 +688,7 @@ public class D2Program {
     leftType = boolAnd();
     int rightType;
     if (leftType == TYPE_BOOL) {
-      for (; lexTokenKw == KW_XOR;) {
+      for (; lexTokenKw == KW_XOR; ) {
         advanceParser();
         emit(" ^ ");
         rightType = boolAnd();
@@ -693,7 +697,7 @@ public class D2Program {
       return leftType;
     }
     if (isIntegral(leftType)) {
-      for (; lexTokenType == TOKEN_BIT_XOR;) {
+      for (; lexTokenType == TOKEN_BIT_XOR; ) {
         advanceParser();
         emit(" ^ ");
         rightType = boolAnd();
@@ -708,7 +712,7 @@ public class D2Program {
     leftType = compare();
     int rightType;
     if (leftType == TYPE_BOOL) {
-      for (; lexTokenKw == KW_AND;) {
+      for (; lexTokenKw == KW_AND; ) {
         advanceParser();
         emit(" && ");
         rightType = compare();
@@ -716,7 +720,7 @@ public class D2Program {
       }
     }
     if (isIntegral(leftType)) {
-      for (; lexTokenType == TOKEN_BIT_AND;) {
+      for (; lexTokenType == TOKEN_BIT_AND; ) {
         advanceParser();
         emit(" & ");
         rightType = compare();
@@ -766,8 +770,12 @@ public class D2Program {
       bufferIndex = 0;
       rightType = shift();
       if (rightType != TYPE_NULL && rightType != leftType) {
-        System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
-            + ", but right operand is " + typeName(rightType) + " @ ");
+        System.out.print(
+            "ERROR: Type mismatch. Left operand is "
+                + typeName(leftType)
+                + ", but right operand is "
+                + typeName(rightType)
+                + " @ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -796,8 +804,12 @@ public class D2Program {
       bufferIndex = 0;
       rightType = shift();
       if ((rightType != TYPE_STRING && rightType != TYPE_NULL)) {
-        System.out.print("ERROR: Type mismatch. Left operand is " + typeName(leftType)
-            + ", but right operand is " + typeName(rightType) + " @ ");
+        System.out.print(
+            "ERROR: Type mismatch. Left operand is "
+                + typeName(leftType)
+                + ", but right operand is "
+                + typeName(rightType)
+                + " @ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -824,8 +836,9 @@ public class D2Program {
   private static int shift() {
     int leftType;
     leftType = addSub();
-    for (; isIntegral(leftType)
-        && (lexTokenType == TOKEN_SHIFT_LEFT || lexTokenType == TOKEN_SHIFT_RIGHT);) {
+    for (;
+        isIntegral(leftType)
+            && (lexTokenType == TOKEN_SHIFT_LEFT || lexTokenType == TOKEN_SHIFT_RIGHT); ) {
       int op;
       op = lexTokenType;
       advanceParser();
@@ -845,7 +858,7 @@ public class D2Program {
     int leftType;
     leftType = mulDiv();
     if (leftType == TYPE_STRING || isNumeric(leftType)) {
-      for (; lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_MINUS;) {
+      for (; lexTokenType == TOKEN_PLUS || lexTokenType == TOKEN_MINUS; ) {
         if (leftType == TYPE_BOOL) {
           System.out.print("ERROR: Cannot add or subtract booleans\n@ ");
           System.out.print(lexerLoc);
@@ -875,8 +888,11 @@ public class D2Program {
   private static int mulDiv() {
     int leftType;
     leftType = unary();
-    for (; isNumeric(leftType) && (lexTokenType == TOKEN_MULT || lexTokenType == TOKEN_DIV
-        || lexTokenType == TOKEN_MOD);) {
+    for (;
+        isNumeric(leftType)
+            && (lexTokenType == TOKEN_MULT
+                || lexTokenType == TOKEN_DIV
+                || lexTokenType == TOKEN_MOD); ) {
       if (leftType == TYPE_DOUBLE && lexTokenType == TOKEN_MOD) {
         System.out.print("ERROR: Cannot take MOD of doubles\n@ ");
         System.out.print(lexerLoc);
@@ -1029,7 +1045,7 @@ public class D2Program {
   private static int composite() {
     int leftType;
     leftType = atom();
-    for (; lexTokenType == TOKEN_LBRACKET || lexTokenType == TOKEN_DOT;) {
+    for (; lexTokenType == TOKEN_LBRACKET || lexTokenType == TOKEN_DOT; ) {
       if (lexTokenType == TOKEN_LBRACKET) {
         expectToken(TOKEN_LBRACKET, "[");
         if (isArrayType(leftType)) {
@@ -1054,8 +1070,12 @@ public class D2Program {
           int fieldIndex;
           fieldIndex = lookupField(recordIndex, fieldName);
           if (fieldIndex == -1) {
-            System.out.print("ERROR: Unknown field '" + fieldName + "' of RECORD type '"
-                + recordNames[recordIndex] + "\n@ ");
+            System.out.print(
+                "ERROR: Unknown field '"
+                    + fieldName
+                    + "' of RECORD type '"
+                    + recordNames[recordIndex]
+                    + "\n@ ");
             System.out.print(lexerLoc);
             System.out.print("\n");
             System.exit(-1);
@@ -1114,7 +1134,7 @@ public class D2Program {
     emit("(");
     int numArgs;
     numArgs = 0;
-    for (; lexTokenType != TOKEN_RPAREN && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RPAREN && lexTokenType != TOKEN_EOF; ) {
       numArgs = numArgs + 1;
       int argType;
       argType = expr();
@@ -1134,7 +1154,22 @@ public class D2Program {
 
   private static void outputInput() {
     System.out.print(
-        "\n  private static String __d2_input() {\n    String input = \"\";\n    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n    try {\n      String line = reader.readLine();\n      while (line != null) {\n        input += line + \"\\n\";\n        line = reader.readLine();\n      }\n    } catch (IOException e) {\n      throw new RuntimeException(\"Could not read standard in\", e);\n    }\n    return input;\n  }\n");
+        "\n"
+            + "  private static String __d2_input() {\n"
+            + "    String input = \"\";\n"
+            + "    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));\n"
+            + "    try {\n"
+            + "      String line = reader.readLine();\n"
+            + "      while (line != null) {\n"
+            + "        input += line + \"\\n"
+            + "\";\n"
+            + "        line = reader.readLine();\n"
+            + "      }\n"
+            + "    } catch (IOException e) {\n"
+            + "      throw new RuntimeException(\"Could not read standard in\", e);\n"
+            + "    }\n"
+            + "    return input;\n"
+            + "  }\n");
   }
 
   private static int atom() {
@@ -1193,8 +1228,10 @@ public class D2Program {
       int type;
       type = lookupProcReturnType(variable);
       if (type == TYPE_VOID) {
-        System.out.print("ERROR: Return type of PROC " + variable
-            + " is void. Cannot assign it to a variable.\n@ ");
+        System.out.print(
+            "ERROR: Return type of PROC "
+                + variable
+                + " is void. Cannot assign it to a variable.\n@ ");
         System.out.print(lexerLoc);
         System.out.print("\n");
         System.exit(-1);
@@ -1381,7 +1418,7 @@ public class D2Program {
     registerRecord(recordName);
     expectKeyword(KW_RECORD, "RECORD");
     expectToken(TOKEN_LBRACE, "{");
-    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF; ) {
       expectToken(TOKEN_VARIABLE, "field");
       expectToken(TOKEN_COLON, ":");
       skipType();
@@ -1411,7 +1448,7 @@ public class D2Program {
     indentSize = indentSize + 1;
     int fieldIndex;
     fieldIndex = recIndex * FIELDS_PER_RECORD;
-    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF; ) {
       if (numFields[recIndex] == FIELDS_PER_RECORD) {
         System.out.print(
             "INTERNAL ERROR: More than 20 fields declared for RECORD " + recordName + "\n@ ");
@@ -1475,7 +1512,7 @@ public class D2Program {
     }
     setCurrentProcNum(procName);
     expectToken(TOKEN_LPAREN, "(");
-    for (; lexTokenType != TOKEN_RPAREN;) {
+    for (; lexTokenType != TOKEN_RPAREN; ) {
       expectToken(TOKEN_VARIABLE, "variable");
       expectToken(TOKEN_COLON, ":");
       parseType();
@@ -1535,7 +1572,7 @@ public class D2Program {
     paramIndex = myProcNum * PARAMS_PER_PROC;
     int index;
     index = 0;
-    for (; lexTokenType != TOKEN_RPAREN;) {
+    for (; lexTokenType != TOKEN_RPAREN; ) {
       if (lexTokenType != TOKEN_VARIABLE) {
         System.out.print("ERROR: Expected variable but found: ");
         printToken();
@@ -1584,11 +1621,18 @@ public class D2Program {
 
   private static boolean isAtStartOfExpression() {
     if (lexTokenType == TOKEN_KEYWORD) {
-      return lexTokenKw == KW_ASC || lexTokenKw == KW_CHR || lexTokenKw == KW_INPUT
-          || lexTokenKw == KW_LENGTH || lexTokenKw == KW_NEW || lexTokenKw == KW_NOT;
+      return lexTokenKw == KW_ASC
+          || lexTokenKw == KW_CHR
+          || lexTokenKw == KW_INPUT
+          || lexTokenKw == KW_LENGTH
+          || lexTokenKw == KW_NEW
+          || lexTokenKw == KW_NOT;
     }
-    return lexTokenType == TOKEN_LITERAL_CONSTANT || lexTokenType == TOKEN_BIT_NOT
-        || lexTokenType == TOKEN_LPAREN || lexTokenType == TOKEN_MINUS || lexTokenType == TOKEN_PLUS
+    return lexTokenType == TOKEN_LITERAL_CONSTANT
+        || lexTokenType == TOKEN_BIT_NOT
+        || lexTokenType == TOKEN_LPAREN
+        || lexTokenType == TOKEN_MINUS
+        || lexTokenType == TOKEN_PLUS
         || lexTokenType == TOKEN_VARIABLE;
   }
 
@@ -1820,7 +1864,7 @@ public class D2Program {
       emit("{\n");
     }
     indentSize = indentSize + 1;
-    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_RBRACE && lexTokenType != TOKEN_EOF; ) {
       indent();
       parseStmt(true);
     }
@@ -1837,15 +1881,15 @@ public class D2Program {
     int condType;
     condType = expr();
     if (condType != TYPE_BOOL) {
-      System.out
-          .print("ERROR: Expected BOOL condition in IF but found " + typeName(condType) + "\n@ ");
+      System.out.print(
+          "ERROR: Expected BOOL condition in IF but found " + typeName(condType) + "\n@ ");
       System.out.print(lexerLoc);
       System.out.print("\n");
       System.exit(-1);
     }
     emit(") ");
     parseBlock(true);
-    for (; lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ELIF;) {
+    for (; lexTokenType == TOKEN_KEYWORD && lexTokenKw == KW_ELIF; ) {
       indentSize = indentSize - 1;
       indent();
       indentSize = indentSize + 1;
@@ -1973,7 +2017,7 @@ public class D2Program {
     System.out.print("import java.io.InputStreamReader;\n\n");
     System.out.print("public class D2Program {\n");
     indentSize = 2;
-    for (; lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_EOF; ) {
       indent();
       parseStmt(true);
     }
@@ -2006,7 +2050,7 @@ public class D2Program {
   }
 
   private static void procFinder() {
-    for (; lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_EOF; ) {
       if (lexTokenType == TOKEN_VARIABLE) {
         String variable;
         variable = lexTokenString;
@@ -2027,7 +2071,7 @@ public class D2Program {
   }
 
   private static void recordFinder() {
-    for (; lexTokenType != TOKEN_EOF;) {
+    for (; lexTokenType != TOKEN_EOF; ) {
       if (lexTokenType == TOKEN_VARIABLE) {
         String variable;
         variable = lexTokenString;

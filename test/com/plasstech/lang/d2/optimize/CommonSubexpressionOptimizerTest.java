@@ -3,10 +3,6 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
-import java.util.List;
-
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -19,6 +15,8 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
+import org.junit.Test;
 
 public class CommonSubexpressionOptimizerTest {
 
@@ -36,9 +34,9 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void allParams() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, C, null), new BinOp(D, B, TokenType.PLUS, C, null));
     var optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
@@ -47,9 +45,10 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void constants() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, ConstantOperand.ONE, null),
-        new BinOp(D, B, TokenType.PLUS, ConstantOperand.ONE, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, ConstantOperand.ONE, null),
+            new BinOp(D, B, TokenType.PLUS, ConstantOperand.ONE, null));
     var optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(2);
@@ -58,10 +57,11 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void allParamsStops() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null),
-        new Transfer(B, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, C, null),
+            new BinOp(D, B, TokenType.PLUS, C, null),
+            new Transfer(B, C, null));
     var optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(3);
@@ -71,10 +71,11 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void allParamsIgnoresUnrelated() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, C, null),
-        new Transfer(TEMP, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, C, null),
+            new Transfer(TEMP, C, null),
+            new BinOp(D, B, TokenType.PLUS, C, null));
     var optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
     assertThat(optimized).hasSize(3);
@@ -83,30 +84,33 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void stopWhenSourceChanged() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, C, null),
-        new Transfer(B, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, C, null),
+            new Transfer(B, C, null),
+            new BinOp(D, B, TokenType.PLUS, C, null));
     optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
   public void stopWhenDestChanged() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(A, B, TokenType.PLUS, C, null),
-        new Transfer(A, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(A, B, TokenType.PLUS, C, null),
+            new Transfer(A, C, null),
+            new BinOp(D, B, TokenType.PLUS, C, null));
     optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
 
   @Test
   public void tempDest_becomesLongTemp() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(TEMP, B, TokenType.PLUS, C, null),
-        new BinOp(D, B, TokenType.PLUS, C, null),
-        new BinOp(B, D, TokenType.PLUS, TEMP, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(TEMP, B, TokenType.PLUS, C, null),
+            new BinOp(D, B, TokenType.PLUS, C, null),
+            new BinOp(B, D, TokenType.PLUS, TEMP, null));
     // Should become:
     //  longtemp = b+c
     //  d=longtemp
@@ -128,10 +132,11 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void unaryTempDest_becomesLongTemp() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new UnaryOp(TEMP, TokenType.MINUS, C, null),
-        new UnaryOp(D, TokenType.MINUS, C, null),
-        new BinOp(B, D, TokenType.PLUS, TEMP, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new UnaryOp(TEMP, TokenType.MINUS, C, null),
+            new UnaryOp(D, TokenType.MINUS, C, null),
+            new BinOp(B, D, TokenType.PLUS, TEMP, null));
     // Should become:
     //  longtemp = -c
     //  d=longtemp
@@ -153,10 +158,11 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void longTempDest() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new BinOp(LONG_TEMP, B, TokenType.PLUS, C, null),
-        new Transfer(D, LONG_TEMP, null),
-        new BinOp(D, B, TokenType.PLUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new BinOp(LONG_TEMP, B, TokenType.PLUS, C, null),
+            new Transfer(D, LONG_TEMP, null),
+            new BinOp(D, B, TokenType.PLUS, C, null));
     // Should become:
     //  longtemp = b+c
     //  d=longtemp
@@ -175,10 +181,11 @@ public class CommonSubexpressionOptimizerTest {
 
   @Test
   public void unaryLongTempDest() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new UnaryOp(LONG_TEMP, TokenType.MINUS, C, null),
-        new Transfer(D, LONG_TEMP, null),
-        new UnaryOp(D, TokenType.MINUS, C, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new UnaryOp(LONG_TEMP, TokenType.MINUS, C, null),
+            new Transfer(D, LONG_TEMP, null),
+            new UnaryOp(D, TokenType.MINUS, C, null));
     // Should become:
     //  longtemp = -c
     //  d=longtemp

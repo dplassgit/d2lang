@@ -2,15 +2,14 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode.Parameter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * "Gathers" all procedure definitions in the (global) symbol table, so you can make
@@ -50,7 +49,9 @@ class ProcGatherer extends DefaultNodeVisitor {
     if (!duplicates.isEmpty()) {
       throw new TypeException(
           node.position(),
-          "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name());
+          "Duplicate parameter names: %s in procedure %s",
+          duplicates.toString(),
+          node.name());
     }
 
     // Add this procedure to the symbol table
@@ -81,7 +82,9 @@ class ProcGatherer extends DefaultNodeVisitor {
     if (!duplicates.isEmpty()) {
       throw new TypeException(
           node.position(),
-          "Duplicate parameter names: %s in procedure %s", duplicates.toString(), node.name());
+          "Duplicate parameter names: %s in procedure %s",
+          duplicates.toString(),
+          node.name());
     }
 
     // Add this procedure to the symbol table

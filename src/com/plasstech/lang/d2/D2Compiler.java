@@ -1,10 +1,5 @@
 package com.plasstech.lang.d2;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
@@ -19,10 +14,12 @@ import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.phase.State;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
 
-/**
- * Top-level driver for the compiler. See {@link D2Options} for options.
- */
+/** Top-level driver for the compiler. See {@link D2Options} for options. */
 public class D2Compiler {
 
   private static final String D2PATH = System.getenv("D2PATH");
@@ -152,8 +149,8 @@ public class D2Compiler {
       if (exeFile.exists()) {
         exeFile.delete();
       }
-      ImmutableList.Builder<String> command = new ImmutableList.Builder<String>().add("gcc",
-          objFile.getAbsolutePath());
+      ImmutableList.Builder<String> command =
+          new ImmutableList.Builder<String>().add("gcc", objFile.getAbsolutePath());
       if (options.libs != null && options.libs.size() > 0) {
         command.addAll(options.libs);
       }
@@ -177,7 +174,6 @@ public class D2Compiler {
         objFile.delete();
       }
     }
-
   }
 
   private static void assertNoProcessError(Process process, String name) throws IOException {

@@ -2,10 +2,6 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -14,6 +10,9 @@ import com.plasstech.lang.d2.parse.node.ConstNode;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /** Represents a symbol in the symbol table for a record type definition. */
 public class RecordSymbol extends AbstractSymbol {
@@ -79,7 +78,8 @@ public class RecordSymbol extends AbstractSymbol {
   private final String baseName;
   private final boolean bound;
 
-  private RecordSymbol(String fqName,
+  private RecordSymbol(
+      String fqName,
       String baseName,
       List<String> formalTypeVariables,
       Map<String, Field> fields,
@@ -92,15 +92,19 @@ public class RecordSymbol extends AbstractSymbol {
     this.bound = true;
   }
 
-  private RecordSymbol(String baseName,
+  private RecordSymbol(
+      String baseName,
       ImmutableList<String> formalTypeVariables,
       List<DeclarationNode> declaredFields) {
     super(RecordDeclarationNode.fqName(baseName, formalTypeVariables));
     this.baseName = baseName;
     this.unboundTypeVariables = formalTypeVariables;
-    this.setVarType(new RecordReferenceType(baseName,
-        formalTypeVariables.stream().map(name -> new UnboundType(name))
-            .collect(toImmutableList())));
+    this.setVarType(
+        new RecordReferenceType(
+            baseName,
+            formalTypeVariables.stream()
+                .map(name -> new UnboundType(name))
+                .collect(toImmutableList())));
     ImmutableMap.Builder<String, Field> fieldBuilder = ImmutableMap.builder();
     int sizeToAllocate = 0;
     for (DeclarationNode decl : declaredFields) {
@@ -112,10 +116,7 @@ public class RecordSymbol extends AbstractSymbol {
         ConstNode<Integer> constSize = (ConstNode<Integer>) size;
         field =
             new ArrayField(
-                decl.name(),
-                arrayType,
-                sizeToAllocate,
-                ImmutableList.of(constSize.value()));
+                decl.name(), arrayType, sizeToAllocate, ImmutableList.of(constSize.value()));
       } else {
         field = new Field(decl.name(), decl.varType(), sizeToAllocate);
       }
@@ -187,9 +188,7 @@ public class RecordSymbol extends AbstractSymbol {
   }
 
   public ImmutableList<ArrayField> arrayFields() {
-    return fields
-        .values()
-        .stream()
+    return fields.values().stream()
         .filter(f -> f.type().isArray())
         .map(
             f -> {
@@ -201,23 +200,26 @@ public class RecordSymbol extends AbstractSymbol {
   /**
    * Returns a new RecordSymbol which is this one with all the generic field types bound to concrete
    * vartypes.
-   * 
+   *
    * @param mapping from variable type to concrete type.
    * @return
    */
   public RecordSymbol bind(Map<String, VarType> mapping) {
-    Preconditions.checkState(isGeneric(),
+    Preconditions.checkState(
+        isGeneric(),
         "Cannot bind type variables in non-generic or already bound record symbol "
             + this.toString());
 
     // Make sure all the unbound variables are accounted for in the mapping.
     Preconditions.checkArgument(
-        unboundTypeVariables.stream().filter(unboundName -> mapping.containsKey(unboundName))
-            .count() == unboundTypeVariables.size());
+        unboundTypeVariables.stream()
+                .filter(unboundName -> mapping.containsKey(unboundName))
+                .count()
+            == unboundTypeVariables.size());
 
     // To make the right fq name, we need to go in the *same order* as the unbound names.
-    List<VarType> boundTypes = unboundTypeVariables.stream()
-        .map(unboundName -> mapping.get(unboundName)).toList();
+    List<VarType> boundTypes =
+        unboundTypeVariables.stream().map(unboundName -> mapping.get(unboundName)).toList();
     String fqName = RecordReferenceType.toFqName(baseName, boundTypes);
     ImmutableMap.Builder<String, Field> newFields = ImmutableMap.builder();
     int newAllocatedSize = 0;
@@ -235,12 +237,7 @@ public class RecordSymbol extends AbstractSymbol {
           if (baseType.isGeneric() && !baseType.isBound()) {
             baseType = baseType.bind(mapping);
             arrayType = new ArrayType(baseType, arrayType.dimensions());
-            field =
-                new ArrayField(
-                    field.name,
-                    arrayType,
-                    newAllocatedSize,
-                    arrayField.sizes());
+            field = new ArrayField(field.name, arrayType, newAllocatedSize, arrayField.sizes());
           }
         }
       } else if (field.type instanceof UnboundType unboundType) {
@@ -261,13 +258,17 @@ public class RecordSymbol extends AbstractSymbol {
       newAllocatedSize += fieldSize;
     }
 
-    RecordSymbol rs = new RecordSymbol(fqName, baseName, unboundTypeVariables, newFields.build(),
-        newAllocatedSize);
-    rs.setVarType(new RecordReferenceType(baseName,
-        unboundTypeVariables.stream().map(name -> new UnboundType(name)).collect(toImmutableList()),
-        boundTypes));
+    RecordSymbol rs =
+        new RecordSymbol(
+            fqName, baseName, unboundTypeVariables, newFields.build(), newAllocatedSize);
+    rs.setVarType(
+        new RecordReferenceType(
+            baseName,
+            unboundTypeVariables.stream()
+                .map(name -> new UnboundType(name))
+                .collect(toImmutableList()),
+            boundTypes));
     return rs;
-
   }
 
   public ImmutableList<String> formalTypeVariables() {

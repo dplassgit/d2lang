@@ -4,9 +4,7 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.type.VarType;
 
-/**
- * Grouping of prebuilt Operand matchers.
- */
+/** Grouping of prebuilt Operand matchers. */
 public class Matchers {
   public static Matcher any() {
     return op -> true;
@@ -93,7 +91,8 @@ public class Matchers {
   }
 
   public static Matcher isPowerOf2() {
-    return and(isIntegralConstant(),
+    return and(
+        isIntegralConstant(),
         op -> {
           int value = ConstantOperand.valueFromConstOperand(op).intValue();
           return (value >= 2) && ((value & (value - 1)) == 0);
@@ -101,7 +100,9 @@ public class Matchers {
   }
 
   public static Matcher isNegativeConstant() {
-    return and(isConstant(), isNumeric(),
+    return and(
+        isConstant(),
+        isNumeric(),
         op -> ConstantOperand.valueFromConstOperand(op).doubleValue() < 0);
   }
 }

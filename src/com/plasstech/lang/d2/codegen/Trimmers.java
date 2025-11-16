@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
+import java.util.List;
 
 public class Trimmers {
   /** Removes all comments from all lines, trims, then removes empty lines. */

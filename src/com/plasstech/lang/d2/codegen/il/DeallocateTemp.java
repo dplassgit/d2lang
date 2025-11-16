@@ -1,13 +1,12 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.SymbolStorage;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Indicates the code generator should "deallocate" this (long) temp, meaning it is no longer used.
@@ -62,7 +61,8 @@ public class DeallocateTemp extends Op {
       // Even though this is also done in the DeadLongTempAssignmentOptimizer, it won't be
       // run if optimizations are off.
       Operand dest = opcode.getDestination();
-      if (dest != null && dest.storage() == SymbolStorage.LONG_TEMP
+      if (dest != null
+          && dest.storage() == SymbolStorage.LONG_TEMP
           && !longTempsRead.contains(dest)) {
         // 3. We are writing to this long temp but have never read from it. Delete it.
         code.set(ip, new Nop(opcode));

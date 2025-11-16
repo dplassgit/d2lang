@@ -1,14 +1,13 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Goto;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 class DeadLabelOptimizer extends LineOptimizer {
   // These are the labels found in the code, and their IP.

@@ -25,5 +25,4 @@ public class Stop extends Op {
   public void accept(OpcodeVisitor visitor) {
     visitor.visit(this);
   }
-
 }

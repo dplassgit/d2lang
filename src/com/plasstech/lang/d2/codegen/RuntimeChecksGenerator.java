@@ -1,10 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -34,6 +29,10 @@ import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * For certain ops, add runtime checks: NPE and index checks. Much of this used to be in
@@ -152,16 +151,23 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     Location arrayLocation = npeCheck(op.array(), position);
     Operand indexLocation = indexChecks(arrayLocation, op.index(), position);
     // Replace the op with the new array and index, even if they're the same
-    emit(new ArraySet(arrayLocation, op.arrayType(), indexLocation,
-        remapTemp(op.source()), op.isArrayLiteral(), position));
+    emit(
+        new ArraySet(
+            arrayLocation,
+            op.arrayType(),
+            indexLocation,
+            remapTemp(op.source()),
+            op.isArrayLiteral(),
+            position));
   }
 
   @Override
   public void visit(FieldSetOp op) {
     var position = op.position();
     Location recordLocation = npeCheck(op.recordLocation(), position);
-    emit(new FieldSetOp(recordLocation, op.recordSymbol(), op.field(), remapTemp(op.source()),
-        position));
+    emit(
+        new FieldSetOp(
+            recordLocation, op.recordSymbol(), op.field(), remapTemp(op.source()), position));
   }
 
   @Override
@@ -217,9 +223,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     // if nonnegativeindex: goto good
     String nonNegativeIndexLabel = Labels.nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
-    emit(new SysCall(ARRAY_SIZE_NEGATIVE_ERR,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()), size)));
+    emit(
+        new SysCall(
+            ARRAY_SIZE_NEGATIVE_ERR,
+            ImmutableList.of(
+                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()), size)));
     emit(new Stop());
     emit(new Label(nonNegativeIndexLabel));
 
@@ -263,8 +271,8 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     return longTemp;
   }
 
-  private static VariableSymbol tempSymbolToLongTempSymbol(VariableSymbol tempSymbol,
-      String newName) {
+  private static VariableSymbol tempSymbolToLongTempSymbol(
+      VariableSymbol tempSymbol, String newName) {
     VariableSymbol symbol =
         new VariableSymbol(tempSymbol.symbolTable(), newName, SymbolStorage.LONG_TEMP);
     symbol.setVarType(tempSymbol.varType());
@@ -285,9 +293,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new BinOp(divBy0Bool, right, TokenType.EQEQ, zero, position));
     String continueLabel = Labels.nextLabel("not_div_by_0");
     emit(new IfOp(divBy0Bool, continueLabel, true));
-    emit(new SysCall(DIV_BY_0,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()))));
+    emit(
+        new SysCall(
+            DIV_BY_0,
+            ImmutableList.of(
+                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
 
@@ -307,9 +317,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
             position));
     String continueLabel = Labels.nextLabel("not_null");
     emit(new IfOp(nullRecordBool, continueLabel, true));
-    emit(new SysCall(NULL_POINTER,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()))));
+    emit(
+        new SysCall(
+            NULL_POINTER,
+            ImmutableList.of(
+                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
     // This may be different now
@@ -331,9 +343,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new IfOp(goodBool, goodLabel, true, position));
 
     // exit(-1)
-    emit(new SysCall(EMPTY_ASC_ERR,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()))));
+    emit(
+        new SysCall(
+            EMPTY_ASC_ERR,
+            ImmutableList.of(
+                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
 
     // goodlabel:
@@ -402,17 +416,31 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     String indexInBoundsLabel = Labels.nextLabel("index_in_bounds");
     emit(new IfOp(indexInBounds, indexInBoundsLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), length, index)));
+      emit(
+          new SysCall(
+              STRING_INDEX_OOB_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  length,
+                  index)));
     } else if (thingWithIndex.type() == VarType.RANGE) {
-      emit(new SysCall(RANGE_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
+      emit(
+          new SysCall(
+              RANGE_INDEX_OOB_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  index)));
     } else {
-      emit(new SysCall(ARRAY_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), length, index)));
+      emit(
+          new SysCall(
+              ARRAY_INDEX_OOB_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  length,
+                  index)));
     }
     emit(new Stop());
 
@@ -431,17 +459,29 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     String nonNegativeIndexLabel = Labels.nextLabel("non_negative_index");
     emit(new IfOp(nonNegativeIndex, nonNegativeIndexLabel, false, position));
     if (thingWithIndex.type() == VarType.STRING) {
-      emit(new SysCall(STRING_INDEX_NEGATIVE_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
+      emit(
+          new SysCall(
+              STRING_INDEX_NEGATIVE_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  index)));
     } else if (thingWithIndex.type() == VarType.RANGE) {
-      emit(new SysCall(RANGE_INDEX_OOB_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
+      emit(
+          new SysCall(
+              RANGE_INDEX_OOB_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  index)));
     } else {
-      emit(new SysCall(ARRAY_INDEX_NEGATIVE_ERR,
-          ImmutableList.of(ConstantOperand.of(position.line()),
-              ConstantOperand.of(position.column()), index)));
+      emit(
+          new SysCall(
+              ARRAY_INDEX_NEGATIVE_ERR,
+              ImmutableList.of(
+                  ConstantOperand.of(position.line()),
+                  ConstantOperand.of(position.column()),
+                  index)));
     }
     emit(new Stop());
 

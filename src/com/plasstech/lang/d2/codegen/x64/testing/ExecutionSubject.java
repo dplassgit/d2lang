@@ -4,12 +4,6 @@ import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.Optional;
-
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
@@ -24,6 +18,11 @@ import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.Optional;
 
 public class ExecutionSubject extends Subject {
   private static final File dir = Files.createTempDir();
@@ -39,8 +38,7 @@ public class ExecutionSubject extends Subject {
     super(metadata, code);
 
     this.config =
-        CompilationConfiguration.create(code)
-            .toBuilder()
+        CompilationConfiguration.create(code).toBuilder()
             // Default to NOT optimized
             .setOptimize(false)
             .setCodeGenDebugLevel(2)
@@ -131,12 +129,10 @@ public class ExecutionSubject extends Subject {
     try {
       file.createNewFile();
 
-      CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(),
-          FileWriteMode.APPEND);
+      CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
       charSink.writeLines(state.asmCode());
 
-      ProcessBuilder pb =
-          new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
+      ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
       pb.directory(dir);
       Process process = pb.start();
       process.waitFor();

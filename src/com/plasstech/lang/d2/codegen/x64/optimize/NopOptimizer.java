@@ -7,11 +7,12 @@ import com.plasstech.lang.d2.codegen.Trimmers;
 class NopOptimizer extends Optimizer {
   @Override
   protected ImmutableList<String> doOptimize(ImmutableList<String> code) {
-    ImmutableList<String> newCode = code.stream()
-        .filter(line -> line.trim().length() > 0)
-        .filter(line -> !line.trim().startsWith(";"))
-        .map(line -> Trimmers.rightTrim(line))
-        .collect(ImmutableList.toImmutableList());
+    ImmutableList<String> newCode =
+        code.stream()
+            .filter(line -> line.trim().length() > 0)
+            .filter(line -> !line.trim().startsWith(";"))
+            .map(line -> Trimmers.rightTrim(line))
+            .collect(ImmutableList.toImmutableList());
     setChanged(newCode.size() != code.size());
     return newCode;
   }

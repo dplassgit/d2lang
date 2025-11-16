@@ -1,7 +1,8 @@
 package com.plasstech.lang.d2.testing;
 
 public class TestCode {
-  public static final String LINKED_LIST = """
+  public static final String LINKED_LIST =
+      """
       intlist: record {
          value: int
          next: intlist
@@ -27,9 +28,10 @@ public class TestCode {
        append(thelist, 1)
        append(thelist, 2)
        print_list(thelist)
-       """;
+      """;
 
-  public static final String RECORD_LOOP_INVARIANT = """
+  public static final String RECORD_LOOP_INVARIANT =
+      """
       rt: record{i:int}
       updaterec: proc(re:rt) {
         re.i = re.i + 1
@@ -45,7 +47,8 @@ public class TestCode {
       println val
       """;
 
-  public static final String RECORD_LOOP_NOT_INVARIANT = """
+  public static final String RECORD_LOOP_NOT_INVARIANT =
+      """
       rt: record{i:int}
       recordloopnoninvariant: proc(rec:rt): int {
         rec.i = 0

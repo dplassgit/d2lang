@@ -2,12 +2,11 @@ package com.plasstech.lang.d2.type;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.parse.node.DeclarationNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
+import org.junit.Test;
 
 public class RecordSymbolTest {
 
@@ -21,8 +20,8 @@ public class RecordSymbolTest {
 
   @Test
   public void isGeneric_formals() {
-    RecordDeclarationNode node = new RecordDeclarationNode("rec", ImmutableList.of(), null,
-        ImmutableList.of("T"));
+    RecordDeclarationNode node =
+        new RecordDeclarationNode("rec", ImmutableList.of(), null, ImmutableList.of("T"));
     RecordSymbol rs = new RecordSymbol(node);
     assertThat(rs.isGeneric()).isTrue();
     assertThat(rs.varType()).isNotNull();
@@ -53,8 +52,10 @@ public class RecordSymbolTest {
   @Test
   public void bind_noGenericFields() {
     RecordDeclarationNode node =
-        new RecordDeclarationNode("rec",
-            ImmutableList.of(new DeclarationNode("f1", VarType.INT, null)), null,
+        new RecordDeclarationNode(
+            "rec",
+            ImmutableList.of(new DeclarationNode("f1", VarType.INT, null)),
+            null,
             ImmutableList.of("T", "U"));
     RecordSymbol unboundSymbol = new RecordSymbol(node);
     assertThat(unboundSymbol.fieldType("f1")).isEqualTo(VarType.INT);
@@ -69,15 +70,16 @@ public class RecordSymbolTest {
   @Test
   public void bind_genericField() {
     RecordDeclarationNode node =
-        new RecordDeclarationNode("rec",
-            ImmutableList.of(new DeclarationNode("f1", new UnboundType("T"), null)), null,
+        new RecordDeclarationNode(
+            "rec",
+            ImmutableList.of(new DeclarationNode("f1", new UnboundType("T"), null)),
+            null,
             ImmutableList.of("T"));
     RecordSymbol unboundSymbol = new RecordSymbol(node);
     assertThat(unboundSymbol.fieldType("f1")).isInstanceOf(UnboundType.class);
     assertThat(unboundSymbol.varType()).isNotNull();
 
-    RecordSymbol boundSymbol =
-        unboundSymbol.bind(ImmutableMap.of("T", VarType.STRING));
+    RecordSymbol boundSymbol = unboundSymbol.bind(ImmutableMap.of("T", VarType.STRING));
     assertThat(boundSymbol.name()).isEqualTo("rec<STRING>");
     assertThat(boundSymbol.fieldType("f1")).isEqualTo(VarType.STRING);
     assertThat(boundSymbol.varType()).isNotNull();
@@ -86,7 +88,8 @@ public class RecordSymbolTest {
   @Test
   public void bind_repeatedGenericField() {
     RecordDeclarationNode node =
-        new RecordDeclarationNode("rec",
+        new RecordDeclarationNode(
+            "rec",
             ImmutableList.of(
                 new DeclarationNode("f1", new UnboundType("T"), null),
                 new DeclarationNode("f2", new UnboundType("T"), null)),
@@ -95,8 +98,7 @@ public class RecordSymbolTest {
     RecordSymbol unboundSymbol = new RecordSymbol(node);
     assertThat(unboundSymbol.varType()).isNotNull();
 
-    RecordSymbol boundSymbol =
-        unboundSymbol.bind(ImmutableMap.of("T", VarType.STRING));
+    RecordSymbol boundSymbol = unboundSymbol.bind(ImmutableMap.of("T", VarType.STRING));
     assertThat(boundSymbol.name()).isEqualTo("rec<STRING>");
     assertThat(boundSymbol.fieldType("f1")).isEqualTo(VarType.STRING);
     assertThat(boundSymbol.fieldType("f2")).isEqualTo(VarType.STRING);
@@ -106,7 +108,8 @@ public class RecordSymbolTest {
   @Test
   public void bind_multipleunGenericFields() {
     RecordDeclarationNode node =
-        new RecordDeclarationNode("rec",
+        new RecordDeclarationNode(
+            "rec",
             ImmutableList.of(
                 new DeclarationNode("f1", new UnboundType("T"), null),
                 new DeclarationNode("f2", new UnboundType("U"), null)),
@@ -126,7 +129,8 @@ public class RecordSymbolTest {
   @Test
   public void bind_boundAndUnboundFields() {
     RecordDeclarationNode node =
-        new RecordDeclarationNode("rec",
+        new RecordDeclarationNode(
+            "rec",
             ImmutableList.of(
                 new DeclarationNode("f1", new UnboundType("T"), null),
                 new DeclarationNode("f2", VarType.STRING, null)),

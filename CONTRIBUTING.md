@@ -23,7 +23,6 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 - [Join The Project Team](#join-the-project-team)
 
 
-
 ## I Have a Question
 
 > If you want to ask a question, we assume that you have read the available [Documentation](/docs).
@@ -43,6 +42,10 @@ We will then take review the issue as soon as possible.
 
 > ### Legal Notice
 > When contributing to this project, you must agree that you have authored 100% of the content, that you have the necessary rights to the content and that the content you contribute may be provided under the project license.
+
+### AI-generated code
+
+If you use an AI agent to generate or update code, you MUST indicate that in the pull request. You can use `#ai-generated` or `#ai-assisted` in the description.
 
 ### Reporting Bugs
 
@@ -145,9 +148,9 @@ Make sure all fields are set, and all numbers are between 0 and 100.
 
 ### Code style
 
-All BUILD files must be formatted using [buildifier](https://github.com/bazelbuild/buildtools/blob/master/buildifier/README.md)
+All BUILD files MUST be formatted using [buildifier](https://github.com/bazelbuild/buildtools/blob/master/buildifier/README.md)
 
-All Java files should be formatted using [google java formatter](https://github.com/google/google-java-format)
+All Java files MUST be formatted using [google java formatter](https://github.com/google/google-java-format)
 
 All .d files should be formatted manually. There is [no d2lang style guide yet](https://github.com/dplassgit/d2lang/issues/377).
 

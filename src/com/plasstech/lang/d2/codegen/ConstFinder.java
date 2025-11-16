@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Optional;
-import java.util.function.Predicate;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
@@ -17,6 +14,8 @@ import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /** Traverses all opcodes and finds constants of the given type. */
 class ConstFinder<T> extends DefaultOpcodeVisitor {

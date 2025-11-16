@@ -5,8 +5,6 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.R8;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
-import java.util.Map;
-
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
@@ -22,6 +20,7 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
 
 /** Generates nasm code for array manipulation. */
 class ArrayCodeGenerator extends DefaultOpcodeVisitor {
@@ -68,8 +67,8 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
 
       if (entrySize > 1) {
         emitter.emit(
-            "imul %s, %s ; total size of entries", allocSizeBytesRegister.nameByType(VarType.INT),
-            entrySize);
+            "imul %s, %s ; total size of entries",
+            allocSizeBytesRegister.nameByType(VarType.INT), entrySize);
       }
       emitter.emit(
           "add %s, %s  ; add storage for # of dimensions, and %d dimension value(s)",
@@ -234,9 +233,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     String leftName = resolver.resolve(op.left());
     String rightName = resolver.resolve(op.right());
     TokenType operator = op.operator();
-    emitter.emit(
-        "; array cmp: %s = %s %s %s",
-        destName, leftName, operator, rightName);
+    emitter.emit("; array cmp: %s = %s %s %s", destName, leftName, operator, rightName);
 
     boolean leftNull = leftName.equals("0") || left.type().isNull();
     boolean rightNull = rightName.equals("0") || right.type().isNull();
@@ -306,12 +303,12 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     Register leftLengthReg = resolver.allocate(VarType.INT);
     generateArrayLength(new RegisterLocation("__leftLength", leftLengthReg, VarType.INT), left);
     Register rightLengthReg = resolver.allocate(VarType.INT);
-    generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT),
-        right);
+    generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
 
     String continueLabel = Labels.nextLabel("array_memcmp");
-    emitter.emit("cmp %s, %s", leftLengthReg.nameByType(VarType.INT),
-        rightLengthReg.nameByType(VarType.INT));
+    emitter.emit(
+        "cmp %s, %s",
+        leftLengthReg.nameByType(VarType.INT), rightLengthReg.nameByType(VarType.INT));
     resolver.deallocate(rightLengthReg);
     emitter.emit("je %s", continueLabel);
     emitter.emit("; sizes are different; definitely not equal");
@@ -338,8 +335,7 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     // calculate header (1+4*dimensions) + total length ( base type * length)
     emitter.emit(
         "imul %s, %s  ; ...*base size ...", leftLengthReg, leftArrayType.baseType().size());
-    emitter.emit("add %s, %d  ; ... +1+dims*4", leftLengthReg,
-        1 + leftArrayType.dimensions() * 4);
+    emitter.emit("add %s, %d  ; ... +1+dims*4", leftLengthReg, 1 + leftArrayType.dimensions() * 4);
     // LeftLengthReg may or may not already be in r8
     resolver.mov(VarType.INT, leftLengthReg, R8);
     resolver.deallocate(leftLengthReg);

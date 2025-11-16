@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.codegen.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
@@ -11,6 +9,7 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.phase.testing.PhaseSubject;
+import java.util.List;
 
 public class ILCodeGeneratorSubject extends PhaseSubject {
   public static ILCodeGeneratorSubject assertThatGenerating(String code) {

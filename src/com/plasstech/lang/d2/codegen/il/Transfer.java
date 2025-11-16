@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.Objects;
-
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.common.Position;
+import java.util.Objects;
 
 /** Represents transfer between two locations - could be memory/memory or memory/reg, etc. */
 public class Transfer extends Op {

@@ -5,10 +5,6 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -49,10 +45,13 @@ import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements Phase {
-  private static final Escaper ESCAPER = new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ",
-      false);
+  private static final Escaper ESCAPER =
+      new PercentEscaper("`-=[];',./~!@#$%^&*()_+{}|:\"<>?\\ ", false);
 
   static final Map<TokenType, String> COMPARISON_OPCODE =
       ImmutableMap.<TokenType, String>builder()
@@ -64,21 +63,21 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           .put(TokenType.LEQ, "setle")
           .build();
 
-  private static final Map<TokenType, String> BINARY_OPCODE = ImmutableMap
-      .<TokenType, String>builder()
-      .put(TokenType.PLUS, "add")
-      .put(TokenType.MINUS, "sub")
-      .put(TokenType.MULT, "imul")
-      .put(TokenType.AND, "and") // for boolean
-      .put(TokenType.OR, "or") // for boolean
-      .put(TokenType.XOR, "xor") // for boolean
-      .put(TokenType.BIT_AND, "and") // for ints
-      .put(TokenType.BIT_OR, "or") // for ints
-      .put(TokenType.BIT_XOR, "xor") // for ints
-      .put(TokenType.SHIFT_LEFT, "shl")
-      .put(TokenType.SHIFT_RIGHT, "sar")
-      .putAll(COMPARISON_OPCODE)
-      .build();
+  private static final Map<TokenType, String> BINARY_OPCODE =
+      ImmutableMap.<TokenType, String>builder()
+          .put(TokenType.PLUS, "add")
+          .put(TokenType.MINUS, "sub")
+          .put(TokenType.MULT, "imul")
+          .put(TokenType.AND, "and") // for boolean
+          .put(TokenType.OR, "or") // for boolean
+          .put(TokenType.XOR, "xor") // for boolean
+          .put(TokenType.BIT_AND, "and") // for ints
+          .put(TokenType.BIT_OR, "or") // for ints
+          .put(TokenType.BIT_XOR, "xor") // for ints
+          .put(TokenType.SHIFT_LEFT, "shl")
+          .put(TokenType.SHIFT_RIGHT, "sar")
+          .putAll(COMPARISON_OPCODE)
+          .build();
 
   private final List<String> prelude = new ArrayList<>();
   private final Registers registers;
@@ -117,16 +116,17 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     OpcodeVisitor printGenerator = new PrintCodeGenerator(resolver, stringTable, emitter);
     OpcodeVisitor labelCodeGenerator = new LabelCodeGenerator(emitter);
     OpcodeVisitor rangeGenerator = new RangeCodeGenerator(resolver, emitter);
-    List<OpcodeVisitor> visitors = ImmutableList.of(
-        labelCodeGenerator,
-        inputGenerator,
-        printGenerator,
-        callGenerator,
-        stringGenerator,
-        arrayGenerator,
-        recordGenerator,
-        rangeGenerator,
-        this);
+    List<OpcodeVisitor> visitors =
+        ImmutableList.of(
+            labelCodeGenerator,
+            inputGenerator,
+            printGenerator,
+            callGenerator,
+            stringGenerator,
+            arrayGenerator,
+            recordGenerator,
+            rangeGenerator,
+            this);
 
     ImmutableList<Op> code = input.lastIlCode();
     code = ImmutableList.copyOf(DeallocateTemp.fixDeallocateTemps(code));
@@ -183,34 +183,53 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         }
       }
     } catch (D2RuntimeException e) {
-      ImmutableList<String> allCode = ImmutableList.<String>builder().add("PARTIAL ASSEMBLY\n\n")
-          .add("================\n\n").addAll(prelude)
-          .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-          .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-          .add("\nsection .text").addAll(emitter.all()).build();
+      ImmutableList<String> allCode =
+          ImmutableList.<String>builder()
+              .add("PARTIAL ASSEMBLY\n\n")
+              .add("================\n\n")
+              .addAll(prelude)
+              .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
+              .add("\nsection .data")
+              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+              .add("\nsection .text")
+              .addAll(emitter.all())
+              .build();
       System.err.println(Joiner.on('\n').join(allCode));
       input = input.addAsmCode(allCode).addException(e);
       return input;
     } catch (RuntimeException e) {
       e.printStackTrace();
       System.err.println("Latest opcode: " + latest);
-      ImmutableList<String> allCode = ImmutableList.<String>builder().add("PARTIAL ASSEMBLY\n\n")
-          .add("================\n\n").addAll(prelude)
-          .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-          .add("\nsection .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-          .add("\nsection .text").addAll(emitter.all()).build();
+      ImmutableList<String> allCode =
+          ImmutableList.<String>builder()
+              .add("PARTIAL ASSEMBLY\n\n")
+              .add("================\n\n")
+              .addAll(prelude)
+              .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
+              .add("\nsection .data")
+              .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+              .add("\nsection .text")
+              .addAll(emitter.all())
+              .build();
       input =
-          input.addAsmCode(allCode).addException(
-              new D2RuntimeException(e.getMessage(), null, e.getClass().getTypeName()));
+          input
+              .addAsmCode(allCode)
+              .addException(
+                  new D2RuntimeException(e.getMessage(), null, e.getClass().getTypeName()));
       return input;
     }
 
-    ImmutableList<String> allCode = ImmutableList.<String>builder().addAll(prelude)
-        .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
-        .add("")
-        .add("section .data").addAll(emitter.data().stream().map(s -> "  " + s).iterator())
-        .add("")
-        .add("section .text").addAll(emitter.all()).build();
+    ImmutableList<String> allCode =
+        ImmutableList.<String>builder()
+            .addAll(prelude)
+            .addAll(emitter.externs().stream().map(s -> "extern " + s).iterator())
+            .add("")
+            .add("section .data")
+            .addAll(emitter.data().stream().map(s -> "  " + s).iterator())
+            .add("")
+            .add("section .text")
+            .addAll(emitter.all())
+            .build();
 
     return input.addAsmCode(allCode);
   }
@@ -308,7 +327,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     VarType leftType = op.left().type();
 
     Location dest = op.destination();
-    if (op.left().isTemp() && op.destination().isTemp()
+    if (op.left().isTemp()
+        && op.destination().isTemp()
         && (leftType.isNumeric() || leftType == VarType.BOOL)
         // Only do this for int=int (op) int, because bool=int (relop) int has a weird set of
         // register sizes for now
@@ -405,8 +425,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           break;
 
         case DOT:
-          fail("Null pointer", op.position(),
-              "Cannot retrieve field %s of NULL RECORD", op.right());
+          fail(
+              "Null pointer", op.position(), "Cannot retrieve field %s of NULL RECORD", op.right());
           break;
 
         default:
@@ -417,13 +437,13 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       fail(op.position(), "Cannot do anything (%s) on %ss (yet?)", operator, leftType);
     }
 
-    // we still deallocate the left, because that removes it from the alias lists etc 
+    // we still deallocate the left, because that removes it from the alias lists etc
     resolver.deallocate(op.left());
     resolver.deallocate(op.right());
   }
 
-  private void generateByteMult(ResolvedOperand leftRo, ResolvedOperand rightRo,
-      ResolvedOperand destRo) {
+  private void generateByteMult(
+      ResolvedOperand leftRo, ResolvedOperand rightRo, ResolvedOperand destRo) {
 
     // 1. if dest is not in a reg, make a reg
     Register allocatedDestReg = null;
@@ -465,9 +485,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
     }
   }
 
-  private void generateShift(ResolvedOperand leftRo,
-      ResolvedOperand rightRo, ResolvedOperand destRo,
-      TokenType operator) {
+  private void generateShift(
+      ResolvedOperand leftRo, ResolvedOperand rightRo, ResolvedOperand destRo, TokenType operator) {
 
     if (rightRo.isConstant()) {
       // Easy, because shl and sar can take a constant
@@ -497,9 +516,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       emitter.emit("; dest in rcx - go through temp reg %s", tempReg);
       resolver.mov(leftRo, tempReg);
       resolver.mov(rightRo, RCX);
-      emitter.emit("%s %s, CL",
-          BINARY_OPCODE.get(operator),
-          tempReg.nameByType(leftRo.type()));
+      emitter.emit("%s %s, CL", BINARY_OPCODE.get(operator), tempReg.nameByType(leftRo.type()));
       resolver.mov(tempReg, destRo);
       resolver.deallocate(tempReg);
       return;
@@ -520,9 +537,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       // since it's not in RCX, put it there.
       resolver.mov(rightRo, RCX);
     }
-    emitter.emit("%s %s, CL",
-        BINARY_OPCODE.get(operator),
-        destRo.name());
+    emitter.emit("%s %s, CL", BINARY_OPCODE.get(operator), destRo.name());
     if (registerState != null) {
       registerState.condPop();
     }
@@ -536,11 +551,9 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       Register tempReg = resolver.allocate(source.type());
       source = resolver.resolveFully(source.operand());
       resolver.mov(source, tempReg);
-      emitter.emit("%s %s %s, %s",
-          BINARY_OPCODE.get(operator),
-          Size.of(source.type()).asmType,
-          dest.name(),
-          tempReg.name());
+      emitter.emit(
+          "%s %s %s, %s",
+          BINARY_OPCODE.get(operator), Size.of(source.type()).asmType, dest.name(), tempReg.name());
       resolver.deallocate(tempReg);
       // NOTE RETURN
       return;
@@ -553,7 +566,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       resolver.mov(dest, tempReg);
       // re-resolve in case source was spilled
       source = resolver.resolveFully(source.operand());
-      emitter.emit("%s %s %s, %s",
+      emitter.emit(
+          "%s %s %s, %s",
           BINARY_OPCODE.get(operator),
           Size.of(source.type()).asmType,
           tempReg.nameByType(source.type()),
@@ -562,22 +576,19 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       resolver.deallocate(tempReg);
       return;
     }
-    emitter.emit("%s %s %s, %s",
-        BINARY_OPCODE.get(operator),
-        Size.of(source.type()).asmType,
-        dest.name(),
-        source.name());
+    emitter.emit(
+        "%s %s %s, %s",
+        BINARY_OPCODE.get(operator), Size.of(source.type()).asmType, dest.name(), source.name());
   }
 
-  private void generateCmp(ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator,
-      String destName) {
+  private void generateCmp(
+      ResolvedOperand leftRo, ResolvedOperand rightRo, TokenType operator, String destName) {
     Register tempReg = null;
     if (directCompare(leftRo, rightRo)) {
       // Direct comparison: reg/anything, mem/reg, mem/imm8, mem/imm32
-      emitter.emit("cmp %s %s, %s  ; direct comparison",
-          Size.of(leftRo.type()).asmType,
-          leftRo.name(),
-          rightRo.name());
+      emitter.emit(
+          "cmp %s %s, %s  ; direct comparison",
+          Size.of(leftRo.type()).asmType, leftRo.name(), rightRo.name());
     } else if (rightRo.isConstant()) {
       // TODO: simplify this
 
@@ -589,8 +600,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       resolver.mov(leftRo.operand(), tempReg);
       Register rightReg = resolver.allocate(VarType.INT);
       resolver.mov(rightRo.operand(), rightReg);
-      emitter.emit("cmp %s, %s  ; imm comparison", tempRegName,
-          rightReg.nameByType(rightRo.type()));
+      emitter.emit(
+          "cmp %s, %s  ; imm comparison", tempRegName, rightReg.nameByType(rightRo.type()));
       resolver.deallocate(rightReg);
     } else {
       // imm/imm, imm/reg, imm/mem, mem/mem
@@ -697,8 +708,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       case BIT_NOT:
         // NOTE: NOT TWOS COMPLEMENT NOT, it's 1-s complement not.
         if (!source.type().isIntegral()) {
-          fail("Code generation", op.position(),
-              "Cannot apply %s to %s expression; must be BYTE, INT or LONG", op.operator(),
+          fail(
+              "Code generation",
+              op.position(),
+              "Cannot apply %s to %s expression; must be BYTE, INT or LONG",
+              op.operator(),
               source.type());
         }
         resolver.mov(source, destination);
@@ -708,8 +722,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       case NOT:
         // boolean not
         if (source.type() != VarType.BOOL) {
-          fail("Code generation", op.position(),
-              "Cannot apply %s to %s expression; must be BOOL", op.operator(),
+          fail(
+              "Code generation",
+              op.position(),
+              "Cannot apply %s to %s expression; must be BOOL",
+              op.operator(),
               source.type());
         }
         resolver.mov(source, destination);
@@ -721,8 +738,11 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           op.accept(doubleGenerator);
         } else {
           if (!source.type().isIntegral()) {
-            fail("Code generation", op.position(),
-                "Cannot apply %s to %s expression; must be BYTE, INT or LONG", op.operator(),
+            fail(
+                "Code generation",
+                op.position(),
+                "Cannot apply %s to %s expression; must be BYTE, INT or LONG",
+                op.operator(),
                 source.type());
           }
           resolver.mov(source, destination);
@@ -731,15 +751,20 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
         break;
 
       case LENGTH:
-        fail("Null pointer", op.position(),
+        fail(
+            "Null pointer",
+            op.position(),
             "Cannot apply LENGTH function to %s expression; must be ARRAY or STRING",
             source.type());
         break;
 
       case ASC:
         if (source.type() != VarType.STRING) {
-          fail("Code generation", op.position(),
-              "Cannot apply %s to %s expression; must be STRING", op.operator(),
+          fail(
+              "Code generation",
+              op.position(),
+              "Cannot apply %s to %s expression; must be STRING",
+              op.operator(),
               source.type());
         }
         // Just read one byte
@@ -748,15 +773,15 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
           // if we turn off optimizations, asc('hi') generates
           // _temp1='hi' _temp2=asc(_temp1) so it's not really asc(constant)...
           String value = ConstantOperand.stringValueFromConstOperand(source);
-          emitter.emit("mov %s, %d ; store a full int (anded to 0xff)", destName,
-              (value.charAt(0)) & 0xff);
+          emitter.emit(
+              "mov %s, %d ; store a full int (anded to 0xff)", destName, (value.charAt(0)) & 0xff);
         } else {
           if (resolver.isInAnyRegister(source) && resolver.isInAnyRegister(destination)) {
             // register to register, don't need extra temp
             Register sourceReg = resolver.toRegister(source);
             Register destReg = resolver.toRegister(destination);
-            emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE),
-                sourceReg);
+            emitter.emit(
+                "mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE), sourceReg);
           } else {
 
             // Source or dest is in memory; use a temp register.
@@ -768,8 +793,8 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
             if (resolver.isInAnyRegister(destination)) {
               // two regs, good.
               Register destReg = resolver.toRegister(destination);
-              emitter.emit("mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE),
-                  tempReg);
+              emitter.emit(
+                  "mov BYTE %s, [%s] ; copy a byte", destReg.nameByType(VarType.BYTE), tempReg);
             } else {
               // This can't really happen, probably, because destinations
               // are typically temps, which are stored in registers.
@@ -829,11 +854,13 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
   @Override
   public void visit(Return op) {
     // we can't just "ret" here because there's cleanup we need to do first.
-    op.returnValueLocation().ifPresent(returnValue -> {
-      // transfer from return value to XMM0/RAX
-      resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
-      resolver.deallocate(returnValue);
-    });
+    op.returnValueLocation()
+        .ifPresent(
+            returnValue -> {
+              // transfer from return value to XMM0/RAX
+              resolver.mov(returnValue, Registers.returnRegister(returnValue.type()));
+              resolver.deallocate(returnValue);
+            });
     // NOTYPO
     emitter.emit("jmp __exit_of_%s", op.procName());
   }

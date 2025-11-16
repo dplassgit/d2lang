@@ -3,9 +3,8 @@ package com.plasstech.lang.d2.lex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-
 import com.plasstech.lang.d2.common.TokenType;
+import org.junit.Test;
 
 public class LexerTest {
   @Test

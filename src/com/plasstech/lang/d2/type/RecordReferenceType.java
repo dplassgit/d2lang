@@ -1,12 +1,11 @@
 package com.plasstech.lang.d2.type;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /** A forward (or backward) reference to a record type. */
 public class RecordReferenceType extends PointerType {
@@ -17,8 +16,9 @@ public class RecordReferenceType extends PointerType {
 
   public static String toFqName(String recordName, List<? extends VarType> actualTypes) {
     if (actualTypes.size() > 0) {
-      return String.format("%s<%s>", recordName,
-          Joiner.on(", ").join(actualTypes.stream().map(VarType::toString).toList()));
+      return String.format(
+          "%s<%s>",
+          recordName, Joiner.on(", ").join(actualTypes.stream().map(VarType::toString).toList()));
     } else {
       return recordName;
     }
@@ -44,8 +44,8 @@ public class RecordReferenceType extends PointerType {
    * @param formalTypes the formal types. They may be empty if we don't know yet
    * @param actualTypes the actual types. They may be empty if it's not generic.
    */
-  public RecordReferenceType(String baseName, List<UnboundType> formalTypes,
-      List<VarType> actualTypes) {
+  public RecordReferenceType(
+      String baseName, List<UnboundType> formalTypes, List<VarType> actualTypes) {
     super(baseName);
     this.formalTypes = ImmutableList.copyOf(formalTypes);
     this.actualTypes = ImmutableList.copyOf(actualTypes);
@@ -69,12 +69,12 @@ public class RecordReferenceType extends PointerType {
   }
 
   @Override
-  final public boolean isRecord() {
+  public final boolean isRecord() {
     return true;
   }
 
   @Override
-  final public boolean compatibleWith(VarType that) {
+  public final boolean compatibleWith(VarType that) {
     return that.equals(this) || that.isNull();
   }
 
@@ -113,13 +113,16 @@ public class RecordReferenceType extends PointerType {
   }
 
   public RecordReferenceType bind(Map<String, VarType> mapping) {
-    Preconditions.checkState(actualTypes.isEmpty(),
-        "Cannot re-bind an already bound RECORD %s", toString());
-    Preconditions.checkState(!formalTypes.isEmpty(),
-        "Cannot bind a non-generic RECORD %s", toString());
-    Preconditions.checkState(mapping.size() == formalTypes.size(),
+    Preconditions.checkState(
+        actualTypes.isEmpty(), "Cannot re-bind an already bound RECORD %s", toString());
+    Preconditions.checkState(
+        !formalTypes.isEmpty(), "Cannot bind a non-generic RECORD %s", toString());
+    Preconditions.checkState(
+        mapping.size() == formalTypes.size(),
         "Wrong number of actual type parameters to RECORD %s; expected %s, saw %s",
-        toString(), formalTypes.size(), mapping.size());
+        toString(),
+        formalTypes.size(),
+        mapping.size());
     List<VarType> actuals =
         formalTypes.stream().map(unboundType -> mapping.get(unboundType.name())).toList();
     return new RecordReferenceType(baseName(), formalTypes, actuals);

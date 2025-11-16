@@ -1,11 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.Labels;
@@ -36,6 +30,11 @@ import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
 /** For each opcode, remap temps with a new id. Remap any stack variables too. */
 class InlineRemapper extends DefaultOpcodeVisitor {
@@ -227,7 +226,7 @@ class InlineRemapper extends DefaultOpcodeVisitor {
 
       case LOCAL:
       case PARAM:
-        return newLongTemp(location);//toRemappedTempName(location.name()), location.type());
+        return newLongTemp(location); // toRemappedTempName(location.name()), location.type());
 
       default:
         // global

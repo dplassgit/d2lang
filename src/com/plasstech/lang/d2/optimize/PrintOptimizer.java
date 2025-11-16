@@ -46,7 +46,7 @@ class PrintOptimizer extends LineOptimizer {
 
   /**
    * Optimize printing a constant non-string, to print it as a string.
-   * 
+   *
    * @return true if optimized this op.
    */
   private boolean optimizePrintConstant(SysCall op) {

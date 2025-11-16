@@ -1,18 +1,16 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import javax.annotation.Nullable;
-
 import com.google.auto.value.AutoBuilder;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import javax.annotation.Nullable;
 
-/**
- * An operand that is "resolved" already to either a location or a register.
- */
-record ResolvedOperand(Operand operand, String name, @Nullable Location location,
-    @Nullable Register register) implements Operand {
+/** An operand that is "resolved" already to either a location or a register. */
+record ResolvedOperand(
+    Operand operand, String name, @Nullable Location location, @Nullable Register register)
+    implements Operand {
 
   @Override
   public VarType type() {

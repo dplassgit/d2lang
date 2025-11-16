@@ -9,9 +9,6 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -29,6 +26,8 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 import com.plasstech.lang.d2.type.testing.NumericTypeProvider;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ArithmeticOptimizerTest {
@@ -47,8 +46,7 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void varPlusVarBecomesShift() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, INT2, TokenType.PLUS, INT2, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(INT1, INT2, TokenType.PLUS, INT2, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -63,8 +61,7 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, one, TokenType.PLUS, one, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(DBL1, one, TokenType.PLUS, one, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -79,8 +76,7 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(4, varType);
-    ImmutableList<Op> program =
-        ImmutableList.of(new UnaryOp(DBL1, TokenType.BIT_NOT, one, null));
+    ImmutableList<Op> program = ImmutableList.of(new UnaryOp(DBL1, TokenType.BIT_NOT, one, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -94,8 +90,9 @@ public class ArithmeticOptimizerTest {
   public void doubleConstPlusConst() {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.of(1.23), TokenType.PLUS,
-            ConstantOperand.of(234.56), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1, ConstantOperand.of(1.23), TokenType.PLUS, ConstantOperand.of(234.56), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -110,8 +107,7 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, one, TokenType.MINUS, one, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(DBL1, one, TokenType.MINUS, one, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -126,8 +122,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.fromValue(2, varType), TokenType.MULT,
-            ConstantOperand.fromValue(3, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1,
+                ConstantOperand.fromValue(2, varType),
+                TokenType.MULT,
+                ConstantOperand.fromValue(3, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -155,8 +156,12 @@ public class ArithmeticOptimizerTest {
   public void multByPowerOf2Long() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(INT1, LocationUtils.newTempLocation("long", VarType.LONG), TokenType.MULT,
-                ConstantOperand.of(8L), null));
+            new BinOp(
+                INT1,
+                LocationUtils.newTempLocation("long", VarType.LONG),
+                TokenType.MULT,
+                ConstantOperand.of(8L),
+                null));
 
     optimizer.optimize(program, null);
 
@@ -181,8 +186,12 @@ public class ArithmeticOptimizerTest {
   public void divByPowerOf2Long() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(INT1, LocationUtils.newTempLocation("long", VarType.LONG), TokenType.DIV,
-                ConstantOperand.of(8L), null));
+            new BinOp(
+                INT1,
+                LocationUtils.newTempLocation("long", VarType.LONG),
+                TokenType.DIV,
+                ConstantOperand.of(8L),
+                null));
 
     optimizer.optimize(program, null);
 
@@ -194,8 +203,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.fromValue(12, varType), TokenType.MOD,
-            ConstantOperand.fromValue(5, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1,
+                ConstantOperand.fromValue(12, varType),
+                TokenType.MOD,
+                ConstantOperand.fromValue(5, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -210,8 +224,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.fromValue(12, varType), TokenType.DIV,
-            ConstantOperand.fromValue(3, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1,
+                ConstantOperand.fromValue(12, varType),
+                TokenType.DIV,
+                ConstantOperand.fromValue(3, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -226,8 +245,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.fromValue(1, varType), TokenType.DIV,
-            ConstantOperand.fromValue(6, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1,
+                ConstantOperand.fromValue(1, varType),
+                TokenType.DIV,
+                ConstantOperand.fromValue(6, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -242,8 +266,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(DBL1, ConstantOperand.fromValue(-1, varType), TokenType.DIV,
-            ConstantOperand.fromValue(-6, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                DBL1,
+                ConstantOperand.fromValue(-1, varType),
+                TokenType.DIV,
+                ConstantOperand.fromValue(-6, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -308,8 +337,7 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void varPlusVarStrings() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, STR1, TokenType.PLUS, STR1, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(INT1, STR1, TokenType.PLUS, STR1, null));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
@@ -336,8 +364,7 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void constStringPlusConstString(
-      @TestParameter({"a", ""}) String leftValue,
-      @TestParameter({"", "b"}) String rightValue) {
+      @TestParameter({"a", ""}) String leftValue, @TestParameter({"", "b"}) String rightValue) {
 
     Operand left = ConstantOperand.of(leftValue);
     Operand right = ConstantOperand.of(rightValue);
@@ -516,8 +543,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.fromValue(111, varType), TokenType.BIT_AND,
-            ConstantOperand.fromValue(4, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1,
+                ConstantOperand.fromValue(111, varType),
+                TokenType.BIT_AND,
+                ConstantOperand.fromValue(4, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -530,8 +562,9 @@ public class ArithmeticOptimizerTest {
   @Test
   public void constBoolAndConst(@TestParameter boolean left, @TestParameter boolean right) {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.of(left), TokenType.AND,
-            ConstantOperand.of(right), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1, ConstantOperand.of(left), TokenType.AND, ConstantOperand.of(right), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -544,8 +577,9 @@ public class ArithmeticOptimizerTest {
   @Test
   public void constBoolOrConst(@TestParameter boolean left, @TestParameter boolean right) {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.of(left), TokenType.OR,
-            ConstantOperand.of(right), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1, ConstantOperand.of(left), TokenType.OR, ConstantOperand.of(right), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -558,8 +592,9 @@ public class ArithmeticOptimizerTest {
   @Test
   public void constBoolXorConst(@TestParameter boolean left, @TestParameter boolean right) {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.of(left), TokenType.XOR,
-            ConstantOperand.of(right), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1, ConstantOperand.of(left), TokenType.XOR, ConstantOperand.of(right), null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -586,8 +621,7 @@ public class ArithmeticOptimizerTest {
   @Test
   public void boolWithItself(@TestParameter({"AND", "OR"}) TokenType tokenType) {
     Location left = LocationUtils.newMemoryAddress("left", VarType.BOOL);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, left, tokenType, left, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(INT1, left, tokenType, left, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -644,8 +678,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.fromValue(111, varType), TokenType.BIT_OR,
-            ConstantOperand.fromValue(4, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1,
+                ConstantOperand.fromValue(111, varType),
+                TokenType.BIT_OR,
+                ConstantOperand.fromValue(4, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -660,8 +699,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT1, ConstantOperand.fromValue(111, varType), TokenType.BIT_XOR,
-            ConstantOperand.fromValue(4, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1,
+                ConstantOperand.fromValue(111, varType),
+                TokenType.BIT_XOR,
+                ConstantOperand.fromValue(4, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -676,9 +720,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT1, ConstantOperand.fromValue(111, varType), TokenType.SHIFT_LEFT,
-                ConstantOperand.fromValue(4, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1,
+                ConstantOperand.fromValue(111, varType),
+                TokenType.SHIFT_LEFT,
+                ConstantOperand.fromValue(4, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -693,9 +741,13 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT1, ConstantOperand.fromValue(120, varType), TokenType.SHIFT_RIGHT,
-                ConstantOperand.fromValue(3, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1,
+                ConstantOperand.fromValue(120, varType),
+                TokenType.SHIFT_RIGHT,
+                ConstantOperand.fromValue(3, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -707,16 +759,15 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void emptyAsc() {
-    assertThatInterpreting(
-        "c=asc('')")
-        .withOptimizer(optimizer).hasCompileTimeError("Cannot take ASC of empty STRING");
+    assertThatInterpreting("c=asc('')")
+        .withOptimizer(optimizer)
+        .hasCompileTimeError("Cannot take ASC of empty STRING");
   }
 
   @Test
   public void constAsc() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new UnaryOp(INT1, TokenType.ASC, ConstantOperand.of("ABC"), null));
+        ImmutableList.of(new UnaryOp(INT1, TokenType.ASC, ConstantOperand.of("ABC"), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -728,8 +779,7 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
 
     Location left = LocationUtils.newParamLocation("operand", varType, 0, 0);
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(left, left, TokenType.MOD, left, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(left, left, TokenType.MOD, left, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -741,8 +791,13 @@ public class ArithmeticOptimizerTest {
   @Test
   public void mod1(@TestParameter(valuesProvider = IntegralTypeProvider.class) VarType varType) {
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(INT2, ConstantOperand.fromValue(14, varType), TokenType.MOD,
-            ConstantOperand.fromValue(1, varType), null));
+        ImmutableList.of(
+            new BinOp(
+                INT2,
+                ConstantOperand.fromValue(14, varType),
+                TokenType.MOD,
+                ConstantOperand.fromValue(1, varType),
+                null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -760,8 +815,7 @@ public class ArithmeticOptimizerTest {
     Operand left = LocationUtils.newTempLocation("operand", varType);
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
 
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(dest, left, operand, one, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(dest, left, operand, one, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -779,8 +833,7 @@ public class ArithmeticOptimizerTest {
     Operand left = LocationUtils.newTempLocation("operand", varType);
     ConstantOperand<? extends Number> negOne = ConstantOperand.fromValue(-1, varType);
 
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -798,8 +851,7 @@ public class ArithmeticOptimizerTest {
     Operand left = LocationUtils.newTempLocation("operand", varType);
     ConstantOperand<? extends Number> negOne = ConstantOperand.fromValue(-2, varType);
 
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(dest, left, operand, negOne, null));
 
     optimizer.optimize(program, null);
 
@@ -808,25 +860,24 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void opZeroUnchanged(
-      @TestParameter(
-        {"PLUS", "MINUS", "SHIFT_LEFT", "SHIFT_RIGHT", "BIT_XOR", "BIT_OR"}
-      ) TokenType operator,
+      @TestParameter({"PLUS", "MINUS", "SHIFT_LEFT", "SHIFT_RIGHT", "BIT_XOR", "BIT_OR"})
+          TokenType operator,
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
-    assume().that(
-        (operator == TokenType.SHIFT_LEFT
-            || operator == TokenType.BIT_XOR
-            || operator == TokenType.SHIFT_RIGHT
-            || operator == TokenType.BIT_OR)
-            && !varType.isIntegral())
+    assume()
+        .that(
+            (operator == TokenType.SHIFT_LEFT
+                    || operator == TokenType.BIT_XOR
+                    || operator == TokenType.SHIFT_RIGHT
+                    || operator == TokenType.BIT_OR)
+                && !varType.isIntegral())
         .isFalse();
 
     Location dest = LocationUtils.newTempLocation("dest", varType);
     Operand left = LocationUtils.newTempLocation("operand", varType);
     ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
 
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(dest, left, operator, zero, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(dest, left, operator, zero, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -841,8 +892,7 @@ public class ArithmeticOptimizerTest {
       @TestParameter(valuesProvider = NumericTypeProvider.class) VarType varType) {
 
     ConstantOperand<? extends Number> one = ConstantOperand.fromValue(1, varType);
-    ImmutableList<Op> program =
-        ImmutableList.of(new UnaryOp(INT1, operator, one, null));
+    ImmutableList<Op> program = ImmutableList.of(new UnaryOp(INT1, operator, one, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -867,8 +917,7 @@ public class ArithmeticOptimizerTest {
     Operand left = LocationUtils.newTempLocation("operand", varType);
     ConstantOperand<? extends Number> zero = ConstantOperand.fromValue(0, varType);
 
-    ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(dest, left, operator, zero, null));
+    ImmutableList<Op> program = ImmutableList.of(new BinOp(dest, left, operator, zero, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
@@ -947,8 +996,8 @@ public class ArithmeticOptimizerTest {
   @Test
   public void rangeConstantIndex() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT1, CONSTANT_RANGE, TokenType.LBRACKET, ConstantOperand.of(0), null));
+        ImmutableList.of(
+            new BinOp(INT1, CONSTANT_RANGE, TokenType.LBRACKET, ConstantOperand.of(0), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -959,9 +1008,13 @@ public class ArithmeticOptimizerTest {
   public void constantStringConstantRange() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(2, 4), VarType.RANGE), null));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(2, 4), VarType.RANGE),
+                null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -972,9 +1025,13 @@ public class ArithmeticOptimizerTest {
   public void constantStringEmptyRange() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("123456"), TokenType.LBRACKET,
-                new ConstantOperand<Range>(new Range(2, 2), VarType.RANGE), null));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("123456"),
+                TokenType.LBRACKET,
+                new ConstantOperand<Range>(new Range(2, 2), VarType.RANGE),
+                null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -985,8 +1042,8 @@ public class ArithmeticOptimizerTest {
   public void constantStringLength() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new UnaryOp(stringResult, TokenType.LENGTH, ConstantOperand.of("abc"), null));
+        ImmutableList.of(
+            new UnaryOp(stringResult, TokenType.LENGTH, ConstantOperand.of("abc"), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -997,9 +1054,13 @@ public class ArithmeticOptimizerTest {
   public void constantStringIndex() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(stringResult, ConstantOperand.of("abc"), TokenType.LBRACKET,
-                ConstantOperand.of(1), null));
+        ImmutableList.of(
+            new BinOp(
+                stringResult,
+                ConstantOperand.of("abc"),
+                TokenType.LBRACKET,
+                ConstantOperand.of(1),
+                null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -1009,9 +1070,9 @@ public class ArithmeticOptimizerTest {
   @Test
   public void constantColon() {
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(INT1, ConstantOperand.of(123), TokenType.COLON,
-                ConstantOperand.of(234), null));
+        ImmutableList.of(
+            new BinOp(
+                INT1, ConstantOperand.of(123), TokenType.COLON, ConstantOperand.of(234), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -1024,8 +1085,7 @@ public class ArithmeticOptimizerTest {
   public void constChr() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new UnaryOp(stringResult, TokenType.CHR, ConstantOperand.of(42), null));
+        ImmutableList.of(new UnaryOp(stringResult, TokenType.CHR, ConstantOperand.of(42), null));
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
     assertThat(optimized).hasSize(1);
@@ -1036,8 +1096,7 @@ public class ArithmeticOptimizerTest {
   public void nonConstChr() {
     Location stringResult = LocationUtils.newStackLocation("string", VarType.STRING, 8);
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new UnaryOp(stringResult, TokenType.CHR, INT1, null));
+        ImmutableList.of(new UnaryOp(stringResult, TokenType.CHR, INT1, null));
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
@@ -1064,9 +1123,8 @@ public class ArithmeticOptimizerTest {
     Operand right = LocationUtils.newTempLocation("operand", varType);
 
     ImmutableList<Op> program =
-        ImmutableList
-            .of(new BinOp(dest, ConstantOperand.fromValue(10, varType), TokenType.MINUS, right,
-                null));
+        ImmutableList.of(
+            new BinOp(dest, ConstantOperand.fromValue(10, varType), TokenType.MINUS, right, null));
 
     optimizer.optimize(program, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -1091,8 +1149,7 @@ public class ArithmeticOptimizerTest {
   @Test
   public void addingStringsAreNotChanged() {
     ImmutableList<Op> input =
-        ImmutableList
-            .of(new BinOp(STR1, STR2, TokenType.PLUS, ConstantOperand.of("hi"), null));
+        ImmutableList.of(new BinOp(STR1, STR2, TokenType.PLUS, ConstantOperand.of("hi"), null));
     optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isFalse();
   }
@@ -1109,8 +1166,8 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized).hasSize(1);
-    assertThat(optimized.get(0)).isBinOp(loc, loc, TokenType.MINUS,
-        ConstantOperand.fromValue(2, varType));
+    assertThat(optimized.get(0))
+        .isBinOp(loc, loc, TokenType.MINUS, ConstantOperand.fromValue(2, varType));
   }
 
   @Test
@@ -1125,8 +1182,8 @@ public class ArithmeticOptimizerTest {
     assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized).hasSize(1);
-    assertThat(optimized.get(0)).isBinOp(loc, loc, TokenType.PLUS,
-        ConstantOperand.fromValue(2, varType));
+    assertThat(optimized.get(0))
+        .isBinOp(loc, loc, TokenType.PLUS, ConstantOperand.fromValue(2, varType));
   }
 
   @Test
@@ -1136,8 +1193,7 @@ public class ArithmeticOptimizerTest {
     ConstantOperand<String> rhs = ConstantOperand.of("hi");
     Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(
-            new BinOp(loc, nullOp, TokenType.NULL_COALESCE, rhs, null));
+        ImmutableList.of(new BinOp(loc, nullOp, TokenType.NULL_COALESCE, rhs, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -1152,8 +1208,7 @@ public class ArithmeticOptimizerTest {
     ConstantOperand<String> lhs = ConstantOperand.of("hi");
     Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(
-            new BinOp(loc, lhs, TokenType.NULL_COALESCE, nullOp, null));
+        ImmutableList.of(new BinOp(loc, lhs, TokenType.NULL_COALESCE, nullOp, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -1167,8 +1222,7 @@ public class ArithmeticOptimizerTest {
     Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
     Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(
-            new BinOp(loc, nullOp, TokenType.NULL_COALESCE, nullOp, null));
+        ImmutableList.of(new BinOp(loc, nullOp, TokenType.NULL_COALESCE, nullOp, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -1182,8 +1236,7 @@ public class ArithmeticOptimizerTest {
     Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
     ConstantOperand<String> lhs = ConstantOperand.of("hi");
     ImmutableList<Op> input =
-        ImmutableList.of(
-            new BinOp(loc, lhs, TokenType.NULL_COALESCE, lhs, null));
+        ImmutableList.of(new BinOp(loc, lhs, TokenType.NULL_COALESCE, lhs, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 

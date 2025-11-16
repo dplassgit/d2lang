@@ -5,9 +5,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.type.testing.StaticCheckerSubject.assertThatTypeChecking;
 import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
@@ -22,6 +19,8 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.phase.State;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class StaticCheckerTest {
@@ -888,42 +887,48 @@ public class StaticCheckerTest {
     assertThatTypeChecking("fib:proc():int {}").hasError("Not all codepaths");
     assertThatTypeChecking("fib:proc():bool { if false { return false } }")
         .hasError("Not all codepaths");
-    assertThatTypeChecking("fib:proc():bool {"
-        + "if false {"
-        + "  if true {"
-        + "    return false"
-        + "  } elif false {"
-        + "    return true"
-        + "  } else {"
-        + "    print 'hi'"
-        + "  }"
-        + "}"
-        + "}").hasError("Not all codepaths");
+    assertThatTypeChecking(
+            "fib:proc():bool {"
+                + "if false {"
+                + "  if true {"
+                + "    return false"
+                + "  } elif false {"
+                + "    return true"
+                + "  } else {"
+                + "    print 'hi'"
+                + "  }"
+                + "}"
+                + "}")
+        .hasError("Not all codepaths");
     assertThatTypeChecking("fib:proc():bool {if false {return false} else {print 'hi'}}")
         .hasError("Not all codepaths");
-    assertThatTypeChecking("fob:proc():int {"
-        + "if (false) {"
-        + "  if (true) {"
-        + "  } elif (3==3) {"
-        + "  } else {"
-        + "  }"
-        + "} elif (3==3) {"
-        + "  if (true) {"
-        + "    return 3"
-        + "  } elif (3==3) {"
-        + "    return 3"
-        + "  } else {"
-        + "    return 3"
-        + "  }"
-        + "}"
-        + "}").hasError("Not all codepaths");
-    assertThatTypeChecking("      head:proc{}\r\n"
-        + "head=[1]\r\n"
-        + "bar:proc:int{\r\n"
-        + "  if true {\r\n"
-        + "    return head[0]\r\n"
-        + "  }"
-        + "}").hasError("Not all codepaths");
+    assertThatTypeChecking(
+            "fob:proc():int {"
+                + "if (false) {"
+                + "  if (true) {"
+                + "  } elif (3==3) {"
+                + "  } else {"
+                + "  }"
+                + "} elif (3==3) {"
+                + "  if (true) {"
+                + "    return 3"
+                + "  } elif (3==3) {"
+                + "    return 3"
+                + "  } else {"
+                + "    return 3"
+                + "  }"
+                + "}"
+                + "}")
+        .hasError("Not all codepaths");
+    assertThatTypeChecking(
+            "      head:proc{}\r\n"
+                + "head=[1]\r\n"
+                + "bar:proc:int{\r\n"
+                + "  if true {\r\n"
+                + "    return head[0]\r\n"
+                + "  }"
+                + "}")
+        .hasError("Not all codepaths");
   }
 
   @Test
@@ -1070,10 +1075,8 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_redeclaredInProc() {
-    assertThatTypeChecking("      f:proc{\n"
-        + "  r: int \n"
-        + "  r:record{b:bool}\n"
-        + "}\n").hasError("redeclared as INT");
+    assertThatTypeChecking("      f:proc{\n" + "  r: int \n" + "  r:record{b:bool}\n" + "}\n")
+        .hasError("redeclared as INT");
   }
 
   @Test
@@ -1100,10 +1103,8 @@ public class StaticCheckerTest {
 
   @Test
   public void recordDefinition_error_redeclaredInProc() {
-    assertThatTypeChecking("      f:proc{\n"
-        + "  r: int \n"
-        + "  r:record{b:bool}\n"
-        + "}\n").hasError("redeclared as INT");
+    assertThatTypeChecking("      f:proc{\n" + "  r: int \n" + "  r:record{b:bool}\n" + "}\n")
+        .hasError("redeclared as INT");
   }
 
   @Test
@@ -1120,77 +1121,93 @@ public class StaticCheckerTest {
 
   @Test
   public void recordFieldGetGeneric() {
-    assertThatTypeChecking("""
-        r2: record<T> {i:T}
-        anr2=new r2<int>
-        x:int
-        x=anr2.i
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<T> {i:T}
+            anr2=new r2<int>
+            x:int
+            x=anr2.i
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldSetGeneric() {
-    assertThatTypeChecking("""
-        r2: record<T> {i:T}
-        anr2=new r2<int>
-        anr2.i = 3
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<T> {i:T}
+            anr2=new r2<int>
+            anr2.i = 3
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldSetGenericFromReturnValue() {
-    assertThatTypeChecking("""
-        r2: record<T> {i:T}
-        new_list: proc: r2<int> { return new r2<int> }
-        anr2=new_list()
-        anr2.i = 3
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<T> {i:T}
+            new_list: proc: r2<int> { return new r2<int> }
+            anr2=new_list()
+            anr2.i = 3
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldGetSetGeneric() {
-    assertThatTypeChecking("""
-        r2: record<T> {i:T}
-        anr2=new r2<int>
-        anr2.i = anr2.i
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<T> {i:T}
+            anr2=new r2<int>
+            anr2.i = anr2.i
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldGetSetGenericMultipleFields() {
-    assertThatTypeChecking("""
-        r2: record<T> {i:T j:T}
-        anr2=new r2<int>
-        anr2.i = anr2.j
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<T> {i:T j:T}
+            anr2=new r2<int>
+            anr2.i = anr2.j
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldGetSetGenericMultipleGenerics() {
-    assertThatTypeChecking("""
-        r2: record<S, T> {i:S j:T}
-        anr2=new r2<int, int>
-        anr2.i = anr2.j
-        """).succeeds();
+    assertThatTypeChecking(
+            """
+            r2: record<S, T> {i:S j:T}
+            anr2=new r2<int, int>
+            anr2.i = anr2.j
+            """)
+        .succeeds();
   }
 
   @Test
   public void recordFieldGetSetGenericMultipleGenericsMismatch() {
-    assertThatTypeChecking("""
-        r2: record<S, T> {i:S j:T}
-        anr2=new r2<int, double>
-        anr2.i = anr2.j
-        """).hasError("but expression is DOUBLE");
+    assertThatTypeChecking(
+            """
+            r2: record<S, T> {i:S j:T}
+            anr2=new r2<int, double>
+            anr2.i = anr2.j
+            """)
+        .hasError("but expression is DOUBLE");
   }
 
   @Test
   public void recursiveGeneneric() {
-    SymbolTable symTab = checkProgram("""
-        list: record<T> {value:T next:list<T>}
-        head = new list<int>
-        second = new list<int>
-        head.next = second
-        """);
+    SymbolTable symTab =
+        checkProgram(
+            """
+            list: record<T> {value:T next:list<T>}
+            head = new list<int>
+            second = new list<int>
+            head.next = second
+            """);
 
     RecordSymbol listSymbol = symTab.get("list", RecordSymbol.class);
     assertThat(listSymbol.fieldType("value")).isInstanceOf(UnboundType.class);
@@ -1211,48 +1228,54 @@ public class StaticCheckerTest {
 
   @Test
   public void returnBoundGeneric() {
-    assertThatTypeChecking("""
-         list: record<T> {
-           value: int
-           next: list<T>
-         }
+    assertThatTypeChecking(
+            """
+             list: record<T> {
+               value: int
+               next: list<T>
+             }
 
-         new_list: proc(): list<int>{
-           return new list<int>
-         }
-         ell = new_list()
-        """).succeeds();
+             new_list: proc(): list<int>{
+               return new list<int>
+             }
+             ell = new_list()
+            """)
+        .succeeds();
   }
 
   @Test
   public void boundGenericParam() {
-    assertThatTypeChecking("""
-         list: record<T> {
-           value: int
-           next: list<T>
-         }
+    assertThatTypeChecking(
+            """
+             list: record<T> {
+               value: int
+               next: list<T>
+             }
 
-         append: proc(it:list<int>, newvalue:int) {
-           head: list<int>
-           head = it
-           while head.next != null do head = head.next {
-           }
+             append: proc(it:list<int>, newvalue:int) {
+               head: list<int>
+               head = it
+               while head.next != null do head = head.next {
+               }
 
-           node = new list<int>
-           node.value = newvalue
-           head.next = node
-         }
-        """).succeeds();
+               node = new list<int>
+               node.value = newvalue
+               head.next = node
+             }
+            """)
+        .succeeds();
   }
 
   @Test
   public void recursiveGeneneric_mismatch() {
-    assertThatTypeChecking("""
-        list: record<T> {value:T next:list<T>}
-        head = new list<int>
-        second = new list<string>
-        head.next = second
-        """).hasError("but expression is RECORD list<STRING>");
+    assertThatTypeChecking(
+            """
+            list: record<T> {value:T next:list<T>}
+            head = new list<int>
+            second = new list<string>
+            head.next = second
+            """)
+        .hasError("but expression is RECORD list<STRING>");
   }
 
   @Test
@@ -1401,17 +1424,19 @@ public class StaticCheckerTest {
         .hasError("Incompatible types for operator \\?\\?;.*STRING.*INT");
     assertThatTypeChecking("a=1 b='' c=a??b")
         .hasError("Cannot apply \\?\\? operator to left operand of type INT");
-    assertThatTypeChecking("""
-        rec1:record{} r1=new rec1
-        rec2:record{} r2=new rec2
-        c= r1??r2
-        """)
+    assertThatTypeChecking(
+            """
+            rec1:record{} r1=new rec1
+            rec2:record{} r2=new rec2
+            c= r1??r2
+            """)
         .hasError("Incompatible types for operator \\?\\?.*rec1.*rec2");
-    assertThatTypeChecking("""
-        rec1:record{} r1=new rec1
-        rec2:record{} c:rec2 c = null
-        c = r1??c
-        """)
+    assertThatTypeChecking(
+            """
+            rec1:record{} r1=new rec1
+            rec2:record{} c:rec2 c = null
+            c = r1??c
+            """)
         .hasError("Incompatible types for operator \\?\\?.*rec1.*rec2");
   }
 
@@ -1446,7 +1471,7 @@ public class StaticCheckerTest {
     assertThatTypeChecking("r1:record{i:int} r2:record{} p:proc():r1{return new r2}")
         .hasError("but RETURN statement was of type RECORD r2");
     assertThatTypeChecking(
-        "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()")
+            "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()")
         .hasError("type RECORD r1 to RECORD r2");
   }
 
@@ -1493,10 +1518,10 @@ public class StaticCheckerTest {
   @Test
   public void newRecord_mismatch() {
     assertThatTypeChecking(
-        "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1")
+            "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var2=var1")
         .hasError("r2 to RECORD r1");
     assertThatTypeChecking(
-        "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2")
+            "r1:record{s:string} r2:record{s:string} var1=new r1 var2 = new r2 var1=var2")
         .hasError("r1 to RECORD r2");
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var1=var2").hasError("to INT");
     assertThatTypeChecking("r1:record{s:string} var1=new r1 var2=1 var2=var1")
@@ -1605,14 +1630,18 @@ public class StaticCheckerTest {
 
   @Test
   public void arrayOfRecordError() {
-    assertThatTypeChecking("      r:record{a:string} " //
-        + "ar:r[2] "
-        + "ai:int[2] "
-        + "ar=ai").hasError("ARRAY of r to 1-d ARRAY of INT");
-    assertThatTypeChecking("      r:record{a:string} " //
-        + "ar:r[2] "
-        + "ai:int[2] "
-        + "ai=ar").hasError("ARRAY of INT to 1-d ARRAY of r");
+    assertThatTypeChecking(
+            "      r:record{a:string} " //
+                + "ar:r[2] "
+                + "ai:int[2] "
+                + "ar=ai")
+        .hasError("ARRAY of r to 1-d ARRAY of INT");
+    assertThatTypeChecking(
+            "      r:record{a:string} " //
+                + "ar:r[2] "
+                + "ai:int[2] "
+                + "ai=ar")
+        .hasError("ARRAY of INT to 1-d ARRAY of r");
   }
 
   @Test
@@ -1713,8 +1742,7 @@ public class StaticCheckerTest {
         .hasError("Cannot convert variable 'head' from declared type PROC");
     assertThatTypeChecking("head:proc{} head.f=3")
         .hasError("Cannot set field of variable 'head.f' of type PROC; not a known RECORD");
-    assertThatTypeChecking("head:proc{} foo:proc {head[1]=3}")
-        .hasError("used as ARRAY; was PROC");
+    assertThatTypeChecking("head:proc{} foo:proc {head[1]=3}").hasError("used as ARRAY; was PROC");
   }
 
   @Test
@@ -1749,12 +1777,15 @@ public class StaticCheckerTest {
 
   @Test
   public void scopes() throws Exception {
-    assertThatTypeChecking(""
-        + "f:proc(flag:bool): string {\n"
-        + "   if flag { s = 'hi'}\n"
-        + "   return s\n" // this should be a typecheck error because 's' is in the inner block
-        + "}\n"
-        + "println f(false)\n").hasError("Indeterminable type for RETURN");
+    assertThatTypeChecking(
+            ""
+                + "f:proc(flag:bool): string {\n"
+                + "   if flag { s = 'hi'}\n"
+                + "   return s\n" // this should be a typecheck error because 's' is in the inner
+                                  // block
+                + "}\n"
+                + "println f(false)\n")
+        .hasError("Indeterminable type for RETURN");
   }
 
   @Test
@@ -1764,7 +1795,8 @@ public class StaticCheckerTest {
 
   @Test
   public void bug_385_global_field_name_and_function() throws Exception {
-    checkProgram("""
+    checkProgram(
+        """
         rt: record {f : string}
         a = new rt
         a.f = "field"
@@ -1776,19 +1808,22 @@ public class StaticCheckerTest {
 
   @Test
   public void bug_385_bad_global_field_name_and_function() throws Exception {
-    assertThatTypeChecking("""
-        rt: record {f : string}
-        a = new rt
-        a.f = "field"
-        println a.x
+    assertThatTypeChecking(
+            """
+            rt: record {f : string}
+            a = new rt
+            a.f = "field"
+            println a.x
 
-        f: proc { }
-        """).hasError("unknown field x");
+            f: proc { }
+            """)
+        .hasError("unknown field x");
   }
 
   @Test
   public void bug_385_local_field_name_and_function() throws Exception {
-    checkProgram("""
+    checkProgram(
+        """
         rt: record {f : string}
 
         f: proc {

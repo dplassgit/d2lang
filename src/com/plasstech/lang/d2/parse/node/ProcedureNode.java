@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
 
 /** Represents a procedure declaration. */
 public class ProcedureNode extends DeclarationNode {

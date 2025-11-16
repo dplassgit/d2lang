@@ -2,10 +2,6 @@ package com.plasstech.lang.d2.type;
 
 import static java.util.stream.Collectors.toList;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.parse.node.ArrayDeclarationNode;
 import com.plasstech.lang.d2.parse.node.BlockNode;
@@ -14,6 +10,9 @@ import com.plasstech.lang.d2.parse.node.DefaultNodeVisitor;
 import com.plasstech.lang.d2.parse.node.ExprNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * "Gathers" record definitions in the parse tree and adds them to the given symbol table. This
@@ -50,11 +49,15 @@ class RecordGatherer extends DefaultNodeVisitor {
       if (field instanceof RecordDeclarationNode subRecord) {
         throw new TypeException(
             field.position(),
-            "Cannot declare nested RECORD '%s' in RECORD '%s'", subRecord.name(), node.name());
+            "Cannot declare nested RECORD '%s' in RECORD '%s'",
+            subRecord.name(),
+            node.name());
       } else if (field instanceof ProcedureNode proc) {
         throw new TypeException(
             field.position(),
-            "Cannot declare nested PROC '%s' in RECORD '%s'", proc.name(), node.name());
+            "Cannot declare nested PROC '%s' in RECORD '%s'",
+            proc.name(),
+            node.name());
       } else if (field instanceof ArrayDeclarationNode anode) {
         // TODO(#38) support multidimensional arrays
         ExprNode sizeNode = anode.sizeExpr();
@@ -82,7 +85,8 @@ class RecordGatherer extends DefaultNodeVisitor {
       throw new TypeException(
           node.position(),
           "Duplicate field(s) '%s' declared in RECORD '%s'",
-          Joiner.on(", ").join(duplicates), node.name());
+          Joiner.on(", ").join(duplicates),
+          node.name());
     }
 
     duplicates.clear();
@@ -99,7 +103,8 @@ class RecordGatherer extends DefaultNodeVisitor {
       throw new TypeException(
           node.position(),
           "Duplicate formal type(s) '%s' declared in RECORD '%s'",
-          Joiner.on(", ").join(duplicates), node.name());
+          Joiner.on(", ").join(duplicates),
+          node.name());
     }
 
     // Add this record to the symbol table

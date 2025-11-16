@@ -3,12 +3,11 @@ package com.plasstech.lang.d2.common;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.google.devtools.common.options.Options;
 import com.google.devtools.common.options.OptionsParser;
 import com.google.devtools.common.options.OptionsParsingException;
+import org.junit.Test;
 
 public class D2OptionsTest {
   private OptionsParser optionsParser = OptionsParser.newOptionsParser(D2Options.class);

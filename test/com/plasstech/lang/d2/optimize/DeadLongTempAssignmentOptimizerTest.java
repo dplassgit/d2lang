@@ -2,8 +2,6 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -12,6 +10,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
+import org.junit.Test;
 
 public class DeadLongTempAssignmentOptimizerTest {
   private final Optimizer optimizer = new OptimizerWithNop(new DeadLongTempAssignmentOptimizer(2));
@@ -38,9 +37,8 @@ public class DeadLongTempAssignmentOptimizerTest {
 
   @Test
   public void longTempUsed_isUnchanged() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new Transfer(LONG_TEMP, A, null),
-        new Transfer(A, LONG_TEMP, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(new Transfer(LONG_TEMP, A, null), new Transfer(A, LONG_TEMP, null));
 
     optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isFalse();
@@ -48,8 +46,7 @@ public class DeadLongTempAssignmentOptimizerTest {
 
   @Test
   public void longTempNotRead_isRemoved() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new Transfer(LONG_TEMP, A, null));
+    ImmutableList<Op> code = ImmutableList.of(new Transfer(LONG_TEMP, A, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();
@@ -58,11 +55,12 @@ public class DeadLongTempAssignmentOptimizerTest {
 
   @Test
   public void longTempRead_isNotRemoved() {
-    ImmutableList<Op> code = ImmutableList.of(
-        new Transfer(LONG_TEMP, A, null),
-        new Transfer(A, LONG_TEMP, null),
-        new Transfer(LONG_TEMP, B, null),
-        new Transfer(A, B, null));
+    ImmutableList<Op> code =
+        ImmutableList.of(
+            new Transfer(LONG_TEMP, A, null),
+            new Transfer(A, LONG_TEMP, null),
+            new Transfer(LONG_TEMP, B, null),
+            new Transfer(A, B, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(code, null);
     assertThat(optimizer.isChanged()).isTrue();

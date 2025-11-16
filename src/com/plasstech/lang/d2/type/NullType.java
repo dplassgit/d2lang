@@ -7,7 +7,7 @@ class NullType extends PointerType {
   }
 
   @Override
-  final public boolean compatibleWith(VarType that) {
+  public final boolean compatibleWith(VarType that) {
     return that == VarType.STRING || that.isRecord() || that.isArray() || that.isNull();
   }
 }

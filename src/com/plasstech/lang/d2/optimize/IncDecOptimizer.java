@@ -18,14 +18,16 @@ class IncDecOptimizer extends LineOptimizer {
   }
 
   /**
+   *
+   *
    * <pre>
-   * temp1=i       // first 
-   * temp2=temp1+1 // second 
+   * temp1=i       // first
+   * temp2=temp1+1 // second
    * i=temp2       // third
    * </pre>
-   * 
+   *
    * becomes
-   * 
+   *
    * <pre>
    * i=i+1: (also, i=i-1)
    * </pre>
@@ -75,21 +77,25 @@ class IncDecOptimizer extends LineOptimizer {
 
       deleteCurrent();
 
-      replaceAt(ip() + 2,
-          plus ? new Inc(third.destination(), third.position())
+      replaceAt(
+          ip() + 2,
+          plus
+              ? new Inc(third.destination(), third.position())
               : new Dec(third.destination(), third.position()));
       deleteAt(ip() + 1);
     }
   }
 
   /**
+   *
+   *
    * <pre>
-   * temp1=i+1 // (also for minus) 
+   * temp1=i+1 // (also for minus)
    * i=temp1 // secondOp
    * </pre>
-   * 
+   *
    * becomes
-   * 
+   *
    * <pre>
    * i++
    * </pre>
@@ -137,15 +143,15 @@ class IncDecOptimizer extends LineOptimizer {
       logger.at(loggingLevel).log("Found shorter Inc/Dec pattern at ip %d", ip());
 
       deleteCurrent();
-      replaceAt(ip() + 1,
-          plus ? new Inc(second.destination(), first.position())
+      replaceAt(
+          ip() + 1,
+          plus
+              ? new Inc(second.destination(), first.position())
               : new Dec(second.destination(), first.position()));
     }
   }
 
-  /**
-   * Replaces i=i+1 with i++.
-   */
+  /** Replaces i=i+1 with i++. */
   private boolean trySimpleIncDec(BinOp op) {
     if (!op.destination().equals(op.left())) {
       return false;

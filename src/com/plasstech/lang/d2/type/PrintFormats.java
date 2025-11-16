@@ -1,14 +1,11 @@
 package com.plasstech.lang.d2.type;
 
+import com.google.common.collect.ImmutableMap;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
-
-/**
- * Mechanisms to format printing primitives.
- */
+/** Mechanisms to format printing primitives. */
 public class PrintFormats {
   public enum Format {
     INT("%d"),
@@ -79,7 +76,8 @@ public class PrintFormats {
           .put(Long.class, Format.LONG)
           .put(Double.class, Format.DOUBLE)
           .put(String.class, Format.STRING)
-          .put(Boolean.class, Format.BOOL).build();
+          .put(Boolean.class, Format.BOOL)
+          .build();
 
   private static final Map<VarType, Format> FORMATS_BY_TYPE =
       ImmutableMap.<VarType, Format>builder()
@@ -89,5 +87,6 @@ public class PrintFormats {
           .put(VarType.DOUBLE, Format.DOUBLE)
           .put(VarType.STRING, Format.STRING)
           .put(VarType.BOOL, Format.BOOL) // is this right?
-          .put(VarType.NULL, Format.NULL).build();
+          .put(VarType.NULL, Format.NULL)
+          .build();
 }

@@ -1,15 +1,12 @@
 package com.plasstech.lang.d2.codegen.x64.optimize;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import java.util.List;
 
-/**
- * Optimizes the asm code using a few simple transformations.
- */
+/** Optimizes the asm code using a few simple transformations. */
 public class NasmOptimizer implements Phase {
   private final int debugLevel;
 
@@ -21,13 +18,14 @@ public class NasmOptimizer implements Phase {
     this.debugLevel = debugLevel;
   }
 
-  private static final List<Optimizer> OPTIMIZERS = ImmutableList.of(
-      new NopOptimizer(),
-      new JmpOptimizer(),
-      new RetJmpOptimizer(),
-      new SingleLinePatternOptimizer(),
-      new AddSubOptimizer(),
-      new ComparisonOptimizer());
+  private static final List<Optimizer> OPTIMIZERS =
+      ImmutableList.of(
+          new NopOptimizer(),
+          new JmpOptimizer(),
+          new RetJmpOptimizer(),
+          new SingleLinePatternOptimizer(),
+          new AddSubOptimizer(),
+          new ComparisonOptimizer());
 
   @Override
   public State execute(State input) {

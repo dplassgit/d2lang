@@ -1,11 +1,10 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.plasstech.lang.d2.codegen.Emitter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 class RegisterState {
   private final List<Register> registersPushed;
@@ -25,8 +24,7 @@ class RegisterState {
   static RegisterState condPush(
       Emitter emitter, RegistersInterface registers, List<Register> toSaveIfAllocated) {
     List<Register> allocated =
-        toSaveIfAllocated
-            .stream()
+        toSaveIfAllocated.stream()
             .filter(r -> registers.isAllocated(r))
             .collect(Collectors.toList());
     RegisterState registerState = new RegisterState(emitter, allocated);

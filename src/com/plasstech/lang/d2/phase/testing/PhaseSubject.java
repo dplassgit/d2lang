@@ -17,10 +17,7 @@ public abstract class PhaseSubject extends Subject {
   protected PhaseSubject(FailureMetadata metadata, String code, PhaseName phase) {
     super(metadata, code);
     this.config =
-        CompilationConfiguration.builder()
-            .setLastPhase(phase)
-            .setSourceCode(code)
-            .build();
+        CompilationConfiguration.builder().setLastPhase(phase).setSourceCode(code).build();
   }
 
   public void hasError(String expectedError) {

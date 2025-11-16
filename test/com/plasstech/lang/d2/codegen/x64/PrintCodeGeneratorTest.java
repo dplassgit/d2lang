@@ -2,9 +2,6 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -14,6 +11,8 @@ import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.x64.testing.AsmUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 public class PrintCodeGeneratorTest {
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
@@ -41,10 +40,7 @@ public class PrintCodeGeneratorTest {
     SysCall op = new SysCall(Call.PRINTLN, ConstantOperand.of("hi"));
     ImmutableList<String> code = generate(op);
     assertThat(code)
-        .containsAtLeast(
-            "mov RDX, CONST_hi_0",
-            "mov RCX, PRINTLN_STRING",
-            "call printf")
+        .containsAtLeast("mov RDX, CONST_hi_0", "mov RCX, PRINTLN_STRING", "call printf")
         .inOrder();
   }
 
@@ -53,15 +49,12 @@ public class PrintCodeGeneratorTest {
     String message = "Bad call line %d col %d";
     stringTable.add(message);
     ConstEntry<String> entry = stringTable.lookup(message);
-    SysCall op = new SysCall(message,
-        ImmutableList.of(ConstantOperand.of(1), ConstantOperand.of(2)));
+    SysCall op =
+        new SysCall(message, ImmutableList.of(ConstantOperand.of(1), ConstantOperand.of(2)));
     ImmutableList<String> code = generate(op);
     assertThat(code)
         .containsAtLeast(
-            "mov RCX, " + entry.name(),
-            "mov DWORD EDX, 1",
-            "mov DWORD R8d, 2",
-            "call printf");
+            "mov RCX, " + entry.name(), "mov DWORD EDX, 1", "mov DWORD R8d, 2", "call printf");
   }
 
   @Test
@@ -69,10 +62,10 @@ public class PrintCodeGeneratorTest {
     String message = "Bad call line %d col %d index %d";
     stringTable.add(message);
     ConstEntry<String> entry = stringTable.lookup(message);
-    SysCall op = new SysCall(message, ImmutableList.of(
-        ConstantOperand.of(1),
-        ConstantOperand.of(2),
-        ConstantOperand.of(3)));
+    SysCall op =
+        new SysCall(
+            message,
+            ImmutableList.of(ConstantOperand.of(1), ConstantOperand.of(2), ConstantOperand.of(3)));
     ImmutableList<String> code = generate(op);
     assertThat(code)
         .containsAtLeast(
@@ -88,14 +81,18 @@ public class PrintCodeGeneratorTest {
     String message = "Bad call line %d col %d index %d (was %d)";
     stringTable.add(message);
     ConstEntry<String> entry = stringTable.lookup(message);
-    SysCall op = new SysCall(message, ImmutableList.of(
-        ConstantOperand.of(1),
-        ConstantOperand.of(2),
-        ConstantOperand.of(3),
-        ConstantOperand.of(4)));
+    SysCall op =
+        new SysCall(
+            message,
+            ImmutableList.of(
+                ConstantOperand.of(1),
+                ConstantOperand.of(2),
+                ConstantOperand.of(3),
+                ConstantOperand.of(4)));
     ImmutableList<String> code = generate(op);
     assertThat(code)
-        .containsAtLeast("mov DWORD R9d, 3",
+        .containsAtLeast(
+            "mov DWORD R9d, 3",
             "mov DWORD ECX, 4",
             "push RCX",
             "mov RCX, " + entry.name(),

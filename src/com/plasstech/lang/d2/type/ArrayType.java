@@ -16,32 +16,32 @@ public class ArrayType extends PointerType {
     this.dimensions = dimensions;
   }
 
-  final public int dimensions() {
+  public final int dimensions() {
     return dimensions;
   }
 
   @Override
-  final public boolean isArray() {
+  public final boolean isArray() {
     return true;
   }
 
-  final public VarType baseType() {
+  public final VarType baseType() {
     return baseType;
   }
 
   @Override
-  final public boolean compatibleWith(VarType thatType) {
+  public final boolean compatibleWith(VarType thatType) {
     // This allows arrays of different sizes to be "compatible" - which should be OK, since
     // the runtime checks will make sure indexing is never out of bounds
     return this.equals(thatType) || thatType.isNull();
   }
 
-  final public ArrayType setKnownLength(int length) {
+  public final ArrayType setKnownLength(int length) {
     this.knownLength = Optional.of(length);
     return this;
   }
 
-  final public Optional<Integer> knownLength() {
+  public final Optional<Integer> knownLength() {
     return knownLength;
   }
 

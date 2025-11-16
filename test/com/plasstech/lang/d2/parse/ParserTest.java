@@ -5,12 +5,6 @@ import static com.plasstech.lang.d2.parse.testing.ParserSubject.assertThatParsin
 import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import java.util.List;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
@@ -48,6 +42,10 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ParserTest {
@@ -524,12 +522,13 @@ public class ParserTest {
 
   @Test
   public void allExprTypes() {
-    ProgramNode node = assertThatParsing(
-        "a=((1 + 2) * (3 - 4) / (-5) == 6) != true "
-            + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false "
-            + " & ((3 + 4) * (5 + 6) / (-7) >= (8 % 2)) "
-            + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2")
-        .succeeds();
+    ProgramNode node =
+        assertThatParsing(
+                "a=((1 + 2) * (3 - 4) / (-5) == 6) != true "
+                    + " | ((2 - 3) * (4 - 5) / (-6) < 7) == !false "
+                    + " & ((3 + 4) * (5 + 6) / (-7) >= (8 % 2)) "
+                    + "b=1+2*3-4/5==6!=true|2-3*4-5/-6<7==!a & 3+4*5+6/-7>=8%2")
+            .succeeds();
     BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(2);
@@ -598,14 +597,17 @@ public class ParserTest {
 
   @Test
   public void ifNested() {
-    ProgramNode node = assertThatParsing("      if a==3 { "
-        + "  if a==4 { "
-        + "   if a == 5 {"
-        + "     print a"
-        + "   } "
-        + "  }"
-        + "}"
-        + "else { print 4 print a}").succeeds();
+    ProgramNode node =
+        assertThatParsing(
+                "      if a==3 { "
+                    + "  if a==4 { "
+                    + "   if a == 5 {"
+                    + "     print a"
+                    + "   } "
+                    + "  }"
+                    + "}"
+                    + "else { print 4 print a}")
+            .succeeds();
     BlockNode root = node.statements();
 
     List<StatementNode> statements = root.statements();
@@ -634,10 +636,13 @@ public class ParserTest {
 
   @Test
   public void ifElif() {
-    ProgramNode node = assertThatParsing("      if a==3 { print a } "
-        + "elif a==4 { print 4 print a} "
-        + "elif a==5 { print 5}"
-        + "else { print 6 print 7}").succeeds();
+    ProgramNode node =
+        assertThatParsing(
+                "      if a==3 { print a } "
+                    + "elif a==4 { print 4 print a} "
+                    + "elif a==5 { print 5}"
+                    + "else { print 6 print 7}")
+            .succeeds();
     BlockNode root = node.statements();
     List<StatementNode> statements = root.statements();
     assertThat(statements).hasSize(1);
@@ -654,8 +659,9 @@ public class ParserTest {
         .hasError("Unexpected start of statement 'EOF'");
     assertThatParsing("if a==3 print a } else {print 4").hasError("expected \\{");
     assertThatParsing("if print a else {print 4").hasError("expected literal");
-    assertThatParsing("if a==3 { print a } else  { print 4 print a} "
-        + "elif a==5 { print 5}else { print 6 print 7}")
+    assertThatParsing(
+            "if a==3 { print a } else  { print 4 print a} "
+                + "elif a==5 { print 5}else { print 6 print 7}")
         .hasError("Unexpected start of statement 'ELIF'");
   }
 
@@ -953,11 +959,13 @@ public class ParserTest {
   @Test
   public void fullProc() {
     ProgramNode root =
-        assertThatParsing("      fib:proc(typed:int, nontyped) : string {"
-            + "  typed = typed + 1"
-            + "  nontyped = typed + 1"
-            + "  return 'hi'"
-            + "}").succeeds();
+        assertThatParsing(
+                "      fib:proc(typed:int, nontyped) : string {"
+                    + "  typed = typed + 1"
+                    + "  nontyped = typed + 1"
+                    + "  return 'hi'"
+                    + "}")
+            .succeeds();
 
     ProcedureNode proc = (ProcedureNode) (root.statements().statements().get(0));
     assertThat(proc.name()).isEqualTo("fib");
@@ -1412,12 +1420,12 @@ public class ParserTest {
     assertThatParsing("r: record<>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<(3)>{i: T s: UV}").hasError("expected VARIABLE");
     assertThatParsing("r: record<record>{i: T s: UV}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<T, 1>{}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<>{}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<(3)>{}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<record>{}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<T,>{}").hasError("expected VARIABLE");
-    //assertThatParsing("r: record<int>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<T, 1>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<(3)>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<record>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<T,>{}").hasError("expected VARIABLE");
+    // assertThatParsing("r: record<int>{}").hasError("expected VARIABLE");
   }
 
   @Test
@@ -1613,13 +1621,15 @@ public class ParserTest {
 
   @Test
   public void unsetRecordCompareToNull() {
-    ProgramNode programNode = assertThatParsing("""
-        R: record{i: int s: string}
-        rec: R
-        isNull = rec == null
-        """).succeeds();
-    BlockNode root =
-        programNode.statements();
+    ProgramNode programNode =
+        assertThatParsing(
+                """
+                R: record{i: int s: string}
+                rec: R
+                isNull = rec == null
+                """)
+            .succeeds();
+    BlockNode root = programNode.statements();
     AssignmentNode assignment = (AssignmentNode) root.statements().get(2);
     BinOpNode node = (BinOpNode) assignment.expr();
     assertThat(node.left()).isInstanceOf(VariableNode.class);
@@ -1671,13 +1681,15 @@ public class ParserTest {
 
   @Test
   public void argsLen() {
-    assertThatParsing("""
-        len=length(args)
-        print 'length is ' println len
-        b=args
-        a=args[0]
-        println 'first is ' + a
-        """).succeeds();
+    assertThatParsing(
+            """
+            len=length(args)
+            print 'length is ' println len
+            b=args
+            a=args[0]
+            println 'first is ' + a
+            """)
+        .succeeds();
   }
 
   @Test

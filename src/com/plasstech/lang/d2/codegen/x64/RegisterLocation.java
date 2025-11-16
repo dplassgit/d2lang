@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.codegen.x64;
 
-import java.util.Objects;
-
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Objects;
 
 public class RegisterLocation extends Location {
 

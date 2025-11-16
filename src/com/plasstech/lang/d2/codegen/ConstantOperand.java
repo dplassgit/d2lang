@@ -1,14 +1,13 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Map;
-import java.util.Objects;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Map;
+import java.util.Objects;
 
 public class ConstantOperand<T> implements Operand {
   // These can't use "of" because "of" sometimes uses these.

@@ -13,18 +13,18 @@ import com.plasstech.lang.d2.type.VarType;
 
 /**
  * Optimizes
- * 
+ *
  * <pre>
  * temp1 = a + 3
  * b = temp1
  * </pre>
- * 
+ *
  * into:
- * 
+ *
  * <pre>
  * b = a + 3
  * </pre>
- * 
+ *
  * (Also UnaryOps) for b as a "param" only
  */
 class TempPropagationOptimizer extends LineOptimizer {
@@ -56,27 +56,32 @@ class TempPropagationOptimizer extends LineOptimizer {
 
   @Override
   public void visit(Call op) {
-    op.destination().ifPresent(destination -> {
-      if (!destination.isTemp()) {
-        return;
-      }
-      // if the next line is an assignment to this destination, merge them.
-      Transfer candidate = getNext(Transfer.class);
-      if (candidate == null) {
-        return;
-      }
-      if (destination.equals(candidate.source())) {
-        deleteCurrent();
-        // We don't need to worry about the destination type (bug #271) because the results of
-        // calls are in RAX/XMM0 which can be MOV'd to any type of defination.
-        replaceAt(ip() + 1,
-            new Call(candidate.destination(),
-                op.procSym(),
-                op.actuals(),
-                op.formals(),
-                candidate.position()));
-      }
-    });
+    op.destination()
+        .ifPresent(
+            destination -> {
+              if (!destination.isTemp()) {
+                return;
+              }
+              // if the next line is an assignment to this destination, merge them.
+              Transfer candidate = getNext(Transfer.class);
+              if (candidate == null) {
+                return;
+              }
+              if (destination.equals(candidate.source())) {
+                deleteCurrent();
+                // We don't need to worry about the destination type (bug #271) because the results
+                // of
+                // calls are in RAX/XMM0 which can be MOV'd to any type of defination.
+                replaceAt(
+                    ip() + 1,
+                    new Call(
+                        candidate.destination(),
+                        op.procSym(),
+                        op.actuals(),
+                        op.formals(),
+                        candidate.position()));
+              }
+            });
   }
 
   @Override

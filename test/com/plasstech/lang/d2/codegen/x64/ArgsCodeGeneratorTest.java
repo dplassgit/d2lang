@@ -2,13 +2,12 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.codegen.Emitter;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class ArgsCodeGeneratorTest {
   private Emitter emitter = new X64Emitter();

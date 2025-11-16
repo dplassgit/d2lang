@@ -10,7 +10,7 @@ abstract class DefaultVarType implements VarType {
   }
 
   @Override
-  final public String name() {
+  public final String name() {
     return name;
   }
 }

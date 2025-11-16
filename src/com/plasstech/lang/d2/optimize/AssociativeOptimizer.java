@@ -1,13 +1,12 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.Set;
-
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.Set;
 
 /**
  * Optimizes comparisons against constants so that the constant is always second.
@@ -59,17 +58,19 @@ class AssociativeOptimizer extends LineOptimizer {
       return;
     }
     // constant (op) non constant: swap it so the constant is on the right.
-    boolean swapit = left.isConstant()
-        && !right.isConstant()
-        && left.type() != VarType.STRING
-        && ASSOCIATIVE_OPERATORS.contains(operator);
+    boolean swapit =
+        left.isConstant()
+            && !right.isConstant()
+            && left.type() != VarType.STRING
+            && ASSOCIATIVE_OPERATORS.contains(operator);
 
     if (!swapit) {
       // maybe string
-      swapit = left.isConstant()
-          && !right.isConstant()
-          && left.type() == VarType.STRING
-          && (operator == TokenType.EQEQ || operator == TokenType.NEQ);
+      swapit =
+          left.isConstant()
+              && !right.isConstant()
+              && left.type() == VarType.STRING
+              && (operator == TokenType.EQEQ || operator == TokenType.NEQ);
     }
 
     if (!swapit) {
@@ -82,8 +83,6 @@ class AssociativeOptimizer extends LineOptimizer {
         return;
       }
     }
-    replaceCurrent(
-        new BinOp(
-            op.destination(), right, operator, left, op.position()));
+    replaceCurrent(new BinOp(op.destination(), right, operator, left, op.position()));
   }
 }

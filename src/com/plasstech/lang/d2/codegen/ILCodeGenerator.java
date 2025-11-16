@@ -131,8 +131,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       throw new TypeException(position, "Cannot find symbol '%s'", name);
     }
     if (!(symbol instanceof VariableSymbol)) {
-      throw new TypeException(position, "%s already declared as %s; cannot be redeclared", name,
-          symbol.varType());
+      throw new TypeException(
+          position, "%s already declared as %s; cannot be redeclared", name, symbol.varType());
     }
     VariableSymbol variable = (VariableSymbol) symbol;
     switch (variable.storage()) {
@@ -328,8 +328,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
    *
    * where both a and b are stack or globals.
    *
-   * <p>
-   * The only reason I did this was to get the loop invariant optimizer to work with records,
+   * <p>The only reason I did this was to get the loop invariant optimizer to work with records,
    * because this is the code it used to generate:
    *
    * <pre>
@@ -340,8 +339,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
    * This was causing the loop optimizer to move BOTH ops out of the loop, because it thought
    * __temp1, and therefore __temp2 was invariant.
    *
-   * <p>
-   * So now this version generates:
+   * <p>So now this version generates:
    *
    * <pre>
    * __temp2 = rec.fieldname
@@ -428,18 +426,19 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           // ... to be continued
           break;
 
-        case NULL_COALESCE: {
-          //    longtemp = left
-          nullDest = allocateLongTemp(destination.type());
-          emit(new Transfer(nullDest, left, node.position()));
-          //    temp = longtemp == null
-          Location temp = allocateTemp(VarType.BOOL);
-          Operand nullOfAppropriateType = new ConstantOperand<Void>(null, left.type());
-          emit(new BinOp(temp, nullDest, TokenType.EQEQ, nullOfAppropriateType, node.position()));
-          //    if not temp goto end
-          emit(new IfOp(temp, resultIsFalseLabel, true, node.position()));
-          // ... to be continued
-        }
+        case NULL_COALESCE:
+          {
+            //    longtemp = left
+            nullDest = allocateLongTemp(destination.type());
+            emit(new Transfer(nullDest, left, node.position()));
+            //    temp = longtemp == null
+            Location temp = allocateTemp(VarType.BOOL);
+            Operand nullOfAppropriateType = new ConstantOperand<Void>(null, left.type());
+            emit(new BinOp(temp, nullDest, TokenType.EQEQ, nullOfAppropriateType, node.position()));
+            //    if not temp goto end
+            emit(new IfOp(temp, resultIsFalseLabel, true, node.position()));
+            // ... to be continued
+          }
           break;
 
         default:
@@ -539,7 +538,8 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     if (node instanceof BinOp binOp) {
       return binOp.operator() == TokenType.DOT;
     }
-    return node instanceof VariableNode || node instanceof ConstNode
+    return node instanceof VariableNode
+        || node instanceof ConstNode
         || node instanceof ArrayLiteralNode;
   }
 
@@ -560,9 +560,11 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
             position));
     String continueLabel = Labels.nextLabel("not_null");
     emit(new IfOp(nullRecordBool, continueLabel, true));
-    emit(new SysCall(NULL_POINTER,
-        ImmutableList.of(ConstantOperand.of(position.line()),
-            ConstantOperand.of(position.column()))));
+    emit(
+        new SysCall(
+            NULL_POINTER,
+            ImmutableList.of(
+                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
     // This may be different now
@@ -585,7 +587,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
           emit(new Transfer(destination, ConstantOperand.of(2), node.position()));
           return;
         }
-        // fall through:
+      // fall through:
       case ASC:
       case MINUS:
       case BIT_NOT:
@@ -786,13 +788,11 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     // call object
     Symbol symbol = symbolTable.getRecursive(node.procName());
     if (!(symbol instanceof ProcSymbol)) {
-      throw new RuntimeException(
-          "proc " + node.procName() + " not found in symtab " + symbolTable);
+      throw new RuntimeException("proc " + node.procName() + " not found in symtab " + symbolTable);
     }
     ProcSymbol procSym = (ProcSymbol) symbol;
     ImmutableList<Location> formals =
-        procSym.formals()
-            .stream()
+        procSym.formals().stream()
             .map(formal -> new ParamLocation(formal))
             .collect(toImmutableList());
     if (node.isStatement()) {
@@ -835,10 +835,7 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
       BlockSymbol blockSymbol = mySymbolTable.enterBlock(node);
       SymbolTable symTab = blockSymbol.symTab();
       ImmutableList<Symbol> locals =
-          symTab
-              .variables()
-              .values()
-              .stream()
+          symTab.variables().values().stream()
               .filter(symbol -> symbol.storage() == SymbolStorage.LOCAL)
               .collect(ImmutableList.toImmutableList());
       for (Symbol symbol : locals) {
@@ -870,7 +867,10 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     public void visit(FieldSetNode fsn) {
       Symbol sym = symbolTable.getRecursive(fsn.variableName());
       if (sym == null) {
-        fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+        fail(
+            "Internal",
+            fsn.position(),
+            "Could not find record symbol %s in symtab",
             fsn.variableName());
       }
       Location recordLocation = lookupLocation(fsn.variableName(), null);
@@ -879,23 +879,26 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         Symbol hopefullyRecordSymbol = symbolTable.getRecursive(rrt.fqName());
         if (hopefullyRecordSymbol instanceof RecordSymbol recordSymbol) {
           if (!recordSymbol.isBound()) {
-            fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+            fail(
+                "Internal",
+                fsn.position(),
+                "Could not find record symbol %s in symtab",
                 fsn.variableName());
             return;
           }
           String fieldName = fsn.fieldName();
-          emit(
-              new FieldSetOp(
-                  recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
+          emit(new FieldSetOp(recordLocation, recordSymbol, fieldName, rhs, fsn.position()));
           return;
         } else if (hopefullyRecordSymbol == null) {
-          fail("Internal", fsn.position(), "Could not find record symbol %s in symtab",
+          fail(
+              "Internal",
+              fsn.position(),
+              "Could not find record symbol %s in symtab",
               fsn.variableName());
           return;
         }
       }
-      fail(fsn.position(), "Can't set field on non-record type; was %s",
-          varType.name());
+      fail(fsn.position(), "Can't set field on non-record type; was %s", varType.name());
     }
 
     @Override
@@ -909,13 +912,14 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
         indexNode.accept(ILCodeGenerator.this);
         Operand indexLocation = indexNode.location();
 
-        emit(new ArraySet(
-            arrayLocation,
-            (ArrayType) asn.varType(),
-            indexLocation,
-            rhs,
-            /* isArrayLiteral= */ false,
-            asn.position()));
+        emit(
+            new ArraySet(
+                arrayLocation,
+                (ArrayType) asn.varType(),
+                indexLocation,
+                rhs,
+                /* isArrayLiteral= */ false,
+                asn.position()));
       } else {
         throw new RuntimeException(
             String.format("Could not find symbol %s in symtab", asn.variableName()));

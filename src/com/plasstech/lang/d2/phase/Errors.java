@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.phase;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.D2RuntimeException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Errors {
   private final List<D2RuntimeException> errors = new ArrayList<>();

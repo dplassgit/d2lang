@@ -2,14 +2,13 @@ package com.plasstech.lang.d2.codegen.x64.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class NasmOptimizerTest {
@@ -110,8 +109,7 @@ public class NasmOptimizerTest {
   }
 
   @Test
-  public void removesAddSubRsp_sameOffset(
-      @TestParameter({"0x20", "0x28"}) String offset) {
+  public void removesAddSubRsp_sameOffset(@TestParameter({"0x20", "0x28"}) String offset) {
     ImmutableList<String> code = ImmutableList.of("  add RSP, " + offset, "  sub RSP, " + offset);
     assertThat(optimize(code)).isEmpty();
   }

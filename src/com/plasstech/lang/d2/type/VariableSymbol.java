@@ -20,9 +20,10 @@ public class VariableSymbol extends AbstractSymbol {
   }
 
   public RecordSymbol recordSymbol() {
-    Preconditions.checkState(varType().isRecord(),
-        String.format("Cannot call VariableSymbol.recordSymbol on %s; not a record type",
-            this.name()));
+    Preconditions.checkState(
+        varType().isRecord(),
+        String.format(
+            "Cannot call VariableSymbol.recordSymbol on %s; not a record type", this.name()));
 
     if (recordSymbol == null) {
       RecordReferenceType rrt = (RecordReferenceType) varType();

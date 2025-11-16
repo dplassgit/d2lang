@@ -45,8 +45,7 @@ public class OpcodeSubject extends Subject {
     check("label").that(gotop.label()).isEqualTo(label);
   }
 
-  public void isBinOp(Location dest, Operand left, TokenType op,
-      Operand right) {
+  public void isBinOp(Location dest, Operand left, TokenType op, Operand right) {
     Truth.assertThat(actual).isInstanceOf(BinOp.class);
     BinOp binOp = (BinOp) actual;
     check("isBinOp").that(binOp.destination()).isEqualTo(dest);
@@ -55,8 +54,7 @@ public class OpcodeSubject extends Subject {
     check("isBinOp").that(binOp.right()).isEqualTo(right);
   }
 
-  public void isUnaryOp(Location dest, TokenType op,
-      Operand operand) {
+  public void isUnaryOp(Location dest, TokenType op, Operand operand) {
     Truth.assertThat(actual).isInstanceOf(UnaryOp.class);
     UnaryOp binOp = (UnaryOp) actual;
     check("isUnaryOp").that(binOp.destination()).isEqualTo(dest);
@@ -74,8 +72,9 @@ public class OpcodeSubject extends Subject {
   public void isExit() {
     Truth.assertThat(actual).isInstanceOf(SysCall.class);
     SysCall syscall = (SysCall) actual;
-    check("isExit").that(syscall.call()).isAnyOf(SysCall.Call.MESSAGE,
-        SysCall.Call.PARAMETERIZED_MESSAGE);
+    check("isExit")
+        .that(syscall.call())
+        .isAnyOf(SysCall.Call.MESSAGE, SysCall.Call.PARAMETERIZED_MESSAGE);
   }
 
   public void isReturning(Operand operand) {

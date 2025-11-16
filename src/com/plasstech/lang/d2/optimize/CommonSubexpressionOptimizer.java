@@ -1,7 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
@@ -19,11 +17,12 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VariableSymbol;
+import java.util.List;
 
 /**
  * Replace common subexpressions.
- * 
- * TODO: this is N^2. It could be linear.
+ *
+ * <p>TODO: this is N^2. It could be linear.
  */
 class CommonSubexpressionOptimizer extends LineOptimizer {
 
@@ -81,7 +80,7 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
     Operand left = op.left();
     Operand right = op.right();
     if (op.operator() == TokenType.LBRACKET || op.operator() == TokenType.DOT) {
-      // arrays and records are mutable so don't even try 
+      // arrays and records are mutable so don't even try
       return;
     }
     if (left.isTemp() || right.isTemp()) {
@@ -90,7 +89,8 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
     }
 
     Location replacement = op.destination();
-    // Find subsequent ops that have the same left and operator and right unless left or right change
+    // Find subsequent ops that have the same left and operator and right unless left or right
+    // change
     // (or there's a stopper). when found, replace the RHS with this op's dest.
     for (int ip = ip() + 1; ip < code.size(); ++ip) {
       Op nextOp = code.get(ip);
@@ -104,7 +104,8 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
       BinOp next = getOpAt(ip, BinOp.class);
       if (next != null) {
         // does it match? replace it.
-        if (next.left().equals(left) && next.right().equals(right)
+        if (next.left().equals(left)
+            && next.right().equals(right)
             && next.operator() == op.operator()) {
           replacement = replaceIt(replacement, next, ip, op);
         }
@@ -120,8 +121,8 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
    * Replace the opcode at "ip" (which is "next") with "transfer from replacement to existing
    * destination". If the replacement is a temp, change its "originalOp" to be assigned to a long
    * temp, and then replace its next use with the long temp.
-   * 
-   * Returns the possibly changed replacement location.
+   *
+   * <p>Returns the possibly changed replacement location.
    */
   private Location replaceIt(Location replacement, Op next, int ip, Op originalOp) {
     // We have a candidate.
@@ -132,8 +133,10 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
       VariableLocation variable = (VariableLocation) replacement;
       VariableSymbol oldSymbol = variable.symbol();
       VariableSymbol newSymbol =
-          oldSymbol.symbolTable().declareTemp(String.format("__cselongtemp_%s", replacement.name()),
-              replacement.type());
+          oldSymbol
+              .symbolTable()
+              .declareTemp(
+                  String.format("__cselongtemp_%s", replacement.name()), replacement.type());
       Location longTemp = new LongTempLocation(newSymbol);
       replaceAt(ip(), originalOp.setDestination(longTemp));
 

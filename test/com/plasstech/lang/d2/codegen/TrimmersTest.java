@@ -2,42 +2,39 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class TrimmersTest {
 
   @Test
   public void trimComments_leavesLeadingSpace(
-      @TestParameter(
-        {
+      @TestParameter({
             "  MOV",
             "  MOV ",
             "  MOV  ; hi",
             "  MOV ; hi",
             "  MOV; hi",
             "  MOV; hi\n \n"
-        }
-      ) String line) {
+          })
+          String line) {
     assertThat(Trimmers.trimComment(line)).isEqualTo("  MOV");
   }
 
   @Test
   public void trimFully(
-      @TestParameter(
-        {
+      @TestParameter({
             "  MOV",
             "  MOV ",
             "  MOV  ; hi",
             "  MOV ; hi",
             "  MOV; hi",
             "  MOV; hi\n \n"
-        }
-      ) String line) {
+          })
+          String line) {
     assertThat(Trimmers.trim(line)).isEqualTo("MOV");
   }
 

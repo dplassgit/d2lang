@@ -1,15 +1,14 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /** Finds loops in a codebase. */
 

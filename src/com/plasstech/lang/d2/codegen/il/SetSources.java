@@ -1,10 +1,9 @@
 package com.plasstech.lang.d2.codegen.il;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Operand;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Given an old and new "source" and an input opcode, returns a new opcode that changes the old
@@ -54,9 +53,11 @@ final class SetSources {
 
     @Override
     public void visit(Return op) {
-      op.returnValueLocation().ifPresent(destination -> {
-        newOp = new Return(op.procName(), newSource);
-      });
+      op.returnValueLocation()
+          .ifPresent(
+              destination -> {
+                newOp = new Return(op.procName(), newSource);
+              });
     }
 
     @Override
@@ -89,8 +90,13 @@ final class SetSources {
           actuals.add(operand);
         }
       }
-      newOp = new Call(op.destination(), op.procSym(), ImmutableList.copyOf(actuals), op.formals(),
-          op.position());
+      newOp =
+          new Call(
+              op.destination(),
+              op.procSym(),
+              ImmutableList.copyOf(actuals),
+              op.formals(),
+              op.position());
     }
 
     @Override
@@ -101,19 +107,31 @@ final class SetSources {
     @Override
     public void visit(ArraySet op) {
       if (op.source().equals(oldSource)) {
-        newOp = new ArraySet(op.array(), op.arrayType(), newSource, op.index(), op.isArrayLiteral(),
-            op.position());
+        newOp =
+            new ArraySet(
+                op.array(),
+                op.arrayType(),
+                newSource,
+                op.index(),
+                op.isArrayLiteral(),
+                op.position());
       } else {
         newOp =
-            new ArraySet(op.array(), op.arrayType(), op.source(), newSource, op.isArrayLiteral(),
+            new ArraySet(
+                op.array(),
+                op.arrayType(),
+                op.source(),
+                newSource,
+                op.isArrayLiteral(),
                 op.position());
       }
     }
 
     @Override
     public void visit(FieldSetOp op) {
-      newOp = new FieldSetOp(op.recordLocation(), op.recordSymbol(), op.field(), newSource,
-          op.position());
+      newOp =
+          new FieldSetOp(
+              op.recordLocation(), op.recordSymbol(), op.field(), newSource, op.position());
     }
 
     @Override

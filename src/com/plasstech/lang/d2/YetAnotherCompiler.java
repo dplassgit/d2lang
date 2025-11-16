@@ -128,8 +128,8 @@ public class YetAnotherCompiler {
   }
 
   /** Return true if should return, false if continue. */
-  private boolean shouldReturn(CompilationConfiguration config, State state,
-      PhaseName currentPhase) {
+  private boolean shouldReturn(
+      CompilationConfiguration config, State state, PhaseName currentPhase) {
     // If an error, or we're at the right place, stop.
     return state.error() || currentPhase == config.lastPhase();
   }

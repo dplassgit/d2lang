@@ -4,10 +4,6 @@ import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertWithoutTrimmingThat;
 import static org.junit.Assert.fail;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -29,6 +25,9 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class NasmCodeGeneratorTest {
 
@@ -325,15 +324,14 @@ public class NasmCodeGeneratorTest {
             // deallocates where needed...
             new DeallocateTemp(LONG_TEMP, null));
     generate(program);
-    assertWithoutTrimmingThat(emitter).containsAtLeast(
-        "  ; Allocating __longtemp (LONG_TEMP) to RBX",
-        "  ; Deallocating __longtemp from RBX");
+    assertWithoutTrimmingThat(emitter)
+        .containsAtLeast(
+            "  ; Allocating __longtemp (LONG_TEMP) to RBX", "  ; Deallocating __longtemp from RBX");
   }
 
   @Test
   public void tempAllocation() {
-    ImmutableList<Op> program =
-        ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, null));
+    ImmutableList<Op> program = ImmutableList.of(new Transfer(TEMP, ConstantOperand.ONE, null));
     generate(program);
     assertWithoutTrimmingThat(emitter).contains("  ; Allocating __temp (TEMP) to RBX");
   }
@@ -342,11 +340,10 @@ public class NasmCodeGeneratorTest {
   public void tempAutoDeallocated() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new Transfer(TEMP, ConstantOperand.ONE, null),
-            new Transfer(GLOBAL, TEMP, null));
+            new Transfer(TEMP, ConstantOperand.ONE, null), new Transfer(GLOBAL, TEMP, null));
     generate(program);
-    assertWithoutTrimmingThat(emitter).containsAtLeast("  ; Allocating __temp (TEMP) to RBX",
-        "  ; Deallocating __temp from RBX");
+    assertWithoutTrimmingThat(emitter)
+        .containsAtLeast("  ; Allocating __temp (TEMP) to RBX", "  ; Deallocating __temp from RBX");
   }
 
   @Test
@@ -388,8 +385,7 @@ public class NasmCodeGeneratorTest {
     Operand nullOperand = new ConstantOperand<Void>(null, VarType.NULL);
 
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(TEMP, nullOperand, TokenType.NEQ, nullOperand, null));
+        ImmutableList.of(new BinOp(TEMP, nullOperand, TokenType.NEQ, nullOperand, null));
     generate(program);
     assertThat(emitter).contains("  xor RSI, RSI");
     assertThat(emitter).contains("  xor RDI, RDI");
@@ -399,8 +395,8 @@ public class NasmCodeGeneratorTest {
   public void fromConstantRange() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
-                null),
+            new BinOp(
+                TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(GLOBAL_RANGE, TEMP_RANGE, null));
     generate(program);
     assertThat(emitter).contains("  mov DWORD EBX, 12");
@@ -413,7 +409,11 @@ public class NasmCodeGeneratorTest {
   public void toConstantRange() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(GLOBAL_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
+            new BinOp(
+                GLOBAL_RANGE,
+                ConstantOperand.of(12),
+                TokenType.COLON,
+                ConstantOperand.of(24),
                 null));
     generate(program);
     assertThat(emitter).contains("  mov DWORD [_globalrange], 12");
@@ -424,8 +424,8 @@ public class NasmCodeGeneratorTest {
   public void toStackRange() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
-                null),
+            new BinOp(
+                TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(STACK_RANGE, TEMP_RANGE, null));
     generate(program);
     assertThat(emitter).contains("  mov DWORD EBX, 12");
@@ -438,8 +438,8 @@ public class NasmCodeGeneratorTest {
   public void toParamRange() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24),
-                null),
+            new BinOp(
+                TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(PARAM_RANGE, TEMP_RANGE, null));
     generate(program);
     assertThat(emitter).contains("  mov DWORD EBX, 12");
@@ -451,9 +451,7 @@ public class NasmCodeGeneratorTest {
   @Test
   public void fromParamRange() {
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new BinOp(TEMP_RANGE, TEMP, TokenType.COLON, TEMP,
-                null));
+        ImmutableList.of(new BinOp(TEMP_RANGE, TEMP, TokenType.COLON, TEMP, null));
     generate(program);
     assertThat(emitter).contains("  mov DWORD ESI, EBX");
     assertThat(emitter).contains("  shl QWORD RSI, 32");

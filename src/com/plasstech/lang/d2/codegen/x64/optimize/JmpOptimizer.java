@@ -1,9 +1,8 @@
 package com.plasstech.lang.d2.codegen.x64.optimize;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.common.collect.ImmutableList;
 
 /** Remove jmp label followed by the same label */
 class JmpOptimizer extends Optimizer {

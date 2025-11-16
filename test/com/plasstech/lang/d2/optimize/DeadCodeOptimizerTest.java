@@ -4,8 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
-import org.junit.Test;
-
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.TempLocation;
@@ -22,6 +20,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.VarType;
+import org.junit.Test;
 
 public class DeadCodeOptimizerTest {
   private final Optimizer optimizer = new OptimizerWithNop(new DeadCodeOptimizer(2));
@@ -32,18 +31,21 @@ public class DeadCodeOptimizerTest {
 
   @Test
   public void oneLoopBreak() {
-    assertThatInterpreting("""
-        oneLoopBreakDCO:proc(n:int):int {
-          sum = 0
-          i = 0
-          while i < 10 do i = i + 1 {
-            sum = sum + 1
-            break
-          }
-          return sum
-        }
-        println oneLoopBreakDCO(10)
-        """).withOptimizer(optimizer).hasSameVariables();
+    assertThatInterpreting(
+            """
+            oneLoopBreakDCO:proc(n:int):int {
+              sum = 0
+              i = 0
+              while i < 10 do i = i + 1 {
+                sum = sum + 1
+                break
+              }
+              return sum
+            }
+            println oneLoopBreakDCO(10)
+            """)
+        .withOptimizer(optimizer)
+        .hasSameVariables();
   }
 
   @Test
@@ -99,9 +101,7 @@ public class DeadCodeOptimizerTest {
   @Test
   public void returnThenStuffThenProcEnd() {
     ImmutableList<Op> program =
-        ImmutableList.of(
-            new Return("name"), new Dec(TEMP1),
-            new ProcExit("proc", 0, 0));
+        ImmutableList.of(new Return("name"), new Dec(TEMP1), new ProcExit("proc", 0, 0));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 

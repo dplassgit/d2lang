@@ -1,8 +1,7 @@
 package com.plasstech.lang.d2.codegen;
 
-import java.util.Objects;
-
 import com.plasstech.lang.d2.type.ParamSymbol;
+import java.util.Objects;
 
 public class ParamLocation extends VariableLocation {
   private final int index;

@@ -1,11 +1,10 @@
 package com.plasstech.lang.d2.parse.node;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.List;
 
 public class ArrayLiteralNode extends AbstractNode implements ExprNode {
 

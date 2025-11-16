@@ -1,8 +1,5 @@
 package com.plasstech.lang.d2.optimize;
 
-import java.util.ArrayList;
-import java.util.Set;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
@@ -15,6 +12,8 @@ import com.plasstech.lang.d2.codegen.il.Inc;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
+import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * Optimizer that optimizes binary ops of the pattern:
@@ -36,14 +35,15 @@ import com.plasstech.lang.d2.type.VarType;
 class AdjacentArithmeticOptimizer extends LineOptimizer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final Set<TokenType> FIRST_OPERATORS = ImmutableSet.of(//
-      TokenType.BIT_AND,
-      TokenType.BIT_OR, //
-      TokenType.BIT_XOR, //
-      TokenType.DIV, //
-      TokenType.MINUS, //
-      TokenType.MULT, //
-      TokenType.PLUS);
+  private static final Set<TokenType> FIRST_OPERATORS =
+      ImmutableSet.of( //
+          TokenType.BIT_AND,
+          TokenType.BIT_OR, //
+          TokenType.BIT_XOR, //
+          TokenType.DIV, //
+          TokenType.MINUS, //
+          TokenType.MULT, //
+          TokenType.PLUS);
   private static final Set<TokenType> PLUS_MINUS = ImmutableSet.of(TokenType.PLUS, TokenType.MINUS);
   private static final Set<TokenType> MULT_DIV = ImmutableSet.of(TokenType.MULT, TokenType.DIV);
 
@@ -99,8 +99,8 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
       return;
     }
     // Can only combine certain operands.
-    if (!compatibleOperands(first.destination(), first.left(), second.destination(),
-        second.left())) {
+    if (!compatibleOperands(
+        first.destination(), first.left(), second.destination(), second.left())) {
       return;
     }
     logger.at(loggingLevel).log("Potential pair: %s and %s", first, second);
@@ -112,26 +112,32 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
     }
 
     deleteCurrent();
-    replaceAt(ip() + 1,
-        new BinOp(second.destination(), first.left(), firstOperator,
-            combinedConstant, second.position()));
+    replaceAt(
+        ip() + 1,
+        new BinOp(
+            second.destination(),
+            first.left(),
+            firstOperator,
+            combinedConstant,
+            second.position()));
   }
 
-  // Only works for 
+  // Only works for
   //  temp1 = temp2 + constant1
   //  temp3 = temp1 + constant2
   // OR
   //  var = var + constant1
   //  var = var + constant2
-  private boolean compatibleOperands(Location firstDest, Operand firstLeft, Location secondDest,
-      Operand secondLeft) {
+  private boolean compatibleOperands(
+      Location firstDest, Operand firstLeft, Location secondDest, Operand secondLeft) {
     if (firstDest.isTemp() && firstDest.equals(secondLeft)) {
       // temp1 = temp2 + constant1
       // temp3 = temp1 + constant2
       return true;
     }
     // second case; all are the same.
-    return firstDest.equals(firstLeft) && firstDest.equals(secondDest)
+    return firstDest.equals(firstLeft)
+        && firstDest.equals(secondDest)
         && firstDest.equals(secondLeft);
   }
 
@@ -150,10 +156,13 @@ class AdjacentArithmeticOptimizer extends LineOptimizer {
 
   /**
    * Tries to combine the first and second values and operators.
-   * 
+   *
    * @return the new constant operand, or null if they can't be combined.
    */
-  private Operand combine(Operand firstOperand, Operand secondOperand, TokenType firstOperator,
+  private Operand combine(
+      Operand firstOperand,
+      Operand secondOperand,
+      TokenType firstOperator,
       TokenType secondOperator) {
     Number firstConst = ConstantOperand.valueFromConstOperand(firstOperand);
     Number secondConst = ConstantOperand.valueFromConstOperand(secondOperand);
