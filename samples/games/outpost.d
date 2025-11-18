@@ -175,15 +175,15 @@ play: proc(self: Outpost) {
 // 1680 NexTY
 // 1690 print"␓␑␑␑␑␑␑"
 
-ship_names=["---", "LGT", "MDM", "HVY"]
+SHIP_NAMES=["---", "LGT", "MDM", "HVY"]
 
 print_board: proc(self: Outpost) {
   print chr(27) print "[H" // move home
   print chr(27) print "[2J" // clear screen
-  println("\nENEMY 1   2   3   4")
+  println("ENEMY 1   2   3   4")
   print("TYPE  ")
   G=1 while G < 5 do G++ {
-    print ship_names[self.ship_type[G]]
+    print SHIP_NAMES[self.ship_type[G]]
     print " "
   }
   println ""
@@ -248,15 +248,16 @@ print_board: proc(self: Outpost) {
 }
 
 
+SUPPLY_SHIP = 5
 // resupply/recharge
 // 2000 ET(5) = 0: ex(5) = 0:ey(5) = 0
 // 2010 energy = 99: M = 99:secondary = 99
 // 2020 torps = torps+5: IF torps > 9 THEN torps = 9
 // 2030 RETURN
 resupply: proc(self: Outpost) {
-  temp = self.ship_type temp[5] = 0
-  temp = self.ex temp[5] = 0
-  temp = self.ey temp[5] = 0
+  temp = self.ship_type temp[SUPPLY_SHIP] = 0
+  temp = self.ex temp[SUPPLY_SHIP] = 0
+  temp = self.ey temp[SUPPLY_SHIP] = 0
   self.energy = 99
   self.mains = 99
   self.secondary = 99
@@ -281,7 +282,7 @@ resupply: proc(self: Outpost) {
 move: proc(self: Outpost): bool {
   G=1 while G < 6 do G++ {
     if self.ship_type[G] > 0 {
-      if G < 5 and randint(9) > 5 { continue }
+      if G < SUPPLY_SHIP and randint(9) > 5 { continue }
       // move towards 6, 6
       if self.ex[G] > 6 {
         temp = self.ex temp[G]  = temp[G] - 1
@@ -295,16 +296,20 @@ move: proc(self: Outpost): bool {
       if self.ey[G] < 6 {
         temp = self.ey temp[G] = temp[G] + 1
       }
-      if self.ship_type[G] == 5 and self.ey[5] == 6 and self.ex[5] == 6 {
+      if self.ship_type[G] == SUPPLY_SHIP and 
+          self.ey[SUPPLY_SHIP] == 6 and 
+          self.ex[SUPPLY_SHIP] == 6 {
         resupply(self) // the supply ship got here
       } else {
         if self.ey[G] == 6 and self.ex[G] == 6 { return True } // die, they got me
       }
       // enemy killed supply ship
-      if G < 5 and self.ex[G] == self.ex[5] and self.ey[G] == self.ey[5] {
-        temp = self.ship_type temp[5] = 0
-        temp = self.ex temp[5] = 0
-        temp = self.ey temp[5] = 0
+      if G < SUPPLY_SHIP and 
+          self.ex[G] == self.ex[SUPPLY_SHIP] and 
+          self.ey[G] == self.ey[SUPPLY_SHIP] {
+        temp = self.ship_type temp[SUPPLY_SHIP] = 0
+        temp = self.ex temp[SUPPLY_SHIP] = 0
+        temp = self.ey temp[SUPPLY_SHIP] = 0
       }
       temp = self.distance temp[G] = calc_distance(self, G) // recompute distance
       temp = self.prob temp[G] = min(99, calc_prob(self, G)) // probability
@@ -359,7 +364,7 @@ new_ship: proc(self: Outpost) {
   i = randint(5)
   if i == 5 and self.ship_type[i] == 0 and randint(4) > 1 {
     // add a supply ship
-    temp = self.ship_type temp[5] = 5
+    temp = self.ship_type temp[i] = 5
     make_any_ship(self, i)
   } else {
     if i == 5 or self.ship_type[i] != 0 or randint(9) > 4 {
@@ -458,7 +463,7 @@ get_input: proc(self: Outpost) {
       damage = 6
       self.mains = max(self.mains - randint(5), 0)
     }
-    // shoot at secondaries at one of the ships if we can
+    // shoot secondaries at one of the ships if we can
     if weapon == "S" and self.secondary > 0 {
       damage = 4
       self.secondary = max(self.secondary - randint(5), 0)
@@ -500,9 +505,11 @@ get_input: proc(self: Outpost) {
     sleep(1)
     return
   }
-  // A is 6 for main, 4 for secondary, 9 for torps
+
   temp = self.enemy_energy 
+  // damage is 6 for main, 4 for secondary, 9 for torps
   temp[target] = self.enemy_energy[target] - round(itod(damage * randint(15)) / itod(self.ship_type[target]))
+
   println("\n***********")
   println("TARGET HIT!")
   println("***********")
@@ -513,7 +520,7 @@ get_input: proc(self: Outpost) {
     println("*********************")
     // increase score based on type of ship
     self.score = self.score + self.ship_type[target]
-    //  erase ship
+    // erase ship
     temp = self.ex temp[target] = 0
     temp = self.ey temp[target] = 0
     temp = self.ship_type temp[target] = 0
@@ -522,7 +529,7 @@ get_input: proc(self: Outpost) {
     temp = self.enemy_energy temp[target] = 0
     sleep(1)
   } else {
-    // decrease our energy if we didn"t destroy him
+    // decrease our energy if we didn't destroy him
     self.energy = self.energy - randint(5)
   }
   return
@@ -544,9 +551,9 @@ print_score: proc(self: Outpost): bool {
   println("**********************")
   println("YOU ARE DESTROYED!!!!!")
   println("**********************")
-  print("\nSCORE =  ") println( self.score)
+  print("\nSCORE = ") println( self.score)
   self.hs = max(self.hs, self.score)
-  print("HIGH SCORE =  ") println(self.hs)
+  print("HIGH SCORE = ") println(self.hs)
   println("\nAnother game?")
   another = input
   if length(another) == 0 { return false }

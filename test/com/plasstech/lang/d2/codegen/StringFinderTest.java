@@ -3,8 +3,13 @@ package com.plasstech.lang.d2.codegen;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.Transfer;
+import com.plasstech.lang.d2.codegen.testing.LocationUtils;
+import com.plasstech.lang.d2.common.TokenType;
+import com.plasstech.lang.d2.type.RecordReferenceType;
+import com.plasstech.lang.d2.type.VarType;
 import org.junit.Test;
 
 public class StringFinderTest {
@@ -60,5 +65,15 @@ public class StringFinderTest {
             new Transfer(null, ConstantOperand.of("hi"), null));
     StringTable table = sf.execute(ops);
     assertThat(table.entries()).hasSize(1);
+  }
+
+  @Test
+  public void fieldDereferenceSkipped() {
+    VarType recordType = new RecordReferenceType("recType");
+    Location lhs = LocationUtils.newMemoryAddress("lhs", recordType);
+    ImmutableList<Op> ops =
+        ImmutableList.of(new BinOp(null, lhs, TokenType.DOT, ConstantOperand.of("field"), null));
+    StringTable table = sf.execute(ops);
+    assertThat(table.entries()).hasSize(0);
   }
 }

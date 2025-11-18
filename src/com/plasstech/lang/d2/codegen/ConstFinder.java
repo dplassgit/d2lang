@@ -13,6 +13,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -52,7 +53,10 @@ class ConstFinder<T> extends DefaultOpcodeVisitor {
   @Override
   public void visit(BinOp op) {
     addEntry(op.left());
-    addEntry(op.right());
+    if (op.operator() != TokenType.DOT) {
+      // the RHS of a "DOT" binary operand (field dereference) will not be a constant.
+      addEntry(op.right());
+    }
   }
 
   @Override
