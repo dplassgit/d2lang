@@ -178,6 +178,8 @@ play: proc(self: Outpost) {
 ship_names=["---", "LGT", "MDM", "HVY"]
 
 print_board: proc(self: Outpost) {
+  print chr(27) print "[H" // move home
+  print chr(27) print "[2J" // clear screen
   println("\nENEMY 1   2   3   4")
   print("TYPE  ")
   G=1 while G < 5 do G++ {
