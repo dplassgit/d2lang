@@ -4,6 +4,12 @@ import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.Optional;
+
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
@@ -18,11 +24,6 @@ import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.Optional;
 
 public class ExecutionSubject extends Subject {
   private static final File dir = Files.createTempDir();
@@ -64,6 +65,11 @@ public class ExecutionSubject extends Subject {
 
   public ExecutionSubject withRuntimeError(String error) {
     this.expectedRuntimeError = Optional.of(error);
+    return this;
+  }
+
+  public ExecutionSubject withRuntimeChecks(boolean check) {
+    this.config = this.config.toBuilder().setRuntimeChecks(check).build();
     return this;
   }
 

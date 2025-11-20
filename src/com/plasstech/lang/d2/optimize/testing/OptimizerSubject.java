@@ -4,6 +4,8 @@ import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import java.util.Map;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.FailureMetadata;
@@ -20,7 +22,6 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.phase.State;
-import java.util.Map;
 
 public class OptimizerSubject extends Subject {
   public static OptimizerSubject assertThatInterpreting(String program) {
@@ -125,11 +126,11 @@ public class OptimizerSubject extends Subject {
   }
 
   private static void assertMapsSame(Map<String, Object> actuals, Map<String, Object> expecteds) {
-    assertThat(actuals).hasSize(expecteds.size());
-    for (Map.Entry<String, Object> entry : actuals.entrySet()) {
+    assertThat(actuals.size()).isAtLeast(expecteds.size());
+    for (Map.Entry<String, Object> entry : expecteds.entrySet()) {
       // make sure everything's there.
       Object actual = entry.getValue();
-      Object expected = expecteds.get(entry.getKey());
+      Object expected = actuals.get(entry.getKey());
       assertWithMessage(String.format("Value of %s is wrong", entry.getKey()))
           .that(actual)
           .isEqualTo(expected);

@@ -1,17 +1,28 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.ArrayAlloc;
 import com.plasstech.lang.d2.codegen.il.ArraySet;
 import com.plasstech.lang.d2.codegen.il.BinOp;
+import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Dec;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
+import com.plasstech.lang.d2.codegen.il.ProcEntry;
+import com.plasstech.lang.d2.codegen.il.ProcExit;
 import com.plasstech.lang.d2.codegen.il.Stop;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -29,16 +40,11 @@ import com.plasstech.lang.d2.type.StaticChecker;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * For certain ops, add runtime checks: NPE and index checks. Much of this used to be in
  * ILCodeGenerator but was split out so we can optimize first (and after!)
  */
-// TODO: write a unit test for this class
 public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -64,9 +70,11 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   // Maps a temp to its corresponding long temp
   private final Map<Operand, LongTempLocation> tempToLongTemp = new HashMap<>();
   private boolean changed;
+  private Set<Operand> nullTested = new HashSet<>();
 
   @Override
   public State execute(State input) {
+    nullTested.clear();
     try {
       tempToLongTemp.clear();
       augmentedCode.clear();
@@ -122,7 +130,6 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
       case PLUS:
         // NOTE we do NOT check string plus for nulls because it was already done in ILCodeGenerator
-        // have to update for remapped temps
         break;
 
       default:
@@ -149,6 +156,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     }
     var position = op.position();
     Location arrayLocation = npeCheck(op.array(), position);
+
     Operand indexLocation = indexChecks(arrayLocation, op.index(), position);
     // Replace the op with the new array and index, even if they're the same
     emit(
@@ -177,14 +185,13 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     var operator = op.operator();
     switch (operator) {
       case LENGTH:
+        source = npeCheck(source, position);
+        break;
+
       case ASC:
         source = npeCheck(source, position);
-        if (operator == TokenType.ASC) {
-          // TODO: write a test for this
-          // also generate length
-          source = lengthCheck(source, op.position());
-        }
-
+        // TODO: write a test for this
+        source = lengthCheck(source, op.position());
         break;
 
       default:
@@ -196,12 +203,52 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
   @Override
   public void visit(Transfer op) {
-    emit(new Transfer(op.destination(), remapTemp(op.source()), op.position()));
+    Operand newSource = remapTemp(op.source());
+    if (nullTested.contains(newSource)) {
+      // We know source is (still) not null, so now we know destination is not null
+      nullTested.add(op.destination());
+    } else {
+      nullTested.remove(op.destination());
+    }
+    emit(new Transfer(op.destination(), newSource, op.position()));
+  }
+
+  @Override
+  public void visit(Label op) {
+    nullTested.clear();
+  }
+
+  @Override
+  public void visit(Call op) {
+    nullTested.clear();
+  }
+
+  @Override
+  public void visit(SysCall op) {
+    if (op.call() == SysCall.Call.INPUT) {
+      // We know the result of input is not null
+      nullTested.add(op.arg());
+    }
+  }
+
+  @Override
+  public void visit(ProcEntry op) {
+    nullTested.clear();
+  }
+
+  @Override
+  public void visit(ProcExit op) {
+    nullTested.clear();
   }
 
   @Override
   public void visit(IfOp op) {
     emit(new IfOp(remapTemp(op.condition()), op.destination(), op.isNot(), op.position()));
+  }
+
+  @Override
+  public void visit(AllocateOp op) {
+    nullTested.add(op.destination());
   }
 
   @Override
@@ -232,6 +279,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new Label(nonNegativeIndexLabel));
 
     emit(new ArrayAlloc(op.destination(), op.arrayType(), size, position));
+    nullTested.add(op.destination());
   }
 
   private TempLocation allocateTemp(VarType varType) {
@@ -305,8 +353,18 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   }
 
   private <T extends Operand> T npeCheck(T operand, Position position) {
+    if (nullTested.contains(operand)) {
+      T newOperand = (T) remapTemp(operand);
+      if (newOperand == operand) { // NOTYPO
+        // We know this isn't null, so we don't have to do anything.
+        return operand;
+      }
+    }
     // Copy operand to a long lived temp so we can re-use it
     operand = (T) copyTempToLongTemp(operand, position);
+    // This may be different now
+    nullTested.add(operand);
+
     TempLocation nullRecordBool = allocateTemp(VarType.BOOL);
     emit(
         new BinOp(
@@ -324,7 +382,6 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
                 ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
     emit(new Stop(-1));
     emit(new Label(continueLabel));
-    // This may be different now
     return operand;
   }
 
