@@ -1,5 +1,5 @@
 // Based on outpost.prg
-// https://www.commodoregames.net/Outpost_Commodore_PET_437.html
+// https://www.commodoregames.net/CommodorePET/Outpost-437.html
 // Original author unknown
 // Python version Copyright 2023 David Plass
 // D version Copyright 2025 David Plass
