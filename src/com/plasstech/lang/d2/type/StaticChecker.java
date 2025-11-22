@@ -1,5 +1,12 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.Stack;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -42,12 +49,6 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Errors;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Stack;
 
 public class StaticChecker extends DefaultNodeVisitor implements Phase {
   public static final String RANGE_INDEX_OUT_OF_RANGE =
@@ -117,7 +118,8 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           TokenType.XOR);
 
   private static final Set<TokenType> NULL_OPERATORS =
-      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.NULL_COALESCE);
+      // Can add null to a string.
+      ImmutableSet.of(TokenType.EQEQ, TokenType.NEQ, TokenType.NULL_COALESCE, TokenType.PLUS);
 
   // NOTE: Does not include arrays or records.
   private static final Map<VarType, Set<TokenType>> OPERATORS_BY_LEFT_VARTYPE =
@@ -451,11 +453,6 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
           new TypeException(
               left.position(), "Cannot apply %s operator to ARRAY expression", operator));
       return;
-    }
-
-    if (leftType == VarType.STRING && operator == TokenType.PLUS && rightType.isNull()) {
-      // Ugh, this is such a random one-off...
-      errors.add(new TypeException(right.position(), "Cannot add NULL to STRING"));
     }
 
     if (operator == TokenType.LBRACKET) {

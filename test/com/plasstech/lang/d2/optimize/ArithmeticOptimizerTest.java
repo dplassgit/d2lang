@@ -45,6 +45,8 @@ public class ArithmeticOptimizerTest {
   private static final Operand CONSTANT_RANGE =
       new ConstantOperand<Range>(new Range(1234, 2345), VarType.RANGE);
 
+  private static final Operand NULL_OPERAND = new ConstantOperand<Void>(null, VarType.NULL);
+
   @Test
   public void varPlusVarBecomesShift() {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(INT1, INT2, TokenType.PLUS, INT2, null));
@@ -89,7 +91,6 @@ public class ArithmeticOptimizerTest {
 
   @Test
   public void doubleConstPlusConst() {
-
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(
@@ -1242,5 +1243,33 @@ public class ArithmeticOptimizerTest {
 
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isTransferredFrom(lhs);
+  }
+
+  @Test
+  public void addNullToEmptyString() {
+    // 'thing'+null-> "thingnull"
+    Location dest = LocationUtils.newTempLocation("loc", VarType.STRING);
+    BinOp op = new BinOp(dest, ConstantOperand.of("thing"), TokenType.PLUS, NULL_OPERAND, null);
+    ImmutableList<Op> input = ImmutableList.of(op);
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0))
+        .isBinOp(dest, op.left(), op.operator(), ConstantOperand.of("null"));
+  }
+
+  @Test
+  public void addEmptyStringToNull() {
+    // null+'thing'-> "nullthing"
+    Location dest = LocationUtils.newTempLocation("loc", VarType.STRING);
+    BinOp op = new BinOp(dest, NULL_OPERAND, TokenType.PLUS, ConstantOperand.of("thing"), null);
+    ImmutableList<Op> input = ImmutableList.of(op);
+    ImmutableList<Op> optimized = optimizer.optimize(input, null);
+    assertThat(optimizer.isChanged()).isTrue();
+
+    assertThat(optimized).hasSize(1);
+    assertThat(optimized.get(0))
+        .isBinOp(dest, ConstantOperand.of("null"), op.operator(), op.right());
   }
 }

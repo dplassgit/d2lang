@@ -3,6 +3,7 @@ package com.plasstech.lang.d2.optimize;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
+import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.Transfer;
@@ -111,6 +112,22 @@ class TempPropagationOptimizer extends LineOptimizer {
       return;
     }
     if (op.destination().equals(candidate.source()) && canApply(op, candidate)) {
+      deleteCurrent();
+      replaceAt(ip() + 1, op.setDestination(candidate.destination()));
+    }
+  }
+
+  @Override
+  public void visit(AllocateOp op) {
+    if (!op.destination().isTemp()) {
+      return;
+    }
+    // if the next line is an assignment to this destination, merge them.
+    Transfer candidate = getNext(Transfer.class);
+    if (candidate == null) {
+      return;
+    }
+    if (op.destination().equals(candidate.source())) {
       deleteCurrent();
       replaceAt(ip() + 1, op.setDestination(candidate.destination()));
     }

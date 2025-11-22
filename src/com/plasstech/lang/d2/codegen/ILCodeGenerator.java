@@ -79,7 +79,6 @@ import com.plasstech.lang.d2.type.VariableSymbol;
 public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final String NULL_POINTER = "Null pointer error at line %d, column %d";
 
   private SymbolTable symbolTable;
   private SymbolTable globals;
@@ -464,17 +463,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     }
 
     switch (operator) {
-      // We have to check for null here because the optimizer may try to optimize "null + ''" to ''
-      // but not know it's null. Shrug, it could be worse.
-      case PLUS:
-        if (left.type() == VarType.STRING) {
-          // make sure "left" isn't null
-          left = npeCheck(left, leftNode.position());
-          // make sure "right" isn't null
-          right = npeCheck(right, rightNode.position());
-        }
-        break;
-
       case AND:
         if (!rightAtomic) {
           // value = right (we know left is true, therefore value is true AND right = right)
@@ -541,34 +529,6 @@ public class ILCodeGenerator extends DefaultNodeVisitor implements Phase {
     return node instanceof VariableNode
         || node instanceof ConstNode
         || node instanceof ArrayLiteralNode;
-  }
-
-  private Operand npeCheck(Operand operand, Position position) {
-    if (operand.isTemp()) {
-      // Copy operand to a long lived temp so we can re-use it
-      Location longTempOperand = allocateLongTemp(operand.type());
-      emit(new Transfer(longTempOperand, operand, position));
-      operand = longTempOperand;
-    }
-    TempLocation nullRecordBool = allocateTemp(VarType.BOOL);
-    emit(
-        new BinOp(
-            nullRecordBool,
-            operand,
-            TokenType.EQEQ,
-            new ConstantOperand<Void>(null, operand.type()),
-            position));
-    String continueLabel = Labels.nextLabel("not_null");
-    emit(new IfOp(nullRecordBool, continueLabel, true));
-    emit(
-        new SysCall(
-            NULL_POINTER,
-            ImmutableList.of(
-                ConstantOperand.of(position.line()), ConstantOperand.of(position.column()))));
-    emit(new Stop(-1));
-    emit(new Label(continueLabel));
-    // This may be different now
-    return operand;
   }
 
   @Override

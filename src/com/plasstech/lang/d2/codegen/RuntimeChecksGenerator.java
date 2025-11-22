@@ -122,22 +122,97 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
         break;
 
       case LBRACKET:
-        if (left.type().compatibleWith(VarType.NULL)) {
-          left = npeCheck(left, position);
+        left = npeCheck(left, position);
+        if (left.type().equals(VarType.STRING)) {
+          // String indexing never returns null
+          noteAsNullTested(op.destination());
         }
         right = indexChecks(left, right, position);
         break;
 
       case PLUS:
-        // NOTE we do NOT check string plus for nulls because it was already done in ILCodeGenerator
+        if (maybeEmitStringPlus(op, left, right)) {
+          return;
+        }
         break;
 
       default:
-        return;
+        break;
     }
 
-    // Replace the op with the new right, even if it's the same.
+    // Replace the op even if it's the same because the sources might be updated.
     emit(new BinOp(destination, left, operator, right, position));
+  }
+
+  private void noteAsNullTested(Operand operand) {
+    if (operand.isTemp()) {
+      // we can't add it as nullTested because... why?
+      return;
+    }
+    nullTested.add(operand);
+  }
+
+  private boolean maybeEmitStringPlus(BinOp op, Operand left, Operand right) {
+    if (!left.type().equals(VarType.STRING) && !right.type().equals(VarType.STRING)) {
+      // Neither is a string (one may be literal null)
+      return false;
+    }
+    // If left == right (both null or both the same operand) we don't have to check it twice.
+    boolean same = left.equals(right);
+    Operand nullOperand = new ConstantOperand<Void>(null, VarType.STRING);
+    // newLeft (longTemp) = left
+    if (!nullTested.contains(op.left())) {
+      Location newLeft = allocateLongTemp(VarType.STRING);
+      if (left.type().equals(VarType.NULL)) {
+        // newLeft = "null"
+        emit(new Transfer(newLeft, ConstantOperand.of("null"), op.position()));
+      } else {
+        emit(new Transfer(newLeft, op.left(), op.position()));
+        String testRightLabel = Labels.nextLabel("test_right");
+        // temp1 = newLeft == null
+        Location temp1 = allocateTemp(VarType.BOOL);
+        emit(new BinOp(temp1, newLeft, TokenType.EQEQ, nullOperand, op.position()));
+
+        // if !temp1 goto test_right
+        emit(new IfOp(temp1, testRightLabel, true, op.position()));
+
+        // newLeft = "null"
+        emit(new Transfer(newLeft, ConstantOperand.of("null"), op.position()));
+
+        // test_right:
+        emit(new Label(testRightLabel));
+      }
+      left = newLeft;
+    }
+    if (same) {
+      right = left; // left might be the "new" left
+    }
+    if (!same && !nullTested.contains(op.right())) {
+      // newRight (longTemp) = right
+      Location newRight = allocateLongTemp(VarType.STRING);
+      if (right.type().equals(VarType.NULL)) {
+        // newLeft = "null"
+        emit(new Transfer(newRight, ConstantOperand.of("null"), op.position()));
+      } else {
+        emit(new Transfer(newRight, op.right(), op.position()));
+        // temp2 = newRight == null
+        String addItLabel = Labels.nextLabel("add_string");
+        Location temp2 = allocateTemp(VarType.BOOL);
+        emit(new BinOp(temp2, newRight, TokenType.EQEQ, nullOperand, op.position()));
+        // if !temp2 goto add_it
+        emit(new IfOp(temp2, addItLabel, true, op.position()));
+
+        // newRight  = "null"
+        emit(new Transfer(newRight, ConstantOperand.of("null"), op.position()));
+        // addit:
+        emit(new Label(addItLabel));
+      }
+      right = newRight;
+    }
+
+    // dest = (new) left + (new) right
+    emit(new BinOp(op.destination(), left, op.operator(), right, op.position()));
+    return true;
   }
 
   private Operand remapTemp(Operand temp) {
@@ -194,21 +269,30 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
         source = lengthCheck(source, op.position());
         break;
 
+      case CHR:
+        // CHR never returns null
+        noteAsNullTested(op.destination());
+        break;
+
       default:
         return;
     }
-    // Replace the op with the new right, even if it's the same.
+    // Replace the op even if it's the same because the source might be updated.
     emit(new UnaryOp(op.destination(), operator, source, position));
   }
 
   @Override
   public void visit(Transfer op) {
     Operand newSource = remapTemp(op.source());
-    if (nullTested.contains(newSource)) {
-      // We know source is (still) not null, so now we know destination is not null
-      nullTested.add(op.destination());
-    } else {
-      nullTested.remove(op.destination());
+    if (newSource.type().compatibleWith(VarType.NULL)) {
+      if (nullTested.contains(newSource)
+          || (newSource.isConstant() && !newSource.type().equals(VarType.NULL))) {
+        // We know source is (still) not null, so now we know destination is not null (or it's a
+        // constant)
+        noteAsNullTested(op.destination());
+      } else {
+        nullTested.remove(op.destination());
+      }
     }
     emit(new Transfer(op.destination(), newSource, op.position()));
   }
@@ -220,14 +304,20 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
   @Override
   public void visit(Call op) {
-    nullTested.clear();
+    // Remove all records, and any arrays or records from the list, but not strings, because
+    // they're immutable (!)
+    for (Operand arg : op.actuals()) {
+      if (arg.type().isArray() || arg.type().isRecord()) {
+        nullTested.remove(arg);
+      }
+    }
   }
 
   @Override
   public void visit(SysCall op) {
     if (op.call() == SysCall.Call.INPUT) {
       // We know the result of input is not null
-      nullTested.add(op.arg());
+      noteAsNullTested(op.arg());
     }
   }
 
@@ -248,7 +338,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
 
   @Override
   public void visit(AllocateOp op) {
-    nullTested.add(op.destination());
+    noteAsNullTested(op.destination());
   }
 
   @Override
@@ -279,7 +369,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     emit(new Label(nonNegativeIndexLabel));
 
     emit(new ArrayAlloc(op.destination(), op.arrayType(), size, position));
-    nullTested.add(op.destination());
+    noteAsNullTested(op.destination());
   }
 
   private TempLocation allocateTemp(VarType varType) {
@@ -353,6 +443,10 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
   }
 
   private <T extends Operand> T npeCheck(T operand, Position position) {
+    if (!operand.type().compatibleWith(VarType.NULL)) {
+      // Not nullable
+      return operand;
+    }
     if (nullTested.contains(operand)) {
       T newOperand = (T) remapTemp(operand);
       if (newOperand == operand) { // NOTYPO
@@ -363,7 +457,7 @@ public class RuntimeChecksGenerator extends DefaultOpcodeVisitor implements Phas
     // Copy operand to a long lived temp so we can re-use it
     operand = (T) copyTempToLongTemp(operand, position);
     // This may be different now
-    nullTested.add(operand);
+    noteAsNullTested(operand);
 
     TempLocation nullRecordBool = allocateTemp(VarType.BOOL);
     emit(

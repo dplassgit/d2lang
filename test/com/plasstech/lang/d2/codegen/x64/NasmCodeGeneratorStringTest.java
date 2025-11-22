@@ -2,10 +2,11 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorStringTest {
@@ -16,9 +17,8 @@ public class NasmCodeGeneratorStringTest {
 
   @Test
   public void index(@TestParameter({"1", "4"}) int index) throws Exception {
-    String value = "value";
     assertThatCompiling(
-            String.format("i=%d a='%s' b=a[i] print b c=a[%d] print c", index, value, index))
+            String.format("i=%d a='values' b=a[i] print b c=a[%d] print c", index, index))
         .executedEqualsInterpreted();
   }
 
@@ -120,22 +120,23 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void procIndex() throws Exception {
     assertThatCompiling(
-            "       b: string "
-                + "foo: proc(a: string, i:int) {"
-                + "   b=a[i] // b = o\r\n"
-                + "   print b"
-                + "   c=a[4] // c = d\r\n"
-                + "   print c"
-                + "} "
-                + "foo('world', 1)")
+            """
+            b: string
+            foo: proc(a: string, i:int) {
+               b=a[i] // b = o
+               print b
+               c=a[4] // c = d
+               print c
+            }
+            foo('world', 1)
+            """)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void constantStringIndex(@TestParameter({"1", "4"}) int index) throws Exception {
-    String value = "value";
     assertThatCompiling(
-            String.format("i=%d b='%s'[i] print b c='%s'[%d] print c", index, value, value, index))
+            String.format("i=%d b='values'[i] print b c='value'[%d] print c", index, index))
         .executedEqualsInterpreted();
   }
 
@@ -159,9 +160,11 @@ public class NasmCodeGeneratorStringTest {
       throws Exception {
     assertThatCompiling(
             String.format(
-                "      a='%s' b='%s' " //
-                    + "c=a %s b println c " //
-                    + "d=b %s a println d",
+                """
+                a='%s' b='%s'
+                c=a %s b println c
+                d=b %s a println d
+                """,
                 first, second, op, op))
         .executedEqualsInterpreted();
   }
@@ -170,13 +173,15 @@ public class NasmCodeGeneratorStringTest {
   public void compOpsParams(@TestParameter({"<", "!=", ">="}) String op) throws Exception {
     assertThatCompiling(
             String.format(
-                "      doit:proc(a:string,b:string) { "
-                    + "  c=a %s b "
-                    + "  print c "
-                    + "  d=b %s a "
-                    + "  print d "
-                    + "} "
-                    + "doit('abc', 'def') ",
+                """
+                doit:proc(a:string,b:string) {
+                  c=a %s b
+                  print c
+                  d=b %s a
+                  print d
+                }
+                doit('abc', 'def')
+                """,
                 op, op))
         .executedEqualsInterpreted();
   }
@@ -244,12 +249,14 @@ public class NasmCodeGeneratorStringTest {
   public void compOpsThreeParams(@TestParameter({"<=", "!=", ">"}) String op) throws Exception {
     assertThatCompiling(
             String.format(
-                "      compOpsThreeParams:proc(x:int, a:string,b:string) { "
-                    + "  print x "
-                    + "  print a %s b "
-                    + "  print b %s a "
-                    + "} "
-                    + "compOpsThreeParams(123, 'abc', 'def') ",
+                """
+                compOpsThreeParams:proc(x:int, a:string,b:string) {
+                  print x
+                  print a %s b
+                  print b %s a
+                }
+                compOpsThreeParams(123, 'abc', 'def')
+                """,
                 op, op))
         .executedEqualsInterpreted();
   }
@@ -257,13 +264,15 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void bug97ComparingParams() throws Exception {
     assertThatCompiling(
-            "      bug97ComparingParams:proc(a:string, b:string) { "
-                + "  println a == chr(10) "
-                + "  println chr(65) == a "
-                + "  println b == chr(66) "
-                + "  println chr(10) == b "
-                + "} "
-                + "bug97ComparingParams('A', 'B')")
+            """
+            bug97ComparingParams:proc(a:string, b:string) {
+              println a == chr(10)
+              println chr(65) == a
+              println b == chr(66)
+              println chr(10) == b
+            }
+            bug97ComparingParams('A', 'B')
+            """)
         .executedEqualsInterpreted();
   }
 
@@ -271,15 +280,17 @@ public class NasmCodeGeneratorStringTest {
   public void compOpsLocals(@TestParameter({"<", "==", ">="}) String op) throws Exception {
     assertThatCompiling(
             String.format(
-                "      compOpsLocals:proc() { "
-                    + "  a='abc' "
-                    + "  b='def' "
-                    + "  print b "
-                    + "  print a "
-                    + "  c = a %s b "
-                    + "  print c "
-                    + "} "
-                    + "compOpsLocals() ",
+                """
+                compOpsLocals:proc() {
+                  a='abc'
+                  b='def'
+                  print b
+                  print a
+                  c = a %s b
+                  print c
+                }
+                compOpsLocals()
+                """,
                 op))
         .executedEqualsInterpreted();
   }
@@ -287,37 +298,53 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void concatEmpty() throws Exception {
     assertThatCompiling(
-            " tester: proc(left:string, right:string) {"
-                + "   t=left+right println t "
-                + "} "
-                + "tester('', 'hi') "
-                + "tester('hi', '') ")
+            """
+        tester: proc(left:string, right:string) {
+          t=left+right println t
+        }
+        tester('', 'hi')
+        tester('hi', '')
+        """)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void concatNull(@TestParameter boolean optimize) throws Exception {
     String sourceCode =
-        " tester: proc(left:string, right:string) {"
-            + "   t=left+right println t "
-            + "} "
-            + "tester(null, '') "
-            + "tester('', null) ";
-    assertThatCompiling(sourceCode)
-        .withOptimize(optimize)
-        .withRuntimeError("Null pointer error")
-        .executes();
+        """
+        tester: proc(left:string, right:string) {
+           t=left+right println t
+        }
+        tester(null, 'x')
+        tester('y', null)
+        """;
+    assertThatCompiling(sourceCode).withOptimize(optimize).executedEqualsInterpreted();
+  }
+
+  @Test
+  public void emptyPlusNull(@TestParameter boolean optimize) throws Exception {
+    String sourceCode =
+        """
+        tester: proc(left:string, right:string) {
+           t=left+right println t
+        }
+        tester(null, '')
+        tester('', null)
+        """;
+    assertThatCompiling(sourceCode).withOptimize(optimize).executedEqualsInterpreted();
   }
 
   @Test
   public void indexOfTemp() throws Exception {
     assertThatCompiling(
-            "      h='hello '\r\n"
-                + "w='world'\r\n"
-                + "len = length(h+w)\r\n"
-                + "i = 0 while i < len do i = i + 1 {\r\n"
-                + "  print ((h+w)[i])[0]\r\n"
-                + "}\r\n")
+            """
+            h='hello '
+            w='world'
+            len = length(h+w)
+            i = 0 while i < len do i = i + 1 {
+              print ((h+w)[i])[0]
+            }
+            """)
         .executedEqualsInterpreted();
   }
 
@@ -330,8 +357,13 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void stringParamThenSliced() throws Exception {
     assertThatCompiling(
-            "      f:proc(s:string, i:int, j:int) {println s[0:2] println s[i:j]}\n"
-                + "f('first', 0, 2)")
+            """
+            f:proc(s:string, i:int, j:int) {
+                println s[0:2]
+                println s[i:j]
+            }
+            f('first', 0, 2)
+            """)
         .withOptimize(false)
         .executedEqualsInterpreted();
   }
@@ -344,16 +376,14 @@ public class NasmCodeGeneratorStringTest {
 
   @Test
   public void stringParamSliced(@TestParameter boolean optimize) throws Exception {
-    assertThatCompiling("      f:proc(s:string) {println s[0:2]}\n" + "f('first')")
+    assertThatCompiling("f:proc(s:string) {println s[0:2]} f('first')")
         .withOptimize(optimize)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void globalStringSliced() throws Exception {
-    assertThatCompiling("      s='first' println s[0:2]")
-        .withOptimize(false)
-        .executedEqualsInterpreted();
+    assertThatCompiling("s='first' println s[0:2]").withOptimize(false).executedEqualsInterpreted();
   }
 
   @Test
@@ -399,59 +429,64 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void bug83() throws Exception {
     assertThatCompiling(
-            "      prepend: proc(s:string) {\n"
-                + "   println s + ' there'\n"
-                + "}\n"
-                + "return_prepend: proc(s:string):string {\n"
-                + "   return s + ' there'\n"
-                + "}\n"
-                + "postpend: proc(s:string) {\n"
-                + "   println 'there ' + s\n"
-                + "}\n"
-                + "return_postpend: proc(s:string):string {\n"
-                + "   return 'there ' + s\n"
-                + "}\n"
-                + "\n"
-                + "  println 'Should print hello there'\n"
-                + "  prepend('hello')\n"
-                + "  println return_prepend('hello')\n"
-                + "  println 'Should print there hello'\n"
-                + "  postpend('hello')\n"
-                + "  println return_postpend('hello')\n")
+            """
+            prepend: proc(s:string) {
+               println s + ' there'
+            }
+            return_prepend: proc(s:string):string {
+               return s + ' there'
+            }
+            postpend: proc(s:string) {
+               println 'there ' + s
+            }
+            return_postpend: proc(s:string):string {
+               return 'there ' + s
+            }
+
+            println 'Should print hello there'
+            prepend('hello')
+            println return_prepend('hello')
+            println 'Should print there hello'
+            postpend('hello')
+            println return_postpend('hello')
+            """)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void addToItself() throws Exception {
     assertThatCompiling(
-            "f:proc(s:string):string {\n "
-                + "  sb = ''\n"
-                // This only fails in a loop because otherwise it is optimized to "return 'X'"
-                + "  i = 0 while i < 2 do i++ {\n"
-                + "    sb = sb + 'X'\n"
-                + "  }\n"
-                + "  sb = sb + 'Y'\n"
-                + "  nb = sb + 'Z'\n"
-                + "  return nb\n"
-                + "}\n"
-                + "print f('abcde')\n")
+            """
+            f:proc(s:string):string {
+              sb = ''
+                // This only fails in a loop because otherwise it is optimized to "return 'X'
+              i = 0 while i < 2 do i++ {
+                sb = sb + 'X'
+              }
+              sb = sb + 'Y'
+              nb = sb + 'Z'
+              return nb
+            }
+            print f('abcde')
+            """)
         .executedEqualsInterpreted();
   }
 
   @Test
   public void bug289() throws Exception {
     assertThatCompiling(
-            ""
-                + "DSet: record {}"
-                + "addToSet: proc(set: DSet, value: string): bool {\n"
-                + "  return false\n"
-                + "}\n"
-                + "\n"
-                + "s = new DSet\n"
-                + "i = 0\n"
-                + "addToSet(s, 'A')\n"
-                + "e = chr(i+asc('A'))+'B'\n"
-                + "print 'e: ' println e")
+            """
+            DSet: record {}
+            addToSet: proc(set: DSet, value: string): bool {
+              return false
+            }
+
+            s = new DSet
+            i = 0
+            addToSet(s, 'A')
+            e = chr(i+asc('A'))+'B'
+            print 'e: ' println e
+            """)
         .executedEqualsInterpreted();
   }
 
@@ -472,11 +507,13 @@ public class NasmCodeGeneratorStringTest {
   @Test
   public void compareString() {
     assertThatCompiling(
-            "f:proc(s:string, first:string): bool { \n"
-                + "return s[0]=='h'\n"
-                + "} \n"
-                + "println f('hi', 'h') \n"
-                + "println f('nohi', 'n')\n")
+            """
+            f:proc(s:string, first:string): bool {
+              return s[0]=='h'
+            }
+            println f('hi', 'h')
+            println f('nohi', 'n')
+            """)
         .withOptimize(true)
         .executedEqualsInterpreted();
   }

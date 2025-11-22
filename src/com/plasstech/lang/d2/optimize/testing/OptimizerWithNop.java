@@ -7,6 +7,8 @@ import com.plasstech.lang.d2.optimize.NopOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.type.SymbolTable;
 
+// Runs the backing optimizer once, then the NopOptimizer. (In contrast to ILOptimizer, which
+// runs all given optimizers multiple times.)
 public class OptimizerWithNop extends DefaultOptimizer {
   private final Optimizer backing;
 

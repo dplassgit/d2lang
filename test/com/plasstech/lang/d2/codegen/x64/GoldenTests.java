@@ -3,12 +3,6 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 import static org.junit.Assert.fail;
 
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
-import com.plasstech.lang.d2.YetAnotherCompiler;
-import com.plasstech.lang.d2.common.CompilationConfiguration;
-import com.plasstech.lang.d2.phase.State;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,8 +10,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
+import com.google.testing.junit.testparameterinjector.TestParameterValuesProvider;
+import com.plasstech.lang.d2.YetAnotherCompiler;
+import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.phase.State;
 
 /** NOTE: THESE TESTS CANNOT BE RUN BY BAZEL */
 @RunWith(TestParameterInjector.class)
@@ -39,6 +41,7 @@ public class GoldenTests {
   @Test
   public void compileGames() throws IOException {
     compileOneFile(new File("samples/games/ge.d"));
+    compileOneFile(new File("samples/games/outpost.d"));
   }
 
   // Just compile, no running
@@ -115,11 +118,10 @@ public class GoldenTests {
   }
 
   private void testFromFile(String path) throws Exception {
-    System.out.println("path = " + path);
     String text = new String(Files.readAllBytes(Paths.get(path)));
     assertThatCompiling(text)
         .withOptimize(optimize)
-        .withCodeGenDebugLevel(2)
+        .withCodeGenDebugLevel(0)
         .withOptDebugLevel(0)
         .executedEqualsInterpreted();
   }

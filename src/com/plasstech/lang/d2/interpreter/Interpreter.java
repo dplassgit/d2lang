@@ -1,5 +1,16 @@
 package com.plasstech.lang.d2.interpreter;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.logging.Level;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
@@ -37,16 +48,6 @@ import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.ArrayField;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.logging.Level;
 
 public class Interpreter extends DefaultOpcodeVisitor {
   private static final int MAX_ITERATIONS = 10000000;
@@ -321,6 +322,15 @@ public class Interpreter extends DefaultOpcodeVisitor {
     boolean leftNull = left == null;
     boolean rightNull = right == null;
     switch (op.operator()) {
+      case PLUS:
+        if (leftNull && right instanceof String) {
+          return "null" + right;
+        }
+        if (left instanceof String && rightNull) {
+          return left + "null";
+        }
+        return "nullnull";
+
       case EQEQ:
       case GEQ:
       case LEQ:

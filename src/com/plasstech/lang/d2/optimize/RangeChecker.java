@@ -84,15 +84,6 @@ public class RangeChecker extends DefaultOpcodeVisitor implements Phase, Optimiz
         }
         break;
 
-      case PLUS:
-        if (left.type() == VarType.STRING || right.type() == VarType.STRING) {
-          if (right.isNull() || left.isNull()) {
-            throw new D2RuntimeException(
-                "Cannot add NULL to STRING", op.position(), "Null pointer");
-          }
-        }
-        break;
-
       case DOT:
         if (left.isNull()) {
           throw new D2RuntimeException(

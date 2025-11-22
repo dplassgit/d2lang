@@ -1,5 +1,8 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
@@ -14,8 +17,6 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * "Part 2" of IL Code generation: currently only expands the null coalesce operator. This isn't
@@ -66,10 +67,14 @@ public class ILCodeGeneratorPart2 extends DefaultOpcodeVisitor implements Phase 
 
   @Override
   public void visit(BinOp op) {
-    if (op.operator() != TokenType.NULL_COALESCE) {
-      return;
+    switch (op.operator()) {
+      case NULL_COALESCE:
+        emitNullCoalesce(op);
+        break;
+
+      default:
+        break;
     }
-    emitNullCoalesce(op);
   }
 
   private void emitNullCoalesce(BinOp op) {

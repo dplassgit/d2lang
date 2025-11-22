@@ -2,6 +2,8 @@ package com.plasstech.lang.d2.codegen;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
@@ -13,7 +15,6 @@ import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Test;
 
 public class ILCodeGeneratorPart2Test {
   private Phase part2 = new ILCodeGeneratorPart2();
@@ -25,8 +26,11 @@ public class ILCodeGeneratorPart2Test {
 
   @Test
   public void noChange() {
+    Location intTemp = LocationUtils.newTempLocation("dest", VarType.INT);
+    Operand leftInt = LocationUtils.newTempLocation("left", VarType.INT);
+    Operand rightInt = LocationUtils.newTempLocation("right", VarType.INT);
     ImmutableList<Op> program =
-        ImmutableList.of(new BinOp(TEMP, STRING_OPERAND, TokenType.PLUS, NULL_OPERAND, null));
+        ImmutableList.of(new BinOp(intTemp, leftInt, TokenType.PLUS, rightInt, null));
     State state = State.create().setIlCode(program);
     state = part2.execute(state);
     assertThat(state.ilCode()).isEqualTo(program);
@@ -43,7 +47,6 @@ public class ILCodeGeneratorPart2Test {
     State state = State.create().setIlCode(program).addTypecheckResult(new TypeCheckResult(symTab));
 
     state = part2.execute(state);
-    System.err.println(state.ilCode());
 
     assertThat(state.ilCode().size()).isGreaterThan(1);
     long postAugmentTempcount = countVarsByStorage(SymbolStorage.LONG_TEMP);
@@ -61,7 +64,6 @@ public class ILCodeGeneratorPart2Test {
     State state = State.create().setIlCode(program).addTypecheckResult(new TypeCheckResult(symTab));
 
     state = part2.execute(state);
-    System.err.println(state.ilCode());
 
     assertThat(state.ilCode().size()).isGreaterThan(1);
     long postAugmentTempcount = countVarsByStorage(SymbolStorage.LONG_TEMP);

@@ -3,14 +3,16 @@ package com.plasstech.lang.d2.codegen;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.ILCodeGeneratorSubject.assertThatGenerating;
 
+import java.util.List;
+import java.util.function.Predicate;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.common.TokenType;
-import java.util.List;
-import java.util.function.Predicate;
-import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * IMPORTANT: This test mostly validates that the ILCodeGenerator *can* generate code for the given
@@ -47,6 +49,24 @@ public class ILCodeGeneratorTest {
   @Test
   public void stringExpression() {
     assertThatGenerating("a='hi' b=a+' world'").succeeds();
+  }
+
+  @Test
+  public void stringAdd() {
+    List<Op> code = assertThatGenerating("a='hi' + ' world'").succeeds();
+    assertThat(code).hasSize(3);
+  }
+
+  @Test
+  public void stringAddNullToEnd() {
+    List<Op> code = assertThatGenerating("a='hi' + null").succeeds();
+    assertThat(code).hasSize(3);
+  }
+
+  @Test
+  public void stringAddNullBeginning() {
+    List<Op> code = assertThatGenerating("a=null + 'hi'").succeeds();
+    assertThat(code).hasSize(3);
   }
 
   @Test

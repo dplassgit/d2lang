@@ -5,6 +5,9 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.plasstech.lang.d2.type.testing.StaticCheckerSubject.assertThatTypeChecking;
 import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.parse.node.AssignmentNode;
@@ -19,8 +22,6 @@ import com.plasstech.lang.d2.parse.node.UnaryNode;
 import com.plasstech.lang.d2.parse.node.VariableNode;
 import com.plasstech.lang.d2.parse.node.VariableSetNode;
 import com.plasstech.lang.d2.phase.State;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class StaticCheckerTest {
@@ -472,11 +473,10 @@ public class StaticCheckerTest {
   }
 
   @Test
-  public void stringAddToNull_error() {
-    assertThatTypeChecking("b='hi' a=b+null").hasError("Cannot add NULL to STRING");
-    assertThatTypeChecking("a='hi'+null").hasError("Cannot add NULL to STRING");
-    assertThatTypeChecking("b='hi' a=null+b")
-        .hasError("Cannot apply \\+ operator to left operand of type NULL");
+  public void stringAddToNull() {
+    assertThatTypeChecking("b='hi' a=b+null").succeeds();
+    assertThatTypeChecking("a='hi'+null").succeeds();
+    assertThatTypeChecking("b='hi' a=null+b").succeeds();
   }
 
   @Test
@@ -1778,13 +1778,13 @@ public class StaticCheckerTest {
   @Test
   public void scopes() throws Exception {
     assertThatTypeChecking(
-            ""
-                + "f:proc(flag:bool): string {\n"
-                + "   if flag { s = 'hi'}\n"
-                + "   return s\n" // this should be a typecheck error because 's' is in the inner
-                                  // block
-                + "}\n"
-                + "println f(false)\n")
+            """
+            f:proc(flag:bool): string {
+               if flag { s = 'hi'}
+               return s // this should be a typecheck error because 's' is in the inner block
+            }
+            println f(false)
+            """)
         .hasError("Indeterminable type for RETURN");
   }
 

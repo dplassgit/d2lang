@@ -143,16 +143,16 @@ public class RangeCheckerTest {
   public void varStringPlusNull() {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(STRING_TEMP, STRING_TEMP, TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
+    // no error
+    run(program);
   }
 
   @Test
   public void varNullPlusString() {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(STRING_TEMP, NULL_STRING, TokenType.PLUS, STRING_TEMP, null));
-    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
+    // no error
+    run(program);
   }
 
   @Test
@@ -198,8 +198,8 @@ public class RangeCheckerTest {
     ImmutableList<Op> program =
         ImmutableList.of(
             new BinOp(STRING_TEMP, ConstantOperand.of("hi"), TokenType.PLUS, NULL_STRING, null));
-    RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
-    assertThat(exception).hasMessageThat().contains("Cannot add NULL to STRING");
+    // no error
+    run(program);
   }
 
   @Test

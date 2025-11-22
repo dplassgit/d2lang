@@ -1,5 +1,10 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -19,10 +24,6 @@ import com.plasstech.lang.d2.optimize.matcher.OpcodeOptimizer;
 import com.plasstech.lang.d2.optimize.matcher.UnaryOpOptimizer;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.List;
-import java.util.function.BiPredicate;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
 /**
  * Constant folding and single-line opcode simplification optimizations, via a declarative list of
@@ -218,6 +219,34 @@ class ArithmeticOptimizer extends LineOptimizer {
                 String right = ConstantOperand.stringValueFromConstOperand(binop.right());
                 return new Transfer(
                     op.getDestination(), ConstantOperand.of(left + right), op.position());
+              }),
+          // null + anything = "null" + anything
+          new BinOpOptimizer(
+              Matchers.hasType(VarType.NULL),
+              TokenType.PLUS,
+              Matchers.hasType(VarType.STRING),
+              op -> {
+                BinOp binop = (BinOp) op;
+                return new BinOp(
+                    op.getDestination(),
+                    ConstantOperand.of("null"),
+                    binop.operator(),
+                    binop.right(),
+                    op.position());
+              }),
+          // anything + null = anything + "null"
+          new BinOpOptimizer(
+              Matchers.hasType(VarType.STRING),
+              TokenType.PLUS,
+              Matchers.hasType(VarType.NULL),
+              op -> {
+                BinOp binop = (BinOp) op;
+                return new BinOp(
+                    op.getDestination(),
+                    binop.left(),
+                    binop.operator(),
+                    ConstantOperand.of("null"),
+                    op.position());
               }),
           // anything + empty = anything
           new BinOpOptimizer(

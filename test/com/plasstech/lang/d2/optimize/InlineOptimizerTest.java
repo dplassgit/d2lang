@@ -9,17 +9,8 @@ import com.plasstech.lang.d2.testing.TestCode;
 
 public class InlineOptimizerTest {
   // don't make this static because it needs to be reset every test.
-  private Optimizer optimizers =
-      new ILOptimizer(
-          ImmutableList.of(
-              new NopOptimizer(),
-              new ConstantPropagationOptimizer(0),
-              new DeadAssignmentOptimizer(0),
-              new DeadCodeOptimizer(0),
-              new DeadLabelOptimizer(0),
-              new DeadProcOptimizer(0),
-              new InlineOptimizer(2)),
-          2);
+  // Also, definitely use ILOptimizer so it runs repeatedly.
+  private Optimizer optimizers = new ILOptimizer(ImmutableList.of(new InlineOptimizer(2)), 2);
 
   @Test
   public void shortVoidNoArg() {
@@ -75,6 +66,14 @@ public class InlineOptimizerTest {
 
   @Test
   public void shortProcRecord() {
+    // This can't be inlined because of the null check, which is still run. It's still run
+    // because it doesn't run the optimizer before inserting the runtime checks, and the sequence
+    // of opcodes is:
+    //    temp = new rt
+    //    x = temp
+    //    (check x for null)
+    //    x.i = 3
+    // and the RuntimeChecksGenerator doesn't retain the non-nullness of temp.
     assertThatInterpreting(
             """
             rt:record{i:int}
@@ -87,7 +86,7 @@ public class InlineOptimizerTest {
             println r.i
             """)
         .withOptimizer(optimizers)
-        .hasNoCalls();
+        .hasCallsTo("shortProcRecord");
   }
 
   @Test
