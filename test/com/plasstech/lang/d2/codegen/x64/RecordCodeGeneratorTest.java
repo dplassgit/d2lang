@@ -2,6 +2,9 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -22,8 +25,6 @@ import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Before;
-import org.junit.Test;
 
 public class RecordCodeGeneratorTest {
   private static final String RECORD_NAME = "recordDefinitionName";
@@ -35,7 +36,6 @@ public class RecordCodeGeneratorTest {
       LocationUtils.newStackLocation("right", RECORD_TYPE, 4);
   private static final Location BOOL_DESTINATION =
       new RegisterLocation("dest", IntRegister.RCX, VarType.BOOL);
-  private static final Operand NULL = new ConstantOperand<Void>(null, VarType.NULL);
   private static final VarType UNBOUND_TYPE = new UnboundType("T");
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
@@ -66,7 +66,7 @@ public class RecordCodeGeneratorTest {
 
   @Test
   public void variableEqeqNull() {
-    BinOp op = new BinOp(BOOL_DESTINATION, LEFT_RECORD, TokenType.EQEQ, NULL, null);
+    BinOp op = new BinOp(BOOL_DESTINATION, LEFT_RECORD, TokenType.EQEQ, ConstantOperand.NULL, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // left == null (comparing to constant null) should generate:
     // cmp QWORD RDX, 0, setz CL
@@ -76,7 +76,7 @@ public class RecordCodeGeneratorTest {
 
   @Test
   public void variableNeqNull() {
-    BinOp op = new BinOp(BOOL_DESTINATION, LEFT_RECORD, TokenType.NEQ, NULL, null);
+    BinOp op = new BinOp(BOOL_DESTINATION, LEFT_RECORD, TokenType.NEQ, ConstantOperand.NULL, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // left != null (comparing to constant null) should generate:
     // cmp QWORD RBX, 0, setnz CL (allocated)
@@ -86,7 +86,8 @@ public class RecordCodeGeneratorTest {
 
   @Test
   public void nullEqeqVariable() {
-    BinOp op = new BinOp(BOOL_DESTINATION, NULL, TokenType.EQEQ, RIGHT_RECORD, null);
+    BinOp op =
+        new BinOp(BOOL_DESTINATION, ConstantOperand.NULL, TokenType.EQEQ, RIGHT_RECORD, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // It generates no code now; nasmcodegenerator is responsible
     assertThat(code).isEmpty();
@@ -94,7 +95,7 @@ public class RecordCodeGeneratorTest {
 
   @Test
   public void nullNeqVariable() {
-    BinOp op = new BinOp(BOOL_DESTINATION, NULL, TokenType.NEQ, RIGHT_RECORD, null);
+    BinOp op = new BinOp(BOOL_DESTINATION, ConstantOperand.NULL, TokenType.NEQ, RIGHT_RECORD, null);
     ImmutableList<String> code = generateUncommentedCode(op);
     // It generates no code now; nasmcodegenerator is responsible
     assertThat(code).isEmpty();

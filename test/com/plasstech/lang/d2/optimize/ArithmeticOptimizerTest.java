@@ -9,6 +9,9 @@ import static com.plasstech.lang.d2.codegen.ConstantOperand.TRUE;
 import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -26,8 +29,6 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.IntegralTypeProvider;
 import com.plasstech.lang.d2.type.testing.NumericTypeProvider;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ArithmeticOptimizerTest {
@@ -1191,9 +1192,8 @@ public class ArithmeticOptimizerTest {
     // null??anything -> anything
     Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
     ConstantOperand<String> rhs = ConstantOperand.of("hi");
-    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(new BinOp(loc, nullOp, TokenType.NULL_COALESCE, rhs, null));
+        ImmutableList.of(new BinOp(loc, ConstantOperand.NULL, TokenType.NULL_COALESCE, rhs, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -1206,9 +1206,8 @@ public class ArithmeticOptimizerTest {
     // anything??null -> anything
     Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
     ConstantOperand<String> lhs = ConstantOperand.of("hi");
-    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(new BinOp(loc, lhs, TokenType.NULL_COALESCE, nullOp, null));
+        ImmutableList.of(new BinOp(loc, lhs, TokenType.NULL_COALESCE, ConstantOperand.NULL, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
@@ -1220,14 +1219,15 @@ public class ArithmeticOptimizerTest {
   public void coalesceNulls() {
     // null??null-> null
     Location loc = LocationUtils.newTempLocation("loc", VarType.STRING);
-    Operand nullOp = LocationUtils.newTempLocation("nullOp", VarType.NULL);
     ImmutableList<Op> input =
-        ImmutableList.of(new BinOp(loc, nullOp, TokenType.NULL_COALESCE, nullOp, null));
+        ImmutableList.of(
+            new BinOp(
+                loc, ConstantOperand.NULL, TokenType.NULL_COALESCE, ConstantOperand.NULL, null));
     ImmutableList<Op> optimized = optimizer.optimize(input, null);
     assertThat(optimizer.isChanged()).isTrue();
 
     assertThat(optimized).hasSize(1);
-    assertThat(optimized.get(0)).isTransferredFrom(nullOp);
+    assertThat(optimized.get(0)).isTransferredFrom(ConstantOperand.NULL);
   }
 
   @Test

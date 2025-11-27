@@ -1,13 +1,14 @@
 package com.plasstech.lang.d2.codegen;
 
+import java.util.Map;
+import java.util.Objects;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.Map;
-import java.util.Objects;
 
 public class ConstantOperand<T> implements Operand {
   // These can't use "of" because "of" sometimes uses these.
@@ -90,6 +91,8 @@ public class ConstantOperand<T> implements Operand {
     throw new D2RuntimeException("Unknown zero type " + varType, null, "Internal");
   }
 
+  public static final ConstantOperand<Void> NULL = new ConstantOperand<Void>(null, VarType.NULL);
+
   private final T value;
   private final VarType type;
 
@@ -126,7 +129,7 @@ public class ConstantOperand<T> implements Operand {
     }
     if (type().isArray()) {
       Object[] valArray = (Object[]) value;
-      return String.format("[%s] [array const]", Joiner.on(", ").join(valArray));
+      return String.format("[%s] [array literal]", Joiner.on(", ").join(valArray));
     }
     return String.format("%s [%s const]", value.toString(), type().toString());
   }
@@ -230,16 +233,13 @@ public class ConstantOperand<T> implements Operand {
   }
 
   public static Range rangeValueFromConstOperand(Operand operand) {
-    if (!(operand instanceof ConstantOperand)) {
-      throw new IllegalArgumentException(
-          "Cannot get Range const from non-ConstOperand: " + operand);
-    }
-    ConstantOperand<?> constant = (ConstantOperand<?>) operand;
-    if (!(constant.value() instanceof Range)) {
+    if (operand instanceof ConstantOperand constant) {
+      if (constant.value() instanceof Range rangeConstant) {
+        return rangeConstant;
+      }
       throw new IllegalArgumentException(
           "Cannot get Range const from non-Range ConstOperand: " + operand);
     }
-    ConstantOperand<Range> rangeConstant = (ConstantOperand<Range>) operand;
-    return rangeConstant.value();
+    throw new IllegalArgumentException("Cannot get Range const from non-ConstOperand: " + operand);
   }
 }

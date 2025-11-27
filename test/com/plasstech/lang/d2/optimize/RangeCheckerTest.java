@@ -3,6 +3,9 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -23,8 +26,6 @@ import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class RangeCheckerTest {
@@ -38,8 +39,6 @@ public class RangeCheckerTest {
       new ConstantOperand<String>(null, VarType.STRING);
   private static final ArrayType ARRAY_TYPE = new ArrayType(VarType.INT, 1);
   private static final Location ARRAY_TEMP = LocationUtils.newTempLocation("arraytemp", ARRAY_TYPE);
-  private static final Location NULL_LOCATION =
-      LocationUtils.newTempLocation("nullarray", VarType.NULL);
   private static final TempLocation STR1 = LocationUtils.newTempLocation("str1", VarType.STRING);
   private static final ConstantOperand<String> CONSTANT_A = ConstantOperand.of("a");
 
@@ -160,7 +159,7 @@ public class RangeCheckerTest {
   public void nullArraySet() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(0), NULL_LOCATION, false, null));
+            new ArraySet(INT_TEMP, ARRAY_TYPE, ConstantOperand.of(0), ConstantOperand.NULL, false, null));
 
     RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot set value of NULL ARRAY");
@@ -170,15 +169,16 @@ public class RangeCheckerTest {
   public void nullFieldGet() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(STRING_TEMP, NULL_LOCATION, TokenType.DOT, ConstantOperand.of("f"), null));
+            new BinOp(STRING_TEMP, ConstantOperand.NULL, TokenType.DOT, ConstantOperand.of("f"), null));
     RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot retrieve field \"f\" of NULL RECORD");
   }
 
   @Test
   public void nullFieldSet() {
+    Location nullRecordLoc = LocationUtils.newStackLocation("f", VarType.NULL, 0);
     ImmutableList<Op> program =
-        ImmutableList.of(new FieldSetOp(NULL_LOCATION, null, "f", null, null));
+        ImmutableList.of(new FieldSetOp(nullRecordLoc, null, "f", null, null));
     RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot set field \"f\" of NULL RECORD");
   }
@@ -275,7 +275,7 @@ public class RangeCheckerTest {
   public void nullIndex() {
     ImmutableList<Op> program =
         ImmutableList.of(
-            new BinOp(STR1, NULL_LOCATION, TokenType.LBRACKET, ConstantOperand.of(1), null));
+            new BinOp(STR1, ConstantOperand.NULL, TokenType.LBRACKET, ConstantOperand.of(1), null));
 
     RuntimeException exception = assertThrows(D2RuntimeException.class, () -> run(program));
     assertThat(exception).hasMessageThat().contains("Cannot index into NULL");
