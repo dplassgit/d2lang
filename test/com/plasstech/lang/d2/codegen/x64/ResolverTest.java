@@ -3,6 +3,11 @@ package com.plasstech.lang.d2.codegen.x64;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 
+import java.util.List;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -10,6 +15,7 @@ import com.google.testing.junit.testparameterinjector.TestParameterValuesProvide
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
 import com.plasstech.lang.d2.codegen.MemoryAddress;
+import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.ParamLocation;
 import com.plasstech.lang.d2.codegen.StackLocation;
 import com.plasstech.lang.d2.codegen.TempLocation;
@@ -19,9 +25,6 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
-import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ResolverTest {
@@ -69,6 +72,9 @@ public class ResolverTest {
       LocationUtils.newTempLocation("__tempi", VarType.INT);
   private static final TempLocation TEMP_STRING =
       LocationUtils.newTempLocation("__temps", VarType.STRING);
+  private static final ConstantOperand<Void> NULL_OPERAND =
+      new ConstantOperand<Void>(null, VarType.NULL);
+
   private static final ProcExit PROC_EXIT = new ProcExit("proc", 0, 0);
 
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());
@@ -131,33 +137,16 @@ public class ResolverTest {
   }
 
   @Test
-  public void mov_boolFalseToReg() {
-    resolver.mov(ConstantOperand.FALSE, IntRegister.RAX);
-    assertThat(emitter).containsExactly("xor RAX, RAX");
-  }
-
-  @Test
   public void mov_boolTrueToReg() {
     resolver.mov(ConstantOperand.TRUE, IntRegister.RAX);
     assertThat(emitter).containsExactly("mov BYTE AL, 1");
   }
 
   @Test
-  public void mov_byte0ToReg() {
-    resolver.mov(ConstantOperand.ZERO_BYTE, IntRegister.RAX);
-    assertThat(emitter).containsExactly("xor RAX, RAX");
-  }
-
-  @Test
-  public void mov_int0ToReg() {
-    resolver.mov(ConstantOperand.ZERO, IntRegister.RAX);
-    assertThat(emitter).containsExactly("xor RAX, RAX");
-  }
-
-  @Test
-  public void mov_nullToReg() {
-    resolver.mov(new ConstantOperand<Void>(null, VarType.NULL), IntRegister.RAX);
-    assertThat(emitter).containsExactly("xor RAX, RAX");
+  public void mov_zeroToReg(
+      @TestParameter(valuesProvider = ZeroOperandProvider.class) Operand operand) {
+    resolver.mov(operand, IntRegister.RAX);
+    assertThat(emitter).containsExactly("xor EAX, EAX");
   }
 
   @Test
@@ -563,6 +552,18 @@ public class ResolverTest {
     public List<VarType> provideValues(Context context) {
       return ImmutableList.of(
           VarType.BYTE, VarType.SHORT, VarType.INT, VarType.LONG, VarType.BOOL, VarType.RANGE);
+    }
+  }
+
+  private static class ZeroOperandProvider extends TestParameterValuesProvider {
+    @Override
+    public List<Operand> provideValues(Context context) {
+      return ImmutableList.of(
+          NULL_OPERAND,
+          ConstantOperand.FALSE,
+          ConstantOperand.ZERO_BYTE,
+          ConstantOperand.ZERO,
+          ConstantOperand.ZERO_LONG);
     }
   }
 

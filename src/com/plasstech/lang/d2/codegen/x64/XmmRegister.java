@@ -27,6 +27,11 @@ enum XmmRegister implements Register {
   }
 
   @Override
+  public String nameBySize(int bits) {
+    return name();
+  }
+
+  @Override
   public void accept(RegisterVisitor visitor) {
     visitor.visit(this);
   }

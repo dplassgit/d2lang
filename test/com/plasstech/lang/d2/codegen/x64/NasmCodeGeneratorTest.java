@@ -4,6 +4,9 @@ import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertThat;
 import static com.plasstech.lang.d2.codegen.testing.EmitterSubject.assertWithoutTrimmingThat;
 import static org.junit.Assert.fail;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -25,9 +28,6 @@ import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.TypeCheckResult;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class NasmCodeGeneratorTest {
 
@@ -46,12 +46,7 @@ public class NasmCodeGeneratorTest {
 
   private Emitter emitter = new X64Emitter();
   private Registers registers = new Registers();
-  private NasmCodeGenerator codeGen;
-
-  @Before
-  public void setUp() {
-    codeGen = new NasmCodeGenerator(emitter, registers);
-  }
+  private NasmCodeGenerator codeGen = new NasmCodeGenerator(emitter, registers);
 
   @Test
   public void shiftLeftParamParamParamByte() {
@@ -387,8 +382,7 @@ public class NasmCodeGeneratorTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP, nullOperand, TokenType.NEQ, nullOperand, null));
     generate(program);
-    assertThat(emitter).contains("  xor RSI, RSI");
-    assertThat(emitter).contains("  xor RDI, RDI");
+    assertThat(emitter).containsAtLeast("xor ESI, ESI", "xor EDI, EDI");
   }
 
   @Test
@@ -399,10 +393,10 @@ public class NasmCodeGeneratorTest {
                 TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(GLOBAL_RANGE, TEMP_RANGE, null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD EBX, 12");
-    assertThat(emitter).contains("  shl QWORD RBX, 32");
-    assertThat(emitter).contains("  add RBX, 24");
-    assertThat(emitter).contains("  mov QWORD [_globalrange], RBX");
+    assertThat(emitter).contains("mov DWORD EBX, 12");
+    assertThat(emitter).contains("shl QWORD RBX, 32");
+    assertThat(emitter).contains("add RBX, 24");
+    assertThat(emitter).contains("mov QWORD [_globalrange], RBX");
   }
 
   @Test
@@ -416,8 +410,8 @@ public class NasmCodeGeneratorTest {
                 ConstantOperand.of(24),
                 null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD [_globalrange], 12");
-    assertThat(emitter).contains("  shl QWORD [_globalrange], 32");
+    assertThat(emitter).contains("mov DWORD [_globalrange], 12");
+    assertThat(emitter).contains("shl QWORD [_globalrange], 32");
   }
 
   @Test
@@ -428,10 +422,10 @@ public class NasmCodeGeneratorTest {
                 TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(STACK_RANGE, TEMP_RANGE, null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD EBX, 12");
-    assertThat(emitter).contains("  shl QWORD RBX, 32");
-    assertThat(emitter).contains("  add RBX, 24");
-    assertThat(emitter).contains("  mov QWORD [RBP - 16], RBX");
+    assertThat(emitter).contains("mov DWORD EBX, 12");
+    assertThat(emitter).contains("shl QWORD RBX, 32");
+    assertThat(emitter).contains("add RBX, 24");
+    assertThat(emitter).contains("mov QWORD [RBP - 16], RBX");
   }
 
   @Test
@@ -442,10 +436,10 @@ public class NasmCodeGeneratorTest {
                 TEMP_RANGE, ConstantOperand.of(12), TokenType.COLON, ConstantOperand.of(24), null),
             new Transfer(PARAM_RANGE, TEMP_RANGE, null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD EBX, 12");
-    assertThat(emitter).contains("  shl QWORD RBX, 32");
-    assertThat(emitter).contains("  add RBX, 24");
-    assertThat(emitter).contains("  mov RCX, RBX");
+    assertThat(emitter).contains("mov DWORD EBX, 12");
+    assertThat(emitter).contains("shl QWORD RBX, 32");
+    assertThat(emitter).contains("add RBX, 24");
+    assertThat(emitter).contains("mov RCX, RBX");
   }
 
   @Test
@@ -453,9 +447,9 @@ public class NasmCodeGeneratorTest {
     ImmutableList<Op> program =
         ImmutableList.of(new BinOp(TEMP_RANGE, TEMP, TokenType.COLON, TEMP, null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD ESI, EBX");
-    assertThat(emitter).contains("  shl QWORD RSI, 32");
-    assertThat(emitter).contains("  add QWORD RSI, RBX");
+    assertThat(emitter).contains("mov DWORD ESI, EBX");
+    assertThat(emitter).contains("shl QWORD RSI, 32");
+    assertThat(emitter).contains("add QWORD RSI, RBX");
   }
 
   @Test
@@ -470,10 +464,10 @@ public class NasmCodeGeneratorTest {
             new BinOp(temp3, temp1, TokenType.COLON, temp2, null),
             new Transfer(GLOBAL_RANGE, temp3, null));
     generate(program);
-    assertThat(emitter).contains("  mov DWORD EDI, EBX");
-    assertThat(emitter).contains("  shl QWORD RDI, 32");
-    assertThat(emitter).contains("  add QWORD RDI, RSI");
-    assertThat(emitter).contains("  mov QWORD [_globalrange], RDI");
+    assertThat(emitter).contains("mov DWORD EDI, EBX");
+    assertThat(emitter).contains("shl QWORD RDI, 32");
+    assertThat(emitter).contains("add QWORD RDI, RSI");
+    assertThat(emitter).contains("mov QWORD [_globalrange], RDI");
   }
 
   private State generateOne(Op op) {

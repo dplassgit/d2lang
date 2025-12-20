@@ -2,6 +2,15 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.Codegen.fail;
 
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -21,14 +30,6 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Resolves temp and other variables and keeps track if they're in registers or not. TODO: rename
@@ -408,7 +409,7 @@ class Resolver implements RegistersInterface {
     if (source.isConstant() || source.isRegister() || destReg != null || sourceReg != null) {
       // reg to reg or const to reg
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s", destReg.name(), destReg.name());
+        emitter.emit("xor %s, %s", destReg.nameBySize(32), destReg.nameBySize(32));
       } else {
         if (sourceReg != null && destReg != null) {
           // Fixed Issue #170: if register to register, don't need "size"
@@ -453,7 +454,7 @@ class Resolver implements RegistersInterface {
 
     if (destReg != null || sourceReg != null) {
       if (source.isConstant() && sourceName.equals("0") && destReg != null) {
-        emitter.emit("xor %s, %s", destReg.name(), destReg.name());
+        emitter.emit("xor %s, %s", destReg.nameBySize(32), destReg.nameBySize(32));
       } else {
         // go right from source to dest
         emitter.emit("mov %s, %s", destName, sourceName);

@@ -8,6 +8,8 @@ public interface Register {
 
   String nameByType(VarType type);
 
+  String nameBySize(int bits);
+
   void accept(RegisterVisitor visitor);
 
   public static final ImmutableList<Register> VOLATILE_REGISTERS =

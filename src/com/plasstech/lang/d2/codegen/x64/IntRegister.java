@@ -46,14 +46,7 @@ enum IntRegister implements Register {
 
   @Override
   public String nameByType(VarType type) {
-    if (type == VarType.INT) {
-      return name32;
-    } else if (type == VarType.BYTE || type == VarType.BOOL) {
-      return name8;
-    } else if (type == VarType.SHORT) {
-      return name16;
-    }
-    return name64;
+    return nameBySize(type.size() * 8);
   }
 
   @Override
@@ -64,5 +57,18 @@ enum IntRegister implements Register {
   @Override
   public VarType varType() {
     return VarType.LONG;
+  }
+
+  @Override
+  public String nameBySize(int bits) {
+    return switch (bits) {
+      case 8 -> name8;
+      case 16 -> name16;
+      case 32 -> name32;
+      case 64 -> name64;
+      default -> {
+        throw new IllegalArgumentException("Cannot get name by size for " + bits);
+      }
+    };
   }
 }
