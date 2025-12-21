@@ -126,7 +126,6 @@ public class OptimizerSubject extends Subject {
   }
 
   private static void assertMapsSame(Map<String, Object> actuals, Map<String, Object> expecteds) {
-    assertThat(actuals.size()).isAtLeast(expecteds.size());
     for (Map.Entry<String, Object> entry : expecteds.entrySet()) {
       // make sure everything's there.
       Object actual = entry.getValue();
@@ -135,5 +134,6 @@ public class OptimizerSubject extends Subject {
           .that(actual)
           .isEqualTo(expected);
     }
+    assertThat(actuals.size()).isAtLeast(expecteds.size());
   }
 }

@@ -5,6 +5,10 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.RAX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -45,9 +49,6 @@ import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements Phase {
   private static final Escaper ESCAPER =
@@ -845,7 +846,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
       }
     }
 
-    emitter.emit0("__exit_of_%s:", op.procName());
+    emitter.emit0("D_exit_of_%s:", op.procName());
     // Takes care of fixing up the stack based on locals & spillovers
     resolver.procExit(op);
     emitter.emit("ret");
@@ -862,7 +863,7 @@ public class NasmCodeGenerator extends ImplementedOnlyOpcodeVisitor implements P
               resolver.deallocate(returnValue);
             });
     // NOTYPO
-    emitter.emit("jmp __exit_of_%s", op.procName());
+    emitter.emit("jmp D_exit_of_%s", op.procName());
   }
 
   @Override

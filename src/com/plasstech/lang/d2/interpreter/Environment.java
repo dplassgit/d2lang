@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.interpreter;
 
-import com.plasstech.lang.d2.codegen.Location;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.plasstech.lang.d2.codegen.Location;
 
 public class Environment {
   // this is a unique sentinel object
@@ -63,7 +64,7 @@ public class Environment {
   public Map<String, Object> variables() {
     Map<String, Object> variablesOnly = new HashMap<>();
     for (Map.Entry<String, Object> entry : values.entrySet()) {
-      if (!entry.getKey().startsWith("__")) {
+      if (!entry.getKey().startsWith("D_")) {
         // not a temp
         Object value = entry.getValue();
         if (value == NULL) {

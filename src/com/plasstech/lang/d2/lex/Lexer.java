@@ -1,9 +1,10 @@
 package com.plasstech.lang.d2.lex;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
-import java.util.Map;
 
 public class Lexer {
   private final String text;
@@ -82,9 +83,6 @@ public class Lexer {
     }
 
     String value = sb.toString();
-    if (value.startsWith("_")) {
-      throw new ScannerException(start, "Illegal variable name %s", value);
-    }
     Position end = new Position(line, col);
     try {
       // Figure out which keyword it is

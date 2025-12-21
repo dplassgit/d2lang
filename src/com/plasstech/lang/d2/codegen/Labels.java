@@ -10,7 +10,7 @@ public class Labels {
   private int id;
 
   public String generateLabel(String prefix) {
-    return generateGlobal("__" + prefix);
+    return generateGlobal("D_" + prefix);
   }
 
   public String generateGlobal(String prefix) {

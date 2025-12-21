@@ -10,6 +10,8 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 import static com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator.COMPARISON_OPCODE;
 
+import java.util.Map;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -24,7 +26,6 @@ import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.Map;
 
 /** Generate NASM code for string operations. TODO: There may be resolve/deallocate mismatches */
 class StringCodeGenerator extends DefaultOpcodeVisitor {
@@ -471,7 +472,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     Register leftLengthReg = resolver.allocate(VarType.INT);
     emitter.emit("; Get left length into %s:", leftLengthReg);
     generateStringLength(
-        position, new RegisterLocation("__leftLengthReg", leftLengthReg, VarType.INT), left);
+        position, new RegisterLocation("D_leftLengthReg", leftLengthReg, VarType.INT), left);
 
     // 2. get right length
     Register rightLengthReg = resolver.allocate(VarType.INT);
@@ -479,7 +480,7 @@ class StringCodeGenerator extends DefaultOpcodeVisitor {
     emitter.emit0("");
     emitter.emit("; Get right length into %s:", rightLengthReg);
     generateStringLength(
-        position, new RegisterLocation("__rightLengthReg", rightLengthReg, VarType.INT), right);
+        position, new RegisterLocation("D_rightLengthReg", rightLengthReg, VarType.INT), right);
 
     // Optimize at runtime for concatenating empty strings
     String fin = Labels.nextLabel("string_add_end");

@@ -5,6 +5,12 @@ import static com.plasstech.lang.d2.parse.testing.ParserSubject.assertThatParsin
 import static com.plasstech.lang.d2.type.testing.VarTypeSubject.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.util.List;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.common.TokenType;
@@ -42,10 +48,6 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.List;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ParserTest {
@@ -107,8 +109,9 @@ public class ParserTest {
   }
 
   @Test
-  public void invalidVariableName() {
-    assertThatParsing("_hi=3").hasError("Illegal variable name _hi");
+  public void previouslyVariableName() {
+    assertThatParsing("_hi=3").succeeds();
+    assertThatParsing("_3=3").succeeds();
   }
 
   @Test

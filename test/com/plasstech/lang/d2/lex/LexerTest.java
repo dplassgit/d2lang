@@ -3,8 +3,9 @@ package com.plasstech.lang.d2.lex;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
-import com.plasstech.lang.d2.common.TokenType;
 import org.junit.Test;
+
+import com.plasstech.lang.d2.common.TokenType;
 
 public class LexerTest {
   @Test
@@ -415,11 +416,20 @@ public class LexerTest {
   }
 
   @Test
-  public void leading_underscore_not_allowed() {
-    assertThrows(ScannerException.class, () -> new Lexer("_token").nextToken());
-    assertThrows(ScannerException.class, () -> new Lexer("__token").nextToken());
-    assertThrows(ScannerException.class, () -> new Lexer("_").nextToken());
-    assertThrows(ScannerException.class, () -> new Lexer("__").nextToken());
+  public void leading_underscore_allowed() {
+    Lexer lexer = new Lexer("_token __token __ _");
+    Token token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
+    assertThat(token.text()).isEqualTo("_token");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
+    assertThat(token.text()).isEqualTo("__token");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
+    assertThat(token.text()).isEqualTo("__");
+    token = lexer.nextToken();
+    assertThat(token.type()).isEqualTo(TokenType.VARIABLE);
+    assertThat(token.text()).isEqualTo("_");
   }
 
   @Test

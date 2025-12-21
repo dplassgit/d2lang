@@ -2,13 +2,14 @@ package com.plasstech.lang.d2;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.il.DeallocateTemp;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
-import org.junit.Test;
 
 public class YetAnotherCompilerTest {
   private YetAnotherCompiler yac = new YetAnotherCompiler();
@@ -22,8 +23,7 @@ public class YetAnotherCompilerTest {
             .setSourceCode("_hi=3")
             .build();
     State result = yac.compile(config);
-    assertThat(result.error()).isTrue();
-    assertThat(result.errorMessage()).contains("Illegal variable name _hi");
+    assertThat(result.error()).isFalse();
   }
 
   @Test

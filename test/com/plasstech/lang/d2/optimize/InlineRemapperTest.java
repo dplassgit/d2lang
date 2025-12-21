@@ -2,6 +2,10 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.List;
+
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Location;
@@ -17,21 +21,19 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.List;
-import org.junit.Test;
 
 public class InlineRemapperTest {
   private SymbolTable symbolTable = new SymbolTable();
   private SymbolTable localSymbolTable = new SymbolTable(symbolTable, SymbolStorage.LOCAL);
 
   private final TempLocation TEMP_DEST =
-      LocationUtils.newTempLocation(symbolTable, "__dest", VarType.INT);
+      LocationUtils.newTempLocation(symbolTable, "D_dest", VarType.INT);
   private final TempLocation TEMP_SOURCE =
-      LocationUtils.newTempLocation(symbolTable, "__source", VarType.INT);
+      LocationUtils.newTempLocation(symbolTable, "D_source", VarType.INT);
   private final TempLocation TEMP_LEFT =
-      LocationUtils.newTempLocation(symbolTable, "__left", VarType.INT);
+      LocationUtils.newTempLocation(symbolTable, "D_left", VarType.INT);
   private final TempLocation TEMP_RIGHT =
-      LocationUtils.newTempLocation(symbolTable, "__right", VarType.INT);
+      LocationUtils.newTempLocation(symbolTable, "D_right", VarType.INT);
   private final StackLocation STACK =
       LocationUtils.newStackLocation(localSymbolTable, "stack", VarType.INT, 0);
   private final MemoryAddress MEMORY = LocationUtils.newMemoryAddress("memory", VarType.INT);
@@ -41,7 +43,7 @@ public class InlineRemapperTest {
     ImmutableList<Op> input = ImmutableList.of(new Transfer(STACK, ConstantOperand.ONE, null));
     List<Op> mapped = new InlineRemapper(input, symbolTable).remap();
     Transfer op = (Transfer) mapped.get(0);
-    assertThat(op.destination().name()).startsWith("_stack__inline");
+    assertThat(op.destination().name()).startsWith("D_stackD_inline");
     assertThat(op.source().isConstant()).isTrue();
   }
 
@@ -66,7 +68,7 @@ public class InlineRemapperTest {
                 ImmutableList.of(new Transfer(TEMP_DEST, ConstantOperand.ONE, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
-    assertThat(op.destination().name()).contains("__dest__inline");
+    assertThat(op.destination().name()).contains("D_destD_inline");
     assertThat(op.source().isConstant()).isTrue();
   }
 
@@ -77,8 +79,8 @@ public class InlineRemapperTest {
                 ImmutableList.of(new Transfer(TEMP_DEST, TEMP_SOURCE, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
-    assertThat(op.destination().name()).contains("__dest__inline");
-    assertThat(op.source().toString()).contains("__source__inline");
+    assertThat(op.destination().name()).contains("D_destD_inline");
+    assertThat(op.source().toString()).contains("D_sourceD_inline");
   }
 
   @Test
@@ -87,8 +89,8 @@ public class InlineRemapperTest {
         new InlineRemapper(ImmutableList.of(new Transfer(STACK, TEMP_SOURCE, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
-    assertThat(op.destination().toString()).startsWith("_stack__inline");
-    assertThat(op.source().toString()).contains("__source__inline");
+    assertThat(op.destination().toString()).startsWith("D_stackD_inline");
+    assertThat(op.source().toString()).contains("D_sourceD_inline");
   }
 
   @Test
@@ -97,7 +99,7 @@ public class InlineRemapperTest {
         new InlineRemapper(ImmutableList.of(new Transfer(STACK, MEMORY, null)), symbolTable)
             .remap();
     Transfer op = (Transfer) mapped.get(0);
-    assertThat(op.destination().toString()).startsWith("_stack__inline");
+    assertThat(op.destination().toString()).startsWith("D_stackD_inline");
     assertThat(op.source()).isEqualTo(MEMORY);
   }
 
@@ -109,8 +111,8 @@ public class InlineRemapperTest {
                 symbolTable)
             .remap();
     BinOp op = (BinOp) mapped.get(0);
-    assertThat(op.destination().name()).contains("__dest__inline");
-    assertThat(op.left().toString()).startsWith("_stack__inline");
+    assertThat(op.destination().name()).contains("D_destD_inline");
+    assertThat(op.left().toString()).startsWith("D_stackD_inline");
     assertThat(op.operator()).isEqualTo(TokenType.PLUS);
     assertThat(op.right()).isEqualTo(MEMORY);
   }
@@ -123,10 +125,10 @@ public class InlineRemapperTest {
                 symbolTable)
             .remap();
     BinOp op = (BinOp) mapped.get(0);
-    assertThat(op.destination().toString()).startsWith("_stack__inline");
-    assertThat(op.left().toString()).contains("__left__inline");
+    assertThat(op.destination().toString()).startsWith("D_stackD_inline");
+    assertThat(op.left().toString()).contains("D_leftD_inline");
     assertThat(op.operator()).isEqualTo(TokenType.AND);
-    assertThat(op.right().toString()).contains("__right__inline");
+    assertThat(op.right().toString()).contains("D_rightD_inline");
   }
 
   @Test
@@ -137,8 +139,8 @@ public class InlineRemapperTest {
                 symbolTable)
             .remap();
     UnaryOp op = (UnaryOp) mapped.get(0);
-    assertThat(op.destination().toString()).startsWith("_stack__inline");
+    assertThat(op.destination().toString()).startsWith("D_stackD_inline");
     assertThat(op.operator()).isEqualTo(TokenType.MINUS);
-    assertThat(op.operand().toString()).contains("__source__inline");
+    assertThat(op.operand().toString()).contains("D_sourceD_inline");
   }
 }

@@ -5,6 +5,8 @@ import static com.plasstech.lang.d2.codegen.x64.IntRegister.R8;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
@@ -20,7 +22,6 @@ import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.Map;
 
 /** Generates nasm code for array manipulation. */
 class ArrayCodeGenerator extends DefaultOpcodeVisitor {
@@ -301,9 +302,9 @@ class ArrayCodeGenerator extends DefaultOpcodeVisitor {
     // Need to use memcmp; get left size, right size
 
     Register leftLengthReg = resolver.allocate(VarType.INT);
-    generateArrayLength(new RegisterLocation("__leftLength", leftLengthReg, VarType.INT), left);
+    generateArrayLength(new RegisterLocation("D_leftLength", leftLengthReg, VarType.INT), left);
     Register rightLengthReg = resolver.allocate(VarType.INT);
-    generateArrayLength(new RegisterLocation("__rightLength", rightLengthReg, VarType.INT), right);
+    generateArrayLength(new RegisterLocation("D_rightLength", rightLengthReg, VarType.INT), right);
 
     String continueLabel = Labels.nextLabel("array_memcmp");
     emitter.emit(

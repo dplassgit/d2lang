@@ -1,14 +1,15 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.google.common.flogger.FluentLogger;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.IfOp;
 import com.plasstech.lang.d2.codegen.il.Label;
 import com.plasstech.lang.d2.codegen.il.Op;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /** Finds loops in a codebase. */
 
@@ -50,13 +51,13 @@ class LoopFinder extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(Label op) {
-    if (op.label().startsWith("__" + Label.LOOP_BEGIN_PREFIX)) {
+    if (op.label().startsWith("D_" + Label.LOOP_BEGIN_PREFIX)) {
       if (mostRecentEnd == null) {
         logger.atFine().log("Found loop start %s without loop end", op.label());
       } else {
         endLabelToStartIp.put(mostRecentEnd, ip);
       }
-    } else if (op.label().startsWith("__" + Label.LOOP_END_PREFIX)) {
+    } else if (op.label().startsWith("D_" + Label.LOOP_END_PREFIX)) {
       Integer start = endLabelToStartIp.get(op.label());
       if (start != null) {
         // matched up this end, with the start.
@@ -69,7 +70,7 @@ class LoopFinder extends DefaultOpcodeVisitor {
 
   @Override
   public void visit(IfOp op) {
-    if (op.destination().startsWith("__" + Label.LOOP_END_PREFIX)) {
+    if (op.destination().startsWith("D_" + Label.LOOP_END_PREFIX)) {
       mostRecentEnd = op.destination();
     }
   }

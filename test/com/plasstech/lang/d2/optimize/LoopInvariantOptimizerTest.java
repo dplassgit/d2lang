@@ -3,6 +3,10 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 
+import java.util.function.Predicate;
+
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -15,8 +19,6 @@ import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.testing.TestCode;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.function.Predicate;
-import org.junit.Test;
 
 public class LoopInvariantOptimizerTest {
   private Optimizer loopOptimizer = new LoopInvariantOptimizer(2);
@@ -66,11 +68,9 @@ public class LoopInvariantOptimizerTest {
             .build();
     State state = new YetAnotherCompiler().compile(config);
     // unoptimized:
-    /**
-     *
-     *
+    /*
      * <pre>
-     * __loop_begin_(something):
+     * D_loop_begin_(something):
      * ...
      * x = 0
      * </pre>
@@ -81,7 +81,7 @@ public class LoopInvariantOptimizerTest {
     Predicate<Op> matchLoopBegin =
         (op) -> {
           if (op instanceof Label label) {
-            return label.label().startsWith("__loop_begin");
+            return label.label().startsWith("D_loop_begin");
           }
           return false;
         };
@@ -92,9 +92,7 @@ public class LoopInvariantOptimizerTest {
     InterpreterResult optimizedResult =
         assertThatInterpreting(program).withOptimizer(loopAndConstantOptimizer).hasSameVariables();
     // optimized:
-    /**
-     *
-     *
+    /*
      * <pre>
      * x = 0
      * ...

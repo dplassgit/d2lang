@@ -1,5 +1,7 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
@@ -17,7 +19,6 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VariableSymbol;
-import java.util.List;
 
 /**
  * Replace common subexpressions.
@@ -136,7 +137,7 @@ class CommonSubexpressionOptimizer extends LineOptimizer {
           oldSymbol
               .symbolTable()
               .declareTemp(
-                  String.format("__cselongtemp_%s", replacement.name()), replacement.type());
+                  String.format("D_cselongtemp_%s", replacement.name()), replacement.type());
       Location longTemp = new LongTempLocation(newSymbol);
       replaceAt(ip(), originalOp.setDestination(longTemp));
 

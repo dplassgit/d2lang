@@ -1,10 +1,11 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProcSymbol extends AbstractSymbol {
 
@@ -20,7 +21,7 @@ public class ProcSymbol extends AbstractSymbol {
   }
 
   public String mungedName() {
-    return "_" + super.name();
+    return "U_" + super.name(); // U for user
   }
 
   @Override
