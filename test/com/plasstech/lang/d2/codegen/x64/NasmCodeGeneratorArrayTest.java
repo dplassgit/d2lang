@@ -625,4 +625,29 @@ public class NasmCodeGeneratorArrayTest {
         """;
     assertThatCompiling(compareArrays).withOptimize(optimize).executes();
   }
+
+  @Test
+  public void evilNames(@TestParameter boolean optimize) {
+    assertThatCompiling(
+            """
+        D_temp_1 = 1
+        D_longtemp_0=[0]
+        D_longtemp_0[0]=D_temp_1
+        println D_longtemp_0[0]
+        D_longtemp_1=[1]
+        println D_longtemp_1[0]
+        D_longtemp_2=[2]
+        println D_longtemp_2[0]
+        D_longtemp_3=[3]
+        println D_longtemp_3[0]
+        D_longtemp_4=[4]
+        println D_longtemp_4[0]
+        D_longtemp_5=[5]
+        println D_longtemp_5[0]
+        D_longtemp_6=[6]
+        println D_longtemp_6[0]
+        """)
+        .withOptimize(optimize)
+        .executedEqualsInterpreted();
+  }
 }

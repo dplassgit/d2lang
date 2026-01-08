@@ -1,14 +1,15 @@
 package com.plasstech.lang.d2.type;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.parse.node.BlockNode;
 import com.plasstech.lang.d2.parse.node.ExternProcedureNode;
 import com.plasstech.lang.d2.parse.node.ProcedureNode;
 import com.plasstech.lang.d2.parse.node.RecordDeclarationNode;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SymbolTable {
   /*
@@ -131,12 +132,26 @@ public class SymbolTable {
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue())));
   }
 
+  private String toUniqueName(String origName) {
+    int i = 0;
+    String name = origName;
+    while (values.containsKey(name)) {
+      name = origName + String.valueOf(i);
+      i++;
+    }
+    return name;
+  }
+
   /** Declare a temp in this symbol table. */
-  public VariableSymbol declareTemp(String name, VarType varType) {
+  public VariableSymbol declareTemp(String origName, VarType varType) {
+    // if the variable already exists, make a new one
+    String name = toUniqueName(origName);
     return declareVariable(name, varType, SymbolStorage.TEMP);
   }
 
-  public VariableSymbol declareLongTemp(String name, VarType varType) {
+  public VariableSymbol declareLongTemp(String origName, VarType varType) {
+    // if the variable already exists, make a new one
+    String name = toUniqueName(origName);
     return declareVariable(name, varType, SymbolStorage.LONG_TEMP);
   }
 

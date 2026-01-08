@@ -6,7 +6,6 @@ import static com.plasstech.lang.d2.codegen.testing.ILCodeGeneratorSubject.asser
 import java.util.List;
 import java.util.function.Predicate;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.plasstech.lang.d2.codegen.il.BinOp;
@@ -228,7 +227,6 @@ public class ILCodeGeneratorTest {
   }
 
   @Test
-  @Ignore
   public void stringSlice() {
     assertThatGenerating("a='abcde' b=a[1:3]").succeeds();
   }
@@ -345,5 +343,22 @@ public class ILCodeGeneratorTest {
   @Test
   public void compareString() {
     assertThatGenerating("s='hi' a=s[0]=='h'").succeeds();
+  }
+
+  @Test
+  public void evilVariableName() {
+    assertThatGenerating("s='hi' D_temp_3=s[0]=='h'").succeeds();
+    assertThatGenerating(
+            """
+            D_longtemp_0=[1]
+            D_longtemp_1=[2]
+            D_longtemp_2=[2]
+            D_longtemp_3=[2]
+            D_longtemp_4=[2]
+            D_longtemp_5=[2]
+            D_longtemp_6=[2]
+            print D_longtemp_0[0]
+            """)
+        .succeeds();
   }
 }

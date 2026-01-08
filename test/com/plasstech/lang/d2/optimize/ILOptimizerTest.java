@@ -4,6 +4,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
 import static org.junit.Assert.assertThrows;
 
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -16,9 +20,6 @@ import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.testing.TestCode;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class ILOptimizerTest {
@@ -405,7 +406,7 @@ public class ILOptimizerTest {
   }
 
   @Test
-  @Ignore
+  @Ignore("Failing because it can't compare doubles?")
   public void recordWithArray() {
     assertThatInterpreting("rt: record{d:double ar:int[3]} x=new rt ar=x.ar ar[1]=3 println x.ar")
         .hasSameVariables();
@@ -483,5 +484,29 @@ public class ILOptimizerTest {
   @Test
   public void compareString() {
     assertThatInterpreting("s='hi' a=s[0]=='h' println a").hasSameVariables();
+  }
+
+  @Test
+  public void evilNames() {
+    assertThatInterpreting(
+            """
+      D_temp_1 = 1
+      D_longtemp_0=[0]
+      D_longtemp_0[0]=D_temp_1
+      println D_longtemp_0[0]
+      D_longtemp_1=[1]
+      println D_longtemp_1[0]
+      D_longtemp_2=[2]
+      println D_longtemp_2[0]
+      D_longtemp_3=[3]
+      println D_longtemp_3[0]
+      D_longtemp_4=[4]
+      println D_longtemp_4[0]
+      D_longtemp_5=[5]
+      println D_longtemp_5[0]
+      D_longtemp_6=[6]
+      println D_longtemp_6[0]
+      """)
+        .hasSameVariables();
   }
 }
