@@ -2,12 +2,13 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertThatCompiling;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.testing.PrimitiveTypeProvider;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class NasmCodeGeneratorArrayTest {
@@ -163,6 +164,22 @@ public class NasmCodeGeneratorArrayTest {
   }
 
   @Test
+  public void arrayOpAssign(@TestParameter({"+", "*", "-", "/"}) String op) throws Exception {
+    assertThatCompiling(
+            String.format(
+                DASSERTS
+                    + """
+                  x=[9, 9]
+                  x[0] %s= 3
+                  x[1] = x[1] %s 3
+                  assertTrue(x[0]==x[1])
+                  """,
+                op,
+                op))
+        .executedEqualsInterpreted();
+  }
+
+  @Test
   public void arrayConstantCalcAssign() throws Exception {
     assertThatCompiling("x=[1, f()] f: proc: int { return 3} println 'Should print 3' print x[1]")
         .executedEqualsInterpreted();
@@ -178,8 +195,8 @@ public class NasmCodeGeneratorArrayTest {
     assertThatCompiling(
             """
             p:proc {
-                x:int[4]
-                print length(x)
+              x:int[4]
+              print length(x)
             }
             p()
             """)
@@ -331,8 +348,6 @@ public class NasmCodeGeneratorArrayTest {
               exit 'should not have been null'
             }
             """)
-        //        .withOptDebugLevel(2)
-        //        .withCodeGenDebugLevel(2)
         .executedEqualsInterpreted();
   }
 
@@ -540,7 +555,6 @@ public class NasmCodeGeneratorArrayTest {
       program += "[1],";
     }
     program += "true)\n";
-    System.err.println(program);
     assertThatCompiling(program).executedEqualsInterpreted();
   }
 

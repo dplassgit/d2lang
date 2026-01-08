@@ -1812,4 +1812,24 @@ public class ParserTest {
     assertThatParsing("a=b[1:]").hasError("expected literal");
     assertThatParsing("a=b[:2]").hasError("expected literal");
   }
+
+  @Test
+  public void arraySlotOperatorArraySlot() {
+    assertThatParsing("foo[3] = foo[3] + 3").succeeds();
+  }
+
+  @Test
+  public void arraySlotError() {
+    assertThatParsing("foo[3] + 3").hasError("expected '='");
+  }
+
+  @Test
+  public void arraySlotOperatorEq(@TestParameter({"+", "*", "-", "/"}) String op) {
+    assertThatParsing(String.format("foo[3] %s= 3", op)).succeeds();
+  }
+
+  @Test
+  public void fieldOperatorEq(@TestParameter({"+", "*", "-", "/"}) String op) {
+    assertThatParsing(String.format("foo.bar %s= 3", op)).succeeds();
+  }
 }

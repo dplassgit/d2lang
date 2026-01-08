@@ -5,6 +5,7 @@ import static com.plasstech.lang.d2.codegen.x64.testing.ExecutionSubject.assertT
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 @RunWith(TestParameterInjector.class)
@@ -447,6 +448,23 @@ public class NasmCodeGeneratorRecordTest {
             nr.i = 100
             println f(nr)
             """)
+        .executedEqualsInterpreted();
+  }
+
+  @Test
+  public void opAssign(@TestParameter({"+", "*", "-", "/"}) String op) throws Exception {
+    assertThatCompiling(
+            String.format(
+                """
+                r:record{i:int j:int}
+                nr = new r
+                nr.i = 20
+                nr.i %s= 10
+                nr.j = 20
+                nr.j = nr.j %s 10
+                if nr.i != nr.j { exit "Should have been equal"}
+                """,
+                op, op))
         .executedEqualsInterpreted();
   }
 }

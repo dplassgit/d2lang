@@ -120,18 +120,29 @@ public class ConstantOperand<T> implements Operand {
     if (value == null) {
       return "__null";
     }
-    if (type() == VarType.STRING) {
+    if (type == VarType.STRING) {
       String valueString = value.toString();
       if (valueString.length() > 40) {
         valueString = valueString.substring(0, 40) + "...";
       }
       return String.format("\"%s\"", valueString);
     }
-    if (type().isArray()) {
+    if (type.isArray()) {
       Object[] valArray = (Object[]) value;
       return String.format("[%s] [array literal]", Joiner.on(", ").join(valArray));
     }
-    return String.format("%s [%s const]", value.toString(), type().toString());
+    if (type.isNumeric()) {
+      if (type == VarType.INT || type == VarType.DOUBLE) {
+        return value.toString();
+      }
+      if (type == VarType.LONG) {
+        return value.toString() + "L";
+      }
+      byte b = (byte) value;
+      return String.format("0y%s", Integer.toHexString(b));
+    } else {
+      return String.format("%s [%s const]", value.toString(), type().toString());
+    }
   }
 
   @Override

@@ -1,5 +1,12 @@
 package com.plasstech.lang.d2.parse;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
@@ -48,12 +55,6 @@ import com.plasstech.lang.d2.type.ArrayType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class Parser implements Phase {
 
@@ -308,10 +309,27 @@ public class Parser implements Phase {
 
     expectToken(TokenType.RBRACKET);
 
-    expectToken(TokenType.ASSIGN);
+    Token operator = token;
+    advance(); // eat the token
     ExprNode rhs = expr();
-
-    return new AssignmentNode(asn, rhs);
+    switch (operator.type()) {
+      case ASSIGN:
+        return new AssignmentNode(asn, rhs);
+      case PLUS_EQ:
+      case MINUS_EQ:
+      case MULT_EQ:
+      case DIV_EQ:
+        // variable [ index
+        ExprNode arrayIndex =
+            new BinOpNode(
+                new VariableNode(variable.text(), variable.start()), TokenType.LBRACKET, indexNode);
+        // variable[indexNode] += rhs => variable[indexNode] = variable[indexNode] + rhs
+        ExprNode fullRhs = new BinOpNode(arrayIndex, OP_EQ_TO_OP.get(operator.type()), rhs);
+        return new AssignmentNode(asn, fullRhs);
+      default:
+        throw new ParseException(
+            token.start(), "Unexpected '%s'; expected '='", operator.text());
+    }
   }
 
   private StatementNode fieldAssignment(Token variable) {
@@ -319,10 +337,28 @@ public class Parser implements Phase {
 
     Token fieldName = expectToken(TokenType.VARIABLE);
     FieldSetNode fsn = new FieldSetNode(variable.text(), fieldName.text(), variable.start());
-    expectToken(TokenType.ASSIGN);
+    Token operator = token;
+    advance();
     ExprNode rhs = expr();
-
-    return new AssignmentNode(fsn, rhs);
+    switch (operator.type()) {
+      case ASSIGN:
+        return new AssignmentNode(fsn, rhs);
+      case PLUS_EQ:
+      case MINUS_EQ:
+      case MULT_EQ:
+      case DIV_EQ:
+        // variable . fieldName
+        ExprNode fieldGet =
+            new BinOpNode(
+                new VariableNode(variable.text(), variable.start()),
+                TokenType.DOT,
+                new VariableNode(fieldName.text(), fieldName.start()));
+        // variable.fieldName += rhs => variable.fieldName = variable.fieldName + rhs
+        ExprNode fullRhs = new BinOpNode(fieldGet, OP_EQ_TO_OP.get(operator.type()), rhs);
+        return new AssignmentNode(fsn, fullRhs);
+      default:
+        throw new ParseException(token.start(), "Unexpected '%s'; expected '='", operator.text());
+    }
   }
 
   private DeclarationNode declaration(Token varToken) {

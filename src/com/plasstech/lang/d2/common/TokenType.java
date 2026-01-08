@@ -38,12 +38,12 @@ public enum TokenType {
   ASC(true),
   INCREMENT("++"),
   DECREMENT("--"),
+  ASSIGN("="),
   PLUS_EQ("+="),
   MINUS_EQ("-="),
   MULT_EQ("*="),
   DIV_EQ("/="),
   // Comparisons:
-  ASSIGN("="),
   EQEQ("=="),
   LT("<"),
   GT(">"),
