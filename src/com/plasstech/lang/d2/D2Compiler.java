@@ -2,18 +2,16 @@ package com.plasstech.lang.d2;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.CharSink;
 import com.google.common.io.CharSource;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.google.devtools.common.options.OptionsParser;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
+import com.plasstech.lang.d2.codegen.x64.X64Assembler;
 import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
 import com.plasstech.lang.d2.common.D2Options;
@@ -40,6 +38,7 @@ public class D2Compiler {
     generateAsmAndLink(options, sourceFilename, state);
   }
 
+  // TODO: move this to YetAnotherCompiler, and re-use in ExecutionSubject
   private static State compileToIntermediateLanguage(D2Options options, String sourceCode) {
     State state = null;
     try {
@@ -71,6 +70,7 @@ public class D2Compiler {
       throws IOException, InterruptedException {
     switch (options.target) {
       case x64:
+        // TODO: move this to another place
         state = new NasmCodeGenerator().execute(state);
         break;
 
@@ -90,7 +90,20 @@ public class D2Compiler {
     }
 
     if (options.optimizeAsm) {
-      state = new NasmOptimizer(options.debugopt).execute(state);
+      switch (options.target) {
+        case x64:
+          // TODO: move this to another place
+          state = new NasmOptimizer(options.debugopt).execute(state);
+          break;
+
+        default:
+          state =
+              state.addException(
+                  new D2RuntimeException(
+                      "Cannot optimize asm for " + options.target + " yet", null, "D2 Compiler"));
+          state.stopOnError(options.debugopt > 0 || options.showStackTraces);
+          break;
+      }
     }
 
     File dir = new File(System.getProperty("user.dir"));
@@ -104,12 +117,12 @@ public class D2Compiler {
     CharSink charSink = Files.asCharSink(asmFile, Charset.defaultCharset(), FileWriteMode.APPEND);
     charSink.writeLines(state.asmCode(), "\n");
 
-    // wait until now to throw the exception so that we've written the asm file.
+    // Wait until now to throw the exception so that we've written the asm file.
     state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
     if (!options.compileOnly) {
       switch (options.target) {
         case x64:
-          x64Assemble(options, dir, baseName, asmFile);
+          new X64Assembler(D2PATH).assemble(options, baseName, asmFile);
           break;
 
         default:
@@ -117,6 +130,7 @@ public class D2Compiler {
               state.addException(
                   new D2RuntimeException(
                       "Cannot assemble for " + options.target + " yet", null, "D2 Compiler"));
+          state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
           break;
       }
     }
@@ -124,65 +138,5 @@ public class D2Compiler {
       asmFile.delete();
     }
     state.stopOnError(options.debugcodegen > 0 || options.showStackTraces);
-  }
-
-  private static void x64Assemble(D2Options options, File dir, String baseName, File asmFile)
-      throws IOException, InterruptedException {
-
-    File objFile = new File(dir, baseName + ".obj");
-    if (objFile.exists()) {
-      objFile.delete();
-    }
-    // Assemble
-    ProcessBuilder pb =
-        new ProcessBuilder(
-            "nasm", "-fwin64", asmFile.getAbsolutePath(), "-o", objFile.getAbsolutePath());
-    pb.directory(dir);
-    if (options.showCommands) {
-      System.out.println(Joiner.on(" ").join(pb.command()));
-    }
-    Process process = pb.start();
-    process.waitFor();
-    assertNoProcessError(process, "Assembling");
-
-    if (!options.compileAndAssembleOnly) {
-      File exeFile = new File(dir, options.exeName);
-      if (exeFile.exists()) {
-        exeFile.delete();
-      }
-      ImmutableList.Builder<String> command =
-          new ImmutableList.Builder<String>().add("gcc", "-s", objFile.getAbsolutePath());
-      if (options.libs != null && options.libs.size() > 0) {
-        command.addAll(options.libs);
-      }
-      if (D2PATH != null) {
-        String dlib = String.format("%s/dlib/dlib.obj", D2PATH);
-        File dlibFile = new File(dlib);
-        if (dlibFile.exists()) {
-          command.add(dlib);
-        }
-      }
-      command.add("-o", exeFile.getAbsolutePath());
-      pb = new ProcessBuilder(command.build());
-      pb.directory(dir);
-      if (options.showCommands) {
-        System.out.println(Joiner.on(" ").join(pb.command()));
-      }
-      process = pb.start();
-      process.waitFor();
-      assertNoProcessError(process, "Linking");
-      if (!options.saveTemps) {
-        objFile.delete();
-      }
-    }
-  }
-
-  private static void assertNoProcessError(Process process, String name) throws IOException {
-    if (process.exitValue() != 0) {
-      InputStream stream = process.getErrorStream();
-      String output = new String(ByteStreams.toByteArray(stream));
-      System.err.printf("%s output: %s\n", name, output);
-      System.exit(process.exitValue());
-    }
   }
 }

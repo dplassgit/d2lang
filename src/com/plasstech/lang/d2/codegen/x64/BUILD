@@ -12,7 +12,7 @@ java_library(
     name = "x64",
     srcs = glob(
         ["*.java"],
-        exclude = REGISTERS_SRCS,
+        exclude = REGISTERS_SRCS + ["X64Assembler.java"],
     ),
     visibility = ["//visibility:public"],
     deps = [
@@ -64,3 +64,15 @@ java_library(
     exported_plugins = [":auto_plugin"],
     exports = ["@maven//:com_google_auto_value_auto_value"],
 )
+
+java_library(
+    name = "x64assembler",
+    srcs = ["X64Assembler.java"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/com/plasstech/lang/d2/common",
+        "//src/com/plasstech/lang/d2/codegen/asm",
+        "@maven//:com_google_guava_guava",
+    ],
+)
+

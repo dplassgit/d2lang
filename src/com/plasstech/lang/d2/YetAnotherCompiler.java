@@ -14,6 +14,7 @@ import com.plasstech.lang.d2.phase.PhaseName;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.StaticChecker;
 
+/** Compiles source to optimized IL code. TOOD: rename this ILCompiler */
 public class YetAnotherCompiler {
 
   public State compile(CompilationConfiguration config) {

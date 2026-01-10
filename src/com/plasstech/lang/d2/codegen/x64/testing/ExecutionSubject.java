@@ -20,13 +20,17 @@ import com.google.common.truth.Subject;
 import com.plasstech.lang.d2.InterpreterExecutor;
 import com.plasstech.lang.d2.YetAnotherCompiler;
 import com.plasstech.lang.d2.codegen.x64.NasmCodeGenerator;
+import com.plasstech.lang.d2.codegen.x64.X64Assembler;
 import com.plasstech.lang.d2.codegen.x64.optimize.NasmOptimizer;
 import com.plasstech.lang.d2.common.CompilationConfiguration;
+import com.plasstech.lang.d2.common.D2Options;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
 import com.plasstech.lang.d2.phase.State;
 
 public class ExecutionSubject extends Subject {
-  private static final File dir = Files.createTempDir();
+  // NOTE: even though createTempDir is deprecated, it is 2-5x faster than the suggested
+  // alternative.
+  private static File dir = Files.createTempDir();
 
   public static ExecutionSubject assertThatCompiling(String code) {
     return assertAbout(ExecutionSubject::new).that(code);
@@ -40,11 +44,11 @@ public class ExecutionSubject extends Subject {
 
     this.config =
         CompilationConfiguration.create(code).toBuilder()
-            // Default to NOT optimized
+            // Default to NOT optimized and no debugging.
             .setOptimize(false)
-            .setCodeGenDebugLevel(2)
-            .setOptDebugLevel(2)
-            .setFilename("sut")
+            .setCodeGenDebugLevel(0)
+            .setOptDebugLevel(0)
+            .setFilename("sut" + code.hashCode())
             .build();
   }
 
@@ -127,55 +131,27 @@ public class ExecutionSubject extends Subject {
       System.err.println(asmCode);
     }
 
+    D2Options options = new D2Options();
     String sourceFilename = config.filename();
-    File file = new File(dir, sourceFilename + ".asm");
-    if (file.exists()) {
-      file.delete();
-    }
+    options.exeName = sourceFilename; // notypo, the executable name will be the source file.
+    options.saveTemps = false;
     try {
-      file.createNewFile();
+      File asmFile = new File(dir, sourceFilename + ".asm");
+      if (asmFile.exists()) {
+        asmFile.delete();
+      }
+      asmFile.createNewFile();
 
-      CharSink charSink = Files.asCharSink(file, Charset.defaultCharset(), FileWriteMode.APPEND);
+      CharSink charSink = Files.asCharSink(asmFile, Charset.defaultCharset(), FileWriteMode.APPEND);
       charSink.writeLines(state.asmCode());
 
-      ProcessBuilder pb = new ProcessBuilder("nasm", "-fwin64", file.getAbsolutePath());
+      // Assemble
+      File exe = new X64Assembler(null).assemble(options, config.filename(), asmFile);
+
+      // Execute
+      ProcessBuilder pb = new ProcessBuilder(exe.getAbsolutePath());
       pb.directory(dir);
       Process process = pb.start();
-      process.waitFor();
-
-      if (process.exitValue() != 0) {
-        InputStream stream1 = process.getErrorStream();
-        String output = new String(ByteStreams.toByteArray(stream1));
-        System.err.printf("%s error output: %s\n", "nasm", output);
-        stream1 = process.getInputStream();
-        output = new String(ByteStreams.toByteArray(stream1));
-        System.err.printf("%s std output: %s\n", "nasm", output);
-        assertWithMessage("nasm" + " had wrong exit value: " + output)
-            .that(process.exitValue())
-            .isEqualTo(0);
-      }
-
-      File obj = new File(dir, sourceFilename + ".obj");
-      File exe = new File(dir, sourceFilename);
-      pb = new ProcessBuilder("gcc", obj.getAbsolutePath(), "-o", exe.getAbsolutePath());
-      pb.directory(dir);
-      process = pb.start();
-      process.waitFor();
-      if (process.exitValue() != 0) {
-        InputStream stream2 = process.getErrorStream();
-        String output = new String(ByteStreams.toByteArray(stream2));
-        System.err.printf("%s error output: %s\n", "Linking", output);
-        stream2 = process.getInputStream();
-        output = new String(ByteStreams.toByteArray(stream2));
-        System.err.printf("%s std output: %s\n", "Linking", output);
-        assertWithMessage("Linking" + " had wrong exit value: " + output)
-            .that(process.exitValue())
-            .isEqualTo(0);
-      }
-
-      pb = new ProcessBuilder(exe.getAbsolutePath());
-      pb.directory(dir);
-      process = pb.start();
       process.waitFor();
       InputStream stream = process.getInputStream();
       String compiledOutput = new String(ByteStreams.toByteArray(stream));
@@ -199,7 +175,7 @@ public class ExecutionSubject extends Subject {
         errorStream = process.getInputStream();
         output = new String(ByteStreams.toByteArray(errorStream));
         System.err.printf("%s std output: %s\n", "Executable", output);
-        assertWithMessage("Executable exit value of asm" + file)
+        assertWithMessage("Executable exit value of asm" + asmFile)
             .that(process.exitValue())
             .isEqualTo(0);
       }

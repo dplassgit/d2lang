@@ -10,6 +10,7 @@ java_library(
         "//src/com/plasstech/lang/d2:yet_another_compiler",
         "//src/com/plasstech/lang/d2/codegen/il",  # for IL op
         "//src/com/plasstech/lang/d2/codegen/x64",
+        "//src/com/plasstech/lang/d2/codegen/x64:x64assembler",
         "//src/com/plasstech/lang/d2/codegen/x64/optimize",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",
