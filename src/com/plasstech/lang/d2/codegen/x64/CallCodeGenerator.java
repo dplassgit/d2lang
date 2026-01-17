@@ -1,16 +1,17 @@
 package com.plasstech.lang.d2.codegen.x64;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.il.Call;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
+import com.plasstech.lang.d2.common.Labels;
 import com.plasstech.lang.d2.type.ProcSymbol;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /** Generates nasm code for calling a procedure. Figures out how to best map actuals to formals. */
 class CallCodeGenerator extends DefaultOpcodeVisitor {

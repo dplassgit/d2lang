@@ -1,16 +1,17 @@
 package com.plasstech.lang.d2.optimize;
 
+import java.util.Set;
+
 import com.google.common.collect.ImmutableSet;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.TempLocation;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.Labels;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
 import com.plasstech.lang.d2.type.VariableSymbol;
-import java.util.Set;
 
 /**
  * When comparing the first character of a string, optimizations can be done:

@@ -8,7 +8,6 @@ import java.util.logging.Level;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.LongTempLocation;
 import com.plasstech.lang.d2.codegen.Operand;
@@ -32,6 +31,7 @@ import com.plasstech.lang.d2.codegen.il.Return;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
+import com.plasstech.lang.d2.common.Labels;
 import com.plasstech.lang.d2.type.Symbol;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;

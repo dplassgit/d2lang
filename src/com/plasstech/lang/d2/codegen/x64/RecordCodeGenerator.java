@@ -4,10 +4,11 @@ import static com.plasstech.lang.d2.codegen.Codegen.fail;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RCX;
 import static com.plasstech.lang.d2.codegen.x64.IntRegister.RDX;
 
+import java.util.Map;
+
 import com.google.common.collect.ImmutableMap;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.Emitter;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.Location;
 import com.plasstech.lang.d2.codegen.Operand;
 import com.plasstech.lang.d2.codegen.VariableLocation;
@@ -15,12 +16,12 @@ import com.plasstech.lang.d2.codegen.il.AllocateOp;
 import com.plasstech.lang.d2.codegen.il.BinOp;
 import com.plasstech.lang.d2.codegen.il.DefaultOpcodeVisitor;
 import com.plasstech.lang.d2.codegen.il.FieldSetOp;
+import com.plasstech.lang.d2.common.Labels;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.RecordSymbol;
 import com.plasstech.lang.d2.type.RecordSymbol.Field;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.Map;
 
 class RecordCodeGenerator extends DefaultOpcodeVisitor {
 

@@ -1,10 +1,12 @@
 package com.plasstech.lang.d2.codegen;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.plasstech.lang.d2.common.Labels;
 
 /** Stores a table of DoubleEntry values, mapped by... double value. */
 public class DoubleTable implements ConstTable<Double> {

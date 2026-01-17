@@ -2,17 +2,18 @@ package com.plasstech.lang.d2.codegen.x64;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstEntry;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.DelegatingEmitter;
-import com.plasstech.lang.d2.codegen.Labels;
 import com.plasstech.lang.d2.codegen.StringTable;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.codegen.il.SysCall.Call;
 import com.plasstech.lang.d2.codegen.x64.testing.AsmUtils;
-import org.junit.Before;
-import org.junit.Test;
+import com.plasstech.lang.d2.common.Labels;
 
 public class PrintCodeGeneratorTest {
   private DelegatingEmitter emitter = new DelegatingEmitter(new X64Emitter());

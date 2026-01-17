@@ -31,6 +31,7 @@ import com.plasstech.lang.d2.common.ArraySizeException;
 import com.plasstech.lang.d2.common.D2RuntimeException;
 import com.plasstech.lang.d2.common.DivisionByZeroException;
 import com.plasstech.lang.d2.common.InvalidIndexException;
+import com.plasstech.lang.d2.common.Labels;
 import com.plasstech.lang.d2.common.Position;
 import com.plasstech.lang.d2.common.Range;
 import com.plasstech.lang.d2.common.TokenType;
