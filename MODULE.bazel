@@ -56,6 +56,7 @@ maven.install(
     repositories = [
         "https://repo1.maven.org/maven2",
     ],
+    known_contributing_modules = ["d2lang", "protobuf"],
 )
 
 # A module must bring any required repositories that are created by a module

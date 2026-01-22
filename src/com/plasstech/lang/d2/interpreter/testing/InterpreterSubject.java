@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.optimize.testing;
+package com.plasstech.lang.d2.interpreter.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
@@ -23,20 +23,20 @@ import com.plasstech.lang.d2.optimize.ILOptimizer;
 import com.plasstech.lang.d2.optimize.Optimizer;
 import com.plasstech.lang.d2.phase.State;
 
-public class OptimizerSubject extends Subject {
-  public static OptimizerSubject assertThatInterpreting(String program) {
-    return assertAbout(OptimizerSubject::new).that(program);
+public class InterpreterSubject extends Subject {
+  public static InterpreterSubject assertThatInterpreting(String program) {
+    return assertAbout(InterpreterSubject::new).that(program);
   }
 
   private final String code;
   private Optimizer optimizer = new ILOptimizer(2);
 
-  private OptimizerSubject(FailureMetadata metadata, String code) {
+  private InterpreterSubject(FailureMetadata metadata, String code) {
     super(metadata, code);
     this.code = code;
   }
 
-  public OptimizerSubject withOptimizer(Optimizer optimizer) {
+  public InterpreterSubject withOptimizer(Optimizer optimizer) {
     this.optimizer = optimizer;
     return this;
   }

@@ -1,7 +1,12 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
+import static com.plasstech.lang.d2.interpreter.testing.InterpreterSubject.assertThatInterpreting;
+
+import java.util.List;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -10,9 +15,6 @@ import com.plasstech.lang.d2.codegen.ConstantOperand;
 import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.il.SysCall;
 import com.plasstech.lang.d2.interpreter.InterpreterResult;
-import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class PrintOptimizerTest {

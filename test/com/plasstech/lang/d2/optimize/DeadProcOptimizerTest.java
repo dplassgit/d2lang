@@ -1,6 +1,6 @@
 package com.plasstech.lang.d2.optimize;
 
-import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThatInterpreting;
+import static com.plasstech.lang.d2.interpreter.testing.InterpreterSubject.assertThatInterpreting;
 
 import org.junit.Test;
 

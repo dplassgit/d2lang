@@ -16,6 +16,7 @@ gen_java_tests(
         "//src/com/plasstech/lang/d2/codegen/testing",
         "//src/com/plasstech/lang/d2/common",
         "//src/com/plasstech/lang/d2/interpreter",
+        "//src/com/plasstech/lang/d2/interpreter/testing",
         "//src/com/plasstech/lang/d2/optimize",
         "//src/com/plasstech/lang/d2/optimize/testing",
         "//src/com/plasstech/lang/d2/parse/node",
