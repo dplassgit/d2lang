@@ -1,6 +1,9 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThat;
+
+import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -16,7 +19,6 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Test;
 
 public class IncDecOptimizerTest {
   private final IncDecOptimizer optimizer = new IncDecOptimizer(2);
@@ -39,7 +41,7 @@ public class IncDecOptimizerTest {
             new BinOp(DEST, SOURCE, TokenType.PLUS, ConstantOperand.ZERO, null),
             new Transfer(SOURCE, DEST, null));
     optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -48,7 +50,7 @@ public class IncDecOptimizerTest {
         ImmutableList.of(new BinOp(STACK, STACK, TokenType.PLUS, ConstantOperand.ONE, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
 
     assertThat(optimized.get(0)).isInstanceOf(Inc.class);
   }
@@ -61,7 +63,7 @@ public class IncDecOptimizerTest {
         ImmutableList.of(new BinOp(dbl, dbl, TokenType.PLUS, ConstantOperand.ONE_DBL, null));
 
     optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -70,7 +72,7 @@ public class IncDecOptimizerTest {
         ImmutableList.of(new BinOp(STACK, STACK, TokenType.MINUS, ConstantOperand.ONE_BYTE, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
 
     assertThat(optimized.get(0)).isInstanceOf(Dec.class);
   }
@@ -88,7 +90,7 @@ public class IncDecOptimizerTest {
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -104,7 +106,7 @@ public class IncDecOptimizerTest {
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -118,7 +120,7 @@ public class IncDecOptimizerTest {
 
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -133,7 +135,7 @@ public class IncDecOptimizerTest {
     System.out.println(Joiner.on('\n').join(optimized));
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Inc.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -147,7 +149,7 @@ public class IncDecOptimizerTest {
 
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Dec.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -159,7 +161,7 @@ public class IncDecOptimizerTest {
 
     optimizer.optimize(program, null);
 
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -175,7 +177,7 @@ public class IncDecOptimizerTest {
     assertThat(optimized.get(0)).isInstanceOf(Nop.class);
     assertThat(optimized.get(1)).isInstanceOf(Nop.class);
     assertThat(optimized.get(2)).isInstanceOf(Dec.class);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
   }
 
   @Test
@@ -188,6 +190,6 @@ public class IncDecOptimizerTest {
 
     optimizer.optimize(program, null);
 
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 }

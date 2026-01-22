@@ -1,6 +1,9 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThat;
+
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -14,7 +17,6 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.optimize.testing.OptimizerWithNop;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Test;
 
 public class AdjacentLabelOptimizerTest {
   private final Optimizer optimizer = new OptimizerWithNop(new AdjacentLabelOptimizer(2));
@@ -31,7 +33,7 @@ public class AdjacentLabelOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(LABEL1, LABEL2);
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(1);
     assertThat(optimized.get(0)).isEqualTo(LABEL1);
   }
@@ -41,7 +43,7 @@ public class AdjacentLabelOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(new Goto(LABEL2.label()), LABEL1, LABEL2);
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(2);
     Goto gotoOp = (Goto) optimized.get(0);
     assertThat(gotoOp.label()).isEqualTo(LABEL1.label());
@@ -53,10 +55,10 @@ public class AdjacentLabelOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(new Goto(LABEL3.label()), LABEL1, LABEL2, LABEL3);
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     // Run again
     optimized = optimizer.optimize(optimized, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(2);
     Goto gotoOp = (Goto) optimized.get(0);
     assertThat(gotoOp.label()).isEqualTo(LABEL1.label());
@@ -69,7 +71,7 @@ public class AdjacentLabelOptimizerTest {
         ImmutableList.of(new IfOp(CONDITION, LABEL2.label(), false), LABEL1, LABEL2);
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(2);
     IfOp ifOp = (IfOp) optimized.get(0);
     assertThat(ifOp.destination()).isEqualTo(LABEL1.label());
@@ -87,7 +89,7 @@ public class AdjacentLabelOptimizerTest {
             new IfOp(CONDITION, LABEL3.label(), false));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
     IfOp ifOp = (IfOp) optimized.get(0);
     assertThat(ifOp.destination()).isEqualTo(LABEL1.label());
@@ -103,7 +105,7 @@ public class AdjacentLabelOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(LABEL1, OP, LABEL2);
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
     assertThat(optimized).isEqualTo(program);
   }
 }

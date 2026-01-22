@@ -1,9 +1,12 @@
 package com.plasstech.lang.d2.optimize;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
 import static com.plasstech.lang.d2.codegen.il.testing.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThat;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -15,8 +18,6 @@ import com.plasstech.lang.d2.codegen.il.Op;
 import com.plasstech.lang.d2.codegen.testing.LocationUtils;
 import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.VarType;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 @RunWith(TestParameterInjector.class)
 public class AssociativeOptimizerTest {
@@ -35,7 +36,7 @@ public class AssociativeOptimizerTest {
           TokenType operator) {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, ZERO, null));
     optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -47,7 +48,7 @@ public class AssociativeOptimizerTest {
 
     optimizer.optimize(program, null);
 
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -58,7 +59,7 @@ public class AssociativeOptimizerTest {
     ImmutableList<Op> program = ImmutableList.of(new BinOp(TEMP1, ONE, operator, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
 
     assertThat(optimized.get(0)).isBinOp(TEMP1, TEMP1, operator, ONE);
   }
@@ -72,7 +73,7 @@ public class AssociativeOptimizerTest {
         ImmutableList.of(new BinOp(booltemp, ConstantOperand.TRUE, op, booltemp2, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
 
     assertThat(optimized.get(0)).isBinOp(booltemp, booltemp2, op, ConstantOperand.TRUE);
   }
@@ -84,7 +85,7 @@ public class AssociativeOptimizerTest {
             new BinOp(STRING_TEMP, ConstantOperand.of("hi"), TokenType.PLUS, STRING_TEMP, null));
 
     optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -97,7 +98,7 @@ public class AssociativeOptimizerTest {
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
 
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized.get(0)).isBinOp(booltemp, STRING_TEMP, operator, hi);
   }
 
@@ -107,7 +108,7 @@ public class AssociativeOptimizerTest {
         ImmutableList.of(new BinOp(TEMP2, TEMP1, TokenType.GT, ConstantOperand.ONE, null));
 
     optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -116,7 +117,7 @@ public class AssociativeOptimizerTest {
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.GT, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP1, TokenType.LT, ConstantOperand.ONE);
   }
 
@@ -126,7 +127,7 @@ public class AssociativeOptimizerTest {
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.LT, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP1, TokenType.GT, ConstantOperand.ONE);
   }
 
@@ -136,7 +137,7 @@ public class AssociativeOptimizerTest {
         ImmutableList.of(new BinOp(TEMP2, ConstantOperand.ONE, TokenType.LEQ, TEMP1, null));
 
     ImmutableList<Op> optimized = optimizer.optimize(program, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized.get(0)).isBinOp(TEMP2, TEMP1, TokenType.GEQ, ConstantOperand.ONE);
   }
 }

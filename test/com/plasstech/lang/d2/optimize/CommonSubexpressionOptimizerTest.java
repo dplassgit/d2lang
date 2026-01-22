@@ -2,6 +2,11 @@ package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.il.testing.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.optimize.testing.OptimizerSubject.assertThat;
+
+import java.util.List;
+
+import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.plasstech.lang.d2.codegen.ConstantOperand;
@@ -15,8 +20,6 @@ import com.plasstech.lang.d2.common.TokenType;
 import com.plasstech.lang.d2.type.SymbolStorage;
 import com.plasstech.lang.d2.type.SymbolTable;
 import com.plasstech.lang.d2.type.VarType;
-import java.util.List;
-import org.junit.Test;
 
 public class CommonSubexpressionOptimizerTest {
 
@@ -38,7 +41,7 @@ public class CommonSubexpressionOptimizerTest {
         ImmutableList.of(
             new BinOp(A, B, TokenType.PLUS, C, null), new BinOp(D, B, TokenType.PLUS, C, null));
     var optimized = optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(2);
     assertThat(optimized.get(1)).isTransferredFrom(A);
   }
@@ -50,7 +53,7 @@ public class CommonSubexpressionOptimizerTest {
             new BinOp(A, B, TokenType.PLUS, ConstantOperand.ONE, null),
             new BinOp(D, B, TokenType.PLUS, ConstantOperand.ONE, null));
     var optimized = optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(2);
     assertThat(optimized.get(1)).isTransferredFrom(A);
   }
@@ -63,7 +66,7 @@ public class CommonSubexpressionOptimizerTest {
             new BinOp(D, B, TokenType.PLUS, C, null),
             new Transfer(B, C, null));
     var optimized = optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
     assertThat(optimized.get(1)).isTransferredFrom(A);
     assertThat(optimized.get(2)).isTransferredFrom(C);
@@ -77,7 +80,7 @@ public class CommonSubexpressionOptimizerTest {
             new Transfer(TEMP, C, null),
             new BinOp(D, B, TokenType.PLUS, C, null));
     var optimized = optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
     assertThat(optimized.get(2)).isTransferredFrom(A);
   }
@@ -90,7 +93,7 @@ public class CommonSubexpressionOptimizerTest {
             new Transfer(B, C, null),
             new BinOp(D, B, TokenType.PLUS, C, null));
     optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -101,7 +104,7 @@ public class CommonSubexpressionOptimizerTest {
             new Transfer(A, C, null),
             new BinOp(D, B, TokenType.PLUS, C, null));
     optimizer.optimize(code, null);
-    assertThat(optimizer.isChanged()).isFalse();
+    assertThat(optimizer).isNotChanged();
   }
 
   @Test
@@ -118,7 +121,7 @@ public class CommonSubexpressionOptimizerTest {
 
     List<Op> optimized = optimizer.optimize(code, null);
 
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
 
     BinOp newFirst = (BinOp) optimized.get(0);
@@ -144,7 +147,7 @@ public class CommonSubexpressionOptimizerTest {
 
     List<Op> optimized = optimizer.optimize(code, null);
 
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
 
     UnaryOp newFirst = (UnaryOp) optimized.get(0);
@@ -170,7 +173,7 @@ public class CommonSubexpressionOptimizerTest {
 
     List<Op> optimized = optimizer.optimize(code, null);
 
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
 
     // no change
@@ -193,7 +196,7 @@ public class CommonSubexpressionOptimizerTest {
 
     List<Op> optimized = optimizer.optimize(code, null);
 
-    assertThat(optimizer.isChanged()).isTrue();
+    assertThat(optimizer).isChanged();
     assertThat(optimized).hasSize(3);
 
     // no change
