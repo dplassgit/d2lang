@@ -1,4 +1,4 @@
-package com.plasstech.lang.d2.optimize.testing;
+package com.plasstech.lang.d2.codegen.il.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
 
@@ -19,7 +19,7 @@ import com.plasstech.lang.d2.codegen.il.Transfer;
 import com.plasstech.lang.d2.codegen.il.UnaryOp;
 import com.plasstech.lang.d2.common.TokenType;
 
-/** Assertions for optimizer tests. */
+/** Assertions about opcodes. */
 public class OpcodeSubject extends Subject {
 
   private final Op actual;

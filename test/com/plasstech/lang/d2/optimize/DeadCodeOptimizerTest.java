@@ -1,8 +1,8 @@
 package com.plasstech.lang.d2.optimize;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.plasstech.lang.d2.codegen.il.testing.OpcodeSubject.assertThat;
 import static com.plasstech.lang.d2.interpreter.testing.InterpreterSubject.assertThatInterpreting;
-import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
 
 import org.junit.Test;
 

@@ -3,7 +3,7 @@ package com.plasstech.lang.d2.optimize;
 import static com.google.common.truth.Truth.assertThat;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ONE;
 import static com.plasstech.lang.d2.codegen.ConstantOperand.ZERO;
-import static com.plasstech.lang.d2.optimize.testing.OpcodeSubject.assertThat;
+import static com.plasstech.lang.d2.codegen.il.testing.OpcodeSubject.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.testing.junit.testparameterinjector.TestParameter;
