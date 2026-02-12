@@ -1037,10 +1037,10 @@ public class StaticCheckerTest {
     SymbolTable symTab =
         checkProgram(
             """
-        r: record<T> { s: T }
-        f: proc<U>(rec: r<U>): U {
-          return rec.s
-         }
+            r: record<T> { s: T }
+            f: proc<U>(rec: r<U>): U {
+              return rec.s
+            }
         """);
     RecordSymbol record = symTab.getRecursive("r", RecordSymbol.class);
     assertThat(record).isNotNull();

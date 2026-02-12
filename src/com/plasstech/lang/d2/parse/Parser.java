@@ -55,6 +55,7 @@ import com.plasstech.lang.d2.parse.node.WhileNode;
 import com.plasstech.lang.d2.phase.Phase;
 import com.plasstech.lang.d2.phase.State;
 import com.plasstech.lang.d2.type.ArrayType;
+import com.plasstech.lang.d2.type.BoundType;
 import com.plasstech.lang.d2.type.RecordReferenceType;
 import com.plasstech.lang.d2.type.UnboundType;
 import com.plasstech.lang.d2.type.VarType;
@@ -107,6 +108,13 @@ public class Parser implements Phase {
           TokenType.MULT,
           TokenType.DIV_EQ,
           TokenType.DIV);
+
+  private static final Function<String, VarType> ILLEGAL_GENERIC =
+      ignored -> {
+        throw new IllegalStateException("Cannot define generic at this location");
+      };
+
+  private static final Function<String, VarType> MAKE_BOUND_TYPE = name -> new BoundType(name);
 
   private final TransactionalLexer lexer;
   private Token token;
@@ -448,11 +456,13 @@ public class Parser implements Phase {
     List<String> formalTypeVariables = ImmutableList.of();
     if (token.type() == TokenType.LT) {
       expectToken(TokenType.LT);
-      formalTypeVariables = commaSeparated(() -> {
-        Token next = expectToken(TokenType.VARIABLE);
-        String name = next.text();
-        return name;
-      });
+      formalTypeVariables =
+          commaSeparated(
+              () -> {
+                Token next = expectToken(TokenType.VARIABLE);
+                String name = next.text();
+                return name;
+              });
       expectToken(TokenType.GT);
     }
     return formalTypeVariables;
@@ -544,32 +554,33 @@ public class Parser implements Phase {
     inProc++;
     expectToken(TokenType.PROC);
     List<String> formalTypeNames = parseFormalTypeNames();
-    List<Parameter> params = formalParams(formalTypeNames);
+    List<Parameter> params = formalParams(formalTypeNames, MAKE_BOUND_TYPE);
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType(RETURN_TYPES, formalTypeNames);
+      returnType = parseVarType(RETURN_TYPES, formalTypeNames, MAKE_BOUND_TYPE);
     }
     BlockNode statements = block();
     inProc--;
-    return new ProcedureNode(varToken.text(), params, formalTypeNames, returnType, statements,
-        varToken.start());
+    return new ProcedureNode(
+        varToken.text(), params, formalTypeNames, returnType, statements, varToken.start());
   }
 
   private DeclarationNode externDecl(Token varToken) {
     expectToken(TokenType.EXTERN);
     expectToken(TokenType.PROC);
 
-    List<Parameter> params = formalParams(ImmutableList.of());
+    List<Parameter> params = formalParams(ImmutableList.of(), ILLEGAL_GENERIC);
 
     VarType returnType = VarType.VOID;
     if (token.type() == TokenType.COLON) {
-      returnType = parseVarType(RETURN_TYPES, ImmutableList.of());
+      returnType = parseVarType(RETURN_TYPES, ImmutableList.of(), ILLEGAL_GENERIC);
     }
     return new ExternProcedureNode(varToken.text(), params, returnType, varToken.start());
   }
 
-  private List<Parameter> formalParams(List<String> formalTypeVariables) {
+  private List<Parameter> formalParams(
+      List<String> formalTypeVariables, Function<String, VarType> formalTypeMaker) {
     List<Parameter> params = new ArrayList<>();
     if (token.type() != TokenType.LPAREN) {
       return params;
@@ -581,21 +592,23 @@ public class Parser implements Phase {
       return params;
     }
 
-    params = commaSeparated(() -> formalParam(formalTypeVariables));
+    params = commaSeparated(() -> formalParam(formalTypeVariables, formalTypeMaker));
     expectToken(TokenType.RPAREN);
     return params;
   }
 
   /** Parses colon followed by var type. */
-  private VarType parseVarType(ImmutableMap<TokenType, VarType> allowedVarTypeMap,
-      List<String> formalTypeNames) {
+  private VarType parseVarType(
+      ImmutableMap<TokenType, VarType> allowedVarTypeMap,
+      List<String> formalTypeNames,
+      Function<String, VarType> formalTypeMaker) {
     expectToken(TokenType.COLON);
     if (token.type() == TokenType.VARIABLE) {
       // Record type.
       Token recordTypeToken = expectToken(TokenType.VARIABLE);
       String typeName = recordTypeToken.text();
       if (formalTypeNames.contains(typeName)) {
-        return new UnboundType(typeName);
+        return formalTypeMaker.apply(typeName);
       }
       return parseRecordReference(typeName, formalTypeNames);
     }
@@ -619,10 +632,11 @@ public class Parser implements Phase {
         token.start(), "Unexpected '%s'; expected built-in or RECORD type", token.text());
   }
 
-  private Parameter formalParam(List<String> formalTypeNames) {
+  private Parameter formalParam(
+      List<String> formalTypeNames, Function<String, VarType> formalTypeMaker) {
     Token paramName = expectToken(TokenType.VARIABLE);
     if (token.type() == TokenType.COLON) {
-      VarType paramType = parseVarType(VARIABLE_TYPES, formalTypeNames);
+      VarType paramType = parseVarType(VARIABLE_TYPES, formalTypeNames, formalTypeMaker);
       return new Parameter(paramName.text(), paramType, paramName.start());
     }
     // no colon, just an unknown param type (which will fail type checking(?))
@@ -911,7 +925,7 @@ public class Parser implements Phase {
     return compositeDereference();
   }
 
-  // Parses <type, type, ... > where they are *actual* types, so no unbound types are allowed. 
+  // Parses <type, type, ... > where they are *actual* types, so no unbound types are allowed.
   private List<VarType> actualTypes() {
     StatusOr<List<VarType>> statusOr = maybeActualTypes();
     if (statusOr.isOk()) {

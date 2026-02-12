@@ -779,6 +779,7 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         errors.add(
             new TypeException(
                 position,
+                // DBP THIS IS WRONG
                 "Wrong number of formal types in NEW RECORD %s; saw %d, expected %d",
                 recordName,
                 actualTypes.size(),

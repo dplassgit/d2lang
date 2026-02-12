@@ -1845,7 +1845,6 @@ public class ParserTest {
   }
 
   @Test
-<<<<<<< HEAD
   public void arraySlotOperatorArraySlot() {
     assertThatParsing("foo[3] = foo[3] + 3").succeeds();
   }
@@ -1867,17 +1866,21 @@ public class ParserTest {
 
   @Test
   public void genericProc() {
-    ProgramNode programNode = assertThatParsing("""
+    ProgramNode programNode =
+        assertThatParsing(
+                """
         f: proc<T>(x: T): T {
           return x
         }
-        """).succeeds();
+        """)
+            .succeeds();
     ProcedureNode proc = (ProcedureNode) programNode.statements().statements().get(0);
     assertThat(proc.formalTypeVariables()).containsExactly("T");
 
-    Parameter param = proc.parameters().get(0);
-    assertThat(param.varType()).isInstanceOf(BoundType.class);
-    BoundType paramType = (BoundType) param.varType();
+    Parameter formalParam = proc.parameters().get(0);
+    // BROKEN
+    assertThat(formalParam.varType()).isInstanceOf(BoundType.class);
+    BoundType paramType = (BoundType) formalParam.varType();
     assertThat(paramType.name()).isEqualTo("T");
 
     VarType returnType = proc.returnType();
@@ -1887,39 +1890,44 @@ public class ParserTest {
 
   @Test
   public void genericProcWithGenericRecord() {
-    ProgramNode programNode = assertThatParsing("""
+    ProgramNode programNode =
+        assertThatParsing(
+                """
         f: proc<T>(r: rec<T>): T {
           return r.v
         }
+        rec: record<V> { v: V }
         """)
             .succeeds();
     ProcedureNode proc = (ProcedureNode) programNode.statements().statements().get(0);
     assertThat(proc.formalTypeVariables()).containsExactly("T");
 
-    Parameter param = proc.parameters().get(0);
-    assertThat(param.varType()).isInstanceOf(RecordReferenceType.class);
+    Parameter formalParam = proc.parameters().get(0);
+    assertThat(formalParam.varType()).isInstanceOf(RecordReferenceType.class);
 
-    RecordReferenceType paramType = (RecordReferenceType) param.varType();
+    RecordReferenceType paramType = (RecordReferenceType) formalParam.varType();
     assertThat(paramType.isGeneric()).isTrue();
     assertThat(paramType.formalTypes()).hasSize(1);
-    assertThat(paramType.actualTypes()).hasSize(1);
+    assertThat(paramType.actualTypes()).hasSize(0);
     UnboundType formalType = paramType.formalTypes().get(0);
     assertThat(formalType.name()).isEqualTo("T");
 
     VarType returnType = proc.returnType();
-    assertThat(returnType).isInstanceOf(BoundType.class);
-    assertThat(returnType).isEqualTo(paramType);
+    assertThat(returnType).isInstanceOf(BoundType.class); // BROKEN
+    assertThat(returnType.name()).isEqualTo("T");
   }
 
   @Test
   public void callGenericProc() {
-    ProgramNode programNode = assertThatParsing("""
+    ProgramNode programNode =
+        assertThatParsing(
+                """
         f: proc<T, U>(r: rec<T>): U {
           return r.v
         }
         v = f<int, string>(r)
         """)
-        .succeeds();
+            .succeeds();
     StatementNode statement = programNode.statements().statements().get(1);
     assertThat(statement).isInstanceOf(AssignmentNode.class);
     AssignmentNode assignment = (AssignmentNode) statement;
@@ -1931,13 +1939,17 @@ public class ParserTest {
 
   @Test
   public void callGenericProcAsStatement() {
-    ProgramNode programNode = assertThatParsing("""
+    ProgramNode programNode =
+        assertThatParsing(
+                """
         f: proc<T, U>(r: rec<T>): U {
           return r.v
         }
         f<int, string>(r)
         """)
-        .succeeds();
+            .succeeds();
+    ProcedureNode procDef = (ProcedureNode) programNode.statements().statements().get(0);
+    assertThat(procDef.formalTypeVariables()).containsExactly("T", "U");
     StatementNode statement = programNode.statements().statements().get(1);
     assertThat(statement).isInstanceOf(CallNode.class);
     CallNode call = (CallNode) statement;
