@@ -47,7 +47,7 @@ Stack: record {
 
 newStack: proc: Stack {
   s = new Stack
-  s.SP = STACK_START 
+  s.SP = STACK_START
   return s
 }
 
@@ -119,7 +119,7 @@ newCpu: proc: CPU {
   i = 0 while i < length(args) do i++ {
     debugFlag = debugFlag or (args[i] == '-d')
   }
-  cpu.debug = debugFlag 
+  cpu.debug = debugFlag
 
   return cpu
 }
@@ -230,7 +230,7 @@ GetBCSigned: proc(): int {
 GetHLSigned: proc(): int {
   H = btoi(cpu.H.v)
   L = btoi(cpu.L.v)
-  HL = (H << 8) | L
+  HL = (H << 8) | (L & 255)
   return HL
 }
 
@@ -238,7 +238,7 @@ GetHLSigned: proc(): int {
 GetDESigned: proc(): int {
   D = btoi(cpu.D.v)
   E = btoi(cpu.E.v)
-  DE = (D << 8) | E
+  DE = (D << 8) | (E & 255)
   return DE
 }
 
@@ -370,12 +370,16 @@ CALL: proc {
     return
   } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11a2 / 11cc
     // send the buffer pointed by HL to the screen
-    start = GetHLUnsigned()
-    while cpu.memory[start] != 0y00 do start++ {
-      c = cpu.memory[start]
+    loc = GetHLUnsigned()
+    while cpu.memory[loc] != 0y00 do loc++ {
+      c = cpu.memory[loc]
       print chr(btoi(c))
     }
-    // TODO: set HL to start
+    // set HL to current location
+    high = (loc >> 8) & 255
+    low = loc & 255
+    SetValueI(cpu.H, high)
+    SetValueI(cpu.L, low)
     SetValue(cpu.A, 0y00)
     return
   } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B	
@@ -389,7 +393,7 @@ CALL: proc {
   } elif (is_t100 and addr == 17020) or (is_t200 and addr == 20379) { // t100 427C/17020 t200 (4F9B/20379) H=row/L=col Exit: A - Destroyed (
     row = btoi(cpu.H.v)
     col = btoi(cpu.L.v)
-    print chr(27) print "[" print row print ";" print col print "H" // esc [10;5H row 10 col 5
+    print chr(27) print "[" print col print ";" print row print "H" // esc [10;5H row 10 col 5
     SetValue(cpu.A, 0yae) // junk
     return
   } elif (is_t200 and addr == 20318) { // t200 4F5E/20318 no auto scroll
@@ -532,9 +536,7 @@ DADB: proc() {
 DADD: proc() {
   DE = GetDESigned()
   HL = GetHLSigned()
-
   res = DE + HL
-
   newHL = res & 65535
 
   // 0xffff0000
@@ -546,7 +548,6 @@ DADD: proc() {
 
   high = (newHL >> 8) & 255
   low = newHL & 255
-
   SetValueI(cpu.H, high)
   SetValueI(cpu.L, low)
 }
@@ -1182,7 +1183,7 @@ XCHG: proc() {
 
 // XOR A with the given other
 XRAx: proc(other: byte) {
-  // TODO: set flags. 
+  // TODO: set flags.
   SetValue(cpu.A, cpu.A.v ^ other)
 }
 
@@ -1718,7 +1719,7 @@ executeCurrentOp: proc(cpu: CPU) {
   elif op == 0yfe { CPI() }
   else {
     print "Unknown op " println op
-    exit 
+    exit
   }
 }
 
@@ -1771,10 +1772,13 @@ printCpuState: proc(cpu: CPU) {
   print "\tA: " print cpu.A.v
   print " B: " print cpu.B.v
   print " C: " print cpu.C.v
+  print " BC: " printHex(GetBCUnsigned())
   print " D: " print cpu.D.v
   print " E: " print cpu.E.v
+  print " DE: " printHex(GetDEUnsigned())
   print " H: " print cpu.H.v
-  print " L: " println cpu.L.v
+  print " L: " print cpu.L.v
+  print " HL: " printHex(GetHLUnsigned()) println""
   print "\tPC: " printHex(cpu.PC)
   print "  S:" print GetBit(cpu.Flags, SIGN_FLAG)
   print " Z:" print GetBit(cpu.Flags, ZERO_FLAG)
