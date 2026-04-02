@@ -1745,20 +1745,20 @@ printHex: proc(num: int) {
 // LOAD
 //
 //////////////////////////////////////////////////////
-global_data: string
+asm_source: string
 
 next_line_loc = 0
 read_input: proc {
-  global_data = input
+  asm_source = input
 }
 
 // Get the next line. Returns null at EOF.
 // NOTE: LAST LINE MUST END WITH \n
 next_line: proc: String {
   line = ''
-  len = length(global_data)
+  len = length(asm_source)
   while next_line_loc < len {
-    ch = global_data[next_line_loc]
+    ch = asm_source[next_line_loc]
     next_line_loc = next_line_loc + 1
     if asc(ch) != asc('\n') {
       line = line + ch
@@ -1829,14 +1829,9 @@ loadData: proc(cpu: CPU) {
 main: proc {
   loadData(cpu)
 
-  // run
   cpu.running = true
   run(cpu)
   cpu.running = false
 }
 
 main()
-
-//i = 3 while i <= 18 do i++ {
-  //printHex(cpu.org + i) print ": " println cpu.memory[cpu.org + i]
-//}
