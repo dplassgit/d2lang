@@ -350,6 +350,9 @@ RST4: proc {
   print chr(btoi(cpu.A.v) & 255)
 }
 
+_kbhit: extern proc: int
+_getch: extern proc: int
+
 
 CALL: proc {
   addr = GetNextPC16()
@@ -402,7 +405,17 @@ CALL: proc {
   } elif (is_t200 and addr == 20323) { // t200 4F63/20323 auto scroll
     SetValueI(cpu.A, 87)
     return
+  } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found 
+    if _kbhit() == 1 {
+      ClearBit(cpu.Flags, ZERO_FLAG)
+      // for some reasoon this is still printing the character and not actually setting it in A
+      SetValueI(cpu.A, _getch())
+    } else {
+      SetBit(cpu.Flags, ZERO_FLAG, true)
+    }
+    return
   }
+
 
   // Otherwise, do the rest of this method
 
@@ -972,13 +985,7 @@ ReturnCond: proc(flag: byte, skip_if: int) {
   if (skip_if == GetBit(cpu.Flags, flag)) {
     return
   }
-
-  low = btoi(Pop(cpu)) & 255
-  high = btoi(Pop(cpu)) & 255
-
-  addr = (high << 8) | low
-
-  cpu.PC = addr - 1
+  RET()
 }
 
 RC: proc() {
