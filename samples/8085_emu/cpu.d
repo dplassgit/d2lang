@@ -234,6 +234,13 @@ GetHLSigned: proc(): int {
   return HL
 }
 
+// Get register pair DE signed int
+GetDESigned: proc(): int {
+  D = btoi(cpu.D.v)
+  E = btoi(cpu.E.v)
+  DE = (D << 8) | E
+  return DE
+}
 
 //////////////////////////////////////////////////////
 //
@@ -523,7 +530,25 @@ DADB: proc() {
 }
 
 DADD: proc() {
-  exit "DADD not implemented"
+  DE = GetDESigned()
+  HL = GetHLSigned()
+
+  res = DE + HL
+
+  newHL = res & 65535
+
+  // 0xffff0000
+  //if (newHL & 4294901760) > 1 {
+  //  SetBit(cpu, Flags, CARRY_FLAG, 1)
+  //else {
+  //  ClearBit(cpu, Flags, CARRY_FLAG)
+  //}
+
+  high = (newHL >> 8) & 255
+  low = newHL & 255
+
+  SetValueI(cpu.H, high)
+  SetValueI(cpu.L, low)
 }
 
 DADH: proc() {
