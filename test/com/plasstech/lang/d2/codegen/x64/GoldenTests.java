@@ -34,6 +34,11 @@ public class GoldenTests {
   }
 
   @Test
+  public void compile8085Cpu() throws IOException {
+    compileOneFile(new File("src/8085_emu/cpu.d"));
+  }
+
+  @Test
   public void compileBootstrap() throws IOException {
     compileOneFile(new File("src/bootstrap/v0/v0.d"));
   }
