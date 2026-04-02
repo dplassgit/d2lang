@@ -3,6 +3,9 @@ itob: extern proc(i: int): byte
 itos: extern proc(i: int): string
 ifind: extern proc(haystack: string, needle: string): int
 
+is_t200 = length(args) > 1 and args[1] == '-t200'
+is_t100 = not is_t200
+
 // This has to be here so the rest of the global references to cpu: CPU work.
 STACK_START = 65534 // why not 65535?
 cpu = newCpu()
@@ -335,33 +338,58 @@ ANAL: proc() { ANDx(cpu.L.v) }
 ANAM: proc() { ANDx(GetM(cpu)) }
 ANI:  proc() { ANDx(NextPC(cpu)) }
 
-CALL: proc() {
+RST4: proc {
+  // print A
+  print chr(btoi(cpu.A.v) & 255)
+}
+
+
+CALL: proc {
   addr = GetNextPC16()
 
   // If this is a ROM call, emulate it.
-  if addr == 1282 { // 0x0502
+  if addr == 32 { // 0x0020 (rst 4)
+    RST4()
+    return
+  }
+  if (is_t100 and addr == 1282) or (is_t200 and addr == 1325) { // 0x0502 or 0x052D
     // Drop into basic
     cpu.running = false
     return
-  } elif addr == 16930 { // 0x4222
+  } elif (is_t100 and addr == 16930) or (is_t200 and addr == 20286) { // 0x4222 4F3E
     // crlf
     println ""
+    SetValue(cpu.A, 0y0d)
     return
-  } elif addr == 4514 { // 0x11a2
+  } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11a2 / 11cc
     // send the buffer pointed by HL to the screen
     start = GetHLUnsigned()
     while cpu.memory[start] != 0y00 do start++ {
       c = cpu.memory[start]
       print chr(btoi(c))
     }
+    // TODO: set HL to start
+    SetValue(cpu.A, 0y00)
     return
-  } elif addr == 32 { // 0x0020 
-    // print A
-    print chr(btoi(cpu.A.v) & 255)
-    return
-  } elif addr == 14804 { // 0x39D4
+  } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B	
     // print the number in HL
     print GetHLUnsigned()
+    return
+  } elif (is_t100 and addr == 16945) or (is_t200 and addr == 20301) { // t100 4231	16945 t200	4F4D	20301	CLS	Exit: A = 12
+    print chr(27) print "[2J" print chr(27) print "[H" // clear screen AND home
+    SetValueI(cpu.A, 12)
+    return
+  } elif (is_t100 and addr == 17020) or (is_t200 and addr == 20379) { // t100 427C/17020 t200 (4F9B/20379) H=row/L=col Exit: A - Destroyed (
+    row = btoi(cpu.H.v)
+    col = btoi(cpu.L.v)
+    print chr(27) print "[" print row print ";" print col print "H" // esc [10;5H row 10 col 5
+    SetValue(cpu.A, 0yae) // junk
+    return
+  } elif (is_t200 and addr == 20318) { // t200 4F5E/20318 no auto scroll
+    SetValueI(cpu.A, 86)
+    return
+  } elif (is_t200 and addr == 20323) { // t200 4F63/20323 auto scroll
+    SetValueI(cpu.A, 87)
     return
   }
 
@@ -1386,7 +1414,7 @@ OPCODES = [
   "CPO", // 0xe4
   "PUSH H", // 0xe5
   "ANI", // 0xe6
-  "RST", // 0xe7}
+  "RST 4", // 0xe7}
   "RPE", // 0xe8
   "PCHL", // 0xe9
   "JPE", // 0xea
@@ -1645,6 +1673,7 @@ executeCurrentOp: proc(cpu: CPU) {
   elif op == 0ye4 { CPO() }
   elif op == 0ye5 { PUSHH() }
   elif op == 0ye6 { ANI() }
+  elif op == 0ye7 { RST4() }
   elif op == 0ye8 { RPE() }
   elif op == 0ye9 { PCHL() }
   elif op == 0yea { JPE() }
