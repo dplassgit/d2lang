@@ -149,7 +149,7 @@ NextPC: proc(cpu: CPU): byte {
 }
 
 // Get the next 2 bytes in memory, using PC
-GetNextPC16: proc(): int {
+GetNextPC16: proc: int {
   low = btoi(NextPC(cpu)) & 255 // unsigned
   high = btoi(NextPC(cpu)) & 255 // unsigned
   word = (high << 8) | low
@@ -195,7 +195,7 @@ SetFlagsBasedOnI: proc(v: int): void {
 //////////////////////////////////////////////////////
 
 // Get register pair BC unsigned int
-GetBCUnsigned: proc(): int {
+GetBCUnsigned: proc: int {
   B = btoi(cpu.B.v) & 255
   C = btoi(cpu.C.v) & 255
   BC = (B << 8) | C
@@ -203,7 +203,7 @@ GetBCUnsigned: proc(): int {
 }
 
 // Get register pair DE unsigned int
-GetDEUnsigned: proc(): int {
+GetDEUnsigned: proc: int {
   D = btoi(cpu.D.v) & 255
   E = btoi(cpu.D.v) & 255
   DE = (D << 8) | E
@@ -211,7 +211,7 @@ GetDEUnsigned: proc(): int {
 }
 
 // Get register pair HL unsigned int
-GetHLUnsigned: proc(): int {
+GetHLUnsigned: proc: int {
   H = btoi(cpu.H.v) & 255
   L = btoi(cpu.L.v) & 255
   HL = (H << 8) | L
@@ -219,7 +219,7 @@ GetHLUnsigned: proc(): int {
 }
 
 // Get register pair BC signed int16_t
-GetBCSigned: proc(): int {
+GetBCSigned: proc: int {
   B = btoi(cpu.B.v)
   C = btoi(cpu.C.v)
   BC = (B << 8) | C
@@ -227,7 +227,7 @@ GetBCSigned: proc(): int {
 }
 
 // Get register pair HL signed int
-GetHLSigned: proc(): int {
+GetHLSigned: proc: int {
   H = btoi(cpu.H.v)
   L = btoi(cpu.L.v)
   HL = (H << 8) | (L & 255)
@@ -235,7 +235,7 @@ GetHLSigned: proc(): int {
 }
 
 // Get register pair DE signed int
-GetDESigned: proc(): int {
+GetDESigned: proc: int {
   D = btoi(cpu.D.v)
   E = btoi(cpu.E.v)
   DE = (D << 8) | (E & 255)
@@ -304,25 +304,25 @@ ADCx: proc(other: byte): void {
 //
 //////////////////////////////////////////////////////
 
-ACI: proc() { ADCx(NextPC(cpu)) }
-ADCA: proc() { ADCx(cpu.A.v) }
-ADCB: proc() { ADCx(cpu.B.v) }
-ADCC: proc() { ADCx(cpu.C.v) }
-ADCD: proc() { ADCx(cpu.D.v) }
-ADCE: proc() { ADCx(cpu.E.v) }
-ADCH: proc() { ADCx(cpu.H.v) }
-ADCL: proc() { ADCx(cpu.L.v) }
-ADCM: proc() { ADCx(GetM(cpu)) }
+ACI: proc { ADCx(NextPC(cpu)) }
+ADCA: proc { ADCx(cpu.A.v) }
+ADCB: proc { ADCx(cpu.B.v) }
+ADCC: proc { ADCx(cpu.C.v) }
+ADCD: proc { ADCx(cpu.D.v) }
+ADCE: proc { ADCx(cpu.E.v) }
+ADCH: proc { ADCx(cpu.H.v) }
+ADCL: proc { ADCx(cpu.L.v) }
+ADCM: proc { ADCx(GetM(cpu)) }
 
-ADDA: proc() { ADDx(cpu.A.v) }
-ADDB: proc() { ADDx(cpu.B.v) }
-ADDC: proc() { ADDx(cpu.C.v) }
-ADDD: proc() { ADDx(cpu.D.v) }
-ADDE: proc() { ADDx(cpu.E.v) }
-ADDH: proc() { ADDx(cpu.H.v) }
-ADDL: proc() { ADDx(cpu.L.v) }
-ADDM: proc() { ADDx(GetM(cpu)) }
-ADI: proc() { ADDx(NextPC(cpu)) }
+ADDA: proc { ADDx(cpu.A.v) }
+ADDB: proc { ADDx(cpu.B.v) }
+ADDC: proc { ADDx(cpu.C.v) }
+ADDD: proc { ADDx(cpu.D.v) }
+ADDE: proc { ADDx(cpu.E.v) }
+ADDH: proc { ADDx(cpu.H.v) }
+ADDL: proc { ADDx(cpu.L.v) }
+ADDM: proc { ADDx(GetM(cpu)) }
+ADI: proc { ADDx(NextPC(cpu)) }
 
 // Bitwise And Register A with another number.
 ANDx: proc(other: byte): void {
@@ -335,15 +335,15 @@ ANDx: proc(other: byte): void {
   SetValue(cpu.A, result)
 }
 
-ANAA: proc() { ANDx(cpu.A.v) }
-ANAB: proc() { ANDx(cpu.B.v) }
-ANAC: proc() { ANDx(cpu.C.v) }
-ANAD: proc() { ANDx(cpu.D.v) }
-ANAE: proc() { ANDx(cpu.E.v) }
-ANAH: proc() { ANDx(cpu.H.v) }
-ANAL: proc() { ANDx(cpu.L.v) }
-ANAM: proc() { ANDx(GetM(cpu)) }
-ANI:  proc() { ANDx(NextPC(cpu)) }
+ANAA: proc { ANDx(cpu.A.v) }
+ANAB: proc { ANDx(cpu.B.v) }
+ANAC: proc { ANDx(cpu.C.v) }
+ANAD: proc { ANDx(cpu.D.v) }
+ANAE: proc { ANDx(cpu.E.v) }
+ANAH: proc { ANDx(cpu.H.v) }
+ANAL: proc { ANDx(cpu.L.v) }
+ANAM: proc { ANDx(GetM(cpu)) }
+ANI:  proc { ANDx(NextPC(cpu)) }
 
 RST4: proc {
   // print A
@@ -454,102 +454,74 @@ CallCond: proc(flag: byte, skip_if: int) {
   cpu.PC = addr - 1
 }
 
-CC: proc() {
+CC: proc {
   CallCond(CARRY_FLAG, 0)
 }
 
-CM: proc() {
+CM: proc {
   CallCond(SIGN_FLAG, 0)
 }
 
-CMA: proc() {
+CMA: proc {
   SetValue(cpu.A, !(cpu.A.v))
 }
 
-CMC: proc() {
+CMC: proc {
   carry = GetBit(cpu.Flags, CARRY_FLAG) == 1
   SetBit(cpu.Flags, CARRY_FLAG, not carry)
 }
 
-CMPA: proc() {
+CMPA: proc {
   // compare a with a
   ClearBit(cpu.Flags, SIGN_FLAG)
   SetBit(cpu.Flags, ZERO_FLAG, true)
   ClearBit(cpu.Flags, CARRY_FLAG)
 }
 
-CMPB: proc() { Compare(cpu.B.v) }
-CMPC: proc() { Compare(cpu.C.v) }
-CMPD: proc() { Compare(cpu.D.v) }
-CMPE: proc() { Compare(cpu.E.v) }
-CMPH: proc() { Compare(cpu.H.v) }
-CMPL: proc() { Compare(cpu.L.v) }
-CMPM: proc() { Compare(GetM(cpu)) }
+CMPB: proc { Compare(cpu.B.v) }
+CMPC: proc { Compare(cpu.C.v) }
+CMPD: proc { Compare(cpu.D.v) }
+CMPE: proc { Compare(cpu.E.v) }
+CMPH: proc { Compare(cpu.H.v) }
+CMPL: proc { Compare(cpu.L.v) }
+CMPM: proc { Compare(GetM(cpu)) }
 
-CNC: proc() {
+CNC: proc {
   CallCond(CARRY_FLAG, 1)
 }
 
-CNZ: proc() {
+CNZ: proc {
   CallCond(ZERO_FLAG, 1)
 }
 
-CP: proc() {
+CP: proc {
   CallCond(SIGN_FLAG, 1)
 }
 
-CPE: proc() {
+CPE: proc {
   exit "CPE not implemented"
 }
 
-CPI: proc() {
+CPI: proc {
   dir = NextPC(cpu)
   Compare(dir)
 }
 
-CPO: proc() {
+CPO: proc {
   exit "CPO not implemented"
 }
 
-CZ: proc() {
+CZ: proc {
   CallCond(ZERO_FLAG, 0)
 }
 
-DAA: proc() {
+DAA: proc {
   exit "DAA not implemented"
 }
 
-DADB: proc() {
-  exit "DADB not implemented"
-
-  // Original C++:
-  //int BC = GetBCSigned()
-  //int HL = GetHLSigned()
-
-  //int32_t res = BC + HL
-
-  //int newHL = res & (0xffff)
-
-  //if ((newHL & 0xffff0000) > 1)
-  //{
-    //SetBit(cpu, Flags, CARRY_FLAG, 1)
-  //}
-  //else
-  //{
-    //ClearBit(cpu, Flags, CARRY_FLAG)
-  //}
-
-  //uint8_t high = (newHL >> 8) & 255
-  //uint8_t low = newHL & 255
-
-  //cpu->H->SetSigned(high)
-  //cpu->L->SetSigned(low)
-}
-
-DADD: proc() {
-  DE = GetDESigned()
+DADx: proc(other: int) {
   HL = GetHLSigned()
-  res = DE + HL
+  res = other + HL
   newHL = res & 65535
 
   // 0xffff0000
@@ -565,11 +537,19 @@ DADD: proc() {
   SetValueI(cpu.L, low)
 }
 
-DADH: proc() {
-  exit "DADH not implemented"
+DADD: proc {
+  DADx(GetDESigned())
 }
 
-DADSP: proc() {
+DADB: proc {
+  DADx(GetBCSigned())
+}
+
+DADH: proc {
+  DADx(GetHLSigned())
+}
+
+DADSP: proc {
   exit "DADSP not implemented"
 }
 
@@ -578,15 +558,15 @@ DCRx: proc(r: Register) {
   SetFlagsBasedOn(r.v)
 }
 
-DCRA: proc() { DCRx(cpu.A) }
-DCRB: proc() { DCRx(cpu.B) }
-DCRC: proc() { DCRx(cpu.C) }
-DCRD: proc() { DCRx(cpu.D) }
-DCRE: proc() { DCRx(cpu.E) }
-DCRH: proc() { DCRx(cpu.H) }
-DCRL: proc() { DCRx(cpu.L) }
+DCRA: proc { DCRx(cpu.A) }
+DCRB: proc { DCRx(cpu.B) }
+DCRC: proc { DCRx(cpu.C) }
+DCRD: proc { DCRx(cpu.D) }
+DCRE: proc { DCRx(cpu.E) }
+DCRH: proc { DCRx(cpu.H) }
+DCRL: proc { DCRx(cpu.L) }
 
-DCRM: proc() {
+DCRM: proc {
   M = GetM(cpu)
   M--
 
@@ -595,7 +575,7 @@ DCRM: proc() {
   SetFlagsBasedOn(M)
 }
 
-DCXB: proc() {
+DCXB: proc {
   BC = GetBCUnsigned()
   BC--
 
@@ -606,7 +586,7 @@ DCXB: proc() {
   SetValueI(cpu.C, low)
 }
 
-DCXD: proc() {
+DCXD: proc {
   DE = GetDEUnsigned()
   DE--
 
@@ -617,7 +597,7 @@ DCXD: proc() {
   SetValueI(cpu.E, low)
 }
 
-DCXH: proc() {
+DCXH: proc {
   HL = GetHLUnsigned()
   HL--
 
@@ -628,12 +608,12 @@ DCXH: proc() {
   SetValueI(cpu.L, low)
 }
 
-DCXSP: proc() {
+DCXSP: proc {
   stack = cpu.stack
   stack.SP = stack.SP - 1
 }
 
-HLT: proc() {
+HLT: proc {
   cpu.running = false
 }
 
@@ -642,15 +622,15 @@ INRx: proc(r: Register) {
   SetFlagsBasedOn(r.v)
 }
 
-INRA: proc() { INRx(cpu.A) }
-INRB: proc() { INRx(cpu.B) }
-INRC: proc() { INRx(cpu.C) }
-INRD: proc() { INRx(cpu.D) }
-INRE: proc() { INRx(cpu.E) }
-INRH: proc() { INRx(cpu.H) }
-INRL: proc() { INRx(cpu.L) }
+INRA: proc { INRx(cpu.A) }
+INRB: proc { INRx(cpu.B) }
+INRC: proc { INRx(cpu.C) }
+INRD: proc { INRx(cpu.D) }
+INRE: proc { INRx(cpu.E) }
+INRH: proc { INRx(cpu.H) }
+INRL: proc { INRx(cpu.L) }
 
-INRM: proc() {
+INRM: proc {
   M = GetM(cpu)
   M++
 
@@ -659,7 +639,7 @@ INRM: proc() {
   SetFlagsBasedOn(M)
 }
 
-INXB: proc() {
+INXB: proc {
   BC = GetBCUnsigned()
   BC++
 
@@ -670,7 +650,7 @@ INXB: proc() {
   SetValueI(cpu.C, low)
 }
 
-INXD: proc() {
+INXD: proc {
   DE = GetDEUnsigned()
   DE++
 
@@ -681,7 +661,7 @@ INXD: proc() {
   SetValueI(cpu.E, low)
 }
 
-INXH: proc() {
+INXH: proc {
   HL = GetHLUnsigned()
   HL++
 
@@ -692,7 +672,7 @@ INXH: proc() {
   SetValueI(cpu.L, low)
 }
 
-INXSP: proc() {
+INXSP: proc {
   stack = cpu.stack
   stack.SP = stack.SP + 1
 }
@@ -709,65 +689,65 @@ JumpCond: proc(flag: byte, skip_if: int) {
   cpu.PC = addr - 1
 }
 
-JC: proc() {
+JC: proc {
   JumpCond(CARRY_FLAG, 0)
 }
 
-JM: proc() {
+JM: proc {
   JumpCond(SIGN_FLAG, 0)
 }
 
-JMP: proc() {
+JMP: proc {
   addr = GetNextPC16()
   cpu.PC = addr - 1
 }
 
-JNC: proc() {
+JNC: proc {
   JumpCond(CARRY_FLAG, 1)
 }
 
-JNZ: proc() {
+JNZ: proc {
   JumpCond(ZERO_FLAG, 1)
 }
 
-JP: proc() {
+JP: proc {
   JumpCond(SIGN_FLAG, 1)
 }
 
-JPE: proc() {
+JPE: proc {
   exit "JPE not implemented"
 }
 
-JPO: proc() {
+JPO: proc {
   exit "JPO not implemented"
 }
 
-JZ: proc() {
+JZ: proc {
   JumpCond(ZERO_FLAG, 0)
 }
 
-LDA: proc() {
+LDA: proc {
   addr = GetNextPC16()
   SetValue(cpu.A, cpu.memory[addr])
 }
 
-LDAXB: proc() {
+LDAXB: proc {
   addr = GetBCUnsigned()
   SetValue(cpu.A, cpu.memory[addr])
 }
 
-LDAXD: proc() {
+LDAXD: proc {
   addr = GetDEUnsigned()
   SetValue(cpu.A, cpu.memory[addr])
 }
 
-LHLD: proc() {
+LHLD: proc {
   addr = GetNextPC16()
   SetValue(cpu.L, cpu.memory[addr])
   SetValue(cpu.H, cpu.memory[addr + 1])
 }
 
-LXIB: proc() {
+LXIB: proc {
   val = GetNextPC16()
 
   high = (val >> 8) & 255
@@ -777,7 +757,7 @@ LXIB: proc() {
   SetValueI(cpu.C, low)
 }
 
-LXID: proc() {
+LXID: proc {
   val = GetNextPC16()
 
   high = (val >> 8) & 255
@@ -787,7 +767,7 @@ LXID: proc() {
   SetValueI(cpu.E, low)
 }
 
-LXIH: proc() {
+LXIH: proc {
   val = GetNextPC16()
 
   high = (val >> 8) & 255
@@ -797,7 +777,7 @@ LXIH: proc() {
   SetValueI(cpu.L, low)
 }
 
-LXISP: proc() {
+LXISP: proc {
   exit "LXISP not implemented"
   //val = GetNextPC16()
 
@@ -809,87 +789,87 @@ MOV: proc(to: Register, from: Register) {
   SetValue(to, from.v)
 }
 
-MOVAA: proc() { }
-MOVAB: proc() { MOV(cpu.A, cpu.B) }
-MOVAC: proc() { MOV(cpu.A, cpu.C) }
-MOVAD: proc() { MOV(cpu.A, cpu.D) }
-MOVAE: proc() { MOV(cpu.A, cpu.E) }
-MOVAH: proc() { MOV(cpu.A, cpu.H) }
-MOVAL: proc() { MOV(cpu.A, cpu.L) }
-MOVAM: proc() { SetValue(cpu.A, GetM(cpu)) }
+MOVAA: proc { }
+MOVAB: proc { MOV(cpu.A, cpu.B) }
+MOVAC: proc { MOV(cpu.A, cpu.C) }
+MOVAD: proc { MOV(cpu.A, cpu.D) }
+MOVAE: proc { MOV(cpu.A, cpu.E) }
+MOVAH: proc { MOV(cpu.A, cpu.H) }
+MOVAL: proc { MOV(cpu.A, cpu.L) }
+MOVAM: proc { SetValue(cpu.A, GetM(cpu)) }
 
-MOVBA: proc() { MOV(cpu.B, cpu.A) }
-MOVBB: proc() { }
-MOVBC: proc() { MOV(cpu.B, cpu.C) }
-MOVBD: proc() { MOV(cpu.B, cpu.D) }
-MOVBE: proc() { MOV(cpu.B, cpu.E) }
-MOVBH: proc() { MOV(cpu.B, cpu.H) }
-MOVBL: proc() { MOV(cpu.B, cpu.L) }
-MOVBM: proc() { SetValue(cpu.B, GetM(cpu)) }
+MOVBA: proc { MOV(cpu.B, cpu.A) }
+MOVBB: proc { }
+MOVBC: proc { MOV(cpu.B, cpu.C) }
+MOVBD: proc { MOV(cpu.B, cpu.D) }
+MOVBE: proc { MOV(cpu.B, cpu.E) }
+MOVBH: proc { MOV(cpu.B, cpu.H) }
+MOVBL: proc { MOV(cpu.B, cpu.L) }
+MOVBM: proc { SetValue(cpu.B, GetM(cpu)) }
 
-MOVCA: proc() { MOV(cpu.C, cpu.A) }
-MOVCB: proc() { MOV(cpu.C, cpu.B) }
-MOVCC: proc() { }
-MOVCD: proc() { MOV(cpu.C, cpu.D) }
-MOVCE: proc() { MOV(cpu.C, cpu.E) }
-MOVCH: proc() { MOV(cpu.C, cpu.H) }
-MOVCL: proc() { MOV(cpu.C, cpu.L) }
-MOVCM: proc() { SetValue(cpu.C, GetM(cpu)) }
+MOVCA: proc { MOV(cpu.C, cpu.A) }
+MOVCB: proc { MOV(cpu.C, cpu.B) }
+MOVCC: proc { }
+MOVCD: proc { MOV(cpu.C, cpu.D) }
+MOVCE: proc { MOV(cpu.C, cpu.E) }
+MOVCH: proc { MOV(cpu.C, cpu.H) }
+MOVCL: proc { MOV(cpu.C, cpu.L) }
+MOVCM: proc { SetValue(cpu.C, GetM(cpu)) }
 
-MOVDA: proc() { MOV(cpu.D, cpu.A) }
-MOVDB: proc() { MOV(cpu.D, cpu.B) }
-MOVDC: proc() { MOV(cpu.D, cpu.C) }
-MOVDD: proc() { }
-MOVDE: proc() { MOV(cpu.D, cpu.E) }
-MOVDH: proc() { MOV(cpu.D, cpu.H) }
-MOVDL: proc() { MOV(cpu.D, cpu.L) }
-MOVDM: proc() { SetValue(cpu.D, GetM(cpu)) }
+MOVDA: proc { MOV(cpu.D, cpu.A) }
+MOVDB: proc { MOV(cpu.D, cpu.B) }
+MOVDC: proc { MOV(cpu.D, cpu.C) }
+MOVDD: proc { }
+MOVDE: proc { MOV(cpu.D, cpu.E) }
+MOVDH: proc { MOV(cpu.D, cpu.H) }
+MOVDL: proc { MOV(cpu.D, cpu.L) }
+MOVDM: proc { SetValue(cpu.D, GetM(cpu)) }
 
-MOVEA: proc() { MOV(cpu.E, cpu.A) }
-MOVEB: proc() { MOV(cpu.E, cpu.B) }
-MOVEC: proc() { MOV(cpu.E, cpu.C) }
-MOVED: proc() { MOV(cpu.E, cpu.D) }
-MOVEE: proc() { }
-MOVEH: proc() { MOV(cpu.E, cpu.H) }
-MOVEL: proc() { MOV(cpu.E, cpu.L) }
-MOVEM: proc() { SetValue(cpu.E, GetM(cpu)) }
+MOVEA: proc { MOV(cpu.E, cpu.A) }
+MOVEB: proc { MOV(cpu.E, cpu.B) }
+MOVEC: proc { MOV(cpu.E, cpu.C) }
+MOVED: proc { MOV(cpu.E, cpu.D) }
+MOVEE: proc { }
+MOVEH: proc { MOV(cpu.E, cpu.H) }
+MOVEL: proc { MOV(cpu.E, cpu.L) }
+MOVEM: proc { SetValue(cpu.E, GetM(cpu)) }
 
-MOVHA: proc() { MOV(cpu.H, cpu.A) }
-MOVHB: proc() { MOV(cpu.H, cpu.B) }
-MOVHC: proc() { MOV(cpu.H, cpu.C) }
-MOVHD: proc() { MOV(cpu.H, cpu.D) }
-MOVHE: proc() { MOV(cpu.H, cpu.E) }
-MOVHH: proc() { }
-MOVHL: proc() { MOV(cpu.H, cpu.L) }
-MOVHM: proc() { SetValue(cpu.H, GetM(cpu)) }
+MOVHA: proc { MOV(cpu.H, cpu.A) }
+MOVHB: proc { MOV(cpu.H, cpu.B) }
+MOVHC: proc { MOV(cpu.H, cpu.C) }
+MOVHD: proc { MOV(cpu.H, cpu.D) }
+MOVHE: proc { MOV(cpu.H, cpu.E) }
+MOVHH: proc { }
+MOVHL: proc { MOV(cpu.H, cpu.L) }
+MOVHM: proc { SetValue(cpu.H, GetM(cpu)) }
 
-MOVLA: proc() { MOV(cpu.L, cpu.A) }
-MOVLB: proc() { MOV(cpu.L, cpu.B) }
-MOVLC: proc() { MOV(cpu.L, cpu.C) }
-MOVLD: proc() { MOV(cpu.L, cpu.D) }
-MOVLE: proc() { MOV(cpu.L, cpu.E) }
-MOVLH: proc() { MOV(cpu.L, cpu.H) }
-MOVLL: proc() { }
-MOVLM: proc() { SetValue(cpu.L, GetM(cpu)) }
+MOVLA: proc { MOV(cpu.L, cpu.A) }
+MOVLB: proc { MOV(cpu.L, cpu.B) }
+MOVLC: proc { MOV(cpu.L, cpu.C) }
+MOVLD: proc { MOV(cpu.L, cpu.D) }
+MOVLE: proc { MOV(cpu.L, cpu.E) }
+MOVLH: proc { MOV(cpu.L, cpu.H) }
+MOVLL: proc { }
+MOVLM: proc { SetValue(cpu.L, GetM(cpu)) }
 
-MOVMA: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.A.v) }
-MOVMB: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.B.v) }
-MOVMC: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.C.v) }
-MOVMD: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.D.v) }
-MOVME: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.E.v) }
-MOVMH: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.H.v) }
-MOVML: proc() { SetMemory(cpu, GetHLUnsigned(), cpu.L.v) }
+MOVMA: proc { SetMemory(cpu, GetHLUnsigned(), cpu.A.v) }
+MOVMB: proc { SetMemory(cpu, GetHLUnsigned(), cpu.B.v) }
+MOVMC: proc { SetMemory(cpu, GetHLUnsigned(), cpu.C.v) }
+MOVMD: proc { SetMemory(cpu, GetHLUnsigned(), cpu.D.v) }
+MOVME: proc { SetMemory(cpu, GetHLUnsigned(), cpu.E.v) }
+MOVMH: proc { SetMemory(cpu, GetHLUnsigned(), cpu.H.v) }
+MOVML: proc { SetMemory(cpu, GetHLUnsigned(), cpu.L.v) }
 
-MVIA: proc() { SetValue(cpu.A, NextPC(cpu)) }
-MVIB: proc() { SetValue(cpu.B, NextPC(cpu)) }
-MVIC: proc() { SetValue(cpu.C, NextPC(cpu)) }
-MVID: proc() { SetValue(cpu.D, NextPC(cpu)) }
-MVIE: proc() { SetValue(cpu.E, NextPC(cpu)) }
-MVIH: proc() { SetValue(cpu.H, NextPC(cpu)) }
-MVIL: proc() { SetValue(cpu.L, NextPC(cpu)) }
-MVIM: proc() { SetMemory(cpu, GetHLUnsigned(), NextPC(cpu)) }
+MVIA: proc { SetValue(cpu.A, NextPC(cpu)) }
+MVIB: proc { SetValue(cpu.B, NextPC(cpu)) }
+MVIC: proc { SetValue(cpu.C, NextPC(cpu)) }
+MVID: proc { SetValue(cpu.D, NextPC(cpu)) }
+MVIE: proc { SetValue(cpu.E, NextPC(cpu)) }
+MVIH: proc { SetValue(cpu.H, NextPC(cpu)) }
+MVIL: proc { SetValue(cpu.L, NextPC(cpu)) }
+MVIM: proc { SetMemory(cpu, GetHLUnsigned(), NextPC(cpu)) }
 
-NOP: proc() { }
+NOP: proc { }
 
 ORAx: proc(other: byte) {
   result = cpu.A.v | other
@@ -901,62 +881,62 @@ ORAx: proc(other: byte) {
   )
 }
 
-ORAA: proc() { ORAx(cpu.A.v) }
-ORAB: proc() { ORAx(cpu.B.v) }
-ORAC: proc() { ORAx(cpu.C.v) }
-ORAD: proc() { ORAx(cpu.D.v) }
-ORAE: proc() { ORAx(cpu.E.v) }
-ORAH: proc() { ORAx(cpu.H.v) }
-ORAL: proc() { ORAx(cpu.L.v) }
-ORAM: proc() { ORAx(GetM(cpu)) }
-ORI: proc() { ORAx(NextPC(cpu)) }
+ORAA: proc { ORAx(cpu.A.v) }
+ORAB: proc { ORAx(cpu.B.v) }
+ORAC: proc { ORAx(cpu.C.v) }
+ORAD: proc { ORAx(cpu.D.v) }
+ORAE: proc { ORAx(cpu.E.v) }
+ORAH: proc { ORAx(cpu.H.v) }
+ORAL: proc { ORAx(cpu.L.v) }
+ORAM: proc { ORAx(GetM(cpu)) }
+ORI: proc { ORAx(NextPC(cpu)) }
 
-PCHL: proc() {
+PCHL: proc {
   addr = GetHLUnsigned()
   cpu.PC = addr - 1
 }
 
-POPB: proc() {
+POPB: proc {
   SetValue(cpu.C, Pop(cpu))
   SetValue(cpu.B, Pop(cpu))
 }
 
-POPD: proc() {
+POPD: proc {
   SetValue(cpu.E, Pop(cpu))
   SetValue(cpu.D, Pop(cpu))
 }
 
-POPH: proc() {
+POPH: proc {
   SetValue(cpu.L, Pop(cpu))
   SetValue(cpu.H, Pop(cpu))
 }
 
-POPPSW: proc() {
+POPPSW: proc {
   SetValue(cpu.Flags, Pop(cpu))
   SetValue(cpu.A, Pop(cpu))
 }
 
-PUSHB: proc() {
+PUSHB: proc {
   Push(cpu.stack, cpu.B.v)
   Push(cpu.stack, cpu.C.v)
 }
 
-PUSHD: proc() {
+PUSHD: proc {
   Push(cpu.stack, cpu.D.v)
   Push(cpu.stack, cpu.E.v)
 }
 
-PUSHH: proc() {
+PUSHH: proc {
   Push(cpu.stack, cpu.H.v)
   Push(cpu.stack, cpu.L.v)
 }
 
-PUSHPSW: proc() {
+PUSHPSW: proc {
   Push(cpu.stack, cpu.A.v)
   Push(cpu.stack, cpu.Flags.v)
 }
 
-RAL: proc() {
+RAL: proc {
   A = btoi(cpu.A.v)
 
   carryOut = (A & 128) > 0
@@ -968,7 +948,7 @@ RAL: proc() {
   SetBit(cpu.Flags, CARRY_FLAG, carryOut)
 }
 
-RAR: proc() {
+RAR: proc {
   A = btoi(cpu.A.v)
 
   carryOut = (A & 1) > 0
@@ -988,11 +968,11 @@ ReturnCond: proc(flag: byte, skip_if: int) {
   RET()
 }
 
-RC: proc() {
+RC: proc {
   ReturnCond(CARRY_FLAG, 0)
 }
 
-RET: proc() {
+RET: proc {
   low = btoi(Pop(cpu)) & 255
   high = btoi(Pop(cpu)) & 255
 
@@ -1001,7 +981,7 @@ RET: proc() {
   cpu.PC = addr - 1
 }
 
-RLC: proc() {
+RLC: proc {
   A = btoi(cpu.A.v)
 
   carryOut = (A & 128) > 0
@@ -1014,35 +994,35 @@ RLC: proc() {
 }
 
 // Undocumented opcode: HL=HL-BC
-DSUB: proc() {
+DSUB: proc {
   exit "DSUB not implemented"
 }
 
-RM: proc() {
+RM: proc {
   ReturnCond(SIGN_FLAG, 0)
 }
 
-RNC: proc() {
+RNC: proc {
   ReturnCond(CARRY_FLAG, 1)
 }
 
-RNZ: proc() {
+RNZ: proc {
   ReturnCond(ZERO_FLAG, 1)
 }
 
-RP: proc() {
+RP: proc {
   ReturnCond(SIGN_FLAG, 1)
 }
 
-RPE: proc() {
+RPE: proc {
   exit "RPE not implemented"
 }
 
-RPO: proc() {
+RPO: proc {
   exit "RPO not implemented"
 }
 
-RRC: proc() {
+RRC: proc {
   A = cpu.A.v
 
   carryOut = (A & 0y01) > 0y00
@@ -1055,7 +1035,7 @@ RRC: proc() {
 }
 
 
-RZ: proc() {
+RZ: proc {
   ReturnCond(ZERO_FLAG, 0)
 }
 
@@ -1082,7 +1062,7 @@ SBBx: proc(otherRaw: byte) {
 }
 
 // This was not tested
-SBBA: proc() {
+SBBA: proc {
   A = btoi(cpu.A.v)
 
   carryIn = GetBit(cpu.Flags, CARRY_FLAG)
@@ -1096,43 +1076,43 @@ SBBA: proc() {
   SetCarry(res)
 }
 
-SBBB: proc() { SBBx(cpu.B.v) }
-SBBC: proc() { SBBx(cpu.C.v) }
-SBBD: proc() { SBBx(cpu.D.v) }
-SBBE: proc() { SBBx(cpu.E.v) }
-SBBH: proc() { SBBx(cpu.H.v) }
-SBBL: proc() { SBBx(cpu.L.v) }
-SBBM: proc() { SBBx(GetM(cpu)) }
-SBI: proc() { SBBx(NextPC(cpu)) }
+SBBB: proc { SBBx(cpu.B.v) }
+SBBC: proc { SBBx(cpu.C.v) }
+SBBD: proc { SBBx(cpu.D.v) }
+SBBE: proc { SBBx(cpu.E.v) }
+SBBH: proc { SBBx(cpu.H.v) }
+SBBL: proc { SBBx(cpu.L.v) }
+SBBM: proc { SBBx(GetM(cpu)) }
+SBI: proc { SBBx(NextPC(cpu)) }
 
-SHLD: proc() {
+SHLD: proc {
   addr = GetNextPC16()
 
   SetMemory(cpu, addr, cpu.L.v)
   SetMemory(cpu, addr + 1, cpu.H.v)
 }
 
-SPHL: proc() {
+SPHL: proc {
   stack = cpu.stack
   stack.SP = GetHLUnsigned()
 }
 
-STA: proc() {
+STA: proc {
   addr = GetNextPC16()
   SetMemory(cpu, addr, cpu.A.v)
 }
 
-STAXB: proc() {
+STAXB: proc {
   addr = GetBCUnsigned()
   SetMemory(cpu, addr, cpu.A.v)
 }
 
-STAXD: proc() {
+STAXD: proc {
   addr = GetDEUnsigned()
   SetMemory(cpu, addr, cpu.A.v)
 }
 
-STC: proc() {
+STC: proc {
   SetBit(cpu.Flags, CARRY_FLAG, true)
 }
 
@@ -1153,7 +1133,7 @@ SUBx: proc(otherRaw: byte) {
 
 }
 
-SUBA: proc() {
+SUBA: proc {
   A = btoi(cpu.A.v)
 
   other = A
@@ -1166,16 +1146,16 @@ SUBA: proc() {
   SetCarry(res)
 }
 
-SUBB: proc() { SUBx(cpu.B.v) }
-SUBC: proc() { SUBx(cpu.C.v) }
-SUBD: proc() { SUBx(cpu.D.v) }
-SUBE: proc() { SUBx(cpu.E.v) }
-SUBH: proc() { SUBx(cpu.H.v) }
-SUBL: proc() { SUBx(cpu.L.v) }
-SUBM: proc() { SUBx(GetM(cpu)) }
-SUI: proc() { SUBx(NextPC(cpu)) }
+SUBB: proc { SUBx(cpu.B.v) }
+SUBC: proc { SUBx(cpu.C.v) }
+SUBD: proc { SUBx(cpu.D.v) }
+SUBE: proc { SUBx(cpu.E.v) }
+SUBH: proc { SUBx(cpu.H.v) }
+SUBL: proc { SUBx(cpu.L.v) }
+SUBM: proc { SUBx(GetM(cpu)) }
+SUI: proc { SUBx(NextPC(cpu)) }
 
-XCHG: proc() {
+XCHG: proc {
   H = cpu.H.v
   L = cpu.L.v
 
@@ -1194,25 +1174,19 @@ XRAx: proc(other: byte) {
   SetValue(cpu.A, cpu.A.v ^ other)
 }
 
-// I think none of these are tested...
-XRAA: proc() { SetValue(cpu.A, 0y00) }
-XRAB: proc() { XRAx(cpu.B.v) }
-XRAC: proc() { XRAx(cpu.C.v) }
-XRAD: proc() { XRAx(cpu.D.v) }
-XRAE: proc() { XRAx(cpu.E.v) }
-XRAH: proc() { XRAx(cpu.H.v) }
-XRAL: proc() { XRAx(cpu.L.v) }
-XRAM: proc() { XRAx(GetM(cpu)) }
-XRI: proc() { XRAx(NextPC(cpu)) }
+// XOR A,A = clear A
+XRAA: proc { SetValue(cpu.A, 0y00) }
+XRAB: proc { XRAx(cpu.B.v) }
+XRAC: proc { XRAx(cpu.C.v) }
+XRAD: proc { XRAx(cpu.D.v) }
+XRAE: proc { XRAx(cpu.E.v) }
+XRAH: proc { XRAx(cpu.H.v) }
+XRAL: proc { XRAx(cpu.L.v) }
+XRAM: proc { XRAx(GetM(cpu)) }
+XRI: proc { XRAx(NextPC(cpu)) }
 
-XTHL: proc() {
+XTHL: proc {
   exit "XTHL not implemented"
-  // this can't be right...? throws away the values?
-  //Pop(cpu)
-  //Pop(cpu)
-
-  //Push(cpu.stack, cpu.H.v)
-  //Push(cpu.stack, cpu.L.v)
 }
 
 OPCODES = [
