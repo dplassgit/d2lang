@@ -29,6 +29,8 @@ Returns the substring of the soruce from `start` to `end.
 
 `itob: extern proc(i: int): byte`: `INT` to `BYTE`
 
+`ltoi: extern proc(el: long): int`: `LONG` to `INT`
+
 `ltod: extern proc(el: long): double`: `LONG` to `DOUBLE`
 
 

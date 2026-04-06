@@ -10,6 +10,7 @@ global itod
 global itob
 global itos
 global ltod
+global ltoi
 global ltos
 global substr
 
@@ -81,6 +82,11 @@ btoi:
 ; itob: extern proc(i: int): byte
 itob:
   mov al, cl
+  ret
+
+; ltoi: extern proc(el:long): int
+ltoi:
+  mov rax, rcx
   ret
 
 ; itod: extern proc(i: int): double
