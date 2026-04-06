@@ -1,5 +1,6 @@
 btoi: extern proc(b: byte): int
 itob: extern proc(i: int): byte
+ltoi: extern proc(el: long): int
 itos: extern proc(i: int): string
 ifind: extern proc(haystack: string, needle: string): int
 
@@ -205,7 +206,7 @@ GetBCUnsigned: proc: int {
 // Get register pair DE unsigned int
 GetDEUnsigned: proc: int {
   D = btoi(cpu.D.v) & 255
-  E = btoi(cpu.D.v) & 255
+  E = btoi(cpu.E.v) & 255
   DE = (D << 8) | E
   return DE
 }
@@ -222,7 +223,7 @@ GetHLUnsigned: proc: int {
 GetBCSigned: proc: int {
   B = btoi(cpu.B.v)
   C = btoi(cpu.C.v)
-  BC = (B << 8) | C
+  BC = (B << 8) | (C & 255)
   return BC
 }
 
@@ -385,11 +386,11 @@ CALL: proc {
     SetValueI(cpu.L, low)
     SetValue(cpu.A, 0y00)
     return
-  } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B	
+  } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B  
     // print the number in HL
     print GetHLUnsigned()
     return
-  } elif (is_t100 and addr == 16945) or (is_t200 and addr == 20301) { // t100 4231	16945 t200	4F4D	20301	CLS	Exit: A = 12
+  } elif (is_t100 and addr == 16945) or (is_t200 and addr == 20301) { // t100 4231  16945 t200  4F4D  20301  CLS  Exit: A = 12
     print chr(27) print "[2J" print chr(27) print "[H" // clear screen AND home
     SetValueI(cpu.A, 12)
     return
@@ -405,10 +406,12 @@ CALL: proc {
   } elif (is_t200 and addr == 20323) { // t200 4F63/20323 auto scroll
     SetValueI(cpu.A, 87)
     return
+  } elif (is_t200 and addr == 4855) { // t100 12CB  4811  t200 12F7  4855  CHGET
+    SetValueI(cpu.A, _getch())
+    return
   } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found 
     if _kbhit() == 1 {
       ClearBit(cpu.Flags, ZERO_FLAG)
-      // for some reasoon this is still printing the character and not actually setting it in A
       SetValueI(cpu.A, _getch())
     } else {
       SetBit(cpu.Flags, ZERO_FLAG, true)
@@ -523,6 +526,12 @@ DADx: proc(other: int) {
   HL = GetHLSigned()
   res = other + HL
   newHL = res & 65535
+  if cpu.debug {
+    print "HL = " printHex(HL)
+    print "other = " printHex(other)
+    print "newHL = " printHex(newHL)
+    println ""
+  }
 
   // 0xffff0000
   //if (newHL & 4294901760) > 1 {
@@ -614,6 +623,7 @@ DCXSP: proc {
 }
 
 HLT: proc {
+  printCpuState(cpu)
   cpu.running = false
 }
 
@@ -1710,11 +1720,16 @@ executeCurrentOp: proc(cpu: CPU) {
 // RUN!
 //
 //////////////////////////////////////////////////////
+_time64: extern proc(ignored:long): long
+
 run: proc(cpu: CPU) {
   if cpu.org == -1 {
     exit "No origin set!"
   }
 
+  if is_t200 {
+    SetMemory(cpu, 61985, 0y64)
+  }
   while cpu.running {
     debug(cpu)
 
@@ -1724,13 +1739,30 @@ run: proc(cpu: CPU) {
     // TODO: change this to something like:
     // oldPc = cpu.PC
     // cpu.PC = cpu.PC + 1
-    // runOneOp(cpu, oldPc)
+    // executeCurrentOp(cpu, oldPc)
     // But then many of the cpu.PC = cpu.PC - 1 need to be changed
+
+    // Wait 1000 cycles to emulate the difference in clock speeds.
+    // sadly, this doesn't really do much.
+    i=1000 while i > 0 {i--}
+
+    if is_t200 {
+      // Update "clock-ish" values
+      seconds = ltoi(_time64(0L))
+      seconds_ish = 12 - (seconds % 12)
+      SetMemory(cpu, 61984, itob(seconds_ish))
+      if seconds_ish == 12 {
+        if cpu.memory[61985] == 0y00 {
+          // reset to 100
+          SetMemory(cpu, 61985, 0y64)
+        } else {
+          SetMemory(cpu, 61985, cpu.memory[61985] - 0y01)
+        }
+      }
+    }
   }
 
-  if cpu.debug {
-    printCpuState(cpu)
-  }
+  debug(cpu)
 }
 
 
@@ -1748,7 +1780,7 @@ debug: proc(cpu: CPU) {
 
 printCpuState: proc(cpu: CPU) {
   println "\t-------------------------------------------------------"
-  // A: 0y00 B: 0y00 C: 0y00 D: 0y00 E: 0y00 H: 0y00 L: 0y00
+  // A: 0y00 B: 0y00 C: 0y00 BC: 0000 D: 0y00 E: 0y00 DE: 0000 H: 0y00 L: 0y00 HL: 0000
   // PC: FFFF  S:0 Z:0 C:0
   print "\tA: " print cpu.A.v
   print " B: " print cpu.B.v
@@ -1759,7 +1791,7 @@ printCpuState: proc(cpu: CPU) {
   print " DE: " printHex(GetDEUnsigned())
   print " H: " print cpu.H.v
   print " L: " print cpu.L.v
-  print " HL: " printHex(GetHLUnsigned()) println""
+  print " HL: " printHex(GetHLUnsigned()) println ""
   print "\tPC: " printHex(cpu.PC)
   print "  S:" print GetBit(cpu.Flags, SIGN_FLAG)
   print " Z:" print GetBit(cpu.Flags, ZERO_FLAG)
@@ -1785,8 +1817,9 @@ printHex: proc(num: int) {
 //
 //////////////////////////////////////////////////////
 asm_source: string
-
+// this needs to be a global since next_line is called multiple times.
 next_line_loc = 0
+
 read_input: proc {
   asm_source = input
 }
@@ -1809,7 +1842,7 @@ next_line: proc: String {
   return null
 }
 
-hexToInt: proc(s: string, i: int, j: int, k: int, m:int): int {
+hexToInt: proc(s: string, i: int, j: int, k: int, m: int): int {
   a = nibbleToByte(s[i])
   b = nibbleToByte(s[j])
   c = nibbleToByte(s[k])
@@ -1817,7 +1850,7 @@ hexToInt: proc(s: string, i: int, j: int, k: int, m:int): int {
   return (a << 12) + (b << 8) + (c << 4) + d
 }
 
-hexToByte: proc(s: string, i: int, j:int): byte {
+hexToByte: proc(s: string, i: int, j: int): byte {
   leftB = nibbleToByte(s[i])
   rightB = nibbleToByte(s[j])
   return itob((leftB << 4) + rightB)
