@@ -262,42 +262,91 @@ Compare: proc(other: byte): void {
   SetBit(cpu.Flags, CARRY_FLAG, A < otherI)
 }
 
+// START FROM GEMIMI
 // Add signed number to Register A
 ADDx: proc(other: byte): void {
-  // Convert to unsigned ints
   rA = btoi(cpu.A.v) & 255
   rOther = btoi(other) & 255
 
   result = rA + rOther
+  resByte = itob(result)
+
+  // AC is set if (bits 0-3 of A) + (bits 0-3 of other) > 15
+  // This is equivalent to checking if bit 4 of the XOR is set
+  ac = (btoi(cpu.A.v) ^ btoi(other) ^ btoi(resByte)) & 16
 
   SetFlags(cpu,
     (result & 128) != 0, // sign
     (result & 255) == 0, // zero
-    (result & 256) > 0 // carry
+    (result & 256) > 0   // carry
   )
 
-  // Will convert back to a byte
-  SetValueI(cpu.A, result)
+  SetBit(cpu.Flags, AUX_CARRY_FLAG, ac != 0)
+  SetValue(cpu.A, resByte)
 }
 
-// Add signed number to Register A with carry
+// Decimal Adjust Accumulator
+DAA: proc {
+  val = btoi(cpu.A.v) & 255
+  low = val & 15
+
+  old_carry = GetBit(cpu.Flags, CARRY_FLAG) == 1
+  had_ac = GetBit(cpu.Flags, AUX_CARRY_FLAG) == 1
+
+  adjustment = 0
+
+  // 1. If low nibble > 9 or AC set, add 6 to low nibble
+  if low > 9 or had_ac {
+    adjustment = 6
+  }
+
+  // 2. If high nibble > 9 or Carry set, add 6 to high nibble
+  // Note: we check high nibble/carry status BEFORE the low adjustment
+  if val > 153 or old_carry {
+    adjustment = adjustment + 96 // 0y60
+  }
+
+  result = val + adjustment
+  resByte = itob(result)
+
+  // DAA AC: set if low nibble addition overflowed
+  // 8085 DAA sets AC if (val & 0y0f) + 6 > 15
+  new_ac = (val ^ adjustment ^ result) & 16
+
+  SetFlags(cpu,
+    (result & 128) != 0,
+    (result & 255) == 0,
+    result > 255 or old_carry
+  )
+
+  SetBit(cpu.Flags, AUX_CARRY_FLAG, new_ac != 0)
+  SetValue(cpu.A, resByte)
+}
+
+// Add byte and current carry flag to Register A
 ADCx: proc(other: byte): void {
-  // Convert to unsigned ints
+  cin = GetBit(cpu.Flags, CARRY_FLAG)
   rA = btoi(cpu.A.v) & 255
-  carryIn = GetBit(cpu.Flags, CARRY_FLAG)
   rOther = btoi(other) & 255
 
-  result = rA + rOther + carryIn
+  result = rA + rOther + cin
+  resByte = itob(result)
+
+  // For ADC, the XOR logic for AC must account for the carry-in
+  // AC = Carry out of bit 3
+  ac = (btoi(cpu.A.v) ^ btoi(other) ^ btoi(resByte)) & 16
 
   SetFlags(cpu,
-    (result & 128) != 0, // sign
-    (result & 255) == 0, // zero
-    (result & 256) > 0 // carry out
+    (result & 128) != 0,
+    (result & 255) == 0,
+    (result & 256) > 0
   )
 
-  // Will convert back to a byte
-  SetValueI(cpu.A, result)
+  SetBit(cpu.Flags, AUX_CARRY_FLAG, ac != 0)
+  SetValue(cpu.A, resByte)
 }
+// END FROM GEMIMI
+
 
 //////////////////////////////////////////////////////
 //
@@ -386,7 +435,7 @@ CALL: proc {
     SetValueI(cpu.L, low)
     SetValue(cpu.A, 0y00)
     return
-  } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B  
+  } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B
     // print the number in HL
     print GetHLUnsigned()
     return
@@ -409,7 +458,7 @@ CALL: proc {
   } elif (is_t200 and addr == 4855) { // t100 12CB  4811  t200 12F7  4855  CHGET
     SetValueI(cpu.A, _getch())
     return
-  } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found 
+  } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found
     if _kbhit() == 1 {
       ClearBit(cpu.Flags, ZERO_FLAG)
       SetValueI(cpu.A, _getch())
@@ -516,10 +565,6 @@ CPO: proc {
 
 CZ: proc {
   CallCond(ZERO_FLAG, 0)
-}
-
-DAA: proc {
-  exit "DAA not implemented"
 }
 
 DADx: proc(other: int) {
@@ -1431,7 +1476,7 @@ OPCODES = [
   "CPO", // 0xe4
   "PUSH H", // 0xe5
   "ANI", // 0xe6
-  "RST 4", // 0xe7}
+  "RST 4", // 0xe7
   "RPE", // 0xe8
   "PCHL", // 0xe9
   "JPE", // 0xea
@@ -1710,6 +1755,7 @@ executeCurrentOp: proc(cpu: CPU) {
   elif op == 0yfe { CPI() }
   else {
     print "Unknown op " println op
+    printCpuState(cpu)
     exit
   }
 }
@@ -1728,32 +1774,41 @@ run: proc(cpu: CPU) {
   }
 
   if is_t200 {
-    SetMemory(cpu, 61985, 0y64)
+    // Pre-set F21F, F220 and F221 to max/defaults.
+    SetMemory(cpu, 61983, itob(150))
+    SetMemory(cpu, 61984, itob(12))
+    SetMemory(cpu, 61985, itob(100))
   }
   while cpu.running {
     debug(cpu)
 
+    // Run instruction
     executeCurrentOp(cpu)
     cpu.PC = cpu.PC + 1
-
-    // TODO: change this to something like:
-    // oldPc = cpu.PC
-    // cpu.PC = cpu.PC + 1
-    // executeCurrentOp(cpu, oldPc)
-    // But then many of the cpu.PC = cpu.PC - 1 need to be changed
 
     // Wait 1000 cycles to emulate the difference in clock speeds.
     // sadly, this doesn't really do much.
     i=1000 while i > 0 {i--}
 
     if is_t200 {
-      // Update "clock-ish" values
+      // Update clock memory values
+
+      // 150-1 jiffy clock at F21F. This is completely inaccurate,
+      // but at least it's something.
+      jiffies = cpu.memory[61983] - 1
+      if jiffies == 0y00 {
+        jiffies = itob(125)
+      }
+      SetMemory(cpu, 61983, jiffies)
+
+      // This is unsynchronized from the ticks, shrug.
       seconds = ltoi(_time64(0L))
       seconds_ish = 12 - (seconds % 12)
+      // F220
       SetMemory(cpu, 61984, itob(seconds_ish))
       if seconds_ish == 12 {
-        if cpu.memory[61985] == 0y00 {
-          // reset to 100
+        // F221
+        if cpu.memory[61985] == 0y01 {
           SetMemory(cpu, 61985, 0y64)
         } else {
           SetMemory(cpu, 61985, cpu.memory[61985] - 0y01)
@@ -1779,10 +1834,10 @@ debug: proc(cpu: CPU) {
 }
 
 printCpuState: proc(cpu: CPU) {
-  println "\t-------------------------------------------------------"
+  println "-------------------------------------------------------"
   // A: 0y00 B: 0y00 C: 0y00 BC: 0000 D: 0y00 E: 0y00 DE: 0000 H: 0y00 L: 0y00 HL: 0000
   // PC: FFFF  S:0 Z:0 C:0
-  print "\tA: " print cpu.A.v
+  print "A: " print cpu.A.v
   print " B: " print cpu.B.v
   print " C: " print cpu.C.v
   print " BC: " printHex(GetBCUnsigned())
@@ -1792,10 +1847,11 @@ printCpuState: proc(cpu: CPU) {
   print " H: " print cpu.H.v
   print " L: " print cpu.L.v
   print " HL: " printHex(GetHLUnsigned()) println ""
-  print "\tPC: " printHex(cpu.PC)
+  print "PC: " printHex(cpu.PC)
   print "  S:" print GetBit(cpu.Flags, SIGN_FLAG)
   print " Z:" print GetBit(cpu.Flags, ZERO_FLAG)
-  print " C:" println GetBit(cpu.Flags, CARRY_FLAG)
+  print " C:" print GetBit(cpu.Flags, CARRY_FLAG)
+  print " AC:" println GetBit(cpu.Flags, AUX_CARRY_FLAG)
 }
 
 DIGITS="0123456789ABCDEF"
