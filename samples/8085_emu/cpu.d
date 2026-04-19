@@ -928,12 +928,12 @@ NOP: proc { }
 
 ORAx: proc(other: byte) {
   result = cpu.A.v | other
-  SetValue(cpu.A, result)
   SetFlags(cpu,
     (result & 0y80) != 0y00,  // sign
     result == 0y00,           // zero
     false                     // always clear carry
   )
+  SetValue(cpu.A, result)
 }
 
 ORAA: proc { ORAx(cpu.A.v) }
@@ -1185,7 +1185,6 @@ SUBx: proc(otherRaw: byte) {
   SetValueI(cpu.A, res)
   SetFlagsBasedOnI(res)
   SetCarry(res)
-
 }
 
 SUBA: proc {
@@ -1776,8 +1775,8 @@ run: proc(cpu: CPU) {
   if is_t200 {
     // Pre-set F21F, F220 and F221 to max/defaults.
     SetMemory(cpu, 61983, itob(150))
-    SetMemory(cpu, 61984, itob(12))
-    SetMemory(cpu, 61985, itob(100))
+    SetMemory(cpu, 61984, 0y0c) // 12
+    SetMemory(cpu, 61985, 0y64)
   }
   while cpu.running {
     debug(cpu)
@@ -1795,9 +1794,9 @@ run: proc(cpu: CPU) {
 
       // 150-1 jiffy clock at F21F. This is completely inaccurate,
       // but at least it's something.
-      jiffies = cpu.memory[61983] - 1
+      jiffies = cpu.memory[61983] - 0y01
       if jiffies == 0y00 {
-        jiffies = itob(125)
+        jiffies = itob(150)
       }
       SetMemory(cpu, 61983, jiffies)
 
@@ -1809,7 +1808,7 @@ run: proc(cpu: CPU) {
       if seconds_ish == 12 {
         // F221
         if cpu.memory[61985] == 0y01 {
-          SetMemory(cpu, 61985, 0y64)
+          SetMemory(cpu, 61985, 0y64) // 100
         } else {
           SetMemory(cpu, 61985, cpu.memory[61985] - 0y01)
         }
