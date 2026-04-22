@@ -404,23 +404,20 @@ _kbhit: extern proc: int
 _getch: extern proc: int
 
 
-CALL: proc {
-  addr = GetNextPC16()
-
-  // If this is a ROM call, emulate it.
+maybe_execute_rom_call: proc(addr: int): bool {
   if addr == 32 { // 0x0020 (rst 4)
     RST4()
-    return
+    return true
   }
   if (is_t100 and addr == 1282) or (is_t200 and addr == 1325) { // 0x0502 or 0x052D
     // Drop into basic
     cpu.running = false
-    return
+    return true
   } elif (is_t100 and addr == 16930) or (is_t200 and addr == 20286) { // 0x4222 4F3E
     // crlf
     println ""
     SetValue(cpu.A, 0y0d)
-    return
+    return true
   } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11a2 / 11cc
     // send the buffer pointed by HL to the screen
     loc = GetHLUnsigned()
@@ -434,30 +431,30 @@ CALL: proc {
     SetValueI(cpu.H, high)
     SetValueI(cpu.L, low)
     SetValue(cpu.A, 0y00)
-    return
+    return true
   } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B
     // print the number in HL
     print GetHLUnsigned()
-    return
+    return true
   } elif (is_t100 and addr == 16945) or (is_t200 and addr == 20301) { // t100 4231  16945 t200  4F4D  20301  CLS  Exit: A = 12
     print chr(27) print "[2J" print chr(27) print "[H" // clear screen AND home
     SetValueI(cpu.A, 12)
-    return
+    return true
   } elif (is_t100 and addr == 17020) or (is_t200 and addr == 20379) { // t100 427C/17020 t200 (4F9B/20379) H=row/L=col Exit: A - Destroyed (
     row = btoi(cpu.H.v)
     col = btoi(cpu.L.v)
     print chr(27) print "[" print col print ";" print row print "H" // esc [10;5H row 10 col 5
     SetValue(cpu.A, 0yae) // junk
-    return
+    return true
   } elif (is_t200 and addr == 20318) { // t200 4F5E/20318 no auto scroll
     SetValueI(cpu.A, 86)
-    return
+    return true
   } elif (is_t200 and addr == 20323) { // t200 4F63/20323 auto scroll
     SetValueI(cpu.A, 87)
-    return
+    return true
   } elif (is_t200 and addr == 4855) { // t100 12CB  4811  t200 12F7  4855  CHGET
     SetValueI(cpu.A, _getch())
-    return
+    return true
   } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found
     if _kbhit() == 1 {
       ClearBit(cpu.Flags, ZERO_FLAG)
@@ -465,12 +462,20 @@ CALL: proc {
     } else {
       SetBit(cpu.Flags, ZERO_FLAG, true)
     }
+    return true
+  }
+  return false
+}
+
+
+CALL: proc {
+  addr = GetNextPC16()
+
+  if maybe_execute_rom_call(addr) {
     return
   }
 
-
   // Otherwise, do the rest of this method
-
   // Get the return address, one after here.
   PC = cpu.PC + 1
 
@@ -753,6 +758,10 @@ JM: proc {
 }
 
 JMP: proc {
+  //if maybe_execute_rom_call() {
+    //RET()
+    //return
+  //}
   addr = GetNextPC16()
   cpu.PC = addr - 1
 }
@@ -1224,8 +1233,11 @@ XCHG: proc {
 
 // XOR A with the given other
 XRAx: proc(other: byte) {
-  // TODO: set flags.
-  SetValue(cpu.A, cpu.A.v ^ other)
+  new_value = cpu.A.v ^ other
+  SetValue(cpu.A, new_value)
+  // clear carry
+  SetBit(cpu.Flags, CARRY_FLAG, false)
+  SetFlagsBasedOn(new_value)
 }
 
 // XOR A,A = clear A
@@ -1767,17 +1779,25 @@ executeCurrentOp: proc(cpu: CPU) {
 //////////////////////////////////////////////////////
 _time64: extern proc(ignored:long): long
 
+// milliseconds since the process started
+clock: extern proc: int
+
 run: proc(cpu: CPU) {
   if cpu.org == -1 {
     exit "No origin set!"
   }
 
+  last_ms_captured = clock()
   if is_t200 {
-    // Pre-set F21F, F220 and F221 to max/defaults.
-    SetMemory(cpu, 61983, itob(150))
-    SetMemory(cpu, 61984, 0y0c) // 12
+    // Pre-set F21F, F220 and F221 to defaults.
+    seconds = ltoi(_time64(0L))
+    // Set the jiffy counter to 1+seconds*2, because reasons.
+    SetMemory(cpu, 61983, 0y01 + itob(seconds*2))
+    // Set the seconds to seconds
+    SetMemory(cpu, 61984, itob((seconds % 12) + 1))
     SetMemory(cpu, 61985, 0y64)
   }
+  ticks_behind=0
   while cpu.running {
     debug(cpu)
 
@@ -1791,27 +1811,33 @@ run: proc(cpu: CPU) {
 
     if is_t200 {
       // Update clock memory values
-
-      // 150-1 jiffy clock at F21F. This is completely inaccurate,
-      // but at least it's something.
-      jiffies = cpu.memory[61983] - 0y01
-      if jiffies == 0y00 {
-        jiffies = itob(150)
-      }
-      SetMemory(cpu, 61983, jiffies)
-
-      // This is unsynchronized from the ticks, shrug.
-      seconds = ltoi(_time64(0L))
-      seconds_ish = 12 - (seconds % 12)
-      // F220
-      SetMemory(cpu, 61984, itob(seconds_ish))
-      if seconds_ish == 12 {
-        // F221
-        if cpu.memory[61985] == 0y01 {
-          SetMemory(cpu, 61985, 0y64) // 100
-        } else {
-          SetMemory(cpu, 61985, cpu.memory[61985] - 0y01)
+      now_ms = clock()
+      if (now_ms - last_ms_captured) > 6 {
+        // This is a little too fast
+        ticks_behind++
+        last_ms_captured = now_ms
+        jiffies = cpu.memory[61983] - 0y01
+        if ticks_behind==3 {
+          //jiffies--
+          ticks_behind=0
         }
+        if jiffies == 0y00 {
+          jiffies = itob(150)
+
+          seconds = cpu.memory[61984] - 0y01
+          // F220
+          if seconds == 0y00 {
+            seconds = 0y0c
+            // F221
+            if cpu.memory[61985] == 0y01 {
+              SetMemory(cpu, 61985, 0y64) // 100
+            } else {
+              SetMemory(cpu, 61985, cpu.memory[61985] - 0y01)
+            }
+          }
+          SetMemory(cpu, 61984, seconds)
+        }
+        SetMemory(cpu, 61983, jiffies)
       }
     }
   }
