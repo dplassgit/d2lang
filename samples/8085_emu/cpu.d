@@ -7,6 +7,9 @@ ifind: extern proc(haystack: string, needle: string): int
 is_t200 = length(args) > 1 and args[1] == '-t200'
 is_t100 = not is_t200
 
+ROM_LOCS_100 = [32, 1282, 16930, 4514, 14804, 16945, 17020]
+ROM_LOCS_200 = [32, 1325, 20286, 4556, 18187, 20301, 20379, 20318, 20323, 4855, 35587]
+
 // This has to be here so the rest of the global references to cpu: CPU work.
 STACK_START = 65534 // why not 65535?
 cpu = newCpu()
@@ -121,6 +124,18 @@ newCpu: proc: CPU {
     debugFlag = debugFlag or (args[i] == '-d')
   }
   cpu.debug = debugFlag
+  mem = cpu.memory
+  if is_t200 {
+    i=0 while i < length(ROM_LOCS_200) do i++{
+      mem[ROM_LOCS_200[i]] = 0y10 // ARHL
+      mem[ROM_LOCS_200[i]+1 ] = 0yc9 // RET
+    }
+  } else {
+    i=0 while i < length(ROM_LOCS_100) do i++{
+      mem[ROM_LOCS_100[i]] = 0y10 // ARHL
+      mem[ROM_LOCS_100[i]+1] = 0yc9 // RET
+    }
+  }
 
   return cpu
 }
@@ -395,16 +410,16 @@ ANAL: proc { ANDx(cpu.L.v) }
 ANAM: proc { ANDx(GetM(cpu)) }
 ANI:  proc { ANDx(NextPC(cpu)) }
 
-RST4: proc {
-  // print A
-  print chr(btoi(cpu.A.v) & 255)
+ARHL: proc {
+  // Trap ROM call
+  maybeExecuteROMRoutine(cpu.PC)
 }
 
 _kbhit: extern proc: int
 _getch: extern proc: int
 
 
-maybe_execute_rom_call: proc(addr: int): bool {
+maybeExecuteROMRoutine: proc(addr: int): bool {
   if addr == 32 { // 0x0020 (rst 4)
     RST4()
     return true
@@ -470,10 +485,6 @@ maybe_execute_rom_call: proc(addr: int): bool {
 
 CALL: proc {
   addr = GetNextPC16()
-
-  if maybe_execute_rom_call(addr) {
-    return
-  }
 
   // Otherwise, do the rest of this method
   // Get the return address, one after here.
@@ -677,6 +688,7 @@ HLT: proc {
   cpu.running = false
 }
 
+
 INRx: proc(r: Register) {
   Increment(r)
   SetFlagsBasedOn(r.v)
@@ -758,10 +770,6 @@ JM: proc {
 }
 
 JMP: proc {
-  //if maybe_execute_rom_call() {
-    //RET()
-    //return
-  //}
   addr = GetNextPC16()
   cpu.PC = addr - 1
 }
@@ -1098,6 +1106,10 @@ RRC: proc {
   SetBit(cpu.A, 0y07, carryOut)
 }
 
+RST4: proc {
+  // print A
+  print chr(btoi(cpu.A.v) & 255)
+}
 
 RZ: proc {
   ReturnCond(ZERO_FLAG, 0)
@@ -1546,6 +1558,7 @@ executeCurrentOp: proc(cpu: CPU) {
   elif op == 0y0d { DCRC() }
   elif op == 0y0e { MVIC() }
   elif op == 0y0f { RRC() }
+  elif op == 0y10 { ARHL() }
   elif op == 0y11 { LXID() }
   elif op == 0y12 { STAXD() }
   elif op == 0y13 { INXD() }
