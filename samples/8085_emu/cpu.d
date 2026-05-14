@@ -7,11 +7,23 @@ ifind: extern proc(haystack: string, needle: string): int
 is_t200 = length(args) > 1 and args[1] == '-t200'
 is_t100 = not is_t200
 
+// These have to be declared befofre newCpu is called, which smells like a bug
 ROM_LOCS_100 = [32, 1282, 16930, 4514, 14804, 16945, 17020]
 ROM_LOCS_200 = [32, 1325, 20286, 4556, 18187, 20301, 20379, 20318, 20323, 4855, 35587]
 
-// This has to be here so the rest of the global references to cpu: CPU work.
+// Configure 32A7 as a copy loop:
+// 0x32A7    0x7E ct_loop: mov A,M                       ; read byte
+// 0x32A8    0x12          stax D                        ; write byte
+// 0x32A9    0x23          inx H
+// 0x32AA    0x13          inx D
+// 0x32AB    0x05          dcr B
+// 0x32AC    0xC2          jnz ct_loop
+// 0x32AD    0xA7
+// 0x32AE    0x32
+// 0x32AF    0xC9          ret
+R_MOVE_B_BYTES = [ 0y7e, 0y12, 0y23, 0y13, 0y05, 0yc2, 0ya7, 0y32, 0yc9 ]
 STACK_START = 65534 // why not 65535?
+
 cpu = newCpu()
 
 // 8-bit register
@@ -104,7 +116,6 @@ CPU: record {
   debug: bool
 }
 
-
 newCpu: proc: CPU {
   cpu = new CPU
   cpu.A = new Register
@@ -126,9 +137,13 @@ newCpu: proc: CPU {
   cpu.debug = debugFlag
   mem = cpu.memory
   if is_t200 {
-    i=0 while i < length(ROM_LOCS_200) do i++{
+    // Set up ROM routines to trap to ARHL, then RET.
+    i=0 while i < length(ROM_LOCS_200) do i++ {
       mem[ROM_LOCS_200[i]] = 0y10 // ARHL
       mem[ROM_LOCS_200[i]+1 ] = 0yc9 // RET
+    }
+    i=0 while i < length(R_MOVE_B_BYTES) do i++ {
+      mem[12967+i] = R_MOVE_B_BYTES[i]
     }
   } else {
     i=0 while i < length(ROM_LOCS_100) do i++{
@@ -136,6 +151,7 @@ newCpu: proc: CPU {
       mem[ROM_LOCS_100[i]+1] = 0yc9 // RET
     }
   }
+
 
   return cpu
 }
@@ -410,29 +426,22 @@ ANAL: proc { ANDx(cpu.L.v) }
 ANAM: proc { ANDx(GetM(cpu)) }
 ANI:  proc { ANDx(NextPC(cpu)) }
 
-ARHL: proc {
-  // Trap ROM call
-  maybeExecuteROMRoutine(cpu.PC)
-}
-
 _kbhit: extern proc: int
 _getch: extern proc: int
 
-
-maybeExecuteROMRoutine: proc(addr: int): bool {
+ARHL: proc {
+  // Trap ROM call
+  addr = cpu.PC
   if addr == 32 { // 0x0020 (rst 4)
     RST4()
-    return true
   }
   if (is_t100 and addr == 1282) or (is_t200 and addr == 1325) { // 0x0502 or 0x052D
     // Drop into basic
     cpu.running = false
-    return true
   } elif (is_t100 and addr == 16930) or (is_t200 and addr == 20286) { // 0x4222 4F3E
     // crlf
     println ""
     SetValue(cpu.A, 0y0d)
-    return true
   } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11a2 / 11cc
     // send the buffer pointed by HL to the screen
     loc = GetHLUnsigned()
@@ -446,30 +455,23 @@ maybeExecuteROMRoutine: proc(addr: int): bool {
     SetValueI(cpu.H, high)
     SetValueI(cpu.L, low)
     SetValue(cpu.A, 0y00)
-    return true
   } elif (is_t100 and addr == 14804) or (is_t200 and addr == 18187) { // 0x39D4 / 470B
     // print the number in HL
     print GetHLUnsigned()
-    return true
   } elif (is_t100 and addr == 16945) or (is_t200 and addr == 20301) { // t100 4231  16945 t200  4F4D  20301  CLS  Exit: A = 12
     print chr(27) print "[2J" print chr(27) print "[H" // clear screen AND home
     SetValueI(cpu.A, 12)
-    return true
   } elif (is_t100 and addr == 17020) or (is_t200 and addr == 20379) { // t100 427C/17020 t200 (4F9B/20379) H=row/L=col Exit: A - Destroyed (
     row = btoi(cpu.H.v)
     col = btoi(cpu.L.v)
     print chr(27) print "[" print col print ";" print row print "H" // esc [10;5H row 10 col 5
-    SetValue(cpu.A, 0yae) // junk
-    return true
+    SetValue(cpu.A, 0yae) // random
   } elif (is_t200 and addr == 20318) { // t200 4F5E/20318 no auto scroll
-    SetValueI(cpu.A, 86)
-    return true
+    SetValueI(cpu.A, 86) // does nothing, but sets A to its appropriate value.
   } elif (is_t200 and addr == 20323) { // t200 4F63/20323 auto scroll
-    SetValueI(cpu.A, 87)
-    return true
+    SetValueI(cpu.A, 87) // does nothing, but sets A to its appropriate value.
   } elif (is_t200 and addr == 4855) { // t100 12CB  4811  t200 12F7  4855  CHGET
     SetValueI(cpu.A, _getch())
-    return true
   } elif (is_t200 and addr == 35587) { // t200 getch (8b03/35587)  Exit: A - Character from keyboard, Z flag - Set if no key is found
     if _kbhit() == 1 {
       ClearBit(cpu.Flags, ZERO_FLAG)
@@ -477,9 +479,7 @@ maybeExecuteROMRoutine: proc(addr: int): bool {
     } else {
       SetBit(cpu.Flags, ZERO_FLAG, true)
     }
-    return true
   }
-  return false
 }
 
 
