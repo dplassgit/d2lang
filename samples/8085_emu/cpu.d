@@ -1801,9 +1801,18 @@ run: proc(cpu: CPU) {
   }
 
   last_ms_captured = clock()
+  //i=100000000 while i > 0 {i--}
+  //ms_for_100m = clock() - last_ms_captured
+  // println ms_for_100m
+  // 12 cycles is 5 microseconds. some ops take 4 and some take 18, so I averaged
+  // now that we know how many ms it takes for 100m cycles
+  //loop_cycles_per_op = 5000000 / ms_for_100m
+  // this didn't work. it is WAY too slow.
+  // println loop_cycles_per_op 
+
   if is_t200 {
     // Pre-set F21F, F220 and F221 to defaults.
-    seconds = ltoi(_time64(0L))
+    seconds = ltoi(_time64(0L)) % 60
     // Set the jiffy counter to 1+seconds*2, because reasons.
     SetMemory(cpu, 61983, 0y01 + itob(seconds*2))
     // Set the seconds to seconds
@@ -1818,9 +1827,7 @@ run: proc(cpu: CPU) {
     executeCurrentOp(cpu)
     cpu.PC = cpu.PC + 1
 
-    // Wait 1000 cycles to emulate the difference in clock speeds.
-    // sadly, this doesn't really do much.
-    i=1000 while i > 0 {i--}
+    i=2000 while i > 0 {i--}
 
     if is_t200 {
       // Update clock memory values
