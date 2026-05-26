@@ -22,6 +22,21 @@ ROM_LOCS_200 = [32, 1325, 20286, 4556, 18187, 20301, 20379, 20318, 20323, 4855, 
 // 0x32AE    0x32
 // 0x32AF    0xC9          ret
 R_MOVE_B_BYTES = [ 0y7e, 0y12, 0y23, 0y13, 0y05, 0yc2, 0ya7, 0y32, 0yc9 ]
+
+// Configure 5DC1 as a clear loop:
+// R_CLEAR_MEM:                           ; 5DC1H
+//     XRA     A
+// ; ======================================================
+// ; Load B bytes at M with A
+// ; ======================================================
+// R_LOAD_MEM:                            ; 5DC2H
+//     MOV     M,A
+//     INX     H
+//     DCR     B
+//     JNZ     R_LOAD_MEM                 ; Load B bytes at M with A
+//     RET
+R_CLEAR_MEM = [ 0yaf, 0y77, 0y23, 0y05, 0yc2, 0yc2, 0y5d, 0yc9, 0y2a ]
+
 STACK_START = 65534 // why not 65535?
 
 cpu = newCpu()
@@ -144,6 +159,10 @@ newCpu: proc: CPU {
     }
     i=0 while i < length(R_MOVE_B_BYTES) do i++ {
       mem[12967+i] = R_MOVE_B_BYTES[i]
+    }
+    // 5dc1=24001
+    i=0 while i < length(R_CLEAR_MEM) do i++ {
+      mem[24001+i] = R_CLEAR_MEM[i]
     }
   } else {
     i=0 while i < length(ROM_LOCS_100) do i++{
