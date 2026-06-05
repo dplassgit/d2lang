@@ -1039,6 +1039,9 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
 
   @Override
   public void visit(ReturnNode node) {
+    ProcSymbol proc = procedures.peek();
+    needsReturn.remove(proc);
+    VarType declaredReturnType = proc.returnType();
     if (node.expr().isPresent()) {
       ExprNode expr = node.expr().get();
       expr.accept(this);
@@ -1046,29 +1049,31 @@ public class StaticChecker extends DefaultNodeVisitor implements Phase {
         errors.add(
             new TypeException(
                 node.position(), "Indeterminable type for RETURN statement: %s", node));
-        ProcSymbol proc = procedures.peek();
-        needsReturn.remove(proc);
         return;
       }
       node.setVarType(expr.varType());
+      if (declaredReturnType.equals(VarType.VOID)) {
+        errors.add(
+            new TypeException(
+                node.position(),
+                "PROC '%s' declared to return %s; cannot return a value",
+                proc.name(),
+                declaredReturnType));
+        return;
+      }
     }
-
-    ProcSymbol proc = procedures.peek();
-    needsReturn.remove(proc);
-    VarType declaredReturnType = proc.returnType();
     VarType actualReturnType = node.varType();
-
     if (actualReturnType.isUnknown()) {
       // TODO: write a test for this block
       errors.add(
           new TypeException(node.position(), "Indeterminable type for RETURN statement: %s", node));
+      return;
     }
-
-    if (!proc.returnType().compatibleWith(actualReturnType)) {
+    if (!declaredReturnType.compatibleWith(actualReturnType)) {
       errors.add(
           new TypeException(
               node.position(),
-              "PROC '%s' declared to return %s but RETURN statement was of type %s",
+              "PROC '%s' declared to return %s but return statement was of type %s",
               proc.name(),
               declaredReturnType,
               actualReturnType));

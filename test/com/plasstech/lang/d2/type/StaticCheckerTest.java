@@ -873,13 +873,11 @@ public class StaticCheckerTest {
 
   @Test
   public void return_mismatch() {
-    assertThatTypeChecking("fib:proc():bool {return 3}")
-        .hasError("declared to return BOOL but RETURN statement was of type INT");
+    assertThatTypeChecking("fib:proc():bool {return 3}").hasError("return BOOL.*INT");
     assertThatTypeChecking("fib:proc(a):int {a='hi' return a}").hasError("INT.*STRING");
-    assertThatTypeChecking("fib:proc(a:int) {a=3 return a}").hasError("VOID.*INT");
-
-    assertThatTypeChecking("fib:proc() {return 3}").hasError("VOID.*INT");
-    assertThatTypeChecking("fib:proc():int {return}").hasError("INT.*VOID");
+    assertThatTypeChecking("fib:proc(a:int) {a=3 return a}").hasError("VOID");
+    assertThatTypeChecking("fib:proc() {return 3}").hasError("VOID");
+    assertThatTypeChecking("fib:proc():int {return}").hasError("INT but.*VOID");
   }
 
   @Test
@@ -1469,7 +1467,7 @@ public class StaticCheckerTest {
   @Test
   public void assignRecordType_procReturnMismatch() {
     assertThatTypeChecking("r1:record{i:int} r2:record{} p:proc():r1{return new r2}")
-        .hasError("but RETURN statement was of type RECORD r2");
+        .hasError("r1 but.*RECORD r2");
     assertThatTypeChecking(
             "r1:record{i:int} r2:record{} p:proc():r2{return new r2} var1:r1 var1=p()")
         .hasError("type RECORD r1 to RECORD r2");
@@ -1832,6 +1830,57 @@ public class StaticCheckerTest {
           println a.f
         }
         """);
+  }
+
+  @Test
+  public void bug_399_return_void_error1() throws Exception {
+    String program =
+        """
+        callee: proc { }
+
+        caller: proc {
+          return callee()
+        }
+        """;
+    assertThatTypeChecking(program)
+        .hasError("PROC 'caller' declared to return VOID; cannot return a value");
+  }
+
+  @Test
+  public void bug_399_return_void_error2() throws Exception {
+    String program =
+        """
+        caller: proc {
+          return 3
+        }
+        """;
+    assertThatTypeChecking(program).hasError("cannot return a value");
+  }
+
+  @Test
+  public void bug_399_return_void_error3() throws Exception {
+    String program =
+        """
+        callee: proc {}
+
+        caller: proc: int {
+          return callee()
+        }
+        """;
+    assertThatTypeChecking(program).hasError("INT but.*VOID");
+  }
+
+  @Test
+  public void bug_399_return_void_ok() throws Exception {
+    String program =
+        """
+          a=1
+          procTest:proc() {
+             if a==1 {println a return } else {println 4 return}
+          }
+          procTest()
+      """;
+    checkProgram(program);
   }
 
   private static SymbolTable checkProgram(String program) {
