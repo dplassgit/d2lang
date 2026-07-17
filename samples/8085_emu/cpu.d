@@ -8,8 +8,21 @@ is_t200 = length(args) > 1 and args[1] == '-t200'
 is_t100 = not is_t200
 
 // These have to be declared befofre newCpu is called, which smells like a bug
+// These are the "fake" ROM locations that are implemented in ARHL
 ROM_LOCS_100 = [32, 1282, 16930, 4514, 14804, 16945, 17020]
-ROM_LOCS_200 = [32, 1325, 20286, 4556, 18187, 20301, 20379, 20318, 20323, 4855, 35587]
+ROM_LOCS_200 = [32, 1325, 4556, 4855, 18187, 20286, 20301, 20318, 20323, 20379, 35587]
+
+// Configure 0x1014 (4116) as R_CONV_A_TOUPPER
+// 0x1014    0xFE cpi 0x61
+// 0x1015    0x61
+// 0x1016    0xD8 rc
+// 0x1017    0xFE cpi 0x7b
+// 0x1018    0x7B
+// 0x1019    0xD0 rnc
+// 0x101A    0xE6 ani 0x5f
+// 0x101B    0x5F
+// 0x101C    0xC9 ret
+R_CONV_A_TOUPPER = [ 0yFE, 0y61, 0yD8, 0yFE, 0y7B, 0yD0, 0yE6, 0y5F, 0yC9 ]
 
 // Configure 32A7 as a copy loop:
 // 0x32A7    0x7E ct_loop: mov A,M                       ; read byte
@@ -26,9 +39,6 @@ R_MOVE_B_BYTES = [ 0y7e, 0y12, 0y23, 0y13, 0y05, 0yc2, 0ya7, 0y32, 0yc9 ]
 // Configure 5DC1 as a clear loop:
 // R_CLEAR_MEM:                           ; 5DC1H
 //     XRA     A
-// ; ======================================================
-// ; Load B bytes at M with A
-// ; ======================================================
 // R_LOAD_MEM:                            ; 5DC2H
 //     MOV     M,A
 //     INX     H
@@ -36,6 +46,7 @@ R_MOVE_B_BYTES = [ 0y7e, 0y12, 0y23, 0y13, 0y05, 0yc2, 0ya7, 0y32, 0yc9 ]
 //     JNZ     R_LOAD_MEM                 ; Load B bytes at M with A
 //     RET
 R_CLEAR_MEM = [ 0yaf, 0y77, 0y23, 0y05, 0yc2, 0yc2, 0y5d, 0yc9, 0y2a ]
+
 
 STACK_START = 65534 // why not 65535?
 
@@ -152,11 +163,13 @@ newCpu: proc: CPU {
   cpu.debug = debugFlag
   mem = cpu.memory
   if is_t200 {
-    // Set up ROM routines to trap to ARHL, then RET.
+    // Set up fake ROM routines to trap to ARHL, then RET.
     i=0 while i < length(ROM_LOCS_200) do i++ {
       mem[ROM_LOCS_200[i]] = 0y10 // ARHL
       mem[ROM_LOCS_200[i]+1 ] = 0yc9 // RET
     }
+
+    // Set up real ROM routines
     i=0 while i < length(R_MOVE_B_BYTES) do i++ {
       mem[12967+i] = R_MOVE_B_BYTES[i]
     }
@@ -164,13 +177,16 @@ newCpu: proc: CPU {
     i=0 while i < length(R_CLEAR_MEM) do i++ {
       mem[24001+i] = R_CLEAR_MEM[i]
     }
+    // 1014=4116
+    i=0 while i < length(R_CONV_A_TOUPPER) do i++ {
+      mem[4116+i] = R_CONV_A_TOUPPER[i]
+    }
   } else {
     i=0 while i < length(ROM_LOCS_100) do i++{
       mem[ROM_LOCS_100[i]] = 0y10 // ARHL
       mem[ROM_LOCS_100[i]+1] = 0yc9 // RET
     }
   }
-
 
   return cpu
 }
@@ -453,15 +469,14 @@ ARHL: proc {
   addr = cpu.PC
   if addr == 32 { // 0x0020 (rst 4)
     RST4()
-  }
-  if (is_t100 and addr == 1282) or (is_t200 and addr == 1325) { // 0x0502 or 0x052D
+  } elif (is_t100 and addr == 1282) or (is_t200 and addr == 1325) { // 0x0502 or 0x052D
     // Drop into basic
     cpu.running = false
   } elif (is_t100 and addr == 16930) or (is_t200 and addr == 20286) { // 0x4222 4F3E
     // crlf
     println ""
     SetValue(cpu.A, 0y0d)
-  } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11a2 / 11cc
+  } elif (is_t100 and addr == 4514) or (is_t200 and addr == 4556) { // 0x11A2 / 11CC
     // send the buffer pointed by HL to the screen
     loc = GetHLUnsigned()
     while cpu.memory[loc] != 0y00 do loc++ {
@@ -1827,7 +1842,7 @@ run: proc(cpu: CPU) {
   // now that we know how many ms it takes for 100m cycles
   //loop_cycles_per_op = 5000000 / ms_for_100m
   // this didn't work. it is WAY too slow.
-  // println loop_cycles_per_op 
+  // println loop_cycles_per_op
 
   if is_t200 {
     // Pre-set F21F, F220 and F221 to defaults.
