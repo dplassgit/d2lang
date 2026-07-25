@@ -23,7 +23,7 @@ while -> 'WHILE' expr do? '{' statements '}'
 do -> 'DO' statement
 
 declaration -> variable ':' type | variable ':' 'EXTERN'? 'PROC' procdef
-type -> 'INT' | 'BOOL' | 'STRING' | 'LONG' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE' | 'BYTE' | variable
+type -> 'INT' | 'BOOL' | 'STRING' | 'LONG' | 'RANGE' | type '[' expr ']' | 'RECORD' '{' declaration* '}' | 'DOUBLE' | 'BYTE' | variable
 
 procdef -> params? returns? '{' statements '}'
 params -> e | '(' (param (',' param)*)? ')'
@@ -43,7 +43,11 @@ comma-separated-expressions -> expr (',' expr)*
 ## Expression grammar
 
 ```
-expr -> boolor
+expr -> nullcoalesce
+
+nullcoalesce -> range ('??' range)*
+
+range -> boolor (':' boolor)?
 
 boolor -> boolxor (('OR' | '|') boolxor)*
 
@@ -79,6 +83,30 @@ atom ->   int_constant
         | '[' comma-separated-expressions ']'
         | 'INPUT'
 ```
+
+## Ranges
+
+`start:end` creates a `RANGE` from two `INT` expressions. Both endpoints are
+required, and a range expression can contain only one `:`. Constant endpoints
+must be non-negative and non-descending.
+
+A range stores its endpoints at indexes `0` and `1`:
+
+```
+r = 2:5
+println r[0] // 2
+println r[1] // 5
+```
+
+A `RANGE` can also slice a `STRING`. The start is inclusive and the end is
+exclusive, so `"hello"[1:4]` is `"ell"`. Array slicing is not implemented.
+
+## Null coalescing
+
+`left ?? right` evaluates to `left` when `left` is not `NULL`; otherwise, it
+evaluates to `right`. The operands must have compatible nullable types, such as
+`STRING`, array, or record types. `??` has the lowest precedence of the binary
+operators listed above.
 
 Not implemented yet: power (exponentiation)
 
