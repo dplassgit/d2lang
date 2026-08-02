@@ -10,7 +10,11 @@ is_t100 = not is_t200
 // These have to be declared befofre newCpu is called, which smells like a bug
 // These are the "fake" ROM locations that are implemented in ARHL
 ROM_LOCS_100 = [32, 1282, 16930, 4514, 14804, 16945, 17020]
-ROM_LOCS_200 = [32, 1325, 4556, 4855, 18187, 20286, 20301, 20318, 20323, 20379, 35587]
+ROM_LOCS_200 = [32, 1325, 4556, 4855, 18187, 20286, 20301, 20318, 20323, 20379, 35587, 36774, 20360, 20365]
+
+//R_BEEP_FUN 0x8fa6 36774
+//R_INV_CHAR_ENABLE equ 0x4F88 ; inverse video 20360
+//R_INV_CHAR_DISABLE equ 0x4F8D ; normal video 20365
 
 // Configure 0x1014 (4116) as R_CONV_A_TOUPPER
 // 0x1014    0xFE cpi 0x61
@@ -46,6 +50,16 @@ R_MOVE_B_BYTES = [ 0y7e, 0y12, 0y23, 0y13, 0y05, 0yc2, 0ya7, 0y32, 0yc9 ]
 //     JNZ     R_LOAD_MEM                 ; Load B bytes at M with A
 //     RET
 R_CLEAR_MEM = [ 0yaf, 0y77, 0y23, 0y05, 0yc2, 0yc2, 0y5d, 0yc9, 0y2a ]
+
+// Compare DE and HL
+// R_COMP_DE_HL:                          ; 0018H
+// 7c  mov A,H
+// 92  sub D
+// c0  rnz
+// 7d  mov A,L
+// 93  sub E
+// c9  ret
+R_COMP_DE_HL = [ 0y7c, 0y92, 0yc0, 0y7d, 0y93, 0yc9]
 
 
 STACK_START = 65534 // why not 65535?
@@ -186,6 +200,11 @@ newCpu: proc: CPU {
       mem[ROM_LOCS_100[i]] = 0y10 // ARHL
       mem[ROM_LOCS_100[i]+1] = 0yc9 // RET
     }
+  }
+  // Both t100 and t200
+  i=0 while i < length(R_COMP_DE_HL) do i++ {
+    // 18h
+    mem[24+i] = R_COMP_DE_HL[i]
   }
 
   return cpu
@@ -513,6 +532,12 @@ ARHL: proc {
     } else {
       SetBit(cpu.Flags, ZERO_FLAG, true)
     }
+  } elif (is_t200 and addr == 36774) { // R_BEEP_FUN
+    print chr(7)
+  } elif (is_t200 and addr == 20360) { // R_INV_CHAR_ENABLE
+    print chr(27) print "[7m"
+  } elif (is_t200 and addr == 20365) { // R_INV_CHAR_DISABLE
+    print chr(27) print "[0m"
   }
 }
 
@@ -520,7 +545,6 @@ ARHL: proc {
 CALL: proc {
   addr = GetNextPC16()
 
-  // Otherwise, do the rest of this method
   // Get the return address, one after here.
   PC = cpu.PC + 1
 
@@ -718,6 +742,14 @@ DCXSP: proc {
 }
 
 HLT: proc {
+  println ""
+  println ""
+  println ""
+  println ""
+  println ""
+  println ""
+  println ""
+  println ""
   printCpuState(cpu)
   cpu.running = false
 }
@@ -885,9 +917,6 @@ LXIH: proc {
 
 LXISP: proc {
   exit "LXISP not implemented"
-  //val = GetNextPC16()
-
-  //cpu->SP->Set(val)
 }
 
 // Move from 'from' to 'to'
@@ -1143,6 +1172,20 @@ RRC: proc {
 RST4: proc {
   // print A
   print chr(btoi(cpu.A.v) & 255)
+}
+
+RST3: proc {
+  // Get the return address, the IP after here.
+  PC = cpu.PC + 1
+
+  high = itob(PC >> 8)
+  low = itob(PC & 255)
+
+  Push(cpu.stack, high)
+  Push(cpu.stack, low)
+
+  // jump to 24 (18h); set PC to 23 because the PC is auto-incremented
+  cpu.PC = 23
 }
 
 RZ: proc {
@@ -1786,6 +1829,7 @@ executeCurrentOp: proc(cpu: CPU) {
   elif op == 0yda { JC() }
   elif op == 0ydc { CC() }
   elif op == 0yde { SBI() }
+  elif op == 0ydf { RST3() }
   elif op == 0ye0 { RPO() }
   elif op == 0ye1 { POPH() }
   elif op == 0ye2 { JPO() }
